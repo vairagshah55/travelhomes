@@ -55,11 +55,11 @@ const LogoWebsite = () => {
     
   return (
     <div>
-        <Link to={`${has ? "/dashboard" : "/"}`  }> 
+        <Link to={`${has ? "/dashboard" : "/"}`  }>
         <img
             src={logoSrc}
             alt="Travel Homes Logo"
-            className="h-14 w-auto max-w-[180px] object-contain"
+            className="h-16 w-auto max-w-[200px] object-contain"
           />
           </Link>
     </div>
@@ -114,11 +114,11 @@ export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "ligh
     
   return (
     <div>
-        <Link to={`${has ? "/dashboard" : "/"}`}> 
+        <Link to={`${has ? "/dashboard" : "/"}`}>
         <img
             src={logoSrc}
             alt="Travel Homes Logo"
-            className="h-14 w-auto max-w-[180px] object-contain"
+            className="h-16 w-auto max-w-[200px] object-contain"
           />
           </Link>
       </div>

@@ -864,41 +864,20 @@ export default function Index() {
           />
 
           {/* Hero Content */}
-          <div className="flex-1 flex flex-col items-center justify-start px-4 sm:px-6 pt-6 pb-10 text-center">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12 md:pt-28 md:pb-14 text-center">
             {/* Heading */}
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                hidden: {},
-                visible: { transition: { staggerChildren: 0.12 } },
-              }}
-              className="mb-4"
+            <motion.h1
+              className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight drop-shadow mb-6 md:mb-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <motion.h1
-                className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight mb-2 drop-shadow"
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
-                }}
-              >
-                Explore The Unexplored
-              </motion.h1>
-
-              <motion.p
-                className="text-sm sm:text-base text-white/70 font-normal"
-                variants={{
-                  hidden: { opacity: 0, y: 12 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
-                }}
-              >
-                Unique stays · Camper vans · Adventures across India
-              </motion.p>
-            </motion.div>
+              Explore The Unexplored
+            </motion.h1>
 
             {/* Category Filters */}
             <motion.div
-              className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-4 md:mb-5"
+              className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-6 md:mb-8"
               initial="hidden"
               animate="visible"
               variants={{
@@ -1597,7 +1576,7 @@ export default function Index() {
         </div>
       </section>
 
-<div ref={contentRef} className="max-w-7xl mx-auto px-4 sm:px-6">
+<div ref={contentRef} className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
       {/* Dynamic Sections Based on Active Filter  */}
       {/* first top content depend on filter */}
       {activeFilter === "camper-van" && homepageSections["camper-van"] && (
