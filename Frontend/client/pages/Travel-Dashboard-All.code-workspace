@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Travel-Dashboard-All",
+			"path": "../../.."
+		},
+		{
+			"name": "Travelhomes-Builder.io",
+			"path": "../../../../../Travelhomes-Builder.io-main/Travelhomes-Builder.io"
+		}
+	],
+	"settings": {}
+}

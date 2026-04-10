@@ -1,0 +1,1181 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /**
+   * Enhanced Figma-based CSS Variables
+   * Based on the provided Figma designs with specific color values
+   */
+  :root {
+    /* Figma Design System Colors */
+    --Background: #F9FAFB;
+    --16: 16px;
+    --4: 4px;
+    --12: 12px;
+    --8: 8px;
+    --pRIMARY: #131313;
+    --Black-Heading: #101828;
+    --Black-Stroke: #EAECF0;
+    --White: #FFF;
+    --Title: #334054;
+    --Stroke: #EAECF0;
+    --Primary-0: #FFF;
+    --Neutral-06: #B0B0B0;
+    --Neutral-07: #717171;
+    --Body: #485467;
+    --Secondary-30: #FFF2E2;
+    --Heading: #131313;
+    --Text: #212121;
+
+    /* Travel Dashboard specific colors from Figma */
+    --dashboard-bg: 210 20% 98%; /* #F9FAFB */
+    --dashboard-primary: 0 0% 7%; /* #131313 */
+    --dashboard-heading: 216 27% 16%; /* #101828 */
+    --dashboard-body: 214 14% 35%; /* #485467 */
+    --dashboard-title: 214 19% 25%; /* #334054 */
+    --dashboard-stroke: 220 13% 91%; /* #EAECF0 */
+    --dashboard-neutral-06: 0 0% 69%; /* #B0B0B0 */
+    --dashboard-neutral-07: 0 0% 44%; /* #717171 */
+    --dashboard-text: 0 0% 13%; /* #212121 */
+
+    /* Override default shadcn colors to match design */
+    --background: 210 20% 98%; /* Match dashboard bg */
+    --foreground: 0 0% 7%; /* Match primary */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 0 0% 7%; /* #131313 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 220 13% 91%; /* #EAECF0 */
+    --input: 220 13% 91%;
+    --ring: 0 0% 7%;
+
+    --radius: 0.75rem; /* 12px like in design */
+
+    /* Sidebar colors */
+    --sidebar-background: 210 20% 98%; /* Match dashboard bg */
+    --sidebar-foreground: 0 0% 47%; /* #7A757D */
+    --sidebar-primary: 0 0% 7%; /* #131313 */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 0 0% 7%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Stats card backgrounds */
+    --stats-impression-bg: 28 100% 94%; /* #FDEBE0 */
+    --stats-impression-icon-bg: 23 69% 88%; /* #F8DBCB */
+    --stats-bookings-bg: 120 60% 95%; /* #E3FBE4 */
+    --stats-bookings-icon-bg: 120 53% 91%; /* #D8F4D9 */
+    --stats-properties-bg: 194 71% 93%; /* #DBF6FC */
+    --stats-properties-icon-bg: 194 100% 90%; /* #CCF5FF */
+    --stats-earnings-bg: 290 62% 95%; /* #F6E0FD */
+    --stats-earnings-icon-bg: 290 100% 91%; /* #F4D2FF */
+    --stats-clicks-bg: 245 81% 94%; /* #DBD9FF */
+    --stats-clicks-icon-bg: 245 85% 90%; /* #D0CDFF */
+
+    /* Status colors from Figma */
+    --status-orange-bg: 38 100% 95%; /* #FFF2E2 */
+    --status-orange-text: 38 100% 36%; /* #B86B00 */
+    --status-purple-bg: 290 62% 95%; /* #F6E0FD */
+    --status-purple-text: 290 77% 50%; /* #B127DC */
+    --status-green-bg: 120 60% 95%; /* #E3FBE4 */
+    --status-green-text: 120 100% 36%; /* #37B800 */
+
+    /* Booking ID link color */
+    --booking-link: 238 82% 60%; /* #4F59E5 */
+    
+    /* Navigation tree lines */
+    --nav-tree-line: 0 0% 90%; /* #E7E7E7 */
+
+    /* Authentication colors from Figma designs */
+    --auth-blackish-green: #121;
+    --auth-neutral-06: #B0B0B0;
+    --auth-neutral-07: #717171;
+    --auth-primary: #131313;
+    --auth-primary-0: #FFF;
+    --auth-text-muted: rgba(17,34,17,0.75);
+
+    /* Congratulations page specific colors from Figma */
+    --congratulations-star-yellow: #FFDC64;
+    --congratulations-star-orange: #FFC850;
+    --congratulations-green: #52AC78;
+    --congratulations-purple: #9186F4;
+    --congratulations-secondary-400: #363F5E;
+    --congratulations-secondary-500: #242C3D;
+  }
+
+  .dark {
+    /* Dark mode dashboard colors */
+    --dashboard-bg: 240 10% 4%; /* Very dark bg */
+    --dashboard-primary: 0 0% 100%; /* White text in dark mode */
+    --dashboard-heading: 0 0% 98%;
+    --dashboard-body: 215 20.2% 65.1%;
+    --dashboard-title: 0 0% 90%;
+    --dashboard-stroke: 217.2 32.6% 17.5%;
+    --dashboard-neutral-06: 0 0% 50%;
+    --dashboard-neutral-07: 0 0% 70%;
+    --dashboard-text: 0 0% 98%;
+
+    --background: 240 10% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 10% 4%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    --sidebar-background: 240 10% 4%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Dark mode stats card backgrounds (darker versions) */
+    --stats-impression-bg: 28 20% 10%;
+    --stats-impression-icon-bg: 23 30% 15%;
+    --stats-bookings-bg: 120 20% 10%;
+    --stats-bookings-icon-bg: 120 25% 15%;
+    --stats-properties-bg: 194 20% 10%;
+    --stats-properties-icon-bg: 194 25% 15%;
+    --stats-earnings-bg: 290 20% 10%;
+    --stats-earnings-icon-bg: 290 25% 15%;
+    --stats-clicks-bg: 245 20% 10%;
+    --stats-clicks-icon-bg: 245 25% 15%;
+
+    /* Dark mode status colors */
+    --status-orange-bg: 38 30% 15%;
+    --status-orange-text: 38 80% 60%;
+    --status-purple-bg: 290 30% 15%;
+    --status-purple-text: 290 70% 70%;
+    --status-green-bg: 120 30% 15%;
+    --status-green-text: 120 60% 60%;
+
+    --booking-link: 238 82% 70%;
+    --nav-tree-line: 0 0% 30%;
+
+    /* Dark mode authentication colors */
+    --auth-blackish-green: #fff;
+    --auth-neutral-06: #777;
+    --auth-neutral-07: #999;
+    --auth-primary: #fff;
+    --auth-primary-0: #1a1a1a;
+    --auth-text-muted: rgba(255,255,255,0.75);
+
+    /* Dark mode congratulations page colors */
+    --congratulations-star-yellow: #FFDC64;
+    --congratulations-star-orange: #FFC850;
+    --congratulations-green: #52AC78;
+    --congratulations-purple: #9186F4;
+    --congratulations-secondary-400: #9CA3AF;
+    --congratulations-secondary-500: #D1D5DB;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .font-geist {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .font-poppins {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .font-plus-jakarta {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge /
+  scrollbar-width: none;     / Firefox */
+}
+
+@layer components {
+  /* Custom form inputs matching Figma design */
+  .figma-input {
+    @apply h-12 border-dashboard-stroke dark:border-gray-600 rounded-lg px-3 text-sm font-plus-jakarta text-dashboard-neutral07 dark:text-gray-300 bg-white dark:bg-gray-800 transition-all duration-200;
+  }
+
+  .figma-input:hover {
+    @apply border-dashboard-primary shadow-sm;
+  }
+
+  .figma-input:focus {
+    @apply border-dashboard-primary ring-2 ring-dashboard-primary/20 shadow-md;
+  }
+
+  .figma-input.error {
+    @apply border-red-500 ring-2 ring-red-500/20;
+  }
+
+  .figma-input.error:focus {
+    @apply border-red-500 ring-2 ring-red-500/30;
+  }
+
+  .figma-select {
+    @apply h-12 border-dashboard-stroke dark:border-gray-600 rounded-lg px-3 text-sm font-plus-jakarta text-dashboard-neutral07 dark:text-gray-300 transition-all duration-200;
+  }
+
+  .figma-select:hover {
+    @apply border-dashboard-primary shadow-sm;
+  }
+
+  .figma-label {
+    @apply text-base font-normal text-dashboard-title dark:text-gray-300 font-plus-jakarta;
+  }
+
+  /* Form field containers */
+  .form-field {
+    @apply space-y-3;
+  }
+
+  .form-field.error .figma-label {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  /* Error message styles */
+  .error-message {
+    @apply text-red-500 text-sm mt-1 animate-in slide-in-from-top-1 duration-200;
+  }
+
+  /* Upload area styles */
+  .upload-area {
+    @apply border-2 border-dashed border-dashboard-stroke dark:border-gray-600 rounded-lg transition-all duration-200 cursor-pointer;
+  }
+
+  .upload-area:hover {
+    @apply border-dashboard-primary bg-gray-50 dark:bg-gray-700/50;
+  }
+
+  .upload-area.active {
+    @apply border-dashboard-primary bg-blue-50 dark:bg-blue-900/20;
+  }
+
+  /* Navigation tree styles */
+  .nav-tree-line {
+    @apply bg-gray-300 dark:bg-gray-600;
+  }
+
+  /* Status badges */
+  .status-orange {
+    @apply bg-status-orange-bg text-status-orange-text;
+  }
+
+  .status-purple {
+    @apply bg-status-purple-bg text-status-purple-text;
+  }
+
+  .status-green {
+    @apply bg-status-green-bg text-status-green-text;
+  }
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;             /* Safari and Chrome */
+}
+
+  /* Responsive table styles */
+  .booking-table {
+    @apply border border-dashboard-stroke dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 overflow-hidden shadow-sm;
+  }
+
+  .booking-table-header {
+    @apply bg-gray-50 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-dashboard-stroke dark:border-gray-600;
+  }
+
+  .booking-table-cell {
+    @apply h-16 px-4 align-middle;
+  }
+
+  .booking-table-row {
+    @apply border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors h-16 cursor-pointer;
+  }
+
+  /* Modal styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/25 flex items-center justify-center z-50 p-4;
+  }
+
+  .modal-content {
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl p-8 relative;
+  }
+
+  /* Hover states */
+  .hover-scale {
+    @apply hover:scale-105 transition-transform duration-200;
+  }
+
+  .hover-shadow {
+    @apply hover:shadow-lg transition-shadow duration-200;
+  }
+
+  .hover-bg {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-200;
+  }
+
+  /* Button variants */
+  .btn-primary {
+    @apply bg-dashboard-primary text-white hover:bg-gray-800 hover:shadow-lg transition-all duration-200;
+  }
+
+  .btn-secondary {
+    @apply border border-dashboard-stroke dark:border-gray-600 text-dashboard-body dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200;
+  }
+
+  /* Upload area */
+  .upload-area {
+    @apply border-2 border-dashed border-dashboard-stroke dark:border-gray-600 rounded-lg p-6 flex flex-col items-center justify-center min-h-[182px] transition-all duration-200 cursor-pointer hover:border-dashboard-primary hover:bg-gray-50 dark:hover:bg-gray-700/50;
+  }
+
+  .upload-area.drag-active {
+    @apply border-dashboard-primary bg-blue-50 dark:bg-blue-900/20;
+  }
+
+  /* Tab styles */
+  .tab-button {
+    @apply pb-3 px-2 lg:px-4 font-bold text-base lg:text-lg transition-colors relative whitespace-nowrap;
+  }
+
+  .tab-button.active {
+    @apply text-dashboard-primary dark:text-white border-b-2 border-dashboard-primary;
+  }
+
+  .tab-button.inactive {
+    @apply text-gray-400 hover:text-dashboard-primary;
+  }
+
+  /* Notification Animation */
+  @keyframes notification-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(19, 19, 19, 0.4);
+      filter: blur(0px);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 20px 8px rgba(19, 19, 19, 0.2);
+      filter: blur(1.2px);
+      background-color: rgba(0, 0, 0, 0.1);
+      transform: scale(1.05);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(19, 19, 19, 0);
+      filter: blur(0px);
+      transform: scale(1);
+    }
+  }
+
+  .dark .notification-pulse {
+    animation: notification-pulse-dark 2s infinite;
+  }
+
+  @keyframes notification-pulse-dark {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2);
+      filter: blur(0px);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 20px 8px rgba(255, 255, 255, 0.15);
+      filter: blur(1.2px);
+      background-color: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+      filter: blur(0px);
+      transform: scale(1);
+    }
+  }
+
+  .notification-pulse {
+    animation: notification-pulse 2s infinite;
+  }
+}
+
+@layer utilities {
+  /* Responsive utilities */
+  .container-responsive {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+
+  .gap-responsive {
+    @apply gap-2 sm:gap-4 lg:gap-6;
+  }
+
+  .padding-responsive {
+    @apply p-2 sm:p-4 lg:p-6;
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Focus utilities */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:ring-offset-2;
+  }
+
+  /* Dark mode transitions */
+  .dark-transition {
+    @apply transition-colors duration-200;
+  }
+
+  /* Authentication page styles */
+  .auth-layout {
+    @apply h-screen w-screen bg-white dark:bg-gray-900 flex max-md:space-y-16  ;
+  }
+
+  .auth-image-gallery {
+    @apply hidden lg:flex lg:w-[661px] p-6 gap-3;
+  }
+
+  .auth-form-container {
+    @apply flex-1 flex items-center justify-center mt-5;
+  }
+
+  .auth-form {
+    @apply w-[94%] max-w-[520px] space-y-0;
+  }
+  @media (300px <= width < 380px) {
+    .auth-form-container {
+    @apply  p-2;
+  }
+    .auth-form {
+      @apply  w-[300px];
+    }
+    
+  }
+
+  .auth-title {
+    @apply text-4xl font-bold text-black dark:text-white font-['Inter'];
+  }
+
+  .auth-subtitle {
+    @apply text-base text-[#112211] dark:text-gray-300 opacity-75 font-['Plus_Jakarta_Sans'];
+  }
+
+  .auth-input {
+    @apply h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] transition-all duration-200;
+  }
+
+  .auth-input:hover {
+    @apply border-[#131313] dark:border-white shadow-sm;
+  }
+
+  .auth-input:focus {
+    @apply border-[#131313] dark:border-white ring-2 ring-[#131313]/20 dark:ring-white/20;
+  }
+
+  .auth-button {
+    @apply w-full h-12 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200;
+  }
+  /* Chrome, Safari, Edge, Opera */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
+  .auth-button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  .auth-link {
+    @apply text-[#131313] dark:text-white hover:underline font-bold;
+  }
+
+  .auth-back-button {
+    @apply flex items-center gap-1 text-[#131313] dark:text-white hover:opacity-80 transition-opacity;
+  }
+
+  .auth-divider {
+    @apply flex items-center gap-4;
+  }
+
+  .auth-divider-line {
+    @apply flex-1 h-px bg-[#D6D6D6] dark:bg-gray-600;
+  }
+
+  .auth-divider-text {
+    @apply text-sm text-[#717171] dark:text-gray-400 font-['Plus_Jakarta_Sans'];
+  }
+
+  .google-button {
+    @apply w-full h-12 border border-black dark:border-white rounded-[52px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200;
+  }
+
+  .otp-input {
+    @apply w-[52px] h-12 text-center border border-[#B0B0B0] dark:border-gray-600 rounded-lg text-base font-['Plus_Jakarta_Sans'] text-[#717171] dark:text-gray-300 bg-white dark:bg-gray-800 transition-all duration-200;
+  }
+
+  .otp-input:focus {
+    @apply border-[#131313] dark:border-white ring-2 ring-[#131313]/20 dark:ring-white/20;
+  }
+
+  .demo-notice {
+    @apply bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4;
+  }
+
+  .demo-notice-title {
+    @apply font-semibold text-blue-900 dark:text-blue-100 mb-2;
+  }
+
+  .demo-notice-text {
+    @apply text-sm text-blue-800 dark:text-blue-200;
+  }
+
+  .progress-indicator {
+    @apply flex space-x-2;
+  }
+
+  .progress-step {
+    @apply h-2 flex-1 rounded-full transition-colors duration-300;
+  }
+
+  .progress-step.active {
+    @apply bg-[#131313] dark:bg-white;
+  }
+
+  .progress-step.inactive {
+    @apply bg-[#B0B0B0] dark:bg-gray-600;
+  }
+
+  .slider-container {
+    @apply overflow-hidden;
+  }
+
+  .slider-content {
+    @apply flex transition-transform duration-500 ease-in-out;
+  }
+
+  .slider-step {
+    @apply w-full flex-shrink-0;
+  }
+
+  /* Onboarding page styles */
+  .onboarding-layout {
+    @apply min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-8;
+  }
+
+  .onboarding-container {
+    @apply w-full max-w-4xl;
+  }
+
+  .onboarding-content {
+    @apply flex gap-8 lg:gap-16;
+  }
+
+  .onboarding-form-section {
+    @apply flex-1 max-w-2xl space-y-8;
+  }
+
+  .onboarding-illustration {
+    @apply hidden lg:block flex-shrink-0 w-[640px] h-[490px] flex items-end justify-center;
+  }
+
+  .service-option {
+    @apply flex items-center p-5 rounded-xl cursor-pointer transition-all duration-200 border;
+  }
+
+  .service-option.selected {
+    @apply border-2 border-[#1B1B1B] dark:border-white bg-white dark:bg-gray-800;
+  }
+
+  .service-option.unselected {
+    @apply border-[#DFDFDF] dark:border-gray-600 hover:border-[#1B1B1B] dark:hover:border-white bg-white dark:bg-gray-800;
+  }
+
+  .service-option.stays {
+    @apply bg-[#FDFDFD] dark:bg-gray-800;
+  }
+
+  .radio-button {
+    @apply w-6 h-6 rounded-full border-[1.2px] transition-all duration-200;
+  }
+
+  .radio-button.selected {
+    @apply border-black dark:border-white bg-white dark:bg-gray-800;
+  }
+
+  .radio-button.unselected {
+    @apply border-[#334054] dark:border-gray-400 bg-white dark:bg-gray-800;
+  }
+
+  .radio-button-dot {
+    @apply absolute inset-0 flex items-center justify-center;
+  }
+
+  .radio-button-dot::after {
+    @apply w-[4.8px] h-[4.8px] rounded-full bg-black dark:bg-white content-[''];
+  }
+
+  /* Congratulations page styles */
+  .congratulations-container {
+    @apply w-full max-w-[1200px] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700;
+    padding: 86px 64px 40px 64px;
+  }
+
+  .congratulations-content {
+    @apply flex flex-col items-center text-center;
+    min-height: 400px;
+    gap: 48px;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 3s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+  
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+  }
+
+  .congratulations-emoji {
+    @apply leading-none font-bold;
+    font-family: 'Manrope', -apple-system, Roboto, Helvetica, sans-serif;
+    font-size: 96px;
+    color: #000;
+  }
+
+  .congratulations-decorative {
+    @apply relative w-full;
+    max-width: 965px;
+  }
+
+  .congratulations-title {
+    @apply font-bold leading-[140%] text-center;
+    font-family: 'Geist', -apple-system, Roboto, Helvetica, sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #131313;
+  }
+
+  .dark .congratulations-title {
+    @apply text-white;
+  }
+
+  .congratulations-subtitle {
+    @apply text-center leading-[30px] font-medium;
+    font-family: 'Plus Jakarta Sans', -apple-system, Roboto, Helvetica, sans-serif;
+    font-size: 18px;
+    color: #334054;
+    max-width: 890px;
+    margin: 0 auto;
+  }
+
+  .dark .congratulations-subtitle {
+    @apply text-gray-300;
+  }
+
+  .what-next-section {
+    @apply text-left;
+    max-width: 890px;
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .what-next-title {
+    @apply font-bold leading-[140%];
+    font-family: 'Geist', -apple-system, Roboto, Helvetica, sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    color: #131313;
+  }
+
+  .dark .what-next-title {
+    @apply text-white;
+  }
+
+  .what-next-content {
+    @apply font-medium;
+    font-family: 'Plus Jakarta Sans', -apple-system, Roboto, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 28px;
+    color: #334054;
+    align-self: stretch;
+  }
+
+  .dark .what-next-content {
+    @apply text-gray-300;
+  }
+
+  .what-next-content p {
+    @apply mb-0;
+  }
+
+  /* Header and footer styles */
+  .onboarding-header {
+    @apply w-full px-20 py-[18px] border-b border-gray-100 dark:border-gray-800;
+  }
+
+  .onboarding-footer {
+    @apply w-full px-20 py-4 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 shadow-[0_-2px_12px_0_rgba(0,0,0,0.03)];
+  }
+
+  /* Mobile responsiveness */
+  @media (max-width: 1024px) {
+    .onboarding-illustration {
+      @apply hidden;
+    }
+
+    .onboarding-content {
+      @apply flex-col gap-6;
+    }
+
+    .congratulations-container {
+      padding: 64px 32px 24px 32px;
+    }
+
+    .congratulations-content {
+      height: auto;
+      gap: 32px;
+    }
+
+    .congratulations-decorative {
+      max-width: 100%;
+    }
+
+    .onboarding-header {
+      @apply px-8;
+    }
+
+    .onboarding-footer {
+      @apply px-8;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .congratulations-emoji {
+      font-size: 64px;
+    }
+
+    .congratulations-title {
+      font-size: 28px;
+    }
+
+    .congratulations-subtitle {
+      font-size: 16px;
+      line-height: 26px;
+    }
+
+    .what-next-title {
+      font-size: 20px;
+    }
+
+    .what-next-content {
+      font-size: 14px;
+      line-height: 24px;
+    }
+
+    .congratulations-container {
+      padding: 48px 24px 20px 24px;
+      margin: 16px;
+      max-width: calc(100vw - 32px);
+    }
+
+    .congratulations-content {
+      gap: 24px;
+    }
+
+    .onboarding-header {
+      @apply px-4;
+    }
+
+    .onboarding-footer {
+      @apply px-4 flex-col gap-4;
+    }
+
+    .service-option {
+      @apply p-4;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .congratulations-container {
+      padding: 32px 16px 16px 16px;
+      margin: 8px;
+      max-width: calc(100vw - 16px);
+    }
+
+    .congratulations-emoji {
+      font-size: 48px;
+    }
+
+    .congratulations-title {
+      font-size: 24px;
+    }
+
+    .congratulations-subtitle {
+      font-size: 14px;
+      line-height: 22px;
+    }
+
+    .what-next-title {
+      font-size: 18px;
+    }
+
+    .what-next-content {
+      font-size: 13px;
+      line-height: 20px;
+    }
+
+    .congratulations-content {
+      gap: 20px;
+    }
+  }
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--dashboard-bg));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--dashboard-neutral-06));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--dashboard-neutral-07));
+}
+
+/* Booking calendar styles */
+.calendar-grid {
+  @apply border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-hidden shadow-sm;
+}
+
+.calendar-header {
+  @apply flex bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600;
+}
+
+.calendar-header-cell {
+  @apply p-4 text-center font-medium text-dashboard-primary dark:text-white border-r border-gray-200 dark:border-gray-600 w-[60px] flex-shrink-0 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer;
+}
+
+.calendar-row {
+  @apply flex border-b border-gray-200 dark:border-gray-600 h-[60px] hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+}
+
+.calendar-row:nth-child(even) {
+  @apply bg-gray-50 dark:bg-gray-700/50;
+}
+
+.calendar-cell {
+  @apply p-4 text-center text-gray-400 border-r border-gray-200 dark:border-gray-600 w-[60px] flex-shrink-0 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer;
+}
+
+.calendar-vehicle-name {
+  @apply p-4 font-medium text-dashboard-body dark:text-gray-300 border-r border-gray-200 dark:border-gray-600 w-[231px] flex-shrink-0 flex items-center transition-colors;
+}
+
+.booking-block {
+  @apply absolute border rounded-lg m-1 pointer-events-auto cursor-pointer hover:shadow-lg transition-all duration-200 flex items-center px-3 min-h-[44px] z-10;
+}
+
+.booking-block:hover {
+  @apply scale-[1.02];
+}
+
+.booking-block-orange {
+  @apply bg-stats-impression-bg border-orange-200 hover:border-orange-300 hover:shadow-orange-200/50;
+}
+
+.booking-block-blue {
+  @apply bg-stats-properties-bg border-blue-200 hover:border-blue-300 hover:shadow-blue-200/50;
+}
+
+.booking-block-purple {
+  @apply bg-stats-clicks-bg border-purple-200 hover:border-purple-300 hover:shadow-purple-200/50;
+}
+
+.booking-block-purple-alt {
+  @apply bg-stats-earnings-bg border-purple-200 hover:border-purple-300 hover:shadow-purple-200/50;
+}
+
+.booking-block-green {
+  @apply bg-stats-bookings-bg border-green-200 hover:border-green-300 hover:shadow-green-200/50;
+}
+
+/* Date navigation styles */
+.date-navigation {
+  @apply flex items-center gap-4;
+}
+
+.date-nav-button {
+  @apply h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors;
+}
+
+.month-year-selector {
+  @apply flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md px-3 py-2 transition-colors;
+}
+
+.month-grid {
+  @apply grid grid-cols-3 gap-1;
+}
+
+.year-grid {
+  @apply grid grid-cols-2 gap-1;
+}
+
+.date-selector-button {
+  @apply p-2 text-xs rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors;
+}
+
+.date-selector-button.active {
+  @apply bg-dashboard-primary text-white;
+}
+
+.date-selector-button.inactive {
+  @apply text-dashboard-body dark:text-gray-300;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .mobile-tab-scroll {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .mobile-tab-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-table {
+    min-width: 800px;
+  }
+
+  .mobile-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  .calendar-header-cell {
+    @apply w-[50px] p-2 text-xs;
+  }
+
+  .calendar-cell {
+    @apply w-[50px] p-2;
+  }
+
+  .calendar-vehicle-name {
+    @apply w-[180px] p-2 text-sm;
+  }
+
+  .booking-block {
+    @apply px-2 min-h-[36px] text-xs;
+  }
+
+  .date-navigation {
+    @apply flex-col gap-2;
+  }
+
+  .month-year-selector {
+    @apply justify-center;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar-header-cell {
+    @apply w-[40px] p-1 text-xs;
+  }
+
+  .calendar-cell {
+    @apply w-[40px] p-1;
+  }
+
+  .calendar-vehicle-name {
+    @apply w-[140px] p-2 text-xs;
+  }
+
+  .booking-block {
+    @apply px-1 min-h-[32px] text-xs;
+  }
+
+  .month-grid {
+    @apply grid-cols-2;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+}
+
+/* Chat panel styles */
+.chat-panel {
+  transition: width 0.3s ease-in-out;
+}
+
+.chat-panel-collapsed {
+  width: 48px;
+}
+
+.chat-panel-expanded {
+  width: 320px;
+}
+
+@media (max-width: 1024px) {
+  .chat-panel-expanded {
+    width: 100%;
+  }
+}
+.scroll-section {
+  scroll-margin-top: 140px;
+}
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  pointer-events: all;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 18px;
+  width: 18px;
+  background: #000;
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -7px;  /* aligns with track */
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 18px;
+  width: 18px;
+  background: #000;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+
+
+/* Hide scrollbar for Chrome, Safari and Edge */
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.scrollbar-hidden {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+

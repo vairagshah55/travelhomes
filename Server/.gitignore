@@ -1,0 +1,69 @@
+# Node modules
+node_modules/
+uploads/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# dotenv environment files
+.env
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Coverage directory
+coverage/
+
+# VSCode
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+*.sw?
+*.sublime-project
+*.sublime-workspace
+
+# Optional npm cache
+.npm/
+
+# Optional yarn cache
+.yarn/
+
+# Next.js or other static generators
+.next/
+out/
+
+# TypeScript
+*.tsbuildinfo
+
+# PM2 logs
+.pnpm-debug.log
+
+# Optional local database files
+*.sqlite
+*.sqlite3
+*.db
+
+# Mac system files
+.AppleDouble
+.LSOverride
+
+# Logs from testing tools
+test-output/
