@@ -82,6 +82,7 @@ export default function Index() {
 
   const [activeTab, setActiveTab] = useState("unique-stays");
   const [activeFilter, setActiveFilter] = useState<FilterType>("unique-stays");
+  const [scrollHighlightFilter, setScrollHighlightFilter] = useState<FilterType | null>(null);
   const [homepageSections, setHomepageSections] = useState<
     Record<string, boolean>
   >({
@@ -654,6 +655,60 @@ export default function Index() {
     setPages((p) => ({ ...p, [k]: Math.max(1, p[k] - 1) }));
 
   const SearchbarRef = useRef(null);
+  const heroSectionRef = useRef<HTMLElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [heroHeight, setHeroHeight] = useState<number>(500);
+  useEffect(() => {
+    if (!heroSectionRef.current) return;
+    const ro = new ResizeObserver(() => {
+      setHeroHeight(heroSectionRef.current?.offsetHeight ?? 500);
+    });
+    ro.observe(heroSectionRef.current);
+    setHeroHeight(heroSectionRef.current.offsetHeight);
+    return () => ro.disconnect();
+  }, []);
+
+  // IntersectionObserver to highlight the correct header filter based on scroll position
+  useEffect(() => {
+    const container = contentRef.current;
+    if (!container) return;
+
+    const sectionMap: Record<string, FilterType> = {
+      "camper-van": "camper-van",
+      "unique-stays": "unique-stays",
+      "activity": "activity",
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the entry with the highest intersection ratio that is intersecting
+        let best: IntersectionObserverEntry | null = null;
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            if (!best || entry.intersectionRatio > best.intersectionRatio) {
+              best = entry;
+            }
+          }
+        }
+        if (best) {
+          const id = (best.target as HTMLElement).dataset.sectionId;
+          if (id && sectionMap[id]) {
+            setScrollHighlightFilter(sectionMap[id]);
+          }
+        }
+      },
+      {
+        rootMargin: "-96px 0px -50% 0px", // offset for fixed header (96px) and trigger in top half of viewport
+        threshold: [0, 0.25, 0.5],
+      }
+    );
+
+    const sections = container.querySelectorAll("[data-section-id]");
+    sections.forEach((el) => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [activeFilter, loadingOffers]);
+
   // Handle scroll action when child requests it
   const handleScrollTo = (sectionId) => {
     const sectionMap = {
@@ -726,12 +781,57 @@ export default function Index() {
 
     if (loading) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-          <div className="flex flex-col items-center gap-4">
-            <Loader size="xl" />
-            <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
-              Fetching Travels data...
-            </p>
+        <div className="min-h-screen bg-white dark:bg-gray-900">
+          {/* Hero skeleton */}
+          <div className="relative w-full h-[420px] md:h-[480px] bg-gray-200 dark:bg-gray-800 animate-pulse">
+            {/* Header bar skeleton */}
+            <div className="absolute top-0 left-0 right-0 z-10 px-4 sm:px-6">
+              <div className="max-w-7xl mx-auto flex items-center justify-between h-20">
+                <div className="h-8 w-32 bg-gray-300 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="flex gap-3">
+                  <div className="h-8 w-8 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse" />
+                  <div className="h-8 w-20 bg-gray-300 dark:bg-gray-700 rounded-full animate-pulse" />
+                </div>
+              </div>
+            </div>
+            {/* Hero content skeleton */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4">
+              <div className="h-8 w-64 md:w-80 bg-gray-300 dark:bg-gray-700 rounded animate-pulse" />
+              <div className="h-4 w-48 md:w-60 bg-gray-300/70 dark:bg-gray-700/70 rounded animate-pulse" />
+              <div className="flex gap-3 mt-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-9 w-28 bg-gray-300/60 dark:bg-gray-700/60 rounded-full animate-pulse" />
+                ))}
+              </div>
+              <div className="hidden lg:block h-16 w-full max-w-3xl bg-gray-300/50 dark:bg-gray-700/50 rounded-2xl animate-pulse mt-2" />
+            </div>
+          </div>
+
+          {/* Section skeletons */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            {[1, 2, 3].map((section) => (
+              <div key={section} className="py-8 md:py-12">
+                <div className="mb-6">
+                  <div className="h-7 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+                  <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                </div>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map((card) => (
+                    <div key={card} className="rounded-xl">
+                      <div className="h-44 bg-gray-200 dark:bg-gray-700 rounded-xl animate-pulse mb-3" />
+                      <div className="space-y-2 px-1">
+                        <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        <div className="h-3 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        <div className="flex gap-2">
+                          <div className="h-4 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                          <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       );
@@ -740,67 +840,131 @@ export default function Index() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative max-md:h-[250px] h-[300px] md:h-[350px] overflow-visible z-50">
+      <section ref={heroSectionRef} className="relative flex flex-col">
         {/* Background Image */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 overflow-hidden">
           <img
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
             src="https://api.builder.io/api/v1/image/assets/TEMP/58bfed58f49dafc4198cf3dc2d050bc688e7aca8?width=2880"
             alt="Hero Background"
           />
-          <div className="absolute inset-0" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/70" />
         </div>
 
         {/* Content */}
-        <div className="relative h-full flex max-w-7xl mx-auto flex-col">
+        <div className="relative flex-1 flex flex-col">
           {/* Navigation */}
           <AirbnbHeader
             variant="transparent"
             className="fixed w-full z-50"
             activeFilter={activeFilter}
             onFilterChange={setActiveFilter}
-            
+            heroHeight={heroHeight}
+            scrollHighlightFilter={scrollHighlightFilter}
           />
 
           {/* Hero Content */}
-          <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-4 text-center">
-            <h1 className="text-xl flex flex-col gap-2 md:text-3xl lg:text-[40px] tracking-[2px] max-md:tracking-[0px] font-bold text-white mb-3   md:mb-5 max-w-4xl leading-tight">
-              Explore The Unexplored in{" "}
-              <span className=" mt-1 max-md:mt-0"> The Caravan!</span>
-            </h1>
+          <div className="flex-1 flex flex-col items-center justify-start px-4 sm:px-6 pt-6 pb-10 text-center">
+            {/* Heading */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.12 } },
+              }}
+              className="mb-4"
+            >
+              <motion.h1
+                className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight mb-2 drop-shadow"
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" } },
+                }}
+              >
+                Explore The Unexplored
+              </motion.h1>
+
+              <motion.p
+                className="text-sm sm:text-base text-white/70 font-normal"
+                variants={{
+                  hidden: { opacity: 0, y: 12 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+                }}
+              >
+                Unique stays · Camper vans · Adventures across India
+              </motion.p>
+            </motion.div>
 
             {/* Category Filters */}
-            <div className=" flex flex-wrap items-center justify-center gap-2 mb-3 md:mb-3">
+            <motion.div
+              className="flex flex-wrap items-center justify-center gap-2 md:gap-3 mb-4 md:mb-5"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.1, delayChildren: 0.55 } },
+              }}
+            >
               {homepageSections["camper-van"] && (
-                <FilterButton
-                  icon={CamperVanIcon}
-                  label="camper van"
-                  active={activeFilter === "camper-van"}
-                  onClick={() => setActiveFilter("camper-van")}
-                />
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 16, scale: 0.95 },
+                    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
+                  }}
+                >
+                  <FilterButton
+                    icon={CamperVanIcon}
+                    label="Camper Van"
+                    active={activeFilter === "camper-van"}
+                    onClick={() => setActiveFilter("camper-van")}
+                    variant="hero"
+                  />
+                </motion.div>
               )}
               {homepageSections["unique-stays"] && (
-                <FilterButton
-                  icon={HomeIcon}
-                  label="Unique Stays"
-                  active={activeFilter === "unique-stays"}
-                  onClick={() => setActiveFilter("unique-stays")}
-                />
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 16, scale: 0.95 },
+                    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
+                  }}
+                >
+                  <FilterButton
+                    icon={HomeIcon}
+                    label="Unique Stays"
+                    active={activeFilter === "unique-stays"}
+                    onClick={() => setActiveFilter("unique-stays")}
+                    variant="hero"
+                  />
+                </motion.div>
               )}
               {homepageSections["best-activity"] && (
-                <FilterButton
-                  icon={RocketIcon}
-                  label="Activity"
-                  active={activeFilter === "activity"}
-                  onClick={() => setActiveFilter("activity")}
-                />
+                <motion.div
+                  variants={{
+                    hidden: { opacity: 0, y: 16, scale: 0.95 },
+                    visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } },
+                  }}
+                >
+                  <FilterButton
+                    icon={RocketIcon}
+                    label="Activity"
+                    active={activeFilter === "activity"}
+                    onClick={() => setActiveFilter("activity")}
+                    variant="hero"
+                  />
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
-            {/* Search Form */}
-            <div
-              className={`max-lg:hidden w-full max-w-7xl bg-gray-100 rounded-2xl p-3 md:p-4 relative overflow-visible mt-1}`}
+            {/* Search Form - Desktop */}
+            <motion.div
+              ref={SearchbarRef}
+              className="hidden lg:block w-full max-w-4xl"
+              initial={{ opacity: 0, y: 28, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.75, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
+            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.28)] ring-1 ring-white/20 p-3 md:p-4 relative overflow-visible">
               {/* Activity Filter */}
               {activeFilter === "activity" && (
                 <div className=" flex flex-col lg:flex-row lg:items-center gap-3 md:gap-6 lg:gap-0">
@@ -1416,19 +1580,32 @@ export default function Index() {
                 </div>
               )}
             </div>
+            </motion.div>
+
+            {/* Mobile Search Pill */}
+            <button
+              onClick={() => navigate(`/search?filter=${activeFilter}`)}
+              className="lg:hidden flex items-center gap-3 bg-white rounded-full shadow-xl px-5 py-3.5 w-full max-w-sm hover:shadow-2xl transition-all mt-4"
+            >
+              <Search className="w-5 h-5 text-gray-500 flex-shrink-0" />
+              <div className="text-left flex-1">
+                <div className="text-sm font-semibold text-gray-800">Where to go?</div>
+                <div className="text-xs text-gray-400">Anywhere · Any time · Any guests</div>
+              </div>
+            </button>
           </div>
         </div>
       </section>
 
-   
-<div className="max-w-7xl mx-auto">
+<div ref={contentRef} className="max-w-7xl mx-auto px-4 sm:px-6">
       {/* Dynamic Sections Based on Active Filter  */}
       {/* first top content depend on filter */}
       {activeFilter === "camper-van" && homepageSections["camper-van"] && (
         <Section
-          title="Stay at our top Camper Van"
-          subtitle="From castles and villas to boats and igloos, we have it all"
-          className="py-8  md:py-12"
+          title="Top Camper Vans"
+          subtitle="Roam free — handpicked vans for every kind of journey"
+          className="py-8 md:py-12"
+          sectionId="camper-van"
         >
           {loadingOffers && <UniqueStaysSkeleton />}
           {offerError && (
@@ -1450,8 +1627,9 @@ export default function Index() {
       {activeFilter === "unique-stays" && homepageSections["unique-stays"] && (
         <Section
           title="Unique Stays"
-          subtitle="From castles and villas to boats and igloos, we have it all"
+          subtitle="One-of-a-kind places you won't find anywhere else"
           className="py-8 md:py-12"
+          sectionId="unique-stays"
         >
           {loadingOffers && <UniqueStaysSkeleton />}
           {offerError && (
@@ -1472,9 +1650,10 @@ export default function Index() {
 
       {activeFilter === "activity" && homepageSections["best-activity"] && (
         <Section
-          title="Best Activity"
-          subtitle="From castles and villas to boats and igloos, we have it all"
+          title="Best Activities"
+          subtitle="Adventures worth taking, experiences worth having"
           className="py-8 md:py-12"
+          sectionId="activity"
         >
           {" "}
           {loadingOffers && <UniqueStaysSkeleton />}
@@ -1501,8 +1680,9 @@ export default function Index() {
           {homepageSections["unique-stays"] && (
             <Section
               title="Unique Stays"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12"
+              sectionId="unique-stays"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1518,9 +1698,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("unique-stays")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1530,8 +1711,9 @@ export default function Index() {
           {homepageSections["best-activity"] && (
             <Section
               title="Best Activity"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12"
+              sectionId="activity"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1550,9 +1732,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("activity")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1566,8 +1749,9 @@ export default function Index() {
           {homepageSections["camper-van"] && (
             <Section
               title="Stay at our top Camper Van"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12 "
+              sectionId="camper-van"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1586,9 +1770,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("caravan")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1598,8 +1783,9 @@ export default function Index() {
           {homepageSections["best-activity"] && (
             <Section
               title="Best Activity"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12"
+              sectionId="activity"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1618,9 +1804,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("activity")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1634,8 +1821,9 @@ export default function Index() {
           {homepageSections["camper-van"] && (
             <Section
               title="Stay at our top Camper Van"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12"
+              sectionId="camper-van"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1654,9 +1842,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("caravan")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1666,8 +1855,9 @@ export default function Index() {
           {homepageSections["unique-stays"] && (
             <Section
               title="Unique Stays"
-              subtitle="From castles and villas to boats and igloos, we have it all"
+              subtitle="Handpicked for every kind of traveler"
               className="py-8 md:py-12"
+              sectionId="unique-stays"
             >
               {" "}
               {loadingOffers && <UniqueStaysSkeleton />}
@@ -1683,9 +1873,10 @@ export default function Index() {
                 <div className="mt-6 flex justify-center">
                   <Button
                     onClick={() => incPage("unique-stays")}
-                    className="rounded-full"
+                    variant="outline"
+                    className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white font-medium px-8 h-11 transition-colors"
                   >
-                    View more
+                    Show more
                   </Button>
                 </div>
               )}
@@ -1709,8 +1900,8 @@ export default function Index() {
 
               <div className="lg:col-span-1 flex flex-col">
                 <div className="mb-6">
-                  <h2 className="text-lg md:text-4xl lg:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
-                    Trending destinations
+                  <h2 className="text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-tight tracking-tight">
+                    Trending Destinations
                   </h2>
                 </div>
                 <DestinationCard
@@ -1744,9 +1935,8 @@ export default function Index() {
                   title="Kerala"
                   className="h-44"
                 />
-                <p className="text-[16px] text-gray-600 dark:text-gray-300 leading-relaxed">
-                  When it comes to planning a dream destination, some
-                  destinations stand out as top recommendations for travelers
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  From the Himalayas to backwaters — India's most-booked destinations await you.
                 </p>
               </div>
             </div>
@@ -1806,8 +1996,8 @@ export default function Index() {
       {/* Testimonials Section */}
       {homepageSections["testimonials"] && (
         <Section
-          title="Testimonials "
-          subtitle="Most popular choices for travelers from India"
+          title="What Travelers Say"
+          subtitle="Real experiences from our community"
           className="py-8 md:py-10 px-4  bg-white text-black dark:bg-black dark:text-white"
           rightContent={
             <div className="flex items-center gap-4">
@@ -1864,10 +2054,10 @@ export default function Index() {
           >
             <Button
               onClick={() => setShowReviewModal(true)}
-              className="bg-black text-white dark:bg-white dark:text-black rounded-full px-8 h-12 hover:bg-gray-900 transition-all duration-300 shadow-xl hover:scale-105 flex items-center gap-2"
+              className="bg-gray-900 text-white rounded-full px-8 h-11 hover:bg-black transition-colors font-medium flex items-center gap-2"
             >
-              <span>Add Review</span>
-              <SlArrowRight className="w-4 h-4" />
+              <span>Write a Review</span>
+              <SlArrowRight className="w-3.5 h-3.5" />
             </Button>
           </div>
           {/* // )} */}
@@ -1942,7 +2132,7 @@ export default function Index() {
       {homepageSections["top-rated-stays"] && (
         <Section
           title="Top Rated Stays"
-          subtitle="From castles and villas to boats and igloos, we have it all"
+          subtitle="Consistently loved by guests across India"
           className="py-8 md:py-12"
         >
           {" "}
@@ -1970,16 +2160,16 @@ export default function Index() {
 
       {/* Latest Articles Section */}
       <Section
-        title="Latest Articles"
-        subtitle="Most popular choices for travelers from India"
+        title="Stories from the Road"
+        subtitle="Tips, guides and tales from India's best journeys"
         className="py-8 px-4 md:py-12"
         rightContent={
           <Button
             variant="outline"
             onClick={() => navigate("/blogs")}
-            className="rounded-full border-black text-black px-4 h-auto py-3"
+            className="rounded-full border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white transition-colors px-5 h-10 font-medium text-sm"
           >
-            <span className="mr-2">Read all blogs</span>
+            <span className="mr-2">Read all articles</span>
             <SlArrowRight className="w-4 h-" />
           </Button>
         }
@@ -2032,17 +2222,15 @@ export default function Index() {
 
       {/* FAQ Section */}
       {homepageSections["faq"] && (
-        <section className="py-8 md:py-12 px-4">
+        <section className="py-8 md:py-12 px-4 pb-24 md:pb-12">
           <div className="flex flex-col lg:flex-row lg:justify-between gap-12 mx-auto">
             {/* Header + Tabs */}
             <div className="text-center lg:text-left w-full lg:w-4/12">
-              <h2 className="text-center text-2xl sm:text-xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 capitalize">
-                Frequently asked questions
+              <h2 className="text-center text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white mb-3 tracking-tight">
+                Frequently Asked Questions
               </h2>
-              <p className="text-gray-600 text-center dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 mb-8 text-sm sm:text-base">
-                We’re here to make your experience as smooth as possible. This
-                section provides clear explanations, useful tips, and detailed
-                guidance to help you get the most out of our platform.{" "}
+              <p className="text-gray-500 text-center dark:text-gray-400 max-w-sm mx-auto lg:mx-0 mb-8 text-sm leading-relaxed">
+                Everything you need to know about booking, hosting, and exploring with us.
               </p>
 
               {/* Tab Navigation */}
@@ -2104,7 +2292,7 @@ export default function Index() {
   </div>
       {/* Footer */}
       <Footer />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-md">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-gray-900/95 border-t border-gray-100 dark:border-gray-800 shadow-sm">
         <MobileUserNav />
       </div>
     </>

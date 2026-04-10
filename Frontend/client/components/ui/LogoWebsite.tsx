@@ -59,14 +59,14 @@ const LogoWebsite = () => {
         <img
             src={logoSrc}
             alt="Travel Homes Logo"
-            className="h-14 w-20 object-contain"
+            className="h-14 w-auto max-w-[180px] object-contain"
           />
           </Link>
     </div>
   );
 };
 
-export function HomeLogoWebsite(){
+export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "light" | "dark" }){
      const { theme } = useTheme(); // or just: const theme = useTheme();
     // console.log(theme);
     const { user } = useAuth();
@@ -99,17 +99,17 @@ export function HomeLogoWebsite(){
     }, []);
 
     const has = user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
-    
+
     const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160"; // Black text
     const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"; // White text
 
-     
+    const resolvedTheme = variant === "dark" ? "dark" : variant === "light" ? "light" : effectiveTheme;
+
     let logoSrc;
-    // Assuming 'theme' correctly reflects the background color of the header container
-    if (effectiveTheme === 'light') {
-         logoSrc = logoUrl ? getImageUrl(logoUrl) : lightLogo;
-    } else {
+    if (resolvedTheme === 'dark') {
          logoSrc = logoDarkUrl ? getImageUrl(logoDarkUrl) : darkLogo;
+    } else {
+         logoSrc = logoUrl ? getImageUrl(logoUrl) : lightLogo;
     }
     
   return (
@@ -118,7 +118,7 @@ export function HomeLogoWebsite(){
         <img
             src={logoSrc}
             alt="Travel Homes Logo"
-            className="h-14 w-20 object-contain"
+            className="h-14 w-auto max-w-[180px] object-contain"
           />
           </Link>
       </div>

@@ -1,7 +1,6 @@
 const twilio = require('twilio');
 const accountSid = process.env.TWILIO_SID;
 const authToken = process.env.TWILIO_TOKEN;
-const client = twilio(accountSid, authToken);
 
 let smsStatus = {
   send: false,
@@ -10,13 +9,14 @@ let smsStatus = {
 
 const twiliosms = async (to, message) => {
   try {
-    if (!accountSid || !authToken) {
+    if (!accountSid || !authToken || !accountSid.startsWith('AC')) {
       console.log('Twilio credentials not configured, simulating SMS send');
       smsStatus.send = true;
       smsStatus.message = 'Otp sent successfully (simulated)!';
       return;
     }
 
+    const client = twilio(accountSid, authToken);
     const result = await client.messages.create({
       body: message,
       from: process.env.TWILIO_PHONE_NUMBER || '+1234567890',
