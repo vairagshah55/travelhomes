@@ -413,9 +413,9 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="min-h-screen font-sans flex-col flex gap-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors"
       >
-        {/* <Header variant="transparent" className="fixed w-full z-30" /> */}
+        <Header callbackFun={() => {}} onNavigate={() => {}} />
 
-        <div ref={contentRef} className="max-w-[1440px] mx-auto  px-4 sm:px-6 py-5 z-10">
+        <div ref={contentRef} className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 z-10">
           {/* Back Navigation */}
           <button
             onClick={() => navigate(-1)}
@@ -431,9 +431,16 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
             transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
             className="mb-5"
           >
-            {/* Row 1: Title + Actions */}
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
+            {/* Category badge */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wide">
+                Unique Stay
+              </span>
+            </div>
+
+            {/* Title + Actions */}
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 dark:text-white leading-snug tracking-tight">
                 {stay?.name}
               </h1>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -446,49 +453,62 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 </button>
                 <button
                   onClick={() => {
-                    if (!isAuthenticated) {
-                      setShowLoginModal(true);
-                      return;
-                    }
+                    if (!isAuthenticated) { setShowLoginModal(true); return; }
                     setIsFavorite(!isFavorite);
                     toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 text-sm ${isFavorite ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
                 >
                   <Heart className={`w-4 h-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 scale-110" : ""}`} />
-                  <span className="hidden sm:inline">Save</span>
+                  <span className="hidden sm:inline">{isFavorite ? 'Saved' : 'Save'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Row 2: Location + Rating */}
-            <div className="flex items-center gap-3 mb-4">
+            {/* Meta row: location, rating, price */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
               <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">{[stay?.city, stay?.state].filter(Boolean).join(", ")}</span>
               </div>
               <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
               <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-current text-gray-900 dark:text-white" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">4.91</span>
-                <span className="text-sm text-gray-500 dark:text-gray-400">(2,304)</span>
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">4.91</span>
+                <span className="text-sm text-gray-400">(2,304)</span>
               </div>
+              {stay?.regularPrice && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">₹{Number(stay.regularPrice).toLocaleString()} <span className="font-normal text-gray-500">/ night</span></span>
+                </>
+              )}
             </div>
 
-            {/* Row 3: Info chips — compact dot-separated on mobile, pills on desktop */}
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[13px] text-gray-600 dark:text-gray-300">
-              {[
-                stay?.guestCapacity && `${stay.guestCapacity} guests`,
-                stay?.numberOfRooms && `${stay.numberOfRooms} rooms`,
-                stay?.numberOfBeds && `${stay.numberOfBeds} beds`,
-                stay?.numberOfBathrooms && `${stay.numberOfBathrooms} baths`,
-                ...(stay?.features || []).slice(0, 3),
-              ].filter(Boolean).map((item, i, arr) => (
-                <span key={i} className="inline-flex items-center gap-1">
-                  <span className="px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-[12px] font-medium">
-                    {item}
-                  </span>
+            {/* Quick info pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {stay?.guestCapacity && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-semibold">
+                  <Users className="w-3.5 h-3.5" /> {stay.guestCapacity} guests
                 </span>
+              )}
+              {stay?.numberOfRooms && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <Building2 className="w-3.5 h-3.5" /> {stay.numberOfRooms} rooms
+                </span>
+              )}
+              {stay?.numberOfBeds && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <Bed className="w-3.5 h-3.5" /> {stay.numberOfBeds} beds
+                </span>
+              )}
+              {stay?.numberOfBathrooms && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <Bath className="w-3.5 h-3.5" /> {stay.numberOfBathrooms} baths
+                </span>
+              )}
+              {(stay?.features || []).slice(0, 2).map((item, i) => (
+                <span key={i} className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300">{item}</span>
               ))}
             </div>
           </motion.div>
@@ -826,122 +846,37 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 {/* Booking Form */}
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-1 gap-4">
-                    {/* Date Selection */}
                     <div className="relative z-50" ref={calendarRef}>
-                      <div
-                        className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          setShowCalendarDropdown(!showCalendarDropdown);
-                          setShowGuestDropdown(false);
-                        }}
-                      >
+                      <div className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors" onClick={() => { setShowCalendarDropdown(!showCalendarDropdown); setShowGuestDropdown(false); }}>
                         <div className="flex justify-between items-center mb-4">
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Calendar className="w-4 h-4  " />
-                            <span className="text-sm font-medium">Date</span>
-                          </div>
+                          <div className="flex items-center gap-2 text-gray-500"><Calendar className="w-4 h-4" /><span className="text-sm font-medium">Date</span></div>
                           <ChevronDown className="w-4 h-4 text-gray-600" />
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium text-black">
-                            {checkInDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
+                          <span className="text-sm font-medium text-black">{checkInDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                           <ArrowRight className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm font-medium text-black">
-                            {checkOutDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                          </span>
+                          <span className="text-sm font-medium text-black">{checkOutDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
                         </div>
                       </div>
-                      {showCalendarDropdown && (
-                        <CalendarDropdown
-                          onClose={() => setShowCalendarDropdown(false)}
-                          onSelect={(range) => {
-                            setCheckInDate(range.start);
-                            setCheckOutDate(range.end);
-                            setShowCalendarDropdown(false);
-                          }}
-                        />
-                      )}
+                      {showCalendarDropdown && (<CalendarDropdown onClose={() => setShowCalendarDropdown(false)} onSelect={(range) => { setCheckInDate(range.start); setCheckOutDate(range.end); setShowCalendarDropdown(false); }} />)}
                     </div>
 
-                    {/* Guest Selection */}
                     <div className="relative" ref={guestRef}>
-                      <div
-                        className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          setShowGuestDropdown(!showGuestDropdown);
-                          setShowCalendarDropdown(false);
-                        }}
-                      >
+                      <div className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors" onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowCalendarDropdown(false); }}>
                         <div className="flex justify-between items-center mb-4">
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Users className="w-4 h-4" />
-                            <span className="text-sm font-medium">Guest</span>
-                          </div>
+                          <div className="flex items-center gap-2 text-gray-500"><Users className="w-4 h-4" /><span className="text-sm font-medium">Guests</span></div>
                           <ChevronDown className="w-4 h-4 text-gray-600" />
                         </div>
-                        <span className="text-sm font-medium text-black">
-                          {guests.adults + guests.children + guests.infants}{" "}
-                          Guests
-                        </span>
+                        <span className="text-sm font-medium text-black">{guests.adults + guests.children + guests.infants} Guests</span>
                       </div>
-                      {showGuestDropdown && (
-                        <GuestDropdown
-                          guests={guests}
-                          onUpdate={setGuests}
-                          onClose={() => setShowGuestDropdown(false)}
-                        />
-                      )}
-                    </div>
-
-                    {/*Rate Selection*/}
-                    <div className="relative">
-                      <div
-                        className="p-4 flex justify-between border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          // setShowGuestDropdown(!showGuestDropdown);
-                          setShowCalendarDropdown(false);
-                        }}
-                      >
-                        <span className="text-sm font-medium text-black">
-                          {/* {guests.adults + guests.children + guests.infants}{" "} */}
-                          Total
-                        </span>
-                        <div className="text-xl font-bold text-black dark:text-white">
-                    {selectedPricing === "per-night"
-                      ? `₹${stay?.regularPrice ?? "—"}`
-                      : `₹${typeof stay?.regularPrice === "number" ? (Number(stay?.regularPrice) * 7).toLocaleString() : "—"}`}
-                    <span className="text-lg text-gray-700 dark:text-white font-normal">
-                      /{selectedPricing === "per-night" ? "night" : "week"}
-                    </span>
-                  </div>
-                      </div>
-                      
+                      {showGuestDropdown && (<GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => setShowGuestDropdown(false)} />)}
                     </div>
                   </div>
                 </div>
 
-                {/* Reserve Button */}
-                <Button
-                  className="w-full bg-black dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors mb-6"
-                  onClick={() => {
-                    navigate("/payment", { 
-                      state: { 
-                        offerId: id, 
-                        checkInDate: checkInDate, 
-                        checkOutDate: checkOutDate, 
-                        guests,
-                        serviceType: 'unique-stay',
-                        service: stay,
-                        type: "unique-stays"
-                      } 
-                    });
-                  }}
-                >
+                <Button className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors mb-6" onClick={() => { navigate("/payment", { state: { offerId: id, checkInDate, checkOutDate, guests, serviceType: 'unique-stay', service: stay, type: "unique-stays" } }); }}>
                   Reserve
                 </Button>
-
-              
               </div>
             </div>
           </div>

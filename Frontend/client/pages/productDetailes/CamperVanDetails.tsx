@@ -406,8 +406,16 @@ export default function UniqueStayDetails() {
             transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
             className="mb-5"
           >
-            <div className="flex items-start justify-between gap-4 mb-2">
-              <h1 className="text-xl sm:text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
+            {/* Category badge */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 text-xs font-semibold uppercase tracking-wide">
+                Camper Van
+              </span>
+            </div>
+
+            {/* Title + Actions */}
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 dark:text-white leading-snug tracking-tight">
                 {stay?.name}
               </h1>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -424,35 +432,47 @@ export default function UniqueStayDetails() {
                     setIsFavorite(!isFavorite);
                     toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 text-sm ${isFavorite ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400' : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300'}`}
                 >
                   <Heart className={`w-4 h-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 scale-110" : ""}`} />
-                  <span className="hidden sm:inline">Save</span>
+                  <span className="hidden sm:inline">{isFavorite ? 'Saved' : 'Save'}</span>
                 </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-3 mb-4">
+            {/* Meta row: location, rating, price */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
               <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                 <MapPin className="w-4 h-4 flex-shrink-0" />
                 <span className="text-sm">{[stay?.city, stay?.state].filter(Boolean).join(", ")}</span>
               </div>
               <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
               <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 fill-current text-gray-900 dark:text-white" />
-                <span className="text-sm font-medium text-gray-900 dark:text-white">4.91</span>
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">4.91</span>
               </div>
+              {stay?.regularPrice && (
+                <>
+                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">₹{Number(stay.regularPrice).toLocaleString()} <span className="font-normal text-gray-500">/ day</span></span>
+                </>
+              )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[13px] text-gray-600 dark:text-gray-300">
-              {[
-                stay?.seatingCapacity && `${stay.seatingCapacity} seats`,
-                stay?.sleepingCapacity && `${stay.sleepingCapacity} sleeps`,
-                ...(stay?.features || []).slice(0, 4),
-              ].filter(Boolean).map((item, i) => (
-                <span key={i} className="px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-[12px] font-medium">
-                  {item}
+            {/* Quick info pills */}
+            <div className="flex flex-wrap items-center gap-2">
+              {stay?.seatingCapacity && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-semibold">
+                  <Users className="w-3.5 h-3.5" /> {stay.seatingCapacity} seats
                 </span>
+              )}
+              {stay?.sleepingCapacity && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <Bed className="w-3.5 h-3.5" /> {stay.sleepingCapacity} sleeps
+                </span>
+              )}
+              {(stay?.features || []).slice(0, 3).map((item, i) => (
+                <span key={i} className="px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs font-medium text-gray-600 dark:text-gray-300">{item}</span>
               ))}
             </div>
           </motion.div>

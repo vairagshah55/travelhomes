@@ -307,7 +307,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
       >
         <div className="flex items-center bg-transparent justify-between w-full">
           {/* Logo */}
-          <div className="w-32 ">
+          <div className="w-40 flex-shrink-0">
             <HomeLogoWebsite />
           </div>
 
@@ -805,7 +805,7 @@ export function HeaderWithFilters({ variant = "white", className = "", callbackF
           } ${className}`}
       >
         {/* Logo */}
-        <div className="w-32 ">
+        <div className="w-40 flex-shrink-0">
           <LogoWebsite />
         </div>
 
@@ -921,7 +921,7 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
           } ${className}`}
       >
         {/* Logo */}
-        <div className="w-32 ">
+        <div className="w-40 flex-shrink-0">
           <LogoWebsite />
         </div>
 

@@ -39,9 +39,9 @@ const LogoWebsite = () => {
 
     const has = user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
     
-    // Default logos
-    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160"; // Black text
-    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"; // White text
+    // Default logos (request 2x resolution for retina clarity)
+    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=400&quality=100"; // Black text
+    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=400&quality=100"; // White text
     
     // Determine which logo to show
     let logoSrc;
@@ -60,6 +60,8 @@ const LogoWebsite = () => {
             src={logoSrc}
             alt="Travel Homes Logo"
             className="h-16 w-auto max-w-[200px] object-contain"
+            style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+            draggable={false}
           />
           </Link>
     </div>
@@ -100,8 +102,8 @@ export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "ligh
 
     const has = user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
 
-    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160"; // Black text
-    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"; // White text
+    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=400&quality=100"; // Black text
+    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=400&quality=100"; // White text
 
     const resolvedTheme = variant === "dark" ? "dark" : variant === "light" ? "light" : effectiveTheme;
 
@@ -119,6 +121,8 @@ export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "ligh
             src={logoSrc}
             alt="Travel Homes Logo"
             className="h-16 w-auto max-w-[200px] object-contain"
+            style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
+            draggable={false}
           />
           </Link>
       </div>
