@@ -118,6 +118,8 @@ export default function AirbnbHeader({
   const activityRef = useRef<HTMLDivElement>(null);
   const [showSearchSection, setShowSearchSection] = useState(false);
   const lastInteractionTime = useRef(0);
+
+  const isScrolled = showFilterButtons || showSearchSection;
   const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>({
     'camper-van': true,
     'unique-stays': true,
@@ -165,8 +167,9 @@ export default function AirbnbHeader({
         const scrollDelta = Math.abs(scrollY - lastScrollY);
 
         setShowFilterButtons(prev => {
-          const threshold = Math.min(heroHeight ?? 200, 300);
-          const next = prev ? scrollY > (threshold - 60) : scrollY > threshold;
+          // Trigger when hero search bar has scrolled away, not when full hero is gone
+          const threshold = (heroHeight ?? 200) - 150;
+          const next = prev ? scrollY > (threshold - 100) : scrollY > threshold;
           return prev !== next ? next : prev;
         });
 
@@ -307,13 +310,15 @@ export default function AirbnbHeader({
       <motion.header
         initial={false}
         animate={{
-          backgroundColor: showFilterButtons || user || showSearchSection ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)",
-          boxShadow: showFilterButtons || showSearchSection
-            ? "0 1px 6px rgba(0, 0, 0, 0.06)"
+          backgroundColor: isScrolled ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)",
+          boxShadow: isScrolled
+            ? "0 1px 8px rgba(0, 0, 0, 0.08)"
             : "0 0 0 rgba(0, 0, 0, 0)",
         }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="fixed top-0 left-0 right-0 z-50"
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-[backdrop-filter] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+          isScrolled ? "backdrop-blur-md" : "backdrop-blur-none"
+        }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-20">
@@ -324,17 +329,17 @@ export default function AirbnbHeader({
               onClick={() => navigate("/")}
               className="cursor-pointer flex-shrink-0 relative"
             >
-              {/* Dark logo (scrolled / logged-in) */}
+              {/* Dark logo (scrolled) */}
               <div
-                className="transition-opacity duration-300 ease-out"
-                style={{ opacity: (showFilterButtons || user || location.pathname.includes("search")) ? 1 : 0 }}
+                className="transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 1 : 0 }}
               >
                 <LogoWebsite />
               </div>
               {/* White logo (hero) — absolute overlaid, fades out on scroll */}
               <div
-                className="absolute inset-0 transition-opacity duration-300 ease-out"
-                style={{ opacity: (showFilterButtons || user || location.pathname.includes("search")) ? 0 : 1 }}
+                className="absolute inset-0 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 0 : 1 }}
               >
                 <HomeLogoWebsite variant="dark" />
               </div>
@@ -343,10 +348,10 @@ export default function AirbnbHeader({
             <AnimatePresence mode="wait">
               {showFilterButtons && (
                 <motion.div
-                  initial={{ opacity: 0, y: -8 }}
+                  initial={{ opacity: 0, y: -12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
+                  transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                   className="flex flex-wrap max-md:hidden items-center sm:ml-52 justify-center gap-3 py-3"
                 >
                   {navTabs.map((tab) => {
@@ -377,10 +382,10 @@ export default function AirbnbHeader({
             <AnimatePresence>
               {showSearchSection && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
                   className="absolute top-20 shadow-2xl left-0 right-0 bg-white rounded-2xl p-3 md:p-4 overflow-visible z-50 border border-gray-100"
                 >
                   {/* ── Activity Filter ──────────────────── */}
@@ -533,8 +538,8 @@ export default function AirbnbHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ${
-                      showFilterButtons || showSearchSection
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      isScrolled
                         ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
@@ -557,8 +562,8 @@ export default function AirbnbHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ${
-                      showFilterButtons || showSearchSection
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      isScrolled
                         ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
@@ -569,8 +574,8 @@ export default function AirbnbHeader({
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className={`rounded-full px-5 h-9 text-sm font-semibold transition-all duration-200 ${
-                      showFilterButtons || showSearchSection
+                    className={`rounded-full px-5 h-9 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                      isScrolled
                         ? "bg-gray-900 hover:bg-gray-700 text-white"
                         : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
                     }`}
@@ -584,8 +589,8 @@ export default function AirbnbHeader({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`lg:hidden p-2 rounded-full transition-colors ${
-                  showFilterButtons || showSearchSection
+                className={`lg:hidden p-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                  isScrolled
                     ? "text-gray-800 hover:bg-gray-100"
                     : "text-white hover:bg-white/15"
                 }`}

@@ -78,8 +78,13 @@ const Login = () => {
       } else {
         setServerError("Invalid email or password.");
       }
-    } catch {
-      setServerError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('verify your OTP')) {
+        setServerError("Please verify your OTP first. Try registering again.");
+      } else {
+        setServerError("Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
