@@ -485,7 +485,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
             {/* Main Content */}
             <div className="lg:col-span-2 mt-3">
               {/* Sticky Nav Bar */}
-              <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-8">
+              <div className="sticky top-[72px] z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-8">
                 <div className="flex overflow-x-auto scrollbar-hide gap-1 relative">
                   {tabs.map((tab) => (
                     <button
@@ -493,7 +493,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                       onClick={() => {
                         setActiveTab(tab.id);
                         const el = document.getElementById(tab.id);
-                        if (el) { const y = el.getBoundingClientRect().top + window.scrollY - 80; window.scrollTo({ top: y, behavior: "smooth" }); }
+                        if (el) { const y = el.getBoundingClientRect().top + window.scrollY - 130; window.scrollTo({ top: y, behavior: "smooth" }); }
                       }}
                       className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
                         activeTab === tab.id ? "text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -512,7 +512,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
               {/* All sections stacked — scroll into view */}
               <div className="space-y-12">
 
-              <div id="overview" className="scroll-mt-24 space-y-3">
+              <div id="overview" className="scroll-mt-36 space-y-3">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">About this activity</h3>
                 <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
                   <ReadMore children={description} maxCharacters={400} dialogTitle="Full Description"/>
@@ -522,7 +522,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
               
 
               {amenities.length > 0 && (
-              <div id="amenities" className="scroll-mt-24 space-y-5">
+              <div id="amenities" className="scroll-mt-36 space-y-5">
                 <div className="h-px bg-gray-100 dark:bg-gray-800" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Features & Amenities</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -546,7 +546,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
 
               {/* Inclusions */}
               {inclusions.length > 0 && (
-              <div id="inclusions" className="scroll-mt-24">
+              <div id="inclusions" className="scroll-mt-36">
                 <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Inclusions</h3>
                 <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10 p-5">
@@ -557,7 +557,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
 
               {/* Exclusions */}
               {exclusions.length > 0 && (
-              <div id="exclusions" className="scroll-mt-24">
+              <div id="exclusions" className="scroll-mt-36">
                 <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Exclusions</h3>
                 <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 p-5">
@@ -569,7 +569,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
 
               {/* Policies & Rules */}
               {policies.length > 0 && (
-              <div id="policies" className="scroll-mt-24">
+              <div id="policies" className="scroll-mt-36">
                 <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
                 <div className="flex items-center gap-2.5 mb-5">
                   <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -589,14 +589,14 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
               )}
 
               {/* Reviews */}
-              <div id="reviews" className="scroll-mt-24 space-y-6">
+              <div id="reviews" className="scroll-mt-36 space-y-6">
                 <div className="h-px bg-gray-100 dark:bg-gray-800" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reviews</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 italic">No reviews yet. Be the first to leave a review.</p>
               </div>
 
               {/* Owner */}
-              <div id="owner" className="scroll-mt-24 space-y-5">
+              <div id="owner" className="scroll-mt-36 space-y-5">
                 <div className="h-px bg-gray-100 dark:bg-gray-800" />
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Hosted by</h3>
                 <div className="flex items-center gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700">

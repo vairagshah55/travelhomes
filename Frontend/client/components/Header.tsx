@@ -913,11 +913,11 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
   <>
       {/* Main Header */}
       <nav
-        className={`flex items-center bg-white justify-between  md:px-10   py-1 z-30
+        className={`sticky top-0 flex items-center justify-between px-4 md:px-10 py-2 z-50 border-b border-gray-100 dark:border-gray-800 backdrop-blur-sm shadow-sm
           ${
             !user && isTransparent
-              ? "bg-transparent"
-              : "bg-white dark:bg-black dark:text-white"
+              ? "bg-white/95 dark:bg-gray-900/95"
+              : "bg-white/95 dark:bg-black/95"
           } ${className}`}
       >
         {/* Logo */}
