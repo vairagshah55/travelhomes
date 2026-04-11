@@ -1863,51 +1863,83 @@ export default function Index() {
             </div>
           )}
           {!loadingOffers && !offerError && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Left Column - Main heading + Delhi */}
-
-              <div className="lg:col-span-1 flex flex-col">
-                <div className="mb-6">
-                  <h2 className="text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-tight tracking-tight">
-                    Trending Destinations
-                  </h2>
-                </div>
-                <DestinationCard
-                  image="https://api.builder.io/api/v1/image/assets/TEMP/4766a16ac97656234c2dd7e78a19fabc9e9361f1?width=641"
-                  title="Delhi"
-                  className="h-52"
-                />
-              </div>
-
-              {/* Middle Columns - Kolkata and Bombay */}
-              <div className="lg:col-span-1">
-                <DestinationCard
-                  image="https://api.builder.io/api/v1/image/assets/TEMP/3d98c6169a4accab38df839bcb2d9390e2e0f6ad?width=641"
-                  title="Kolkata"
-                  className="h-52 lg:h-80"
-                />
-              </div>
-
-              <div className="lg:col-span-1">
-                <DestinationCard
-                  image="https://api.builder.io/api/v1/image/assets/TEMP/e768669efb8c29a3468b96ce5cb10cf4e7c7d719?width=641"
-                  title="Bombay"
-                  className="h-52 lg:h-80"
-                />
-              </div>
-
-              {/* Right Column - Kerala + Description */}
-              <div className="lg:col-span-1 flex flex-col gap-6">
-                <DestinationCard
-                  image="https://api.builder.io/api/v1/image/assets/TEMP/344595448bfa2603988d6406e077bc1b7911c209?width=488"
-                  title="Kerala"
-                  className="h-44"
-                />
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                  From the Himalayas to backwaters — India's most-booked destinations await you.
+            <>
+              {/* Heading - visible on mobile above scroll, on desktop inside grid */}
+              <div className="mb-4 lg:hidden">
+                <h2 className="text-2xl font-semibold text-gray-900 dark:text-white leading-tight tracking-tight">
+                  Trending Destinations
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  India's most-booked destinations
                 </p>
               </div>
-            </div>
+
+              {/* Mobile: horizontal scroll */}
+              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 lg:hidden">
+                <div className="flex gap-4 min-w-max">
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/4766a16ac97656234c2dd7e78a19fabc9e9361f1?width=641"
+                    title="Delhi"
+                    className="w-[240px] h-[180px] flex-shrink-0"
+                  />
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/3d98c6169a4accab38df839bcb2d9390e2e0f6ad?width=641"
+                    title="Kolkata"
+                    className="w-[240px] h-[180px] flex-shrink-0"
+                  />
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/e768669efb8c29a3468b96ce5cb10cf4e7c7d719?width=641"
+                    title="Bombay"
+                    className="w-[240px] h-[180px] flex-shrink-0"
+                  />
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/344595448bfa2603988d6406e077bc1b7911c209?width=488"
+                    title="Kerala"
+                    className="w-[240px] h-[180px] flex-shrink-0"
+                  />
+                </div>
+              </div>
+
+              {/* Desktop: original grid layout */}
+              <div className="hidden lg:grid lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-1 flex flex-col">
+                  <div className="mb-6">
+                    <h2 className="text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-tight tracking-tight">
+                      Trending Destinations
+                    </h2>
+                  </div>
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/4766a16ac97656234c2dd7e78a19fabc9e9361f1?width=641"
+                    title="Delhi"
+                    className="h-52"
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/3d98c6169a4accab38df839bcb2d9390e2e0f6ad?width=641"
+                    title="Kolkata"
+                    className="h-52 lg:h-80"
+                  />
+                </div>
+                <div className="lg:col-span-1">
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/e768669efb8c29a3468b96ce5cb10cf4e7c7d719?width=641"
+                    title="Bombay"
+                    className="h-52 lg:h-80"
+                  />
+                </div>
+                <div className="lg:col-span-1 flex flex-col gap-6">
+                  <DestinationCard
+                    image="https://api.builder.io/api/v1/image/assets/TEMP/344595448bfa2603988d6406e077bc1b7911c209?width=488"
+                    title="Kerala"
+                    className="h-44"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    From the Himalayas to backwaters — India's most-booked destinations await you.
+                  </p>
+                </div>
+              </div>
+            </>
           )}
         </section>
       )}
@@ -2144,14 +2176,15 @@ export default function Index() {
       >
         <div
           ref={articlesRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
         >
+          <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {latestBlogs && latestBlogs.length > 0
             ? latestBlogs.map((b) => (
                 <Link
                   to={`/blogsDetials?slug=${b.slug}`}
                   key={b._id}
-                  className="block"
+                  className="block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
                 >
                   <ArticleCard
                     image={b.coverImage || "/placeholder.svg"}
@@ -2184,7 +2217,12 @@ export default function Index() {
                   title:
                     "Experience Goa Like Never Before: Unique Adventures Await!",
                 },
-              ].map((article, i) => <ArticleCard key={i} {...article} />)}
+              ].map((article, i) => (
+                <div key={i} className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink">
+                  <ArticleCard {...article} />
+                </div>
+              ))}
+          </div>
         </div>
       </Section>
 

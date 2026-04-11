@@ -64,7 +64,8 @@ function DefaultCard({
   }
 
   return (
-    <div className={`grid sm:grid-cols-2 max-md:px-3 ${location.pathname.includes("/search") ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-x-5 gap-y-8`}>
+    <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+      <div className={`flex md:grid md:grid-cols-2 ${location.pathname.includes("/search") ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-5`}>
       {CardData.map((item) => {
         const isLiked = isFavorite[item.id] ?? hasWishlistItem(item.id);
 
@@ -72,7 +73,7 @@ function DefaultCard({
           <Link
             key={item.id}
             to={item.id}
-            className="group block card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+            className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
           >
             {/* Image */}
             <div className="relative">
@@ -144,6 +145,7 @@ function DefaultCard({
           </Link>
         );
       })}
+      </div>
     </div>
   );
 }

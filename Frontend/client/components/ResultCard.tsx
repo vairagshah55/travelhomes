@@ -78,14 +78,15 @@ function ResultCard({
   const content = getCardContent();
 
   return (
-    <div className="grid sm:grid-cols-1 max-md:px-3 md:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-8">
+    <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5">
       {content.map((item) => {
         const isLiked = wishlistIds.has(item.id);
         return (
           <Link
             key={item.id}
             to={item.id}
-            className="group block card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+            className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
           >
             {/* Image */}
             <div className="relative">
@@ -157,6 +158,7 @@ function ResultCard({
           </Link>
         );
       })}
+      </div>
     </div>
   );
 }
