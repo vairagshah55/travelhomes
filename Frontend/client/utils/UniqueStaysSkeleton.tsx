@@ -49,90 +49,106 @@ const UniqueStaysSkeleton = () => {
   );
 };
 
+const ShimmerBlock = ({ className = "" }: { className?: string }) => (
+  <div className={`bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse relative overflow-hidden ${className}`}>
+    <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+  </div>
+);
+
 export const StayDetailsSkeleton = () => {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10 mt-20 py-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4 md:gap-0">
-        <div>
-          <Skeleton className="h-6 w-32 sm:w-40 mb-2 bg-gray-200" />
-          <Skeleton className="h-4 w-24 sm:w-28 bg-gray-200" />
-        </div>
-        <div className="flex gap-3">
-          <Skeleton className="h-9 w-16 sm:w-20 rounded-md bg-gray-200" />
-          <Skeleton className="h-9 w-16 sm:w-20 rounded-md bg-gray-200" />
-          <Skeleton className="h-9 w-20 sm:w-24 rounded-md bg-gray-200" />
-        </div>
-      </div>
-
-      {/* Image Gallery */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-10">
-        <Skeleton className="col-span-2 row-span-2 h-40 sm:h-[320px] rounded-xl bg-gray-200" />
-        <Skeleton className="h-32 sm:h-[150px] rounded-xl bg-gray-200" />
-        <Skeleton className="h-32 sm:h-[150px] rounded-xl bg-gray-200" />
-        <Skeleton className="h-32 sm:h-[150px] rounded-xl bg-gray-200" />
-        <Skeleton className="h-32 sm:h-[150px] rounded-xl bg-gray-200" />
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-3 sm:gap-6 mb-8 flex-wrap">
-        {[...Array(6)].map((_, i) => (
-          <Skeleton key={i} className="h-5 w-16 sm:w-20" />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
-        {/* Left Content */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Overview */}
-          <div>
-            <Skeleton className="h-6 w-28 sm:w-32 mb-4 bg-gray-200" />
-            <Skeleton className="h-4 w-full mb-2 bg-gray-200" />
-            <Skeleton className="h-4 w-5/6 bg-gray-200" />
+    <div className="min-h-screen bg-white dark:bg-gray-900">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 pt-20 pb-6">
+        {/* Back + Title */}
+        <ShimmerBlock className="h-4 w-16 mb-5 rounded" />
+        <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
+          <div className="flex-1">
+            <ShimmerBlock className="h-8 w-64 sm:w-80 mb-3 rounded-lg" />
+            <ShimmerBlock className="h-4 w-40 sm:w-52 rounded" />
           </div>
-
-          {/* Amenities */}
-          <div>
-            <Skeleton className="h-6 w-28 sm:w-32 mb-4 bg-gray-200" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-4 w-20 sm:w-24 bg-gray-200" />
-              ))}
-            </div>
-          </div>
-
-          {/* Reviews */}
-          <div>
-            <Skeleton className="h-6 w-28 sm:w-32 mb-4 bg-gray-200" />
-            <Skeleton className="h-10 w-16 sm:w-20 mb-4 bg-gray-200" />
-            {[...Array(4)].map((_, i) => (
-              <Skeleton key={i} className="h-4 w-full mb-2 bg-gray-200" />
-            ))}
-          </div>
-
-          {/* Owner */}
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-14 w-14 rounded-full bg-gray-200" />
-            <div>
-              <Skeleton className="h-4 w-28 sm:w-32 mb-2 bg-gray-200" />
-              <Skeleton className="h-4 w-20 sm:w-24 bg-gray-200" />
-            </div>
+          <div className="flex gap-3">
+            <ShimmerBlock className="h-10 w-24 rounded-full" />
+            <ShimmerBlock className="h-10 w-20 rounded-full" />
+            <ShimmerBlock className="h-10 w-24 rounded-full" />
           </div>
         </div>
 
-        {/* Right Price Card */}
-        <div>
-          <Skeleton className="h-[280px] rounded-xl bg-gray-200" />
+        {/* Image Gallery */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-8 h-[250px] sm:h-[300px] lg:h-[400px]">
+          <ShimmerBlock className="col-span-2 row-span-2 rounded-xl !rounded-lg" />
+          <ShimmerBlock className="rounded-xl" />
+          <ShimmerBlock className="rounded-xl" />
+          <ShimmerBlock className="col-span-2 rounded-xl" />
         </div>
-      </div>
 
-      {/* More Unique Stays */}
-      <div className="mt-16">
-        <Skeleton className="h-6 w-32 sm:w-40 mb-6 bg-gray-200" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-52 sm:h-[220px] rounded-xl bg-gray-200" />
+        {/* Tabs */}
+        <div className="flex gap-4 sm:gap-6 mb-8 border-b border-gray-100 dark:border-gray-800 pb-3">
+          {[80, 72, 68, 76, 88, 64].map((w, i) => (
+            <ShimmerBlock key={i} className="h-5 rounded" style={{ width: w }} />
           ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+          {/* Left Content */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Overview */}
+            <div>
+              <ShimmerBlock className="h-6 w-28 mb-4 rounded" />
+              <ShimmerBlock className="h-4 w-full mb-2.5 rounded" />
+              <ShimmerBlock className="h-4 w-full mb-2.5 rounded" />
+              <ShimmerBlock className="h-4 w-4/5 rounded" />
+            </div>
+
+            {/* Amenities */}
+            <div>
+              <ShimmerBlock className="h-6 w-28 mb-5 rounded" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <ShimmerBlock className="h-10 w-10 rounded-lg flex-shrink-0" />
+                    <ShimmerBlock className="h-4 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Reviews */}
+            <div>
+              <ShimmerBlock className="h-6 w-24 mb-5 rounded" />
+              <div className="flex items-center gap-8 mb-6">
+                <ShimmerBlock className="h-16 w-16 rounded-xl" />
+                <div className="flex-1 space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <ShimmerBlock className="h-3 w-20 rounded" />
+                      <ShimmerBlock className="h-2 flex-1 rounded-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Owner */}
+            <div className="flex items-center gap-4">
+              <ShimmerBlock className="h-14 w-14 rounded-full flex-shrink-0" />
+              <div>
+                <ShimmerBlock className="h-4 w-32 mb-2 rounded" />
+                <ShimmerBlock className="h-3 w-24 rounded" />
+              </div>
+            </div>
+          </div>
+
+          {/* Right Booking Card */}
+          <div className="hidden lg:block">
+            <div className="sticky top-24 space-y-4">
+              <ShimmerBlock className="h-8 w-36 rounded-lg" />
+              <ShimmerBlock className="h-12 w-full rounded-xl" />
+              <ShimmerBlock className="h-12 w-full rounded-xl" />
+              <ShimmerBlock className="h-12 w-full rounded-xl" />
+              <ShimmerBlock className="h-4 w-full rounded" />
+              <ShimmerBlock className="h-4 w-3/4 rounded" />
+            </div>
+          </div>
         </div>
       </div>
     </div>

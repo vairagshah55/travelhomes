@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Button } from "../../components/ui/button";
 import Header, { HomeHeader } from "../../components/Header";
@@ -336,26 +337,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
 
   const tabs = allTabs.filter(tab => tab.hasContent);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = tabs.map(tab => document.getElementById(tab.id)).filter(Boolean) as HTMLElement[];
-      let current = '';
-
-      sections.forEach(section => {
-        const rect = section.getBoundingClientRect();
-        if (rect.top <= 200 && rect.bottom >= 200) { // 200px from top
-          current = section.id;
-        }
-      });
-
-      if (current && current !== activeTab) {
-        setActiveTab(current);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [tabs]); // Removed activeTab from dependencies to prevent re-renders
+  // Tab content is now rendered inline (no scroll detection needed)
 
   /*
     Legacy static samples for UniqueStay were here.
@@ -374,7 +356,12 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 )}
           {!(loadingStay || loadingVendor) && (
     <>
-      <div className="min-h-screen font-sans flex-col flex gap-0  bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="min-h-screen font-sans flex-col flex gap-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors"
+      >
         {/* <Header variant="transparent" className="fixed w-full z-30" /> */}
 
         <div ref={contentRef} className="max-w-[1440px] mx-auto  px-4 sm:px-6 py-5 z-10">
@@ -389,10 +376,15 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
      
 
           {/* Header Section */}
-          <div className="mb-3">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
+            className="mb-3"
+          >
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 md:gap-6">
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-black dark:bg-black dark:text-white mt-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-white mt-4">
                   {stay?.name }
                 </h1>
                 <div className="flex items-center gap-4 mb-4">
@@ -408,29 +400,29 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 <Button
                   variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
                   onClick={() => setShowShareModal(true)}
                 >
-                  <RiShareCircleFill className="w-6 h-4 -rotate-45" />
-                  Share
+                  <RiShareCircleFill className="w-4 h-4 -rotate-45" />
+                  <span className="hidden sm:inline">Share</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
                   onClick={() => {
                     setIsFavorite(!isFavorite);
                     toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
                   }}
                 >
                   <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                  Save
+                  <span className="hidden sm:inline">Save</span>
                 </Button>
                 <Button
                   variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm bg-gray-900 text-white rounded-full hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                   onClick={() => {
                     if (isAuthenticated) {
                       navigate("/payment", { 
@@ -451,14 +443,19 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 </Button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* Image Gallery */}
-          <div className="mb-3 w-full max-w-[1280px]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="mb-3 w-full max-w-[1280px]"
+          >
             <div
               className="
-      grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2 lg:gap-3
-      w-full h-[250px] sm:h-[300px] lg:h-[400px] aspect-[16/9]
+      grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3
+      w-full h-[200px] sm:h-[280px] md:h-[340px] lg:h-[400px]
     "
             >
               {/* Main Left Image */}
@@ -516,385 +513,350 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-1">
            {/* Main Content */}
-                      <div className="lg:col-span-2 space-y-12 mt-3 ">
-                        {/* Tabs */}
-                        <div className="sticky top-0 z-40 bg-white  border-gray-200 mb-8 dark:bg-black dark:text-white border-b">
-                          <div className="flex overflow-x-auto scrollbar-hide">
+                      <div className="lg:col-span-2 mt-3">
+                        {/* Tabs Bar */}
+                        <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 mb-6">
+                          <div className="flex overflow-x-auto scrollbar-hide gap-1 relative">
                             {tabs.map((tab) => (
                               <button
                                 key={tab.id}
-                                onClick={() => {
-                                  setActiveTab(tab.id);
-                                  const element = document.getElementById(tab.id);
-          const yOffset = -120; // Adjust for sticky header height
-          const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
-          window.scrollTo({ top: y, behavior: "smooth" });
-          
-                                }}
-                                className={`px-6 py-4 text-base font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap rounded-lg transition-colors duration-200 ${
                                   activeTab === tab.id
-                                    ? "border-black dark:border-white dark:text-white text-black"
-                                    : "border-transparent dark:text-white text-gray-500 hover:text-gray-700"
+                                    ? "text-gray-900 dark:text-white"
+                                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                                 }`}
                               >
                                 {tab.label}
+                                {activeTab === tab.id && (
+                                  <motion.div
+                                    layoutId="tab-indicator"
+                                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-gray-900 dark:bg-white rounded-full"
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                  />
+                                )}
                               </button>
                             ))}
                           </div>
+                          <div className="h-px bg-gray-200 dark:bg-gray-700" />
                         </div>
-          
-                        {/* Tab Content */}
-                        <div id="overview" className="scroll-mt-[120px] space-y-10">
-                          <div className="space-y-1 w-full">
-                            <h3 className="text-xl font-semibold text-black dark:text-white">Overview</h3>
-                            <ReadMore children={description} maxCharacters={220} dialogTitle="Full Description"/>
+
+                        {/* Tab Content with AnimatePresence */}
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="min-h-[200px]"
+                          >
+
+                        {activeTab === "overview" && (
+                          <div className="space-y-10">
+                            {/* Description */}
+                            <div className="space-y-3">
+                              <h3 className="text-lg font-semibold text-black dark:text-white">About this place</h3>
+                              <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                                <ReadMore children={description} maxCharacters={400} dialogTitle="Full Description"/>
+                              </div>
+                            </div>
+
+                            {/* Amenities preview */}
+                            {amenities.length > 0 && (
+                              <>
+                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-semibold text-black dark:text-white">Amenities</h3>
+                                    {amenities.length > 6 && (
+                                      <button onClick={() => setActiveTab("amenities")} className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600">
+                                        View all {amenities.length}
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {amenities.slice(0, 6).map((amenity, i) => (
+                                      <div key={i} className="flex items-center gap-2.5 py-2">
+                                        <amenity.icon className="w-5 h-5 text-gray-600 dark:text-gray-300 flex-shrink-0" />
+                                        <span className="text-sm text-gray-700 dark:text-gray-300">{amenity.name}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Inclusions */}
+                            {inclusions.length > 0 && (
+                              <>
+                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-black dark:text-white">What's included</h3>
+                                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {inclusions.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="text-green-500 mt-0.5">&#10003;</span>
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Exclusions */}
+                            {exclusions.length > 0 && (
+                              <>
+                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-black dark:text-white">Not included</h3>
+                                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    {exclusions.map((item, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="text-gray-400 mt-0.5">&#10005;</span>
+                                        {item}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Policies & Rules */}
+                            {policies.length > 0 && (
+                              <>
+                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                                <div className="space-y-3">
+                                  <h3 className="text-lg font-semibold text-black dark:text-white">Policies & Rules</h3>
+                                  <ul className="space-y-2">
+                                    {policies.map((rule, i) => (
+                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                        <span className="text-gray-400 mt-0.5">&bull;</span>
+                                        {rule}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </>
+                            )}
+
+                            {/* Owner Details */}
+                            <>
+                              <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                              <div className="space-y-4">
+                                <h3 className="text-lg font-semibold text-black dark:text-white">Hosted by</h3>
+                                <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                                  <img
+                                    src={vendor?.photo || "/User.jpg"}
+                                    alt={vendor?.brandName || vendor?.personName || "Owner"}
+                                    className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-gray-900 dark:text-white">
+                                      {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
+                                    </div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                      {[
+                                        vendor?.businessCity || vendor?.business?.city,
+                                        vendor?.businessState || vendor?.business?.state,
+                                      ].filter(Boolean).join(", ")}
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      {vendor?.rating && (
+                                        <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+                                          <Star className="w-3 h-3 fill-current" /> {vendor.rating}
+                                        </span>
+                                      )}
+                                      {vendor?.reviewCount && (
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">{vendor.reviewCount} reviews</span>
+                                      )}
+                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    size="sm"
+                                    className="bg-gray-900 text-white rounded-full px-4 text-xs hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
+                                    onClick={handleContactOwner}
+                                  >
+                                    Contact
+                                  </Button>
+                                </div>
+                              </div>
+                            </>
                           </div>
-                          <hr className="border-gray-200 dark:border-gray-700" />
-                        </div>
-          
-                        
-          
-                        <div id="amenities" className="scroll-mt-[120px] space-y-8">
-                            <h2 className="text-xl font-semibold text-black dark:text-white">
+                        )}
+
+                        {activeTab === "amenities" && (
+                          <div className="space-y-6">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">
                               Amenities
-                            </h2>
-          
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 lg:gap-x-32 gap-y-6">
-                              {visibleAmenities.slice(0, 6).map((amenity, index) => (
-                                <div key={index} className="flex text-base font-medium items-center gap-4">
-                                  <span className="text-xl">
-                                    <amenity.icon className="w-6 h-6 text-black dark:text-white" />
-                                  </span>
-          
-                                  <span className="text-sm font-normal text-gray-800 dark:text-gray-200">
+                            </h3>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {amenities.map((amenity, index) => (
+                                <motion.div
+                                  key={index}
+                                  initial={{ opacity: 0, x: -8 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: index * 0.04, duration: 0.25 }}
+                                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                >
+                                  <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                    <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                                  </div>
+                                  <span className="text-sm text-gray-700 dark:text-gray-200">
                                     {amenity.name}
                                   </span>
-                                </div>
+                                </motion.div>
                               ))}
                             </div>
-          
-                            {!showAll && amenities.length > 6 && (
-                            <Button
-                              variant="outline"
-                              className="border-black dark:border-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white"
-                              onClick={() => setOpenAmenitiesModal(true)}
-                            >
-                              See All {amenities.length} Amenities
-                            </Button>
-                            )}
                           </div>
-                        <Dialog open={openAmenitiesModal} onOpenChange={setOpenAmenitiesModal}>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto dark:bg-black dark:text-white">
-                            <DialogHeader>
-                              <DialogTitle className="text-xl font-semibold">
-                                All Amenities
-                              </DialogTitle>
-                            </DialogHeader>
-          
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-6 mt-4">
-                              {amenities.map((amenity, index) => (
-                                <div key={index} className="flex text-base font-medium items-center gap-4">
-                                  <amenity.icon className="w-6 h-6 text-black dark:text-white" />
-                                  <span className="text-sm font-normal dark:text-gray-200">{amenity.name}</span>
-                                </div>
-                              ))}
+                        )}
+
+                        {activeTab === "inclusions" && (
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">Inclusions</h3>
+                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                              <ReadMore children={inclusionsText} maxCharacters={600} dialogTitle="Full Inclusions"/>
                             </div>
-                          </DialogContent>
-                        </Dialog>
-          
-                          <div id="inclusions" className="scroll-mt-[200px] space-y-8">
-                            <h3 className="text-xl font-semibold text-black dark:text-white">Inclusions</h3>
-                            <ReadMore children={inclusionsText} maxCharacters={220} dialogTitle="Full Inclusions"/>
                           </div>
-                          
-            <div id="exclusions" className="scroll-mt-[120px] space-y-3">
-                            <h3 className="text-xl font-semibold text-black dark:text-white">Exclusions</h3>
-                            <ReadMore children={exclusionsText} maxCharacters={220} dialogTitle="Full Exclusions"/>
+                        )}
+
+                        {activeTab === "exclusions" && (
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">Exclusions</h3>
+                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                              <ReadMore children={exclusionsText} maxCharacters={600} dialogTitle="Full Exclusions"/>
+                            </div>
                           </div>
-                        
-          
-                        <div id="policies" className="scroll-mt-[120px] space-y-6">
-                            <h3 className="text-xl font-semibold text-black dark:text-white">Policies & Rules</h3>
-                            <ReadMore children={visiblePolicies} maxCharacters={220} dialogTitle="Full Policies"/>
+                        )}
+
+                        {activeTab === "policies" && (
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">Policies & Rules</h3>
+                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                              <ReadMore children={visiblePolicies} maxCharacters={600} dialogTitle="Full Policies"/>
+                            </div>
                           </div>
+                        )}
           
-                        <div id="reviews" className="scroll-mt-[120px] space-y-8">
+                        {activeTab === "reviews" && (
+                          <div className="space-y-8">
                             <div className="flex justify-between items-center">
-                              <h2 className="text-xl font-semibold text-black dark:text-white">
-                                Reviews
-                              </h2>
+                              <h3 className="text-lg font-semibold text-black dark:text-white">Reviews</h3>
                               <Button
-                                className="bg-black text-white rounded-full px-6 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                                className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                                 onClick={() => toast("Opening review form...")}
                               >
                                 Add Review
                               </Button>
                             </div>
-          
-                            {/* Summary Section */}
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                              <div className="flex flex-col items-center gap-4">
-                                <div className="text-6xl font-bold text-gray-800 dark:text-white">
-                                  4.5
-                                </div>
-                                <div className="flex items-center gap-1">
+
+                            {/* Rating Summary */}
+                            <div className="flex items-center gap-6 p-5 bg-gray-50 dark:bg-gray-800 rounded-2xl">
+                              <div className="text-center">
+                                <div className="text-4xl font-bold text-gray-900 dark:text-white">4.5</div>
+                                <div className="flex items-center gap-0.5 mt-1">
                                   {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`w-6 h-6 ${
-                                        i < 4
-                                          ? "fill-yellow-400 text-yellow-400"
-                                          : "fill-yellow-400/50 text-yellow-400/50"
-                                      }`}
-                                    />
+                                    <Star key={i} className={`w-4 h-4 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "fill-yellow-400/40 text-yellow-400/40"}`} />
                                   ))}
                                 </div>
-                                <div className="text-lg text-gray-600 dark:text-gray-400">
-                                  2,304
-                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">2,304 reviews</div>
                               </div>
-          
-                              <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {[
-                                  "Cleanliness",
-                                  "Accuracy",
-                                  "Communication",
-                                  "Location",
-                                  "Value",
-                                ].map((category) => (
-                                  <div key={category} className="flex items-center gap-4">
-                                    <span className="w-32 text-sm font-normal text-black dark:text-white ">
-                                      {category}
-                                    </span>
-                                    <div className="flex-1 flex items-center gap-3">
-                                      <div className="flex-1 h-1 bg-gray-200 dark:bg-gray-700 rounded-full">
-                                        <div
-                                          className="h-full bg-black dark:bg-white rounded-full"
-                                          style={{ width: "96%" }}
-                                        ></div>
-                                      </div>
-                                      <span className="text-base font-medium text-black dark:text-white">
-                                        4.8
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-          
-                            {/* Reviews List */}
-                            <div className="space-y-8">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {visibleReviews.map((review, index) => (
-                                  <div key={index} className="space-y-3">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 bg-gray-300 rounded-full">
-                                        <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                                          src={review.profile}
-                                          className="rounded-full w-10 h-10 object-cover"
-                                        />
-                                      </div>
-                                      <div>
-                                        <div className="text-base font-medium text-black dark:text-white">
-                                          {review.name}
-                                        </div>
-                                        <div className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                                          {review.date}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <p className="text-gray-800 dark:text-gray-200 text-sm font-normal">
-                                      {review.review}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-          
-                            {/* See All Reviews Button */}
-                            {allReviews.length > 2 && (
-                              <Button
-                                variant="outline"
-                                className="border-black dark:border-gray-700 px-8 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white"
-                                onClick={() => setOpenReviewsDialog(true)}
-                              >
-                                See All {allReviews.length} Reviews
-                              </Button>
-                            )}
-          
-                            <Dialog open={openReviewsDialog} onOpenChange={setOpenReviewsDialog}>
-                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto dark:bg-black dark:text-white">
-                                <DialogHeader>
-                                  <DialogTitle className="text-xl font-semibold">
-                                    All Reviews
-                                  </DialogTitle>
-                                </DialogHeader>
-          
-                                <div className="space-y-8 mt-4">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {allReviews.map((review, index) => (
-                                      <div key={index} className="space-y-3">
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full">
-                                            <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                                              src={review.profile}
-                                              className="rounded-full w-10 h-10 object-cover"
-                                            />
-                                          </div>
-                                          <div>
-                                            <div className="text-[13px] font-normal text-black dark:text-white">
-                                              {review.name}
-                                            </div>
-                                            <div className="text-sm font-normal text-gray-500 dark:text-gray-400">
-                                              {review.date}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <p className="text-gray-800 dark:text-gray-200 text-base font-medium">
-                                          {review.review}
-                                        </p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                          </div>
-          
-                        <div id="owner" className="scroll-mt-[120px] space-y-8">
-                            <h2 className="text-xl font-semibold text-black dark:text-white">
-                              Owner Details
-                            </h2>
-          
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                              {/* Owner Card */}
-                              <div className="p-10 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 shadow-sm dark:shadow-none">
-                                <div className="flex items-center gap-8">
-                                  <div className="flex flex-col items-center gap-4">
-                                    <div className="w-20 h-20 bg-gray-300 dark:bg-gray-700 rounded-full">
-                                      <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                                        src={vendor?.photo || "/User.jpg"}
-                                        alt={
-                                          vendor?.brandName ||
-                                          vendor?.personName ||
-                                          "Owner"
-                                        }
-                                        className="rounded-full w-20 h-20 object-cover"
+
+                              <div className="flex-1 space-y-2.5">
+                                {["Cleanliness", "Accuracy", "Communication", "Location", "Value"].map((cat) => (
+                                  <div key={cat} className="flex items-center gap-3">
+                                    <span className="w-24 text-xs text-gray-600 dark:text-gray-300">{cat}</span>
+                                    <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: "96%" }}
+                                        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+                                        className="h-full bg-gray-900 dark:bg-white rounded-full"
                                       />
                                     </div>
-                                    <div className="text-center">
-                                      <div className="text-2xl font-bold text-black dark:text-white">
-                                          <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                                            {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
-                                        </p>
-                                     
-                                      </div>
-                                      <div className="text-base font-medium text-gray-500 dark:text-gray-400">
-                                        {vendor?.location &&
-                                         [
-                                            vendor?.businessLocality || vendor?.business?.locality,
-                                            vendor?.businessCity || vendor?.business?.city,
-                                            vendor?.businessState || vendor?.business?.state
-                                         ]}
-                                      </div>
-                                    </div>
+                                    <span className="text-xs font-medium text-gray-700 dark:text-gray-200 w-6">4.8</span>
                                   </div>
-          
-                                  <div className="flex-1 space-y-4">
-                                    {vendor?.reviewCount && (
-                                    <div className="text-center">
-                                      <div className="text-xl font-semibold text-black dark:text-white">
-                                        {vendor.reviewCount}
-                                      </div>
-                                      <div className="text-base font-medium text-black dark:text-gray-300">Reviews</div>
-                                    </div>
-                                    )}
-          
-                                    {vendor?.rating && (
-                                    <div className="flex items-center gap-2 justify-center">
-                                      <div className="ttext-xl font-semibold text-black dark:text-white">
-                                        {vendor.rating}
-                                      </div>
-                                      <Star className="w-4 h-4 fill-black dark:fill-white text-black dark:text-white" />
-                                      <div className="text-base font-medium text-black dark:text-gray-300">Rating</div>
-                                    </div>
-                                    )}
-
-                                    {/* {(vendor?.businessEmail || vendor?.business?.email || vendor?.email) && (
-                                        <div className="flex items-center gap-2 justify-center">
-                                            <Mail className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                                                {vendor?.businessEmail || vendor?.business?.email || vendor?.email}
-                                            </span>
-                                        </div>
-                                    )} */}
-                                    
-                                    {/* {(vendor?.businessPhone || vendor?.business?.phone || vendor?.phoneNumber) && (
-                                        <div className="flex items-center gap-2 justify-center">
-                                            <Phone className="w-4 h-4 text-gray-500" />
-                                            <span className="text-sm text-gray-700 dark:text-gray-300">
-                                                {vendor?.businessPhone || vendor?.business?.phone || vendor?.phoneNumber}
-                                            </span>
-                                        </div>
-                                    )} */}
-                                  </div>
-                                </div>
-
-                                {/* Additional Business Details */}
-                                {/* <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                                     {(vendor?.legalCompanyName || vendor?.business?.legalCompanyName) && (
-                                        <div className="flex justify-between">
-                                            <span className="text-sm font-medium text-gray-500">Legal Company Name</span>
-                                            <span className="text-sm text-black dark:text-white font-medium">{vendor?.legalCompanyName || vendor?.business?.legalCompanyName}</span>
-                                        </div>
-                                     )}
-                                     {(vendor?.businessAddress || (vendor?.businessLocality || vendor?.business?.locality)) && (
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-sm font-medium text-gray-500">Business Address</span>
-                                            <span className="text-sm text-black dark:text-white font-medium">
-                                                {[
-                                                    vendor?.businessLocality || vendor?.business?.locality,
-                                                    vendor?.businessCity || vendor?.business?.city,
-                                                    vendor?.businessState || vendor?.business?.state,
-                                                    vendor?.businessPincode || vendor?.business?.pincode
-                                                ].filter(Boolean).join(", ")}
-                                            </span>
-                                        </div>
-                                     )}
-                                </div> */}
+                                ))}
                               </div>
-          
-                              {/* Owner Info */}
-                              <div className="space-y-6">
-                                <div>
-                                  <h3 className="text-xl font-semibold text-black dark:text-white mb-2">
-                                    Verified by Travelhomes
-                                  </h3>
-                                  <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                                    Listing verified by Travelhomes.
-                                  </p>
-                                </div>
-          
-                               
-                                
-                                {/* Personal Details if available and different from business */}
-                                {(vendor?.firstName || vendor?.lastName || vendor?.personal?.firstName || vendor?.personal?.lastName) && (
-                                    <div>
-                                         <h3 className="text-xl font-semibold text-black dark:text-white mb-2">
-                                            Host
-                                        </h3>
-                                        <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                                            {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
-                                        </p>
+                            </div>
+
+                            {/* Reviews List */}
+                            {visibleReviews.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {visibleReviews.map((review, index) => (
+                                  <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-3"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <img src={review.profile} className="w-9 h-9 rounded-full object-cover" />
+                                      <div>
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">{review.name}</div>
+                                        <div className="text-xs text-gray-500">{review.date}</div>
+                                      </div>
                                     </div>
-                                )}
-          
+                                    <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{review.review}</p>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-500 dark:text-gray-400 italic">No reviews yet. Be the first to leave a review.</p>
+                            )}
+                          </div>
+                        )}
+
+                        {activeTab === "owner" && (
+                          <div className="space-y-6">
+                            <h3 className="text-lg font-semibold text-black dark:text-white">Owner Details</h3>
+
+                            <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900">
+                              <div className="flex items-center gap-5">
+                                <img
+                                  src={vendor?.photo || "/User.jpg"}
+                                  alt={vendor?.brandName || vendor?.personName || "Owner"}
+                                  className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-gray-900 dark:text-white">
+                                    {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
+                                  </div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                                    {[
+                                      vendor?.businessLocality || vendor?.business?.locality,
+                                      vendor?.businessCity || vendor?.business?.city,
+                                      vendor?.businessState || vendor?.business?.state,
+                                    ].filter(Boolean).join(", ")}
+                                  </div>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    {vendor?.reviewCount && (
+                                      <span className="text-xs text-gray-600 dark:text-gray-300">{vendor.reviewCount} reviews</span>
+                                    )}
+                                    {vendor?.rating && (
+                                      <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+                                        <Star className="w-3 h-3 fill-current" /> {vendor.rating}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-white">Verified by Travelhomes</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">Identity & listing verified</div>
+                                </div>
                                 <Button
-                                  className="bg-black text-white rounded-full px-6 py-2 text-sm font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                                  className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                                   onClick={handleContactOwner}
                                 >
                                   Contact Owner
@@ -902,6 +864,10 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                               </div>
                             </div>
                           </div>
+                        )}
+
+                          </motion.div>
+                        </AnimatePresence>
                       </div>
 
             {/* Sidebar - Booking Card */}
@@ -1227,7 +1193,7 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
           contentRef={pdfRef}
           isDarkMode={isDarkMode}
         />
-      </div>
+      </motion.div>
       <div className="fixed bottom-0 left-0 right-0 z-50 dark:bg-black dark:text-white bg-white border-t border-gray-200 dark:border-gray-800 shadow-md">
         <MobileUserNav />
       </div>

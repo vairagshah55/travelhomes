@@ -1224,3 +1224,8 @@ input[type="range"]::-moz-range-thumb {
   100% { left: 130%; }
 }
 
+/* ─── Skeleton shimmer sweep ─── */
+@keyframes shimmer {
+  100% { transform: translateX(200%); }
+}
+
