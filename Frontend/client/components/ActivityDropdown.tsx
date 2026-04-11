@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Star } from "lucide-react";
 
 export function ActivityDropdown({
   onSelect,
@@ -17,38 +17,22 @@ export function ActivityDropdown({
   ];
 
   return (
-    <div className="absolute top-full left-0 mt-2 w-full max-w-sm bg-white rounded-3xl shadow-lg p-6 z-[9999] min-w-[300px]">
-      {/* <div className="flex items-center justify-between mb-6 bg-gray-100 rounded-full p-2">
-        <div className="flex items-center gap-4 px-4 flex-1">
-          <Search className="w-4 h-4 text-gray-600" />
-          <input
-            type="text"
-            placeholder="Search activity"
-            className="flex-1 bg-transparent text-gray-800 placeholder:text-gray-600 text-sm outline-none"
-          />
-        </div>
-        <button className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-          <Search className="w-4 h-4 text-white" />
+    <div className="absolute top-[calc(100%+24px)] left-0 w-[300px] bg-white rounded-2xl shadow-xl p-2 z-[9999] border border-gray-100">
+      {activities.map((activity) => (
+        <button
+          key={activity}
+          onClick={() => {
+            onSelect(activity);
+            onClose();
+          }}
+          className="flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl text-gray-800 hover:bg-gray-50 transition-colors duration-150 group"
+        >
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-gray-200 transition-colors flex-shrink-0">
+            <Star className="w-4 h-4 text-gray-500" />
+          </span>
+          <span className="font-medium text-sm">{activity}</span>
         </button>
-      </div> */}
-
-      <div className="space-y-5">
-        {activities.map((activity) => (
-          <div key={activity} className="flex items-center gap-3">
-            <div className="flex-1 px-3">
-              <button
-                onClick={() => {
-                  onSelect(activity);
-                  onClose();
-                }}
-                className="text-left text-black text-sm font-normal hover:text-gray-600 transition-colors w-full"
-              >
-                {activity}
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
