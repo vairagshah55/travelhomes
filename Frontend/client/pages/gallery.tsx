@@ -6,6 +6,34 @@ interface GalleryProps {
   page?: string;
 }
 
+function ShimmerImage({ src, alt, className }: { src: string; alt: string; className: string }) {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+
+  return (
+    <div className={`relative overflow-hidden rounded-2xl ${className}`}>
+      {/* Skeleton shimmer */}
+      {!loaded && !error && (
+        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-800 animate-pulse">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 dark:via-white/10 to-transparent animate-[shimmer_1.5s_infinite]"
+            style={{ transform: 'translateX(-100%)', animation: 'shimmer 1.5s infinite' }}
+          />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={`w-full h-full object-cover transition-all duration-500 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-105'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setError(true)}
+        draggable={false}
+      />
+      {/* Subtle hover overlay */}
+      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors duration-300" />
+    </div>
+  );
+}
+
 const Gallery: React.FC<GalleryProps> = ({ page = "Login" }) => {
   const [images, setImages] = useState<string[]>([
     "https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641",
@@ -53,26 +81,26 @@ const Gallery: React.FC<GalleryProps> = ({ page = "Login" }) => {
 
   return (
     <div className="hidden lg:flex w-1/2 gap-4 mt-6">
-      {/* Left */}
+      {/* Left column */}
       <div className="flex flex-col gap-4 w-1/2">
         {images.slice(0, 3).map((img, i) => (
-          <img
-            key={i}
+          <ShimmerImage
+            key={`left-${i}-${img}`}
             src={getImageUrl(img)}
             alt="Travel"
-            className="h-[170px] w-full rounded-2xl object-cover shadow-sm"
+            className="h-[170px] w-full shadow-sm"
           />
         ))}
       </div>
 
-      {/* Right */}
+      {/* Right column */}
       <div className="flex flex-col gap-4 w-1/2">
         {images.slice(3).map((img, i) => (
-          <img
-            key={i}
+          <ShimmerImage
+            key={`right-${i}-${img}`}
             src={getImageUrl(img)}
             alt="Travel"
-            className="h-[260px] w-full rounded-2xl object-cover shadow-sm "
+            className="h-[260px] w-full shadow-sm"
           />
         ))}
       </div>

@@ -559,6 +559,19 @@
     @apply border-[#131313] dark:border-white ring-2 ring-[#131313]/20 dark:ring-white/20;
   }
 
+  .auth-input.auth-input-error {
+    border-color: #ef4444 !important;
+  }
+
+  .auth-input.auth-input-error:hover {
+    border-color: #ef4444 !important;
+  }
+
+  .auth-input.auth-input-error:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+  }
+
   .auth-button {
     @apply w-full h-12 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200;
   }

@@ -135,6 +135,8 @@ const Register = () => {
     return Object.keys(newErrors).length === 0; // true if valid
   };
 
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+
   const validateInput = (name: string, value: string) => {
     let errorMessage = "";
 
@@ -151,8 +153,8 @@ const Register = () => {
         break;
       case "password":
         if (!value.trim()) errorMessage = "Password is required.";
-        else if (value.length < 8)
-          errorMessage = "Password must be at least 8 characters.";
+        else if (!passwordRegex.test(value))
+          errorMessage = "Min 8 chars, with uppercase, lowercase, number & special symbol.";
         break;
       case "confirmPassword":
         if (!value.trim()) errorMessage = "Please confirm your password.";
@@ -172,6 +174,23 @@ const Register = () => {
 
     setErrors((prev) => ({ ...prev, [name]: errorMessage }));
   };
+
+  // Real-time check: is step 1 form complete & valid?
+  const isStep1Valid =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
+    /^\d{10}$/.test(formData.mobile) &&
+    passwordRegex.test(formData.password) &&
+    formData.confirmPassword === formData.password &&
+    formData.confirmPassword.length > 0;
+
+  // Real-time check: is step 3 form complete?
+  const isStep3Valid =
+    formData.firstName.trim().length > 0 &&
+    formData.lastName.trim().length > 0 &&
+    formData.dateOfBirth.trim().length > 0 &&
+    countryOption.trim().length > 0 &&
+    stateOption.trim().length > 0 &&
+    cityOption.trim().length > 0;
 
   // Step 2 (OTP)
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -223,6 +242,10 @@ const Register = () => {
   // === Form logic for each step ===
   const updateFormData = (field: keyof RegisterFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear error on change if currently showing one
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
   };
 
   // --- Step 1: Register ---
@@ -232,7 +255,6 @@ const Register = () => {
       setHasSubmitted(true); // 👈 KEY LINE
 
     if (!validateForm(1)) {
-      toast.error("Please fix the highlighted errors.");
       return;
     }
 
@@ -382,7 +404,6 @@ const Register = () => {
   const handleDetailsSave = async () => {
     // Validate required fields for Step 3
     if (!validateForm(3)) {
-      toast.error("Please fix the highlighted errors.");
       return;
     }
 
@@ -449,7 +470,7 @@ const Register = () => {
           Let's get you all set up so you can access your personal account.
         </p>
       </div>
-      <form onSubmit={handleRegister}>
+      <form onSubmit={handleRegister} noValidate>
         <div className="space-y-3 max-md:space-y-3">
           <div className="space-y-3 max-md:space-y-3">
             <Input
@@ -457,10 +478,10 @@ const Register = () => {
               value={formData.email}
               onChange={(e) => updateFormData("email", e.target.value)}
               onBlur={() => validateInput("email", formData.email)}
-              className={`auth-input h-10 ${hasSubmitted  && errors.email ? "border-red-500" : ""}`}
+              className={`auth-input h-10 ${errors.email ? "auth-input-error" : ""}`}
               placeholder="Email ID"
             />
-            {hasSubmitted  && errors.email && (
+            {errors.email && (
               <p className="text-red-500 text-sm mt-1">{errors.email}</p>
             )}
 
@@ -498,10 +519,10 @@ const Register = () => {
                   onChange={handlePhoneChange}
                   onBlur={() => validateInput("mobile", formData.mobile)}
                   maxLength={10}
-                  className="auth-input"
+                  className={`auth-input ${errors.mobile ? "auth-input-error" : ""}`}
                   placeholder="Mobile Number"
                 />
-                {hasSubmitted  && errors.mobile && (
+                {errors.mobile && (
                   <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
                 )}
               </div>
@@ -513,7 +534,7 @@ const Register = () => {
                   value={formData.password}
                   onChange={(e) => updateFormData("password", e.target.value)}
                   onBlur={() => validateInput("password", formData.password)}
-                  className="h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171]"
+                  className={`h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] ${errors.password ? "border-red-500" : ""}`}
                   placeholder="Create Password"
                 />
                 <button
@@ -524,8 +545,25 @@ const Register = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {hasSubmitted  && errors.password && (
+              {errors.password && (
                 <p className="text-red-500 text-sm mt-1">{errors.password}</p>
+              )}
+              {/* Password strength indicator */}
+              {formData.password.length > 0 && !errors.password && (
+                <div className="space-y-1.5">
+                  <div className="flex gap-1">
+                    {[
+                      formData.password.length >= 8,
+                      /[A-Z]/.test(formData.password),
+                      /[a-z]/.test(formData.password),
+                      /\d/.test(formData.password),
+                      /[@$!%*?&#]/.test(formData.password),
+                    ].map((met, i) => (
+                      <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-green-600 dark:text-green-400">Strong password</p>
+                </div>
               )}
               <div className="relative">
                 <Input
@@ -537,7 +575,7 @@ const Register = () => {
                   onBlur={() =>
                     validateInput("confirmPassword", formData.confirmPassword)
                   }
-                  className="h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171]"
+                  className={`h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] ${errors.confirmPassword ? "border-red-500" : ""}`}
                   placeholder="Confirm Password"
                 />
                 <button
@@ -552,10 +590,13 @@ const Register = () => {
                   )}
                 </button>
 
-                {hasSubmitted  && errors.confirmPassword && (
+                {errors.confirmPassword && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.confirmPassword}
                   </p>
+                )}
+                {!errors.confirmPassword && formData.confirmPassword && formData.confirmPassword === formData.password && (
+                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">Passwords match</p>
                 )}
 
                 {/* <div className="flex items-center gap-4 mt-3">
@@ -587,7 +628,7 @@ const Register = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200"
+              className="w-full bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {isLoading ? "Creating Account..." : "Register"}
             </Button>
@@ -889,7 +930,7 @@ const Register = () => {
         </div>
         <Button
           type="submit"
-          className="w-full h-10 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200"
+          className="w-full h-10 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
         >
           Save
         </Button>
