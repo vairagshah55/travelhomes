@@ -938,7 +938,7 @@ export default function Index() {
             {/* Search Form - Desktop */}
             <motion.div
               ref={SearchbarRef}
-              className="hidden lg:block w-full max-w-4xl"
+              className="hidden lg:block w-full max-w-5xl"
               initial={{ opacity: 0, y: 28, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.75, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
@@ -1016,21 +1016,18 @@ export default function Index() {
                         {checkInDate
                           ? `${checkInDate.toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })} - ${
                               checkOutDate
                                 ? checkOutDate.toLocaleDateString("en-GB", {
                                     day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
+                                    month: "short",
                                   })
                                 : ""
                             }`
                           : new Date().toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })}
                       </button>
 
@@ -1257,13 +1254,11 @@ export default function Index() {
                         {checkInDate
                           ? checkInDate.toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })
                           : new Date().toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })}
                       </button>
 
@@ -1302,13 +1297,11 @@ export default function Index() {
                         {checkOutDate
                           ? checkOutDate.toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })
                           : new Date().toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })}
                       </button>
 
@@ -1449,13 +1442,11 @@ export default function Index() {
                         {checkInDate
                           ? checkInDate.toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })
                           : new Date().toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })}
                       </button>
 
@@ -1494,13 +1485,11 @@ export default function Index() {
                         {checkOutDate
                           ? checkOutDate.toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })
                           : new Date().toLocaleDateString("en-GB", {
                               day: "2-digit",
-                              month: "2-digit",
-                              year: "numeric",
+                              month: "short",
                             })}
                       </button>
 

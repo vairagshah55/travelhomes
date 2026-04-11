@@ -163,9 +163,8 @@ export default function AirbnbHeader({
         const scrollDelta = Math.abs(scrollY - lastScrollY);
 
         setShowFilterButtons(prev => {
-          const threshold = heroHeight ?? 200;
-          // Hysteresis: appear at threshold, disappear at threshold - 50px
-          const next = prev ? scrollY > (threshold - 50) : scrollY > threshold;
+          const threshold = Math.min(heroHeight ?? 200, 300);
+          const next = prev ? scrollY > (threshold - 60) : scrollY > threshold;
           return prev !== next ? next : prev;
         });
 
@@ -279,7 +278,7 @@ export default function AirbnbHeader({
             ? "0 1px 6px rgba(0, 0, 0, 0.06)"
             : "0 0 0 rgba(0, 0, 0, 0)",
         }}
-        transition={{ duration: 0.5, ease: "easeInOut" }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
         className="fixed top-0 left-0 right-0 z-50"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
@@ -293,14 +292,14 @@ export default function AirbnbHeader({
             >
               {/* Dark logo (scrolled / logged-in) */}
               <div
-                className="transition-opacity duration-500 ease-in-out"
+                className="transition-opacity duration-300 ease-out"
                 style={{ opacity: (showFilterButtons || user || location.pathname.includes("search")) ? 1 : 0 }}
               >
                 <LogoWebsite />
               </div>
               {/* White logo (hero) — absolute overlaid, fades out on scroll */}
               <div
-                className="absolute inset-0 transition-opacity duration-500 ease-in-out"
+                className="absolute inset-0 transition-opacity duration-300 ease-out"
                 style={{ opacity: (showFilterButtons || user || location.pathname.includes("search")) ? 0 : 1 }}
               >
                 <HomeLogoWebsite variant="dark" />
