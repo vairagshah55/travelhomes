@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Button } from "../../components/ui/button";
 import Header, { HomeHeader } from "../../components/Header";
@@ -33,6 +34,11 @@ import {
   ChevronRight,
   Mail,
   Phone,
+  Eye,
+  EyeOff,
+  X as XIcon,
+  CircleCheck,
+  CircleX,
 } from "lucide-react";
 import MobileUserNav from "@/components/MobileUserNav";
 import { Card } from "@/components/ui/card";
@@ -70,7 +76,7 @@ import { StayDetailsSkeleton } from "@/utils/UniqueStaysSkeleton";
 export default function UniqueStayDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, login } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPricing, setSelectedPricing] = useState("per-night");
   const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
@@ -94,6 +100,12 @@ export default function UniqueStayDetails() {
   const [reserveOpen, setReserveOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginFieldErrors, setLoginFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -308,35 +320,28 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
   const allTabs = [
     { id: "overview", label: "Overview", hasContent: true },
     { id: "amenities", label: "Amenities", hasContent: amenities.length > 0 },
-    { id: "inclusions", label: "Inclusions", hasContent: true },
-    { id: "exclusions", label: "Exclusions", hasContent: true },
-    { id: "policies", label: "Policies & Rules", hasContent: true },
-    { id: "reviews", label: "Reviews", hasContent: allReviews.length > 0 },
-    { id: "owner", label: "Owner Details", hasContent:true },
+    { id: "inclusions", label: "Inclusions", hasContent: inclusions.length > 0 },
+    { id: "exclusions", label: "Exclusions", hasContent: exclusions.length > 0 },
+    { id: "policies", label: "Policies & Rules", hasContent: policies.length > 0 },
+    { id: "reviews", label: "Reviews", hasContent: true },
+    { id: "owner", label: "Owner Details", hasContent: true },
   ];
 
   const tabs = allTabs.filter(tab => tab.hasContent);
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = tabs.map(tab => document.getElementById(tab.id)).filter(Boolean) as HTMLElement[];
-      let current = '';
-
-      sections.forEach(section => {
-        const rect = section.getBoundingClientRect();
-        if (rect.top <= 200 && rect.bottom >= 200) { // 200px from top
-          current = section.id;
+      const sections = tabs.map(t => document.getElementById(t.id)).filter(Boolean) as HTMLElement[];
+      for (let i = sections.length - 1; i >= 0; i--) {
+        if (sections[i].getBoundingClientRect().top <= 120) {
+          if (activeTab !== tabs[i].id) setActiveTab(tabs[i].id);
+          break;
         }
-      });
-
-      if (current && current !== activeTab) {
-        setActiveTab(current);
       }
     };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [tabs]); // Removed activeTab from dependencies to prevent re-renders
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [tabs]);
 
   
   const galleryImages = stay?.photos?.galleryUrls && stay.photos.galleryUrls.length > 0
@@ -348,652 +353,296 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
       {(loadingStay || loadingVendor) && <StayDetailsSkeleton />}
       {!(loadingStay || loadingVendor) && (
         <>
-          <div className="min-h-screen font-sans flex-col flex gap-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-        {/* <Header variant="transparent" className="fixed w-full z-50" /> */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="min-h-screen font-sans flex-col flex gap-0 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors"
+          >
+        <Header callbackFun={() => {}} onNavigate={() => {}} />
 
-        <div ref={contentRef} className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-5 z-30">
+        <div ref={contentRef} className="max-w-[1440px] mx-auto px-4 sm:px-6 py-5 z-10">
           {/* Back Navigation */}
-          
-            <button
-              onClick={() => navigate(-1)}
-              className="text-gray-600 flex gap-1 items-center dark:bg-black dark:text-white hover:text-black transition-colors"
-            >
-              <IoIosArrowBack size={20}/> Back
-            </button>
-         
+          <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4">
+            <IoIosArrowBack size={16} /> Back
+          </button>
 
           {/* Header Section */}
-          <div className="mb-3">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold text-black dark:bg-black dark:text-white mt-4">
-                  {stay?.name || "Loading..."}
-                </h1>
-                <div className="flex items-center gap-4 mb-4">
-                  {/* <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-black dark:bg-black dark:text-white text-black" />
-                    <span className="font-medium text-black dark:bg-black dark:text-white">
-                      4.91
-                    </span>
-                  </div>
-                  <span className="text-gray-500 dark:bg-black dark:text-white">
-                    •
-                  </span>
-                  <span className="text-gray-600  dark:bg-black dark:text-whiteunderline cursor-pointer dark:text-white">
-                    15 reviews
-                  </span>
-                  <span className="text-gray-500 dark:bg-black dark:text-white">
-                    •
-                  </span> */}
-                  <div className="flex items-center dark:bg-black dark:text-white gap-1 text-gray-600">
-                    <MapPin className="w-4 h-4 dark:bg-black dark:text-white" />
-                    <span>
-                      {[stay?.city, stay?.state]
-                        .filter(Boolean)
-                        .join(", ") ||
-                        "Location Loading..."}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
-                  onClick={() => setShowShareModal(true)}
-                >
-                  <RiShareCircleFill className="w-6 h-4 -rotate-45" />
-                  Share
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
-                  onClick={() => {
-                    setIsFavorite(!isFavorite);
-                    toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
-                  }}
-                >
-                  <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-                  Save
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      navigate("/payment", { 
-                        state: { 
-                          service: stay, 
-                          type: "activity",
-                          checkInDate,
-                          checkOutDate,
-                          guests
-                        } 
-                      });
-                    } else {
-                      navigate("/register");
-                    }
-                  }}
-                >
-                  Reserve
-                </Button>
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }} className="mb-5">
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
+                {stay?.name}
+              </h1>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button onClick={() => setShowShareModal(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300">
+                  <RiShareCircleFill className="w-4 h-4 -rotate-45" /><span className="hidden sm:inline">Share</span>
+                </button>
+                <button onClick={() => { if (!isAuthenticated) { setShowLoginModal(true); return; } setIsFavorite(!isFavorite); toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!"); }} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300">
+                  <Heart className={`w-4 h-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 scale-110" : ""}`} /><span className="hidden sm:inline">Save</span>
+                </button>
               </div>
             </div>
-          </div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{[stay?.city, stay?.state].filter(Boolean).join(", ")}</span>
+              </div>
+              <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 fill-current text-gray-900 dark:text-white" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">4.91</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[13px] text-gray-600 dark:text-gray-300">
+              {[
+                stay?.personCapacity && `${stay.personCapacity} persons`,
+                stay?.timeDuration,
+                ...(stay?.features || []).slice(0, 3),
+              ].filter(Boolean).map((item, i) => (
+                <span key={i} className="px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-[12px] font-medium">{item}</span>
+              ))}
+            </div>
+          </motion.div>
 
           {/* Image Gallery */}
-          <div className="mb-3 max-w-[1280px] mx-auto">
-            <div
-              className="
-      grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4
-      w-full h-[200px] sm:h-[300px] lg:h-[400px] aspect-[16/9]
-    "
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+            className="mb-4 w-full max-w-[1280px]"
+          >
+            {/* Mobile: Single hero image */}
+            <div className="md:hidden relative rounded-2xl overflow-hidden aspect-[16/10]"
+              onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
             >
-              {/* Main Left Image */}
-              <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl">
-                <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                  src={
-                     getImageUrl(stay?.photos?.coverUrl) ||
-                     getImageUrl(stay?.photos?.galleryUrls?.[0])        }
-                  onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
-                  alt={stay?.name || stay?.title || "Stay Main"}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-              </div>
-
-              {/* Top Right Images */}
-              <div className="col-span-2 grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="relative overflow-hidden rounded-xl aspect-[16/9]"
-                  >
-                    <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                      src={
-                         getImageUrl(stay?.photos?.galleryUrls?.[i])   }
-                      onClick={() => { setPhotoIndex(i + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
-                      alt={stay?.name || stay?.title || `Stay ${i}`}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Bottom Right Image */}
-              <div className="col-span-2 relative overflow-hidden rounded-xl">
-                <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                  src={
-                     getImageUrl(stay?.photos?.galleryUrls?.[3])       }
-                  onClick={() => { setPhotoIndex(3 + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
-                  alt={stay?.name || stay?.title || "Stay Bottom"}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-
-                {/* Overlay button */}
-                <div className="absolute bottom-4 right-4">
-                  <button
-                    onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
-                    className="
-            bg-white/90 text-black text-sm lg:text-base font-medium
-            px-4 py-2 rounded-lg shadow-sm hover:bg-white
-            transition-all duration-300 hover:shadow-md
-          "
-                  >
-                    View all +{stay?.photos?.galleryUrls?.length || 0} photos
-                  </button>
-                </div>
+              <img src={getImageUrl(stay?.photos?.coverUrl) || getImageUrl(stay?.photos?.galleryUrls?.[0])} alt={stay?.name || "Activity"} className="w-full h-full object-cover" draggable={false} onContextMenu={(e) => e.preventDefault()} />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              <div className="absolute bottom-3 right-3">
+                <button className="bg-white/90 backdrop-blur-sm text-black text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">{galleryImages.length} photos</button>
               </div>
             </div>
-          </div>
 
-             <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-1">
+            {/* Desktop: Grid gallery */}
+            <div className="hidden md:grid grid-cols-4 gap-2 lg:gap-3 h-[340px] lg:h-[420px]">
+              <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
+                <img src={getImageUrl(stay?.photos?.coverUrl) || getImageUrl(stay?.photos?.galleryUrls?.[0])} onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }} alt={stay?.name || "Activity"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" draggable={false} onContextMenu={(e) => e.preventDefault()} />
+              </div>
+              {[1, 2].map((i) => (
+                <div key={i} className="relative overflow-hidden rounded-xl cursor-pointer group">
+                  <img src={getImageUrl(stay?.photos?.galleryUrls?.[i])} onClick={() => { setPhotoIndex(i + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }} alt={`${stay?.name || "Activity"} ${i}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" draggable={false} onContextMenu={(e) => e.preventDefault()} />
+                </div>
+              ))}
+              <div className="col-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
+                <img src={getImageUrl(stay?.photos?.galleryUrls?.[3])} onClick={() => { setPhotoIndex(3 + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }} alt={stay?.name || "Activity"} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" draggable={false} onContextMenu={(e) => e.preventDefault()} />
+                <button onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }} className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-black text-sm font-medium px-4 py-2 rounded-full shadow-sm hover:bg-white hover:shadow-md transition-all duration-200">View all {galleryImages.length} photos</button>
+              </div>
+            </div>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-1">
             {/* Main Content */}
-            <div className="lg:col-span-2 space-y-12 mt-3 ">
-              {/* Tabs */}
-              <div className="sticky top-0 z-40 bg-white  border-gray-200 mb-8 dark:bg-black dark:text-white border-b">
-                <div className="flex overflow-x-auto scrollbar-hide">
+            <div className="lg:col-span-2 mt-3">
+              {/* Sticky Nav Bar */}
+              <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-8">
+                <div className="flex overflow-x-auto scrollbar-hide gap-1 relative">
                   {tabs.map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => {
                         setActiveTab(tab.id);
-                        const element = document.getElementById(tab.id);
-const yOffset = -120; // Adjust for sticky header height
-const y = element.getBoundingClientRect().top + window.scrollY + yOffset;
-window.scrollTo({ top: y, behavior: "smooth" });
-
+                        const el = document.getElementById(tab.id);
+                        if (el) { const y = el.getBoundingClientRect().top + window.scrollY - 80; window.scrollTo({ top: y, behavior: "smooth" }); }
                       }}
-                      className={`px-6 py-4 text-base font-medium whitespace-nowrap border-b-2 transition-colors ${
-                        activeTab === tab.id
-                          ? "border-black dark:border-white dark:text-white text-black"
-                          : "border-transparent dark:text-white text-gray-500 hover:text-gray-700"
+                      className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
+                        activeTab === tab.id ? "text-gray-900 dark:text-white" : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                       }`}
                     >
                       {tab.label}
+                      {activeTab === tab.id && (
+                        <motion.div layoutId="activity-tab-indicator" className="absolute bottom-0 left-2 right-2 h-0.5 bg-gray-900 dark:bg-white rounded-full" transition={{ type: "spring", stiffness: 400, damping: 30 }} />
+                      )}
                     </button>
                   ))}
                 </div>
+                <div className="h-px bg-gray-200 dark:bg-gray-700" />
               </div>
 
-              {/* Tab Content */}
-              <div id="overview" className="scroll-mt-[120px] space-y-10">
-                <div className="space-y-1 w-full">
-                  <h3 className="text-xl font-semibold text-black dark:text-white">Overview</h3>
-                  <ReadMore children={description} maxCharacters={220} dialogTitle="Full Description"/>
+              {/* All sections stacked — scroll into view */}
+              <div className="space-y-12">
+
+              <div id="overview" className="scroll-mt-24 space-y-3">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">About this activity</h3>
+                <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                  <ReadMore children={description} maxCharacters={400} dialogTitle="Full Description"/>
                 </div>
-                <hr className="border-gray-200 dark:border-gray-700" />
               </div>
 
               
 
-              <div id="amenities" className="scroll-mt-[120px] space-y-8">
-                  <h2 className="text-xl font-semibold text-black dark:text-white">
-                    Amenities
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-32 gap-y-6">
-                    {visibleAmenities.slice(0, 6).map((amenity, index) => (
-                      <div key={index} className="flex text-base font-medium items-center gap-4">
-                        <span className="text-xl">
-                          <amenity.icon className="w-6 h-6 text-black dark:text-white" />
-                        </span>
-
-                        <span className="text-sm font-normal text-gray-800 dark:text-gray-200">
-                          {amenity.name}
-                        </span>
+              {amenities.length > 0 && (
+              <div id="amenities" className="scroll-mt-24 space-y-5">
+                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Features & Amenities</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {visibleAmenities.map((amenity, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                        <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                       </div>
-                    ))}
-                  </div>
-
-                  {!showAll && amenities.length > 6 && (
-                  <Button
-                    variant="outline"
-                    className="border-black dark:border-gray-700 px-6 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white"
-                    onClick={() => setOpenAmenitiesModal(true)}
-                  >
-                    See All {amenities.length} Amenities
-                  </Button>
-                  )}
+                      <span className="text-sm font-normal text-gray-800 dark:text-gray-200">
+                        {amenity.name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              <Dialog open={openAmenitiesModal} onOpenChange={setOpenAmenitiesModal}>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto dark:bg-black dark:text-white">
-                  <DialogHeader>
-                    <DialogTitle className="text-xl font-semibold">
-                      All Amenities
-                    </DialogTitle>
-                  </DialogHeader>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4 mt-4">
-                    {amenities.map((amenity, index) => (
-                      <div key={index} className="flex text-base font-medium items-center gap-4">
-                        <amenity.icon className="w-6 h-6 text-black dark:text-white" />
-                        <span className="text-sm font-normal dark:text-gray-200">{amenity.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {!showAll && amenities.length > 12 && (
+                <button onClick={() => setShowAll(true)} className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600">Show all {amenities.length} amenities</button>
+              )}
+              </div>
+              )}
 
-                <div id="inclusions" className="scroll-mt-[200px] space-y-8">
-                  <h3 className="text-xl font-semibold text-black dark:text-white">Inclusions</h3>
-                  <ReadMore children={inclusionsText} maxCharacters={220} dialogTitle="Full Inclusions"/>
+              {/* Inclusions */}
+              {inclusions.length > 0 && (
+              <div id="inclusions" className="scroll-mt-24">
+                <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Inclusions</h3>
+                <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10 p-5">
+                  <div className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-line">{inclusions.join("\n")}</div>
                 </div>
-                
-  <div id="exclusions" className="scroll-mt-[120px] space-y-3">
-                  <h3 className="text-xl font-semibold text-black dark:text-white">Exclusions</h3>
-                  <ReadMore children={exclusionsText} maxCharacters={220} dialogTitle="Full Exclusions"/>
+              </div>
+              )}
+
+              {/* Exclusions */}
+              {exclusions.length > 0 && (
+              <div id="exclusions" className="scroll-mt-24">
+                <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Exclusions</h3>
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 p-5">
+                  <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">{exclusions.join("\n")}</div>
                 </div>
+              </div>
+              )}
               
 
-              <div id="policies" className="scroll-mt-[120px] space-y-6">
-                  <h3 className="text-xl font-semibold text-black dark:text-white">Policies & Rules</h3>
-                  <ReadMore children={visiblePolicies} maxCharacters={220} dialogTitle="Full Policies"/>
-                </div>
-
-              <div id="reviews" className="scroll-mt-[120px] space-y-8">
-                  <div className="flex justify-between items-center">
-                    <h2 className="text-xl font-semibold text-black dark:text-white">
-                      Reviews
-                    </h2>
-                    {/* <Button
-                      className="bg-black text-white rounded-full px-6 hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                      onClick={() => alert("Opening review form...")}
-                    >
-                      Add Review
-                    </Button> */}
+              {/* Policies & Rules */}
+              {policies.length > 0 && (
+              <div id="policies" className="scroll-mt-24">
+                <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                   </div>
-
-                  {allReviews.length > 0 ? (
-                    <>
-                      {/* Summary Section would go here if we had aggregated data */}
-                      
-                      {/* Reviews List */}
-                      <div className="space-y-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          {visibleReviews.map((review, index) => (
-                            <div key={index} className="space-y-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-300 rounded-full">
-                                  <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                                    src={review.profile}
-                                    className="rounded-full w-10 h-10 object-cover"
-                                  />
-                                </div>
-                                <div>
-                                  <div className="text-base font-medium text-black dark:text-white">
-                                    {review.name}
-                                  </div>
-                                  <div className="text-bsmase font-normal text-gray-500 dark:text-gray-400">
-                                    {review.date}
-                                  </div>
-                                </div>
-                              </div>
-                              <p className="text-gray-800 dark:text-gray-200 text-sm font-normal">
-                                {review.review}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* See All Reviews Button */}
-                      {allReviews.length > 2 && (
-                        <Button
-                          variant="outline"
-                          className="border-black dark:border-gray-700 px-8 py-3 rounded-full hover:bg-gray-50 dark:hover:bg-gray-800 text-black dark:text-white"
-                          onClick={() => setOpenReviewsDialog(true)}
-                        >
-                          See All {allReviews.length} Reviews
-                        </Button>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-gray-500 dark:text-gray-400">No reviews yet.</p>
-                  )}
-
-                  <Dialog open={openReviewsDialog} onOpenChange={setOpenReviewsDialog}>
-                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto dark:bg-black dark:text-white">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl font-semibold">
-                          All Reviews
-                        </DialogTitle>
-                      </DialogHeader>
-
-                      <div className="space-y-8 mt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                          {allReviews.map((review, index) => (
-                            <div key={index} className="space-y-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full">
-                                  <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                                    src={review.profile}
-                                    className="rounded-full w-10 h-10 object-cover"
-                                  />
-                                </div>
-                                <div>
-                                  <div className="text-base font-medium text-black dark:text-white">
-                                    {review.name}
-                                  </div>
-                                  <div className="text-[13px] font-normal text-gray-500 dark:text-gray-400">
-                                    {review.date}
-                                  </div>
-                                </div>
-                              </div>
-                              <p className="text-gray-800 dark:text-gray-200 text-sm font-normal">
-                                {review.review}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">House Rules</h3>
                 </div>
-
-              <div id="owner" className="scroll-mt-[120px] space-y-8">
-                  <h2 className="text-xl font-semibold text-black dark:text-white">
-                    Owner Details
-                  </h2>
-
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* Owner Card */}
-                    <div className="p-10 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900 shadow-sm dark:shadow-none">
-                      <div className="flex items-center gap-8">
-                        <div className="flex flex-col items-center gap-4">
-                          <div className="w-20 h-20 bg-gray-300 dark:bg-gray-700 rounded-full">
-                            <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                              src={vendor?.photo || "/User.jpg"}
-                              alt={
-                                vendor?.brandName ||
-                                vendor?.personName ||
-                                "Owner"
-                              }
-                              className="rounded-full w-20 h-20 object-cover"
-                            />
-                          </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-black dark:text-white">
-                             <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                                  {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
-                              </p>
-                            </div>
-                            <div className="text-base font-medium text-gray-500 dark:text-gray-400">
-                              {vendor?.location &&
-                               [
-                                  vendor?.businessLocality || vendor?.business?.locality,
-                                  vendor?.businessCity || vendor?.business?.city,
-                                  vendor?.businessState || vendor?.business?.state
-                               ]}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 space-y-4">
-                          {vendor?.reviewCount && (
-                          <div className="text-center">
-                            <div className="text-xl font-semibold text-black dark:text-white">
-                              {vendor.reviewCount}
-                            </div>
-                            <div className="text-base font-medium text-black dark:text-gray-300">Reviews</div>
-                          </div>
-                          )}
-
-                          {vendor?.rating && (
-                          <div className="flex items-center gap-2 justify-center">
-                            <div className="ttext-xl font-semibold text-black dark:text-white">
-                              {vendor.rating}
-                            </div>
-                            <Star className="w-4 h-4 fill-black dark:fill-white text-black dark:text-white" />
-                            <div className="text-base font-medium text-black dark:text-gray-300">Rating</div>
-                          </div>
-                          )}
-                          
-                          {/* {(vendor?.businessEmail || vendor?.business?.email || vendor?.email) && (
-                              <div className="flex items-center gap-2 justify-center">
-                                  <Mail className="w-4 h-4 text-gray-500" />
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      {vendor?.businessEmail || vendor?.business?.email || vendor?.email}
-                                  </span>
-                              </div>
-                          )} */}
-                          
-                          {/* {(vendor?.businessPhone || vendor?.business?.phone || vendor?.phoneNumber) && (
-                              <div className="flex items-center gap-2 justify-center">
-                                  <Phone className="w-4 h-4 text-gray-500" />
-                                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                                      {vendor?.businessPhone || vendor?.business?.phone || vendor?.phoneNumber}
-                                  </span>
-                              </div>
-                          )} */}
-                        </div>
-                      </div>
-                      
-                      {/* Additional Business Details */}
-                      {/* <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
-                           {(vendor?.legalCompanyName || vendor?.business?.legalCompanyName) && (
-                              <div className="flex justify-between">
-                                  <span className="text-sm font-medium text-gray-500">Legal Company Name</span>
-                                  <span className="text-sm text-black dark:text-white font-medium">{vendor?.legalCompanyName || vendor?.business?.legalCompanyName}</span>
-                              </div>
-                           )}
-                           {(vendor?.businessAddress || (vendor?.businessLocality || vendor?.business?.locality)) && (
-                              <div className="flex flex-col gap-1">
-                                  <span className="text-sm font-medium text-gray-500">Business Address</span>
-                                  <span className="text-sm text-black dark:text-white font-medium">
-                                      {[
-                                          vendor?.businessLocality || vendor?.business?.locality,
-                                          vendor?.businessCity || vendor?.business?.city,
-                                          vendor?.businessState || vendor?.business?.state,
-                                          vendor?.businessPincode || vendor?.business?.pincode
-                                      ].filter(Boolean).join(", ")}
-                                  </span>
-                              </div>
-                           )}
-                      </div> */}
+                <div className="rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                  {policies.map((rule, i) => (
+                    <div key={i} className={`flex items-center gap-4 px-5 py-4 ${i !== policies.length - 1 ? "border-b border-gray-50 dark:border-gray-700/50" : ""} hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors`}>
+                      <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">{i + 1}</span>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{rule}</span>
                     </div>
+                  ))}
+                </div>
+              </div>
+              )}
 
+              {/* Reviews */}
+              <div id="reviews" className="scroll-mt-24 space-y-6">
+                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reviews</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 italic">No reviews yet. Be the first to leave a review.</p>
+              </div>
 
-                 
-
-                    {/* Owner Info */}
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-xl font-semibold text-black dark:text-white mb-2">
-                          Verified by Travelhomes
-                        </h3>
-                        <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                          Listing verified by Travelhomes.
-                        </p>
-                      </div>
-
-                    
-                      
-                      {/* Personal Details if available and different from business */}
-                      {(vendor?.firstName || vendor?.lastName || vendor?.personal?.firstName || vendor?.personal?.lastName) && (
-                          <div>
-                               <h3 className="text-xl font-semibold text-black dark:text-white mb-2">
-                                  Host
-                              </h3>
-                              <p className="text-[13px] font-normal text-gray-700 dark:text-gray-300">
-                                  {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
-                              </p>
-                          </div>
-                      )}
-
-                      <Button
-                        className="bg-black text-white rounded-full px-6 py-2 text-sm font-bold hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                        onClick={handleContactOwner}
-                      >
-                        Contact Owner
-                      </Button>
+              {/* Owner */}
+              <div id="owner" className="scroll-mt-24 space-y-5">
+                <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Hosted by</h3>
+                <div className="flex items-center gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700">
+                  <img src={vendor?.photo || "/User.jpg"} alt={vendor?.brandName || "Owner"} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-gray-900 dark:text-white">
+                      {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      {[vendor?.businessCity || vendor?.business?.city, vendor?.businessState || vendor?.business?.state].filter(Boolean).join(", ")}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1">
+                      {vendor?.rating && (<span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300"><Star className="w-3 h-3 fill-current" /> {vendor.rating}</span>)}
+                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
                     </div>
                   </div>
+                  <Button size="sm" className="bg-gray-900 text-white rounded-full px-4 text-xs hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0" onClick={handleContactOwner}>Contact</Button>
                 </div>
+              </div>
+
+              </div>
             </div>
 
             {/* Sidebar - Booking Card */}
-            <div className="lg:col-span-1 mt-24">
-              <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 rounded-3xl p-8 shadow-lg">
-               
+            <div className="lg:col-span-1 lg:mt-24 mt-8">
+              <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 dark:border-gray-700 rounded-3xl p-6 sm:p-8 shadow-lg">
+
+                {/* Price + Savings */}
+                <div className="mb-5">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    {stay?.regularPrice && <span className="text-sm text-gray-400 line-through">₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}</span>}
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{Number(stay?.regularPrice || 0).toLocaleString()}</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">/ person</span>
+                    {stay?.regularPrice && <span className="ml-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold">Save 17%</span>}
+                  </div>
+                </div>
+
+                {/* Rare find */}
+                <div className="flex items-start gap-3 p-3 mb-5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                  <span className="text-lg flex-shrink-0">💎</span>
+                  <div>
+                    <div className="text-sm font-semibold text-rose-800 dark:text-rose-300">Rare find</div>
+                    <div className="text-xs text-rose-600 dark:text-rose-400">This activity is usually booked. Don't miss out.</div>
+                  </div>
+                </div>
 
                 {/* Booking Form */}
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-1 gap-4">
-                    {/* Date Selection */}
                     <div className="relative z-50" ref={calendarRef}>
-                      <div
-                        className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          setShowCalendarDropdown(!showCalendarDropdown);
-                          setShowGuestDropdown(false);
-                        }}
-                      >
+                      <div className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors" onClick={() => { setShowCalendarDropdown(!showCalendarDropdown); setShowGuestDropdown(false); }}>
                         <div className="flex justify-between items-center mb-4">
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Calendar className="w-4 h-4  " />
-                            <span className="text-sm font-medium">Date</span>
-                          </div>
+                          <div className="flex items-center gap-2 text-gray-500"><Calendar className="w-4 h-4" /><span className="text-sm font-medium">Date</span></div>
                           <ChevronDown className="w-4 h-4 text-gray-600" />
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm font-medium text-black">
-                            {checkInDate}
-                          </span>
+                          <span className="text-sm font-medium text-black">{checkInDate}</span>
                           <ArrowRight className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm font-medium text-black">
-                            {checkOutDate}
-                          </span>
+                          <span className="text-sm font-medium text-black">{checkOutDate}</span>
                         </div>
                       </div>
-                      {showCalendarDropdown && (
-                        <CalendarDropdown
-                          onClose={() => setShowCalendarDropdown(false)}
-                          onSelect={(range) => {
-                            setCheckInDate(range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-                            setCheckOutDate(range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
-                            setShowCalendarDropdown(false);
-                          }}
-                        />
-                      )}
+                      {showCalendarDropdown && (<CalendarDropdown onClose={() => setShowCalendarDropdown(false)} onSelect={(range) => { setCheckInDate(range.start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })); setCheckOutDate(range.end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })); setShowCalendarDropdown(false); }} />)}
                     </div>
 
-                    {/* Guest Selection */}
                     <div className="relative" ref={guestRef}>
-                      <div
-                        className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          setShowGuestDropdown(!showGuestDropdown);
-                          setShowCalendarDropdown(false);
-                        }}
-                      >
+                      <div className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors" onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowCalendarDropdown(false); }}>
                         <div className="flex justify-between items-center mb-4">
-                          <div className="flex items-center gap-2 text-gray-500">
-                            <Users className="w-4 h-4" />
-                            <span className="text-sm font-medium">Guest</span>
-                          </div>
+                          <div className="flex items-center gap-2 text-gray-500"><Users className="w-4 h-4" /><span className="text-sm font-medium">Guests</span></div>
                           <ChevronDown className="w-4 h-4 text-gray-600" />
                         </div>
-                        <span className="text-sm font-medium text-black">
-                          {guests.adults + guests.children + guests.infants}{" "}
-                          Guests
-                        </span>
+                        <span className="text-sm font-medium text-black">{guests.adults + guests.children + guests.infants} Guests</span>
                       </div>
-                      {showGuestDropdown && (
-                        <GuestDropdown
-                          guests={guests}
-                          onUpdate={setGuests}
-                          onClose={() => setShowGuestDropdown(false)}
-                        />
-                      )}
-                    </div>
-
-                    {/*Rate Selection*/}
-                    <div className="relative">
-                      <div
-                        className="p-4 flex justify-between border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                        onClick={() => {
-                          // setShowGuestDropdown(!showGuestDropdown);
-                          setShowCalendarDropdown(false);
-                        }}
-                      >
-                        <span className="text-sm font-medium text-black">
-                          {/* {guests.adults + guests.children + guests.infants}{" "} */}
-                          Total
-                        </span>
-                        <div className="text-xl font-bold text-black dark:text-white">
-                    {selectedPricing === "per-night"
-                      ? `₹${stay?.regularPrice ?? "—"}`
-                      : `₹${typeof stay?.regularPrice === "number" ? (Number(stay?.regularPrice) * 7).toLocaleString() : "—"}`}
-                    <span className="text-lg text-gray-700 dark:text-white font-normal">
-                      /{selectedPricing === "per-night" ? "night" : "week"}
-                    </span>
-                  </div>
-                      </div>
-                      
+                      {showGuestDropdown && (<GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => setShowGuestDropdown(false)} />)}
                     </div>
                   </div>
                 </div>
 
-                {/* Reserve Button */}
-                <Button
-                  className="w-full bg-black dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors mb-6"
-                  onClick={() => {
-                    navigate("/payment", {
-                      state: {
-                        offerId: id,
-                        checkInDate: checkInDate,
-                        checkOutDate: checkOutDate,
-                        guests,
-                        serviceType: 'activity',
-                        service: stay,
-                        type: "activity"
-                      }
-                    });
-                  }}
-                >
+                <Button className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors mb-6" onClick={() => { navigate("/payment", { state: { offerId: id, checkInDate, checkOutDate, guests, serviceType: 'activity', service: stay, type: "activity" } }); }}>
                   Reserve
                 </Button>
-
-              
               </div>
             </div>
           </div>
-          {/* More Stays Section */}
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold text-black mb-8 dark:bg-black dark:text-white">
-              More {stay ? "activities" : "activities"}
-            </h2>
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((index) => (
-                <UniqueStayCard key={index} />
-              ))}
-            </div> */}
-            <DefaultCard CardData={stayShown} />
-          </div>
         </div>
 
-        {/* <Footer /> */}
+        <div className="mt-10"><Footer /></div>
 
         {/* Photo Gallery Modal */}
         <PhotoGallery
@@ -1169,7 +818,24 @@ window.scrollTo({ top: y, behavior: "smooth" });
           contentRef={pdfRef}
           isDarkMode={isDarkMode}
         />
+      </motion.div>
+
+      {/* Sticky mobile booking bar */}
+      <div className="lg:hidden fixed bottom-14 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              {stay?.regularPrice && <span className="text-xs text-gray-400 line-through">₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}</span>}
+              <span className="text-lg font-bold text-gray-900 dark:text-white">₹{Number(stay?.regularPrice || 0).toLocaleString()}</span>
+              <span className="text-xs text-gray-500">/ person</span>
+            </div>
+          </div>
+          <Button className="bg-gray-900 dark:bg-white dark:text-black text-white rounded-full px-6 h-11 text-sm font-semibold hover:bg-gray-800 flex-shrink-0 shadow-md" onClick={() => { navigate("/payment", { state: { offerId: id, checkInDate, checkOutDate, guests, serviceType: 'activity', service: stay, type: "activity" } }); }}>
+            Book now
+          </Button>
+        </div>
       </div>
+
       <div className="fixed bottom-0 left-0 right-0 z-50 dark:bg-black dark:text-white bg-white border-t border-gray-200 dark:border-gray-800 shadow-md">
         <MobileUserNav />
       </div>
