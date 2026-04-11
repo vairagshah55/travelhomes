@@ -179,14 +179,16 @@ export default function Index() {
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showLocationToDropdown, setShowLocationToDropdown] = useState(false);
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
+  const [guestsConfirmed, setGuestsConfirmed] = useState(false);
   // const [showCalendar, setShowCalendar] = useState(false);
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+  const [searchErrors, setSearchErrors] = useState<Record<string, string>>({});
   // const [selectedTime, setSelectedTime] = useState("10:00 AM");
   const [selectedLocation, setSelectedLocation] = useState("");
   // const [checkInDate, setCheckInDate] = useState('01/02/2025');
   // const [checkOutDate, setCheckOutDate] = useState('04/02/2025');
   const [guests, setGuests] = useState({
-    adults: 0,
+    adults: 1,
     children: 0,
     infants: 0,
     pet: 0,
@@ -206,6 +208,19 @@ export default function Index() {
 
   // Handle search navigation
   const handleSearch = () => {
+    const errors: Record<string, string> = {};
+    if (!selectedLocation.trim()) errors.location = "Required";
+    if (activeFilter === "camper-van" && !selectedLocationTo.trim()) errors.locationTo = "Required";
+    if (!checkInDate) errors.checkin = "Required";
+    if (activeFilter !== "activity" && !checkOutDate) errors.checkout = "Required";
+    if (activeFilter === "activity" && (!activityName.trim() || activityName === "Tracking")) errors.activity = "Required";
+
+    if (Object.keys(errors).length > 0) {
+      setSearchErrors(errors);
+      return;
+    }
+    setSearchErrors({});
+
     const params = new URLSearchParams({
       filter: activeFilter,
       location: selectedLocation,
@@ -259,6 +274,25 @@ export default function Index() {
         capture: true,
       });
   }, []);
+
+  useEffect(() => {
+    const closeDropdowns = () => {
+      setShowLocationDropdown(false);
+      setShowLocationToDropdown(false);
+      setShowGuestDropdown(false);
+      setShowCalendar(false);
+      setShowActivityDropdown(false);
+    };
+    window.addEventListener("scroll", closeDropdowns, { passive: true });
+    return () => window.removeEventListener("scroll", closeDropdowns);
+  }, []);
+
+  useEffect(() => { if (selectedLocation) setSearchErrors((e) => { const { location, ...rest } = e; return rest; }); }, [selectedLocation]);
+  useEffect(() => { if (selectedLocationTo) setSearchErrors((e) => { const { locationTo, ...rest } = e; return rest; }); }, [selectedLocationTo]);
+  useEffect(() => { if (checkInDate) setSearchErrors((e) => { const { checkin, ...rest } = e; return rest; }); }, [checkInDate]);
+  useEffect(() => { if (checkOutDate) setSearchErrors((e) => { const { checkout, ...rest } = e; return rest; }); }, [checkOutDate]);
+  useEffect(() => { if (activityName && activityName !== "Tracking") setSearchErrors((e) => { const { activity, ...rest } = e; return rest; }); }, [activityName]);
+  useEffect(() => { setSearchErrors({}); }, [activeFilter]);
 
   // Callback to receive date range
   const handleDateRangeSelect = (range: { start: Date; end: Date }) => {
@@ -945,382 +979,196 @@ export default function Index() {
               transition={{ delay: 0.75, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             >
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.28)] ring-1 ring-white/20 p-3 md:p-4 relative overflow-visible z-50">
-              {/* Activity Filter */}
+
+              {/* ── Activity Filter ──────────────────── */}
               {activeFilter === "activity" && (
-                <div className="flex flex-col lg:flex-row lg:items-center gap-3 md:gap-6 lg:gap-0">
-                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-center gap-3 md:gap-6 lg:gap-0">
-                    {/* Location Field */}
-                    <div
-                      className={`flex flex-col gap-1 md:gap-2 flex-1 min-w-0 relative px-4 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={locationRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">Location</span>
+                <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0">
+                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs font-medium">Location</span>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Search location"
-                        value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
-                        onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }}
-                        onFocus={() => setShowLocationDropdown(true)}
-                        className="w-full px-1 bg-transparent text-black font-medium text-md focus:outline-none placeholder:text-gray-400"
-                      />
-                      {showLocationDropdown && (
-                        <LocationDropdown
-                          searchQuery={selectedLocation}
-                          onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }}
-                          onClose={() => setShowLocationDropdown(false)}
-                        />
-                      )}
+                      <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
+                      {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
+                      {searchErrors.location && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
                     </div>
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0"></div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    {/* Date Field */}
-                    <div
-                      ref={calendarRef}
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm">Date</span>
+                    <div ref={calendarRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-xs font-medium">Date</span>
                       </div>
-                      <button
-                        onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }}
-                        className={`font-medium text-md ${checkInDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
-                      >
-                        {checkInDate
-                          ? `${checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - ${checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}`
-                          : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
+                        {checkInDate ? `${checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - ${checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}` : "Add date"}
                       </button>
-                      {showCalendar && (
-                        <CalendarDropdown
-                          onSelect={handleDateRangeSelect}
-                          onClose={() => setShowCalendar(false)}
-                          selectedRange={{ start: checkInDate, end: checkOutDate }}
-                        />
-                      )}
+                      {showCalendar && <CalendarDropdown onSelect={handleDateRangeSelect} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
+                      {searchErrors.checkin && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0"></div>
-
-                    {/* Activity Name Field */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 min-w-0 relative px-4 py-2 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={activityRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Star className="w-5 h-5" />
-                        <span className="text-sm">Activity Name</span>
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={activityRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Star className="w-4 h-4" />
+                        <span className="text-xs font-medium">Activity</span>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Search Activity"
-                        value={activityName === "Tracking" ? "" : activityName}
-                        onChange={(e) => { setActivityName(e.target.value); setShowActivityDropdown(true); }}
-                        onFocus={() => setShowActivityDropdown(true)}
-                        className="w-full px-1 bg-transparent text-black font-medium text-md focus:outline-none placeholder:text-gray-400"
-                      />
-                      {showActivityDropdown && (
-                        <ActivityDropdown
-                          onSelect={setActivityName}
-                          onClose={() => setShowActivityDropdown(false)}
-                        />
-                      )}
+                      <input type="text" placeholder="Search activity" value={activityName === "Tracking" ? "" : activityName} onChange={(e) => { setActivityName(e.target.value); setShowActivityDropdown(true); }} onFocus={() => setShowActivityDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
+                      {showActivityDropdown && <ActivityDropdown onSelect={setActivityName} onClose={() => setShowActivityDropdown(false)} />}
+                      {searchErrors.activity && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.activity}</span>}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0"></div>
-
-                    {/* Guests Field */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={guestRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Users className="w-5 h-5" />
-                        <span className="text-sm">Guests</span>
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Users className="w-4 h-4" />
+                        <span className="text-xs font-medium">Guests</span>
                       </div>
-                      <button
-                        onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowActivityDropdown(false); }}
-                        className={`font-medium text-md text-left hover:text-gray-700 transition-colors ${guests.adults + guests.children + guests.infants + guests.pet > 0 ? "text-black" : "text-gray-400"}`}
-                      >
-                        {guests.adults + guests.children + guests.infants || "Add guests"}
+                      <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowActivityDropdown(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
+                        {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                      {showGuestDropdown && (
-                        <GuestDropdown
-                          guests={guests}
-                          onUpdate={setGuests}
-                          onClose={() => setShowGuestDropdown(false)}
-                        />
-                      )}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
-
-                  <div className="flex justify-center lg:flex-shrink-0 lg:ml-4 mt-4 lg:mt-0">
-                    <Button
-                      onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 active:scale-95 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14 transition-all duration-200 shadow-lg hover:shadow-xl"
-                      size="icon"
-                    >
-                      <Search className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-2">
+                    <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg" size="icon">
+                      <Search className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* CamperVan Filter */}
+              {/* ── CamperVan Filter ─────────────────── */}
               {activeFilter === "camper-van" && (
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between w-full">
-                  <div className="flex flex-col gap-6 lg:flex-row lg:flex-1 lg:gap-0">
-                    {/* Location From */}
-                    <div
-                      className={`flex flex-col gap-1 md:gap-2 flex-1 min-w-0 relative px-4 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={locationRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">Location From</span>
+                <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
+                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs font-medium">From</span>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Search location"
-                        value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
-                        onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }}
-                        onFocus={() => setShowLocationDropdown(true)}
-                        className="w-full bg-transparent px-1 text-black font-medium text-md focus:outline-none placeholder:text-gray-400"
-                      />
-                      {showLocationDropdown && (
-                        <LocationDropdown
-                          searchQuery={selectedLocation}
-                          onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }}
-                          onClose={() => setShowLocationDropdown(false)}
-                        />
-                      )}
+                      <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
+                      {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
+                      {searchErrors.location && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Location To */}
-                    <div
-                      className={`flex flex-col gap-1 md:gap-2 flex-1 min-w-0 relative px-4 py-2 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={locationToRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">Location To</span>
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationToRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs font-medium">To</span>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Search location"
-                        value={selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo}
-                        onChange={(e) => { setSelectedLocationTo(e.target.value); setShowLocationToDropdown(true); }}
-                        onFocus={() => setShowLocationToDropdown(true)}
-                        className="w-full bg-transparent px-1 text-black font-medium text-md focus:outline-none placeholder:text-gray-400"
-                      />
-                      {showLocationToDropdown && (
-                        <LocationDropdown
-                          searchQuery={selectedLocationTo}
-                          onSelect={(location) => { setSelectedLocationTo(location); setShowLocationToDropdown(false); }}
-                          onClose={() => setShowLocationToDropdown(false)}
-                        />
-                      )}
+                      <input type="text" placeholder="Search location" value={selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo} onChange={(e) => { setSelectedLocationTo(e.target.value); setShowLocationToDropdown(true); }} onFocus={() => setShowLocationToDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
+                      {showLocationToDropdown && <LocationDropdown searchQuery={selectedLocationTo} onSelect={(location) => { setSelectedLocationTo(location); setShowLocationToDropdown(false); }} onClose={() => setShowLocationToDropdown(false)} />}
+                      {searchErrors.locationTo && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.locationTo}</span>}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Check-in */}
-                    <div
-                      ref={calendarRef}
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm">Check in</span>
+                    <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-xs font-medium">Check in</span>
+                        </div>
+                        <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
+                          {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                        </button>
+                        {searchErrors.checkin && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
                       </div>
-                      <button
-                        onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }}
-                        className={`font-medium text-md ${checkInDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
-                      >
-                        {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-xs font-medium">Check out</span>
+                        </div>
+                        <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
+                          {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                        </button>
+                        {searchErrors.checkout && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkout}</span>}
+                      </div>
+                      {showCalendar && <CalendarDropdown onSelect={(range) => { handleDateRangeSelect(range); }} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
+                    </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
+
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Users className="w-4 h-4" />
+                        <span className="text-xs font-medium">Guests</span>
+                      </div>
+                      <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
+                        {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                      {showCalendar && (
-                        <CalendarDropdown
-                          onSelect={(range) => { handleDateRangeSelect(range); }}
-                          onClose={() => setShowCalendar(false)}
-                          selectedRange={{ start: checkInDate, end: checkOutDate }}
-                        />
-                      )}
-                    </div>
-
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Check-out */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm">Check out</span>
-                      </div>
-                      <button
-                        onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }}
-                        className={`font-medium text-md ${checkOutDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
-                      >
-                        {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                      </button>
-                    </div>
-
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Guests */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 relative min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={guestRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Users className="w-5 h-5" />
-                        <span className="text-sm">Guests</span>
-                      </div>
-                      <button
-                        onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }}
-                        className={`font-medium text-md text-left hover:text-gray-700 transition-colors ${guests.adults + guests.children + guests.infants + guests.pet > 0 ? "text-black" : "text-gray-400"}`}
-                      >
-                        {(guests.adults + guests.children + guests.infants + guests.pet > 0 && `${guests.adults + guests.children + guests.infants + guests.pet} guests`) || "Add guests"}
-                      </button>
-                      {showGuestDropdown && (
-                        <GuestDropdown
-                          guests={guests}
-                          onUpdate={setGuests}
-                          onClose={() => setShowGuestDropdown(false)}
-                        />
-                      )}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
-
-                  <div className="flex justify-center lg:ml-4 mt-4 lg:mt-0">
-                    <Button
-                      onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 active:scale-95 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14 transition-all duration-200 shadow-lg hover:shadow-xl"
-                      size="icon"
-                    >
-                      <Search className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-2">
+                    <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg" size="icon">
+                      <Search className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>
               )}
 
-              {/* Unique Stays Filter */}
+              {/* ── Unique Stays Filter ──────────────── */}
               {activeFilter === "unique-stays" && (
-                <div className="flex flex-col lg:flex-row lg:items-center gap-4 md:gap-6 lg:gap-0">
-                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-center gap-4 md:gap-6 lg:gap-0">
-                    {/* Location */}
-                    <div
-                      className={`flex flex-col gap-1 md:gap-2 flex-1 min-w-0 relative px-4 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={locationRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">Location</span>
+                <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0">
+                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs font-medium">Location</span>
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Search location"
-                        value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
-                        onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }}
-                        onFocus={() => setShowLocationDropdown(true)}
-                        className="w-full px-1 bg-transparent text-black font-medium text-md focus:outline-none placeholder:text-gray-400"
-                      />
-                      {showLocationDropdown && (
-                        <LocationDropdown
-                          searchQuery={selectedLocation}
-                          onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }}
-                          onClose={() => setShowLocationDropdown(false)}
-                        />
-                      )}
+                      <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
+                      {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
+                      {searchErrors.location && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Check-in */}
-                    <div
-                      ref={calendarRef}
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm">Check in</span>
+                    <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-xs font-medium">Check in</span>
+                        </div>
+                        <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
+                          {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                        </button>
+                        {searchErrors.checkin && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
                       </div>
-                      <button
-                        onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }}
-                        className={`font-medium text-md ${checkInDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
-                      >
-                        {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                      </button>
-                      {showCalendar && (
-                        <CalendarDropdown
-                          onSelect={(range) => { handleDateRangeSelect(range); }}
-                          onClose={() => setShowCalendar(false)}
-                          selectedRange={{ start: checkInDate, end: checkOutDate }}
-                        />
-                      )}
+                      <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
+                        <div className="flex items-center gap-1.5 text-gray-400">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-xs font-medium">Check out</span>
+                        </div>
+                        <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
+                          {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                        </button>
+                        {searchErrors.checkout && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkout}</span>}
+                      </div>
+                      {showCalendar && <CalendarDropdown onSelect={(range) => { handleDateRangeSelect(range); }} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
                     </div>
+                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-2" />
 
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Check-out */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Calendar className="w-5 h-5" />
-                        <span className="text-sm">Check out</span>
+                    <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Users className="w-4 h-4" />
+                        <span className="text-xs font-medium">Guests</span>
                       </div>
-                      <button
-                        onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }}
-                        className={`font-medium text-md ${checkOutDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
-                      >
-                        {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
+                        {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                    </div>
-
-                    <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center"></div>
-
-                    {/* Guests */}
-                    <div
-                      className={`flex flex-col gap-2 flex-1 min-w-0 px-4 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
-                      ref={guestRef}
-                    >
-                      <div className="flex items-center gap-2 text-gray-500">
-                        <Users className="w-5 h-5" />
-                        <span className="text-sm">Guests</span>
-                      </div>
-                      <button
-                        onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }}
-                        className={`font-medium text-md text-left hover:text-gray-700 transition-colors ${guests.adults + guests.children + guests.infants + guests.pet > 0 ? "text-black" : "text-gray-400"}`}
-                      >
-                        {guests.adults + guests.children + guests.infants || "Add guests"}
-                      </button>
-                      {showGuestDropdown && (
-                        <GuestDropdown
-                          guests={guests}
-                          onUpdate={setGuests}
-                          onClose={() => setShowGuestDropdown(false)}
-                        />
-                      )}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
-
-                  <div className="flex justify-center lg:flex-shrink-0 lg:ml-4 mt-4 lg:mt-0">
-                    <Button
-                      onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 active:scale-95 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14 transition-all duration-200 shadow-lg hover:shadow-xl"
-                      size="icon"
-                    >
-                      <Search className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-2">
+                    <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg" size="icon">
+                      <Search className="w-5 h-5" />
                     </Button>
                   </div>
                 </div>
               )}
+
             </div>
             </motion.div>
 

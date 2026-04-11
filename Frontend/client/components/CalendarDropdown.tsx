@@ -200,7 +200,7 @@ export function CalendarDropdown({
   };
 
   return (
-    <div className="absolute top-[calc(100%+8px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800">
+    <div className="absolute top-[calc(100%+24px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800">
       <div className="flex flex-col md:flex-row gap-6 items-start justify-center">
         <div className="w-full md:w-auto">{renderCalendar(0)}</div>
         <div className="hidden md:block w-[1px] self-stretch bg-gray-100 dark:bg-gray-800" />

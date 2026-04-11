@@ -28,7 +28,7 @@ export function LocationDropdown({
   }, [q]);
 
   return (
-    <div className="absolute max-h-80 overflow-y-auto scrollbar-hide top-[calc(100%+24px)] left-0 w-[300px] bg-white rounded-2xl shadow-xl p-2 z-[9999] border border-gray-100">
+    <div className="absolute max-h-80 overflow-y-auto scrollbar-hide top-[calc(100%+24px)] left-0 w-full max-w-[300px] bg-white rounded-2xl shadow-xl p-2 z-[9999] border border-gray-100">
       {filteredLocations.length > 0 ? (
         filteredLocations.map((location) => (
           <button
