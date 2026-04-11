@@ -548,32 +548,86 @@
   }
 
   .auth-input {
-    @apply h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] transition-all duration-200;
+    height: 2.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    background-color: rgba(249, 250, 251, 0.5);
+    color: #111827;
+    transition: all 0.2s ease-out;
+  }
+
+  .auth-input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+  }
+
+  .dark .auth-input {
+    border-color: #374151;
+    background-color: rgba(31, 41, 55, 0.5);
+    color: #fff;
+  }
+
+  .dark .auth-input::placeholder {
+    color: #6b7280;
   }
 
   .auth-input:hover {
-    @apply border-[#131313] dark:border-white shadow-sm;
+    border-color: #d1d5db;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .auth-input:hover {
+    border-color: #6b7280;
+    background-color: #1f2937;
   }
 
   .auth-input:focus {
-    @apply border-[#131313] dark:border-white ring-2 ring-[#131313]/20 dark:ring-white/20;
+    border-color: #111827;
+    background-color: #fff;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .auth-input:focus {
+    border-color: #fff;
+    background-color: #1f2937;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
   }
 
   .auth-input.auth-input-error {
     border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.03) !important;
   }
 
   .auth-input.auth-input-error:hover {
     border-color: #ef4444 !important;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.08) !important;
   }
 
   .auth-input.auth-input-error:focus {
     border-color: #ef4444 !important;
-    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
   }
 
   .auth-button {
-    @apply w-full h-12 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200;
+    width: 100%;
+    height: 2.75rem;
+    background-color: #111827;
+    color: #fff;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s ease-out;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .auth-button:hover {
+    background-color: #1f2937;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
   /* Chrome, Safari, Edge, Opera */
 input[type=number]::-webkit-inner-spin-button,
@@ -617,11 +671,22 @@ input[type=number] {
   }
 
   .otp-input {
-    @apply w-[52px] h-12 text-center border border-[#B0B0B0] dark:border-gray-600 rounded-lg text-base font-['Plus_Jakarta_Sans'] text-[#717171] dark:text-gray-300 bg-white dark:bg-gray-800 transition-all duration-200;
+    @apply w-[52px] h-12 text-center border border-gray-200 dark:border-gray-700 rounded-xl text-lg font-semibold
+      text-gray-900 dark:text-white bg-gray-50/50 dark:bg-gray-800/50
+      transition-all duration-200 ease-out;
+  }
+
+  .otp-input:hover {
+    @apply border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800;
   }
 
   .otp-input:focus {
-    @apply border-[#131313] dark:border-white ring-2 ring-[#131313]/20 dark:ring-white/20;
+    @apply border-gray-900 dark:border-white bg-white dark:bg-gray-800 outline-none;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .otp-input:focus {
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
   }
 
   .demo-notice {

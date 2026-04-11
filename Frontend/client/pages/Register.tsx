@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Calendar, Plus, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, Eye, EyeOff, Search, X } from "lucide-react";
 import { FcGoogle } from "react-icons/fc"; // Official Google logo, colored
 import { IoIosArrowBack } from "react-icons/io";
 import { Country } from "country-state-city";
@@ -206,6 +206,7 @@ const Register = () => {
   const [stateOption, setStateOption] = useState("");
   const [cityOption, setCityOptions] = useState("");
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
 
 
   formData.country = countryOption;
@@ -488,7 +489,7 @@ const Register = () => {
             <div className="flex sm:flex-row gap-3">
               <div
                 onClick={() => setOpen(true)}
-                className="flex max-md:w-[35%] cursor-pointer items-center gap-3 border border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 h-10 w-full sm:w-auto"
+                className="flex max-md:w-[35%] cursor-pointer items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-3 h-11 w-full sm:w-auto bg-gray-50/50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200"
               >
                 {selected && (
                   <span
@@ -534,7 +535,7 @@ const Register = () => {
                   value={formData.password}
                   onChange={(e) => updateFormData("password", e.target.value)}
                   onBlur={() => validateInput("password", formData.password)}
-                  className={`h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] ${errors.password ? "border-red-500" : ""}`}
+                  className={`auth-input pr-12 ${errors.password ? "auth-input-error" : ""}`}
                   placeholder="Create Password"
                 />
                 <button
@@ -575,7 +576,7 @@ const Register = () => {
                   onBlur={() =>
                     validateInput("confirmPassword", formData.confirmPassword)
                   }
-                  className={`h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 pr-12 text-base font-['Plus_Jakarta_Sans'] placeholder:text-[#717171] ${errors.confirmPassword ? "border-red-500" : ""}`}
+                  className={`auth-input pr-12 ${errors.confirmPassword ? "auth-input-error" : ""}`}
                   placeholder="Confirm Password"
                 />
                 <button
@@ -670,58 +671,74 @@ const Register = () => {
         </div>
 
         {/*Countries Model*/}
-        <Dialog open={open} onClose={setOpen}>
-          <DialogBackdrop
-            transition
-            className="inset-0  data-closed:opacity-1 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
-          />
-          {/* {isModalOpen && ( */}
-          <div className="fixed inset-0 bg-opacity-60 flex items-center justify-center z-50">
-            <DialogPanel className="w-[150px] shadow-md bg-[#f9fafc]  shadow-[#717171] h-[3 30px] scrollbar-hide  rounded-xl px-4 max-h-[80%] overflow-y-auto">
-              <button
-                onClick={() => setOpen(false)}
-                className="w-[130px] rounded-xl fixed bg-[#f9fafc] p-3 text-[#717171] text-[16px]"
-              >
-                <span className="font-[22px] flex gap-0 items-center">
-                  <IoIosArrowBack size={24} />
-                  Back
-                </span>
-              </button>
-              {/* <div className="w-full text-white mt-4 rounded-xl p-3 flex border focus:border-[#BED6FF] border-[#BED6FF] px-4">
-              <img src={SearchIcon} alt="" className="w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search for Countries"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="outline-none font-normal ml-1 placeholder:text-white px-2 text-sm w-full bg-transparent"
-              />
-            </div> */}
+        <Dialog open={open} onClose={() => { setOpen(false); setCountrySearch(""); }}>
+          <DialogBackdrop className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <DialogPanel className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Select Country</h3>
+                <button
+                  onClick={() => { setOpen(false); setCountrySearch(""); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
+              </div>
 
-              <ul className="mt-6 py-5">
-                {countries.map((c) => (
-                  <li
-                    key={c.isoCode}
-                    onClick={() => {
-                      setSelected(c);
-                      setOpen(false);
-                    }}
-                    className="flex items-center rounded-[5px] text-[#717171] text-sm font-normal px-3 py-2 cursor-pointer"
-                  >
-                    {React.createElement((Flags as any)[c.isoCode], {
-                      title: c.name,
-                      style: { width: "25px", marginRight: "12px" },
-                    })}{" "}
-                    {/* {c.name} */}
-                    {c.dialCode.charAt(0) !== "+"
-                      ? `+${c.dialCode}`
-                      : c.dialCode}
-                  </li>
-                ))}
+              {/* Search */}
+              <div className="px-4 py-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search country or code..."
+                    value={countrySearch}
+                    onChange={(e) => setCountrySearch(e.target.value)}
+                    autoFocus
+                    className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-900 dark:focus:border-white transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* List */}
+              <ul className="max-h-[320px] overflow-y-auto px-2 pb-3 scrollbar-hide">
+                {countries
+                  .filter((c) => {
+                    const q = countrySearch.toLowerCase();
+                    if (!q) return true;
+                    const code = c.dialCode.charAt(0) !== "+" ? `+${c.dialCode}` : c.dialCode;
+                    return c.name.toLowerCase().includes(q) || code.includes(q) || c.isoCode.toLowerCase().includes(q);
+                  })
+                  .map((c) => {
+                    const code = c.dialCode.charAt(0) !== "+" ? `+${c.dialCode}` : c.dialCode;
+                    const isActive = selected?.isoCode === c.isoCode;
+                    return (
+                      <li
+                        key={c.isoCode}
+                        onClick={() => {
+                          setSelected(c);
+                          setOpen(false);
+                          setCountrySearch("");
+                        }}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
+                          isActive ? "bg-gray-100 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                        }`}
+                      >
+                        <span className="flex-shrink-0">
+                          {React.createElement((Flags as any)[c.isoCode], {
+                            title: c.name,
+                            style: { width: "22px", borderRadius: "2px" },
+                          })}
+                        </span>
+                        <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">{c.name}</span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">{code}</span>
+                      </li>
+                    );
+                  })}
               </ul>
             </DialogPanel>
           </div>
-          {/* )} */}
         </Dialog>
       </form>
     </>
@@ -807,7 +824,7 @@ const Register = () => {
                 value={formData.firstName}
                 onChange={(e) => updateFormData("firstName", e.target.value)}
                 onBlur={() => validateInput("firstName", formData.firstName)}
-                className="auth-input"
+                className={`auth-input ${errors.firstName ? "auth-input-error" : ""}`}
                 placeholder="First Name"
               />
               {errors.firstName && (
@@ -819,7 +836,7 @@ const Register = () => {
                 value={formData.lastName}
                 onChange={(e) => updateFormData("lastName", e.target.value)}
                 onBlur={() => validateInput("lastName", formData.lastName)}
-                className="auth-input"
+                className={`auth-input ${errors.lastName ? "auth-input-error" : ""}`}
                 placeholder="Last Name"
               />
               {errors.lastName && (
@@ -837,15 +854,14 @@ const Register = () => {
     value={formData.dateOfBirth}
     onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
     onBlur={() => validateInput("dateOfBirth", formData.dateOfBirth)}
-    className="h-10 w-full border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans']
-               placeholder:text-[#717171]
-               appearance-none
+    className={`auth-input w-full appearance-none
                [&::-webkit-calendar-picker-indicator]:opacity-0
                [&::-webkit-calendar-picker-indicator]:absolute
                [&::-webkit-calendar-picker-indicator]:right-0
                [&::-webkit-calendar-picker-indicator]:w-full
                [&::-webkit-calendar-picker-indicator]:h-full
-               [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+               [&::-webkit-calendar-picker-indicator]:cursor-pointer
+               ${errors.dateOfBirth ? "auth-input-error" : ""}`}
     placeholder="Date of Birth"
   />
 
@@ -870,7 +886,7 @@ const Register = () => {
               }));
             }}
           >
-            <SelectTrigger className="h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans'] text-[#717171]">
+            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
               <SelectValue placeholder="Country" />
             </SelectTrigger>
             <SelectContent>
@@ -888,7 +904,7 @@ const Register = () => {
             value={stateOption}
             onValueChange={(value) => setStateOption(value)}
           >
-            <SelectTrigger className="h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans'] text-[#717171]">
+            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
               <SelectValue placeholder="State" />
             </SelectTrigger>
             <SelectContent>
@@ -909,7 +925,7 @@ const Register = () => {
             value={cityOption}
             onValueChange={(value) => setCityOptions(value)}
           >
-            <SelectTrigger className="h-10 border-[#B0B0B0] dark:border-gray-600 rounded-lg px-3 text-base font-['Plus_Jakarta_Sans'] text-[#717171]">
+            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
               <SelectValue placeholder="City" />
             </SelectTrigger>
             <SelectContent>

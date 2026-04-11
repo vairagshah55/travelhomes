@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { IoIosArrowBack } from "react-icons/io";
@@ -11,9 +10,6 @@ import Gallery from "./gallery";
 
 const isEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-
-const isMobile = (value: string) =>
-  /^[6-9]\d{9}$/.test(value);
 
 const isStrongPassword = (pwd: string) =>
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
@@ -29,6 +25,7 @@ const ForgotPassword = () => {
   // Step 1
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Step 2
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -52,18 +49,25 @@ const ForgotPassword = () => {
     }
   }, [currentStep]);
 
+  useEffect(() => {
+    setErrors({});
+  }, [currentStep]);
+
+  const clearError = (field: string) => {
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
   /* ================= STEP 1 ================= */
 
   const handleRequestReset = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!input.trim()) {
-      toast.error("Email is required");
-      return;
-    }
+    const newErrors: { [key: string]: string } = {};
+    if (!input.trim()) newErrors.email = "Email is required.";
+    else if (!isEmail(input)) newErrors.email = "Enter a valid email address.";
 
-    if (!isEmail(input) && !isMobile(input)) {
-      toast.error("Please enter a valid email ");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -172,20 +176,14 @@ const ForgotPassword = () => {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!password || !confirmPassword) {
-      toast.error("All password fields are required");
-      return;
-    }
+    const newErrors: { [key: string]: string } = {};
+    if (!password.trim()) newErrors.password = "Password is required.";
+    else if (!isStrongPassword(password)) newErrors.password = "Min 8 chars, with uppercase, lowercase, number & special symbol.";
+    if (!confirmPassword.trim()) newErrors.confirmPassword = "Please confirm your password.";
+    else if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
 
-    if (!isStrongPassword(password)) {
-      toast.error(
-        "Password must be 8+ chars with uppercase, lowercase, number & symbol"
-      );
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
@@ -213,145 +211,216 @@ const ForgotPassword = () => {
 
   /* ================= UI ================= */
 
+  const progressSteps = [1, 2, 3];
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black px-6">
       <div className="w-full max-w-6xl flex gap-5">
-        <Gallery 
+        <Gallery
           page={
-            currentStep === 1 
-              ? "EnterEmail" 
-              : currentStep === 2 
-              ? "Verification" 
+            currentStep === 1
+              ? "EnterEmail"
+              : currentStep === 2
+              ? "Verification"
               : "ChangePassword"
-          } 
+          }
         />
 
-        <div className="auth-form-container">
-          <div className="auth-form">
-            <div className="space-y-5 px-4">
-              {currentStep === 1 ? (
-                <Link to="/login" className="flex items-center gap-1">
-                  <IoIosArrowBack size={22} /> Back to login
-                </Link>
-              ) : (
-                <button
-                  onClick={() => setCurrentStep((s) => s - 1)}
-                  className="flex items-center gap-1"
-                >
-                  <IoIosArrowBack size={22} /> Back
-                </button>
-              )}
+        <div className="w-full lg:w-1/2 max-w-md mx-auto mt-8">
+          {/* Back button */}
+          {currentStep === 1 ? (
+            <Link to="/login" className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity">
+              <IoIosArrowBack size={18} /> Back to login
+            </Link>
+          ) : (
+            <button
+              onClick={() => setCurrentStep((s) => s - 1)}
+              className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity"
+            >
+              <IoIosArrowBack size={18} /> Back
+            </button>
+          )}
 
-              <h1 className="text-4xl font-bold">
-                {currentStep === 1 && "Reset Password"}
-                {currentStep === 2 && "Verify Code"}
-                {currentStep === 3 && "Create New Password"}
-              </h1>
-            </div>
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 mb-6">
+            {progressSteps.map((s) => (
+              <div
+                key={s}
+                className={`h-1 flex-1 rounded-full transition-all duration-300 ${
+                  s <= currentStep ? "bg-gray-900 dark:bg-white" : "bg-gray-200 dark:bg-gray-700"
+                }`}
+              />
+            ))}
+          </div>
 
-            <div className="pt-8 px-4">
-              {currentStep === 1 && (
-                <form onSubmit={handleRequestReset} className="space-y-5">
-                  <Input
-                    placeholder="Enter Your Email "
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
+          <h1 className="text-2xl font-bold mb-1 text-gray-900 dark:text-white">
+            {currentStep === 1 && "Reset Password"}
+            {currentStep === 2 && "Verify Code"}
+            {currentStep === 3 && "Create New Password"}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            {currentStep === 1 && "Enter your email to receive a reset code."}
+            {currentStep === 2 && `A 6-digit code was sent to ${input}`}
+            {currentStep === 3 && "Choose a strong new password for your account."}
+          </p>
+
+          {/* STEP 1: Email */}
+          {currentStep === 1 && (
+            <form onSubmit={handleRequestReset} noValidate className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Enter Your Email"
+                  value={input}
+                  onChange={(e) => { setInput(e.target.value); clearError("email"); }}
+                  onBlur={() => {
+                    if (!input.trim()) setErrors((p) => ({ ...p, email: "Email is required." }));
+                    else if (!isEmail(input)) setErrors((p) => ({ ...p, email: "Enter a valid email address." }));
+                  }}
+                  className={`auth-input w-full ${errors.email ? "auth-input-error" : ""}`}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {loading ? "Sending..." : "Send Reset Code"}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2: OTP */}
+          {currentStep === 2 && (
+            <form onSubmit={handleVerifyOtp} noValidate className="space-y-4">
+              <div className="flex gap-2 justify-start">
+                {otp.map((d, i) => (
+                  <input
+                    key={i}
+                    ref={(el) => (inputRefs.current[i] = el)}
+                    value={d}
+                    maxLength={1}
+                    inputMode="numeric"
+                    onChange={(e) => handleOtpChange(i, e.target.value)}
+                    onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                    onPaste={i === 0 ? handleOtpPaste : undefined}
+                    className="otp-input"
                   />
-                  <Button disabled={loading} 
-                  className="w-full">
-                    {loading ? "Sending..." : "Send Code"}
-                  </Button>
-                </form>
-              )}
+                ))}
+              </div>
 
-              {currentStep === 2 && (
-                <form onSubmit={handleVerifyOtp} className="space-y-5">
-                  <div className="flex gap-2">
-                    {otp.map((d, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => (inputRefs.current[i] = el)}
-                        value={d}
-                        maxLength={1}
-                        onChange={(e) =>
-                          handleOtpChange(i, e.target.value)
-                        }
-                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                        onPaste={i === 0 ? handleOtpPaste : undefined}
-                        className="w-12 h-12 text-center border rounded"
-                      />
-                    ))}
-                  </div>
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Didn't receive it?</span>
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={resendLoading}
+                  className="text-sm font-semibold text-gray-900 dark:text-white hover:underline disabled:opacity-50"
+                >
+                  {resendLoading ? "Sending..." : "Resend"}
+                </button>
+              </div>
 
+              <button
+                type="submit"
+                disabled={otpIsLoading || otp.some((o) => !o)}
+                className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50"
+              >
+                {otpIsLoading ? "Verifying..." : "Verify Code"}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 3: New Password */}
+          {currentStep === 3 && (
+            <form onSubmit={handleResetPassword} noValidate className="space-y-4">
+              <div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="New password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); clearError("password"); }}
+                    onBlur={() => {
+                      if (!password.trim()) setErrors((p) => ({ ...p, password: "Password is required." }));
+                      else if (!isStrongPassword(password)) setErrors((p) => ({ ...p, password: "Min 8 chars, with uppercase, lowercase, number & special symbol." }));
+                    }}
+                    className={`auth-input w-full pr-12 ${errors.password ? "auth-input-error" : ""}`}
+                  />
                   <button
                     type="button"
-                    onClick={handleResendOtp}
-                    disabled={resendLoading}
-                    className="text-sm underline"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
                   >
-                    {resendLoading ? "Sending..." : "Resend Code"}
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                </div>
+                {errors.password && (
+                  <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>
+                )}
+                {/* Password strength indicator */}
+                {password.length > 0 && !errors.password && (
+                  <div className="mt-2 space-y-1.5">
+                    <div className="flex gap-1">
+                      {[
+                        password.length >= 8,
+                        /[A-Z]/.test(password),
+                        /[a-z]/.test(password),
+                        /\d/.test(password),
+                        /[@$!%*?&]/.test(password),
+                      ].map((met, i) => (
+                        <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`} />
+                      ))}
+                    </div>
+                    {isStrongPassword(password) && (
+                      <p className="text-xs text-green-600 dark:text-green-400">Strong password</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
-                  <Button
-                  className="w-full"
-                    disabled={otpIsLoading || otp.some((o) => !o)}
+              <div>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirm password"
+                    value={confirmPassword}
+                    onChange={(e) => { setConfirmPassword(e.target.value); clearError("confirmPassword"); }}
+                    onBlur={() => {
+                      if (!confirmPassword.trim()) setErrors((p) => ({ ...p, confirmPassword: "Please confirm your password." }));
+                      else if (password !== confirmPassword) setErrors((p) => ({ ...p, confirmPassword: "Passwords do not match." }));
+                    }}
+                    className={`auth-input w-full pr-12 ${errors.confirmPassword ? "auth-input-error" : ""}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
                   >
-                    {otpIsLoading ? "Verifying..." : "Verify"}
-                  </Button>
-                </form>
-              )}
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1.5">{errors.confirmPassword}</p>
+                )}
+                {!errors.confirmPassword && confirmPassword && confirmPassword === password && (
+                  <p className="text-green-600 dark:text-green-400 text-xs mt-1.5">Passwords match</p>
+                )}
+              </div>
 
-              {currentStep === 3 && (
-                <form onSubmit={handleResetPassword} className="space-y-5">
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="New password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-3"
-                    >
-                      {showPassword ? <EyeOff /> : <Eye />}
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <Input
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm password"
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(e.target.value)
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
-                      className="absolute right-3 top-3"
-                    >
-                      {showConfirmPassword ? <EyeOff /> : <Eye />}
-                    </button>
-                  </div>
-
-                  <p className="text-xs text-gray-500">
-                    Use 8+ chars with uppercase, lowercase, number & symbol
-                  </p>
-
-                  <Button disabled={resetLoading}
-                         className="w-full"
-                         >
-                    {resetLoading ? "Resetting..." : "Reset Password"}
-                  </Button>
-                </form>
-              )}
-            </div>
-          </div>
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                {resetLoading ? "Resetting..." : "Reset Password"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
