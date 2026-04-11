@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth, DEMO_CREDENTIALS } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
-import { Label } from "../components/ui/label";
 import {
   Select,
   SelectContent,
@@ -12,995 +11,1149 @@ import {
   SelectValue,
 } from "../components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, Calendar, Plus, Eye, EyeOff, Search, X } from "lucide-react";
-import { FcGoogle } from "react-icons/fc"; // Official Google logo, colored
+import { ChevronDown, Eye, EyeOff, Search } from "lucide-react";
+import { FcGoogle } from "react-icons/fc";
 import { IoIosArrowBack } from "react-icons/io";
 import { Country } from "country-state-city";
 import * as Flags from "country-flag-icons/react/3x2";
-import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-import { cmsPublicApi } from "../lib/api";
 import Gallery from "./gallery";
 
-type CountryOption = {
-  isoCode: string;
-  name: string;
-  countryCode?: string;
-  dialCode?: string;
-};
+/* ─── Types ──────────────────────────────────────────────── */
 
-const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
-  name: c.name,
-  countryCode: c.isoCode,
-  dialCode: c.phonecode,
-}));
+type PhoneCountry = { isoCode: string; name: string; dialCode?: string };
 
-interface RegisterFormData {
+interface FormData {
+  email: string;
+  mobile: string;
+  password: string;
+  confirmPassword: string;
   firstName: string;
   lastName: string;
   dateOfBirth: string;
   country: string;
   state: string;
   city: string;
-  email: string;
-  mobile: string;
-  password: string;
-  confirmPassword: string;
 }
+
+/* ─── Module-level constants ─────────────────────────────── */
+
+const PHONE_COUNTRIES: PhoneCountry[] = Country.getAllCountries().map((c) => ({
+  isoCode: c.isoCode,
+  name: c.name,
+  dialCode: c.phonecode,
+}));
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PWD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+
+const STATIC_OTP = "123456"; // TODO: remove before production
+
+/* ─── Validation (pure function) ────────────────────────── */
+
+const validate = (field: string, value: string, password = ""): string => {
+  switch (field) {
+    case "email":
+      if (!value.trim()) return "Email is required.";
+      if (!EMAIL_RE.test(value)) return "Enter a valid email address.";
+      return "";
+    case "mobile":
+      if (!value.trim()) return "Mobile number is required.";
+      if (!/^\d{10}$/.test(value)) return "Enter a valid 10-digit phone number.";
+      return "";
+    case "password":
+      if (!value.trim()) return "Password is required.";
+      if (!PWD_RE.test(value))
+        return "Min 8 chars, with uppercase, lowercase, number & special symbol.";
+      return "";
+    case "confirmPassword":
+      if (!value.trim()) return "Please confirm your password.";
+      if (value !== password) return "Passwords do not match.";
+      return "";
+    case "firstName":
+      if (!value.trim()) return "First name is required.";
+      return "";
+    case "lastName":
+      if (!value.trim()) return "Last name is required.";
+      return "";
+    case "dateOfBirth":
+      if (!value.trim()) return "Date of birth is required.";
+      return "";
+    default:
+      return "";
+  }
+};
+
+/* ─── DOB constants ──────────────────────────────────────── */
+
+const DOB_MONTHS = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
+const DOB_CURRENT_YEAR = new Date().getFullYear();
+const DOB_YEARS = Array.from({ length: 100 }, (_, i) => DOB_CURRENT_YEAR - i);
+
+/* ─── Component ──────────────────────────────────────────── */
 
 const Register = () => {
   const navigate = useNavigate();
-  const {
-    register,
-    login,
-    loginWithGoogle,
-    verifyOTP,
-    lastRegisterId,
-    authenticateAfterRegister,
-  } = useAuth();
+  const { register, login, loginWithGoogle, verifyOTP, lastRegisterId } = useAuth();
 
-  // Step control: 1-register, 2-otp, 3-details
-  const [currentStep, setCurrentStep] = useState(1);
-
-  // Step 1
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [formData, setFormData] = useState<RegisterFormData>({
-    firstName: "",
-    lastName: "",
-    dateOfBirth: "",
-    country: "",
-    state: "",
-    city: "",
-    email: "",
-    mobile: "",
-    password: "",
-    confirmPassword: "",
+  /* ── Step ─────────────────────────────────────────────── */
+  const [step, setStep] = useState<number>(() => {
+    const s = parseInt(sessionStorage.getItem('reg_step') || '1');
+    return isNaN(s) || s < 1 || s > 3 ? 1 : s;
   });
 
-  // === Add these new states ===
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  /* ── Step 1 – Credentials ─────────────────────────────── */
+  const [form, setForm] = useState<FormData>({
+    email: sessionStorage.getItem('reg_email') || "",
+    mobile: "", password: "", confirmPassword: "",
+    firstName: "", lastName: "", dateOfBirth: "",
+    country: "India", state: "", city: "",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // === Validation function ===
-  const validateForm = (step: number) => {
-    const newErrors: { [key: string]: string } = {};
+  /* ── Step 1 – Phone country picker ───────────────────── */
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry | null>(PHONE_COUNTRIES[100]);
+  const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
+  const [phoneSearch, setPhoneSearch] = useState("");
+  const phoneDropdownRef = useRef<HTMLDivElement>(null);
 
-    // Step 1 validations (email, mobile, password)
-    if (step === 1) {
-      if (!formData.email.trim()) newErrors.email = "Email is required.";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
-        newErrors.email = "Enter a valid email address.";
-
-      if (!formData.mobile.trim())
-        newErrors.mobile = "Mobile number is required.";
-      else if (!/^\d{10}$/.test(formData.mobile))
-        newErrors.mobile = "Enter a valid 10-digit phone number.";
-
-  if (!formData.password.trim()) {
-  newErrors.password = "Password is required.";
-} else {
-  const password = formData.password;
-
-  const passwordRegex =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-
-  if (!passwordRegex.test(password)) {
-    newErrors.password =
-      "Password must be at least 8 characters and include uppercase, lowercase, number & special symbol.";
-  }
-}
-      if (!formData.confirmPassword.trim())
-        newErrors.confirmPassword = "Please confirm your password.";
-      else if (formData.password !== formData.confirmPassword)
-        newErrors.confirmPassword = "Passwords do not match.";
-    }
-
-    // Step 3 validations (details form)
-    if (step === 3) {
-      if (!formData.firstName.trim())
-        newErrors.firstName = "First name is required.";
-      if (!formData.lastName.trim())
-        newErrors.lastName = "Last name is required.";
-      if (!formData.dateOfBirth.trim())
-        newErrors.dateOfBirth = "Date of birth is required.";
-      if (!countryOption.trim()) newErrors.country = "Select a country.";
-      if (!stateOption.trim()) newErrors.state = "Select a state.";
-      if (!cityOption.trim()) newErrors.city = "Select a city.";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // true if valid
-  };
-
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-
-  const validateInput = (name: string, value: string) => {
-    let errorMessage = "";
-
-    switch (name) {
-      case "email":
-        if (!value.trim()) errorMessage = "Email is required.";
-        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-          errorMessage = "Enter a valid email address.";
-        break;
-      case "mobile":
-        if (!value.trim()) errorMessage = "Mobile number is required.";
-        else if (!/^\d{10}$/.test(value))
-          errorMessage = "Enter a valid 10-digit phone number.";
-        break;
-      case "password":
-        if (!value.trim()) errorMessage = "Password is required.";
-        else if (!passwordRegex.test(value))
-          errorMessage = "Min 8 chars, with uppercase, lowercase, number & special symbol.";
-        break;
-      case "confirmPassword":
-        if (!value.trim()) errorMessage = "Please confirm your password.";
-        else if (value !== formData.password)
-          errorMessage = "Passwords do not match.";
-        break;
-      case "firstName":
-        if (!value.trim()) errorMessage = "First name is required.";
-        break;
-      case "lastName":
-        if (!value.trim()) errorMessage = "Last name is required.";
-        break;
-      case "dateOfBirth":
-        if (!value.trim()) errorMessage = "Date of birth is required.";
-        break;
-    }
-
-    setErrors((prev) => ({ ...prev, [name]: errorMessage }));
-  };
-
-  // Real-time check: is step 1 form complete & valid?
-  const isStep1Valid =
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) &&
-    /^\d{10}$/.test(formData.mobile) &&
-    passwordRegex.test(formData.password) &&
-    formData.confirmPassword === formData.password &&
-    formData.confirmPassword.length > 0;
-
-  // Real-time check: is step 3 form complete?
-  const isStep3Valid =
-    formData.firstName.trim().length > 0 &&
-    formData.lastName.trim().length > 0 &&
-    formData.dateOfBirth.trim().length > 0 &&
-    countryOption.trim().length > 0 &&
-    stateOption.trim().length > 0 &&
-    cityOption.trim().length > 0;
-
-  // Step 2 (OTP)
+  /* ── Step 2 – OTP ─────────────────────────────────────── */
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [otpIsLoading, setOtpIsLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  const [selected, setSelected] = useState<CountryOption | null>(
-    countries[100],
-  );
-  const [open, setOpen] = useState(false);
-  const [data, setData] = useState([]);
-  const [countryOption, setCoutryOption] = useState("");
-  const [stateOption, setStateOption] = useState("");
-  const [cityOption, setCityOptions] = useState("");
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
 
+  /* ── Step 3 – Location ────────────────────────────────── */
+  const [locationData, setLocationData] = useState<any[]>([]);
+  const [country, setCountry] = useState("India");
+  const [state, setState] = useState("");
+  const [city, setCity] = useState("");
+  const [stateOpen, setStateOpen] = useState(false);
+  const [stateSearch, setStateSearch] = useState("");
+  const [cityOpen, setCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+  const stateDropdownRef = useRef<HTMLDivElement>(null);
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
 
-  formData.country = countryOption;
-  formData.state = stateOption;
-  formData.city = cityOption;
+  /* ── Step 3 – DOB selects ─────────────────────────────── */
+  const [dobDay, setDobDay] = useState("");
+  const [dobMonth, setDobMonth] = useState("");
+  const [dobYear, setDobYear] = useState("");
+  const [dobOpenPanel, setDobOpenPanel] = useState<"day" | "month" | "year" | null>(null);
+  const [dobDaySearch, setDobDaySearch] = useState("");
+  const [dobMonthSearch, setDobMonthSearch] = useState("");
+  const [dobYearSearch, setDobYearSearch] = useState("");
+  const dobWrapperRef = useRef<HTMLDivElement>(null);
 
-  // Populate country list on mount
+  /* ── Effects ──────────────────────────────────────────── */
+
   useEffect(() => {
-    fetch("/countries_states_cities.json") // remove ../../.. for public/ path
-      .then((res) => res.json())
-      .then((json) => {
-        setData(json);
-        setCoutryOption("India");
-      })
-      .catch((err) => console.error("Failed to load countries:", err));
+    fetch("/countries_states_cities.json")
+      .then((r) => r.json())
+      .then(setLocationData)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
-    if (currentStep === 2 && inputRefs.current[0]) {
-      inputRefs.current[0].focus();
-    }
-  }, [currentStep]);
+    if (step === 2) inputRefs.current[0]?.focus();
+  }, [step]);
 
   useEffect(() => {
-  setErrors({});
-  setHasSubmitted(false);
-}, [currentStep]);
+    setErrors({});
+    setServerError("");
+    setOtpError("");
+  }, [step]);
 
-  // === Step navigation ===
-  const handleNext = () => setCurrentStep((prev) => prev + 1);
-  const handleBack = () => setCurrentStep((prev) => prev - 1);
-  const handleBackRegister = () => navigate("/");
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const t = setInterval(() => setResendTimer((p) => (p > 0 ? p - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [resendTimer]);
 
-  // === Form logic for each step ===
-  const updateFormData = (field: keyof RegisterFormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error on change if currently showing one
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
+  // Sync location selections into form
+  useEffect(() => {
+    setForm((prev) => ({ ...prev, country, state, city }));
+  }, [country, state, city]);
+
+  // Close phone dropdown on outside click
+  useEffect(() => {
+    if (!phoneDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (phoneDropdownRef.current && !phoneDropdownRef.current.contains(e.target as Node)) {
+        setPhoneDropdownOpen(false);
+        setPhoneSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [phoneDropdownOpen]);
+
+  // Close state dropdown on outside click
+  useEffect(() => {
+    if (!stateOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (stateDropdownRef.current && !stateDropdownRef.current.contains(e.target as Node)) {
+        setStateOpen(false);
+        setStateSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [stateOpen]);
+
+  // Close city dropdown on outside click
+  useEffect(() => {
+    if (!cityOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target as Node)) {
+        setCityOpen(false);
+        setCitySearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [cityOpen]);
+
+  // Close DOB panels on outside click
+  useEffect(() => {
+    if (!dobOpenPanel) return;
+    const handler = (e: MouseEvent) => {
+      if (dobWrapperRef.current && !dobWrapperRef.current.contains(e.target as Node)) {
+        setDobOpenPanel(null);
+        setDobDaySearch("");
+        setDobMonthSearch("");
+        setDobYearSearch("");
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [dobOpenPanel]);
+
+  // Persist step so refresh / navigation away doesn't reset to step 1
+  useEffect(() => {
+    if (step > 1) {
+      sessionStorage.setItem('reg_step', String(step));
+    } else {
+      clearRegSession();
     }
+  }, [step]);
+
+  // Persist email so it survives refresh (needed for OTP display + final login)
+  useEffect(() => {
+    if (form.email) sessionStorage.setItem('reg_email', form.email);
+  }, [form.email]);
+
+  /* ── Helpers ──────────────────────────────────────────── */
+
+  const clearRegSession = () => {
+    ['reg_step', 'reg_email', 'reg_register_id'].forEach((k) =>
+      sessionStorage.removeItem(k)
+    );
   };
 
-  // --- Step 1: Register ---
+  const update = (field: keyof FormData, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (serverError) setServerError("");
+  };
+
+  const blur = (field: string, value: string) => {
+    const msg = validate(field, value, form.password);
+    setErrors((prev) => ({ ...prev, [field]: msg }));
+  };
+
+  const validateStep = (s: number): boolean => {
+    const fields = s === 1
+      ? ["email", "mobile", "password", "confirmPassword"]
+      : ["firstName", "lastName", "dateOfBirth"];
+
+    const newErrors: Record<string, string> = {};
+    fields.forEach((f) => {
+      const msg = validate(f, (form as any)[f], form.password);
+      if (msg) newErrors[f] = msg;
+    });
+
+    if (s === 3) {
+      if (!country) newErrors.country = "Select a country.";
+      if (!state) newErrors.state = "Select a state.";
+      if (!city) newErrors.city = "Select a city.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const dialCode = (c: PhoneCountry) =>
+    c.dialCode?.charAt(0) !== "+" ? `+${c.dialCode}` : (c.dialCode ?? "");
+
+  const countryStates =
+    (locationData.find((c: any) => c.name === country) as any)?.states ?? [];
+  const stateCities =
+    countryStates.find((s: any) => s.name === state)?.cities ?? [];
+
+  /* ── Step 1 handlers ──────────────────────────────────── */
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateStep(1)) return;
 
-      setHasSubmitted(true); // 👈 KEY LINE
-
-    if (!validateForm(1)) {
-      return;
-    }
-
-    if (
-      formData.password &&
-      formData.confirmPassword &&
-      formData.password !== formData.confirmPassword
-    ) {
-      toast.error("Passwords do not match.");
-      return;
-    }
     setIsLoading(true);
     try {
       const res = await register({
         userType: "user",
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        dateOfBirth: formData.dateOfBirth,
-        country: formData.country,
-        state: formData.state,
-        city: formData.city,
-        email: formData.email,
-        mobile: formData.mobile,
-        password: formData.password,
+        email: form.email,
+        mobile: form.mobile,
+        password: form.password,
       } as any);
+
       if (res.ok) {
-        toast.success("Registration successful! Check your email for the OTP.");
-        setCurrentStep(2);
-        setC(30);
+        toast.success("Check your email for the OTP.");
+        setStep(2);
+        setResendTimer(30);
       } else if (res.code === 409) {
-        toast.error("Email already exists. Please log in.");
-        // Stay on step 1 so user can correct email or go to login
+        setServerError("An account with this email already exists.");
       } else {
-        toast.error(res.message || "Registration failed. Please try again.");
+        setServerError(res.message || "Registration failed. Please try again.");
       }
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      toast.error(error?.message || "Registration failed. Please try again.");
+    } catch {
+      setServerError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handlePhoneChange = (e) => {
-    const value = e.target.value.replace(/\D/g, ""); // removes everything except digits (0-9)
-    updateFormData("mobile", value);
   };
 
   const handleGoogleSignup = async () => {
     setIsGoogleLoading(true);
     try {
       const success = await loginWithGoogle();
-      if (success) {
-        toast.success("Sign up with Google successful!");
-        navigate("/");
-      }
-    } catch (error) {
+      if (success) navigate("/");
+    } catch {
       toast.error("Google sign up failed. Please try again.");
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  // --- Step 2: OTP ---
-  const handleOtpChange = (index: number, value: string) => {
-    if (value.length > 1) return; // Prevent multi character paste
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    console.log("Updated OTP:", newOtp);
-    // Auto-focus next
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+  /* ── Step 2 handlers ──────────────────────────────────── */
+
+  const handleOtpChange = (i: number, value: string) => {
+    if (!/^\d?$/.test(value)) return;
+    const next = [...otp];
+    next[i] = value;
+    setOtp(next);
+    if (otpError) setOtpError("");
+    if (value && i < 5) inputRefs.current[i + 1]?.focus();
   };
 
-  const handleOtpKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
+  const handleOtpKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[i] && i > 0) inputRefs.current[i - 1]?.focus();
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text");
-    const pasteOtp = pasteData.slice(0, 6).split("");
-    const newOtp = [...otp];
-    pasteOtp.forEach((char, index) => {
-      if (index < 6 && /^\d$/.test(char)) {
-        newOtp[index] = char;
-      }
-    });
-    setOtp(newOtp);
-    console.log("Pasted OTP:", newOtp);
-    const nextEmptyIndex = newOtp.findIndex((val) => val === "");
-    const focusIndex = nextEmptyIndex === -1 ? 5 : nextEmptyIndex;
-    inputRefs.current[focusIndex]?.focus();
+    const digits = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!digits) return;
+    const next = [...otp];
+    digits.split("").forEach((d, i) => (next[i] = d));
+    setOtp(next);
+    inputRefs.current[Math.min(digits.length, 5)]?.focus();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const otpCode = otp.join("");
-    if (otpCode.length !== 6) {
-      toast.error("Please enter complete OTP");
+    const code = otp.join("");
+    if (code.length !== 6) {
+      setOtpError("Please enter the complete 6-digit code.");
       return;
     }
-    setOtpIsLoading(true);
+
+    // TODO: remove static OTP before production
+    if (code === STATIC_OTP) {
+      toast.success("OTP verified!");
+      setStep(3);
+      return;
+    }
+
+    setOtpLoading(true);
     try {
-      const success = await verifyOTP(otpCode);
+      const success = await verifyOTP(code);
       if (success) {
-        toast.success("OTP verified successfully!");
-        // Move to final details step
-        setCurrentStep(3);
+        setStep(3);
       } else {
-        toast.error("Invalid OTP. Please try again.");
+        setOtpError("Invalid or expired OTP. Please try again.");
         setOtp(["", "", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       }
     } catch {
-      toast.error("Verification failed. Please try again.");
-      setOtp(["", "", "", "", "",""]);
+      setOtpError("Verification failed. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
-      setOtpIsLoading(false);
+      setOtpLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (!lastRegisterId) return;
+    setResendLoading(true);
     try {
-      setResendLoading(true);
-      if (!lastRegisterId) throw new Error("No register id");
       const { authApi } = await import("../lib/api");
       await authApi.resendRegisterOtp(lastRegisterId);
-      toast.success("OTP resent successfully! Check your email.");
-      setC(30);
+      toast.success("New code sent. Check your email.");
+      setResendTimer(30);
     } catch {
-      toast.error("Failed to resend OTP");
+      toast.error("Failed to resend OTP.");
     } finally {
       setResendLoading(false);
     }
   };
 
-  // --- Step 3: Details ---
-  const handleDetailsSave = async () => {
-    // Validate required fields for Step 3
-    if (!validateForm(3)) {
-      return;
+  /* ── Step 3 handlers ──────────────────────────────────── */
+
+  const daysInMonth = (() => {
+    if (!dobMonth) return 31;
+    const y = dobYear ? parseInt(dobYear) : 2000;
+    return new Date(y, parseInt(dobMonth), 0).getDate();
+  })();
+
+  const handleDobChange = (part: "day" | "month" | "year", value: string) => {
+    const d = part === "day" ? value : dobDay;
+    const m = part === "month" ? value : dobMonth;
+    const y = part === "year" ? value : dobYear;
+    if (part === "day") setDobDay(value);
+    if (part === "month") setDobMonth(value);
+    if (part === "year") setDobYear(value);
+    if (d && m && y) {
+      update("dateOfBirth", `${y}-${m}-${d}`);
+    } else {
+      update("dateOfBirth", "");
     }
+  };
+
+  const handleSaveDetails = async () => {
+    if (!validateStep(3)) return;
 
     try {
-      // Update register collection with final details
       if (lastRegisterId) {
         const { authApi } = await import("../lib/api");
         await authApi.updateRegister(lastRegisterId, {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          dateOfBirth: formData.dateOfBirth,
-          country: countryOption,
-          state: stateOption,
-          city: cityOption,
-          mobile: formData.mobile,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          dateOfBirth: form.dateOfBirth,
+          country,
+          state,
+          city,
+          mobile: form.mobile,
           userType: "user",
-          email: formData.email,
-          password: formData.password,
+          email: form.email,
+          password: form.password,
         } as any);
       }
-      
-      // Log the user in to get the token (Authentication)
-      const success = await login(formData.email, formData.password, true, "user");
-      
+
+      const success = await login(form.email, form.password, true, "user");
       if (success) {
-        toast.success("Details saved! Registration complete.");
-        // Navigate to user home page or redirected page
-        const redirect = sessionStorage.getItem('auth_redirect');
+        clearRegSession();
+        toast.success("Registration complete!");
+        const redirect = sessionStorage.getItem("auth_redirect");
         if (redirect) {
-          sessionStorage.removeItem('auth_redirect');
+          sessionStorage.removeItem("auth_redirect");
           navigate(redirect);
         } else {
           navigate("/");
         }
       } else {
-        toast.error("Registration successful, but login failed. Please log in manually.");
+        toast.error("Registered, but login failed. Please sign in manually.");
+        clearRegSession();
         navigate("/login");
       }
-    } catch (e) {
+    } catch {
       toast.error("Failed to save details. Please try again.");
     }
   };
 
-  const [c, setC] = useState(0);
+  /* ── Step renders ─────────────────────────────────────── */
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (c > 0) {
-      interval = setInterval(() => {
-        setC((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [c]);
-  // === RENDER STEPS ===
-  //Step 1
-  const renderRegisterStep = () => (
+  const renderStep1 = () => (
     <>
-      <div className="mb-3">
-        <h1 className="text-2xl max-md:text-center font-bold text-black dark:text-white font-['Inter']">
-          Register
-        </h1>
-        <p className="text-sm max-md:text-center text-[#112211] dark:text-gray-300 opacity-75 font-['Plus_Jakarta_Sans']">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-black dark:text-white">Register</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
           Let's get you all set up so you can access your personal account.
         </p>
       </div>
-      <form onSubmit={handleRegister} noValidate>
-        <div className="space-y-3 max-md:space-y-3">
-          <div className="space-y-3 max-md:space-y-3">
-            <Input
-              type="email"
-              value={formData.email}
-              onChange={(e) => updateFormData("email", e.target.value)}
-              onBlur={() => validateInput("email", formData.email)}
-              className={`auth-input h-10 ${errors.email ? "auth-input-error" : ""}`}
-              placeholder="Email ID"
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-            )}
 
-            <div className="flex sm:flex-row gap-3">
-              <div
-                onClick={() => setOpen(true)}
-                className="flex max-md:w-[35%] cursor-pointer items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-3 h-11 w-full sm:w-auto bg-gray-50/50 dark:bg-gray-800/50 hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200"
-              >
-                {selected && (
-                  <span
-                    onClick={() => {
-                      setSelected(selected);
-                    }}
-                    className="flex items-center gap-2 text-base text-[#717171] font-['Plus_Jakarta_Sans']"
-                  >
-                    {React.createElement((Flags as any)[selected.isoCode], {
-                      title: selected.name,
-                      style: { width: "24px" },
-                    })}
-                    {selected.dialCode.charAt(0) !== "+"
-                      ? `+${selected.dialCode}`
-                      : selected.dialCode}
-                  </span>
-                )}
-
-                {/* <Plus className="w-3 h-3 text-[#717171]" /> */}
-                {/* <span className="text-base text-[#717171] font-['Plus_Jakarta_Sans']">
-                91
-              </span> */}
-              </div>
-              <div className="w-full flex flex-col">
-                <Input
-                  type="text"
-                  value={formData.mobile}
-                  onChange={handlePhoneChange}
-                  onBlur={() => validateInput("mobile", formData.mobile)}
-                  maxLength={10}
-                  className={`auth-input ${errors.mobile ? "auth-input-error" : ""}`}
-                  placeholder="Mobile Number"
-                />
-                {errors.mobile && (
-                  <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>
-                )}
-              </div>
-            </div>
-            <div className="space-y-3 max-md:space-y-3">
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) => updateFormData("password", e.target.value)}
-                  onBlur={() => validateInput("password", formData.password)}
-                  className={`auth-input pr-12 ${errors.password ? "auth-input-error" : ""}`}
-                  placeholder="Create Password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/3 text-[#717171] hover:text-[#131313] dark:hover:text-white"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">{errors.password}</p>
-              )}
-              {/* Password strength indicator */}
-              {formData.password.length > 0 && !errors.password && (
-                <div className="space-y-1.5">
-                  <div className="flex gap-1">
-                    {[
-                      formData.password.length >= 8,
-                      /[A-Z]/.test(formData.password),
-                      /[a-z]/.test(formData.password),
-                      /\d/.test(formData.password),
-                      /[@$!%*?&#]/.test(formData.password),
-                    ].map((met, i) => (
-                      <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`} />
-                    ))}
-                  </div>
-                  <p className="text-xs text-green-600 dark:text-green-400">Strong password</p>
-                </div>
-              )}
-              <div className="relative">
-                <Input
-                  type={showConfirmPassword ? "text" : "password"}
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    updateFormData("confirmPassword", e.target.value)
-                  }
-                  onBlur={() =>
-                    validateInput("confirmPassword", formData.confirmPassword)
-                  }
-                  className={`auth-input pr-12 ${errors.confirmPassword ? "auth-input-error" : ""}`}
-                  placeholder="Confirm Password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-[#717171] hover:text-[#131313] dark:hover:text-white"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={20} />
-                  ) : (
-                    <Eye size={20} />
-                  )}
-                </button>
-
-                {errors.confirmPassword && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.confirmPassword}
-                  </p>
-                )}
-                {!errors.confirmPassword && formData.confirmPassword && formData.confirmPassword === formData.password && (
-                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">Passwords match</p>
-                )}
-
-                {/* <div className="flex items-center gap-4 mt-3">
-                  <label className="flex items-center gap-2 text-sm text-[#717171] dark:text-gray-400 font-['Plus_Jakarta_Sans']">
-                    <input
-                      type="radio"
-                      name="userType"
-                      value="user"
-                      checked={userType === "user"}
-                      onChange={() => setUserType("user")}
-                    />
-                    User
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-[#717171] dark:text-gray-400 font-['Plus_Jakarta_Sans']">
-                    <input
-                      type="radio"
-                      name="userType"
-                      value="vendor"
-                      checked={userType === "vendor"}
-                      onChange={() => setUserType("vendor")}
-                    />
-                    Vendor
-                  </label>
-                </div> */}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-3 max-md:space-y-2">
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              {isLoading ? "Creating Account..." : "Register"}
-            </Button>
-            <div className="text-center">
-              <span className="text-sm text-[#121] dark:text-gray-300">
-                Already have account?{" "}
-                <Link
-                  to="/login"
-                  className="font-bold text-[#121] dark:text-white hover:underline"
-                >
-                  Login
-                </Link>
-              </span>
-            </div>
-          </div>
-          {/* Divider */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-[#D6D6D6] dark:bg-gray-600"></div>
-            <span className="text-sm text-[#717171] dark:text-gray-400 font-['Plus_Jakarta_Sans']">
-              Or Sign Up with
-            </span>
-            <div className="flex-1 h-px  bg-[#D6D6D6] dark:bg-gray-600"></div>
-          </div>
-          {/* Google signup */}
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleGoogleSignup}
-            disabled={isGoogleLoading}
-            className="w-full h-10 border border-black dark:border-white rounded-[52px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <FcGoogle />
-              <span className="text-[#717171] font-normal dark:text-white font-['Inter'] text-base">
-                {isGoogleLoading ? "Signing up..." : "Continue with Google"}
-              </span>
-            </div>
-          </Button>
+      <form onSubmit={handleRegister} noValidate className="space-y-3">
+        {/* Email */}
+        <div>
+          <Input
+            type="email"
+            value={form.email}
+            onChange={(e) => update("email", e.target.value)}
+            onBlur={() => blur("email", form.email)}
+            className={`auth-input ${errors.email ? "auth-input-error" : ""}`}
+            placeholder="Email ID"
+          />
+          {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
         </div>
 
-        {/*Countries Model*/}
-        <Dialog open={open} onClose={() => { setOpen(false); setCountrySearch(""); }}>
-          <DialogBackdrop className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" />
-          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-            <DialogPanel className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Select Country</h3>
-                <button
-                  onClick={() => { setOpen(false); setCountrySearch(""); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <X className="w-4 h-4 text-gray-500" />
-                </button>
-              </div>
+        {/* Phone */}
+        <div className="flex gap-3 items-start">
+          {/* Country code inline dropdown */}
+          <div className="relative flex-shrink-0" ref={phoneDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setPhoneDropdownOpen((o) => !o)}
+              className={`flex items-center gap-1.5 h-11 px-3 rounded-xl border bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 min-w-[88px] ${
+                phoneDropdownOpen
+                  ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                  : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+              }`}
+            >
+              {phoneCountry && (
+                <>
+                  {React.createElement((Flags as any)[phoneCountry.isoCode], {
+                    title: phoneCountry.name,
+                    style: { width: "20px", borderRadius: "2px", flexShrink: 0 },
+                  })}
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-100 tabular-nums">
+                    {dialCode(phoneCountry)}
+                  </span>
+                </>
+              )}
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
+                  phoneDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
 
-              {/* Search */}
-              <div className="px-4 py-3">
+            {/* Dropdown panel */}
+            {phoneDropdownOpen && (
+              <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+                {/* Search */}
+                <div className="px-3 pt-3 pb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search country or code..."
+                      value={phoneSearch}
+                      onChange={(e) => setPhoneSearch(e.target.value)}
+                      autoFocus
+                      className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Country list */}
+                <ul className="max-h-56 overflow-y-auto px-1.5 pb-2 scrollbar-hide">
+                  {PHONE_COUNTRIES.filter((c) => {
+                    if (!phoneSearch) return true;
+                    const q = phoneSearch.toLowerCase();
+                    const code = dialCode(c);
+                    return (
+                      c.name.toLowerCase().includes(q) ||
+                      code.includes(q) ||
+                      c.isoCode.toLowerCase().includes(q)
+                    );
+                  }).map((c) => (
+                    <li
+                      key={c.isoCode}
+                      onClick={() => {
+                        setPhoneCountry(c);
+                        setPhoneDropdownOpen(false);
+                        setPhoneSearch("");
+                      }}
+                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-xl cursor-pointer transition-colors ${
+                        phoneCountry?.isoCode === c.isoCode
+                          ? "bg-gray-100 dark:bg-gray-800"
+                          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      {React.createElement((Flags as any)[c.isoCode], {
+                        title: c.name,
+                        style: { width: "20px", borderRadius: "2px", flexShrink: 0 },
+                      })}
+                      <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">
+                        {c.name}
+                      </span>
+                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 tabular-nums">
+                        {dialCode(c)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Phone number input */}
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={form.mobile}
+              onChange={(e) => update("mobile", e.target.value.replace(/\D/g, ""))}
+              onBlur={() => blur("mobile", form.mobile)}
+              maxLength={10}
+              className={`auth-input ${errors.mobile ? "auth-input-error" : ""}`}
+              placeholder="Mobile Number"
+            />
+            {errors.mobile && <p className="text-red-500 text-xs mt-1.5">{errors.mobile}</p>}
+          </div>
+        </div>
+
+        {/* Password */}
+        <div>
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={(e) => update("password", e.target.value)}
+              onBlur={() => blur("password", form.password)}
+              className={`auth-input pr-12 ${errors.password ? "auth-input-error" : ""}`}
+              placeholder="Create Password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>}
+          {form.password.length > 0 && !errors.password && (
+            <div className="mt-2 space-y-1">
+              <div className="flex gap-1">
+                {[
+                  form.password.length >= 8,
+                  /[A-Z]/.test(form.password),
+                  /[a-z]/.test(form.password),
+                  /\d/.test(form.password),
+                  /[@$!%*?&#]/.test(form.password),
+                ].map((met, i) => (
+                  <div
+                    key={i}
+                    className={`h-1 flex-1 rounded-full transition-colors ${
+                      met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"
+                    }`}
+                  />
+                ))}
+              </div>
+              {PWD_RE.test(form.password) && (
+                <p className="text-xs text-green-600 dark:text-green-400">Strong password</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Confirm password */}
+        <div>
+          <div className="relative">
+            <Input
+              type={showConfirmPassword ? "text" : "password"}
+              value={form.confirmPassword}
+              onChange={(e) => update("confirmPassword", e.target.value)}
+              onBlur={() => blur("confirmPassword", form.confirmPassword)}
+              className={`auth-input pr-12 ${errors.confirmPassword ? "auth-input-error" : ""}`}
+              placeholder="Confirm Password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {errors.confirmPassword && (
+            <p className="text-red-500 text-xs mt-1.5">{errors.confirmPassword}</p>
+          )}
+          {!errors.confirmPassword && form.confirmPassword && form.confirmPassword === form.password && (
+            <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">Passwords match</p>
+          )}
+        </div>
+
+        {serverError && <p className="text-red-500 text-xs">{serverError}</p>}
+
+        <Button
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          {isLoading ? "Creating Account..." : "Register"}
+        </Button>
+
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+          Already have an account?{" "}
+          <Link to="/login" className="font-semibold text-gray-900 dark:text-white hover:underline">
+            Login
+          </Link>
+        </p>
+
+        <div className="flex items-center gap-3 text-sm text-gray-400">
+          <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+          Or Sign Up with
+          <span className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGoogleSignup}
+          disabled={isGoogleLoading}
+          className="w-full h-11 border border-gray-200 dark:border-gray-700 rounded-[52px] bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+        >
+          <div className="flex items-center gap-3">
+            <FcGoogle size={20} />
+            <span className="text-gray-600 dark:text-white text-sm">
+              {isGoogleLoading ? "Signing up..." : "Continue with Google"}
+            </span>
+          </div>
+        </Button>
+      </form>
+
+    </>
+  );
+
+  const renderStep2 = () => (
+    <form onSubmit={handleVerifyOtp} className="space-y-5">
+      <div>
+        <h1 className="text-2xl font-bold text-black dark:text-white">Verify Code</h1>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          An authentication code has been sent to {form.email}.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <p className="text-sm text-gray-700 dark:text-gray-300">Enter Code</p>
+        <div className="flex gap-2">
+          {otp.map((digit, i) => (
+            <input
+              key={i}
+              ref={(el) => (inputRefs.current[i] = el)}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleOtpChange(i, e.target.value)}
+              onKeyDown={(e) => handleOtpKeyDown(i, e)}
+              onPaste={i === 0 ? handleOtpPaste : undefined}
+              className={`otp-input ${otpError ? "border-red-500" : ""}`}
+            />
+          ))}
+        </div>
+        {otpError && <p className="text-red-500 text-xs mt-1.5">{otpError}</p>}
+      </div>
+
+      <div className="flex items-center gap-1">
+        <span className="text-sm text-gray-500 dark:text-gray-400">Didn't receive a code?</span>
+        <button
+          type="button"
+          onClick={handleResendOtp}
+          disabled={resendLoading || resendTimer > 0}
+          className="text-sm font-semibold text-gray-900 dark:text-white hover:underline disabled:opacity-50"
+        >
+          {resendTimer > 0 ? `${resendTimer}s ` : ""}Resend
+        </button>
+      </div>
+
+      <Button
+        type="submit"
+        disabled={otpLoading || otp.join("").length !== 6}
+        className="w-full h-11 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
+      >
+        {otpLoading ? "Verifying..." : "Verify"}
+      </Button>
+    </form>
+  );
+
+  const renderStep3 = () => (
+    <>
+      <form
+        onSubmit={(e) => { e.preventDefault(); handleSaveDetails(); }}
+        className="space-y-3"
+      >
+        <div className="mb-1">
+          <h1 className="text-2xl font-bold text-black dark:text-white">Your Details</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Almost done — just a few more details.
+          </p>
+        </div>
+
+        {/* Name */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <Input
+              value={form.firstName}
+              onChange={(e) => update("firstName", e.target.value)}
+              onBlur={() => blur("firstName", form.firstName)}
+              className={`auth-input ${errors.firstName ? "auth-input-error" : ""}`}
+              placeholder="First Name"
+            />
+            {errors.firstName && <p className="text-red-500 text-xs mt-1.5">{errors.firstName}</p>}
+          </div>
+          <div className="flex-1">
+            <Input
+              value={form.lastName}
+              onChange={(e) => update("lastName", e.target.value)}
+              onBlur={() => blur("lastName", form.lastName)}
+              className={`auth-input ${errors.lastName ? "auth-input-error" : ""}`}
+              placeholder="Last Name"
+            />
+            {errors.lastName && <p className="text-red-500 text-xs mt-1.5">{errors.lastName}</p>}
+          </div>
+        </div>
+
+        {/* Date of Birth */}
+        <div>
+          <div className="flex gap-2" ref={dobWrapperRef}>
+
+            {/* Day */}
+            <div className="relative" style={{ width: "76px" }}>
+              <button
+                type="button"
+                onClick={() => setDobOpenPanel((p) => (p === "day" ? null : "day"))}
+                className={`h-11 w-full flex items-center justify-between px-3 border rounded-xl text-sm bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 ${
+                  errors.dateOfBirth && !dobDay
+                    ? "border-red-500"
+                    : dobOpenPanel === "day"
+                    ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                }`}
+              >
+                <span className={dobDay ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                  {dobDay || "DD"}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "day" ? "rotate-180" : ""}`} />
+              </button>
+              {dobOpenPanel === "day" && (
+                <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+                  <div className="px-2 pt-2 pb-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Day..."
+                        value={dobDaySearch}
+                        onChange={(e) => setDobDaySearch(e.target.value)}
+                        autoFocus
+                        className="w-full h-8 pl-7 pr-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <ul className="max-h-44 overflow-y-auto py-1 scrollbar-hide">
+                    {Array.from({ length: daysInMonth }, (_, i) => i + 1)
+                      .filter((d) => !dobDaySearch || String(d).includes(dobDaySearch))
+                      .map((d) => {
+                        const val = String(d).padStart(2, "0");
+                        return (
+                          <li
+                            key={d}
+                            onClick={() => { handleDobChange("day", val); setDobOpenPanel(null); setDobDaySearch(""); }}
+                            className={`px-3 py-1.5 cursor-pointer text-sm text-center rounded-lg mx-1 transition-colors ${
+                              dobDay === val
+                                ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
+                                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                          >
+                            {d}
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Month */}
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => setDobOpenPanel((p) => (p === "month" ? null : "month"))}
+                className={`h-11 w-full flex items-center justify-between px-3 border rounded-xl text-sm bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 ${
+                  dobOpenPanel === "month"
+                    ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                }`}
+              >
+                <span className={dobMonth ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                  {dobMonth ? DOB_MONTHS[parseInt(dobMonth) - 1] : "Month"}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "month" ? "rotate-180" : ""}`} />
+              </button>
+              {dobOpenPanel === "month" && (
+                <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+                  <div className="px-2 pt-2 pb-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search..."
+                        value={dobMonthSearch}
+                        onChange={(e) => setDobMonthSearch(e.target.value)}
+                        autoFocus
+                        className="w-full h-8 pl-7 pr-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <ul className="max-h-44 overflow-y-auto py-1 scrollbar-hide">
+                    {DOB_MONTHS.map((m, i) => {
+                      const val = String(i + 1).padStart(2, "0");
+                      return m.toLowerCase().includes(dobMonthSearch.toLowerCase()) || !dobMonthSearch ? (
+                        <li
+                          key={i}
+                          onClick={() => { handleDobChange("month", val); setDobOpenPanel(null); setDobMonthSearch(""); }}
+                          className={`px-3 py-1.5 cursor-pointer text-sm rounded-lg mx-1 transition-colors ${
+                            dobMonth === val
+                              ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          {m}
+                        </li>
+                      ) : null;
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Year */}
+            <div className="relative" style={{ width: "96px" }}>
+              <button
+                type="button"
+                onClick={() => setDobOpenPanel((p) => (p === "year" ? null : "year"))}
+                className={`h-11 w-full flex items-center justify-between px-3 border rounded-xl text-sm bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 ${
+                  dobOpenPanel === "year"
+                    ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                }`}
+              >
+                <span className={dobYear ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                  {dobYear || "Year"}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "year" ? "rotate-180" : ""}`} />
+              </button>
+              {dobOpenPanel === "year" && (
+                <div className="absolute top-[calc(100%+6px)] right-0 z-50 w-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+                  <div className="px-2 pt-2 pb-1">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Year..."
+                        value={dobYearSearch}
+                        onChange={(e) => setDobYearSearch(e.target.value)}
+                        autoFocus
+                        className="w-full h-8 pl-7 pr-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+                  <ul className="max-h-44 overflow-y-auto py-1 scrollbar-hide">
+                    {DOB_YEARS
+                      .filter((y) => !dobYearSearch || String(y).includes(dobYearSearch))
+                      .map((y) => (
+                        <li
+                          key={y}
+                          onClick={() => { handleDobChange("year", String(y)); setDobOpenPanel(null); setDobYearSearch(""); }}
+                          className={`px-3 py-1.5 cursor-pointer text-sm text-center rounded-lg mx-1 transition-colors ${
+                            dobYear === String(y)
+                              ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          }`}
+                        >
+                          {y}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+          </div>
+          {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1.5">{errors.dateOfBirth}</p>}
+        </div>
+
+        {/* Country (locked) */}
+        <Select value={country} disabled>
+          <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white">
+            <SelectValue placeholder="Country" />
+          </SelectTrigger>
+          <SelectContent>
+            {locationData.map((c: any, i: number) => (
+              <SelectItem key={i} value={c.name}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* State */}
+        <div className="relative" ref={stateDropdownRef}>
+          <button
+            type="button"
+            onClick={() => { setStateOpen((o) => !o); setCityOpen(false); }}
+            className={`h-11 w-full flex items-center justify-between border rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 ${
+              errors.state
+                ? "border-red-500"
+                : stateOpen
+                ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+            }`}
+          >
+            <span className={state ? "text-gray-900 dark:text-white" : "text-gray-400 font-normal"}>
+              {state || "State"}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${stateOpen ? "rotate-180" : ""}`} />
+          </button>
+          {errors.state && <p className="text-red-500 text-xs mt-1.5">{errors.state}</p>}
+
+          {stateOpen && (
+            <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+              <div className="px-3 pt-3 pb-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search country or code..."
-                    value={countrySearch}
-                    onChange={(e) => setCountrySearch(e.target.value)}
+                    placeholder="Search state..."
+                    value={stateSearch}
+                    onChange={(e) => setStateSearch(e.target.value)}
                     autoFocus
-                    className="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-900 dark:focus:border-white transition-colors"
+                    className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
                   />
                 </div>
               </div>
-
-              {/* List */}
-              <ul className="max-h-[320px] overflow-y-auto px-2 pb-3 scrollbar-hide">
-                {countries
-                  .filter((c) => {
-                    const q = countrySearch.toLowerCase();
-                    if (!q) return true;
-                    const code = c.dialCode.charAt(0) !== "+" ? `+${c.dialCode}` : c.dialCode;
-                    return c.name.toLowerCase().includes(q) || code.includes(q) || c.isoCode.toLowerCase().includes(q);
-                  })
-                  .map((c) => {
-                    const code = c.dialCode.charAt(0) !== "+" ? `+${c.dialCode}` : c.dialCode;
-                    const isActive = selected?.isoCode === c.isoCode;
-                    return (
-                      <li
-                        key={c.isoCode}
-                        onClick={() => {
-                          setSelected(c);
-                          setOpen(false);
-                          setCountrySearch("");
-                        }}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                          isActive ? "bg-gray-100 dark:bg-gray-800" : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                        }`}
-                      >
-                        <span className="flex-shrink-0">
-                          {React.createElement((Flags as any)[c.isoCode], {
-                            title: c.name,
-                            style: { width: "22px", borderRadius: "2px" },
-                          })}
-                        </span>
-                        <span className="flex-1 text-sm text-gray-900 dark:text-white truncate">{c.name}</span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400 font-medium flex-shrink-0">{code}</span>
-                      </li>
-                    );
-                  })}
+              <ul className="max-h-52 overflow-y-auto px-1.5 pb-2 scrollbar-hide">
+                {countryStates
+                  .filter((s: any) => !stateSearch || s.name.toLowerCase().includes(stateSearch.toLowerCase()))
+                  .map((s: any, i: number) => (
+                    <li
+                      key={i}
+                      onClick={() => { setState(s.name); setCity(""); setStateOpen(false); setStateSearch(""); }}
+                      className={`px-2.5 py-2 rounded-xl cursor-pointer text-sm transition-colors ${
+                        state === s.name
+                          ? "bg-gray-100 dark:bg-gray-800 font-medium text-gray-900 dark:text-white"
+                          : "text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      {s.name}
+                    </li>
+                  ))}
               </ul>
-            </DialogPanel>
-          </div>
-        </Dialog>
+            </div>
+          )}
+        </div>
+
+        {/* City */}
+        <div className="relative" ref={cityDropdownRef}>
+          <button
+            type="button"
+            onClick={() => { setCityOpen((o) => !o); setStateOpen(false); }}
+            disabled={!state}
+            className={`h-11 w-full flex items-center justify-between border rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+              errors.city
+                ? "border-red-500"
+                : cityOpen
+                ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+            }`}
+          >
+            <span className={city ? "text-gray-900 dark:text-white" : "text-gray-400 font-normal"}>
+              {city || "City"}
+            </span>
+            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${cityOpen ? "rotate-180" : ""}`} />
+          </button>
+          {errors.city && <p className="text-red-500 text-xs mt-1.5">{errors.city}</p>}
+
+          {cityOpen && (
+            <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+              <div className="px-3 pt-3 pb-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search city..."
+                    value={citySearch}
+                    onChange={(e) => setCitySearch(e.target.value)}
+                    autoFocus
+                    className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-gray-400 dark:focus:border-gray-500 transition-colors"
+                  />
+                </div>
+              </div>
+              <ul className="max-h-52 overflow-y-auto px-1.5 pb-2 scrollbar-hide">
+                {stateCities
+                  .filter((c: any) => !citySearch || c.name.toLowerCase().includes(citySearch.toLowerCase()))
+                  .map((c: any, i: number) => (
+                    <li
+                      key={i}
+                      onClick={() => { setCity(c.name); setCityOpen(false); setCitySearch(""); }}
+                      className={`px-2.5 py-2 rounded-xl cursor-pointer text-sm transition-colors ${
+                        city === c.name
+                          ? "bg-gray-100 dark:bg-gray-800 font-medium text-gray-900 dark:text-white"
+                          : "text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                      }`}
+                    >
+                      {c.name}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full h-11 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          Complete Registration
+        </Button>
       </form>
     </>
   );
 
-  //Step 2
-  const renderOTPStep = () => (
-    <form onSubmit={handleVerifyOtp} className="space-y-6">
-      <div className="space-y-3">
-        <div className="space-y-3">
-          <h1 className="text-2xl max-md:text-center font-bold text-black dark:text-white font-['Inter']">
-            Verify code
-          </h1>
-          <p className="text-sm max-md:text-center text-[#112211] dark:text-gray-300 opacity-75 font-['Plus_Jakarta_Sans']">
-            An authentication code has been sent to your email.
-          </p>
-        </div>
-    
-        <div className="space-y-4">
-          <label className="text-base text-[#222] dark:text-gray-300 font-['Plus_Jakarta_Sans']">
-            Enter Code
-          </label>
-          <div className="flex gap-2 sm:gap-3 justify-start">
-            {otp.map((digit, idx) => (
-              <input
-                key={idx}
-                ref={(el) => (inputRefs.current[idx] = el)}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleOtpChange(idx, e.target.value)}
-                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
-                onPaste={idx === 0 ? handleOtpPaste : undefined}
-                className="otp-input w-[48px] sm:w-[52px] focus:outline-none"
-              />
-            ))}
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-1">
-            <span className="text-sm text-[#717171] dark:text-gray-400 font-['Plus_Jakarta_Sans']">
-              Didn't receive a code?
-            </span>
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={resendLoading || c > 0}
-              className="text-sm text-[#121] dark:text-white font-bold hover:underline disabled:opacity-50 font-['Plus_Jakarta_Sans']"
-            >
-             {c > 0 && `${c}s `}<span className="text-sm text-[#121]">Resend</span> 
-            </button>
-            {/* <button className="text-[#818181] text-xs" disabled={resendLoading} onClick={handleResend}>
-             {c}s <span className="text-sm text-[#121]">Resend</span> 
-            </button> */}
-          </div>
-        </div>
-        <Button
-          type="submit"
-          disabled={otpIsLoading || otp.join("").length !== 6}
-          className="w-full h-10 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
-        >
-          {otpIsLoading ? "Verifying..." : "Verify"}
-        </Button>
-      </div>
-    </form>
-  );
-
-  //Step 3
-  const renderDetailsStep = () => (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        handleDetailsSave();
-      }}
-    >
-      <div className="space-y-3">
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1 space-y-3">
-              <Input
-                value={formData.firstName}
-                onChange={(e) => updateFormData("firstName", e.target.value)}
-                onBlur={() => validateInput("firstName", formData.firstName)}
-                className={`auth-input ${errors.firstName ? "auth-input-error" : ""}`}
-                placeholder="First Name"
-              />
-              {errors.firstName && (
-                <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
-              )}
-            </div>
-            <div className="flex-1 space-y-3">
-              <Input
-                value={formData.lastName}
-                onChange={(e) => updateFormData("lastName", e.target.value)}
-                onBlur={() => validateInput("lastName", formData.lastName)}
-                className={`auth-input ${errors.lastName ? "auth-input-error" : ""}`}
-                placeholder="Last Name"
-              />
-              {errors.lastName && (
-                <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
-              )}
-            </div>
-          </div>
-         <div
-  className="relative"
-  onClick={() => document.getElementById("dob")?.showPicker()}
->
-  <Input
-    id="dob"
-    type="date"
-    value={formData.dateOfBirth}
-    onChange={(e) => updateFormData("dateOfBirth", e.target.value)}
-    onBlur={() => validateInput("dateOfBirth", formData.dateOfBirth)}
-    className={`auth-input w-full appearance-none
-               [&::-webkit-calendar-picker-indicator]:opacity-0
-               [&::-webkit-calendar-picker-indicator]:absolute
-               [&::-webkit-calendar-picker-indicator]:right-0
-               [&::-webkit-calendar-picker-indicator]:w-full
-               [&::-webkit-calendar-picker-indicator]:h-full
-               [&::-webkit-calendar-picker-indicator]:cursor-pointer
-               ${errors.dateOfBirth ? "auth-input-error" : ""}`}
-    placeholder="Date of Birth"
-  />
-
-  {/* Custom calendar icon (optional) */}
-  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#222] pointer-events-none" />
-</div>
-
-          {errors.dateOfBirth && (
-            <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>
-          )}
-          <Select
-            name="country"
-            value={countryOption}
-            disabled={true}
-            onValueChange={(value) => {
-              const countryVal = value;
-              setCoutryOption(countryVal);
-              setFormData((prev) => ({
-                ...prev,
-                state: "",
-                city: "", // reset city
-              }));
-            }}
-          >
-            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
-              <SelectValue placeholder="Country" />
-            </SelectTrigger>
-            <SelectContent>
-              {<SelectItem value="texas"> Select Country</SelectItem>}
-              {data.map((Country: any, idx: number) => (
-                <SelectItem key={idx} value={Country.name}>
-                  {Country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-
-            {/* Render states from selected country */}
-          </Select>
-          <Select
-            value={stateOption}
-            onValueChange={(value) => setStateOption(value)}
-          >
-            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
-              <SelectValue placeholder="State" />
-            </SelectTrigger>
-            <SelectContent>
-              {<SelectItem value="texas">Select State</SelectItem>}
-              {data
-                .find((c) => c.name === countryOption)
-                ?.states?.map((state: any, idx: number) => (
-                  <SelectItem key={idx} value={state.name}>
-                    {state.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          {errors.state && (
-            <p className="text-red-500 text-sm mt-1">{errors.state}</p>
-          )}
-          <Select
-            value={cityOption}
-            onValueChange={(value) => setCityOptions(value)}
-          >
-            <SelectTrigger className="h-11 border border-gray-200 dark:border-gray-700 rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 text-gray-900 dark:text-white hover:border-gray-300 dark:hover:border-gray-500 transition-all duration-200">
-              <SelectValue placeholder="City" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="los-angeles">Select City</SelectItem>
-              {data
-                .find((country) => country.name === countryOption)
-                ?.states.find((state) => state.name === stateOption)
-                ?.cities.map((city: any, idx: number) => (
-                  <SelectItem key={idx} value={city.name}>
-                    {city.name}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          {errors.city && (
-            <p className="text-red-500 text-sm mt-1">{errors.city}</p>
-          )}
-        </div>
-        <Button
-          type="submit"
-          className="w-full h-10 bg-[#131313] hover:bg-gray-800 text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
-        >
-          Save
-        </Button>
-      </div>
-    </form>
-  );
-
-  // --- Progress indicator: 3 steps now ---
-  const progressSteps = [1, 2, 3];
+  /* ── Main render ──────────────────────────────────────── */
 
   return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black px-6">
+    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black px-6">
       <div className="w-full max-w-6xl flex gap-5">
-        <Gallery page="Register"/>
-    
-      {/* Right side - Form + Step tracker */}
-      <div className="auth-form-container lg:w-1/2 flex justify-center items-center">
-        <div className="auth-form">
-          {/* Back button and header */}
-          <div className="space-y-5 max-md:px-0 px-4">
-            {currentStep === 1 && (
+        <Gallery page="Register" />
+
+        <div className="auth-form-container lg:w-1/2 flex justify-center items-center">
+          <div className="auth-form">
+            <div className="px-4 mb-2">
               <button
-                onClick={handleBackRegister}
-                className="flex items-center gap-1 text-[#131313] dark:text-white hover:opacity-80 transition-opacity"
+                onClick={
+                  step === 1
+                    ? () => navigate("/")
+                    : () => {
+                        const prev = step - 1;
+                        if (prev === 1) clearRegSession();
+                        setStep(prev);
+                      }
+                }
+                className="flex items-center gap-1 text-gray-900 dark:text-white hover:opacity-80 transition-opacity"
               >
-                {/* <ArrowLeft size={24} /> */}
-                <IoIosArrowBack size={24} />
-                <span className="text-md max-md:text-sm font-medium font-['Plus_Jakarta_Sans']">
-                  Home
-                </span>
+                <IoIosArrowBack size={22} />
+                <span className="text-sm font-medium">{step === 1 ? "Home" : "Back"}</span>
               </button>
-            )}
-            {currentStep > 1 && (
-              <button
-                onClick={handleBack}
-                className="flex items-center gap-1 text-[#131313] dark:text-white hover:opacity-80 transition-opacity"
-              >
-                <IoIosArrowBack size={24} />
-                <span className="text-md max-md:text-sm font-medium font-['Plus_Jakarta_Sans']">
-                  Back
-                </span>
-              </button>
-            )}
-          </div>
-        
-          {/* Step renderer */}
-          <div className="overflow-hidden pt-5 max-md:px-0 px-4">
-            {currentStep === 1 && renderRegisterStep()}
-            {currentStep === 2 && renderOTPStep()}
-            {currentStep === 3 && renderDetailsStep()}
+            </div>
+
+            <div className="px-4 pt-4">
+              {step === 1 && renderStep1()}
+              {step === 2 && renderStep2()}
+              {step === 3 && renderStep3()}
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };

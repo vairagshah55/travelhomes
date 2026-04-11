@@ -102,7 +102,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
      }
   });
 
-  const [lastRegisterId, setLastRegisterId] = useState<string | null>(null);
+  const [lastRegisterId, setLastRegisterId] = useState<string | null>(
+    () => sessionStorage.getItem('reg_register_id')
+  );
   const lastUserTypeUpdateAt = React.useRef<number>(0);
 
   const login = async (email: string, password: string, rememberMe: boolean = true, userType?: 'user' | 'vendor'): Promise<boolean> => {
@@ -287,6 +289,7 @@ const loginWithGoogle = async (): Promise<boolean> => {
         console.log(`DEBUG: RECEIVED OTP FROM SERVER: ${otp}`);
         console.log("------------------------------------------");
       }
+      if (regId) sessionStorage.setItem('reg_register_id', regId);
       setLastRegisterId(regId || null);
       return { ok: true, registerId: regId };
     } catch (e: any) {

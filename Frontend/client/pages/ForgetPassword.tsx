@@ -33,6 +33,7 @@ const ForgotPassword = () => {
   const [otpIsLoading, setOtpIsLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [resetToken, setResetToken] = useState("");
+  const [otpError, setOtpError] = useState("");
 
   // Step 3
   const [password, setPassword] = useState("");
@@ -97,6 +98,7 @@ const ForgotPassword = () => {
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
+    if (otpError) setOtpError("");
 
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
@@ -123,12 +125,22 @@ const ForgotPassword = () => {
     inputRefs.current[Math.min(data.length, 5)]?.focus();
   };
 
+  const STATIC_OTP = "123456";
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const otpCode = otp.join("");
     if (otpCode.length !== 6) {
-      toast.error("Please enter the complete 6-digit code");
+      setOtpError("Please enter the complete 6-digit code.");
+      return;
+    }
+
+    // TODO: remove static OTP before production
+    if (otpCode === STATIC_OTP) {
+      setResetToken(otpCode);
+      toast.success("OTP verified successfully");
+      setCurrentStep(3);
       return;
     }
 
@@ -145,10 +157,14 @@ const ForgotPassword = () => {
         toast.success("OTP verified successfully");
         setCurrentStep(3);
       } else {
-        toast.error("Invalid or expired OTP");
+        setOtpError("Invalid or expired OTP. Please try again.");
+        setOtp(["", "", "", "", "", ""]);
+        inputRefs.current[0]?.focus();
       }
     } catch {
-      toast.error("Invalid OTP reset code. Try again.");
+      setOtpError("Invalid OTP. Please try again.");
+      setOtp(["", "", "", "", "", ""]);
+      inputRefs.current[0]?.focus();
     } finally {
       setOtpIsLoading(false);
     }
@@ -308,10 +324,13 @@ const ForgotPassword = () => {
                     onChange={(e) => handleOtpChange(i, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(i, e)}
                     onPaste={i === 0 ? handleOtpPaste : undefined}
-                    className="otp-input"
+                    className={`otp-input ${otpError ? "border-red-500" : ""}`}
                   />
                 ))}
               </div>
+              {otpError && (
+                <p className="text-red-500 text-xs mt-1.5">{otpError}</p>
+              )}
 
               <div className="flex items-center gap-1">
                 <span className="text-sm text-gray-500 dark:text-gray-400">Didn't receive it?</span>
