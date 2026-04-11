@@ -42,6 +42,11 @@ import {
   ChevronRight,
   Mail,
   Phone,
+  Eye,
+  EyeOff,
+  X as XIcon,
+  CircleCheck,
+  CircleX,
 } from "lucide-react";
 import MobileUserNav from "@/components/MobileUserNav";
 import { Card } from "@/components/ui/card";
@@ -73,7 +78,7 @@ import { StayDetailsSkeleton } from "@/utils/UniqueStaysSkeleton";
 export default function UniqueStayDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, login } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPricing, setSelectedPricing] = useState("per-night");
   const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
@@ -96,6 +101,12 @@ const [openAmenitiesModal, setOpenAmenitiesModal] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
+  const [loginFieldErrors, setLoginFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -153,22 +164,49 @@ const [openAmenitiesModal, setOpenAmenitiesModal] = useState(false);
   const [vendor, setVendor] = useState<any>(null);
   const [loadingVendor, setLoadingVendor] = useState<boolean>(false);
     const [pages, setPages] = useState<{ caravan: number; 'unique-stays': number; activity: number }>({ caravan: 1, 'unique-stays': 1, activity: 1 });
-    const pageSize = 12;
-      const [offers, setOffers] = useState<OfferDTO[]>([]);
-    const [openDesc, setOpenDesc] = useState(false);
+    const [offers, setOffers] = useState<OfferDTO[]>([]);
 
-  const approved = offers.filter(o => o.status === 'approved');
-  const caravanCards: CardItem[] = approved.filter(o => getNormCategory(o.category, o.serviceType) === 'caravan').map(mapOfferToCard);
-  const stayCards: CardItem[] = approved.filter(o => getNormCategory(o.category, o.serviceType) === 'unique-stays').map(mapOfferToCard);
-  const activityCards: CardItem[] = approved.filter(o => getNormCategory(o.category, o.serviceType) === 'activity').map(mapOfferToCard);
+  // Fetch related offers
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await offersApi.list("approved");
+        if (mounted) setOffers(res.data || []);
+      } catch {}
+    })();
+    return () => { mounted = false; };
+  }, []);
 
-  const caravanTotalPages = Math.max(1, Math.ceil(caravanCards.length / pageSize));
-  const stayTotalPages = Math.max(1, Math.ceil(stayCards.length / pageSize));
-  const activityTotalPages = Math.max(1, Math.ceil(activityCards.length / pageSize));
+  // Build smart related sections — exclude current listing
+  const relatedStays = offers
+    .filter(o => o.status === "approved" && getNormCategory(o.category, o.serviceType) === "unique-stays" && o._id !== id)
+    .map(mapOfferToCard);
 
-  const caravanShown = caravanCards.slice(0, pages.caravan * pageSize);
-  const stayShown = stayCards.slice(0, pages['unique-stays'] * pageSize);
-  const activityShown = activityCards.slice(0, pages.activity * pageSize);
+  // Same city stays
+  const sameCityStays = stay?.city
+    ? offers
+        .filter(o => o.status === "approved" && getNormCategory(o.category, o.serviceType) === "unique-stays" && o._id !== id && o.city?.toLowerCase() === stay.city?.toLowerCase())
+        .map(mapOfferToCard)
+    : [];
+
+  // Similar price range (±40%)
+  const currentPrice = Number(stay?.regularPrice || 0);
+  const similarPriceStays = currentPrice > 0
+    ? offers
+        .filter(o => {
+          if (o._id === id || o.status !== "approved" || getNormCategory(o.category, o.serviceType) !== "unique-stays") return false;
+          const p = Number(o.regularPrice || 0);
+          return p >= currentPrice * 0.6 && p <= currentPrice * 1.4;
+        })
+        .map(mapOfferToCard)
+    : [];
+
+  // "You might also like" = similar price stays that are NOT in the same city (to avoid duplicates)
+  const alsoLikeStays = similarPriceStays.filter(s => !sameCityStays.find(c => c.id === s.id)).slice(0, 4);
+
+  // Legacy compat
+  const stayShown = relatedStays.slice(0, 4);
   const [openInclusions, setOpenInclusions]=useState(false)
   const [openExclusions, setOpenExclusions]=useState(false)
   const [openReviewsDialog, setOpenReviewsDialog]=useState(false)
@@ -328,16 +366,29 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
   const allTabs = [
     { id: "overview", label: "Overview", hasContent: true },
     { id: "amenities", label: "Amenities", hasContent: amenities.length > 0 },
-    { id: "inclusions", label: "Inclusions", hasContent: true },
-    { id: "exclusions", label: "Exclusions", hasContent: true },
-    { id: "policies", label: "Policies & Rules", hasContent: true },
-    { id: "reviews", label: "Reviews", hasContent: allReviews.length > 0 },
-    { id: "owner", label: "Owner Details", hasContent:true },
+    { id: "inclusions", label: "Inclusions", hasContent: inclusions.length > 0 },
+    { id: "exclusions", label: "Exclusions", hasContent: exclusions.length > 0 },
+    { id: "policies", label: "Policies & Rules", hasContent: policies.length > 0 },
+    { id: "reviews", label: "Reviews", hasContent: true },
+    { id: "owner", label: "Owner Details", hasContent: true },
   ];
 
   const tabs = allTabs.filter(tab => tab.hasContent);
 
-  // Tab content is now rendered inline (no scroll detection needed)
+  // Highlight active tab based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = tabs.map(t => document.getElementById(t.id)).filter(Boolean) as HTMLElement[];
+      for (let i = sections.length - 1; i >= 0; i--) {
+        if (sections[i].getBoundingClientRect().top <= 120) {
+          if (activeTab !== tabs[i].id) setActiveTab(tabs[i].id);
+          break;
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [tabs]);
 
   /*
     Legacy static samples for UniqueStay were here.
@@ -366,82 +417,79 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
 
         <div ref={contentRef} className="max-w-[1440px] mx-auto  px-4 sm:px-6 py-5 z-10">
           {/* Back Navigation */}
-
-            <button
-              onClick={() => navigate(-1)}
-              className="text-gray-600 flex gap-1 items-center dark:bg-black dark:text-white hover:text-black transition-colors"
-            >
-              <IoIosArrowBack size={20}/> Back
-            </button>
-     
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors mb-4"
+          >
+            <IoIosArrowBack size={16} /> Back
+          </button>
 
           {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-            className="mb-3"
+            className="mb-5"
           >
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 md:gap-6">
-              <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-black dark:text-white mt-4">
-                  {stay?.name }
-                </h1>
-                <div className="flex items-center gap-4 mb-4">
-                 
-                  <div className="flex items-center dark:bg-black dark:text-white gap-1 text-gray-600">
-                    <MapPin className="w-4 h-4 dark:bg-black dark:text-white" />
-                    <span>
-                      {[stay?.city, stay?.state]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
+            {/* Row 1: Title + Actions */}
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="text-xl sm:text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white leading-snug tracking-tight">
+                {stay?.name}
+              </h1>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
                   onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300"
                 >
                   <RiShareCircleFill className="w-4 h-4 -rotate-45" />
                   <span className="hidden sm:inline">Share</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm border-gray-300 rounded-full hover:bg-gray-50 dark:hover:bg-slate-500"
+                </button>
+                <button
                   onClick={() => {
+                    if (!isAuthenticated) {
+                      setShowLoginModal(true);
+                      return;
+                    }
                     setIsFavorite(!isFavorite);
                     toast.success(isFavorite ? "Removed from favorites" : "Added to favorites!");
                   }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300"
                 >
-                  <Heart className={`w-4 h-4 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+                  <Heart className={`w-4 h-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 scale-110" : ""}`} />
                   <span className="hidden sm:inline">Save</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-sm bg-gray-900 text-white rounded-full hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                  onClick={() => {
-                    if (isAuthenticated) {
-                      navigate("/payment", { 
-                        state: { 
-                          service: stay, 
-                          type: "unique-stays",
-                          checkInDate,
-                          checkOutDate,
-                          guests
-                        } 
-                      });
-                    } else {
-                      navigate("/register");
-                    }
-                  }}
-                >
-                  Reserve
-                </Button>
+                </button>
               </div>
+            </div>
+
+            {/* Row 2: Location + Rating */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm">{[stay?.city, stay?.state].filter(Boolean).join(", ")}</span>
+              </div>
+              <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 fill-current text-gray-900 dark:text-white" />
+                <span className="text-sm font-medium text-gray-900 dark:text-white">4.91</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">(2,304)</span>
+              </div>
+            </div>
+
+            {/* Row 3: Info chips — compact dot-separated on mobile, pills on desktop */}
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[13px] text-gray-600 dark:text-gray-300">
+              {[
+                stay?.guestCapacity && `${stay.guestCapacity} guests`,
+                stay?.numberOfRooms && `${stay.numberOfRooms} rooms`,
+                stay?.numberOfBeds && `${stay.numberOfBeds} beds`,
+                stay?.numberOfBathrooms && `${stay.numberOfBathrooms} baths`,
+                ...(stay?.features || []).slice(0, 3),
+              ].filter(Boolean).map((item, i, arr) => (
+                <span key={i} className="inline-flex items-center gap-1">
+                  <span className="px-2.5 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-[12px] font-medium">
+                    {item}
+                  </span>
+                </span>
+              ))}
             </div>
           </motion.div>
 
@@ -450,67 +498,76 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-            className="mb-3 w-full max-w-[1280px]"
+            className="mb-4 w-full max-w-[1280px]"
           >
-            <div
-              className="
-      grid grid-cols-2 lg:grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3
-      w-full h-[200px] sm:h-[280px] md:h-[340px] lg:h-[400px]
-    "
+            {/* Mobile: Single hero image with tap to open gallery */}
+            <div className="md:hidden relative rounded-2xl overflow-hidden aspect-[16/10]"
+              onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
             >
-              {/* Main Left Image */}
-              <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl">
-                <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                  src={
-                    getImageUrl(stay?.photos?.coverUrl) ||
-                    getImageUrl(stay?.photos?.galleryUrls?.[0])        }
-                  onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
-                  alt={stay?.name || stay?.name || "Stay Main"}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-              </div>
-
-              {/* Top Right Images */}
-              <div className="col-span-2 grid grid-cols-2 gap-2 sm:gap-3 lg:gap-3">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="relative overflow-hidden rounded-xl aspect-[16/9]"
-                  >
-                    <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                      src={
-                        getImageUrl(stay?.photos?.galleryUrls?.[i])       }
-                      onClick={() => { setPhotoIndex(i + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
-                      alt={stay?.name || stay?.name || `Stay ${i}`}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Bottom Right Image */}
-              <div className="col-span-2 relative overflow-hidden rounded-xl">
-                <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-                  src={
-                   getImageUrl(stay?.photos?.galleryUrls?.[3])          }
-                  onClick={() => { setPhotoIndex(3 + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
-                  alt={stay?.name || stay?.name || "Stay Bottom"}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
-
-                {/* Overlay button */}
-                <div className="absolute bottom-4 right-4">
-                  <button
-                    onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
-                    className="
-            bg-white/90 text-black text-sm lg:text-base font-medium
-            px-4 py-2 rounded-lg shadow-sm hover:bg-white
-            transition-all duration-300 hover:shadow-md
-          "
-                  >
-                    View all +{stay?.photos?.galleryUrls?.length || 0} photos
-                  </button>
+              <img
+                src={getImageUrl(stay?.photos?.coverUrl) || getImageUrl(stay?.photos?.galleryUrls?.[0])}
+                alt={stay?.name || "Stay"}
+                className="w-full h-full object-cover"
+                draggable={false}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                <div className="flex gap-1.5">
+                  {galleryImages.slice(0, 5).map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-white" : "bg-white/40"}`} />
+                  ))}
                 </div>
+                <button className="bg-white/90 backdrop-blur-sm text-black text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
+                  {galleryImages.length} photos
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop: Grid gallery */}
+            <div className="hidden md:grid grid-cols-4 gap-2 lg:gap-3 h-[340px] lg:h-[420px]">
+              {/* Main Left Image */}
+              <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
+                <img
+                  src={getImageUrl(stay?.photos?.coverUrl) || getImageUrl(stay?.photos?.galleryUrls?.[0])}
+                  onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
+                  alt={stay?.name || "Stay Main"}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </div>
+
+              {/* Right images */}
+              {[1, 2].map((i) => (
+                <div key={i} className="relative overflow-hidden rounded-xl cursor-pointer group">
+                  <img
+                    src={getImageUrl(stay?.photos?.galleryUrls?.[i])}
+                    onClick={() => { setPhotoIndex(i + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
+                    alt={`${stay?.name || "Stay"} ${i}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    draggable={false}
+                    onContextMenu={(e) => e.preventDefault()}
+                  />
+                </div>
+              ))}
+
+              {/* Bottom right with "View all" */}
+              <div className="col-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
+                <img
+                  src={getImageUrl(stay?.photos?.galleryUrls?.[3])}
+                  onClick={() => { setPhotoIndex(3 + (stay?.photos?.coverUrl ? 1 : 0)); setShowPhotoGallery(true); }}
+                  alt={stay?.name || "Stay"}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  draggable={false}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+                <button
+                  onClick={() => { setPhotoIndex(0); setShowPhotoGallery(true); }}
+                  className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-black text-sm font-medium px-4 py-2 rounded-full shadow-sm hover:bg-white hover:shadow-md transition-all duration-200"
+                >
+                  View all {galleryImages.length} photos
+                </button>
               </div>
             </div>
           </motion.div>
@@ -518,14 +575,21 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-1">
            {/* Main Content */}
                       <div className="lg:col-span-2 mt-3">
-                        {/* Tabs Bar */}
-                        <div className="sticky top-0 z-40 bg-white dark:bg-gray-900 mb-6">
+                        {/* Sticky Nav Bar */}
+                        <div className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-8">
                           <div className="flex overflow-x-auto scrollbar-hide gap-1 relative">
                             {tabs.map((tab) => (
                               <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap rounded-lg transition-colors duration-200 ${
+                                onClick={() => {
+                                  setActiveTab(tab.id);
+                                  const el = document.getElementById(tab.id);
+                                  if (el) {
+                                    const y = el.getBoundingClientRect().top + window.scrollY - 80;
+                                    window.scrollTo({ top: y, behavior: "smooth" });
+                                  }
+                                }}
+                                className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
                                   activeTab === tab.id
                                     ? "text-gray-900 dark:text-white"
                                     : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -545,210 +609,94 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                           <div className="h-px bg-gray-200 dark:bg-gray-700" />
                         </div>
 
-                        {/* Tab Content with AnimatePresence */}
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="min-h-[200px]"
-                          >
+                        {/* All sections stacked — scroll into view */}
+                        <div className="space-y-12">
 
-                        {activeTab === "overview" && (
-                          <div className="space-y-10">
-                            {/* Description */}
-                            <div className="space-y-3">
-                              <h3 className="text-lg font-semibold text-black dark:text-white">About this place</h3>
-                              <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
-                                <ReadMore children={description} maxCharacters={400} dialogTitle="Full Description"/>
-                              </div>
+                          {/* Overview */}
+                          <div id="overview" className="scroll-mt-24 space-y-3">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">About this place</h3>
+                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
+                              <ReadMore children={description} maxCharacters={400} dialogTitle="Full Description"/>
                             </div>
+                          </div>
 
-                            {/* Amenities preview */}
-                            {amenities.length > 0 && (
-                              <>
-                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                                <div className="space-y-4">
-                                  <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-semibold text-black dark:text-white">Amenities</h3>
-                                    {amenities.length > 6 && (
-                                      <button onClick={() => setActiveTab("amenities")} className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600">
-                                        View all {amenities.length}
-                                      </button>
-                                    )}
-                                  </div>
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                                    {amenities.slice(0, 6).map((amenity, i) => (
-                                      <div key={i} className="flex items-center gap-2.5 py-2">
-                                        <amenity.icon className="w-5 h-5 text-gray-600 dark:text-gray-300 flex-shrink-0" />
-                                        <span className="text-sm text-gray-700 dark:text-gray-300">{amenity.name}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-
-                            {/* Inclusions */}
-                            {inclusions.length > 0 && (
-                              <>
-                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-black dark:text-white">What's included</h3>
-                                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {inclusions.map((item, i) => (
-                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <span className="text-green-500 mt-0.5">&#10003;</span>
-                                        {item}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </>
-                            )}
-
-                            {/* Exclusions */}
-                            {exclusions.length > 0 && (
-                              <>
-                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-black dark:text-white">Not included</h3>
-                                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    {exclusions.map((item, i) => (
-                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <span className="text-gray-400 mt-0.5">&#10005;</span>
-                                        {item}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </>
-                            )}
-
-                            {/* Policies & Rules */}
-                            {policies.length > 0 && (
-                              <>
-                                <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                                <div className="space-y-3">
-                                  <h3 className="text-lg font-semibold text-black dark:text-white">Policies & Rules</h3>
-                                  <ul className="space-y-2">
-                                    {policies.map((rule, i) => (
-                                      <li key={i} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
-                                        <span className="text-gray-400 mt-0.5">&bull;</span>
-                                        {rule}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </>
-                            )}
-
-                            {/* Owner Details */}
-                            <>
+                          {/* Amenities */}
+                          {amenities.length > 0 && (
+                            <div id="amenities" className="scroll-mt-24 space-y-5">
                               <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                              <div className="space-y-4">
-                                <h3 className="text-lg font-semibold text-black dark:text-white">Hosted by</h3>
-                                <div className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
-                                  <img
-                                    src={vendor?.photo || "/User.jpg"}
-                                    alt={vendor?.brandName || vendor?.personName || "Owner"}
-                                    className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-900 dark:text-white">
-                                      {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Amenities</h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                {visibleAmenities.map((amenity, i) => (
+                                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                    <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                      <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
                                     </div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                                      {[
-                                        vendor?.businessCity || vendor?.business?.city,
-                                        vendor?.businessState || vendor?.business?.state,
-                                      ].filter(Boolean).join(", ")}
-                                    </div>
-                                    <div className="flex items-center gap-3 mt-1">
-                                      {vendor?.rating && (
-                                        <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                                          <Star className="w-3 h-3 fill-current" /> {vendor.rating}
-                                        </span>
-                                      )}
-                                      {vendor?.reviewCount && (
-                                        <span className="text-xs text-gray-500 dark:text-gray-400">{vendor.reviewCount} reviews</span>
-                                      )}
-                                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
-                                    </div>
+                                    <span className="text-sm text-gray-700 dark:text-gray-200">{amenity.name}</span>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    className="bg-gray-900 text-white rounded-full px-4 text-xs hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
-                                    onClick={handleContactOwner}
-                                  >
-                                    Contact
-                                  </Button>
+                                ))}
+                              </div>
+                              {!showAll && amenities.length > 12 && (
+                                <button onClick={() => setShowAll(true)} className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600">
+                                  Show all {amenities.length} amenities
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Inclusions */}
+                          {inclusions.length > 0 && (
+                            <div id="inclusions" className="scroll-mt-24">
+                              <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Inclusions</h3>
+                              <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10 p-5">
+                                <div className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-line">
+                                  {inclusions.join("\n")}
                                 </div>
                               </div>
-                            </>
-                          </div>
-                        )}
+                            </div>
+                          )}
 
-                        {activeTab === "amenities" && (
-                          <div className="space-y-6">
-                            <h3 className="text-lg font-semibold text-black dark:text-white">
-                              Amenities
-                            </h3>
+                          {/* Exclusions */}
+                          {exclusions.length > 0 && (
+                            <div id="exclusions" className="scroll-mt-24">
+                              <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Exclusions</h3>
+                              <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 p-5">
+                                <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">
+                                  {exclusions.join("\n")}
+                                </div>
+                              </div>
+                            </div>
+                          )}
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {amenities.map((amenity, index) => (
-                                <motion.div
-                                  key={index}
-                                  initial={{ opacity: 0, x: -8 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: index * 0.04, duration: 0.25 }}
-                                  className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                                >
-                                  <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                    <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+                          {/* Policies & Rules */}
+                          {policies.length > 0 && (
+                            <div id="policies" className="scroll-mt-24">
+                              <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
+                              <div className="flex items-center gap-2 mb-5">
+                                <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                  <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">House Rules</h3>
+                              </div>
+                              <div className="rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+                                {policies.map((rule, i) => (
+                                  <div key={i} className={`flex items-center gap-4 px-5 py-4 ${i !== policies.length - 1 ? "border-b border-gray-50 dark:border-gray-700/50" : ""} hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors`}>
+                                    <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">
+                                      {i + 1}
+                                    </span>
+                                    <span className="text-sm text-gray-700 dark:text-gray-300">{rule}</span>
                                   </div>
-                                  <span className="text-sm text-gray-700 dark:text-gray-200">
-                                    {amenity.name}
-                                  </span>
-                                </motion.div>
-                              ))}
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {activeTab === "inclusions" && (
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-black dark:text-white">Inclusions</h3>
-                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
-                              <ReadMore children={inclusionsText} maxCharacters={600} dialogTitle="Full Inclusions"/>
-                            </div>
-                          </div>
-                        )}
-
-                        {activeTab === "exclusions" && (
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-black dark:text-white">Exclusions</h3>
-                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
-                              <ReadMore children={exclusionsText} maxCharacters={600} dialogTitle="Full Exclusions"/>
-                            </div>
-                          </div>
-                        )}
-
-                        {activeTab === "policies" && (
-                          <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-black dark:text-white">Policies & Rules</h3>
-                            <div className="text-gray-600 dark:text-gray-300 text-[15px] leading-relaxed">
-                              <ReadMore children={visiblePolicies} maxCharacters={600} dialogTitle="Full Policies"/>
-                            </div>
-                          </div>
-                        )}
-          
-                        {activeTab === "reviews" && (
-                          <div className="space-y-8">
+                          {/* Reviews */}
+                          <div id="reviews" className="scroll-mt-24 space-y-6">
+                            <div className="h-px bg-gray-100 dark:bg-gray-800" />
                             <div className="flex justify-between items-center">
-                              <h3 className="text-lg font-semibold text-black dark:text-white">Reviews</h3>
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reviews</h3>
                               <Button
                                 className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
                                 onClick={() => toast("Opening review form...")}
@@ -757,7 +705,6 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                               </Button>
                             </div>
 
-                            {/* Rating Summary */}
                             <div className="flex items-center gap-6 p-5 bg-gray-50 dark:bg-gray-800 rounded-2xl">
                               <div className="text-center">
                                 <div className="text-4xl font-bold text-gray-900 dark:text-white">4.5</div>
@@ -768,18 +715,12 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                                 </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">2,304 reviews</div>
                               </div>
-
                               <div className="flex-1 space-y-2.5">
                                 {["Cleanliness", "Accuracy", "Communication", "Location", "Value"].map((cat) => (
                                   <div key={cat} className="flex items-center gap-3">
                                     <span className="w-24 text-xs text-gray-600 dark:text-gray-300">{cat}</span>
                                     <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                                      <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: "96%" }}
-                                        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-                                        className="h-full bg-gray-900 dark:bg-white rounded-full"
-                                      />
+                                      <div className="h-full bg-gray-900 dark:bg-white rounded-full" style={{ width: "96%" }} />
                                     </div>
                                     <span className="text-xs font-medium text-gray-700 dark:text-gray-200 w-6">4.8</span>
                                   </div>
@@ -787,17 +728,10 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                               </div>
                             </div>
 
-                            {/* Reviews List */}
                             {visibleReviews.length > 0 ? (
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {visibleReviews.map((review, index) => (
-                                  <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-3"
-                                  >
+                                  <div key={index} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-3">
                                     <div className="flex items-center gap-3">
                                       <img src={review.profile} className="w-9 h-9 rounded-full object-cover" />
                                       <div>
@@ -806,74 +740,88 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
                                       </div>
                                     </div>
                                     <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{review.review}</p>
-                                  </motion.div>
+                                  </div>
                                 ))}
                               </div>
                             ) : (
                               <p className="text-sm text-gray-500 dark:text-gray-400 italic">No reviews yet. Be the first to leave a review.</p>
                             )}
                           </div>
-                        )}
 
-                        {activeTab === "owner" && (
-                          <div className="space-y-6">
-                            <h3 className="text-lg font-semibold text-black dark:text-white">Owner Details</h3>
-
-                            <div className="p-6 border border-gray-200 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-900">
-                              <div className="flex items-center gap-5">
-                                <img
-                                  src={vendor?.photo || "/User.jpg"}
-                                  alt={vendor?.brandName || vendor?.personName || "Owner"}
-                                  className="w-16 h-16 rounded-full object-cover flex-shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-gray-900 dark:text-white">
-                                    {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    {[
-                                      vendor?.businessLocality || vendor?.business?.locality,
-                                      vendor?.businessCity || vendor?.business?.city,
-                                      vendor?.businessState || vendor?.business?.state,
-                                    ].filter(Boolean).join(", ")}
-                                  </div>
-                                  <div className="flex items-center gap-4 mt-2">
-                                    {vendor?.reviewCount && (
-                                      <span className="text-xs text-gray-600 dark:text-gray-300">{vendor.reviewCount} reviews</span>
-                                    )}
-                                    {vendor?.rating && (
-                                      <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                                        <Star className="w-3 h-3 fill-current" /> {vendor.rating}
-                                      </span>
-                                    )}
-                                  </div>
+                          {/* Owner */}
+                          <div id="owner" className="scroll-mt-24 space-y-5">
+                            <div className="h-px bg-gray-100 dark:bg-gray-800" />
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Hosted by</h3>
+                            <div className="flex items-center gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700">
+                              <img
+                                src={vendor?.photo || "/User.jpg"}
+                                alt={vendor?.brandName || vendor?.personName || "Owner"}
+                                className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold text-gray-900 dark:text-white">
+                                  {vendor?.firstName || vendor?.personal?.firstName} {vendor?.lastName || vendor?.personal?.lastName}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                                  {[vendor?.businessCity || vendor?.business?.city, vendor?.businessState || vendor?.business?.state].filter(Boolean).join(", ")}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1">
+                                  {vendor?.rating && (
+                                    <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+                                      <Star className="w-3 h-3 fill-current" /> {vendor.rating}
+                                    </span>
+                                  )}
+                                  {vendor?.reviewCount && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{vendor.reviewCount} reviews</span>
+                                  )}
+                                  <span className="text-xs text-green-600 dark:text-green-400 font-medium">Verified</span>
                                 </div>
                               </div>
-
-                              <div className="mt-5 pt-5 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">Verified by Travelhomes</div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">Identity & listing verified</div>
-                                </div>
-                                <Button
-                                  className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                                  onClick={handleContactOwner}
-                                >
-                                  Contact Owner
-                                </Button>
-                              </div>
+                              <Button
+                                size="sm"
+                                className="bg-gray-900 text-white rounded-full px-4 text-xs hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
+                                onClick={handleContactOwner}
+                              >
+                                Contact
+                              </Button>
                             </div>
                           </div>
-                        )}
 
-                          </motion.div>
-                        </AnimatePresence>
+                        </div>
                       </div>
 
             {/* Sidebar - Booking Card */}
             <div className="lg:col-span-1 lg:mt-24 mt-8">
-              <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 rounded-3xl p-8 shadow-lg">
-               
+              <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 dark:border-gray-700 rounded-3xl p-6 sm:p-8 shadow-lg">
+
+                {/* Price + Savings */}
+                <div className="mb-5">
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    {stay?.regularPrice && (
+                      <span className="text-sm text-gray-400 line-through">
+                        ₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}
+                      </span>
+                    )}
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                      ₹{Number(stay?.regularPrice || 0).toLocaleString()}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">/ night</span>
+                    {stay?.regularPrice && (
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold">
+                        Save 17%
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Rare find nudge */}
+                <div className="flex items-start gap-3 p-3 mb-5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                  <span className="text-lg flex-shrink-0">💎</span>
+                  <div>
+                    <div className="text-sm font-semibold text-rose-800 dark:text-rose-300">Rare find</div>
+                    <div className="text-xs text-rose-600 dark:text-rose-400">This place is usually booked. Don't miss out.</div>
+                  </div>
+                </div>
 
                 {/* Booking Form */}
                 <div className="space-y-4 mb-6">
@@ -998,21 +946,162 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
             </div>
           </div>
 
-          {/* More Stays Section */}
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold text-black mb-8 dark:bg-black dark:text-white">
-              More {stay ? "unique stays" : "unique stays"}
-            </h2>
-            {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((index) => (
-                <UniqueStayCard key={index} />
-              ))}
-            </div> */}
-            <DefaultCard CardData={stayShown} />
-          </div>
+          {/* Related Stays */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mt-14 space-y-14"
+          >
+            {/* Same city stays */}
+            {sameCityStays.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                      More stays in {stay?.city}
+                    </h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                      Explore similar places nearby
+                    </p>
+                  </div>
+                  {sameCityStays.length > 4 && (
+                    <button
+                      onClick={() => navigate(`/search?filter=unique-stays&location=${stay?.city}`)}
+                      className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600"
+                    >
+                      View all
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4 md:mx-0 md:px-0">
+                  <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 min-w-max md:min-w-0">
+                    {sameCityStays.slice(0, 4).map((item, idx) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.08, duration: 0.4, ease: "easeOut" }}
+                      >
+                        <Link
+                          to={item.id}
+                          className="block w-64 md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
+                        >
+                          <div className="relative aspect-[4/3] overflow-hidden rounded-xl img-shimmer-wrap">
+                            <img
+                              src={getImageUrl(item.image)}
+                              alt={item.title}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="img-shimmer-sweep" />
+                          </div>
+                          <div className="pt-3 px-1 space-y-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white line-clamp-1">{item.title}</h3>
+                              <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                                <Star className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
+                                <span className="text-[13px] font-medium text-gray-900 dark:text-white">4.9</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{item.details}</span>
+                            </div>
+                            <div className="flex items-baseline gap-1.5 pt-0.5">
+                              {item.Maxprice && <span className="text-[13px] text-gray-400 line-through">₹{item.Maxprice}</span>}
+                              <span className="text-[15px] font-bold text-gray-900 dark:text-white">{item.price}</span>
+                              <span className="text-[13px] text-gray-500">{item.unit}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* You might also like */}
+            {alsoLikeStays.length > 0 && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    You might also like
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Similar stays at a similar price
+                  </p>
+                </div>
+                <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4 md:mx-0 md:px-0">
+                  <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 min-w-max md:min-w-0">
+                    {alsoLikeStays.map((item, idx) => (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: idx * 0.08, duration: 0.4, ease: "easeOut" }}
+                      >
+                        <Link
+                          to={item.id}
+                          className="block w-64 md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
+                        >
+                          <div className="relative aspect-[4/3] overflow-hidden rounded-xl img-shimmer-wrap">
+                            <img
+                              src={getImageUrl(item.image)}
+                              alt={item.title}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                            <div className="img-shimmer-sweep" />
+                          </div>
+                          <div className="pt-3 px-1 space-y-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white line-clamp-1">{item.title}</h3>
+                              <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                                <Star className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
+                                <span className="text-[13px] font-medium text-gray-900 dark:text-white">4.9</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                              <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">{item.details}</span>
+                            </div>
+                            <div className="flex items-baseline gap-1.5 pt-0.5">
+                              {item.Maxprice && <span className="text-[13px] text-gray-400 line-through">₹{item.Maxprice}</span>}
+                              <span className="text-[15px] font-bold text-gray-900 dark:text-white">{item.price}</span>
+                              <span className="text-[13px] text-gray-500">{item.unit}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Fallback: if no city/price matches, show any other stays */}
+            {sameCityStays.length === 0 && alsoLikeStays.length === 0 && stayShown.length > 0 && (
+              <div>
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    More unique stays
+                  </h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Handpicked stays you'll love
+                  </p>
+                </div>
+                <DefaultCard CardData={stayShown} />
+              </div>
+            )}
+          </motion.div>
         </div>
 
-        {/* <Footer /> */}
+        <div className="mt-10">
+          <Footer />
+        </div>
 
         {/* Photo Gallery Modal */}
         <PhotoGallery
@@ -1184,6 +1273,178 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
           </div>
         </div>
 
+        {/* Login Modal */}
+        <AnimatePresence>
+          {showLoginModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+              onClick={() => setShowLoginModal(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Close */}
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <XIcon className="w-5 h-5 text-gray-500" />
+                </button>
+
+                {/* Header */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Log in to save</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Save your favourite stays and access them anytime.</p>
+                </div>
+
+                {/* Form */}
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setLoginError("");
+                    const errs: { email?: string; password?: string } = {};
+
+                    // Email validation
+                    if (!loginForm.email.trim()) {
+                      errs.email = "Email is required";
+                    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginForm.email.trim())) {
+                      errs.email = "Enter a valid email address";
+                    }
+
+                    // Password validation
+                    if (!loginForm.password) {
+                      errs.password = "Password is required";
+                    } else if (loginForm.password.length < 6) {
+                      errs.password = "Password must be at least 6 characters";
+                    }
+
+                    setLoginFieldErrors(errs);
+                    if (Object.keys(errs).length > 0) return;
+
+                    setLoginLoading(true);
+                    try {
+                      const success = await login(loginForm.email.trim(), loginForm.password, true);
+                      if (success) {
+                        toast.success("Logged in!");
+                        setShowLoginModal(false);
+                        setIsFavorite(true);
+                        toast.success("Added to favorites!");
+                        setLoginForm({ email: "", password: "" });
+                        setLoginFieldErrors({});
+                      } else {
+                        setLoginError("Invalid email or password");
+                      }
+                    } catch {
+                      setLoginError("Login failed. Please try again.");
+                    } finally {
+                      setLoginLoading(false);
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+                    <input
+                      type="email"
+                      value={loginForm.email}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setLoginForm(p => ({ ...p, email: val }));
+                        if (!val.trim()) {
+                          setLoginFieldErrors(p => ({ ...p, email: "Email is required" }));
+                        } else if (val.includes("@") && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())) {
+                          setLoginFieldErrors(p => ({ ...p, email: "Enter a valid email address" }));
+                        } else {
+                          setLoginFieldErrors(p => ({ ...p, email: undefined }));
+                        }
+                      }}
+                      placeholder="you@example.com"
+                      className={`w-full px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm outline-none transition-colors placeholder:text-gray-400 ${
+                        loginFieldErrors.email
+                          ? "border-red-400 focus:border-red-500"
+                          : "border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
+                      }`}
+                      autoFocus
+                    />
+                    {loginFieldErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">{loginFieldErrors.email}</p>
+                    )}
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showLoginPassword ? "text" : "password"}
+                        value={loginForm.password}
+                        onChange={(e) => {
+                          setLoginForm(p => ({ ...p, password: e.target.value }));
+                          if (loginFieldErrors.password) setLoginFieldErrors(p => ({ ...p, password: undefined }));
+                        }}
+                        placeholder="Enter password"
+                        className={`w-full px-4 py-2.5 pr-11 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm outline-none transition-colors placeholder:text-gray-400 ${
+                          loginFieldErrors.password
+                            ? "border-red-400 focus:border-red-500"
+                            : "border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
+                        }`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {loginFieldErrors.password && (
+                      <p className="text-xs text-red-500 mt-1">{loginFieldErrors.password}</p>
+                    )}
+                  </div>
+
+                  {/* Server error */}
+                  {loginError && (
+                    <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
+                      <span className="text-red-500 text-sm mt-0.5">&#9888;</span>
+                      <p className="text-sm text-red-600 dark:text-red-400">{loginError}</p>
+                    </div>
+                  )}
+
+                  {/* Submit */}
+                  <Button
+                    type="submit"
+                    disabled={loginLoading || !loginForm.email.trim() || !loginForm.password || !!loginFieldErrors.email || !!loginFieldErrors.password}
+                    className="w-full bg-gray-900 dark:bg-white dark:text-black text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {loginLoading ? "Logging in..." : "Log in"}
+                  </Button>
+
+                  {/* Register link */}
+                  <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+                    Don't have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => { setShowLoginModal(false); navigate("/register"); }}
+                      className="text-gray-900 dark:text-white font-medium underline underline-offset-2"
+                    >
+                      Sign up
+                    </button>
+                  </p>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Share Modal */}
         <ShareModal
           isOpen={showShareModal}
@@ -1194,6 +1455,51 @@ const visiblePolicies = policies.map(e => `• ${e} </br>`).join("\n");
           isDarkMode={isDarkMode}
         />
       </motion.div>
+
+      {/* Sticky mobile booking bar */}
+      <div className="lg:hidden fixed bottom-14 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              {stay?.regularPrice && (
+                <span className="text-xs text-gray-400 line-through">
+                  ₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}
+                </span>
+              )}
+              <span className="text-lg font-bold text-gray-900 dark:text-white">
+                ₹{Number(stay?.regularPrice || 0).toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">/ night</span>
+            </div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {checkInDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – {checkOutDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+            </div>
+          </div>
+          <Button
+            className="bg-gray-900 dark:bg-white dark:text-black text-white rounded-full px-6 h-11 text-sm font-semibold hover:bg-gray-800 flex-shrink-0 shadow-md"
+            onClick={() => {
+              if (isAuthenticated) {
+                navigate("/payment", {
+                  state: {
+                    offerId: id,
+                    checkInDate,
+                    checkOutDate,
+                    guests,
+                    serviceType: 'unique-stay',
+                    service: stay,
+                    type: "unique-stays"
+                  }
+                });
+              } else {
+                navigate("/register");
+              }
+            }}
+          >
+            Check availability
+          </Button>
+        </div>
+      </div>
+
       <div className="fixed bottom-0 left-0 right-0 z-50 dark:bg-black dark:text-white bg-white border-t border-gray-200 dark:border-gray-800 shadow-md">
         <MobileUserNav />
       </div>
