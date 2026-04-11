@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 function FilterButton({
   icon: Icon,
@@ -16,33 +17,52 @@ function FilterButton({
   const isHero = variant === "hero";
 
   return (
-    <button
+    <motion.button
       onClick={onClick}
-      className={`flex items-center gap-2 md:gap-2.5 px-4 py-2 rounded-full transition-all duration-200 border ${
+      whileHover={{ scale: 1.04 }}
+      whileTap={{ scale: 0.96 }}
+      transition={{ type: "spring", stiffness: 400, damping: 20 }}
+      className={`relative flex items-center gap-2 md:gap-2.5 px-5 py-2.5 rounded-full transition-all duration-300 border overflow-hidden ${
         active
           ? isHero
-            ? "bg-white text-gray-900 border-white shadow-md"
-            : "bg-gray-900 text-white border-gray-900"
+            ? "bg-white text-gray-900 border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
+            : "bg-gray-900 text-white border-gray-900 shadow-md"
           : isHero
-          ? "bg-white/15 backdrop-blur-sm text-white border-white/25 hover:bg-white/25"
+          ? "bg-white/10 backdrop-blur-md text-white border-white/20 hover:bg-white/20 hover:border-white/40"
           : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50 shadow-sm"
       }`}
     >
-      <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+      {active && (
+        <motion.span
+          layoutId={isHero ? "hero-filter-pill" : "filter-pill"}
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: isHero
+              ? "white"
+              : "linear-gradient(135deg, #1a1a1a 0%, #333 100%)",
+          }}
+          transition={{ type: "spring", stiffness: 350, damping: 30 }}
+        />
+      )}
+      <div className="relative z-10 w-5 h-5 flex items-center justify-center flex-shrink-0">
         <Icon
-          className={`w-4 h-4 ${
+          className={`w-4 h-4 transition-colors duration-200 ${
             active && isHero
               ? "text-gray-900"
               : isHero
-              ? "text-white"
+              ? "text-white/90"
               : active
               ? "text-white"
-              : "text-gray-600"
+              : "text-gray-500"
           }`}
         />
       </div>
-      <span className="text-sm font-medium capitalize">{label}</span>
-    </button>
+      <span className={`relative z-10 text-sm font-semibold capitalize tracking-wide transition-colors duration-200 ${
+        active && isHero ? "text-gray-900" : ""
+      }`}>
+        {label}
+      </span>
+    </motion.button>
   );
 }
 

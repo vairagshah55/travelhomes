@@ -75,6 +75,48 @@ const Star = StarIcon;
 
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
+const HERO_IMAGES = [
+  "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=2400&q=80&auto=format",
+  "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=2400&q=80&auto=format",
+  "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=2400&q=80&auto=format",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=2400&q=80&auto=format",
+];
+
+function HeroSlideshow() {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {HERO_IMAGES.map((src, i) => (
+        <motion.img
+          key={src}
+          src={src}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          initial={false}
+          animate={{
+            opacity: i === current ? 1 : 0,
+            scale: i === current ? 1 : 1.08,
+          }}
+          transition={{
+            opacity: { duration: 1.2, ease: "easeInOut" },
+            scale: { duration: 6, ease: "linear" },
+          }}
+        />
+      ))}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/75" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+    </div>
+  );
+}
+
 export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -875,15 +917,8 @@ export default function Index() {
     <>
       {/* Hero Section */}
       <section ref={heroSectionRef} className="relative flex flex-col z-20 overflow-visible">
-        {/* Background Image */}
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            className="w-full h-full object-cover object-center"
-            src="https://api.builder.io/api/v1/image/assets/TEMP/58bfed58f49dafc4198cf3dc2d050bc688e7aca8?width=2880"
-            alt="Hero Background"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/30 to-black/70" />
-        </div>
+        {/* Background Slideshow */}
+        <HeroSlideshow />
 
         {/* Content */}
         <div className="relative flex-1 flex flex-col overflow-visible">
@@ -900,14 +935,30 @@ export default function Index() {
           {/* Hero Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12 md:pt-28 md:pb-14 text-center overflow-visible">
             {/* Heading */}
-            <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight drop-shadow mb-6 md:mb-8"
-              initial={{ opacity: 0, y: 20 }}
+            <motion.p
+              className="text-white/70 text-xs sm:text-sm font-medium tracking-[0.2em] uppercase mb-3"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+            >
+              Your journey starts here
+            </motion.p>
+            <motion.h1
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-3 md:mb-4"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             >
               Explore The Unexplored
             </motion.h1>
+            <motion.p
+              className="text-white/60 text-sm sm:text-base max-w-md mb-7 md:mb-9"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+            >
+              Campervans, unique stays & adventures across India
+            </motion.p>
 
             {/* Category Filters */}
             <motion.div
