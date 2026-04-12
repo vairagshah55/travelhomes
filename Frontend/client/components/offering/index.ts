@@ -6,3 +6,5 @@ export {
 } from "./ui";
 
 export { CamperVanPricing, UniqueStayPricing, ActivityPricing } from "./PricingSections";
+export { OfferingCard } from "./OfferingCard";
+export { OfferPanel } from "./OfferPanel";
