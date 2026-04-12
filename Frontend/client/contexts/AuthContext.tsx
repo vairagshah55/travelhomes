@@ -107,7 +107,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
   const lastUserTypeUpdateAt = React.useRef<number>(0);
 
-  const login = async (email: string, password: string, rememberMe: boolean = true, userType?: 'user' | 'vendor'): Promise<boolean> => {
+  // Clean up invalid/fake tokens on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem('travel_auth_token') || sessionStorage.getItem('travel_auth_token');
+    if (storedToken && !storedToken.includes('.')) {
+      // Valid JWTs always have 3 dot-separated parts (header.payload.signature)
+      // Fake tokens like "dev_token_..." or "demo_token_..." have no dots
+      console.warn('Invalid token detected, clearing auth state');
+      localStorage.removeItem('travel_auth_user');
+      localStorage.removeItem('travel_auth_token');
+      localStorage.removeItem('travel_onboarding_complete');
+      sessionStorage.removeItem('travel_auth_user');
+      sessionStorage.removeItem('travel_auth_token');
+      sessionStorage.removeItem('travel_onboarding_complete');
+      setUser(null);
+      setToken(null);
+      setIsAuthenticated(false);
+    }
+  }, []);
+
+  // Auto-refresh user profile when tab regains focus (picks up admin approval, etc.)
+  const refreshUserRef = React.useRef<() => Promise<void>>();
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated && user?.email) {
+        refreshUserRef.current?.();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [isAuthenticated, user?.email]);
+
+  // Refresh user profile on initial app load to pick up vendorStatus changes
+  useEffect(() => {
+    if (isAuthenticated && user?.email) {
+      // Small delay to let the app render first, then refresh in background
+      const t = setTimeout(() => refreshUserRef.current?.(), 500);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const login = async (email: string, password: string, rememberMe: boolean = true, _userType?: 'user' | 'vendor'): Promise<boolean> => {
     // if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
     //   const loggedInUser = { ...DEMO_USER, userType: userType || 'user' as 'user' | 'vendor' };
     //   setUser(loggedInUser);
@@ -175,30 +217,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // TODO: Remove this dev bypass before production — allows login even when
     // server-side OTP was not verified (e.g. static OTP used during registration)
     if (r.code === 403) {
-      console.log('DEV: OTP not verified on server, bypassing for development');
+      console.log('DEV: OTP not verified on server, attempting force-verify then retry');
       const { authApi } = await import('../lib/api');
       try {
-        // Try to force-verify via the register endpoint so future logins work normally
+        // Force-verify OTP so the server marks the user as verified
         const regId = sessionStorage.getItem('reg_register_id');
         if (regId) await authApi.verifyRegisterOtp(regId, '000000').catch(() => {});
       } catch {}
-      // Authenticate client-side without a server token
-      const devUser: User = {
-        id: 'dev-' + Date.now(),
-        email,
-        firstName: email.split('@')[0],
-        lastName: '',
-        userType: userType || 'user',
-      };
-      setUser(devUser);
-      setIsAuthenticated(true);
-      setNeedsOnboarding(false);
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('travel_auth_user', JSON.stringify(devUser));
-      storage.setItem('travel_onboarding_complete', 'true');
-      storage.setItem('travel_auth_token', 'dev_token_' + Date.now());
-      setToken('dev_token_' + Date.now());
-      return true;
+
+      // Retry login — should now succeed with a real JWT
+      const retry = await tryOnce('user');
+      if (retry.ok && retry.resp) {
+        const u = retry.resp.user;
+        const loggedInUser: User = {
+          id: u.id || (u as any)._id,
+          email: u.email,
+          firstName: u.firstName || '',
+          lastName: u.lastName || '',
+          userType: (u.userType as any)?.toLowerCase() as 'user' | 'vendor',
+        };
+        setUser(loggedInUser);
+        setIsAuthenticated(true);
+        setNeedsOnboarding(false);
+        const storage = rememberMe ? localStorage : sessionStorage;
+        const otherStorage = rememberMe ? sessionStorage : localStorage;
+        otherStorage.removeItem('travel_auth_token');
+        storage.setItem('travel_auth_user', JSON.stringify(loggedInUser));
+        storage.setItem('travel_onboarding_complete', 'true');
+        storage.setItem('travel_auth_token', retry.resp.token);
+        setToken(retry.resp.token);
+        return true;
+      }
+
     }
 
     return false;
@@ -331,7 +381,7 @@ const loginWithGoogle = async (): Promise<boolean> => {
   };
 
   // TODO: Remove static OTP bypass before production — temporary for development/testing
-  const STATIC_OTP = '000000';
+  const STATIC_OTP = '123456';
 
   const verifyOTP = async (otp: string): Promise<boolean> => {
     try {
@@ -455,13 +505,20 @@ const authenticateAfterRegister = (u: Partial<User> & { email: string }) => {
     try {
       const { userProfileApi } = await import('../lib/api');
       const res = await userProfileApi.get(user.email);
+      console.log('[AUTH] refreshUser response:', { vendorStatus: res?.data?.vendorStatus, userType: res?.data?.userType });
       if (res?.success && res.data) {
         const p = res.data;
         
         // If we recently updated userType locally, don't let the server overwrite it
         // until enough time has passed for the server to have the updated value
         const isRecentlyUpdated = (Date.now() - lastUserTypeUpdateAt.current) < 10000; // 10 seconds
-        const effectiveUserType = isRecentlyUpdated ? user.userType : ((p as any).userType || user.userType);
+        let effectiveUserType = isRecentlyUpdated ? user.userType : ((p as any).userType || user.userType);
+
+        // Auto-promote to vendor if admin has approved
+        const vs = (p as any).vendorStatus;
+        if ((vs === 'approved' || vs === 'active') && effectiveUserType !== 'vendor') {
+          effectiveUserType = 'vendor';
+        }
 
         const updatedUser: User = {
           ...user,
@@ -489,6 +546,9 @@ const authenticateAfterRegister = (u: Partial<User> & { email: string }) => {
       console.error('Failed to refresh user profile:', error);
     }
   };
+
+  // Keep ref in sync so the visibilitychange listener always calls the latest version
+  refreshUserRef.current = refreshUser;
 
   return (
     <AuthContext.Provider

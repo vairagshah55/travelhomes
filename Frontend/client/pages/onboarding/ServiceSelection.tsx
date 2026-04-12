@@ -48,6 +48,7 @@ const ServiceSelection = () => {
   const [pendingServiceType, setPendingServiceType] = useState<string | null>(
     null
   );
+  const [pendingData, setPendingData] = useState<any>(null);
   const [showError, setShowError] = useState(false);
   const [hoveredService, setHoveredService] = useState<ServiceType | null>(
     null
@@ -55,24 +56,22 @@ const ServiceSelection = () => {
 
   useEffect(() => {
     const checkPendingApp = async () => {
-      if (user?.vendorStatus === "pending") {
-        try {
-          const data = await getOnboardingData();
-          if (data && data.doc && data.doc.status === "pending") {
-            setHasPendingApplication(true);
-            setPendingServiceType(data.type);
-          } else {
-            setHasPendingApplication(false);
-            setPendingServiceType(null);
-          }
-        } catch (e) {
-          console.error("Failed to check onboarding status", e);
+      try {
+        const data = await getOnboardingData();
+        if (data && data.doc && data.doc.status === "pending") {
+          setHasPendingApplication(true);
+          setPendingServiceType(data.type);
+          setPendingData(data.doc);
+        } else {
           setHasPendingApplication(false);
           setPendingServiceType(null);
+          setPendingData(null);
         }
-      } else {
+      } catch (e) {
+        console.error("Failed to check onboarding status", e);
         setHasPendingApplication(false);
         setPendingServiceType(null);
+        setPendingData(null);
       }
     };
     checkPendingApp();
@@ -237,6 +236,29 @@ const ServiceSelection = () => {
             </p>
           </div>
 
+          {/* Pending Application Banner */}
+          {hasPendingApplication && pendingData && (
+            <div className="mb-6 p-5 rounded-2xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/30">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl mt-0.5">⏳</span>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-amber-800 dark:text-amber-300 text-base">
+                    Your {pendingServiceType ? SERVICE_META[pendingServiceType as ServiceType]?.title : 'listing'} is under review
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                    Submitted on {new Date(pendingData.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}. Our team will review it within 24–48 hours. We'll notify you via email once approved.
+                  </p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Pending Review
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Service Cards */}
           <div className="flex flex-col gap-3 mb-4">
             {visibleServices.map((service, index) => (
@@ -285,7 +307,7 @@ const ServiceSelection = () => {
             style={{
               backgroundColor: "var(--th-accent)",
               color: "var(--th-accent-fg)",
-              boxShadow: selectedService ? "0 4px 20px rgba(59, 217, 218, 0.25)" : "none",
+              boxShadow: selectedService ? "0 4px 20px rgba(37, 99, 235, 0.25)" : "none",
             }}
           >
             Continue
@@ -468,7 +490,7 @@ const ServiceCard = ({
         ? {
             borderColor: "var(--th-accent)",
             backgroundColor: "var(--th-accent-subtle)",
-            boxShadow: "0 4px 24px rgba(59, 217, 218, 0.12)",
+            boxShadow: "0 4px 24px rgba(37, 99, 235, 0.12)",
           }
         : undefined
     }

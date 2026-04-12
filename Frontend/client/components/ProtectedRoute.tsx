@@ -17,8 +17,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.userType?.toLowerCase() as any)) {
-    // If role not allowed, redirect to home or unauthorized page
-    return <Navigate to="/" replace />;
+    // Allow access to vendor routes if user has an approved/active vendor status
+    const isApprovedVendor = allowedRoles.includes('vendor') &&
+      (user.vendorStatus === 'approved' || user.vendorStatus === 'active');
+
+    if (!isApprovedVendor) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <>{children}</>;

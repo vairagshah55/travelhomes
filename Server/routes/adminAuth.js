@@ -14,12 +14,13 @@
 
 // routes/adminAuth.js
 const express = require('express');
-const { loginAdmin, registerAdmin, getMe } = require('../controller/adminAuthController');
+const { loginAdmin, loginAdmins, registerAdmin, getMe } = require('../controller/adminAuthController');
 const { requireJwt } = require('../middleware/auth');
 const router = express.Router();
 
 // Public
-router.post('/login', loginAdmin);
+router.post('/login', loginAdmins);           // AdminStaff login (primary)
+router.post('/login/superadmin', loginAdmin);  // Admin (superadmin) login
 router.post('/register', registerAdmin);
 
 // Protected

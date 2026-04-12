@@ -432,6 +432,10 @@ const CaravanOnboarding = () => {
         let newData = { ...prev };
         let changed = false;
 
+        // Only auto-seed when basePrice is known AND the field is still empty
+        // (never override a value the user has manually entered)
+        if (basePrice <= 0) return prev;
+
         const calculateFinal = (type: string, value: string) => {
            const val = parseFloat(value) || 0;
            if (type === 'percentage') {
@@ -441,36 +445,28 @@ const CaravanOnboarding = () => {
            }
         };
 
-        if (prev.firstUserDiscount) {
+        if (prev.firstUserDiscount && !prev.firstUserDiscountFinalPrice) {
             const final = calculateFinal(prev.firstUserDiscountType, prev.firstUserDiscountValue);
-            if (prev.firstUserDiscountFinalPrice !== final) {
-                newData.firstUserDiscountFinalPrice = final;
-                changed = true;
-            }
+            newData.firstUserDiscountFinalPrice = final;
+            changed = true;
         }
 
-        if (prev.festivalOffers) {
+        if (prev.festivalOffers && !prev.festivalOffersFinalPrice) {
             const final = calculateFinal(prev.festivalOffersType, prev.festivalOffersValue);
-            if (prev.festivalOffersFinalPrice !== final) {
-                newData.festivalOffersFinalPrice = final;
-                changed = true;
-            }
+            newData.festivalOffersFinalPrice = final;
+            changed = true;
         }
 
-        if (prev.weeklyMonthlyOffers) {
+        if (prev.weeklyMonthlyOffers && !prev.weeklyMonthlyOffersFinalPrice) {
             const final = calculateFinal(prev.weeklyMonthlyOffersType, prev.weeklyMonthlyOffersValue);
-            if (prev.weeklyMonthlyOffersFinalPrice !== final) {
-                newData.weeklyMonthlyOffersFinalPrice = final;
-                changed = true;
-            }
+            newData.weeklyMonthlyOffersFinalPrice = final;
+            changed = true;
         }
 
-        if (prev.specialOffers) {
+        if (prev.specialOffers && !prev.specialOffersFinalPrice) {
             const final = calculateFinal(prev.specialOffersType, prev.specialOffersValue);
-            if (prev.specialOffersFinalPrice !== final) {
-                newData.specialOffersFinalPrice = final;
-                changed = true;
-            }
+            newData.specialOffersFinalPrice = final;
+            changed = true;
         }
 
         return changed ? newData : prev;
@@ -698,6 +694,9 @@ const CaravanOnboarding = () => {
       }
       if (!formData.personalPincode || !formData.personalPincode.trim()) {
         newErrors.personalPincode = "Pincode is required";
+        hasError = true;
+      } else if (!/^\d{6}$/.test(formData.personalPincode.trim())) {
+        newErrors.personalPincode = "Enter a valid 6-digit pincode";
         hasError = true;
       }
       if (!formData.dateOfBirth) {
@@ -998,6 +997,13 @@ const CaravanOnboarding = () => {
         setUploadError("Only JPG, PNG, or PDF files are allowed.");
         return;
       }
+
+      const maxSize = 5 * 1024 * 1024; // 5 MB
+      if (file.size > maxSize) {
+        setUploadError("File size must be under 5 MB.");
+        return;
+      }
+
       setFileName(file.name);
       setIdProofImage(URL.createObjectURL(file));
 

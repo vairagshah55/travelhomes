@@ -44,7 +44,7 @@ const handleLogin = async (e: React.FormEvent) => {
 
     console.log("LOGIN RESPONSE:", data);
 
-    if (!data?.status) {
+    if (!data?.success) {
       toast.error(data?.message || "Invalid admin credentials");
       return;
     }

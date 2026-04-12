@@ -232,6 +232,11 @@ export default {
         "th-inner": "var(--th-shadow-inner)",
         "th-ring":  "var(--th-shadow-ring)",
         "th-ring-error": "var(--th-shadow-ring-error)",
+        /* Blue theme shadows */
+        "blue-sm":   "0 2px 8px rgba(37, 99, 235, 0.08)",
+        "blue-md":   "0 4px 16px rgba(37, 99, 235, 0.12)",
+        "blue-lg":   "0 12px 40px rgba(37, 99, 235, 0.15)",
+        "blue-glow": "0 0 20px rgba(37, 99, 235, 0.2)",
       },
 
       /* ─── TRANSITIONS ──────────────────────────────────── */
@@ -241,6 +246,8 @@ export default {
         "th-out":     "var(--th-ease-out)",
         "th-spring":  "var(--th-ease-spring)",
         "th-bounce":  "var(--th-ease-bounce)",
+        /* Blue theme easing */
+        "out-expo":   "cubic-bezier(0.16, 1, 0.3, 1)",
       },
       transitionDuration: {
         "th-fast":    "var(--th-duration-fast)",
@@ -319,6 +326,39 @@ export default {
           from: { backgroundPosition: "-400px 0" },
           to: { backgroundPosition: "400px 0" },
         },
+        /* Blue theme keyframes */
+        "fade-in-up": {
+          from: { opacity: "0", transform: "translateY(20px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-down": {
+          from: { opacity: "0", transform: "translateY(-20px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-scale": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to:   { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-in-right": {
+          from: { opacity: "0", transform: "translateX(30px)" },
+          to:   { opacity: "1", transform: "translateX(0)" },
+        },
+        "slide-in-left": {
+          from: { opacity: "0", transform: "translateX(-30px)" },
+          to:   { opacity: "1", transform: "translateX(0)" },
+        },
+        "subtle-bounce": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%":      { transform: "translateY(-6px)" },
+        },
+        "shimmer": {
+          "0%":   { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "1" },
+          "50%":      { opacity: "0.7" },
+        },
       },
       animation: {
         "accordion-down":   "accordion-down 0.2s ease-out",
@@ -332,6 +372,15 @@ export default {
         "th-bounce-in":     "th-bounce-in 0.5s var(--th-ease-bounce) both",
         "th-pulse-soft":    "th-pulse-soft 2s var(--th-ease-default) infinite",
         "th-shimmer":       "th-shimmer 1.6s ease-in-out infinite",
+        /* Blue theme animations */
+        "fade-in-up":       "fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in-down":     "fade-in-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "fade-in-scale":    "fade-in-scale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "slide-in-right":   "slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "slide-in-left":    "slide-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) both",
+        "subtle-bounce":    "subtle-bounce 2s ease-in-out infinite",
+        "shimmer":          "shimmer 2s infinite",
+        "pulse-soft":       "pulse-soft 2s ease-in-out infinite",
       },
 
       /* ─── GRID (existing) ──────────────────────────────── */

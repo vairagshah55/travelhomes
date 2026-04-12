@@ -395,6 +395,10 @@ const ActivityOnboarding = () => {
         let newData = { ...prev };
         let changed = false;
 
+        // Only auto-seed when basePrice is known AND the field is still empty
+        // (never override a value the user has manually entered)
+        if (basePrice <= 0) return prev;
+
         const calculateFinal = (type: string, value: string) => {
            const val = parseFloat(value) || 0;
            if (type === 'percentage') {
@@ -404,36 +408,24 @@ const ActivityOnboarding = () => {
            }
         };
 
-        if (prev.firstUserDiscount) {
-            const final_ = calculateFinal(prev.discountType, prev.discountAmount);
-            if (prev.finalPrice !== final_) {
-                newData.finalPrice = final_;
-                changed = true;
-            }
+        if (prev.firstUserDiscount && !prev.finalPrice) {
+            newData.finalPrice = calculateFinal(prev.discountType, prev.discountAmount);
+            changed = true;
         }
 
-        if (prev.festivalOffers) {
-            const final_ = calculateFinal(prev.festivalDiscountType, prev.festivalDiscountAmount);
-            if (prev.festivalFinalPrice !== final_) {
-                newData.festivalFinalPrice = final_;
-                changed = true;
-            }
+        if (prev.festivalOffers && !prev.festivalFinalPrice) {
+            newData.festivalFinalPrice = calculateFinal(prev.festivalDiscountType, prev.festivalDiscountAmount);
+            changed = true;
         }
 
-        if (prev.weeklyOffers) {
-            const final_ = calculateFinal(prev.weeklyDiscountType, prev.weeklyDiscountAmount);
-            if (prev.weeklyFinalPrice !== final_) {
-                newData.weeklyFinalPrice = final_;
-                changed = true;
-            }
+        if (prev.weeklyOffers && !prev.weeklyFinalPrice) {
+            newData.weeklyFinalPrice = calculateFinal(prev.weeklyDiscountType, prev.weeklyDiscountAmount);
+            changed = true;
         }
 
-        if (prev.specialOffers) {
-            const final_ = calculateFinal(prev.specialDiscountType, prev.specialDiscountAmount);
-            if (prev.specialFinalPrice !== final_) {
-                newData.specialFinalPrice = final_;
-                changed = true;
-            }
+        if (prev.specialOffers && !prev.specialFinalPrice) {
+            newData.specialFinalPrice = calculateFinal(prev.specialDiscountType, prev.specialDiscountAmount);
+            changed = true;
         }
 
         return changed ? newData : prev;
@@ -725,9 +717,20 @@ const ActivityOnboarding = () => {
       if (!formData.personalPincode) {
         newErrors.personalPincode = "Personal Pincode is required";
         isValid = false;
+      } else if (!/^\d{6}$/.test(formData.personalPincode.trim())) {
+        newErrors.personalPincode = "Enter a valid 6-digit pincode";
+        isValid = false;
+      }
+      if (!formData.dateOfBirth) {
+        newErrors.dateOfBirth = "Date of birth is required";
+        isValid = false;
+      }
+      if (!formData.idProof) {
+        newErrors.idProof = "ID proof type is required";
+        isValid = false;
       }
       if (!formData.idPhotos || formData.idPhotos.length === 0) {
-        newErrors.idPhotos = "ID Photos are required";
+        newErrors.idPhotos = "ID proof photo is required";
         isValid = false;
       }
     } else if (currentStep === 8) {
@@ -848,6 +851,20 @@ const ActivityOnboarding = () => {
     files: FileList | null,
   ) => {
     if (!files) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5 MB
+    const validTypes = ["image/jpeg", "image/png", "application/pdf"];
+
+    for (const file of Array.from(files)) {
+      if (field === "idPhotos" && !validTypes.includes(file.type)) {
+        toast.error("Only JPG, PNG, or PDF files are allowed.");
+        return;
+      }
+      if (file.size > maxSize) {
+        toast.error("File size must be under 5 MB.");
+        return;
+      }
+    }
 
     setFormData((prev) => {
       const currentFiles = prev[field] || [];

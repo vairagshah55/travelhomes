@@ -7,8 +7,7 @@ const Admin = require('../models/AdminModel');
  * Helper to sign JWT tokens for admin
  */
 function signToken(payload) {
-  // Use environment config or fallback
-  const secret = process.env.JWT_SECRET || 'dev_secret_key';
+  const secret = process.env.JWT_SECRET || 'defaultsecret';
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   return jwt.sign(payload, secret, { expiresIn });
 }
@@ -26,19 +25,17 @@ const loginAdmins = async (req, res) => {
         message: 'Email and password are required',
       });
     }
-    let staff = await AdminStaff.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+    const staff = await AdminStaff.findOne({ email: email.toLowerCase() }).select('+passwordHash');
 
-    const isMatch = await bcrypt.compare(password, staff.passwordHash);
-    if (!isMatch) {
+    if (!staff || !staff.passwordHash) {
       return res.status(401).json({
         success: false,
         message: 'Incorrect email or password',
       });
     }
-    // Find admin staff by email (case insensitive)
 
-    console.log(password);
-    if (!staff || !staff.passwordHash) {
+    const isMatch = await bcrypt.compare(password, staff.passwordHash);
+    if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: 'Incorrect email or password',
@@ -220,6 +217,7 @@ const getMe = async (req, res) => {
 
 module.exports = {
   loginAdmin,
+  loginAdmins,
   registerAdmin,
   getMe,
 };

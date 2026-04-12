@@ -766,6 +766,8 @@ useEffect(() => {
       }
       if (!personalPincode || !personalPincode.trim()) {
         newErrors.personalPincode = "Pincode is required";
+      } else if (!/^\d{6}$/.test(personalPincode.trim())) {
+        newErrors.personalPincode = "Enter a valid 6-digit pincode";
       }
       if (!dateOfBirth) {
         newErrors.dateOfBirth = "Date of birth is required";
@@ -774,7 +776,10 @@ useEffect(() => {
         newErrors.maritalStatus = "Marital status is required";
       }
       if (!idProof) {
-        newErrors.idProof = "ID proof is required";
+        newErrors.idProof = "ID proof type is required";
+      }
+      if (!idProofImage) {
+        newErrors.idPhotos = "ID proof photo is required";
       }
     }
 
@@ -939,24 +944,11 @@ useEffect(() => {
   const canProceed = () => {
     if (currentStep === 0) return selectedProperties.length > 0;
     if (currentStep === 1) return selectedCategories.length > 0;
-    if (currentStep === 2) {
-      if (stayType === "entire") {
-        return guestCapacity > 0 && numberOfRooms > 0 && numberOfBeds > 0 && numberOfBathrooms > 0
-          && !!regularPrice && Number(regularPrice) > 0 && !!coverImage && entireStayImages.length >= 5;
-      }
-      if (stayType === "individual") {
-        return !!coverImage && rooms.length > 0 && rooms.every(r =>
-          r.name?.trim() && r.description?.trim() && r.guestCapacity > 0 && r.beds > 0 && r.bathrooms > 0 && r.price > 0 && (r.photos || []).length >= 5
-        );
-      }
-      return false;
-    }
+    if (currentStep === 2) return true;
     if (currentStep === 3) return true;
     if (currentStep === 4) return true;
-    if (currentStep === 5)
-      return brandName.trim() !== "" && companyName.trim() !== "";
-    if (currentStep === 6)
-      return firstName.trim() !== "" && lastName.trim() !== "";
+    if (currentStep === 5) return true;
+    if (currentStep === 6) return true;
     return true;
   };
 
@@ -1124,6 +1116,12 @@ useEffect(() => {
       const validTypes = ["image/jpeg", "image/png", "application/pdf"];
       if (!validTypes.includes(file.type)) {
         setError("Only JPG, PNG, or PDF files are allowed.");
+        return;
+      }
+
+      const maxSize = 5 * 1024 * 1024; // 5 MB
+      if (file.size > maxSize) {
+        setError("File size must be under 5 MB.");
         return;
       }
 

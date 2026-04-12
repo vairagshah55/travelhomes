@@ -6,6 +6,7 @@ type ThemeProviderProps = {
   children: React.ReactNode
   defaultTheme?: Theme
   storageKey?: string
+  forcedTheme?: Theme
 }
 
 type ThemeProviderState = {
@@ -24,18 +25,20 @@ export function ThemeProvider({
   children,
   defaultTheme = 'system',
   storageKey = 'dashboard-theme',
+  forcedTheme,
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => forcedTheme ?? ((localStorage.getItem(storageKey) as Theme) || defaultTheme)
   )
 
   useEffect(() => {
     const root = window.document.documentElement
+    const activeTheme = forcedTheme ?? theme
 
     root.classList.remove('light', 'dark')
 
-    if (theme === 'system') {
+    if (activeTheme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
@@ -45,12 +48,13 @@ export function ThemeProvider({
       return
     }
 
-    root.classList.add(theme)
-  }, [theme])
+    root.classList.add(activeTheme)
+  }, [theme, forcedTheme])
 
   const value = {
-    theme,
+    theme: forcedTheme ?? theme,
     setTheme: (theme: Theme) => {
+      if (forcedTheme) return // ignore changes when theme is forced
       localStorage.setItem(storageKey, theme)
       setTheme(theme)
     },

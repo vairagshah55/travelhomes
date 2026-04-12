@@ -30,7 +30,7 @@
     --th-text-muted:       #9ca3af;
     --th-text-placeholder: #b0b0b0;
     --th-text-inverse:     #ffffff;
-    --th-text-link:        #2563eb;
+    --th-text-link:        #2563EB;
 
     /* Borders */
     --th-border:           #eaecf0;
@@ -48,9 +48,9 @@
     --th-error:            #ef4444;
     --th-error-bg:         rgba(239,68,68,0.06);
     --th-error-text:       #ef4444;
-    --th-info:             #3b82f6;
-    --th-info-bg:          #dbf6fc;
-    --th-info-text:        #2660a0;
+    --th-info:             #2563EB;
+    --th-info-bg:          #EFF6FF;
+    --th-info-text:        #1D4ED8;
     --th-purple-bg:        #f6e0fd;
     --th-purple-text:      #b127dc;
 
@@ -70,14 +70,14 @@
     --th-ring:             rgba(19,19,19,0.08);
     --th-ring-error:       rgba(239,68,68,0.12);
     --th-overlay:          rgba(0,0,0,0.25);
-    --th-booking-link:     #4f59e5;
+    --th-booking-link:     #2563EB;
 
     /* Accent (for special highlights) */
-    --th-accent:           #3BD9DA;
-    --th-accent-hover:     #2BC4C5;
-    --th-accent-fg:        #0A2E2E;
-    --th-accent-subtle:    #E8FAFA;
-    --th-accent-muted:     #B8F0F0;
+    --th-accent:           #2563EB;
+    --th-accent-hover:     #1D4ED8;
+    --th-accent-fg:        #FFFFFF;
+    --th-accent-subtle:    #EFF6FF;
+    --th-accent-muted:     #BFDBFE;
 
     /* Congratulations page */
     --th-congrats-star-yellow:  #FFDC64;
@@ -329,11 +329,11 @@
     --th-booking-link:     #818cf8;
 
     /* Accent dark */
-    --th-accent:           #3BD9DA;
-    --th-accent-hover:     #5CE4E5;
-    --th-accent-fg:        #0A2E2E;
-    --th-accent-subtle:    #0D2F2F;
-    --th-accent-muted:     #143D3D;
+    --th-accent:           #3B82F6;
+    --th-accent-hover:     #60A5FA;
+    --th-accent-fg:        #FFFFFF;
+    --th-accent-subtle:    #1E293B;
+    --th-accent-muted:     #1E3A5F;
 
     /* Shadows dark */
     --th-shadow-xs:    0 1px 2px rgba(0,0,0,0.2);
@@ -986,10 +986,10 @@
   .onb-card-selected {
     border-color: var(--th-accent) !important;
     background: var(--th-accent-subtle) !important;
-    box-shadow: 0 4px 20px rgba(59, 217, 218, 0.12);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
   }
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(59, 217, 218, 0.25);
+    box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
   }
   .onb-btn-primary {
     background: var(--th-accent);
@@ -999,7 +999,7 @@
   .onb-btn-primary:hover:not(:disabled) {
     filter: brightness(1.08);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(59, 217, 218, 0.3);
+    box-shadow: 0 6px 24px rgba(37, 99, 235, 0.3);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1027,7 +1027,7 @@
     background: var(--th-accent-subtle) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(59, 217, 218, 0.15);
+    box-shadow: 0 2px 12px rgba(37, 99, 235, 0.15);
   }
 
   /* Congratulations */
@@ -1494,4 +1494,131 @@ input[type="range"]::-moz-range-thumb {
 @media print {
   .no-print  { display: none !important; }
   .print-only { display: block !important; }
+}
+
+/* ─── Modern Motion System ─── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes subtle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-down {
+  animation: fade-in-down 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-subtle-bounce {
+  animation: subtle-bounce 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent 25%, rgba(37, 99, 235, 0.08) 50%, transparent 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 480ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 560ms; }
+
+/* Smooth hover transitions for cards */
+.hover-lift {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(37, 99, 235, 0.12), 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Glass morphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Modern focus ring */
+.focus-ring-blue:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* Smooth page transitions */
+.page-enter {
+  animation: fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

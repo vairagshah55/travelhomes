@@ -47,8 +47,8 @@ const registerUserOrVendor = async (req, res) => {
     // 1) Persist raw registration in `register` collection
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Generate 6-digit OTP and store with expiry (5 minutes)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Static OTP for development — TODO: revert to random OTP before production
+    const otp = '123456';
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -263,7 +263,8 @@ const resendRegisterOtp = async (req, res) => {
     if (!doc)
       return res.status(404).json({ success: false, message: "Registration not found" });
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Static OTP for development — TODO: revert to random OTP before production
+    const otp = '123456';
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     doc.otp = otp;

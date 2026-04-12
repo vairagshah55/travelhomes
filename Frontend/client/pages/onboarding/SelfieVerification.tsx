@@ -191,7 +191,7 @@ const ActivitySelfie = () => {
       
       // Clear ids after success to avoid cross-flow confusion
       onboardingService.clearAll();
-      navigate("/onboarding/complete");
+      navigate("/onboarding/complete", { state: { type } });
     } catch (e: any) {
       toast.error(e?.message || 'Failed to save selfie verification');
     } finally {

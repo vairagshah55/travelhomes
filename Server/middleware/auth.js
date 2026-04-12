@@ -17,7 +17,7 @@ function requireJwt(options = {}) {
         return res.status(401).json({ success: false, message: 'No token provided' });
       }
 
-      const secret = process.env.JWT_SECRET || 'dev_secret_key';
+      const secret = process.env.JWT_SECRET || 'defaultsecret';
       const payload = jwt.verify(token, secret);
       
       console.log(`[JWT AUTH] Token verified, user type:`, payload.userType || payload.type);

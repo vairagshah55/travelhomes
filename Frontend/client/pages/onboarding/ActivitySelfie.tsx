@@ -67,7 +67,7 @@ const ActivitySelfie = () => {
     await new Promise((resolve) => setTimeout(resolve, 2000));
     setIsLoading(false);
     toast.success('Verification submitted successfully!');
-    navigate('/onboarding/complete');
+    navigate('/onboarding/complete', { state: { type: 'activity' } });
   };
 
   React.useEffect(() => {

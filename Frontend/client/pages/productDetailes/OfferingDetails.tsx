@@ -9,7 +9,6 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/ThemeToggle';
 import { Sidebar } from '@/components/Navigation';
 import { useParams, useNavigate } from 'react-router-dom';
 import ProfileDropdown from '@/components/ProfileDropdown';
