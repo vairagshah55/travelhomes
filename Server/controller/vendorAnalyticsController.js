@@ -3,6 +3,7 @@ const VendorAnalyticsSnapshot = require('../models/VendorAnalyticsSnapshot');
 const AdminAnalyticsMetric = require('../models/AdminAnalyticsMetric');
 const Payment = require('../models/Payment');
 const Management = require('../models/Management');
+const Offer = require('../models/Offer');
 
 // Compute counts from CalendarBooking
 async function computeCounts() {
@@ -24,17 +25,22 @@ async function computeCounts() {
       }),
     ]);
     
-    // Aggregated metrics (impressions/clicks)
-    const metricsAgg = await AdminAnalyticsMetric.aggregate([
-      { 
-        $group: {
-          _id: null,
-          impressions: { $sum: '$impressions' },
-          clicks: { $sum: '$clicks' }
-        }
-      }
+    // Aggregated metrics (impressions/clicks) from Offer model + AdminAnalyticsMetric
+    const [offerMetricsAgg, analyticsMetricsAgg] = await Promise.all([
+      Offer.aggregate([
+        { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' } } }
+      ]),
+      AdminAnalyticsMetric.aggregate([
+        { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' } } }
+      ]),
     ]);
-    const metrics = metricsAgg?.[0] || { impressions: 0, clicks: 0 };
+    const offerMetrics = offerMetricsAgg?.[0] || { impressions: 0, clicks: 0 };
+    const analyticsMetrics = analyticsMetricsAgg?.[0] || { impressions: 0, clicks: 0 };
+    // Use the higher value (Offer model is the source of truth now)
+    const metrics = {
+      impressions: Math.max(offerMetrics.impressions || 0, analyticsMetrics.impressions || 0),
+      clicks: Math.max(offerMetrics.clicks || 0, analyticsMetrics.clicks || 0),
+    };
     
     // Payments summary - Sum of amounts
     const [paymentsReceivedAgg, paymentsPendingAgg] = await Promise.all([

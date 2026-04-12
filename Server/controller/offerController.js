@@ -7,6 +7,7 @@ const ActivityOnboarding = require('../models/ActivityOnboarding');
 const CaravanOnboarding = require('../models/CaravanOnboarding');
 const StayOnboarding = require('../models/StayOnboarding');
 const Notification = require('../models/Notification');
+const AdminAnalyticsMetric = require('../models/AdminAnalyticsMetric');
 const { sendRejectionEmail, sendApprovalEmail } = require('../services/mailer');
 const fs = require('fs');
 const path = require('path');
@@ -226,6 +227,29 @@ const getOffer = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
     if (!offer) return res.status(404).json({ success: false, message: 'Offer not found' });
+
+    // Track impression (fire-and-forget, don't block response)
+    try {
+      // 1. Increment on the offer itself
+      Offer.updateOne({ _id: offer._id }, { $inc: { impressions: 1 } }).exec();
+
+      // 2. Increment on the analytics metric (upsert daily record)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const category = (offer.serviceType || offer.category || 'unique-stay').toLowerCase();
+      const validCategories = ['activity', 'camper-van', 'unique-stay'];
+      const metricCategory = validCategories.includes(category) ? category : 'unique-stay';
+
+      AdminAnalyticsMetric.findOneAndUpdate(
+        { serviceId: offer._id, metricDate: today, category: metricCategory },
+        { $inc: { impressions: 1 } },
+        { upsert: true, new: true }
+      ).exec();
+    } catch (trackErr) {
+      // Silently ignore tracking errors — don't fail the request
+      console.error('Impression tracking error:', trackErr.message);
+    }
+
     res.json({ success: true, data: offer });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

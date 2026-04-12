@@ -92,6 +92,16 @@ const OfferSchema = new Schema(
     rejectionReason: {
       type: String
     },
+    impressions: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
+    clicks: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     ratingsCount: {
       type: Number,
       default: 0
