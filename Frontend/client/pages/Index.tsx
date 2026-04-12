@@ -121,12 +121,6 @@ export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // Redirect vendors to their dashboard when visiting the home page
-  useEffect(() => {
-    if (user && (user.userType === 'vendor' || user.vendorStatus === 'approved' || user.vendorStatus === 'active')) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user]);
 
   const [activeTab, setActiveTab] = useState("unique-stays");
   const [activeFilter, setActiveFilter] = useState<FilterType>("unique-stays");

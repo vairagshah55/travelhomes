@@ -15,6 +15,7 @@ import {
   Bell,
   Pin,
   PinOff,
+  Globe,
 } from 'lucide-react';
 
 interface MenuItem {
@@ -63,6 +64,7 @@ const bottomMenuItems: MenuItem[] = [
   { id: 'notifications', label: 'Notifications',  icon: Bell,        path: '/notifications', badge: 8 },
   { id: 'settings',      label: 'Settings',        icon: Settings,    path: '/settings'       },
   { id: 'help',          label: 'Help & Support',  icon: HelpCircle,  path: '/help'           },
+  { id: 'visit-site',    label: 'Visit Site',       icon: Globe,       path: '/'               },
 ];
 
 /* ─── small reusable badge ─── */
