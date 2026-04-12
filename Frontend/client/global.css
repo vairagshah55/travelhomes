@@ -11,31 +11,31 @@
 
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand */
-    --th-brand:            #131313;
-    --th-brand-hover:      #1f2937;
+    /* Brand — #01487e primary, #001f4b navy, #55a9cb sky, #00080a deep */
+    --th-brand:            #01487e;
+    --th-brand-hover:      #001f4b;
     --th-brand-fg:         #ffffff;
 
     /* Surfaces */
     --th-surface-0:        #ffffff;
-    --th-surface-1:        #f9fafb;
-    --th-surface-2:        #f3f4f6;
-    --th-surface-3:        #e5e7eb;
+    --th-surface-1:        #f0f8fd;
+    --th-surface-2:        #e0f2fa;
+    --th-surface-3:        #c5e6f5;
     --th-surface-raised:   #ffffff;
 
     /* Text */
-    --th-text-primary:     #101828;
-    --th-text-secondary:   #485467;
-    --th-text-tertiary:    #717171;
-    --th-text-muted:       #9ca3af;
-    --th-text-placeholder: #b0b0b0;
+    --th-text-primary:     #00080a;
+    --th-text-secondary:   #001f4b;
+    --th-text-tertiary:    #01487e;
+    --th-text-muted:       #55a9cb;
+    --th-text-placeholder: rgba(85,169,203,0.55);
     --th-text-inverse:     #ffffff;
-    --th-text-link:        #2563EB;
+    --th-text-link:        #01487e;
 
     /* Borders */
-    --th-border:           #eaecf0;
-    --th-border-hover:     #d1d5db;
-    --th-border-focus:     #131313;
+    --th-border:           #c5e6f5;
+    --th-border-hover:     #55a9cb;
+    --th-border-focus:     #01487e;
     --th-border-error:     #ef4444;
 
     /* Status */
@@ -48,36 +48,36 @@
     --th-error:            #ef4444;
     --th-error-bg:         rgba(239,68,68,0.06);
     --th-error-text:       #ef4444;
-    --th-info:             #2563EB;
-    --th-info-bg:          #EFF6FF;
-    --th-info-text:        #1D4ED8;
+    --th-info:             #01487e;
+    --th-info-bg:          #e0f2fa;
+    --th-info-text:        #001f4b;
     --th-purple-bg:        #f6e0fd;
     --th-purple-text:      #b127dc;
 
-    /* Stats card fills */
-    --th-stat-impression:       #fdebe0;
-    --th-stat-impression-icon:  #f8dbcb;
-    --th-stat-bookings:         #e3fbe4;
-    --th-stat-bookings-icon:    #d8f4d9;
-    --th-stat-properties:       #dbf6fc;
-    --th-stat-properties-icon:  #ccf5ff;
-    --th-stat-earnings:         #f6e0fd;
-    --th-stat-earnings-icon:    #f4d2ff;
-    --th-stat-clicks:           #dbd9ff;
-    --th-stat-clicks-icon:      #d0cdff;
+    /* Stats card fills — ocean palette tints */
+    --th-stat-impression:       #e0f2fa;
+    --th-stat-impression-icon:  #c5e6f5;
+    --th-stat-bookings:         #d4ecf7;
+    --th-stat-bookings-icon:    #bfe3f3;
+    --th-stat-properties:       #e8f5fb;
+    --th-stat-properties-icon:  #d4ecf7;
+    --th-stat-earnings:         #c5e6f5;
+    --th-stat-earnings-icon:    #aad9ef;
+    --th-stat-clicks:           #ddf1f8;
+    --th-stat-clicks-icon:      #c5e6f5;
 
     /* Interactive */
-    --th-ring:             rgba(19,19,19,0.08);
+    --th-ring:             rgba(1,72,126,0.15);
     --th-ring-error:       rgba(239,68,68,0.12);
-    --th-overlay:          rgba(0,0,0,0.25);
-    --th-booking-link:     #2563EB;
+    --th-overlay:          rgba(0,8,10,0.35);
+    --th-booking-link:     #01487e;
 
-    /* Accent (for special highlights) */
-    --th-accent:           #2563EB;
-    --th-accent-hover:     #1D4ED8;
-    --th-accent-fg:        #FFFFFF;
-    --th-accent-subtle:    #EFF6FF;
-    --th-accent-muted:     #BFDBFE;
+    /* Accent (sky blue for highlights & active states) */
+    --th-accent:           #55a9cb;
+    --th-accent-hover:     #01487e;
+    --th-accent-fg:        #ffffff;
+    --th-accent-subtle:    #f0f8fd;
+    --th-accent-muted:     #c5e6f5;
 
     /* Congratulations page */
     --th-congrats-star-yellow:  #FFDC64;
@@ -175,58 +175,58 @@
     --th-z-tooltip:    500;
 
     /* ─── SHADCN COMPATIBILITY (mapped from th-tokens) ───────── */
-    --background: 210 20% 98%;
-    --foreground: 0 0% 7%;
+    --background: 206 60% 99%;
+    --foreground: 192 100% 2%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card-foreground: 192 100% 2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
-    --primary: 0 0% 7%;
+    --popover-foreground: 192 100% 2%;
+    --primary: 206 98% 25%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 0 0% 7%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 0 0% 7%;
+    --secondary: 197 60% 95%;
+    --secondary-foreground: 215 100% 15%;
+    --muted: 197 60% 95%;
+    --muted-foreground: 206 98% 25%;
+    --accent: 197 53% 57%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 0 0% 7%;
+    --border: 197 40% 88%;
+    --input: 197 40% 88%;
+    --ring: 206 98% 25%;
 
-    /* Sidebar (shadcn) */
-    --sidebar-background: 210 20% 98%;
-    --sidebar-foreground: 0 0% 47%;
-    --sidebar-primary: 0 0% 7%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 0 0% 7%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar (shadcn) — navy dark sidebar */
+    --sidebar-background: 215 100% 15%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 197 53% 57%;
+    --sidebar-primary-foreground: 215 100% 15%;
+    --sidebar-accent: 215 100% 18%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 70% 22%;
+    --sidebar-ring: 197 53% 57%;
 
     /* Legacy dashboard compat (HSL without hsl() wrapper) */
-    --dashboard-bg: 210 20% 98%;
-    --dashboard-primary: 0 0% 7%;
-    --dashboard-heading: 216 27% 16%;
-    --dashboard-body: 214 14% 35%;
-    --dashboard-title: 214 19% 25%;
-    --dashboard-stroke: 220 13% 91%;
-    --dashboard-neutral-06: 0 0% 69%;
-    --dashboard-neutral-07: 0 0% 44%;
-    --dashboard-text: 0 0% 13%;
+    --dashboard-bg: 206 60% 99%;
+    --dashboard-primary: 192 100% 2%;
+    --dashboard-heading: 215 100% 15%;
+    --dashboard-body: 206 60% 30%;
+    --dashboard-title: 215 100% 15%;
+    --dashboard-stroke: 197 40% 88%;
+    --dashboard-neutral-06: 197 25% 65%;
+    --dashboard-neutral-07: 206 30% 45%;
+    --dashboard-text: 192 100% 2%;
 
-    /* Legacy stats (HSL) */
-    --stats-impression-bg: 28 100% 94%;
-    --stats-impression-icon-bg: 23 69% 88%;
-    --stats-bookings-bg: 120 60% 95%;
-    --stats-bookings-icon-bg: 120 53% 91%;
-    --stats-properties-bg: 194 71% 93%;
-    --stats-properties-icon-bg: 194 100% 90%;
-    --stats-earnings-bg: 290 62% 95%;
-    --stats-earnings-icon-bg: 290 100% 91%;
-    --stats-clicks-bg: 245 81% 94%;
-    --stats-clicks-icon-bg: 245 85% 90%;
+    /* Legacy stats (HSL) — ocean palette tints */
+    --stats-impression-bg: 197 60% 95%;
+    --stats-impression-icon-bg: 197 53% 88%;
+    --stats-bookings-bg: 206 70% 94%;
+    --stats-bookings-icon-bg: 206 60% 87%;
+    --stats-properties-bg: 197 65% 96%;
+    --stats-properties-icon-bg: 197 60% 90%;
+    --stats-earnings-bg: 215 80% 93%;
+    --stats-earnings-icon-bg: 215 75% 86%;
+    --stats-clicks-bg: 197 55% 95%;
+    --stats-clicks-icon-bg: 197 50% 88%;
 
     /* Legacy status (HSL) */
     --status-orange-bg: 38 100% 95%;
@@ -237,32 +237,32 @@
     --status-green-text: 120 100% 36%;
 
     /* Legacy misc */
-    --booking-link: 238 82% 60%;
-    --nav-tree-line: 0 0% 90%;
+    --booking-link: 206 98% 25%;
+    --nav-tree-line: 197 40% 88%;
 
     /* Legacy auth */
-    --auth-blackish-green: #121;
-    --auth-neutral-06: #B0B0B0;
-    --auth-neutral-07: #717171;
-    --auth-primary: #131313;
+    --auth-blackish-green: #001f4b;
+    --auth-neutral-06: #55a9cb;
+    --auth-neutral-07: #01487e;
+    --auth-primary: #01487e;
     --auth-primary-0: #FFF;
-    --auth-text-muted: rgba(17,34,17,0.75);
+    --auth-text-muted: rgba(0,31,75,0.75);
 
     /* Legacy naming aliases (DO NOT use in new code) */
-    --Background: #F9FAFB;
-    --pRIMARY: #131313;
-    --Black-Heading: #101828;
-    --Black-Stroke: #EAECF0;
+    --Background: #f0f8fd;
+    --pRIMARY: #01487e;
+    --Black-Heading: #00080a;
+    --Black-Stroke: #c5e6f5;
     --White: #FFF;
-    --Title: #334054;
-    --Stroke: #EAECF0;
+    --Title: #001f4b;
+    --Stroke: #c5e6f5;
     --Primary-0: #FFF;
-    --Neutral-06: #B0B0B0;
-    --Neutral-07: #717171;
-    --Body: #485467;
-    --Secondary-30: #FFF2E2;
-    --Heading: #131313;
-    --Text: #212121;
+    --Neutral-06: #55a9cb;
+    --Neutral-07: #01487e;
+    --Body: #001f4b;
+    --Secondary-30: #e0f2fa;
+    --Heading: #00080a;
+    --Text: #00080a;
     --16: 16px;
     --4: 4px;
     --12: 12px;
@@ -271,31 +271,31 @@
 
   /* ─── DARK MODE ────────────────────────────────────────────── */
   .dark {
-    /* Brand */
-    --th-brand:            #ffffff;
-    --th-brand-hover:      #e5e7eb;
-    --th-brand-fg:         #0a0a0a;
+    /* Brand — sky blue leads on dark, navy as fg */
+    --th-brand:            #55a9cb;
+    --th-brand-hover:      #7abfd6;
+    --th-brand-fg:         #001f4b;
 
-    /* Surfaces */
-    --th-surface-0:        #0a0a0a;
-    --th-surface-1:        #111111;
-    --th-surface-2:        #1a1a1a;
-    --th-surface-3:        #262626;
-    --th-surface-raised:   #1a1a1a;
+    /* Surfaces — deep ocean stack */
+    --th-surface-0:        #00080a;
+    --th-surface-1:        #000d1a;
+    --th-surface-2:        #001530;
+    --th-surface-3:        #001f4b;
+    --th-surface-raised:   #001530;
 
     /* Text */
-    --th-text-primary:     #fafafa;
-    --th-text-secondary:   #a1a1aa;
-    --th-text-tertiary:    #71717a;
-    --th-text-muted:       #52525b;
-    --th-text-placeholder: #52525b;
-    --th-text-inverse:     #0a0a0a;
-    --th-text-link:        #60a5fa;
+    --th-text-primary:     #ffffff;
+    --th-text-secondary:   #55a9cb;
+    --th-text-tertiary:    rgba(85,169,203,0.75);
+    --th-text-muted:       rgba(85,169,203,0.45);
+    --th-text-placeholder: rgba(85,169,203,0.35);
+    --th-text-inverse:     #00080a;
+    --th-text-link:        #55a9cb;
 
     /* Borders */
-    --th-border:           #262626;
-    --th-border-hover:     #3f3f46;
-    --th-border-focus:     #ffffff;
+    --th-border:           rgba(85,169,203,0.15);
+    --th-border-hover:     rgba(85,169,203,0.35);
+    --th-border-focus:     #55a9cb;
     --th-border-error:     #ef4444;
 
     /* Status (dark) */
@@ -305,100 +305,100 @@
     --th-warning-text:     #fbbf24;
     --th-error-bg:         rgba(239,68,68,0.12);
     --th-error-text:       #f87171;
-    --th-info-bg:          rgba(59,130,246,0.12);
-    --th-info-text:        #60a5fa;
+    --th-info-bg:          rgba(85,169,203,0.12);
+    --th-info-text:        #55a9cb;
     --th-purple-bg:        rgba(177,39,220,0.12);
     --th-purple-text:      #c084fc;
 
-    /* Stats dark */
-    --th-stat-impression:       rgba(253,235,224,0.08);
-    --th-stat-impression-icon:  rgba(248,219,203,0.12);
-    --th-stat-bookings:         rgba(227,251,228,0.08);
-    --th-stat-bookings-icon:    rgba(216,244,217,0.12);
-    --th-stat-properties:       rgba(219,246,252,0.08);
-    --th-stat-properties-icon:  rgba(204,245,255,0.12);
-    --th-stat-earnings:         rgba(246,224,253,0.08);
-    --th-stat-earnings-icon:    rgba(244,210,255,0.12);
-    --th-stat-clicks:           rgba(219,217,255,0.08);
-    --th-stat-clicks-icon:      rgba(208,205,255,0.12);
+    /* Stats dark — ocean palette transparencies */
+    --th-stat-impression:       rgba(85,169,203,0.08);
+    --th-stat-impression-icon:  rgba(85,169,203,0.14);
+    --th-stat-bookings:         rgba(1,72,126,0.12);
+    --th-stat-bookings-icon:    rgba(1,72,126,0.20);
+    --th-stat-properties:       rgba(85,169,203,0.06);
+    --th-stat-properties-icon:  rgba(85,169,203,0.12);
+    --th-stat-earnings:         rgba(0,31,75,0.50);
+    --th-stat-earnings-icon:    rgba(0,31,75,0.70);
+    --th-stat-clicks:           rgba(85,169,203,0.06);
+    --th-stat-clicks-icon:      rgba(85,169,203,0.10);
 
     /* Interactive dark */
-    --th-ring:             rgba(255,255,255,0.12);
+    --th-ring:             rgba(85,169,203,0.25);
     --th-ring-error:       rgba(239,68,68,0.18);
-    --th-overlay:          rgba(0,0,0,0.55);
-    --th-booking-link:     #818cf8;
+    --th-overlay:          rgba(0,8,10,0.65);
+    --th-booking-link:     #55a9cb;
 
     /* Accent dark */
-    --th-accent:           #3B82F6;
-    --th-accent-hover:     #60A5FA;
-    --th-accent-fg:        #FFFFFF;
-    --th-accent-subtle:    #1E293B;
-    --th-accent-muted:     #1E3A5F;
+    --th-accent:           #55a9cb;
+    --th-accent-hover:     #7abfd6;
+    --th-accent-fg:        #001f4b;
+    --th-accent-subtle:    #001530;
+    --th-accent-muted:     #001f4b;
 
     /* Shadows dark */
-    --th-shadow-xs:    0 1px 2px rgba(0,0,0,0.2);
-    --th-shadow-sm:    0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
-    --th-shadow-md:    0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
-    --th-shadow-lg:    0 8px 24px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.2);
-    --th-shadow-xl:    0 16px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
-    --th-shadow-2xl:   0 24px 56px rgba(0,0,0,0.6);
+    --th-shadow-xs:    0 1px 2px rgba(0,8,10,0.25);
+    --th-shadow-sm:    0 1px 3px rgba(0,8,10,0.35), 0 1px 2px rgba(0,8,10,0.25);
+    --th-shadow-md:    0 4px 6px rgba(0,8,10,0.35), 0 2px 4px rgba(0,8,10,0.25);
+    --th-shadow-lg:    0 8px 24px rgba(0,8,10,0.45), 0 2px 8px rgba(0,8,10,0.25);
+    --th-shadow-xl:    0 16px 40px rgba(0,8,10,0.55), 0 4px 12px rgba(0,8,10,0.35);
+    --th-shadow-2xl:   0 24px 56px rgba(0,8,10,0.65);
 
     /* Congrats dark */
     --th-congrats-sec-400: #9CA3AF;
     --th-congrats-sec-500: #D1D5DB;
 
     /* shadcn dark compat */
-    --background: 240 10% 4%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 6%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 10% 4%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 0 0% 98%;
+    --background: 192 100% 2%;
+    --foreground: 0 0% 100%;
+    --card: 215 100% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 215 100% 8%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 197 53% 57%;
+    --primary-foreground: 215 100% 15%;
+    --secondary: 215 100% 15%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 215 100% 15%;
+    --muted-foreground: 197 53% 57%;
+    --accent: 215 100% 15%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 215 80% 20%;
+    --input: 215 80% 20%;
+    --ring: 197 53% 57%;
 
-    --sidebar-background: 240 10% 4%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 240 10% 4%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 215 100% 15%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 197 53% 57%;
+    --sidebar-primary-foreground: 192 100% 2%;
+    --sidebar-accent: 215 100% 12%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 215 80% 18%;
+    --sidebar-ring: 197 53% 57%;
 
     /* Legacy dashboard dark */
-    --dashboard-bg: 240 10% 4%;
+    --dashboard-bg: 192 100% 2%;
     --dashboard-primary: 0 0% 100%;
-    --dashboard-heading: 0 0% 98%;
-    --dashboard-body: 215 20.2% 65.1%;
+    --dashboard-heading: 0 0% 100%;
+    --dashboard-body: 197 53% 57%;
     --dashboard-title: 0 0% 90%;
-    --dashboard-stroke: 217.2 32.6% 17.5%;
-    --dashboard-neutral-06: 0 0% 50%;
-    --dashboard-neutral-07: 0 0% 70%;
-    --dashboard-text: 0 0% 98%;
+    --dashboard-stroke: 215 80% 20%;
+    --dashboard-neutral-06: 197 30% 50%;
+    --dashboard-neutral-07: 197 40% 60%;
+    --dashboard-text: 0 0% 100%;
 
-    /* Legacy stats dark */
-    --stats-impression-bg: 28 20% 10%;
-    --stats-impression-icon-bg: 23 30% 15%;
-    --stats-bookings-bg: 120 20% 10%;
-    --stats-bookings-icon-bg: 120 25% 15%;
-    --stats-properties-bg: 194 20% 10%;
-    --stats-properties-icon-bg: 194 25% 15%;
-    --stats-earnings-bg: 290 20% 10%;
-    --stats-earnings-icon-bg: 290 25% 15%;
-    --stats-clicks-bg: 245 20% 10%;
-    --stats-clicks-icon-bg: 245 25% 15%;
+    /* Legacy stats dark — ocean tones */
+    --stats-impression-bg: 197 30% 10%;
+    --stats-impression-icon-bg: 197 35% 15%;
+    --stats-bookings-bg: 206 40% 10%;
+    --stats-bookings-icon-bg: 206 45% 15%;
+    --stats-properties-bg: 197 30% 10%;
+    --stats-properties-icon-bg: 197 35% 15%;
+    --stats-earnings-bg: 215 50% 10%;
+    --stats-earnings-icon-bg: 215 55% 15%;
+    --stats-clicks-bg: 197 30% 10%;
+    --stats-clicks-icon-bg: 197 35% 15%;
 
     /* Legacy status dark */
     --status-orange-bg: 38 30% 15%;
@@ -408,16 +408,16 @@
     --status-green-bg: 120 30% 15%;
     --status-green-text: 120 60% 60%;
 
-    --booking-link: 238 82% 70%;
-    --nav-tree-line: 0 0% 30%;
+    --booking-link: 197 53% 57%;
+    --nav-tree-line: 215 80% 20%;
 
     /* Legacy auth dark */
-    --auth-blackish-green: #fff;
-    --auth-neutral-06: #777;
-    --auth-neutral-07: #999;
-    --auth-primary: #fff;
-    --auth-primary-0: #1a1a1a;
-    --auth-text-muted: rgba(255,255,255,0.75);
+    --auth-blackish-green: #55a9cb;
+    --auth-neutral-06: rgba(85,169,203,0.5);
+    --auth-neutral-07: rgba(85,169,203,0.7);
+    --auth-primary: #55a9cb;
+    --auth-primary-0: #000d1a;
+    --auth-text-muted: rgba(85,169,203,0.75);
   }
 
   /* ─── BASE RESETS ──────────────────────────────────────────── */

@@ -1,434 +1,382 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import React, { useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calendar,
-  Award,
+  Package,
+  DollarSign,
   BarChart3,
-  TrendingUp,
-  PieChart,
-  MessageCircle,
   Settings,
   LogOut,
   ChevronRight,
-  PanelLeftOpen,
-  PanelLeftClose,
+  MessageSquare,
+  FileText,
+  HelpCircle,
+  Bell,
+  Pin,
+  PinOff,
 } from 'lucide-react';
-import LogoWebsite from './ui/LogoWebsite';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useAuth } from '../contexts/AuthContext';
-import { getImageUrl } from '@/lib/utils';
 
-const TEAL = '#3BD9DA';
-const W_OPEN = 240;
-const W_CLOSED = 68;
-
-type NavItem = {
-  icon: React.ElementType;
+interface MenuItem {
+  id: string;
   label: string;
-  href: string;
-  subItems?: { label: string; href: string }[];
-};
+  icon: React.ElementType;
+  path: string;
+  children?: MenuItem[];
+  badge?: number;
+}
 
-type NavGroup = {
-  groupLabel: string;
-  items: NavItem[];
-};
+interface SidebarProps {
+  defaultCollapsed?: boolean;
+  onToggle?: (collapsed: boolean) => void;
+}
 
-const navGroups: NavGroup[] = [
+const menuItems: MenuItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
   {
-    groupLabel: 'Overview',
-    items: [
-      { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+    id: 'bookings', label: 'Bookings', icon: Calendar, path: '/bookings',
+    children: [
+      { id: 'all-bookings',     label: 'All Bookings', icon: Calendar, path: '/bookings' },
+      { id: 'booking-details',  label: 'Details',      icon: FileText, path: '/bookings/details' },
     ],
   },
   {
-    groupLabel: 'Management',
-    items: [
-      {
-        icon: Calendar,
-        label: 'Bookings',
-        href: '/bookings',
-        subItems: [
-          { label: 'Calendar', href: '/bookings' },
-          { label: 'Booking Details', href: '/bookings/details' },
-        ],
-      },
-      {
-        icon: Award,
-        label: 'Offering',
-        href: '/offering',
-        subItems: [
-          { label: 'View Offerings', href: '/offering' },
-          { label: 'Add Offerings', href: '/offering/add' },
-        ],
-      },
-      { icon: BarChart3, label: 'Revenue', href: '/revenue' },
-      {
-        icon: TrendingUp,
-        label: 'Marketing',
-        href: '/marketing',
-        subItems: [
-          { label: 'Upload Content', href: '/marketing' },
-          { label: 'Offers', href: '/marketing/offers' },
-        ],
-      },
+    id: 'offering', label: 'Offerings', icon: Package, path: '/offering',
+    children: [
+      { id: 'all-offerings', label: 'All Offerings', icon: Package, path: '/offering' },
+      { id: 'add-offering',  label: 'Add New',       icon: Package, path: '/offering/add' },
     ],
   },
+  { id: 'revenue',   label: 'Revenue',   icon: DollarSign,    path: '/revenue'    },
   {
-    groupLabel: 'Insights',
-    items: [
-      { icon: PieChart, label: 'Analytics', href: '/analytics' },
-      { icon: MessageCircle, label: 'Chat', href: '/dashchat' },
+    id: 'marketing', label: 'Marketing', icon: BarChart3, path: '/marketing',
+    children: [
+      { id: 'marketing-home', label: 'Overview', icon: BarChart3, path: '/marketing' },
+      { id: 'offers',         label: 'Offers',   icon: Package,   path: '/marketing/offers' },
     ],
   },
-  {
-    groupLabel: 'Account',
-    items: [
-      {
-        icon: Settings,
-        label: 'Settings',
-        href: '/settings',
-        subItems: [
-          { label: 'General Settings', href: '/settings' },
-          { label: 'Raise Issue Ticket', href: '/settings/account' },
-        ],
-      },
-    ],
-  },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3,     path: '/analytics'  },
+  { id: 'messages',  label: 'Messages',  icon: MessageSquare, path: '/vendor-chat' },
 ];
 
-export const Sidebar = ({
-  className = '',
-  isCollapsed,
-  onToggleCollapse,
-  forceExpanded = false,
-}: {
-  className?: string;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-  forceExpanded?: boolean;
+const bottomMenuItems: MenuItem[] = [
+  { id: 'notifications', label: 'Notifications',  icon: Bell,        path: '/notifications', badge: 8 },
+  { id: 'settings',      label: 'Settings',        icon: Settings,    path: '/settings'       },
+  { id: 'help',          label: 'Help & Support',  icon: HelpCircle,  path: '/help'           },
+];
+
+/* ─── small reusable badge ─── */
+const Badge = ({ count, active }: { count: number; active: boolean }) => (
+  <span className={`
+    inline-flex items-center justify-center
+    text-[10px] font-bold leading-none
+    min-w-[18px] h-[18px] px-1 rounded-full
+    ${active
+      ? 'bg-blue-600 text-white'
+      : 'bg-gray-100 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400'}
+  `}>
+    {count > 99 ? '99+' : count}
+  </span>
+);
+
+/* ─── tooltip shown in collapsed mode ─── */
+const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) => (
+  <div className="
+    pointer-events-none absolute left-full ml-4 z-50
+    flex items-center gap-2
+    px-3 py-2 rounded-xl whitespace-nowrap
+    bg-gray-900/95 dark:bg-gray-800 text-white text-[12px] font-medium
+    shadow-2xl ring-1 ring-white/10
+    opacity-0 invisible -translate-x-1
+    group-hover:opacity-100 group-hover:visible group-hover:translate-x-0
+    transition-all duration-150 ease-out
+  ">
+    {/* arrow */}
+    <span className="absolute right-full top-1/2 -translate-y-1/2
+      border-[5px] border-transparent border-r-gray-900/95 dark:border-r-gray-800" />
+    {label}
+    {badge !== undefined && badge > 0 && (
+      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-500 rounded-full leading-none">
+        {badge}
+      </span>
+    )}
+  </div>
+);
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  defaultCollapsed = false,
+  onToggle,
 }) => {
-  const [hovered, setHovered] = useState(false);
-  const [pinned, setPinned] = useState(false);
-  // showText lags behind isOpen: false instantly, true after delay
-  const [showText, setShowText] = useState(forceExpanded);
-  const [openItems, setOpenItems] = useState<Set<string>>(new Set(['Bookings']));
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [pinned,        setPinned]        = useState(!defaultCollapsed);
+  const [hoverOpen,     setHoverOpen]     = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const sidebarRef   = useRef<HTMLDivElement>(null);
+  const hoverTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
+  const navigate  = useNavigate();
+  const location  = useLocation();
+  const isOpen    = pinned || hoverOpen;
 
-  const isOpen = forceExpanded || hovered || pinned;
+  const handleMouseEnter = () => {
+    if (pinned) return;
+    hoverTimer.current = setTimeout(() => setHoverOpen(true), 100);
+  };
+  const handleMouseLeave = () => {
+    if (hoverTimer.current) clearTimeout(hoverTimer.current);
+    if (!pinned) { setHoverOpen(false); setExpandedItems(new Set()); }
+  };
+  const handlePinToggle = () => {
+    const next = !pinned;
+    setPinned(next);
+    if (!next) setHoverOpen(false);
+    onToggle?.(!next);
+  };
 
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (isOpen) {
-      // Delay text mount until sidebar has visually opened enough
-      timerRef.current = setTimeout(() => setShowText(true), 180);
-    } else {
-      // Remove text from DOM immediately — no delay, no bleed
-      setShowText(false);
-    }
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isOpen]);
-
-  const isActive = (href: string) =>
-    href === '/dashboard'
-      ? location.pathname === '/dashboard'
-      : location.pathname.startsWith(href);
-
-  const isSubActive = (href: string) => location.pathname === href;
-
-  const toggleItem = (label: string) => {
-    setOpenItems(prev => {
-      const next = new Set(prev);
-      next.has(label) ? next.delete(label) : next.add(label);
-      return next;
+  const toggleExpand = (id: string) => {
+    if (!isOpen) return;
+    setExpandedItems(prev => {
+      const s = new Set(prev);
+      s.has(id) ? s.delete(id) : s.add(id);
+      return s;
     });
   };
 
-  return (
-    <TooltipProvider delayDuration={300}>
-      {/* Plain <aside> with CSS transition — overflow:hidden always enforced via inline style */}
-      <aside
-        onMouseEnter={() => { if (!forceExpanded) setHovered(true); }}
-        onMouseLeave={() => { if (!forceExpanded) setHovered(false); }}
-        style={{
-          width: isOpen ? W_OPEN : W_CLOSED,
-          transition: 'width 0.22s cubic-bezier(0.4,0,0.2,1)',
-          overflow: 'hidden',       // inline — never overridden
-          minWidth: isOpen ? W_OPEN : W_CLOSED,
-        }}
-        className={`
-          relative flex flex-col h-full flex-shrink-0
-          bg-white dark:bg-gray-950
-          border-r border-gray-100 dark:border-gray-800
-          shadow-[2px_0_16px_rgba(0,0,0,0.05)]
-          ${className}
-        `}
-      >
-        {/* ── Logo ── */}
-        <div
-          className="h-[65px] flex items-center border-b border-gray-100 dark:border-gray-800 flex-shrink-0"
-          style={{ padding: '0 14px' }}
-        >
-          {showText ? (
-            <LogoWebsite />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-[11px] font-extrabold tracking-wide select-none mx-auto"
-              style={{
-                background: `linear-gradient(135deg, ${TEAL} 0%, #22C4C5 100%)`,
-                boxShadow: `0 2px 8px ${TEAL}44`,
-              }}
+  const isActive       = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  const isParentActive = (item: MenuItem) => isActive(item.path) || (item.children?.some(c => isActive(c.path)) ?? false);
+
+  /* ─── single nav row (top-level) ─── */
+  const renderItem = (item: MenuItem) => {
+    const hasChildren = !!item.children?.length;
+    const expanded    = expandedItems.has(item.id);
+    const active      = isParentActive(item);
+
+    return (
+      <div key={item.id}>
+        {/* ── collapsed state ── */}
+        {!isOpen ? (
+          <div className="group relative flex justify-center py-1 px-2">
+            <button
+              onClick={() => hasChildren ? toggleExpand(item.id) : navigate(item.path)}
+              className={`
+                relative flex items-center justify-center w-10 h-10 rounded-xl
+                transition-all duration-150
+                ${active
+                  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
+                  : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200'}
+              `}
             >
-              TH
-            </div>
-          )}
-        </div>
-
-        {/* ── Nav ── */}
-        <nav
-          className="flex-1 py-2 scrollbar-hide"
-          style={{ overflowY: 'auto', overflowX: 'hidden' }}
-        >
-          {navGroups.map((group, gi) => (
-            <div key={group.groupLabel} className={gi > 0 ? 'mt-1' : ''}>
-
-              {/* Divider (collapsed) or group label (expanded) */}
-              {gi > 0 && !showText && (
-                <div className="mx-4 my-2 h-px bg-gray-100 dark:bg-gray-800" />
+              <item.icon size={18} />
+              {/* notification dot */}
+              {item.badge !== undefined && item.badge > 0 && !active && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-[#0f1117]" />
               )}
-              {showText && (
-                <p className={`px-4 pb-1 text-[9.5px] font-bold tracking-[0.14em] uppercase text-gray-400 dark:text-gray-600 select-none whitespace-nowrap ${gi > 0 ? 'pt-4' : 'pt-2'}`}>
-                  {group.groupLabel}
-                </p>
-              )}
+            </button>
+            <CollapsedTooltip label={item.label} badge={item.badge} />
+          </div>
+        ) : (
+          /* ── expanded state ── */
+          <div
+            onClick={() => hasChildren ? toggleExpand(item.id) : navigate(item.path)}
+            className={`
+              group relative flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer select-none
+              transition-all duration-150
+              ${active
+                ? 'bg-gradient-to-r from-blue-50 to-indigo-50/40 dark:from-blue-500/[0.12] dark:to-indigo-500/[0.04] text-blue-700 dark:text-blue-400'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-100'}
+            `}
+          >
+            {/* gradient left bar */}
+            <span className={`
+              absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full
+              bg-gradient-to-b from-blue-500 to-indigo-500
+              transition-all duration-200
+              ${active ? 'h-6 opacity-100' : 'h-0 opacity-0'}
+            `} />
 
-              <div className="px-2">
-                {group.items.map((item) => {
-                  const active = isActive(item.href);
-                  const expanded = openItems.has(item.label);
-                  const hasChildren = !!(item.subItems?.length);
+            <item.icon
+              size={16}
+              className={`shrink-0 transition-all duration-150
+                ${active ? 'text-blue-600 dark:text-blue-400' : 'group-hover:scale-110'}
+              `}
+            />
 
-                  return (
-                    <div key={item.label}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div
-                            className={`
-                              relative flex items-center rounded-xl cursor-pointer select-none mb-0.5
-                              transition-colors duration-150
-                              ${showText ? 'px-3 py-2.5' : 'justify-center py-2.5'}
-                              ${active
-                                ? 'bg-[#E8FAFA] dark:bg-[#3BD9DA]/10'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/70'
-                              }
-                            `}
-                            onClick={() => {
-                              if (hasChildren && showText) {
-                                toggleItem(item.label);
-                              } else {
-                                navigate(item.href);
-                              }
-                            }}
-                          >
-                            {/* Active pill */}
-                            {active && (
-                              <span
-                                className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-full"
-                                style={{ background: TEAL, height: '52%' }}
-                              />
-                            )}
+            <span className="flex-1 text-[13px] font-medium whitespace-nowrap tracking-[-0.01em]">
+              {item.label}
+            </span>
 
-                            {/* Icon */}
-                            <item.icon
-                              size={18}
-                              className="flex-shrink-0 transition-colors duration-150"
-                              style={{ color: active ? TEAL : undefined }}
-                            />
+            {item.badge !== undefined && item.badge > 0 && (
+              <Badge count={item.badge} active={active} />
+            )}
 
-                            {/* Label + chevron — strictly not in DOM when closed */}
-                            {showText && (
-                              <div className="flex items-center justify-between flex-1 ml-3 min-w-0 overflow-hidden">
-                                <span
-                                  className={`text-[13px] font-medium whitespace-nowrap truncate leading-none transition-colors duration-150 ${
-                                    active
-                                      ? 'text-gray-900 dark:text-white'
-                                      : 'text-gray-600 dark:text-gray-400'
-                                  }`}
-                                >
-                                  {item.label}
-                                </span>
-                                {hasChildren && (
-                                  <ChevronRight
-                                    size={13}
-                                    className={`flex-shrink-0 ml-2 transition-transform duration-200 ${
-                                      expanded ? 'rotate-90' : ''
-                                    } ${active ? 'text-gray-500 dark:text-gray-400' : 'text-gray-300 dark:text-gray-600'}`}
-                                  />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </TooltipTrigger>
+            {hasChildren && (
+              <ChevronRight
+                size={13}
+                className={`text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
+              />
+            )}
+          </div>
+        )}
 
-                        {/* Tooltip only when icons-only */}
-                        {!showText && (
-                          <TooltipContent side="right" sideOffset={12} className="text-xs font-medium">
-                            {item.label}
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-
-                      {/* Sub-items */}
-                      <AnimatePresence initial={false}>
-                        {hasChildren && expanded && showText && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                            style={{ overflow: 'hidden' }}
-                          >
-                            <div className="ml-8 mr-1 mb-1 pl-3.5 border-l-2 border-gray-100 dark:border-gray-800 py-0.5">
-                              {item.subItems!.map((sub) => {
-                                const subActive = isSubActive(sub.href);
-                                return (
-                                  <Link key={sub.href} to={sub.href}>
-                                    <div
-                                      className={`py-[7px] px-2.5 text-[12px] font-medium rounded-lg mt-0.5 whitespace-nowrap transition-colors duration-150 ${
-                                        subActive
-                                          ? 'text-[#3BD9DA] bg-[#E8FAFA] dark:bg-[#3BD9DA]/10'
-                                          : 'text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                      }`}
-                                    >
-                                      {sub.label}
-                                    </div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </nav>
-
-        {/* ── Footer ── */}
-        <div
-          className="flex-shrink-0 border-t border-gray-100 dark:border-gray-800 p-2.5"
-          style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}
-        >
-          {/* User card — only when expanded */}
-          {showText && user && (
-            <div
-              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-gray-800/70 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors duration-150"
-              onClick={() => navigate('/user-profile')}
-            >
-              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 bg-gray-200 ring-2 ring-white dark:ring-gray-700">
-                <img
-                  src={user.photo ? getImageUrl(user.photo) : '/user-avatar.svg'}
-                  onError={(e) => { e.currentTarget.src = '/user-avatar.svg'; }}
-                  alt="avatar"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-                  {[user.firstName, user.lastName].filter(Boolean).join(' ') || 'Vendor'}
-                </p>
-                <div className="flex items-center gap-1 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: TEAL }} />
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">Vendor Account</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="h-px bg-gray-100 dark:bg-gray-800 mx-1" />
-
-          {/* Pin toggle */}
-          {!forceExpanded && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setPinned(p => !p)}
+        {/* ── children (expanded only) ── */}
+        {isOpen && hasChildren && expanded && (
+          <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800/80 pl-3 pr-0">
+            {item.children!.map(child => {
+              const ca = isActive(child.path);
+              return (
+                <div
+                  key={child.id}
+                  onClick={() => navigate(child.path)}
                   className={`
-                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-150
-                    ${!showText ? 'justify-center' : ''}
-                    ${pinned
-                      ? 'bg-[#E8FAFA] dark:bg-[#3BD9DA]/10 text-[#3BD9DA]'
-                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }
+                    group flex items-center gap-2 py-2 px-2.5 rounded-lg cursor-pointer
+                    transition-colors duration-150 select-none
+                    ${ca
+                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'
+                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]'}
                   `}
                 >
-                  {pinned
-                    ? <PanelLeftClose size={16} className="flex-shrink-0" />
-                    : <PanelLeftOpen size={16} className="flex-shrink-0" />
-                  }
-                  {showText && (
-                    <span className="text-[13px] font-medium whitespace-nowrap">
-                      {pinned ? 'Unpin sidebar' : 'Pin sidebar'}
+                  <span className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
+                    ${ca ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400'}
+                  `} />
+                  <span className="flex-1 text-[12px] font-medium whitespace-nowrap">
+                    {child.label}
+                  </span>
+                  {child.badge !== undefined && child.badge > 0 && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500 text-white leading-none">
+                      {child.badge}
                     </span>
                   )}
-                </button>
-              </TooltipTrigger>
-              {!showText && (
-                <TooltipContent side="right" sideOffset={12} className="text-xs font-medium">
-                  {pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
-          {/* Logout */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                onClick={() => {
-                  localStorage.removeItem('user');
-                  localStorage.removeItem('token');
-                  window.location.href = '/';
-                }}
-                className={`
-                  flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer
-                  text-gray-400 dark:text-gray-500
-                  hover:text-red-500 dark:hover:text-red-400
-                  hover:bg-red-50 dark:hover:bg-red-950/20
-                  transition-all duration-150
-                  ${!showText ? 'justify-center' : ''}
-                `}
-              >
-                <LogOut size={16} className="flex-shrink-0" />
-                {showText && (
-                  <span className="text-[13px] font-medium whitespace-nowrap">Logout</span>
-                )}
-              </div>
-            </TooltipTrigger>
-            {!showText && (
-              <TooltipContent side="right" sideOffset={12} className="text-xs font-medium">
-                Logout
-              </TooltipContent>
-            )}
-          </Tooltip>
+  /* ─── logout row ─── */
+  const renderLogout = () => {
+    if (!isOpen) {
+      return (
+        <div className="group relative flex justify-center py-1 px-2">
+          <button
+            onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+            className="flex items-center justify-center w-10 h-10 rounded-xl text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
+          >
+            <LogOut size={18} />
+          </button>
+          <CollapsedTooltip label="Logout" />
         </div>
-      </aside>
-    </TooltipProvider>
+      );
+    }
+    return (
+      <div
+        onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+        className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer select-none
+          text-gray-400 dark:text-gray-500
+          hover:bg-red-50 dark:hover:bg-red-500/10
+          hover:text-red-600 dark:hover:text-red-400
+          transition-all duration-150 group"
+      >
+        <LogOut size={16} className="shrink-0 transition-transform duration-150 group-hover:scale-110" />
+        <span className="text-[13px] font-medium whitespace-nowrap">Logout</span>
+      </div>
+    );
+  };
+
+  /* ─── render ─── */
+  return (
+    <div
+      ref={sidebarRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      style={{ width: isOpen ? 256 : 68 }}
+      className="
+        relative flex flex-col h-full overflow-hidden
+        bg-white dark:bg-[#0f1117]
+        shadow-[inset_-1px_0_0_#f0f0f0] dark:shadow-[inset_-1px_0_0_#1c1f26]
+        transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+      "
+    >
+      {/* ─── Header ─── */}
+      <div className={`
+        flex items-center h-[60px] shrink-0 px-3.5
+        shadow-[inset_0_-1px_0_#f0f0f0] dark:shadow-[inset_0_-1px_0_#1c1f26]
+        ${!isOpen ? 'justify-center' : ''}
+      `}>
+        {isOpen ? (
+          <div className="flex items-center gap-2.5 flex-1 min-w-0">
+            {/* logo mark */}
+            <div className="w-8 h-8 shrink-0 rounded-xl
+              bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
+              shadow-lg shadow-blue-500/25
+              flex items-center justify-center"
+            >
+              <span className="text-white font-black text-[13px] leading-none">T</span>
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap leading-tight">
+                TripHut
+              </p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight whitespace-nowrap">
+                Host Dashboard
+              </p>
+            </div>
+
+            <button
+              onClick={handlePinToggle}
+              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              className={`
+                ml-auto shrink-0 p-1.5 rounded-lg transition-all duration-150
+                ${pinned
+                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10'
+                  : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                }
+              `}
+            >
+              {pinned ? <Pin size={13} /> : <PinOff size={13} />}
+            </button>
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-xl
+            bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
+            shadow-lg shadow-blue-500/25
+            flex items-center justify-center"
+          >
+            <span className="text-white font-black text-[13px] leading-none">T</span>
+          </div>
+        )}
+      </div>
+
+      {/* ─── Main nav ─── */}
+      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3
+        scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 scrollbar-track-transparent"
+      >
+        {isOpen && (
+          <p className="px-5 pt-1 pb-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-600 whitespace-nowrap">
+            Main Menu
+          </p>
+        )}
+        <div className="space-y-0.5">
+          {menuItems.map(renderItem)}
+        </div>
+      </nav>
+
+      {/* ─── Bottom nav ─── */}
+      <div className="shrink-0 py-3 shadow-[inset_0_1px_0_#f0f0f0] dark:shadow-[inset_0_1px_0_#1c1f26]">
+        {isOpen && (
+          <p className="px-5 pt-1 pb-2.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-gray-400 dark:text-gray-600 whitespace-nowrap">
+            Support
+          </p>
+        )}
+        <div className="space-y-0.5">
+          {bottomMenuItems.map(renderItem)}
+          {renderLogout()}
+        </div>
+      </div>
+    </div>
   );
 };
+
+export default Sidebar;

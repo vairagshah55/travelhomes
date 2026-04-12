@@ -37,6 +37,7 @@ const Revenue = () => {
     setIsCollapsed(!isCollapsed);
   };
 
+  const [loading, setLoading] = useState(true);
   const [revenueData, setRevenueData] = useState({
     totalEarnings: '0',
     totalPaymentReceived: '0',
@@ -44,6 +45,10 @@ const Revenue = () => {
   });
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [chartData, setChartData] = useState<any[]>([]);
+
+  const Sk = ({ className = '' }: { className?: string }) => (
+    <div className={`animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800 ${className}`} />
+  );
 
   // Filter payment history based on search
   const filteredPaymentHistory = paymentHistory.filter(payment => {
@@ -66,6 +71,7 @@ const Revenue = () => {
     const load = async () => {
         const token = localStorage.getItem('travel_auth_token');
         if(!token) return;
+        setLoading(true);
         try {
            // 1. Counts
            const counts = await vendorAnalyticsApi.getCounts(token);
@@ -108,6 +114,8 @@ const Revenue = () => {
 
         } catch(e) {
             console.error(e);
+        } finally {
+            setLoading(false);
         }
     }
     load();
@@ -118,10 +126,7 @@ const Revenue = () => {
  <div className="flex h-screen w-full bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta overflow-hidden motion-page-shell">
   {/* Sidebar (Desktop Only) */}
   <div className="hidden lg:block">
-    <Sidebar 
-      isCollapsed={isCollapsed} 
-      onToggleCollapse={handleToggleCollapse}
-    />
+    <Sidebar />
   </div>
 
   {/* Main Content Area */}
@@ -153,24 +158,35 @@ const Revenue = () => {
       {/* Main Dashboard Content */}
       <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-animate-group="revenue-stats" data-stagger="60">
-          {[
-            { label: 'Total Earnings',         value: `₹ ${revenueData.totalEarnings}`,         icon: Eye },
-            { label: 'Payment Received',        value: `₹ ${revenueData.totalPaymentReceived}`,  icon: MousePointer },
-            { label: 'Pending Payment',         value: `₹ ${revenueData.pendingPayment}`,        icon: ClipboardCheck },
-          ].map(({ label, value, icon: Icon }) => (
-            <div key={label} data-animate="kpi-card" data-animate-item className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group motion-kpi-card">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform motion-kpi-icon" style={{ background: '#E8FAFA' }}>
-                  <Icon size={18} style={{ color: '#3BD9DA' }} />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3">
+                  <Sk className="w-10 h-10 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2 pt-0.5">
+                    <Sk className="h-3 w-24" />
+                    <Sk className="h-6 w-28" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
-                  <p data-countup data-countup-duration="1200" className="text-xl font-bold text-gray-900 dark:text-white mt-0.5 font-geist">{value}</p>
+              ))
+            : [
+                { label: 'Total Earnings',        value: `₹ ${revenueData.totalEarnings}`,        icon: Eye },
+                { label: 'Payment Received',       value: `₹ ${revenueData.totalPaymentReceived}`, icon: MousePointer },
+                { label: 'Pending Payment',        value: `₹ ${revenueData.pendingPayment}`,       icon: ClipboardCheck },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" style={{ background: '#E8FAFA' }}>
+                      <Icon size={18} style={{ color: '#3BD9DA' }} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+                      <p className="text-xl font-bold text-gray-900 dark:text-white mt-0.5">{value}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          ))}
+              ))
+          }
         </div>
 
         {/* Earnings Chart */}
@@ -193,6 +209,14 @@ const Revenue = () => {
           </div>
 
           <div className="relative h-48 bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4">
+            {loading ? (
+              <div className="flex items-end justify-between h-full gap-1.5 px-6">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="flex-1 rounded-t animate-pulse bg-gray-200 dark:bg-gray-600"
+                    style={{ height: `${20 + Math.random() * 60}%` }} />
+                ))}
+              </div>
+            ) : (
             <div className="flex items-end justify-between h-full">
               {chartData.map((item, index) => (
                 <div key={index} className="flex flex-col items-center gap-1.5 flex-1" data-animate="section" data-animate-item>
@@ -210,6 +234,7 @@ const Revenue = () => {
                 </div>
               ))}
             </div>
+            )}
 
             {/* Y-Axis Labels */}
             <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-[10px] sm:text-xs text-dashboard-body dark:text-gray-400 py-1 sm:py-2">
@@ -281,8 +306,18 @@ const Revenue = () => {
         </tr>
       </thead>
 
-      <tbody className="divide-y divide-gray-100 dark:divide-gray-600 w-full " data-animate-group="payment-rows" data-stagger="30">
-        {paginatedHistory.map((payment, index) => (
+      <tbody className="divide-y divide-gray-100 dark:divide-gray-600 w-full">
+        {loading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <tr key={i}>
+                {Array.from({ length: 7 }).map((__, j) => (
+                  <td key={j} className="px-3 sm:px-4 py-3">
+                    <div className="h-4 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" style={{ width: j === 6 ? 64 : j === 0 ? 80 : 96 }} />
+                  </td>
+                ))}
+              </tr>
+            ))
+          : paginatedHistory.map((payment, index) => (
           <tr
             key={index}
             data-animate="table-row"

@@ -47,7 +47,12 @@ interface MetricCard {
 const Analytics = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+  const [loading, setLoading] = useState(true);
+
+  const Sk = ({ className = '' }: { className?: string }) => (
+    <div className={`animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800 ${className}`} />
+  );
+
   // Filters
   const [monthlyFilter, setMonthlyFilter] = useState("monthly");
   const [yearlyFilter, setYearlyFilter] = useState("yearly");
@@ -86,7 +91,7 @@ const Analytics = () => {
         if (res.data.properties) setProperties(res.data.properties);
       })
       .catch((err) => console.error("Error fetching counts:", err))
-      .finally(() => {});
+      .finally(() => { if (mounted) setLoading(false); });
       
     return () => {
       mounted = false;
@@ -303,10 +308,7 @@ const Analytics = () => {
     <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta motion-page-shell">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
-        <Sidebar
-          isCollapsed={isCollapsed}
-          onToggleCollapse={handleToggleCollapse}
-        />
+        <Sidebar />
       </div>
 
       {/* Main Content */}
@@ -319,41 +321,53 @@ const Analytics = () => {
           <div className="max-w-7xl mx-auto space-y-6">
 
             {/* All Metrics — single unified grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-animate-group="analytics-kpis" data-stagger="60">
-              {[...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map((metric, index) => (
-                <MetricCardComponent key={index} metric={metric} />
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {loading
+                ? Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3">
+                      <Sk className="w-10 h-10 rounded-xl shrink-0" />
+                      <div className="flex-1 space-y-2 pt-1">
+                        <Sk className="h-3 w-20" />
+                        <Sk className="h-6 w-14" />
+                      </div>
+                    </div>
+                  ))
+                : [...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map((metric, index) => (
+                    <MetricCardComponent key={index} metric={metric} />
+                  ))
+              }
             </div>
 
             {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" data-animate-group="analytics-charts" data-stagger="120">
-              <ChartComponent
-                title="Monthly Earnings"
-                filter={monthlyFilter}
-                onFilterChange={setMonthlyFilter}
-                data={monthlyGraphData}
-                dataKey="earnings"
-                color="#3BD9DA"
-              />
-              <ChartComponent
-                title="Yearly Earnings"
-                filter={yearlyFilter}
-                onFilterChange={setYearlyFilter}
-                data={yearlyGraphData}
-                dataKey="earnings"
-                color="#8B5CF6"
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {loading
+                ? Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <Sk className="h-5 w-36" />
+                        <Sk className="h-7 w-24 rounded-lg" />
+                      </div>
+                      <Sk className="h-48 w-full" />
+                    </div>
+                  ))
+                : <>
+                    <ChartComponent title="Monthly Earnings" filter={monthlyFilter} onFilterChange={setMonthlyFilter} data={monthlyGraphData} dataKey="earnings" color="#3BD9DA" />
+                    <ChartComponent title="Yearly Earnings"  filter={yearlyFilter}  onFilterChange={setYearlyFilter}  data={yearlyGraphData}  dataKey="earnings" color="#8B5CF6" />
+                  </>
+              }
             </div>
 
             {/* Visitors chart full width */}
-            <ChartComponent
-              title="Daily Visitors"
-              filter={dailyFilter}
-              onFilterChange={setDailyFilter}
-              data={dailyGraphData}
-              dataKey="visitors"
-              color="#3BD9DA"
-            />
+            {loading
+              ? <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <Sk className="h-5 w-36" />
+                    <Sk className="h-7 w-24 rounded-lg" />
+                  </div>
+                  <Sk className="h-48 w-full" />
+                </div>
+              : <ChartComponent title="Daily Visitors" filter={dailyFilter} onFilterChange={setDailyFilter} data={dailyGraphData} dataKey="visitors" color="#3BD9DA" />
+            }
           </div>
         </div>
       </div>

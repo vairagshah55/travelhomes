@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /c/vairag/travelhomes/Frontend/client/pages/onboarding/components/stays/*.tsx /c/vairag/travelhomes/Frontend/client/pages/onboarding/components/caravan/*.tsx /c/vairag/travelhomes/Frontend/client/pages/onboarding/components/activity/*.tsx /c/vairag/travelhomes/Frontend/client/pages/onboarding/components/shared/*.tsx)",
+      "Bash(grep -E \"#[0-9A-Fa-f]{3,8}\")",
+      "Bash(ls -lhS /c/vairag/travelhomes/Frontend/client/pages/*.tsx)",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(wc -l c:/vairag/travelhomes/Frontend/client/pages/*.tsx c:/vairag/travelhomes/Frontend/client/components/*.tsx)"
+    ]
+  }
+}

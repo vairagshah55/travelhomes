@@ -130,6 +130,20 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
 
+        /* Ocean design palette — use these in components */
+        ocean: {
+          50:  "#f0f8fd",
+          100: "#e0f2fa",
+          200: "#c5e6f5",
+          300: "#a0d8ec",
+          400: "#55a9cb",   /* sky accent */
+          500: "#01487e",   /* primary brand */
+          600: "#013a65",
+          700: "#001f4b",   /* navy */
+          800: "#000f28",
+          900: "#00080a",   /* deep */
+        },
+
         /* Legacy dashboard (keep working) */
         dashboard: {
           bg: "hsl(var(--dashboard-bg))",
@@ -232,11 +246,11 @@ export default {
         "th-inner": "var(--th-shadow-inner)",
         "th-ring":  "var(--th-shadow-ring)",
         "th-ring-error": "var(--th-shadow-ring-error)",
-        /* Blue theme shadows */
-        "blue-sm":   "0 2px 8px rgba(37, 99, 235, 0.08)",
-        "blue-md":   "0 4px 16px rgba(37, 99, 235, 0.12)",
-        "blue-lg":   "0 12px 40px rgba(37, 99, 235, 0.15)",
-        "blue-glow": "0 0 20px rgba(37, 99, 235, 0.2)",
+        /* Ocean theme shadows */
+        "blue-sm":   "0 2px 8px rgba(1,72,126,0.10)",
+        "blue-md":   "0 4px 16px rgba(1,72,126,0.15)",
+        "blue-lg":   "0 12px 40px rgba(1,72,126,0.20)",
+        "blue-glow": "0 0 24px rgba(85,169,203,0.35)",
       },
 
       /* ─── TRANSITIONS ──────────────────────────────────── */

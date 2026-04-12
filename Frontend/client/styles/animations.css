@@ -36,13 +36,13 @@
 .motion-kpi-card {
   --motion-enter-y: 20px;
   --motion-scale-start: 0.96;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.92) 100%);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(240,248,253,0.92) 100%);
   box-shadow: var(--motion-card-shadow);
   transform-origin: center top;
 }
 
 .dark .motion-kpi-card {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.96) 0%, rgba(15, 23, 42, 0.96) 100%);
+  background: linear-gradient(180deg, rgba(0,21,48,0.96) 0%, rgba(0,8,10,0.96) 100%);
 }
 
 .motion-kpi-card:hover {

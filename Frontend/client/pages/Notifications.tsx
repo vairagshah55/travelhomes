@@ -133,7 +133,7 @@ const Notifications = () => {
     <div className="flex h-screen bg-dashboard-bg font-plus-jakarta motion-page-shell">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
+        <Sidebar />
       </div>
 
       {/* Main Content */}
@@ -208,9 +208,18 @@ const Notifications = () => {
           {/* Notifications List */}
           <div className="space-y-3" data-animate-group="notification-items" data-stagger="90">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="w-8 h-8 motion-spinner" />
-                <p className="mt-4 text-dashboard-body font-geist">Loading notifications...</p>
+              <div className="space-y-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4 bg-white dark:bg-gray-900">
+                    <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-800 animate-pulse shrink-0" />
+                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 animate-pulse shrink-0" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3.5 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse w-2/5" />
+                      <div className="h-3 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse w-3/4" />
+                    </div>
+                    <div className="h-3 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse w-16 shrink-0" />
+                  </div>
+                ))}
               </div>
             ) : (
               filteredNotifications.map((notification) => (
