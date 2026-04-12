@@ -123,194 +123,139 @@ const [ticket, setTicket] = useState({
     }
   };
 
+  const navLinks = [
+    { href: '/settings',             label: 'General',      key: 'general'     },
+    { href: '/settings/account',     label: 'Raise Ticket', key: 'account'     },
+    { href: '/settings/preferences', label: 'Preferences',  key: 'preferences' },
+  ];
+
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta">
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
       </div>
-      
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col w-full ">
-        <DashboardHeader Headtitle={"Settings"}/>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader Headtitle="Settings" />
 
-        <div className="flex-1 flex flex-col pr-5 pb-5 overflow-y-auto scrollbar-hide">
-          <div className="flex-1 p-5 bg-white dark:bg-gray-800 rounded-3xl ">
-            <div className="max-w-6xl mx-auto space-y-8">
-              {/* General Settings Section */}
-          <div className={"space-y-5 " + (activeSection === 'general' ? '' : 'hidden')}>
-  <h2 className="text-xl font-bold text-dashboard-body dark:text-gray-300 font-plus-jakarta">
-    General Settings
-  </h2>
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+          <div className="max-w-3xl mx-auto space-y-6">
 
-  <div className="border border-dashboard-stroke dark:border-gray-600 rounded-2xl bg-white dark:bg-gray-800">
-    <div className="flex items-center justify-between p-5">
-      
-      {/* LEFT CONTENT */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium text-dashboard-title dark:text-gray-300">
-          Confirmation before accepting booking
-        </p>
-        <p className="text-xs text-dashboard-muted dark:text-gray-400">
-          When enabled, complete assessment is required
-        </p>
-      </div>
-
-      {/* TOGGLE */}
-      <label className="relative inline-flex items-center cursor-pointer">
-        <input
-          type="checkbox"
-          checked={general.confirmBeforeBooking}
-          onChange={(e) =>
-            setGeneral({
-              ...general,
-              confirmBeforeBooking: e.target.checked,
-            })
-          }
-          className="sr-only peer"
-        />
-        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:bg-black dark:peer-checked:bg-white transition-all"></div>
-        <div className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-5"></div>
-      </label>
-
-    </div>
-  </div>
-</div>
-
-
-              {/* Account Section */}
-             <div className={"space-y-5 " + (activeSection === 'account' ? '' : 'hidden')}>
-
-  {/* PAGE TITLE */}
-  <h2 className="text-xl font-bold text-dashboard-body dark:text-gray-300 font-plus-jakarta">
-    Raise Issue Ticket
-  </h2>
-
-  {/* FORM CARD */}
-  <div className="bg-white dark:bg-gray-800 border border-dashboard-stroke dark:border-gray-600 rounded-2xl p-5">
-    
-    {/* FORM GRID */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-      {/* Name */}
-      <div>
-        <label className="text-sm text-dashboard-title dark:text-gray-300">
-          Name
-        </label>
-        <Input
-          placeholder="Your name"
-          value={ticket.name}
-          onChange={(e) => setTicket({ ...ticket, name: e.target.value })}
-        />
-      </div>
-
-      {/* Phone */}
-      <div>
-        <label className="text-sm text-dashboard-title dark:text-gray-300">
-          Phone Number
-        </label>
-        <Input
-          type="text"
-          inputMode="numeric"
-          placeholder="Enter 10 digit number"
-          value={ticket.phone}
-          onKeyDown={(e) => {
-            // Allow backspace, delete, tab, escape, enter, and numbers
-            if (
-              !/[0-9]/.test(e.key) &&
-              !['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(e.key)
-            ) {
-              e.preventDefault();
-            }
-          }}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '').slice(0, 10);
-            setTicket({ ...ticket, phone: val });
-          }}
-        />
-      </div>
-
-      {/* Email */}
-      <div>
-        <label className="text-sm text-dashboard-title dark:text-gray-300">
-          Email
-        </label>
-        <Input
-          placeholder="example@email.com"
-          value={ticket.email}
-          onChange={(e) => setTicket({ ...ticket, email: e.target.value })}
-        />
-      </div>
-
-      {/* Subject */}
-      <div>
-        <label className="text-sm text-dashboard-title dark:text-gray-300">
-          Subject
-        </label>
-        <Input
-          placeholder="Subject"
-          value={ticket.subject}
-          onChange={(e) => setTicket({ ...ticket, subject: e.target.value })}
-        />
-      </div>
-    </div>
-
-    {/* Message */}
-    <div className="mt-4">
-      <label className="text-sm text-dashboard-title dark:text-gray-300">
-        Message
-      </label>
-      <Textarea
-        className="min-h-[120px]"
-        placeholder="Describe your issue..."
-        value={ticket.message}
-        onChange={(e) => setTicket({ ...ticket, message: e.target.value })}
-      />
-    </div>
-
-    {/* SUBMIT BUTTON */}
-    <div className="flex justify-end mt-4">
-      <Button 
-        onClick={handleSubmitTicket}
-        className="bg-black dark:bg-white text-white dark:text-black px-6"
-      >
-        Submit
-      </Button>
-    </div>
-  </div>
-  {/* INFO / FAQ CARD */}
-<div className="mt-6 bg-white dark:bg-gray-800 border border-dashboard-stroke dark:border-gray-600 rounded-2xl p-5">
-  
-  <h3 className="text-sm font-semibold text-dashboard-heading dark:text-gray-200 mb-3">
-    How I delete my account
-  </h3>
-
-  <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 space-y-1">
-    <p className="text-xs font-medium text-dashboard-title dark:text-gray-300">
-      Message
-    </p>
-    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-      The alignment of the primary CTA button on the homepage appears inconsistent
-      across different screen sizes. On smaller screens, the button shifts slightly
-      to the right, affecting the visual balance.
-    </p>
-  </div>
-
-</div>
-
-</div>
-
-            
-         
-
+            {/* ── Settings nav tabs ── */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl w-fit">
+              {navLinks.map((link) => (
+                <button
+                  key={link.key}
+                  onClick={() => navigate(link.href)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                    activeSection === link.key
+                      ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {link.label}
+                </button>
+              ))}
             </div>
+
+            {/* ── General Settings ── */}
+            <div className={'space-y-4 ' + (activeSection === 'general' ? '' : 'hidden')}>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">General Settings</h2>
+
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
+                <div className="flex items-center justify-between p-5">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                      Confirmation before accepting booking
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      When enabled, complete assessment is required
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={general.confirmBeforeBooking}
+                      onChange={(e) => setGeneral({ ...general, confirmBeforeBooking: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div
+                      className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer transition-all"
+                      style={{ '--tw-peer-checked': '#3BD9DA' } as React.CSSProperties}
+                    >
+                      <div className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${general.confirmBeforeBooking ? 'translate-x-5' : ''}`} />
+                    </div>
+                    <div
+                      className="absolute inset-0 rounded-full transition-all pointer-events-none"
+                      style={general.confirmBeforeBooking ? { background: '#3BD9DA' } : {}}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Raise Ticket ── */}
+            <div className={'space-y-4 ' + (activeSection === 'account' ? '' : 'hidden')}>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Raise Issue Ticket</h2>
+
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { label: 'Name',         key: 'name',    type: 'text',  placeholder: 'Your name' },
+                    { label: 'Phone Number', key: 'phone',   type: 'text',  placeholder: 'Enter 10 digit number' },
+                    { label: 'Email',        key: 'email',   type: 'email', placeholder: 'example@email.com' },
+                    { label: 'Subject',      key: 'subject', type: 'text',  placeholder: 'Subject' },
+                  ].map(({ label, key, type, placeholder }) => (
+                    <div key={key} className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">{label}</label>
+                      <Input
+                        type={type}
+                        placeholder={placeholder}
+                        value={(ticket as any)[key]}
+                        onChange={(e) => {
+                          let val = e.target.value;
+                          if (key === 'phone') val = val.replace(/\D/g, '').slice(0, 10);
+                          setTicket({ ...ticket, [key]: val });
+                        }}
+                        onKeyDown={key === 'phone' ? (e) => {
+                          if (!/[0-9]/.test(e.key) && !['Backspace','Delete','Tab','Escape','Enter','ArrowLeft','ArrowRight'].includes(e.key)) e.preventDefault();
+                        } : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">Message</label>
+                  <Textarea
+                    className="min-h-[120px] resize-none"
+                    placeholder="Describe your issue in detail…"
+                    value={ticket.message}
+                    onChange={(e) => setTicket({ ...ticket, message: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleSubmitTicket}
+                    className="px-6 font-semibold text-[#131313] rounded-xl"
+                    style={{ background: '#3BD9DA' }}
+                  >
+                    Submit Ticket
+                  </Button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
       {/* Success Modal */}
     <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-  <DialogContent className="sm:max-w-[560px] p-10 text-center border-0 rounded-2xl bg-white dark:bg-gray-800">
+  <DialogContent className="sm:max-w-[560px] p-10 text-center border-0 rounded-2xl bg-white dark:bg-gray-900">
     
     <div className="flex flex-col items-center space-y-8">
 
@@ -338,7 +283,8 @@ const [ticket, setTicket] = useState({
       {/* BUTTON */}
       <Button
         onClick={() => setShowSuccessModal(false)}
-        className="w-full max-w-sm h-12 rounded-full bg-black text-white hover:bg-gray-900 dark:bg-white dark:text-black"
+        className="w-full max-w-sm h-12 rounded-full font-semibold text-[#131313]"
+        style={{ background: '#3BD9DA' }}
       >
         Back to Home
       </Button>

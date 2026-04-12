@@ -25,6 +25,7 @@ import {
   User,
   X,
   Image as ImageIcon,
+  Award,
 } from "lucide-react";
 import { Sidebar } from "@/components/Navigation";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -34,6 +35,13 @@ import { getImageUrl } from "@/lib/utils";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomPagination } from "@/components/CustomPagination";
+
+// ─── Status chip ─────────────────────────────────────────────────────────────
+const STATUS_STYLES: Record<string, string> = {
+  approved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400',
+  pending:  'bg-amber-100  text-amber-700  dark:bg-amber-900/40  dark:text-amber-400',
+  cancelled:'bg-red-100    text-red-600    dark:bg-red-900/40    dark:text-red-400',
+};
 
 // --------- Card Component ---------
 const OfferingCard = ({
@@ -58,131 +66,119 @@ const OfferingCard = ({
   const id = listing._id!;
   const cover = listing.photos?.coverUrl || "";
   const category = listing.category || "Offer";
-  const seats = listing.seatingCapacity || 0;
-  const sleeps = listing.sleepingCapacity || 0;
+  const seats = Number(listing.seatingCapacity || 0);
+  const sleeps = Number(listing.sleepingCapacity || 0);
   const price = Number(listing.regularPrice || 0);
+  const status = (listing.status || "pending") as string;
+  const location = [listing.city, listing.state].filter(Boolean).join(", ");
+
   return (
-    <div className="relative group">
+    <div className="relative group" data-parallax="0.05">
       <div
-        className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+        data-animate="property-card"
+        data-animate-item
+        className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer motion-property-card"
         onClick={() => onCardClick(id)}
       >
-        {/* Image */}
-        <div className="relative h-56 overflow-hidden">
+        {/* ── Image ── */}
+        <div className="relative h-52 overflow-hidden bg-gray-100 dark:bg-gray-800 motion-property-image-wrap">
           {cover ? (
             <img
               src={getImageUrl(cover)}
               alt={listing.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              data-animate-image
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 motion-property-image"
             />
           ) : (
-            <div className="w-full h-full bg-gray-200 dark:bg-gray-700" />
+            <div className="w-full h-full flex items-center justify-center">
+              <ImageIcon size={36} className="text-gray-300 dark:text-gray-600" />
+            </div>
           )}
 
-          {/* Badge + Actions */}
+          {/* Status chip + menu */}
           <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-            <Badge className="bg-white text-dashboard-primary font-bold text-sm px-2 py-1 rounded shadow-sm">
-              {category}
-            </Badge>
-            <div className="relative">
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLES[status] ?? STATUS_STYLES.pending} ${status === 'pending' ? 'motion-badge-pending' : status === 'approved' ? 'motion-badge-confirmed' : ''}`}>
+              {status}
+            </span>
+
+            {/* Three-dot menu */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 bg-white/80 hover:bg-white rounded-full shadow-sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleDropdown(id);
-                }}
+                className="h-8 w-8 bg-white/90 hover:bg-white dark:bg-gray-900/90 dark:hover:bg-gray-900 rounded-full shadow-sm backdrop-blur-sm"
+                onClick={() => onToggleDropdown(id)}
               >
-                <MoreHorizontal size={16} className="text-gray-700" />
+                <MoreHorizontal size={15} className="text-gray-700 dark:text-gray-300" />
               </Button>
 
               {showDropdown === id && (
-                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-10">
-                  {listing.status === "approved" ? (
-                    <>
-                      <button
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-dashboard-heading dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg flex items-center gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(listing);
-                        }}
-                      >
-                        <Edit2 size={14} /> Edit
-                      </button>
-                      <button
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-dashboard-heading dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-lg flex items-center gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCardClick(id);
-                        }}
-                      >
-                        <Eye size={14} /> View
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-dashboard-heading dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg flex items-center gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEdit(listing);
-                        }}
-                      >
-                        <Edit2 size={14} /> Edit
-                      </button>
-
-                      <button
-                        className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-b-lg flex items-center gap-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(id);
-                        }}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </>
+                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-20 overflow-hidden motion-dropdown-surface" data-state="open">
+                  <button
+                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2.5 transition-colors"
+                    onClick={() => onEdit(listing)}
+                  >
+                    <Edit2 size={13} /> Edit
+                  </button>
+                  <button
+                    className="w-full px-4 py-2.5 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-2.5 transition-colors"
+                    onClick={() => onCardClick(id)}
+                  >
+                    <Eye size={13} /> View Details
+                  </button>
+                  {status !== "approved" && (
+                    <button
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2.5 transition-colors"
+                      onClick={() => onDelete(id)}
+                    >
+                      <Trash2 size={13} /> Delete
+                    </button>
                   )}
                 </div>
               )}
             </div>
           </div>
+
+          {/* Category pill at bottom of image */}
+          <div className="absolute bottom-3 left-3">
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-black/50 text-white backdrop-blur-sm">
+              {category}
+            </span>
+          </div>
         </div>
 
-        {/* Content */}
+        {/* ── Content ── */}
         <div className="p-4">
-          <div className="flex justify-between items-start mb-4">
-            <div className="flex-1">
-              <h3 className="font-bold text-base text-dashboard-heading dark:text-white mb-2 font-plus-jakarta">
-                {listing.name}
-              </h3>
-              <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 font-poppins">
-                <span>{seats} Seats /</span>
-                <span>{sleeps} Sleeps</span>
-              </div>
-            </div>
+          <h3 className="font-bold text-sm text-gray-900 dark:text-white font-plus-jakarta truncate mb-1">
+            {listing.name}
+          </h3>
 
-            <div className="flex items-center gap-1.5">
-              <Star
-                size={14}
-                fill="currentColor"
-                className="text-dashboard-heading dark:text-white"
-              />
-              <span className="text-sm font-medium text-dashboard-heading dark:text-white">
-                4.9
-              </span>
-            </div>
+          {location && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mb-2.5 truncate">
+              {location}
+            </p>
+          )}
+
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500 mb-3">
+            {seats > 0 && <span>{seats} seats</span>}
+            {seats > 0 && sleeps > 0 && <span className="text-gray-300 dark:text-gray-700">·</span>}
+            {sleeps > 0 && <span>{sleeps} sleeps</span>}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-base font-bold text-dashboard-heading dark:text-white font-plus-jakarta">
-                ₹{price}
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-base font-bold text-gray-900 dark:text-white font-plus-jakarta">
+                ₹{price.toLocaleString('en-IN')}
               </span>
-              <span className="text-sm text-dashboard-heading dark:text-white font-plus-jakarta">
-                / day
-              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 ml-0.5">/ day</span>
             </div>
+            <button
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+              style={{ color: '#3BD9DA', background: '#E8FAFA' }}
+              onClick={(e) => { e.stopPropagation(); onCardClick(id); }}
+            >
+              View
+            </button>
           </div>
         </div>
       </div>
@@ -401,7 +397,7 @@ const OfferModal: React.FC<OfferFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0">
+      <DialogContent className="max-w-4xl p-0 motion-modal-surface">
         <DialogHeader className="px-6 pt-6">
           <DialogTitle>{isEdit ? "Edit Offer" : "Add New Offer"}</DialogTitle>
         </DialogHeader>
@@ -693,8 +689,13 @@ const OfferModal: React.FC<OfferFormProps> = ({
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={submit} disabled={saving}>
-              {isEdit ? "Save Changes" : "Create Offer"}
+            <Button
+              onClick={submit}
+              disabled={saving}
+              style={{ background: '#3BD9DA', color: '#131313' }}
+              className="hover:opacity-90 font-semibold"
+            >
+              {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Offer"}
             </Button>
           </div>
         </div>
@@ -837,77 +838,111 @@ const Offering = () => {
     setModalOpen(false);
   };
 
+  const tabs: { key: "approved" | "pending"; label: string; count: number }[] = [
+    { key: "approved", label: "Approved", count: approvedoffers.length },
+    { key: "pending",  label: "Pending",  count: pendingoffers.length },
+  ];
+
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta overflow-hidden">
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta overflow-hidden motion-page-shell">
       {/* Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar
-          isCollapsed={isCollapsed}
-          onToggleCollapse={handleToggleCollapse}
-        />
+      <div className="hidden lg:block flex-shrink-0">
+        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
       </div>
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle={"Offering"} />
+        <DashboardHeader Headtitle="Offerings" />
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col pr-5 pb-5 min-h-0">
-          {/* Tabs + Add button */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dashboard-stroke dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-3xl">
-            <div className="flex items-center">
-              <button
-                onClick={() => setActiveTab("approved")}
-                className={`px-4 py-3 text-base font-bold font-plus-jakarta relative ${
-                  activeTab === "approved"
-                    ? "text-dashboard-heading dark:text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:text-dashboard-heading dark:hover:text-white"
-                }`}
-              >
-                Approved
-                {activeTab === "approved" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary"></div>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("pending")}
-                className={`px-4 py-3 text-base font-bold font-plus-jakarta relative ${
-                  activeTab === "pending"
-                    ? "text-dashboard-heading dark:text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:text-dashboard-heading dark:hover:text-white"
-                }`}
-              >
-                Pending
-                {activeTab === "pending" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary"></div>
-                )}
-              </button>
+        <div className="flex-1 flex flex-col overflow-hidden m-4 lg:m-5">
+          {/* ── Toolbar ── */}
+          <div data-animate="section" className="flex items-center justify-between px-1 pb-4 motion-section-reveal">
+            {/* Tabs */}
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  data-active={activeTab === tab.key ? "true" : "false"}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold font-plus-jakarta transition-all duration-150 ${
+                    activeTab === tab.key
+                      ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  } motion-tab-trigger`}
+                >
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ${
+                        activeTab === tab.key
+                          ? "text-white"
+                          : "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
+                      }`}
+                      style={activeTab === tab.key ? { background: '#3BD9DA' } : {}}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              ))}
             </div>
 
+            {/* Add button */}
             <Button
-            onClick={()=>navigate("/offering/add")}
-              // onClick={() => {
-
-                // setEditing(null);
-                // setModalOpen(true);
-              // }}
-              className="bg-dashboard-primary text-white hover:bg-gray-800 rounded-full px-6 h-11 font-geist font-medium flex items-center gap-2"
+              onClick={() => navigate("/offering/add")}
+              className="rounded-xl px-5 h-10 font-semibold text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+              style={{ background: '#3BD9DA', color: '#131313' }}
             >
-              <Plus size={18} />
-              Add New Offers
+              <Plus size={16} />
+              Add Offering
             </Button>
           </div>
 
-          {/* Grid */}
+          {/* ── Grid ── */}
           <div
-            className="flex-1 p-5 bg-white dark:bg-gray-800 rounded-b-3xl overflow-y-auto"
+            className="flex-1 overflow-y-auto scrollbar-hide"
             onClick={() => setShowDropdown(null)}
           >
             {loading ? (
               <UniqueStaysSkeleton />
+            ) : offers.length === 0 ? (
+              /* ── Empty state ── */
+              <div data-animate="section" className="flex flex-col items-center justify-center h-full min-h-[400px] text-center px-4 motion-section-reveal">
+                <div
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5"
+                  style={{ background: '#E8FAFA' }}
+                >
+                  <Award size={36} style={{ color: '#3BD9DA' }} />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  {activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
+                </h3>
+                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs mb-6 leading-relaxed">
+                  {activeTab === "approved"
+                    ? "Once the admin approves your submitted offerings, they'll appear here."
+                    : "Offerings you create go into pending review first. Create one to get started."}
+                </p>
+                {activeTab === "approved" ? (
+                  <button
+                    onClick={() => setActiveTab("pending")}
+                    className="text-sm font-semibold transition-colors"
+                    style={{ color: '#3BD9DA' }}
+                  >
+                    View pending offerings →
+                  </button>
+                ) : (
+                  <Button
+                    onClick={() => navigate("/offering/add")}
+                    className="rounded-xl px-6 h-10 font-semibold text-sm"
+                    style={{ background: '#3BD9DA', color: '#131313' }}
+                  >
+                    <Plus size={15} className="mr-2" /> Create your first offering
+                  </Button>
+                )}
+              </div>
             ) : (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20 ">
+                <div key={activeTab} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-6 motion-tab-panel" data-animate-group="offering-cards" data-stagger="80">
                   {paginatedOffers.map((listing) => (
                     <OfferingCard
                       key={listing._id}
@@ -929,25 +964,6 @@ const Offering = () => {
                 />
               </>
             )}
-
-            {/* Empty State */}
-            {!loading &&
-              ((activeTab === "approved" && offers.length === 0) ||
-                (activeTab === "pending" && offers.length === 0)) && (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                    <Plus size={24} className="text-gray-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-dashboard-heading dark:text-white mb-2">
-                    No {activeTab} offerings yet
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-sm">
-                    {activeTab === "approved"
-                      ? "Approved offers will show here once the admin approves your offer."
-                      : "Newly created offers appear here as pending until approved by admin."}
-                  </p>
-                </div>
-              )}
           </div>
         </div>
       </div>

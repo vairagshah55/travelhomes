@@ -6,8 +6,8 @@ const UniqueStaysSkeleton = () => {
     <section className="max-w-7xl mx-auto px-4 sm:px-6 md:px-10">
       {/* Title */}
       <div className="mb-6">
-        <div className="h-7 w-36 sm:w-48 bg-gray-200 rounded animate-pulse mb-2" />
-        <div className="h-4 w-64 sm:w-80 bg-gray-200 rounded animate-pulse" />
+        <div className="h-7 w-36 sm:w-48 bg-gray-200 rounded motion-skeleton mb-2" />
+        <div className="h-4 w-64 sm:w-80 bg-gray-200 rounded motion-skeleton" />
       </div>
 
       {/* Cards */}
@@ -19,27 +19,27 @@ const UniqueStaysSkeleton = () => {
           >
             {/* Image */}
             <div className="relative">
-              <div className="h-[150px] sm:h-[180px] w-full bg-gray-200 rounded-xl animate-pulse" />
+              <div className="h-[150px] sm:h-[180px] w-full bg-gray-200 rounded-xl motion-skeleton" />
 
               {/* Heart icon placeholder */}
-              <div className="absolute top-3 right-3 h-6 w-6 bg-gray-200 rounded-full animate-pulse" />
+              <div className="absolute top-3 right-3 h-6 w-6 bg-gray-200 rounded-full motion-skeleton" />
             </div>
 
             {/* Content */}
             <div className="mt-3 space-y-2 px-2 sm:px-3">
               {/* Title + rating */}
               <div className="flex justify-between items-center">
-                <div className="h-4 w-20 sm:w-24 bg-gray-200 rounded animate-pulse" />
-                <div className="h-4 w-8 sm:w-10 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-20 sm:w-24 bg-gray-200 rounded motion-skeleton" />
+                <div className="h-4 w-8 sm:w-10 bg-gray-200 rounded motion-skeleton" />
               </div>
 
               {/* Location */}
-              <div className="h-3 w-32 sm:w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="h-3 w-32 sm:w-40 bg-gray-200 rounded motion-skeleton" />
 
               {/* Price */}
               <div className="flex gap-2 items-center mt-2">
-                <div className="h-4 w-10 sm:w-12 bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-10 sm:w-12 bg-gray-200 rounded motion-skeleton" />
+                <div className="h-3 w-16 sm:w-20 bg-gray-200 rounded motion-skeleton" />
               </div>
             </div>
           </div>
@@ -49,8 +49,8 @@ const UniqueStaysSkeleton = () => {
   );
 };
 
-const ShimmerBlock = ({ className = "" }: { className?: string }) => (
-  <div className={`bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse relative overflow-hidden ${className}`}>
+const ShimmerBlock = ({ className = "", ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={`bg-gray-200 dark:bg-gray-700 rounded-lg relative overflow-hidden motion-skeleton ${className}`} {...props}>
     <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent" />
   </div>
 );

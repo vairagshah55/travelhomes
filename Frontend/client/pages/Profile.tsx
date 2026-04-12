@@ -328,9 +328,9 @@ const Profile = () => {
   const [linkUrl, setLinkUrl] = useState("");
 
   return (
-    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta">
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar
           isCollapsed={isCollapsed}
           onToggleCollapse={handleToggleCollapse}
@@ -343,55 +343,32 @@ const Profile = () => {
         <DashboardHeader Headtitle={"Profile"} />
 
         {/* Profile Content */}
-        <main className="flex-1 p-4 lg:p-5 dark:bg-black dark:text-white bg-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
+        <main className="flex-1 p-4 lg:p-5 dark:bg-gray-900 dark:text-white bg-white m-2 lg:m-4 rounded-2xl lg:rounded-3xl overflow-auto scrollbar-hide">
           {/* Profile Tabs Header */}
-          <div className="flex items-center justify-between gap-6 border-b border-dashboard-stroke pb-4 mb-5">
-            <div className="flex items-center flex-1">
-              <div className="flex items-center gap-0">
+          <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3 mb-5">
+            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl">
+              {[
+                { key: 'personal', label: 'Personal Details' },
+                { key: 'social',   label: 'Social Profile'   },
+                { key: 'business', label: 'Business Details' },
+              ].map((tab) => (
                 <button
-                  onClick={() => setActiveTab("personal")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
-                    activeTab === "personal"
-                      ? "text-dashboard-heading"
-                      : "text-gray-400 hover:text-dashboard-heading"
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key as any)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold font-plus-jakarta transition-all duration-150 ${
+                    activeTab === tab.key
+                      ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                   }`}
                 >
-                  Personal Details
-                  {activeTab === "personal" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary"></div>
-                  )}
+                  {tab.label}
                 </button>
-                <button
-                  onClick={() => setActiveTab("social")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
-                    activeTab === "social"
-                      ? "text-dashboard-heading"
-                      : "text-gray-400 hover:text-dashboard-heading"
-                  }`}
-                >
-                  Social Profile
-                  {activeTab === "social" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary"></div>
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("business")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
-                    activeTab === "business"
-                      ? "text-dashboard-heading"
-                      : "text-gray-400 hover:text-dashboard-heading"
-                  }`}
-                >
-                  Business Details
-                  {activeTab === "business" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary"></div>
-                  )}
-                </button>
-              </div>
+              ))}
             </div>
             <Button
               onClick={() => setIsChangePasswordOpen(true)}
-              className="bg-dashboard-primary  dark:text-black text-white px-6 py-3 rounded-full font-geist text-sm"
+              className="rounded-xl px-5 h-9 font-semibold text-sm text-[#131313] flex-shrink-0"
+              style={{ background: '#3BD9DA' }}
             >
               Change Password
             </Button>
@@ -401,7 +378,7 @@ const Profile = () => {
           {activeTab === "personal" && (
             <div className="space-y-6">
               {/* Personal Details Form */}
-              <Card className="bg-gray-50 dark:bg-black dark:text-white border-0">
+              <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
                 <CardContent className="p-6">
                   {/* Photo + Email row */}
                   <div className="flex items-center gap-6 mb-6">
@@ -649,7 +626,7 @@ const Profile = () => {
                         <Button 
                           onClick={handleSaveProfile} 
                           disabled={saving}
-                          className="bg-dashboard-primary text-white"
+                          className="text-[#131313] font-semibold" style={{ background: '#3BD9DA' }}
                         >
                           {saving ? 'Saving...' : 'Save Changes'}
                         </Button>
@@ -665,7 +642,7 @@ const Profile = () => {
                   <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
-                    className="px-6 py-3 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-white rounded-full font-geist flex items-center gap-2"
+                    className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border" style={{ borderColor: '#3BD9DA', color: '#3BD9DA' }}
                   >
                     <Edit size={18} />
                     Edit
@@ -744,7 +721,7 @@ const Profile = () => {
               </Card>
 
               {/* Add Link Form */}
-              <Card className="bg-gray-50 dark:bg-black dark:text-white border-0">
+              <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
                 <CardContent className="p-5">
                   <div className="flex items-end gap-6">
                     <div className="flex-1 space-y-3">
@@ -769,7 +746,7 @@ const Profile = () => {
                         className="border-gray-300 bg-white text-sm text-dashboard-neutral-07 font-plus-jakarta"
                       />
                     </div>
-                    <Button onClick={handleAddSocialLink} className="bg-dashboard-primary dark:text-black  text-white px-8 py-3 rounded-full font-geist">
+                    <Button onClick={handleAddSocialLink} className="rounded-xl px-5 font-semibold text-[#131313]" style={{ background: '#3BD9DA' }}>
                       ADD
                     </Button>
                   </div>
@@ -780,7 +757,7 @@ const Profile = () => {
                 <Button 
                   onClick={handleSaveProfile} 
                   disabled={saving}
-                  className="bg-dashboard-primary text-white"
+                  className="text-[#131313] font-semibold" style={{ background: '#3BD9DA' }}
                 >
                   {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
@@ -791,7 +768,7 @@ const Profile = () => {
           {activeTab === "business" && (
             <div className="space-y-6">
               {/* Business Information */}
-              <Card className="bg-gray-50 dark:bg-black dark:text-white border-0">
+              <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
                 <CardContent className="p-6">
                   {!isEditing ? (
                     <div className="space-y-7">
@@ -1067,7 +1044,7 @@ const Profile = () => {
                         <Button 
                           onClick={handleSaveProfile} 
                           disabled={saving}
-                          className="bg-dashboard-primary text-white"
+                          className="text-[#131313] font-semibold" style={{ background: '#3BD9DA' }}
                         >
                           {saving ? 'Saving...' : 'Save Changes'}
                         </Button>
@@ -1082,7 +1059,7 @@ const Profile = () => {
                   <Button
                     onClick={() => setIsEditing(true)}
                     variant="outline"
-                    className="px-6 py-3 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-white rounded-full font-geist flex items-center gap-2"
+                    className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border" style={{ borderColor: '#3BD9DA', color: '#3BD9DA' }}
                   >
                     <Edit size={18} />
                     Edit

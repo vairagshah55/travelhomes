@@ -209,7 +209,7 @@ const filteredFAQs = searchQuery.trim()
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Button className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 bg-dashboard-primary rounded-full p-0">
-                <Search className="h-5 w-5 text-white dark:text-black" />
+                <Search className="h-5 w-5 text-white dark:text-white" />
               </Button>
             </div>
 
@@ -239,7 +239,7 @@ const filteredFAQs = searchQuery.trim()
                   key={item.id}
                   className={`rounded-lg border transition-all ${
                     item.isOpen
-                      ? 'bg-gray-100 dark:bg-black dark:text-white border-gray-200'
+                      ? 'bg-gray-100 dark:bg-gray-800 dark:text-white border-gray-200'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -259,7 +259,7 @@ const filteredFAQs = searchQuery.trim()
 
                   {item.isOpen && item.answer && (
                     <div className="px-4 sm:px-6 pb-5">
-                      <p className="text-sm sm:text-base text-gray-500 dark:bg-black dark:text-white font-plus-jakarta leading-6">
+                      <p className="text-sm sm:text-base text-gray-500 dark:bg-gray-800 dark:text-white font-plus-jakarta leading-6">
                         {item.answer}
                       </p>
                     </div>
@@ -272,7 +272,7 @@ const filteredFAQs = searchQuery.trim()
           </div>
 
           {/* Ticket Form */}
-          <div className="bg-gray-100 dark:bg-black dark:text-white rounded-xl px-4 sm:px-6 py-6">
+          <div className="bg-gray-100 dark:bg-gray-800 dark:text-white rounded-xl px-4 sm:px-6 py-6">
             <h2 className="text-xl sm:text-2xl font-semibold text-dashboard-heading font-poppins mb-5">
               Raise a Ticket
             </h2>
@@ -348,7 +348,7 @@ const filteredFAQs = searchQuery.trim()
               <div className="flex justify-end">
                 <Button
                   onClick={handleSubmit}
-                  className="bg-dashboard-primary text-white dark:text-black px-6 sm:px-10 py-3 rounded-full hover:bg-gray-500 font-geist"
+                  className="bg-dashboard-primary text-white dark:text-white px-6 sm:px-10 py-3 rounded-full hover:bg-gray-500 font-geist"
                 >
                   Submit
                 </Button>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import UserDropdown from "./UserDropdown";
-import { Bell, Menu, MessageCircle, MapPin, Calendar, Users, Search, X, Star } from "lucide-react";
+import { Bell, Menu, MessageCircle, MapPin, Calendar, Users, Search, X, Star, ChevronRight, LayoutDashboard } from "lucide-react";
 import { Sidebar } from "./Navigation";
 import ProfileDropdown from "./ProfileDropdown";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -25,35 +25,66 @@ interface HeaderProps {
 
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
+// ─── Breadcrumb label map ─────────────────────────────────────────────────────
+const ROUTE_LABELS: Record<string, string> = {
+  dashboard:    'Dashboard',
+  bookings:     'Bookings',
+  details:      'Booking Details',
+  offering:     'Offerings',
+  add:          'Add Offering',
+  edit:         'Edit',
+  revenue:      'Revenue',
+  marketing:    'Marketing',
+  offers:       'Offers',
+  analytics:    'Analytics',
+  dashchat:     'Chat',
+  'vendor-chat':'Chat',
+  settings:     'Settings',
+  account:      'Account',
+  preferences:  'Preferences',
+  notifications:'Notifications',
+  profile:      'Profile',
+  'user-profile':'User Profile',
+  help:         'Help',
+};
+
+const isId = (s: string) =>
+  /^[a-f0-9]{24}$/i.test(s) || /^[0-9a-fA-F-]{36}$/.test(s) || /^\d+$/.test(s);
+
+function useBreadcrumbs() {
+  const location = useLocation();
+  const segments = location.pathname.split('/').filter(Boolean);
+
+  return segments.map((seg, i) => ({
+    label: isId(seg) ? 'Details' : (ROUTE_LABELS[seg] ?? seg),
+    href: '/' + segments.slice(0, i + 1).join('/'),
+    isLast: i === segments.length - 1,
+  }));
+}
+
 export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   const navigate = useNavigate();
   const { updateUserType } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const crumbs = useBreadcrumbs();
+  const isNested = crumbs.length > 1;
 
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
         const res = await notificationsApi.list(true, 1, 'vendor');
-        if (res.success) {
-          setUnreadCount(res.totalUnread);
-        }
-      } catch (error) {
-        console.error("Error fetching unread count:", error);
+        if (res.success) setUnreadCount(res.totalUnread);
+      } catch {
+        // silent
       }
     };
-
     fetchUnreadCount();
-    // Refresh every 30 seconds
     const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleNotificationClick = () => {
-    navigate("/notifications");
-  };
 
   const handleSwitchToUser = async () => {
     await updateUserType('user');
@@ -62,110 +93,106 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
 
   return (
     <header
-      className="
-        flex items-center justify-between
-        px-4 py-3 sm:px-6 lg:px-8
-        bg-dashboard-bg dark:bg-gray-900
-        border-b border-gray-200 dark:border-gray-700
-        transition-all
-        sticky top-0 z-30
-      "
+      data-animate-header
+      className="flex items-center justify-between px-4 py-2.5 sm:px-6 bg-dashboard-bg dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 motion-dashboard-header"
     >
-      {/* Left Section */}
-      <div className="flex items-center gap-3">
-        {/* Mobile Menu Button */}
+      {/* ── Left ── */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile drawer trigger */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden dark:bg-black dark:text-white"
-            >
-              <Menu size={22} />
+            <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 text-gray-500 dark:text-gray-400">
+              <Menu size={20} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
-            <Sidebar />
+          <SheetContent side="left" className="w-64 p-0 motion-mobile-sidebar">
+            <Sidebar forceExpanded />
           </SheetContent>
         </Sheet>
 
-        {/* Header Title */}
-        <h1
-          className="
-            text-lg sm:text-xl lg:text-2xl
-            font-bold text-dashboard-heading dark:text-white
-            tracking-tight font-geist
-          "
-        >
-          {Headtitle}
-        </h1>
+        {/* Title + breadcrumbs */}
+        <div className="flex flex-col justify-center min-w-0">
+          {/* Breadcrumb trail — only on nested routes */}
+          {isNested && (
+            <nav aria-label="Breadcrumb" className="flex items-center gap-0.5 mb-0.5">
+              {/* Dashboard home icon always first */}
+              <Link
+                to="/dashboard"
+                className="flex items-center text-gray-400 hover:text-[#3BD9DA] transition-colors duration-150"
+              >
+                <LayoutDashboard size={11} />
+              </Link>
+              {crumbs.map((crumb, i) => (
+                <React.Fragment key={crumb.href}>
+                  <ChevronRight size={10} className="text-gray-300 dark:text-gray-700 flex-shrink-0" />
+                  {crumb.isLast ? (
+                    <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
+                      {crumb.label}
+                    </span>
+                  ) : (
+                    <Link
+                      to={crumb.href}
+                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#3BD9DA] transition-colors duration-150 truncate"
+                    >
+                      {crumb.label}
+                    </Link>
+                  )}
+                </React.Fragment>
+              ))}
+            </nav>
+          )}
+
+          {/* Page title */}
+          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight font-geist leading-tight truncate">
+            {Headtitle}
+          </h1>
+        </div>
       </div>
 
-      {/* Right Section */}
-      <div className="flex items-center gap-3 sm:gap-4 lg:gap-5">
-        {/* Mobile Chat Button */}
+      {/* ── Right ── */}
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* Switch to User */}
         <button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className="
-            lg:hidden p-2
-            hover:bg-gray-100 dark:hover:bg-gray-800
-            rounded-lg transition-colors
-          "
+          onClick={handleSwitchToUser}
+          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-gray-900 text-white hover:bg-gray-700 transition-all duration-200 shadow-sm hover:shadow-md"
         >
-          <MessageCircle size={20} className="text-dashboard-primary" />
+          Switch to User
         </button>
 
-        {/* Theme Toggle */}
+        {/* Theme toggle */}
         <ThemeToggle />
 
-        {/* Notification Button */}
+        {/* Notifications */}
         <Button
           variant="ghost"
           size="icon"
-          onClick={handleNotificationClick}
-          className={`
-            relative bg-white dark:bg-gray-800
-            rounded-full border border-gray-200 dark:border-gray-700
-            shadow-sm h-9 w-9
-            hover:bg-gray-50 dark:hover:bg-gray-700
-            transition-all
-            ${unreadCount > 0 ? 'notification-pulse' : ''}
-          `}
+          onClick={() => navigate("/notifications")}
+          className={`relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all motion-theme-toggle ${unreadCount > 0 ? 'notification-pulse' : ''}`}
         >
           <Bell
-            size={20}
-            className={`
-              text-gray-600 dark:text-gray-300
-              hover:text-dashboard-primary transition-colors
-              ${unreadCount > 0 ? 'animate-bounce' : ''}
-            `}
+            size={18}
+            className={`text-gray-600 dark:text-gray-300 ${unreadCount > 0 ? 'animate-bounce' : ''}`}
           />
           {unreadCount > 0 && (
-            <span
-              className="
-                absolute -top-1 -right-1 h-4 w-4
-                bg-red-500 text-white text-[8px] flex items-center justify-center
-                rounded-full border-2 border-white dark:border-gray-800
-              "
-            >
+            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white dark:border-gray-800 motion-unread-dot">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
           )}
         </Button>
 
-        {/* Profile Dropdown */}
+        {/* Profile */}
         <ProfileDropdown
-          onViewAsUserClick={() => console.log("View As User clicked")}
+          onViewAsUserClick={() => {}}
           onSwitchToUserClick={handleSwitchToUser}
           onBusinessDetailsClick={() => navigate("/profile?tab=business")}
           onPersonalDetailsClick={() => navigate("/profile?tab=personal")}
           onChangePasswordClick={() => setIsChangePasswordOpen(true)}
-          onLogoutClick={() => console.log("Logout clicked")}
+          onLogoutClick={() => {}}
         />
-        
-        <ChangePasswordModal 
-          isOpen={isChangePasswordOpen} 
-          onOpenChange={setIsChangePasswordOpen} 
+
+        <ChangePasswordModal
+          isOpen={isChangePasswordOpen}
+          onOpenChange={setIsChangePasswordOpen}
         />
       </div>
     </header>

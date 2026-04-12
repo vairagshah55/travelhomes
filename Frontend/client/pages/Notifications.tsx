@@ -130,7 +130,7 @@ const Notifications = () => {
   };
 
   return (
-    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta">
+    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta motion-page-shell">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
@@ -142,7 +142,7 @@ const Notifications = () => {
        <DashboardHeader Headtitle={"Notifications"}/>
 
         {/* Notifications Content */}
-        <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-black dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
+        <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-gray-900 dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto motion-surface-card">
           {/* Filter Tabs and Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dashboard-stroke pb-4 mb-5">
             <div className="flex items-center gap-4">
@@ -162,21 +162,23 @@ const Notifications = () => {
               <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
                 <button
                   onClick={() => setActiveFilter('all')}
+                  data-active={activeFilter === 'all' ? "true" : "false"}
                   className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
                     activeFilter === 'all'
-                      ? 'bg-dashboard-primary dark:text-black text-white'
+                      ? 'bg-dashboard-primary text-white'
                       : 'text-dashboard-heading hover:text-dashboard-primary'
-                  }`}
+                  } motion-tab-trigger`}
                 >
                   All
                 </button>
                 <button
                   onClick={() => setActiveFilter('unread')}
+                  data-active={activeFilter === 'unread' ? "true" : "false"}
                   className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
                     activeFilter === 'unread'
-                      ? 'bg-dashboard-primary dark:text-black text-white'
+                      ? 'bg-dashboard-primary text-white'
                       : 'text-dashboard-heading hover:text-dashboard-primary'
-                  }`}
+                  } motion-tab-trigger`}
                 >
                   Unread
                 </button>
@@ -204,17 +206,19 @@ const Notifications = () => {
           </div>
 
           {/* Notifications List */}
-          <div className="space-y-3">
+          <div className="space-y-3" data-animate-group="notification-items" data-stagger="90">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 text-dashboard-primary animate-spin" />
+                <div className="w-8 h-8 motion-spinner" />
                 <p className="mt-4 text-dashboard-body font-geist">Loading notifications...</p>
               </div>
             ) : (
               filteredNotifications.map((notification) => (
                 <div
                   key={notification.id || notification._id}
-                  className={`border border-dashboard-stroke rounded-2xl dark:bg-black dark:text-white bg-white hover:shadow-sm transition-all cursor-pointer max-w-[1096px] group flex items-center ${
+                  data-animate="notification-item"
+                  data-animate-item
+                  className={`border border-dashboard-stroke rounded-2xl dark:bg-gray-900 dark:text-white bg-white hover:shadow-sm transition-all cursor-pointer max-w-[1096px] group flex items-center motion-notification-card ${
                     !notification.isRead ? 'border-l-4 border-l-dashboard-primary bg-blue-50/5' : ''
                   }`}
                 >
@@ -248,7 +252,7 @@ const Notifications = () => {
                       {/* Right Side - Unread indicator and time */}
                       <div className="flex flex-col items-end gap-5 pt-1.5 min-w-[80px]">
                         {!notification.isRead && (
-                          <div className="w-2 h-2 bg-dashboard-primary rounded-full"></div>
+                          <div className="w-2 h-2 bg-dashboard-primary rounded-full motion-unread-dot"></div>
                         )}
                         <div className="flex flex-col items-end gap-0.5">
                           <span className="text-[10px] text-dashboard-body font-geist leading-[150%] whitespace-nowrap">
@@ -265,7 +269,7 @@ const Notifications = () => {
 
           {/* Empty State */}
           {!loading && filteredNotifications.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div data-animate="section" className="flex flex-col items-center justify-center py-16 text-center motion-section-reveal">
               <Bell size={48} className="text-gray-300 mb-4" />
               <h3 className="text-lg font-semibold text-dashboard-heading font-geist mb-2">
                 No notifications
@@ -283,7 +287,7 @@ const Notifications = () => {
 
       {/* Notification View Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-3xl p-6">
+        <DialogContent className="sm:max-w-[500px] rounded-3xl p-6 motion-modal-surface">
           <DialogHeader>
             <div className="flex items-center gap-4 mb-2">
                <img

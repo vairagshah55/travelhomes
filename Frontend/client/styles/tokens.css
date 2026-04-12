@@ -1,0 +1,53 @@
+:root {
+  --blue-50: #EFF6FF;
+  --blue-100: #DBEAFE;
+  --blue-200: #BFDBFE;
+  --blue-400: #60A5FA;
+  --blue-500: #3B82F6;
+  --blue-600: #2563EB;
+  --blue-700: #1D4ED8;
+  --blue-900: #1E3A8A;
+
+  --white: #FFFFFF;
+  --gray-50: #F8FAFC;
+  --gray-100: #F1F5F9;
+  --gray-200: #E2E8F0;
+  --gray-400: #94A3B8;
+  --gray-700: #334155;
+  --gray-900: #0F172A;
+  --black: #000000;
+
+  --dark-bg: #0F172A;
+  --dark-surface: #1E293B;
+  --dark-border: #334155;
+
+  --glow-blue: 0 0 20px rgba(59, 130, 246, 0.4);
+  --glow-soft: 0 0 40px rgba(59, 130, 246, 0.15);
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  --dur-micro: 100ms;
+  --dur-fast: 180ms;
+  --dur-base: 280ms;
+  --dur-slow: 450ms;
+  --dur-dramatic: 700ms;
+
+  --motion-surface-light: rgba(255, 255, 255, 0.88);
+  --motion-surface-dark: rgba(30, 41, 59, 0.9);
+  --motion-card-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  --motion-card-shadow-strong: 0 24px 48px rgba(15, 23, 42, 0.16);
+  --motion-scroll-shadow: 0 18px 36px rgba(15, 23, 42, 0.08);
+  --motion-divider: rgba(148, 163, 184, 0.18);
+  --motion-theme-fade: var(--gray-50);
+}
+
+.dark {
+  --motion-card-shadow: 0 20px 44px rgba(2, 6, 23, 0.32);
+  --motion-card-shadow-strong: 0 28px 58px rgba(2, 6, 23, 0.42);
+  --motion-scroll-shadow: 0 22px 44px rgba(2, 6, 23, 0.34);
+  --motion-divider: rgba(191, 219, 254, 0.12);
+  --motion-theme-fade: var(--dark-bg);
+}

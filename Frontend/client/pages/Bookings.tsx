@@ -531,7 +531,7 @@ const BookingBlock = ({
 
   return (
     <div
-      className={`${colorClass} rounded-lg m-1 pointer-events-auto cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 flex items-center px-3 group min-h-[44px] z-10`}
+      className={`${colorClass} rounded-lg m-1 pointer-events-auto cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all duration-200 flex items-center px-3 group min-h-[44px] z-10 motion-calendar-booking`}
       style={{
         width: `${span * 60 - 8}px`,
       }}
@@ -545,7 +545,7 @@ const BookingBlock = ({
           <span className="font-semibold text-gray-800 truncate">
             {booking.guestName}
           </span>
-          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(booking.status)}`}>
+          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(booking.status)} ${booking.status === 'Confirmed' ? 'motion-badge-confirmed' : String(booking.status).toLowerCase() === 'pending' ? 'motion-badge-pending' : ''}`}>
             {booking.status}
           </span>
         </div>
@@ -578,6 +578,7 @@ const CalendarGrid = ({
   onBookingClick,
   onBookingDrag,
   onDateClick,
+  selectedDate,
   vehicleNames,
 }: {
   currentMonth: number;
@@ -586,6 +587,7 @@ const CalendarGrid = ({
   onBookingClick: (booking: BookingData) => void;
   onBookingDrag: (bookingId: string, newStartDate: Date, newEndDate: Date) => void;
   onDateClick: (date: number, resourceName: string) => void;
+  selectedDate: {date: number, resource: string} | null;
   vehicleNames: string[];
 }) => {
   const [draggedBooking, setDraggedBooking] = useState<BookingData | null>(null);
@@ -670,7 +672,7 @@ const CalendarGrid = ({
     e.preventDefault();
     if (!draggedBooking) return;
 
-    const originalDays = draggedBooking.totalDays;
+    const originalDays = Number(draggedBooking.totalDays || 1);
     const newStartDate = new Date(currentYear, currentMonth, date);
     const newEndDate = new Date(currentYear, currentMonth, date + originalDays - 1);
 
@@ -680,7 +682,7 @@ const CalendarGrid = ({
   };
 
   return (
-    <div className="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-x-auto overflow-y-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div className="border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 overflow-x-auto overflow-y-hidden shadow-sm hover:shadow-md transition-shadow motion-calendar-shell">
       {/* Header Row */}
       <div className="flex bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 min-w-max">
         <div className="p-4 font-medium text-dashboard-primary dark:text-white border-r border-gray-200 dark:border-gray-600 w-[300px] flex-shrink-0">
@@ -726,13 +728,15 @@ const CalendarGrid = ({
               return (
                 <div
                   key={day}
+                  data-selected={selectedDate?.date === day && selectedDate?.resource === vehicle ? "true" : "false"}
+                  data-booked={isBooked ? "true" : "false"}
                   className={`p-4 text-center border-r border-gray-200 dark:border-gray-600 w-[60px] flex-shrink-0 flex items-center justify-center transition-colors cursor-pointer group relative
                     ${isBooked 
                       ? 'bg-red-50 text-red-800 hover:bg-red-100' 
                       : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }
                     ${isDragOver ? 'bg-blue-200 border-blue-400' : ''}
-                  `}
+                  } motion-calendar-date`}
                   onClick={() => {
                     if (currentBooking) {
                       onBookingClick(currentBooking);
@@ -1216,10 +1220,15 @@ const Bookings = () => {
     
     try {
       // Calculate total amount if base price or extra charges changed
+      const baseAmount = Number(selectedBooking.basePrice || 0);
+      const extraAmount = Number(selectedBooking.extraCharges || 0);
+      const paidAmount = Number(selectedBooking.paidAmount || 0);
+      const totalAmount = baseAmount + extraAmount;
+
       const updatedBookingData = {
         ...selectedBooking,
-        totalAmount: selectedBooking.basePrice + selectedBooking.extraCharges,
-        pendingAmount: (selectedBooking.basePrice + selectedBooking.extraCharges) - selectedBooking.paidAmount
+        totalAmount: String(totalAmount),
+        pendingAmount: String(totalAmount - paidAmount)
       };
       
       const updatedBooking = await updateBooking(selectedBooking._id, updatedBookingData, token);
@@ -1278,9 +1287,9 @@ const Bookings = () => {
   });
 
   return (
-    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta">
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta motion-page-shell">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block flex-shrink-0">
         <Sidebar
           isCollapsed={isCollapsed}
           onToggleCollapse={handleToggleCollapse}
@@ -1290,13 +1299,13 @@ const Bookings = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden">
         {/* Header */}
-        <DashboardHeader Headtitle={"Bookings"} />
+        <DashboardHeader Headtitle="Bookings" />
 
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-6 bg-white dark:bg-gray-800  rounded-2xl lg:rounded-3xl overflow-auto scrollbar-hide overflow-x-hidden">
+        <main className="flex-1 p-4 lg:p-6 bg-white dark:bg-gray-900 rounded-2xl lg:rounded-3xl overflow-auto scrollbar-hide overflow-x-hidden m-2 lg:m-4 motion-surface-card">
 
           {/* Header with Date Navigation */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 lg:mb-8 border-b border-dashboard-stroke dark:border-gray-700 pb-4 lg:pb-6 gap-4">
+          <div data-animate="section" className="flex flex-col lg:flex-row lg:items-center justify-between mb-6 border-b border-gray-100 dark:border-gray-800 pb-4 gap-4 motion-section-reveal">
             <DateNavigation
               currentMonth={currentMonth}
               currentYear={currentYear}
@@ -1305,22 +1314,20 @@ const Bookings = () => {
             />
             <Button
               onClick={handleNewBooking}
-              className="bg-dashboard-primary text-white dark:text-black  hover:shadow-lg hover:scale-105 rounded-full px-4 lg:px-6 w-fit transition-all duration-200 group"
+              className="rounded-xl px-5 h-10 font-semibold text-sm flex items-center gap-2 w-fit shadow-sm hover:shadow-md transition-all"
+              style={{ background: '#3BD9DA', color: '#131313' }}
             >
-              <Plus
-                size={18}
-                className="mr-2 group-hover:rotate-90 transition-transform"
-              />
+              <Plus size={16} className="mr-1" />
               New Booking
             </Button>
           </div>
 
           {/* Calendar Grid */}
-          <div className="overflow-scroll overflow-y-scroll mobile-table">
+          <div className="overflow-scroll overflow-y-scroll mobile-table motion-calendar-month" key={`${currentYear}-${currentMonth}`}>
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dashboard-primary"></div>
-                <span className="ml-2">Loading bookings...</span>
+              <div className="flex items-center justify-center h-64 gap-2 text-gray-400">
+                <div className="h-6 w-6 motion-spinner" />
+                <span className="text-sm">Loading bookings…</span>
               </div>
             ) : (
               <CalendarGrid
@@ -1330,6 +1337,7 @@ const Bookings = () => {
                 onBookingClick={handleBookingClick}
                 onBookingDrag={handleBookingDrag}
                 onDateClick={handleDateClick}
+                selectedDate={selectedDate}
                 vehicleNames={vehicleNames}
               />
             )}
@@ -1337,7 +1345,7 @@ const Bookings = () => {
 
           {/* New Booking Modal */}
           <Dialog open={isNewBookingModalOpen} onOpenChange={setIsNewBookingModalOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-hide motion-modal-surface">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Plus size={20} />
@@ -1544,7 +1552,7 @@ const Bookings = () => {
 
           {/* Edit Booking Modal */}
           <Dialog open={isEditBookingModalOpen} onOpenChange={setIsEditBookingModalOpen}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto scrollbar-hide motion-modal-surface">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Edit size={20} />

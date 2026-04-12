@@ -127,28 +127,28 @@ const Analytics = () => {
     {
       title: "Impression",
       value: String(impressions),
-      icon: <Eye size={20} className="text-dashboard-primary" />,
+      icon: <Eye size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
     {
       title: "Clicked",
       value: String(clicks),
-      icon: <MousePointer size={20} className="text-dashboard-primary" />,
+      icon: <MousePointer size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
     {
       title: "No. of Payment Received",
       value: String(payments.received),
-      icon: <ClipboardCheck size={20} className="text-dashboard-primary" />,
+      icon: <ClipboardCheck size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
       iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
     },
     {
       title: "No. of Payment Pending",
       value: String(payments.pending),
-      icon: <ListChecks size={20} className="text-dashboard-primary" />,
+      icon: <ListChecks size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-red-50 dark:bg-red-900/20",
       iconBgColor: "bg-red-100 dark:bg-red-800/30",
     },
@@ -158,28 +158,28 @@ const Analytics = () => {
     {
       title: "Total Booking",
       value: String(counts.total),
-      icon: <Wallet size={20} className="text-dashboard-primary" />,
+      icon: <Wallet size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
     {
       title: "Upcoming Booking",
       value: String(counts.upcoming),
-      icon: <ClipboardCheck size={20} className="text-dashboard-primary" />,
+      icon: <ClipboardCheck size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
       iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
     },
     {
       title: "Past Booking",
       value: String(counts.past),
-      icon: <ListChecks size={20} className="text-dashboard-primary" />,
+      icon: <ListChecks size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-green-50 dark:bg-green-900/20",
       iconBgColor: "bg-green-100 dark:bg-green-800/30",
     },
     {
       title: "Cancelled Booking",
       value: String(counts.cancelled),
-      icon: <Wallet size={20} className="text-dashboard-primary" />,
+      icon: <Wallet size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
@@ -189,36 +189,31 @@ const Analytics = () => {
     {
       title: "Approved Property Listing",
       value: String(properties.approved),
-      icon: <Eye size={20} className="text-dashboard-primary" />,
+      icon: <Eye size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
     {
       title: "Pending Property for Approval",
       value: String(properties.pending),
-      icon: <Eye size={20} className="text-dashboard-primary" />,
+      icon: <Eye size={20} style={{ color: '#3BD9DA' }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
   ];
 
   const MetricCardComponent = ({ metric }: { metric: MetricCard }) => (
-    <div
-      className={`p-4 rounded-xl ${metric.bgColor} border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all cursor-pointer group`}
-    >
+    <div data-animate="kpi-card" data-animate-item className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group motion-kpi-card">
       <div className="flex items-start gap-3">
         <div
-          className={`w-12 h-12 rounded-full ${metric.iconBgColor} flex items-center justify-center group-hover:scale-110 transition-transform`}
+          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 motion-kpi-icon"
+          style={{ background: '#E8FAFA' }}
         >
           {metric.icon}
         </div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-600 dark:text-gray-400 font-plus-jakarta mb-2">
-            {metric.title}
-          </p>
-          <p className="text-2xl font-bold text-dashboard-primary dark:text-white font-geist">
-            {metric.value}
-          </p>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{metric.title}</p>
+          <p data-countup data-countup-duration="1200" className="text-xl font-bold text-gray-900 dark:text-white mt-0.5 tracking-tight font-geist">{metric.value}</p>
         </div>
       </div>
     </div>
@@ -239,7 +234,7 @@ const Analytics = () => {
     dataKey: string;
     color?: string;
   }) => (
-    <div className="bg-white dark:bg-gray-800 border border-dashboard-stroke dark:border-gray-600 rounded-xl p-5 hover:shadow-md transition-all">
+    <div data-animate="chart-card" data-animate-item className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 hover:shadow-md transition-all duration-200 motion-surface-card">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 font-plus-jakarta">
           {title}
@@ -305,7 +300,7 @@ const Analytics = () => {
   );
 
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta">
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta motion-page-shell">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar
@@ -320,73 +315,45 @@ const Analytics = () => {
         <DashboardHeader Headtitle={"Analytics"} />
 
         {/* Content Area */}
-        <div className="flex-1 flex flex-col pr-5 pb-5 overflow-y-auto scrollbar-hide">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dashboard-stroke dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-3xl">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-dashboard-title dark:text-white font-plus-jakarta">
-                Overview
-              </h2>
+        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+
+            {/* All Metrics — single unified grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" data-animate-group="analytics-kpis" data-stagger="60">
+              {[...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map((metric, index) => (
+                <MetricCardComponent key={index} metric={metric} />
+              ))}
             </div>
-           
-          </div>
 
-          {/* Content */}
-          <div className="flex-1 p-5 bg-white dark:bg-gray-800 rounded-b-3xl ">
-            <div className="max-w-7xl mx-auto space-y-8">
-              {/* Top Row Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {topRowMetrics.map((metric, index) => (
-                  <MetricCardComponent key={index} metric={metric} />
-                ))}
-              </div>
-
-              {/* Second Row Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {bottomRowMetrics.map((metric, index) => (
-                  <MetricCardComponent key={index} metric={metric} />
-                ))}
-              </div>
-
-              {/* Third Row Metrics */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                {secondBottomRowMetrics.map((metric, index) => (
-                  <MetricCardComponent key={index} metric={metric} />
-                ))}
-              </div>
-
-              {/* Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartComponent
-                  title="Total Earnings"
-                  filter={monthlyFilter}
-                  onFilterChange={setMonthlyFilter}
-                  data={monthlyGraphData}
-                  dataKey="earnings"
-                  color="#2563eb"
-                />
-                <ChartComponent
-                  title="Total Earnings"
-                  filter={yearlyFilter}
-                  onFilterChange={setYearlyFilter}
-                  data={yearlyGraphData}
-                  dataKey="earnings"
-                  color="#2563eb"
-                />
-              </div>
-
-              {/* Single Chart */}
-              <div className="grid grid-cols-1">
-                <ChartComponent
-                  title="Total Visitor"
-                  filter={dailyFilter}
-                  onFilterChange={setDailyFilter}
-                  data={dailyGraphData}
-                  dataKey="visitors"
-                  color="#0ea5e9"
-                />
-              </div>
+            {/* Charts row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5" data-animate-group="analytics-charts" data-stagger="120">
+              <ChartComponent
+                title="Monthly Earnings"
+                filter={monthlyFilter}
+                onFilterChange={setMonthlyFilter}
+                data={monthlyGraphData}
+                dataKey="earnings"
+                color="#3BD9DA"
+              />
+              <ChartComponent
+                title="Yearly Earnings"
+                filter={yearlyFilter}
+                onFilterChange={setYearlyFilter}
+                data={yearlyGraphData}
+                dataKey="earnings"
+                color="#8B5CF6"
+              />
             </div>
+
+            {/* Visitors chart full width */}
+            <ChartComponent
+              title="Daily Visitors"
+              filter={dailyFilter}
+              onFilterChange={setDailyFilter}
+              data={dailyGraphData}
+              dataKey="visitors"
+              color="#3BD9DA"
+            />
           </div>
         </div>
       </div>

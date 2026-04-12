@@ -548,6 +548,21 @@ export default function AirbnbHeader({
                     <CgLoadbarDoc size={16} className="shrink-0" />
                     List your space
                   </button>
+                  {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
+                    <button
+                      className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
+                        isScrolled
+                          ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md"
+                          : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
+                      }`}
+                      onClick={() => {
+                        updateUserType('vendor');
+                        navigate("/dashboard");
+                      }}
+                    >
+                      Switch to Vendor
+                    </button>
+                  )}
                   <UserDropdown
                     onSwitchToVendor={() => {
                       updateUserType('vendor');

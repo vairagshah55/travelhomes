@@ -576,7 +576,7 @@ const DashboardChat = () => {
                 }
               }}
               placeholder="Write a message..."
-              className="dark:dark-color dark:text-black dark:border dark:border-gray-600 rounded-xl flex-1 px-4 py-2 outline-none text-sm resize-none"
+              className="dark:dark-color dark:text-white dark:border dark:border-gray-600 rounded-xl flex-1 px-4 py-2 outline-none text-sm resize-none"
             />
 
             {/* Attach */}

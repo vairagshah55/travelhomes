@@ -1,6 +1,8 @@
 import "./global.css";
+import "./styles/tokens.css";
+import "./styles/animations.css";
 
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -68,21 +70,37 @@ import Payment from "./pages/productDetailes/Payment";
 import SEOMeta from "./components/SEOMeta";
 import ScrollToTop from "./components/ScrollToTop";
 import OAuthRedirect from "./pages/OAuthRedirect";
+import { initDashboardAnimations } from "./animations";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="light" storageKey="travel-dashboard-theme">
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <HotToaster />
-          <BrowserRouter>
-            <ScrollToTop />
-            <SEOMeta />
-            <Routes>
+const App = () => {
+  useLayoutEffect(() => initDashboardAnimations(), []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="travel-dashboard-theme">
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <HotToaster
+              position="top-center"
+              toastOptions={{
+                duration: 4000,
+                className: "motion-hot-toast",
+                success: {
+                  className: "motion-hot-toast motion-hot-toast-success",
+                },
+                error: {
+                  className: "motion-hot-toast motion-hot-toast-error",
+                },
+              }}
+            />
+            <BrowserRouter>
+              <ScrollToTop />
+              <SEOMeta />
+              <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/search" element={<SearchResults />} />
@@ -340,12 +358,13 @@ const App = () => (
 
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -115,7 +115,7 @@ const Revenue = () => {
 
 
   return (
- <div className="flex h-screen w-full bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta overflow-hidden">
+ <div className="flex h-screen w-full bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta overflow-hidden motion-page-shell">
   {/* Sidebar (Desktop Only) */}
   <div className="hidden lg:block">
     <Sidebar 
@@ -139,100 +139,48 @@ const Revenue = () => {
       "
     >
       {/* Top Bar */}
-      <div
-        className="
-          flex flex-wrap items-center justify-between
-          gap-3 px-4 sm:px-5 py-4
-          border-b border-dashboard-stroke dark:border-gray-700
-          bg-white dark:bg-gray-800
-          rounded-t-3xl
-        "
-      >
-        <h2 className="text-lg sm:text-xl font-bold text-dashboard-heading dark:text-white font-geist">
-          Overview
-        </h2>
-
+      <div data-animate="section" className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4 motion-section-reveal">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-white font-geist">Revenue Overview</h2>
         <Button
-          className="
-            bg-dashboard-primary text-white hover:bg-gray-800
-            rounded-full px-4 sm:px-6 h-10 sm:h-11
-            font-geist font-medium flex items-center gap-2
-          "
+          className="rounded-xl px-5 h-10 font-semibold text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all"
+          style={{ background: '#3BD9DA', color: '#131313' }}
         >
-          <Plus size={18} />
+          <Plus size={16} />
           <span className="hidden sm:inline">New Booking</span>
         </Button>
       </div>
 
       {/* Main Dashboard Content */}
-      <div
-        className="
-          p-4 sm:p-5 bg-white dark:bg-gray-800
-          rounded-b-3xl max-w-7xl mx-auto space-y-6
-        "
-      >
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 ">
-          {/* Total Earnings */}
-          <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4  border border-orange-100 dark:border-orange-800">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-200 dark:bg-orange-800 rounded-full flex items-center justify-center mt-1">
-                <Eye size={20} className="text-dashboard-primary" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-dashboard-body dark:text-gray-300 mb-1 sm:mb-2">
-                  Total Earnings
-                </h4>
-                <p className="text-xl sm:text-2xl font-bold text-dashboard-primary dark:text-white font-geist">
-                  ₹ {revenueData.totalEarnings}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Total Payment Received */}
-          <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 border border-purple-100 dark:border-purple-800">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-200 dark:bg-purple-800 rounded-full flex items-center justify-center mt-1">
-                <MousePointer size={20} className="text-dashboard-primary" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-dashboard-body dark:text-gray-300 mb-1 sm:mb-2 uppercase">
-                  Total Payment Received
-                </h4>
-                <p className="text-xl sm:text-2xl font-bold text-dashboard-primary dark:text-white font-geist">
-                  {revenueData.totalPaymentReceived}
-                </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4" data-animate-group="revenue-stats" data-stagger="60">
+          {[
+            { label: 'Total Earnings',         value: `₹ ${revenueData.totalEarnings}`,         icon: Eye },
+            { label: 'Payment Received',        value: `₹ ${revenueData.totalPaymentReceived}`,  icon: MousePointer },
+            { label: 'Pending Payment',         value: `₹ ${revenueData.pendingPayment}`,        icon: ClipboardCheck },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} data-animate="kpi-card" data-animate-item className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group motion-kpi-card">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform motion-kpi-icon" style={{ background: '#E8FAFA' }}>
+                  <Icon size={18} style={{ color: '#3BD9DA' }} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</p>
+                  <p data-countup data-countup-duration="1200" className="text-xl font-bold text-gray-900 dark:text-white mt-0.5 font-geist">{value}</p>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Pending Payment */}
-          <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-xl p-4 border border-cyan-100 dark:border-cyan-800">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyan-200 dark:bg-cyan-800 rounded-full flex items-center justify-center mt-1">
-                <ClipboardCheck size={20} className="text-dashboard-primary" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-dashboard-body dark:text-gray-300 mb-1 sm:mb-2">
-                  Pending Payment
-                </h4>
-                <p className="text-xl sm:text-2xl font-bold text-dashboard-primary dark:text-white font-geist">
-                  {revenueData.pendingPayment}
-                </p>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
 
         {/* Earnings Chart */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 border border-dashboard-stroke dark:border-gray-600">
+        <div data-animate="section" className="bg-white dark:bg-gray-900 rounded-2xl p-4 sm:p-5 border border-gray-100 dark:border-gray-800 motion-section-reveal motion-surface-card">
           <div className="flex items-center justify-between mb-4 sm:mb-6 flex-wrap gap-3">
             <div className="flex flex-col">
               <h3 className="text-sm sm:text-base font-semibold text-dashboard-title dark:text-gray-300">
                 Total Earnings
               </h3>
-              <p className="text-lg font-bold text-dashboard-primary dark:text-white">
+              <p data-countup data-countup-duration="1200" className="text-lg font-bold text-dashboard-primary dark:text-white">
                  ₹ {revenueData.totalEarnings}
               </p>
             </div>
@@ -247,10 +195,14 @@ const Revenue = () => {
           <div className="relative h-48 bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4">
             <div className="flex items-end justify-between h-full">
               {chartData.map((item, index) => (
-                <div key={index} className="flex flex-col items-center gap-1.5 flex-1">
+                <div key={index} className="flex flex-col items-center gap-1.5 flex-1" data-animate="section" data-animate-item>
                   <div
-                    className="bg-gradient-to-t from-dashboard-primary to-blue-400 rounded-t w-6 sm:w-8 transition-all hover:from-blue-600 hover:to-blue-500"
-                    style={{ height: `${(item.value / 500) * 100}%`, minHeight: "8px" }}
+                    className="rounded-t w-6 sm:w-8 transition-all"
+                    style={{
+                      background: 'linear-gradient(to top, #3BD9DA, #a5f3f4)',
+                      height: `${(item.value / 500) * 100}%`,
+                      minHeight: "8px",
+                    }}
                   ></div>
                   <span className="text-[11px] sm:text-xs text-dashboard-body dark:text-gray-400 font-medium">
                     {item.month}
@@ -269,16 +221,16 @@ const Revenue = () => {
         </div>
 
         {/* Payment History Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-dashboard-stroke dark:border-gray-600 overflow-hidden">
+        <div data-animate="section" className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden motion-section-reveal motion-surface-card">
   {/* Header Section */}
-  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 border-b border-dashboard-stroke dark:border-gray-600">
-    <h3 className="text-base sm:text-lg font-semibold text-dashboard-title dark:text-gray-300">
+  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800">
+    <h3 className="text-base font-bold text-gray-900 dark:text-white">
       Payment History
     </h3>
 
     <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full sm:w-auto">
       {/* Search Input */}
-      <div className="relative flex-1 sm:flex-none">
+      <div className="relative flex-1 sm:flex-none motion-search-field">
         <Search
           size={18}
           className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -287,7 +239,7 @@ const Revenue = () => {
           placeholder="Search List"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 w-full sm:w-56 md:w-64 figma-input"
+          className="pl-10 w-full sm:w-56 md:w-64 figma-input motion-search-input"
         />
       </div>
 
@@ -296,7 +248,7 @@ const Revenue = () => {
         <SelectTrigger className="w-24 sm:w-28 md:w-32 figma-input">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="motion-dropdown-surface">
           <SelectItem value="Monthly">Monthly</SelectItem>
           <SelectItem value="Weekly">Weekly</SelectItem>
           <SelectItem value="Daily">Daily</SelectItem>
@@ -329,11 +281,13 @@ const Revenue = () => {
         </tr>
       </thead>
 
-      <tbody className="divide-y divide-gray-100 dark:divide-gray-600 w-full ">
+      <tbody className="divide-y divide-gray-100 dark:divide-gray-600 w-full " data-animate-group="payment-rows" data-stagger="30">
         {paginatedHistory.map((payment, index) => (
           <tr
             key={index}
-            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            data-animate="table-row"
+            data-animate-item
+            className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors motion-table-row"
           >
             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-dashboard-body dark:text-gray-300 whitespace-nowrap">
               {payment.paymentMethod}
@@ -353,8 +307,14 @@ const Revenue = () => {
             <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-dashboard-body dark:text-gray-300 whitespace-nowrap">
               {formatDate(payment.receiptDate)}
             </td>
-            <td className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-dashboard-body dark:text-gray-300 whitespace-nowrap">
-              {payment.status}
+            <td className="px-3 sm:px-4 py-2 sm:py-3 whitespace-nowrap">
+              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                payment.status === 'Paid'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 motion-badge-confirmed'
+                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 motion-badge-pending'
+              }`}>
+                {payment.status}
+              </span>
             </td>
           </tr>
         ))}

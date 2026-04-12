@@ -3,117 +3,312 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle,DialogOverlay } from "@/components/ui/dialog"; // Adjust import based on your setup
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogOverlay } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   Eye,
   CheckSquare,
   ClipboardCheck,
   Wallet,
   MousePointer,
-  Bell,
-  Plus,
   Users,
   ArrowUpDown,
-  ChevronDown,
-  Menu,
-  Send,
-  MessageCircle,
-  X,
-  Minus,
-  MapPinOff
+  MapPinOff,
+  TrendingUp,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { Avatar } from '@/components/ui/avatar';
 import { Sidebar } from '@/components/Navigation';
-import ProfileDropdown from '@/components/ProfileDropdown';
 import ChangePasswordModal from '@/components/ChangePasswordModal';
-import MobileVendorNav from '@/components/MobileVendorNav';
-import {DashboardHeader} from '../components/Header';
+import { DashboardHeader } from '../components/Header';
 import { bookingDetailsApi, vendorAnalyticsApi, BookingDetailDTO, VendorAnalyticsCounts, VendorAnalyticsGraphData } from '../lib/api';
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { formatDate } from 'date-fns';
+import { formatDate, format } from 'date-fns';
 
-// Stats Card Component
+// ─── Brand teal ───────────────────────────────────────────────────────────────
+const TEAL = '#3BD9DA';
+const TEAL_SUBTLE = '#E8FAFA';
+
+// ─── Stats Card ───────────────────────────────────────────────────────────────
 const StatsCard = ({
   icon: Icon,
   title,
   value,
-  bgColor,
-  iconBg
+  sub,
 }: {
   icon: React.ElementType;
   title: string;
   value: string;
-  bgColor: string;
-  iconBg: string;
+  sub?: string;
 }) => (
-  <Card className={`${bgColor} border-0 flex-1 transition-all duration-200 hover:shadow-lg hover:scale-105 cursor-pointer group`}>
-    <CardContent className="p-4">
-      <div className="flex items-start gap-5">
-        <div className={`${iconBg} rounded-full p-3 transition-transform group-hover:scale-110`}>
-          <Icon size={20} className="text-dashboard-primary transition-transform group-hover:rotate-12" />
-        </div>
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-dashboard-body">{title}</p>
-          <p className="text-2xl font-bold text-dashboard-primary tracking-tight group-hover:text-dashboard-heading transition-colors">{value}</p>
-        </div>
+  <Card
+    data-animate="kpi-card"
+    data-animate-item
+    className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 cursor-default group motion-kpi-card"
+  >
+    <CardContent className="p-4 flex items-start gap-3">
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 motion-kpi-icon"
+        style={{ background: TEAL_SUBTLE }}
+      >
+        <Icon size={18} style={{ color: TEAL }} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">{title}</p>
+        <p data-countup data-countup-duration="1200" className="text-xl font-bold text-gray-900 dark:text-white mt-0.5 tracking-tight">{value}</p>
+        {sub && (
+          <p className="text-[11px] text-gray-400 dark:text-gray-600 mt-0.5 flex items-center gap-1">
+            <TrendingUp size={10} />
+            {sub}
+          </p>
+        )}
       </div>
     </CardContent>
   </Card>
 );
 
-// Status Badge Component
-// const StatusBadge = ({ type, label }: { type: 'orange' | 'purple' | 'green'; label: string }) => {
-//   const styles = {
-//     orange: 'bg-status-orange-bg text-status-orange-text',
-//     purple: 'bg-status-purple-bg text-status-purple-text',
-//     green: 'bg-status-green-bg text-status-green-text',
-//   };
-
-//   return (
-//     <Badge variant="secondary" className={`${styles[type]} border-0 font-medium`}>
-//       {label}
-//     </Badge>
-//   );
-// };
-
-
-
-// Table Component
-
-
-
-
-
+// ─── Chart configs ────────────────────────────────────────────────────────────
 const earningsChartConfig = {
-  earnings: {
-    label: "Earnings",
-    color: "#2563eb",
-  },
+  earnings: { label: 'Earnings', color: '#3BD9DA' },
 } satisfies ChartConfig;
 
 const visitorsChartConfig = {
-  visitors: {
-    label: "Visitors",
-    color: "#60a5fa",
-  },
+  visitors: { label: 'Visitors', color: '#8B5CF6' },
 } satisfies ChartConfig;
 
+// ─── Booking Table ────────────────────────────────────────────────────────────
+const BookingTable = ({
+  title,
+  data,
+  loading,
+}: {
+  title: string;
+  data: BookingDetailDTO[];
+  loading: boolean;
+}) => {
+  const [selectedBooking, setSelectedBooking] = useState<BookingDetailDTO | null>(null);
+  const [open, setOpen] = useState(false);
+
+  const handleOpenModal = (booking: BookingDetailDTO) => {
+    setSelectedBooking(booking);
+    setOpen(true);
+  };
+
+  return (
+    <div data-animate="section" className="space-y-4 motion-section-reveal">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">{title}</h3>
+          <Select defaultValue="today">
+            <SelectTrigger className="h-8 w-auto text-xs border-gray-200 dark:border-gray-700">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-sm font-semibold w-fit"
+          style={{ color: TEAL }}
+        >
+          View All
+        </Button>
+      </div>
+
+      <Card className="border border-gray-100 dark:border-gray-800 motion-surface-card">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-gray-50 dark:bg-gray-800/60">
+              <TableRow className="border-gray-100 dark:border-gray-800">
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[120px]">Booking ID</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[140px]">Client</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[120px]">Location</TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[140px]">
+                  <div className="flex items-center gap-1.5">
+                    Check In <ArrowUpDown size={12} className="text-gray-400 motion-sort-arrow" />
+                  </div>
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[140px]">
+                  <div className="flex items-center gap-1.5">
+                    Check Out <ArrowUpDown size={12} className="text-gray-400 motion-sort-arrow" />
+                  </div>
+                </TableHead>
+                <TableHead className="font-semibold text-gray-700 dark:text-gray-300 text-xs uppercase tracking-wide min-w-[90px]">Guests</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody data-animate-group="booking-rows" data-stagger="30">
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-12 text-center">
+                    <div className="flex justify-center items-center gap-2 text-gray-400">
+                      <div className="h-5 w-5 motion-spinner" />
+                      <span className="text-sm">Loading bookings…</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+              {!loading && data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="py-14 text-center">
+                    <div className="flex flex-col items-center gap-2 text-gray-400">
+                      <MapPinOff size={36} strokeWidth={1.5} />
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No bookings yet</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-600">Bookings from guests will appear here</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+              {data.map((booking, index) => (
+                <TableRow
+                  key={index}
+                  data-animate="table-row"
+                  data-animate-item
+                  className="border-gray-50 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer group motion-table-row"
+                >
+                  <TableCell>
+                    <button
+                      onClick={() => handleOpenModal(booking)}
+                      className="text-sm font-semibold hover:underline transition-all"
+                      style={{ color: TEAL }}
+                    >
+                      {booking.id}
+                    </button>
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-700 dark:text-gray-300">{booking.clientName}</TableCell>
+                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">{booking.location}</TableCell>
+                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(booking.checkIn, 'dd MMM yyyy')}
+                  </TableCell>
+                  <TableCell className="text-sm text-gray-600 dark:text-gray-400">
+                    {formatDate(booking.checkOut, 'dd MMM yyyy')}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5">
+                      <Users size={14} className="text-gray-400" />
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{booking.guests}</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </Card>
+
+      {/* Booking detail modal */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-lg w-full motion-modal-surface">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-gray-300">
+              {[
+                ['Booking ID', selectedBooking.id],
+                ['Client Name', selectedBooking.clientName],
+                ['Service Name', selectedBooking.serviceName],
+                ['Check In', selectedBooking.checkIn],
+                ['Check Out', selectedBooking.checkOut],
+                ['Guests', selectedBooking.guests],
+                ['Location', selectedBooking.location],
+              ].map(([label, val]) => (
+                <div key={label as string} className="flex flex-col gap-0.5">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">{label}</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{val}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+// ─── Chart Card ───────────────────────────────────────────────────────────────
+const ChartCard = ({
+  title,
+  config,
+  dataKey,
+  gradientId,
+  data,
+}: {
+  title: string;
+  config: ChartConfig;
+  dataKey: string;
+  gradientId: string;
+  data: VendorAnalyticsGraphData[];
+}) => {
+  const color = (config[dataKey] as any)?.color ?? TEAL;
+  return (
+    <div data-animate="chart-card" data-animate-item className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 motion-surface-card">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-sm font-bold text-gray-900 dark:text-white">{title}</h3>
+        <Select defaultValue="month">
+          <SelectTrigger className="h-7 w-auto text-xs border-gray-200 dark:border-gray-700 gap-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="week">This Week</SelectItem>
+            <SelectItem value="month">This Month</SelectItem>
+            <SelectItem value="year">This Year</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="h-[260px] w-full">
+        <ChartContainer config={config} className="h-full w-full">
+          <AreaChart data={data} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={color} stopOpacity={0.2} />
+                <stop offset="95%" stopColor={color} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="4 4" stroke="rgba(107,114,128,0.15)" />
+            <XAxis
+              dataKey="name"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tick={{ fill: '#9CA3AF', fontSize: 11 }}
+            />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Area
+              type="monotone"
+              dataKey={dataKey}
+              stroke={color}
+              strokeWidth={2}
+              fillOpacity={1}
+              fill={`url(#${gradientId})`}
+              dot={false}
+              activeDot={{ r: 4, fill: color, strokeWidth: 0 }}
+            />
+          </AreaChart>
+        </ChartContainer>
+      </div>
+    </div>
+  );
+};
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedChat, setSelectedChat] = useState('elmer');
-  const [newMessage, setNewMessage] = useState('');
-  
+
   const [stats, setStats] = useState<VendorAnalyticsCounts | null>(null);
   const [bookings, setBookings] = useState<BookingDetailDTO[]>([]);
   const [graphData, setGraphData] = useState<VendorAnalyticsGraphData[]>([]);
@@ -125,487 +320,103 @@ const Dashboard = () => {
         const token = localStorage.getItem('travel_auth_token');
         setLoading(true);
         if (!token) {
-           console.error('No auth token found');
-           // Optionally redirect to login
-           return;
+          console.error('No auth token found');
+          return;
         }
 
         const bookingParams: Record<string, any> = { mine: true };
         if (user?.userType === 'vendor' && user?.id) {
-          // Pass vendorId to filter bookings on backend
           bookingParams.vendorId = user.id;
         }
 
         const [statsRes, bookingsRes, graphsRes] = await Promise.all([
           vendorAnalyticsApi.getCounts(token),
           bookingDetailsApi.list(token, bookingParams),
-          vendorAnalyticsApi.getGraphs(token)
+          vendorAnalyticsApi.getGraphs(token),
         ]);
 
-        if (statsRes.success) {
-          setStats(statsRes.data);
-          setLoading(false);
-        }
-        if (bookingsRes.success) {
-          setBookings(bookingsRes.data);
-          setLoading(false);
-        }
-        if (graphsRes.success) {
-          setGraphData(graphsRes.data);
-          setLoading(false);
-        }
+        if (statsRes.success) setStats(statsRes.data);
+        if (bookingsRes.success) setBookings(bookingsRes.data);
+        if (graphsRes.success) setGraphData(graphsRes.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        setLoading(false);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchData();
-    }
+    if (user) fetchData();
   }, [user]);
 
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 17) return 'Good afternoon';
+    return 'Good evening';
+  })();
 
-  const handleNotificationClick = () => {
-    navigate('/notifications');
-  };
+  const today = format(new Date(), 'EEEE, d MMMM yyyy');
 
-  const handleSwitchToUser = async () => {
-    await updateUserType('user');
-    navigate('/user-profile'); // Navigate to user dashboard
-  };
-
-  const handleSendMessage = () => {
-    if (newMessage.trim()) {
-      // Here you would typically send the message to your backend
-      setNewMessage('');
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  // Chat data
-  const chatList = [
-    {
-      id: 'elmer',
-      name: 'Elmer Laverty',
-      message: 'just ideas for next time',
-      time: '12m',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/be4a4e75066693fe1cd9dd4592522f7eb516375a?width=96',
-      isActive: true,
-      hasUnread: false
-    },
-    {
-      id: 'elmer2',
-      name: 'Sarah Johnson',
-      message: 'Thanks for the booking!',
-      time: '15m',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/026909e15a189514c1fd8ffbc0a749d76d066ca9?width=96',
-      isActive: false,
-      hasUnread: true
-    },
-    {
-      id: 'elmer3',
-      name: 'Mike Wilson',
-      message: 'When is check-in?',
-      time: '1h',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/eb39745c8108a69a643c98d18ead577372ef67c4?width=96',
-      isActive: false,
-      hasUnread: true
-    }
+  const statsItems = [
+    { icon: Eye,           title: 'Impressions',       value: stats?.metrics?.impressions?.toLocaleString() ?? '—' },
+    { icon: CheckSquare,   title: 'Total Bookings',     value: stats?.total?.toLocaleString() ?? '—' },
+    { icon: ClipboardCheck,title: 'Listed Properties',  value: stats?.properties?.approved?.toLocaleString() ?? '—' },
+    { icon: Wallet,        title: 'Total Earning',      value: `₹${stats?.payments?.received?.toLocaleString() ?? '0'}` },
+    { icon: MousePointer,  title: 'Clicks',             value: stats?.metrics?.clicks?.toLocaleString() ?? '—' },
   ];
-
-  const messages = [
-    {
-      id: 1,
-      type: 'received',
-      content: 'just ideas for next time',
-      time: '2:31 PM',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/e0e97c7f6f6549797f0826fa6cf62f5e7b5bc7de?width=80'
-    },
-    {
-      id: 2,
-      type: 'received',
-      content: "I'll be there in 2 mins ⏰",
-      time: '2:31 PM',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/e0e97c7f6f6549797f0826fa6cf62f5e7b5bc7de?width=80'
-    },
-    {
-      id: 3,
-      type: 'sent',
-      content: 'Perfect! Looking forward to it.',
-      time: '2:32 PM'
-    },
-    {
-      id: 4,
-      type: 'received',
-      content: 'Thanks for being flexible with the timing 😊',
-      time: '2:33 PM',
-      avatar: 'https://api.builder.io/api/v1/image/assets/TEMP/e0e97c7f6f6549797f0826fa6cf62f5e7b5bc7de?width=80'
-    }
-  ];
-
-  // Sample data
-  const tripStartingData = [
-    {
-      id: 'CV042W4',
-      clientName: 'Badal Singh',
-      serviceName: 'XYX',
-    location: 'Indore',
-      checkIn: '20/2/2024, 10:30 pm',
-      checkOut: '20/2/2024, 10:30 pm',
-      guests: '7'
-    },
-    {
-      id: 'CV042E4',
-      clientName: 'Badal Singh',
-      serviceName: 'XYZ',
-      location: 'Indore',
-      checkIn: '20/2/2024, 10:30 pm',
-      checkOut: '20/2/2024, 10:30 pm',
-      guests: '7'
-    },
-    {
-      id: 'CV042344',
-      clientName: 'Badal Singh',
-      serviceName: 'XYZ',
-     location: 'Indore',
-      checkIn: '20/2/2024, 10:30 pm',
-      checkOut: '20/2/2024, 10:30 pm',
-      guests: '7'
-    }
-  ];
-
-const BookingTable = ({ title, data }: { title: string; data: BookingDetailDTO[];}) => {
-  const [selectedBooking, setSelectedBooking] = useState<BookingDetailDTO | null>(null);
-  const [open, setOpen] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<string>('today');
-
-  const handleOpenModal = (booking: BookingDetailDTO) => {
-    setSelectedBooking(booking);
-    setOpen(true);
-  };
-
-  const handleFilterChange = (value: string) => {
-    setSelectedFilter(value);
-  };
-
-  
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-     <div className='flex gap-3'>
-         <h3 className="text-lg font-bold text-dashboard-primary">{title}</h3>
-          <Select defaultValue="today" onValueChange={handleFilterChange}>
-            <SelectTrigger className="w-auto border-dashboard-neutral-06 text-dashboard-neutral-07">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="month">This Month</SelectItem>
-            </SelectContent>
-          </Select>
-     </div>
-        <div className="flex items-center gap-4">
-        
-          <Button
-            variant="ghost"
-            className="text-dashboard-primary font-bold text-sm  transition-colors"
-          >
-            View All
-          </Button>
-        </div>
+    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta motion-page-shell">
+      {/* Sidebar */}
+      <div className="hidden lg:block flex-shrink-0">
+        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(p => !p)} />
       </div>
 
-      <Card className="border-dashboard-stroke">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader className="bg-gray-50 dark:bg-black dark:text-white">
-              <TableRow>
-                <TableHead className="font-bold text-dashboard-title min-w-[120px]">Booking ID</TableHead>
-                <TableHead className="font-bold text-dashboard-title min-w-[140px]">Client Name</TableHead>
-                <TableHead className="font-bold text-dashboard-title min-w-[120px]">Service Name</TableHead>
-                <TableHead className="font-bold text-dashboard-title min-w-[160px]">
-                  <div className="flex items-center gap-2">
-                    Check In
-                    <ArrowUpDown size={16} className="text-gray-400" />
-                  </div>
-                </TableHead>
-                <TableHead className="font-bold text-dashboard-title min-w-[160px]">
-                  <div className="flex items-center gap-2">
-                    Check Out
-                    <ArrowUpDown size={16} className="text-gray-400" />
-                  </div>
-                </TableHead>
-                <TableHead className="font-bold text-dashboard-title min-w-[100px]">No. of Guest</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center flex justify-center items-center w-full gap-2 py-4">  
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-dashboard-primary"></div>
-                    <span className="ml-2 ">Loading bookings...</span>
-                  </TableCell>
-                </TableRow>
-              )}
-              {!loading && data.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center flex justify-center items-center w-full gap-2 py-4">
-                    <div className="flex flex-col items-center justify-center">
-                      <MapPinOff size={48} className="mx-auto mb-4 text-gray-400" />
-                      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">No bookings found</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Try adjusting your filters or create a new booking.</p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
+      {/* Main */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <DashboardHeader Headtitle="Dashboard" />
 
-              {(data || []).map((booking, index) => (
-                <TableRow
-                  key={index}
-                  className="border-gray-100 hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors cursor-pointer group"
-                >
-                  <TableCell>
-                    <button
-                      onClick={() => handleOpenModal(booking)}
-                      className="font-bold text-booking-link hover:underline transition-all"
-                    >
-                      {booking.id}
-                    </button>
-                  </TableCell>
-                  <TableCell className="text-dashboard-body group-hover:text-dashboard-heading transition-colors">
-                    {booking.clientName}
-                  </TableCell>
-                  <TableCell>
-                  {booking.location} 
-                  </TableCell>
-         <TableCell className="text-dashboard-body text-sm group-hover:text-dashboard-heading transition-colors">
-  {formatDate(booking.checkIn, "dd MMM yyyy")}
-</TableCell>
-
-<TableCell className="text-dashboard-body text-sm group-hover:text-dashboard-heading transition-colors">
-  {formatDate(booking.checkOut, "dd MMM yyyy")}
-</TableCell>
-
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users size={18} className="text-gray-400 group-hover:text-dashboard-primary transition-colors" />
-                      <span className="text-dashboard-body group-hover:text-dashboard-heading transition-colors">
-                        {booking.guests}
-                      </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </Card>
-
-      {/* Modal for booking details */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogOverlay className='bg-gray-300'/>
-        <DialogContent className="max-w-lg w-full">
-          <DialogHeader>
-            <DialogTitle>Booking Details</DialogTitle>
-          </DialogHeader>
-          {selectedBooking && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 text-sm dark:bg-black dark:text-white text-gray-700">
-              <p className="flex flex-col"><strong>Booking ID:</strong> {selectedBooking.id}</p>
-              <p className="flex flex-col"><strong>Client Name:</strong> {selectedBooking.clientName}</p>
-              <p className="flex flex-col"><strong>Service Name:</strong> {selectedBooking.serviceName}</p>
-              <p className="flex flex-col"><strong>Check In:</strong> {selectedBooking.checkIn}</p>
-              <p className="flex flex-col"><strong>Check Out:</strong> {selectedBooking.checkOut}</p>
-              <p className="flex flex-col"><strong>No. of Guests:</strong> {selectedBooking.guests}</p>
-              <p className="flex flex-col"><strong>Location:</strong> {selectedBooking.location}</p>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 scrollbar-hide">
+          {/* ── Greeting ── */}
+          <div data-animate="section" className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-1 motion-section-reveal">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white font-geist">
+                {greeting}, {((user as any)?.name ?? user?.firstName ?? 'there').split(' ')[0]} 👋
+              </h2>
+              <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{today}</p>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-};
-
-  return (
-    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta">
-      {/* Desktop Sidebar - Hidden on mobile, shown on lg+ */}
-      <div className="hidden lg:block">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-x-hidden">
-        {/* Dashboard Content */}
-        <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <DashboardHeader Headtitle={"Dashboard"}/>
-
-        {/* Main Dashboard Content */}
-        <main className="flex-1 p-4 lg:p-6 dark:bg-black dark:text-white bg-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto scrollbar-hide overflow-x-hidden">
-          {/* Overview Header */}
-          <div className="flex lg:flex-row lg:items-center justify-between mb-6 lg:mb-8 border-b border-dashboard-stroke pb-4 lg:pb-6 gap-4">
-            <h2 className="text-lg lg:text-xl font-bold text-dashboard-heading font-geist">Overview</h2>
-            {/* <Button className="bg-dashboard-primary text-white dark:text-black  hover:shadow-lg hover:scale-105 rounded-full px-4 lg:px-6 w-fit transition-all duration-200 group">
-              <Plus size={18} className="mr-2 group-hover:rotate-90 transition-transform" />
-              New Booking
-            </Button> */}
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-6 lg:mb-8">
-            <StatsCard
-              icon={Eye}
-              title="Impression"
-              value={stats?.metrics?.impressions?.toString() || "0"}
-              bgColor="bg-stats-impression-bg"
-              iconBg="bg-stats-impression-icon"
+          {/* ── Stats ── */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-7" data-animate-group="dashboard-stats" data-stagger="60">
+            {statsItems.map((s) => (
+              <StatsCard key={s.title} icon={s.icon} title={s.title} value={s.value} />
+            ))}
+          </div>
+
+          {/* ── Charts ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-7" data-animate-group="dashboard-charts" data-stagger="100">
+            <ChartCard
+              title="Total Earnings"
+              config={earningsChartConfig}
+              dataKey="earnings"
+              gradientId="fillEarnings"
+              data={graphData}
             />
-            <StatsCard
-              icon={CheckSquare}
-              title="Total Bookings"
-              value={stats?.total?.toString() || "0"}
-              bgColor="bg-stats-bookings-bg"
-              iconBg="bg-stats-bookings-icon"
-            />
-            <StatsCard
-              icon={ClipboardCheck}
-              title="Listed Properties"
-              value={stats?.properties?.approved?.toString() || "0"}
-              bgColor="bg-stats-properties-bg"
-              iconBg="bg-stats-properties-icon"
-            />
-            <StatsCard
-              icon={Wallet}
-              title="Total Earning"
-              value={`$${stats?.payments?.received?.toString() || "0"}`}
-              bgColor="bg-stats-earnings-bg"
-              iconBg="bg-stats-earnings-icon"
+            <ChartCard
+              title="Total Visitors"
+              config={visitorsChartConfig}
+              dataKey="visitors"
+              gradientId="fillVisitors"
+              data={graphData}
             />
           </div>
 
-          {/* Second Row Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-6 lg:mb-8">
-            <StatsCard
-              icon={MousePointer}
-              title="Clicked"
-              value={stats?.metrics?.clicks?.toString() || "0"}
-              bgColor="bg-stats-clicks-bg"
-              iconBg="bg-stats-clicks-icon"
-            />
-          </div>
-
-          {/* Tables */}
-          <div className="space-y-6 lg:space-y-8">
-            <BookingTable title="Recent Bookings" loadingt={loading} data={bookings} />
-          </div>
-
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 lg:mt-8">
-             {/* Earnings Chart */}
-             <div className="bg-white dark:bg-black border border-dashboard-stroke dark:border-gray-800 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="text-lg font-bold text-dashboard-title dark:text-white">Total Earnings</h3>
-                </div>
-                <div className="h-[300px] w-full">
-                  <ChartContainer config={earningsChartConfig} className="h-full w-full">
-                    <AreaChart data={graphData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="fillEarnings" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--color-earnings)" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="var(--color-earnings)" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis 
-                        dataKey="name" 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                      />
-                      <YAxis 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area 
-                        type="monotone" 
-                        dataKey="earnings" 
-                        stroke="var(--color-earnings)" 
-                        fillOpacity={1} 
-                        fill="url(#fillEarnings)" 
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
-                  </ChartContainer>
-                </div>
-             </div>
-
-             {/* Visitors Chart */}
-             <div className="bg-white dark:bg-black border border-dashboard-stroke dark:border-gray-800 rounded-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                   <h3 className="text-lg font-bold text-dashboard-title dark:text-white">Total Visitors</h3>
-                </div>
-                <div className="h-[300px] w-full">
-                  <ChartContainer config={visitorsChartConfig} className="h-full w-full">
-                    <AreaChart data={graphData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="fillVisitors" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--color-visitors)" stopOpacity={0.8}/>
-                          <stop offset="95%" stopColor="var(--color-visitors)" stopOpacity={0.1}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis 
-                        dataKey="name" 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                      />
-                      <YAxis 
-                        tickLine={false} 
-                        axisLine={false} 
-                        tickMargin={8} 
-                        tick={{ fill: '#6B7280', fontSize: 12 }}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Area 
-                        type="monotone" 
-                        dataKey="visitors" 
-                        stroke="var(--color-visitors)" 
-                        fillOpacity={1} 
-                        fill="url(#fillVisitors)" 
-                        strokeWidth={2}
-                      />
-                    </AreaChart>
-                  </ChartContainer>
-                </div>
-             </div>
-          </div>
+          {/* ── Bookings table ── */}
+          <BookingTable title="Recent Bookings" data={bookings} loading={loading} />
         </main>
-        </div>
-
-        {/* Chat Panel */}
-    
       </div>
 
-      {/* Change Password Modal */}
       <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}
