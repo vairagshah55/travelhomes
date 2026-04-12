@@ -142,29 +142,37 @@
     --th-duration-slower:  500ms;
 
     /* ─── 6. TYPOGRAPHY ──────────────────────────────────────── */
-    --th-font-sans:     'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --th-font-display:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --th-font-heading:  'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    /* Single unified font — DM Sans (closest to Airbnb Cereal) */
+    --th-font-sans:     'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --th-font-display:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    --th-font-heading:  'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     --th-font-mono:     'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-    --th-text-xs:       0.75rem;     /* 12px */
-    --th-text-sm:       0.875rem;    /* 14px */
-    --th-text-base:     1rem;        /* 16px */
-    --th-text-lg:       1.125rem;    /* 18px */
-    --th-text-xl:       1.25rem;     /* 20px */
-    --th-text-2xl:      1.5rem;      /* 24px */
-    --th-text-3xl:      1.875rem;    /* 30px */
-    --th-text-4xl:      2.25rem;     /* 36px */
+    /* Airbnb-standard type scale */
+    --th-text-xs:       0.6875rem;   /* 11px — labels, legal */
+    --th-text-sm:       0.75rem;     /* 12px — captions, meta */
+    --th-text-base:     0.875rem;    /* 14px — body default */
+    --th-text-md:       1rem;        /* 16px — body large */
+    --th-text-lg:       1.125rem;    /* 18px — lead / subheading */
+    --th-text-xl:       1.375rem;    /* 22px — H4 */
+    --th-text-2xl:      1.75rem;     /* 28px — H3 */
+    --th-text-3xl:      2.25rem;     /* 36px — H2 */
+    --th-text-4xl:      3.25rem;     /* 52px — Display */
 
-    --th-leading-tight:   1.25;
-    --th-leading-snug:    1.375;
+    --th-leading-tight:   1.2;
+    --th-leading-snug:    1.3;
     --th-leading-normal:  1.5;
-    --th-leading-relaxed: 1.625;
+    --th-leading-relaxed: 1.6;
     --th-leading-loose:   1.75;
 
-    --th-tracking-tight:  -0.025em;
-    --th-tracking-normal: 0em;
-    --th-tracking-wide:   0.025em;
+    /* Airbnb-standard letter spacing */
+    --th-tracking-tighter: -0.03em;
+    --th-tracking-tight:   -0.02em;
+    --th-tracking-snug:    -0.015em;
+    --th-tracking-normal:  -0.01em;
+    --th-tracking-wide:    0.02em;
+    --th-tracking-wider:   0.05em;
+    --th-tracking-widest:  0.1em;
 
     /* ─── 7. Z-INDEX SCALE ───────────────────────────────────── */
     --th-z-dropdown:   50;
@@ -428,47 +436,65 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--th-font-sans);
+    font-size: var(--th-text-base);        /* 14px default — Airbnb standard */
+    line-height: var(--th-leading-normal); /* 1.5 */
+    letter-spacing: var(--th-tracking-normal); /* -0.01em */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* ─── Unified font aliases (all point to DM Sans now) ─── */
   .font-geist,
-  .font-display {
-    font-family: var(--th-font-display);
-  }
-
-  .font-poppins {
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  }
-
-  .font-plus-jakarta {
+  .font-display,
+  .font-poppins,
+  .font-plus-jakarta,
+  .font-heading {
     font-family: var(--th-font-sans);
   }
 
-  .font-heading {
-    font-family: var(--th-font-heading);
+  /* ─── Airbnb-standard heading scale ─────────────────────── */
+  h1 {
+    font-size: var(--th-text-3xl);    /* 36px */
+    font-weight: 700;
+    letter-spacing: var(--th-tracking-tight);  /* -0.02em */
+    line-height: var(--th-leading-snug);        /* 1.3 */
+  }
+  h2 {
+    font-size: var(--th-text-2xl);    /* 28px */
+    font-weight: 600;
+    letter-spacing: var(--th-tracking-snug);   /* -0.015em */
+    line-height: var(--th-leading-snug);
+  }
+  h3 {
+    font-size: var(--th-text-xl);     /* 22px */
+    font-weight: 600;
+    letter-spacing: var(--th-tracking-normal); /* -0.01em */
+    line-height: var(--th-leading-normal);
+  }
+  h4 {
+    font-size: var(--th-text-lg);     /* 18px */
+    font-weight: 600;
+    letter-spacing: var(--th-tracking-normal);
+    line-height: var(--th-leading-normal);
   }
 
   /* ─── ONBOARDING LAYOUT TYPOGRAPHY ──────────────────────── */
-  /* Adds Outfit display font + tighter tracking to all headings
-     inside any onboarding page. Just add `onboarding-layout` to
-     the page root — no per-heading changes needed. */
   .onboarding-layout h1 {
     font-family: var(--th-font-heading);
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: var(--th-tracking-tight);
+    line-height: 1.12;
   }
   .onboarding-layout h2 {
     font-family: var(--th-font-heading);
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-weight: 700;
+    letter-spacing: var(--th-tracking-snug);
     line-height: 1.2;
   }
   .onboarding-layout h3 {
     font-family: var(--th-font-heading);
     font-weight: 600;
-    letter-spacing: -0.015em;
+    letter-spacing: var(--th-tracking-normal);
   }
 }
 

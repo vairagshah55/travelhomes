@@ -1,7 +1,19 @@
-import React from "react";
-import { MoreHorizontal, X } from "lucide-react";
+import React, { useRef, useEffect } from "react";
+import { MoreHorizontal, X, Plus } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 import { IconType } from "react-icons";
+
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+const TEAL      = "#07e4e4";
+const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
+const TEAL_RING = "rgba(7, 228, 228, 0.2)";
+const BLACK     = "#131313";
+const GRAY_500  = "#6b6b6b";
+const GRAY_600  = "#555555";
+const GRAY_400  = "#9a9a9a";
+const GRAY_200  = "#e4e4e4";
+const WHITE     = "#ffffff";
+const SURFACE   = "#F7F8FA";
 
 interface FeatureItem {
   label: string;
@@ -40,185 +52,365 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   onSetCustomFeatureInput,
   onAddCustomFeature,
 }) => {
+  const selectedCount = selectedFeatures.length + customFeatures.length;
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showCustomFeaturesInput) {
+      inputRef.current?.focus();
+    }
+  }, [showCustomFeaturesInput]);
+
+  const handleAdd = () => {
+    if (customFeatureInput.trim() && customFeatures.length < 20) {
+      onAddCustomFeature(customFeatureInput.trim());
+      onSetCustomFeatureInput("");
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-      <div className="text-center ">
-        <h1 className="text-3xl font-bold text-black dark:text-white">
+    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
+
+      {/* ── Header ── */}
+      <div className="text-center space-y-2 pb-1">
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
+            Amenities
+          </span>
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+        </div>
+        <h1
+          style={{
+            fontSize: "clamp(22px, 3.5vw, 30px)",
+            fontWeight: 800,
+            color: BLACK,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.15,
+          }}
+        >
           Activity Features
         </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
           {selectedActivities.length > 0
-            ? `Select features for your ${selectedActivities.length === 1 ? "activity" : "activities"}`
-            : "Select features for your activity"}
+            ? `Select features for your ${selectedActivities.length === 1 ? "activity" : "activities"}.`
+            : "Select features for your activity."}
         </p>
       </div>
 
-      <div className="max-w-4xl mx-auto flex flex-col gap-6 w-full">
-        {/* All features section with custom features displayed first */}
-        <div className="space-y-4 ">
-          <div className="flex gap-3  max-md:flex-col items-center justify-between">
-            {selectedActivities.length > 0 ? (
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                  Select Features
-                </h3>
-                <span className="text-xs bg-gray-100 dark:bg-gray-400 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
-                  Based on your selection
-                </span>
-              </div>
-            ) : (
-              <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                All Features
-              </h3>
-            )}
-            {!showCustomFeaturesInput && customFeatures.length < 20 && (
-              <button
-                onClick={() => onSetShowCustomFeaturesInput(true)}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700"
-              >
-                + Add Custom Feature
-              </button>
-            )}
-          </div>
+      {/* ── Feature card ── */}
+      <div
+        style={{
+          width: "100%",
+          backgroundColor: WHITE,
+          border: "1.5px solid #EBEBEB",
+          borderRadius: 20,
+          padding: "20px 22px 22px",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
+        }}
+      >
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-4">
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: GRAY_500,
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+            }}
+          >
+            Features
+          </p>
+          {selectedCount > 0 && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: TEAL,
+                backgroundColor: TEAL_BG,
+                border: `1px solid ${TEAL_RING}`,
+                borderRadius: 99,
+                padding: "2px 10px",
+              }}
+            >
+              {selectedCount} selected
+            </span>
+          )}
+        </div>
 
-          {/* Features display: custom features first, then standard features */}
-          <div className="flex flex-wrap gap-3">
-            {/* Custom features */}
-            {customFeatures.map((customFeature, idx) => (
-              <button
-                key={`custom-${idx}`}
-                onClick={() => onRemoveCustomFeature(idx)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-[48px] border transition-all duration-200 onb-card ${
-                  selectedFeatures.includes(customFeature)
-                    ? "onb-pill-selected"
-                    : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[var(--th-accent)]"
-                }`}
-              >
-                <div className="w-[22px] h-[22px]">
-                  <MoreHorizontal size={16} className="text-gray-600" />
-                </div>
-                <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
-                  {customFeature}
-                </span>
-                <X
-                  size={14}
-                  className="text-gray-600 hover:text-red-500"
-                />
-              </button>
-            ))}
+        <div className="flex flex-wrap gap-2.5">
+          {/* Custom features */}
+          {customFeatures.map((customFeature, idx) => (
+            <button
+              key={`custom-${idx}`}
+              type="button"
+              onClick={() => onRemoveCustomFeature(idx)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "8px 14px",
+                borderRadius: 99,
+                border: `1.5px solid ${TEAL}`,
+                backgroundColor: TEAL_BG,
+                boxShadow: `0 0 0 3px ${TEAL_RING}`,
+                cursor: "pointer",
+                color: TEAL,
+              }}
+            >
+              <MoreHorizontal size={14} color={TEAL} />
+              <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                {customFeature}
+              </span>
+              <X size={12} color={TEAL} />
+            </button>
+          ))}
 
-            {/* Standard features */}
-            {activityFeatures.map((feature, idx) => {
-              const isRecommended =
-                selectedActivities.length > 0 &&
-                selectedActivities.some((actId) =>
-                  activityFeatureMap[actId]?.includes(feature.value),
-                );
-              return (
-                <button
-                  key={idx}
-                  onClick={() => onToggleFeature(feature.value)}
-                  className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all duration-200 onb-card ${
-                    selectedFeatures.includes(feature.value)
-                      ? "onb-pill-selected"
-                      : isRecommended
-                        ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 hover:border-gray-500"
-                        : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[var(--th-accent)]"
-                  }`}
-                >
-                  <div className="w-[22px] h-[22px]">
-                    <feature.icon
-                      size={18}
-                      className={`${isRecommended ? "text-gray-600" : "text-gray-600"}`}
-                    />
-                  </div>
-                  <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
-                    {feature.label}
-                  </span>
-                  {isRecommended && (
-                    <span className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded-full">
-                      Recommended
-                    </span>
-                  )}
-                </button>
+          {/* Standard features */}
+          {activityFeatures.map((feature, idx) => {
+            const selected = selectedFeatures.includes(feature.value);
+            const isRecommended =
+              selectedActivities.length > 0 &&
+              selectedActivities.some((actId) =>
+                activityFeatureMap[actId]?.includes(feature.value),
               );
-            })}
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => onToggleFeature(feature.value)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 14px",
+                  borderRadius: 99,
+                  border: `1.5px solid ${selected ? TEAL : isRecommended ? "rgba(7,228,228,0.3)" : GRAY_200}`,
+                  backgroundColor: selected ? TEAL_BG : isRecommended ? "rgba(7,228,228,0.04)" : SURFACE,
+                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  color: selected ? TEAL : GRAY_600,
+                }}
+                onMouseEnter={(e) => {
+                  if (!selected) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!selected) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = isRecommended ? "rgba(7,228,228,0.3)" : GRAY_200;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = isRecommended ? "rgba(7,228,228,0.04)" : SURFACE;
+                  }
+                }}
+              >
+                <span style={{ color: selected ? TEAL : GRAY_400, display: "flex", alignItems: "center" }}>
+                  <feature.icon size={16} />
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                  {feature.label}
+                </span>
+                {isRecommended && !selected && (
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: TEAL,
+                      backgroundColor: TEAL_BG,
+                      border: `1px solid ${TEAL_RING}`,
+                      borderRadius: 99,
+                      padding: "1px 7px",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Suggested
+                  </span>
+                )}
+              </button>
+            );
+          })}
 
-            {/* Admin Features */}
-            {adminFeatures.map((feature, idx) => (
+          {/* Admin features */}
+          {adminFeatures.map((feature, idx) => {
+            const selected = selectedFeatures.includes(feature.name);
+            return (
               <button
                 key={feature.id || `admin-${idx}`}
+                type="button"
                 onClick={() => onToggleFeature(feature.name)}
-                className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all duration-200 onb-card ${
-                  selectedFeatures.includes(feature.name)
-                    ? "onb-pill-selected"
-                    : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[var(--th-accent)]"
-                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 14px",
+                  borderRadius: 99,
+                  border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
+                  backgroundColor: selected ? TEAL_BG : SURFACE,
+                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  color: selected ? TEAL : GRAY_600,
+                }}
+                onMouseEnter={(e) => {
+                  if (!selected) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!selected) {
+                    (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
+                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
+                  }
+                }}
               >
-                <div className="w-[22px] h-[22px]">
-                  <img src={getImageUrl(feature.icon)} alt="" className="w-full h-full object-contain" />
-                </div>
-                <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
+                <span
+                  style={{
+                    width: 18,
+                    height: 18,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    opacity: selected ? 1 : 0.65,
+                    transition: "opacity 0.15s",
+                  }}
+                >
+                  <img
+                    src={getImageUrl(feature.icon)}
+                    alt=""
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
                   {feature.name}
                 </span>
               </button>
-            ))}
-          </div>
-        </div>
+            );
+          })}
 
-        {/* Custom features input */}
-        {showCustomFeaturesInput && (
-          <div className="flex flex-col gap-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={customFeatureInput}
-                onChange={(e) => onSetCustomFeatureInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (
-                    e.key === "Enter" &&
-                    customFeatureInput.trim() &&
-                    customFeatures.length < 20
-                  ) {
-                    onAddCustomFeature(customFeatureInput.trim());
-                    onSetCustomFeatureInput("");
-                  }
+          {/* ── Inline custom input pill ── */}
+          {customFeatures.length < 20 && (
+            showCustomFeaturesInput ? (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 6px 4px 14px",
+                  borderRadius: 99,
+                  border: `1.5px solid ${TEAL}`,
+                  backgroundColor: WHITE,
+                  boxShadow: `0 0 0 3px ${TEAL_RING}`,
                 }}
-                placeholder="Add custom feature..."
-                maxLength={50}
-                className="flex-1 h-[38px] px-3 py-3 border border-[#EAECF0] rounded-lg text-sm text-[#121213] font-plus-jakarta focus:outline-none focus:border-[var(--th-accent)] dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                autoFocus
-              />
-              <button
-                onClick={() => {
-                  if (
-                    customFeatureInput.trim() &&
-                    customFeatures.length < 20
-                  ) {
-                    onAddCustomFeature(customFeatureInput.trim());
-                    onSetCustomFeatureInput("");
-                  }
-                }}
-                disabled={
-                  !customFeatureInput.trim() ||
-                  customFeatures.length >= 20
-                }
-                className="px-4 py-2 rounded-lg onb-btn-primary"
               >
-                Add
-              </button>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={customFeatureInput}
+                  onChange={(e) => onSetCustomFeatureInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAdd();
+                    if (e.key === "Escape") {
+                      onSetShowCustomFeaturesInput(false);
+                      onSetCustomFeatureInput("");
+                    }
+                  }}
+                  placeholder="Feature name…"
+                  maxLength={50}
+                  style={{
+                    width: 130,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: BLACK,
+                    backgroundColor: "transparent",
+                    border: "none",
+                    outline: "none",
+                    letterSpacing: "-0.01em",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  disabled={!customFeatureInput.trim()}
+                  style={{
+                    height: 28,
+                    padding: "0 12px",
+                    borderRadius: 99,
+                    border: "none",
+                    backgroundColor: customFeatureInput.trim() ? TEAL : GRAY_200,
+                    color: customFeatureInput.trim() ? BLACK : GRAY_400,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: customFeatureInput.trim() ? "pointer" : "not-allowed",
+                    transition: "all 0.15s",
+                    flexShrink: 0,
+                  }}
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { onSetShowCustomFeaturesInput(false); onSetCustomFeatureInput(""); }}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 99,
+                    border: "none",
+                    backgroundColor: "transparent",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    flexShrink: 0,
+                  }}
+                >
+                  <X size={13} color={GRAY_400} />
+                </button>
+              </div>
+            ) : (
               <button
-                onClick={() => {
-                  onSetShowCustomFeaturesInput(false);
-                  onSetCustomFeatureInput("");
+                type="button"
+                onClick={() => onSetShowCustomFeaturesInput(true)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 14px",
+                  borderRadius: 99,
+                  border: `1.5px dashed ${GRAY_200}`,
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                  color: GRAY_400,
                 }}
-                className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
+                  (e.currentTarget as HTMLButtonElement).style.color = TEAL;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
+                  (e.currentTarget as HTMLButtonElement).style.color = GRAY_400;
+                }}
               >
-                Cancel
+                <Plus size={13} strokeWidth={2.5} />
+                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                  Add custom
+                </span>
               </button>
-            </div>
-          </div>
-        )}
+            )
+          )}
+        </div>
       </div>
     </div>
   );

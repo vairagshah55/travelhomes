@@ -15,12 +15,14 @@ export default {
     extend: {
 
       /* ─── FONT FAMILIES ────────────────────────────────── */
+      /* Single font: DM Sans — closest free match to Airbnb Cereal */
       fontFamily: {
-        'sans':           ['Plus Jakarta Sans', 'sans-serif'],
-        'plus-jakarta':   ['Plus Jakarta Sans', 'sans-serif'],
-        'display':        ['Inter', 'sans-serif'],
-        'geist':          ['Inter', 'sans-serif'],
-        'poppins':        ['Poppins', 'sans-serif'],
+        'sans':           ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        'display':        ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        'geist':          ['DM Sans', 'sans-serif'],
+        'plus-jakarta':   ['DM Sans', 'sans-serif'],
+        'poppins':        ['DM Sans', 'sans-serif'],
+        'heading':        ['DM Sans', 'sans-serif'],
         'mono':           ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
 
@@ -280,16 +282,17 @@ export default {
         "tooltip":  "500",
       },
 
-      /* ─── FONT SIZE ────────────────────────────────────── */
+      /* ─── FONT SIZE — Airbnb-standard scale ────────────── */
       fontSize: {
-        "th-xs":   ["var(--th-text-xs)",   { lineHeight: "var(--th-leading-normal)" }],
-        "th-sm":   ["var(--th-text-sm)",   { lineHeight: "var(--th-leading-normal)" }],
-        "th-base": ["var(--th-text-base)", { lineHeight: "var(--th-leading-relaxed)" }],
-        "th-lg":   ["var(--th-text-lg)",   { lineHeight: "var(--th-leading-snug)" }],
-        "th-xl":   ["var(--th-text-xl)",   { lineHeight: "var(--th-leading-snug)" }],
-        "th-2xl":  ["var(--th-text-2xl)",  { lineHeight: "var(--th-leading-tight)" }],
-        "th-3xl":  ["var(--th-text-3xl)",  { lineHeight: "var(--th-leading-tight)" }],
-        "th-4xl":  ["var(--th-text-4xl)",  { lineHeight: "var(--th-leading-tight)" }],
+        "th-xs":      ["var(--th-text-xs)",   { lineHeight: "1.4",  letterSpacing: "0em"   }], /* 11px */
+        "th-sm":      ["var(--th-text-sm)",   { lineHeight: "1.5",  letterSpacing: "-0.005em" }], /* 12px */
+        "th-base":    ["var(--th-text-base)", { lineHeight: "1.5",  letterSpacing: "-0.01em"  }], /* 14px */
+        "th-md":      ["var(--th-text-md)",   { lineHeight: "1.5",  letterSpacing: "-0.01em"  }], /* 16px */
+        "th-lg":      ["var(--th-text-lg)",   { lineHeight: "1.4",  letterSpacing: "-0.015em" }], /* 18px */
+        "th-xl":      ["var(--th-text-xl)",   { lineHeight: "1.3",  letterSpacing: "-0.015em" }], /* 22px */
+        "th-2xl":     ["var(--th-text-2xl)",  { lineHeight: "1.25", letterSpacing: "-0.02em"  }], /* 28px */
+        "th-3xl":     ["var(--th-text-3xl)",  { lineHeight: "1.2",  letterSpacing: "-0.025em" }], /* 36px */
+        "th-display": ["var(--th-text-4xl)",  { lineHeight: "1.1",  letterSpacing: "-0.03em"  }], /* 52px */
       },
 
       /* ─── KEYFRAMES & ANIMATION ────────────────────────── */

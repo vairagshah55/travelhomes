@@ -54,7 +54,18 @@ const ActivityOnboarding = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const STEP_STORAGE_KEY = "activity_onboarding_step";
+  const FORM_STORAGE_KEY = "activity_onboarding_form";
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem(STEP_STORAGE_KEY);
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(STEP_STORAGE_KEY, String(currentStep));
+  }, [currentStep]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [data, setData] = useState([]);
@@ -74,7 +85,7 @@ const ActivityOnboarding = () => {
   );
 
   // Form data for all steps
-  const [formData, setFormData] = useState({
+  const defaultFormData = {
     // Step 0: Selected activity types
     selectedActivities: [] as string[],
 
@@ -111,22 +122,22 @@ const ActivityOnboarding = () => {
 
     // Step 5: Types of Discount
     firstUserDiscount: true,
-    discountType: "",
+    discountType: "percentage",
     discountAmount: "",
     finalPrice: "",
 
     festivalOffers: false,
-    festivalDiscountType: "",
+    festivalDiscountType: "percentage",
     festivalDiscountAmount: "",
     festivalFinalPrice: "",
 
     weeklyOffers: false,
-    weeklyDiscountType: "",
+    weeklyDiscountType: "percentage",
     weeklyDiscountAmount: "",
     weeklyFinalPrice: "",
 
     specialOffers: false,
-    specialDiscountType: "",
+    specialDiscountType: "percentage",
     specialDiscountAmount: "",
     specialFinalPrice: "",
 
@@ -154,7 +165,27 @@ const ActivityOnboarding = () => {
     idPhotos: [] as (File | string)[],
     // Step 8: Terms & Conditions
     termsAccepted: false,
+  };
+
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(FORM_STORAGE_KEY);
+      if (saved) return { ...defaultFormData, ...JSON.parse(saved) };
+    } catch {}
+    return defaultFormData;
   });
+
+  useEffect(() => {
+    try {
+      const serialisable = {
+        ...formData,
+        coverImage: typeof formData.coverImage === "string" ? formData.coverImage : null,
+        photos: formData.photos.filter((p: File | string) => typeof p === "string"),
+        idPhotos: formData.idPhotos.filter((p: File | string) => typeof p === "string"),
+      };
+      sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(serialisable));
+    } catch {}
+  }, [formData]);
 
   // Features state
   const [customFeatures, setCustomFeatures] = useState<string[]>([]);
@@ -281,22 +312,22 @@ const ActivityOnboarding = () => {
             expectations: doc.expectations || [],
 
             firstUserDiscount: doc.firstUserDiscount ?? true,
-            discountType: doc.discountType || "",
+            discountType: doc.discountType || "percentage",
             discountAmount: String(doc.discountAmount || ""),
             finalPrice: String(doc.finalPrice || ""),
 
             festivalOffers: doc.festivalOffers ?? false,
-            festivalDiscountType: doc.festivalDiscountType || "",
+            festivalDiscountType: doc.festivalDiscountType || "percentage",
             festivalDiscountAmount: String(doc.festivalDiscountAmount || ""),
             festivalFinalPrice: String(doc.festivalFinalPrice || ""),
 
             weeklyOffers: doc.weeklyOffers ?? false,
-            weeklyDiscountType: doc.weeklyDiscountType || "",
+            weeklyDiscountType: doc.weeklyDiscountType || "percentage",
             weeklyDiscountAmount: String(doc.weeklyDiscountAmount || ""),
             weeklyFinalPrice: String(doc.weeklyFinalPrice || ""),
 
             specialOffers: doc.specialOffers ?? false,
-            specialDiscountType: doc.specialDiscountType || "",
+            specialDiscountType: doc.specialDiscountType || "percentage",
             specialDiscountAmount: String(doc.specialDiscountAmount || ""),
             specialFinalPrice: String(doc.specialFinalPrice || ""),
 
@@ -609,26 +640,18 @@ const ActivityOnboarding = () => {
       // Inclusion/Exclusion - optional
     } else if (currentStep === 5) {
       if (formData.firstUserDiscount) {
-        if (!formData.discountType) {
-          newErrors.discountType = "Discount type is required";
-          isValid = false;
-        }
         if (!formData.discountAmount) {
-          newErrors.discountAmount = "Discount amount is required";
+          newErrors.firstUserValue = "Discount amount is required";
           isValid = false;
         }
         if (!formData.finalPrice) {
-          newErrors.finalPrice = "Final price is required";
+          newErrors.firstUserFinalPrice = "Final price is required";
           isValid = false;
         }
       }
       if (formData.festivalOffers) {
-        if (!formData.festivalDiscountType) {
-          newErrors.festivalDiscountType = "Discount type is required";
-          isValid = false;
-        }
         if (!formData.festivalDiscountAmount) {
-          newErrors.festivalDiscountAmount = "Discount amount is required";
+          newErrors.festivalValue = "Discount amount is required";
           isValid = false;
         }
         if (!formData.festivalFinalPrice) {
@@ -637,12 +660,8 @@ const ActivityOnboarding = () => {
         }
       }
       if (formData.weeklyOffers) {
-        if (!formData.weeklyDiscountType) {
-          newErrors.weeklyDiscountType = "Discount type is required";
-          isValid = false;
-        }
         if (!formData.weeklyDiscountAmount) {
-          newErrors.weeklyDiscountAmount = "Discount amount is required";
+          newErrors.weeklyValue = "Discount amount is required";
           isValid = false;
         }
         if (!formData.weeklyFinalPrice) {
@@ -651,12 +670,8 @@ const ActivityOnboarding = () => {
         }
       }
       if (formData.specialOffers) {
-        if (!formData.specialDiscountType) {
-          newErrors.specialDiscountType = "Discount type is required";
-          isValid = false;
-        }
         if (!formData.specialDiscountAmount) {
-          newErrors.specialDiscountAmount = "Discount amount is required";
+          newErrors.specialValue = "Discount amount is required";
           isValid = false;
         }
         if (!formData.specialFinalPrice) {
@@ -674,7 +689,7 @@ const ActivityOnboarding = () => {
         isValid = false;
       }
       if (!formData.legalCompanyName || !formData.legalCompanyName.trim()) {
-        newErrors.legalCompanyName = "Legal Company name is required";
+        newErrors.companyName = "Legal Company name is required";
         isValid = false;
       }
       if (!formData.businessPhone || !formData.businessPhone.trim()) {
@@ -682,11 +697,11 @@ const ActivityOnboarding = () => {
         isValid = false;
       }
       if (!formData.businessCity) {
-        newErrors.businessCity = "Business City is required";
+        newErrors.city = "Business City is required";
         isValid = false;
       }
       if (!formData.businessState) {
-        newErrors.businessState = "Business State is required";
+        newErrors.state = "Business State is required";
         isValid = false;
       }
       if (!formData.businessPincode) {
@@ -746,6 +761,8 @@ const ActivityOnboarding = () => {
           sessionStorage.setItem('onboardingId', saved.id);
           sessionStorage.setItem('onboardingType', 'activity');
           sessionStorage.setItem('id', saved.id);
+          sessionStorage.removeItem(STEP_STORAGE_KEY);
+          sessionStorage.removeItem(FORM_STORAGE_KEY);
           navigate("/onboarding/selfie-verification");
           return;
         } else {
@@ -760,7 +777,6 @@ const ActivityOnboarding = () => {
 
     if (!isValid) {
       setErrors(newErrors);
-      toast.error("Please fill all required fields correctly");
       return;
     }
 
@@ -768,9 +784,7 @@ const ActivityOnboarding = () => {
   };
 
   // Update formData helper
-  const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error for the field if it exists
+  const clearError = (field: string) => {
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -778,6 +792,11 @@ const ActivityOnboarding = () => {
         return newErrors;
       });
     }
+  };
+
+  const updateFormData = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    clearError(field);
   };
 
   // Toggle activity selection and keep formData selectedActivities in sync
@@ -1085,15 +1104,19 @@ const ActivityOnboarding = () => {
       pincode: "businessPincode",
     };
     updateFormData(fieldMap[field] || field, value);
+    // Also clear the UI error key (BusinessDetailsStep uses the prop field name)
+    clearError(field);
   };
 
   const handleBusinessStateChange = (val: string) => {
     updateFormData("businessState", val);
     updateFormData("businessCity", "");
+    clearError("state");
   };
 
   const handleBusinessCityChange = (val: string) => {
     updateFormData("businessCity", val);
+    clearError("city");
   };
 
   // --- Personal details mapping for shared PersonalDetailsStep ---
@@ -1218,6 +1241,7 @@ const ActivityOnboarding = () => {
           locationData={data}
           onUpdateFormData={updateFormData}
           setFormData={setFormData as any}
+          clearError={clearError}
         />
       )}
 

@@ -136,10 +136,19 @@ const CaravanOnboarding = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem("caravan_onboarding_step");
+    return saved ? parseInt(saved, 10) : 0;
+  });
   const sliderRef = useRef(null);
 
-  const [formData, setFormData] = useState<FormData>({
+  useEffect(() => {
+    sessionStorage.setItem("caravan_onboarding_step", String(currentStep));
+  }, [currentStep]);
+
+  const FORM_STORAGE_KEY = "caravan_onboarding_form";
+
+  const defaultFormData: FormData = {
     name: "",
     description: "",
     rules: [],
@@ -204,7 +213,29 @@ const CaravanOnboarding = () => {
     idProof: "",
     idPhotos: [],
     termsAccepted: false,
+  };
+
+  const [formData, setFormData] = useState<FormData>(() => {
+    try {
+      const saved = sessionStorage.getItem(FORM_STORAGE_KEY);
+      if (saved) return { ...defaultFormData, ...JSON.parse(saved) };
+    } catch {}
+    return defaultFormData;
   });
+
+  // Persist form data on every change (File objects are excluded — they can't be serialised)
+  useEffect(() => {
+    try {
+      const serialisable = {
+        ...formData,
+        photos: formData.photos.filter((p) => typeof p === "string"),
+        coverImage: formData.coverImage.filter((p) => typeof p === "string"),
+        idPhotos: formData.idPhotos.filter((p) => typeof p === "string"),
+      };
+      sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(serialisable));
+    } catch {}
+  }, [formData]);
+
   console.log("Form Data:", formData);
   const [selected, setSelected] = useState<CountryOption | null>(
     countries[100],
@@ -512,6 +543,10 @@ const CaravanOnboarding = () => {
         newErrors.description = "Caravan description is required";
         hasError = true;
       }
+      if (!formData.coverImage || formData.coverImage.length === 0) {
+        newErrors.coverImage = "A cover photo is required";
+        hasError = true;
+      }
       if (formData.photos.length < 5) {
         newErrors.photos = "Please upload at least 5 photos";
         hasError = true;
@@ -533,26 +568,38 @@ const CaravanOnboarding = () => {
         return;
       }
     } else if (currentStep === 3) {
-      if (!formData.locality || !formData.locality.trim()) {
-        toast.error("Locality is required");
-        return;
+      const newErrors: Record<string, string> = {};
+      let hasError = false;
+
+      if (formData.sleepingCapacity < 1) {
+        newErrors.sleepingCapacity = "At least 1 sleeping spot is required";
+        hasError = true;
       }
       if (!formData.address || !formData.address.trim()) {
-        toast.error("Address is required");
-        return;
+        newErrors.address = "Street address is required";
+        hasError = true;
       }
       if (!formData.state || !formData.state.trim()) {
-        toast.error("State is required");
-        return;
+        newErrors.state = "State is required";
+        hasError = true;
       }
       if (!formData.city || !formData.city.trim()) {
-        toast.error("City is required");
-        return;
+        newErrors.city = "City is required";
+        hasError = true;
       }
       if (!formData.pincode || !formData.pincode.trim()) {
-        toast.error("Pincode is required");
+        newErrors.pincode = "Pincode is required";
+        hasError = true;
+      } else if (formData.pincode.length !== 6) {
+        newErrors.pincode = "Pincode must be 6 digits";
+        hasError = true;
+      }
+
+      if (hasError) {
+        setErrors(newErrors);
         return;
       }
+      setErrors({});
     } else if (currentStep === 4) {
       const newErrors: Record<string, string> = {};
       let hasError = false;
@@ -561,7 +608,8 @@ const CaravanOnboarding = () => {
       const hasPerDay = formData.perDayCharge && !isNaN(Number(formData.perDayCharge)) && Number(formData.perDayCharge) > 0;
 
       if (!hasPerKm && !hasPerDay) {
-        toast.error("At least one price (Per KM or Per Day) is required");
+        newErrors.pricing = "At least one price (Per KM or Per Day) is required";
+        setErrors(newErrors);
         return;
       }
 
@@ -657,7 +705,29 @@ const CaravanOnboarding = () => {
         newErrors.brandName = "Brand name is required";
         hasError = true;
       }
-
+      if (!formData.legalCompanyName || !formData.legalCompanyName.trim()) {
+        newErrors.legalCompanyName = "Legal company name is required";
+        hasError = true;
+      }
+      if (!formData.businessAddress || !formData.businessAddress.trim()) {
+        newErrors.businessAddress = "Business address is required";
+        hasError = true;
+      }
+      if (!formData.businessState || !formData.businessState.trim()) {
+        newErrors.businessState = "State is required";
+        hasError = true;
+      }
+      if (!formData.businessCity || !formData.businessCity.trim()) {
+        newErrors.businessCity = "City is required";
+        hasError = true;
+      }
+      if (!formData.businessPincode || !formData.businessPincode.trim()) {
+        newErrors.businessPincode = "Pincode is required";
+        hasError = true;
+      } else if (formData.businessPincode.length !== 6) {
+        newErrors.businessPincode = "Pincode must be 6 digits";
+        hasError = true;
+      }
       if (!formData.businessPhoneNumber || !formData.businessPhoneNumber.trim() || formData.businessPhoneNumber.length !== 10) {
         newErrors.businessPhoneNumber = "Valid business phone number is required";
         hasError = true;
@@ -701,10 +771,6 @@ const CaravanOnboarding = () => {
       }
       if (!formData.dateOfBirth) {
         newErrors.dateOfBirth = "Date of Birth is required";
-        hasError = true;
-      }
-      if (!formData.maritalStatus) {
-        newErrors.maritalStatus = "Marital Status is required";
         hasError = true;
       }
       if (!formData.idProof) {
@@ -841,6 +907,8 @@ const CaravanOnboarding = () => {
         sessionStorage.setItem('onboardingId', result.id);
         sessionStorage.setItem('onboardingType', 'caravan');
         sessionStorage.setItem('id', result.id);
+        sessionStorage.removeItem("caravan_onboarding_step");
+        sessionStorage.removeItem(FORM_STORAGE_KEY);
         updateUserType('vendor');
         toast.success("Caravan onboarding saved successfully!");
         navigate("/onboarding/selfie-verification");
@@ -1136,6 +1204,7 @@ const CaravanOnboarding = () => {
       gstNumber: "gstNumber",
       businessEmail: "businessEmailId",
       businessPhone: "businessPhoneNumber",
+      businessAddress: "businessAddress",
       pincode: "businessPincode",
     };
     const formField = fieldMap[field] || field;
@@ -1144,7 +1213,10 @@ const CaravanOnboarding = () => {
     // Map error keys back
     const errorKeyMap: Record<string, string> = {
       brandName: "brandName",
+      companyName: "legalCompanyName",
+      businessAddress: "businessAddress",
       businessPhone: "businessPhoneNumber",
+      pincode: "businessPincode",
     };
     const errorField = errorKeyMap[field];
     if (errorField && errors[errorField]) {
@@ -1154,6 +1226,11 @@ const CaravanOnboarding = () => {
 
   const businessErrors: Record<string, string> = {};
   if (errors.brandName) businessErrors.brandName = errors.brandName;
+  if (errors.legalCompanyName) businessErrors.companyName = errors.legalCompanyName;
+  if (errors.businessAddress) businessErrors.businessAddress = errors.businessAddress;
+  if (errors.businessState) businessErrors.state = errors.businessState;
+  if (errors.businessCity) businessErrors.city = errors.businessCity;
+  if (errors.businessPincode) businessErrors.businessPincode = errors.businessPincode;
   if (errors.businessPhoneNumber) businessErrors.businessPhone = errors.businessPhoneNumber;
 
   // --- Personal details mapping for shared PersonalDetailsStep ---
@@ -1281,12 +1358,14 @@ const CaravanOnboarding = () => {
             pincode={formData.pincode}
             locationData={data}
             mapSrc={mapSrc}
+            errors={errors}
             onAdjustCapacity={adjustCapacity}
             onAddressChange={(value) => setFormData((prev) => ({ ...prev, address: value }))}
             onLocalityChange={(value) => setFormData((prev) => ({ ...prev, locality: value, state: "", city: "" }))}
             onStateChange={(value) => setFormData((prev) => ({ ...prev, state: value, city: "" }))}
             onCityChange={(value) => setFormData((prev) => ({ ...prev, city: value }))}
             onPincodeChange={(value) => setFormData((prev) => ({ ...prev, pincode: value }))}
+            clearError={clearError}
           />
         );
       case 4:
@@ -1326,6 +1405,7 @@ const CaravanOnboarding = () => {
               gstNumber: formData.gstNumber,
               businessEmail: formData.businessEmailId,
               businessPhone: formData.businessPhoneNumber,
+              businessAddress: formData.businessAddress,
               pincode: formData.businessPincode,
             }}
             errors={businessErrors}
@@ -1339,8 +1419,8 @@ const CaravanOnboarding = () => {
             selectedState={formData.businessState}
             selectedCity={formData.businessCity}
             countryName={formData.businessLocality}
-            onStateChange={(val) => setFormData((prev) => ({ ...prev, businessState: val, businessCity: "" }))}
-            onCityChange={(val) => setFormData((prev) => ({ ...prev, businessCity: val }))}
+            onStateChange={(val) => { setFormData((prev) => ({ ...prev, businessState: val, businessCity: "" })); setErrors((prev) => ({ ...prev, businessState: "", businessCity: "" })); }}
+            onCityChange={(val) => { setFormData((prev) => ({ ...prev, businessCity: val })); setErrors((prev) => ({ ...prev, businessCity: "" })); }}
             mapSrc={mapSrcbusiness}
           />
         );

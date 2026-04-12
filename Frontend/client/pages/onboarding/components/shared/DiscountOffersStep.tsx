@@ -1,6 +1,17 @@
 import React from "react";
-import { IndianRupee, Percent } from "lucide-react";
+import { IndianRupee, Percent, Tag } from "lucide-react";
 import { type DiscountOffer } from "./types";
+
+// ─── Brand tokens ─────────────────────────────────────────────────────────────
+const TEAL      = "#07e4e4";
+const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
+const BLACK     = "#131313";
+const GRAY_500  = "#6b6b6b";
+const GRAY_400  = "#9a9a9a";
+const GRAY_200  = "#e4e4e4";
+const WHITE     = "#ffffff";
+const SURFACE   = "#F7F8FA";
+const ERROR     = "#ef4444";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
@@ -17,73 +28,105 @@ interface DiscountOffersStepProps {
   weeklyLabel?: string;
 }
 
-// Per-offer visual config
 const OFFER_CONFIG: Record<
   OfferKey,
-  { emoji: string; label: string; description: string; color: string; bg: string; darkBg: string }
+  { emoji: string; label: string; description: string; color: string; bg: string }
 > = {
   firstUser: {
     emoji: "🎖️",
     label: "First 5 Guests",
     description: "Welcome discount for your very first 5 bookings",
     color: "#8b5cf6",
-    bg: "#f5f3ff",
-    darkBg: "rgba(139,92,246,0.08)",
+    bg: "rgba(139,92,246,0.06)",
   },
   festival: {
     emoji: "🎉",
     label: "Festival Offer",
     description: "Seasonal promotions tied to holidays & festivals",
     color: "#f59e0b",
-    bg: "#fffbeb",
-    darkBg: "rgba(245,158,11,0.08)",
+    bg: "rgba(245,158,11,0.06)",
   },
   weekly: {
     emoji: "📅",
     label: "Weekly / Monthly",
     description: "Savings for guests who stay longer",
     color: "#10b981",
-    bg: "#f0fdf4",
-    darkBg: "rgba(16,185,129,0.08)",
+    bg: "rgba(16,185,129,0.06)",
   },
   special: {
     emoji: "⭐",
     label: "Special Offer",
     description: "Custom promotion for any occasion",
-    color: "#ef4444",
-    bg: "#fef2f2",
-    darkBg: "rgba(239,68,68,0.08)",
+    color: "#f43f5e",
+    bg: "rgba(244,63,94,0.06)",
   },
 };
 
-// Smooth iOS-style toggle
-const Toggle: React.FC<{ enabled: boolean; onToggle: () => void; color: string }> = ({
+/* ─── iOS Toggle ──────────────────────────────────────────────────────────── */
+const Toggle = ({
   enabled,
   onToggle,
   color,
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  color: string;
 }) => (
   <button
     type="button"
     onClick={onToggle}
-    className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none"
-    style={{ backgroundColor: enabled ? color : "#D1D5DB" }}
-    aria-checked={enabled}
     role="switch"
+    aria-checked={enabled}
+    style={{
+      position: "relative",
+      width: 44,
+      height: 24,
+      borderRadius: 99,
+      backgroundColor: enabled ? color : GRAY_200,
+      border: "none",
+      cursor: "pointer",
+      flexShrink: 0,
+      transition: "background-color 0.25s",
+      boxShadow: enabled ? `0 0 0 3px ${color}22` : "none",
+    }}
   >
     <span
-      className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300"
-      style={{ transform: enabled ? "translateX(20px)" : "translateX(0)" }}
+      style={{
+        position: "absolute",
+        top: 3,
+        left: 3,
+        width: 18,
+        height: 18,
+        borderRadius: "50%",
+        backgroundColor: WHITE,
+        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
+        transform: enabled ? "translateX(20px)" : "translateX(0)",
+        transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1)",
+        display: "block",
+      }}
     />
   </button>
 );
 
-// Segmented control for discount type
-const TypeSegment: React.FC<{
+/* ─── Segmented type selector ─────────────────────────────────────────────── */
+const TypeSegment = ({
+  value,
+  onChange,
+  color,
+}: {
   value: string;
   onChange: (v: string) => void;
   color: string;
-}> = ({ value, onChange, color }) => (
-  <div className="flex rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+}) => (
+  <div
+    style={{
+      display: "flex",
+      borderRadius: 11,
+      backgroundColor: SURFACE,
+      padding: 3,
+      gap: 3,
+    }}
+  >
     {[
       { label: "Percentage", val: "percentage", Icon: Percent },
       { label: "Fixed Amount", val: "fixed", Icon: IndianRupee },
@@ -94,14 +137,26 @@ const TypeSegment: React.FC<{
           key={val}
           type="button"
           onClick={() => onChange(val)}
-          className="flex-1 flex items-center justify-center gap-1.5 h-9 px-3 text-xs font-semibold transition-all duration-150"
-          style={
-            active
-              ? { backgroundColor: color, color: "#fff" }
-              : { backgroundColor: "transparent", color: "#6b7280" }
-          }
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            height: 36,
+            borderRadius: 9,
+            border: `1.5px solid ${active ? `${color}30` : "transparent"}`,
+            backgroundColor: active ? WHITE : "transparent",
+            color: active ? color : GRAY_400,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+            transition: "background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s",
+            boxShadow: active ? "0 1px 4px rgba(0,0,0,0.08)" : "0 1px 4px transparent",
+            letterSpacing: "0.01em",
+          }}
         >
-          <Icon size={11} />
+          <Icon size={12} />
           {label}
         </button>
       );
@@ -109,18 +164,120 @@ const TypeSegment: React.FC<{
   </div>
 );
 
-const OfferCard: React.FC<{
+/* ─── Amount input ────────────────────────────────────────────────────────── */
+const AmountInput = ({
+  value,
+  onChange,
+  placeholder,
+  isPercent,
+  color,
+  error,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  isPercent?: boolean;
+  color: string;
+  error?: boolean;
+}) => {
+  const [focused, setFocused] = React.useState(false);
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        borderRadius: 12,
+        overflow: "hidden",
+        border: `1.5px solid ${error ? "#fca5a5" : focused ? color : "transparent"}`,
+        backgroundColor: error ? "rgba(239,68,68,0.04)" : focused ? WHITE : SURFACE,
+        boxShadow: focused && !error
+          ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
+          : error
+          ? "0 0 0 3px rgba(239,68,68,0.1)"
+          : "none",
+        transition: "all 0.15s",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          padding: "0 10px",
+          height: 46,
+          borderRight: `1.5px solid ${focused ? `${color}30` : GRAY_200}`,
+          backgroundColor: focused ? `${color}12` : SURFACE,
+          flexShrink: 0,
+          transition: "all 0.15s",
+        }}
+      >
+        {isPercent
+          ? <Percent size={12} color={focused ? color : GRAY_400} />
+          : <IndianRupee size={12} color={focused ? color : GRAY_400} />
+        }
+      </div>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder={placeholder}
+        style={{
+          flex: 1,
+          height: 46,
+          padding: "0 12px",
+          fontSize: 15,
+          fontWeight: 600,
+          color: value ? BLACK : GRAY_400,
+          backgroundColor: "transparent",
+          border: "none",
+          outline: "none",
+          letterSpacing: "-0.01em",
+          minWidth: 0,
+        }}
+      />
+      {isPercent && (
+        <span style={{ paddingRight: 12, fontSize: 12, color: GRAY_400, fontWeight: 600, opacity: value ? 1 : 0, transition: "opacity 0.15s" }}>%</span>
+      )}
+    </div>
+  );
+};
+
+/* ─── Error message ───────────────────────────────────────────────────────── */
+const ErrorMsg = ({ message }: { message?: string }) =>
+  message ? (
+    <div className="flex items-center gap-1.5 mt-0.5">
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+        <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
+        <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      <p style={{ fontSize: 11, color: ERROR }}>{message}</p>
+    </div>
+  ) : null;
+
+/* ─── Offer card ──────────────────────────────────────────────────────────── */
+const OfferCard = ({
+  offerKey,
+  customLabel,
+  offer,
+  onToggle,
+  onOfferChange,
+  errors,
+}: {
   offerKey: OfferKey;
   customLabel?: string;
   offer: DiscountOffer;
   onToggle: () => void;
   onOfferChange: (field: keyof DiscountOffer, value: string) => void;
   errors: Record<string, string>;
-}> = ({ offerKey, customLabel, offer, onToggle, onOfferChange, errors }) => {
+}) => {
   const cfg = OFFER_CONFIG[offerKey];
   const label = customLabel ?? cfg.label;
 
-  // Savings hint
+  const valueError = errors[`${offerKey}Value`] ?? (offerKey === "firstUser" ? errors.discountPercentage : undefined);
+  const finalPriceError = errors[`${offerKey}FinalPrice`] ?? (offerKey === "firstUser" ? errors.finalPrice : undefined);
+
   const savingsHint =
     offer.enabled && offer.value
       ? offer.type === "percentage"
@@ -128,59 +285,99 @@ const OfferCard: React.FC<{
         : `Guests save ₹${offer.value}`
       : null;
 
-  const valueError = errors[`${offerKey}Value`] ?? (offerKey === "firstUser" ? errors.discountPercentage : undefined);
-  const finalPriceError = errors[`${offerKey}FinalPrice`] ?? (offerKey === "firstUser" ? errors.finalPrice : undefined);
-
   return (
     <div
-      className="rounded-2xl border-2 transition-all duration-300 overflow-hidden"
       style={{
-        borderColor: offer.enabled ? cfg.color : "transparent",
-        boxShadow: offer.enabled ? `0 0 0 1px ${cfg.color}20` : undefined,
-        backgroundColor: offer.enabled ? cfg.bg : undefined,
-        // dark mode handled via class below
+        backgroundColor: WHITE,
+        border: `1.5px solid ${offer.enabled ? cfg.color : "#EBEBEB"}`,
+        borderRadius: 20,
+        overflow: "hidden",
+        boxShadow: offer.enabled
+          ? `0 0 0 3px ${cfg.color}18, 0 2px 12px rgba(0,0,0,0.04)`
+          : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
+        transition: "all 0.2s",
       }}
     >
-      {/* Inner wrapper to allow bg override in dark */}
-      <div className={`${offer.enabled ? "dark:bg-transparent" : "bg-white dark:bg-gray-800"} rounded-2xl`}
-        style={{ backgroundColor: offer.enabled ? cfg.bg : undefined }}
+      {/* Header row */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "16px 20px",
+          backgroundColor: offer.enabled ? cfg.bg : WHITE,
+          transition: "background-color 0.2s",
+        }}
       >
-        {/* Card header row */}
-        <div className="flex items-center justify-between p-5">
-          <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-              style={{ backgroundColor: offer.enabled ? `${cfg.color}20` : "#f3f4f6" }}
-            >
-              {cfg.emoji}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-white">{label}</p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{cfg.description}</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 13,
+              backgroundColor: offer.enabled ? `${cfg.color}18` : SURFACE,
+              border: `1.5px solid ${offer.enabled ? `${cfg.color}30` : GRAY_200}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 20,
+              flexShrink: 0,
+              transition: "all 0.2s",
+            }}
+          >
+            {cfg.emoji}
           </div>
-
-          <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-            {savingsHint && (
-              <span
-                className="hidden sm:inline text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ backgroundColor: `${cfg.color}18`, color: cfg.color }}
-              >
-                {savingsHint}
-              </span>
-            )}
-            <Toggle enabled={offer.enabled} onToggle={onToggle} color={cfg.color} />
+          <div>
+            <p style={{ fontSize: 13.5, fontWeight: 700, color: offer.enabled ? cfg.color : BLACK, letterSpacing: "-0.01em", transition: "color 0.2s" }}>
+              {label}
+            </p>
+            <p style={{ fontSize: 11.5, color: GRAY_500, marginTop: 2 }}>{cfg.description}</p>
           </div>
         </div>
 
-        {/* Expanded form */}
-        {offer.enabled && (
-          <div className="px-5 pb-5 flex flex-col gap-4">
-            <div className="w-full h-px" style={{ backgroundColor: `${cfg.color}30` }} />
+        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+          {savingsHint && (
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                color: cfg.color,
+                backgroundColor: `${cfg.color}14`,
+                border: `1px solid ${cfg.color}30`,
+                borderRadius: 99,
+                padding: "3px 10px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {savingsHint}
+            </span>
+          )}
+          <Toggle enabled={offer.enabled} onToggle={onToggle} color={cfg.color} />
+        </div>
+      </div>
 
-            {/* Discount Type segmented control */}
+      {/* Expanded form */}
+      {offer.enabled && (
+        <div
+          style={{
+            padding: "0 20px 20px",
+            backgroundColor: offer.enabled ? cfg.bg : WHITE,
+          }}
+        >
+          <div style={{ height: 1, backgroundColor: `${cfg.color}25`, marginBottom: 18 }} />
+
+          <div className="flex flex-col gap-4">
+            {/* Discount type */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <label
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: GRAY_500,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                }}
+              >
                 Discount Type
               </label>
               <TypeSegment
@@ -190,94 +387,84 @@ const OfferCard: React.FC<{
               />
             </div>
 
-            {/* Value + Final Price side by side */}
+            {/* Value + Final Price */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Discount Value */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: valueError ? ERROR : GRAY_500,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
                   {offer.type === "percentage" ? "Percentage" : "Fixed Amount"}
                 </label>
-                <div
-                  className={`flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-offset-1 transition-all ${
-                    valueError ? "border-red-400" : "border-gray-200 dark:border-gray-600"
-                  }`}
-                  style={{ "--tw-ring-color": `${cfg.color}40` } as React.CSSProperties}
-                >
-                  <div className="flex items-center px-2.5 h-10 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex-shrink-0">
-                    {offer.type === "percentage" ? (
-                      <Percent size={12} className="text-gray-400" />
-                    ) : (
-                      <IndianRupee size={12} className="text-gray-400" />
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={offer.value}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/[^0-9.]/g, "");
-                      if (offer.type === "percentage" && Number(v) > 99) return;
-                      onOfferChange("value", v);
-                    }}
-                    placeholder={offer.type === "percentage" ? "e.g. 20" : "e.g. 500"}
-                    className="flex-1 h-10 px-2.5 text-sm bg-transparent text-gray-800 dark:text-white focus:outline-none min-w-0"
-                  />
-                  {offer.type === "percentage" && (
-                    <span className="pr-3 text-xs text-gray-400">%</span>
-                  )}
-                </div>
-                {valueError && (
-                  <p className="text-xs text-red-500">{valueError}</p>
-                )}
+                <AmountInput
+                  value={offer.value}
+                  onChange={(v) => {
+                    if (offer.type === "percentage" && Number(v) > 99) return;
+                    onOfferChange("value", v);
+                  }}
+                  placeholder={offer.type === "percentage" ? "e.g. 20" : "e.g. 500"}
+                  isPercent={offer.type === "percentage"}
+                  color={cfg.color}
+                  error={!!valueError}
+                />
+                <ErrorMsg message={valueError} />
               </div>
 
-              {/* Final Price */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                <label
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: finalPriceError ? ERROR : GRAY_500,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
                   Final Price
                 </label>
-                <div
-                  className={`flex items-center border rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-offset-1 transition-all ${
-                    finalPriceError ? "border-red-400" : "border-gray-200 dark:border-gray-600"
-                  }`}
-                  style={{ "--tw-ring-color": `${cfg.color}40` } as React.CSSProperties}
-                >
-                  <div className="flex items-center gap-0.5 px-2.5 h-10 border-r border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 flex-shrink-0">
-                    <IndianRupee size={12} className="text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={offer.finalPrice}
-                    onChange={(e) => onOfferChange("finalPrice", e.target.value.replace(/[^0-9.]/g, ""))}
-                    placeholder="e.g. 1200"
-                    className="flex-1 h-10 px-2.5 text-sm bg-transparent text-gray-800 dark:text-white focus:outline-none min-w-0"
-                  />
-                </div>
-                {finalPriceError && (
-                  <p className="text-xs text-red-500">{finalPriceError}</p>
-                )}
+                <AmountInput
+                  value={offer.finalPrice}
+                  onChange={(v) => onOfferChange("finalPrice", v)}
+                  placeholder="e.g. 1200"
+                  color={cfg.color}
+                  error={!!finalPriceError}
+                />
+                <ErrorMsg message={finalPriceError} />
               </div>
             </div>
 
-            {/* Mobile savings hint */}
-            {savingsHint && (
+            {/* Final price hint */}
+            {offer.value && offer.finalPrice && (
               <div
-                className="sm:hidden flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-                style={{ backgroundColor: `${cfg.color}12`, color: cfg.color }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "10px 14px",
+                  borderRadius: 11,
+                  backgroundColor: `${cfg.color}10`,
+                  border: `1px solid ${cfg.color}25`,
+                }}
               >
-                <span>✓</span>
-                <span>{savingsHint}</span>
-                {offer.finalPrice && <span className="ml-auto opacity-70">Final: ₹{offer.finalPrice}</span>}
+                <span style={{ fontSize: 16 }}>✓</span>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: cfg.color }}>
+                  {savingsHint} · Final price ₹{offer.finalPrice}
+                </span>
               </div>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
+/* ─── Main component ──────────────────────────────────────────────────────── */
 const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   offers,
   onToggle,
@@ -295,27 +482,64 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   ];
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-3xl">
-      {/* Header */}
-      <div className="text-center space-y-2.5">
-        <h1 className="text-2xl lg:text-[32px] font-bold text-black dark:text-white leading-tight">
+    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+
+      {/* ── Header ── */}
+      <div className="text-center space-y-2 pb-1">
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
+            Promotions
+          </span>
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+        </div>
+        <h1
+          style={{
+            fontSize: "clamp(22px, 3.5vw, 30px)",
+            fontWeight: 800,
+            color: BLACK,
+            letterSpacing: "-0.03em",
+            lineHeight: 1.15,
+          }}
+        >
           Discount Offers
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Set up promotional offers to attract more bookings
+        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+          Set up promotional offers to attract more bookings. All optional.
         </p>
+
         {activeCount > 0 && (
-          <span
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-            style={{ backgroundColor: "var(--th-accent)", color: "var(--th-accent-fg)" }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" />
-            {activeCount} offer{activeCount > 1 ? "s" : ""} active
-          </span>
+          <div className="flex justify-center mt-1">
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                color: TEAL,
+                backgroundColor: TEAL_BG,
+                border: "1px solid rgba(7,228,228,0.3)",
+                borderRadius: 99,
+                padding: "4px 14px",
+              }}
+            >
+              <Tag size={11} strokeWidth={2.5} />
+              {activeCount} offer{activeCount > 1 ? "s" : ""} active
+            </span>
+          </div>
         )}
       </div>
 
-      {/* Offer cards */}
+      {/* ── Offer cards ── */}
       <div className="w-full flex flex-col gap-3">
         {offerEntries.map(({ offerKey, customLabel }) => (
           <OfferCard
@@ -330,9 +554,8 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
         ))}
       </div>
 
-      {/* Bottom tip */}
       {activeCount === 0 && (
-        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+        <p style={{ fontSize: 12, color: GRAY_400, textAlign: "center" }}>
           Toggle any offer above to enable it — discounts help your listing get discovered faster.
         </p>
       )}

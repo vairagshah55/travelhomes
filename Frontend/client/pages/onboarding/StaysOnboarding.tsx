@@ -248,24 +248,43 @@ const StaysOnboarding = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const [currentStep, setCurrentStep] = useState(0);
+  const STEP_STORAGE_KEY = "stay_onboarding_step";
+  const FORM_STORAGE_KEY = "stay_onboarding_form";
+
+  // ─── Restore cached form snapshot (sessionStorage) ─────────────────────────
+  const _cached = (() => {
+    try {
+      const raw = sessionStorage.getItem(FORM_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  })();
+
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = sessionStorage.getItem(STEP_STORAGE_KEY);
+    return saved ? parseInt(saved, 10) : 0;
+  });
+
+  useEffect(() => {
+    sessionStorage.setItem(STEP_STORAGE_KEY, String(currentStep));
+  }, [currentStep]);
+
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
-  const [selectedProperties, setSelectedProperties] = useState<string[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [stayType, setStayType] = useState<"entire" | "individual">("entire");
+  const [selectedProperties, setSelectedProperties] = useState<string[]>(_cached?.selectedProperties ?? []);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(_cached?.selectedCategories ?? []);
+  const [stayType, setStayType] = useState<"entire" | "individual">(_cached?.stayType ?? "entire");
 
   // Rules and regulations state
-  const [entireStayRules, setEntireStayRules] = useState<string[]>([""]);
-  const [roomRules, setRoomRules] = useState<Record<string, string[]>>({});
-  const [optionalRules, setOptionalRules] = useState<string[]>([""]);
-  const [guestCapacity, setGuestCapacity] = useState(0);
-  const [numberOfRooms, setNumberOfRooms] = useState(1);
-  const [numberOfBeds, setNumberOfBeds] = useState(0);
-  const [numberOfBathrooms, setNumberOfBathrooms] = useState(0);
-  const [regularPrice, setRegularPrice] = useState("");
-  const [rooms, setRooms] = useState<Room[]>([
+  const [entireStayRules, setEntireStayRules] = useState<string[]>(_cached?.entireStayRules ?? [""]);
+  const [roomRules, setRoomRules] = useState<Record<string, string[]>>(_cached?.roomRules ?? {});
+  const [optionalRules, setOptionalRules] = useState<string[]>(_cached?.optionalRules ?? [""]);
+  const [guestCapacity, setGuestCapacity] = useState(_cached?.guestCapacity ?? 0);
+  const [numberOfRooms, setNumberOfRooms] = useState(_cached?.numberOfRooms ?? 1);
+  const [numberOfBeds, setNumberOfBeds] = useState(_cached?.numberOfBeds ?? 0);
+  const [numberOfBathrooms, setNumberOfBathrooms] = useState(_cached?.numberOfBathrooms ?? 0);
+  const [regularPrice, setRegularPrice] = useState(_cached?.regularPrice ?? "");
+  const [rooms, setRooms] = useState<Room[]>(_cached?.rooms ?? [
     {
       id: "1",
       name: "",
@@ -276,13 +295,12 @@ const StaysOnboarding = () => {
       bathrooms: 1,
       price: 5934,
     },
-
   ]);
   const [expandedRoom, setExpandedRoom] = useState<string>("1");
 
   // Features state
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
-  const [customFeatures, setCustomFeatures] = useState<string[]>([]);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(_cached?.selectedFeatures ?? []);
+  const [customFeatures, setCustomFeatures] = useState<string[]>(_cached?.customFeatures ?? []);
   const [showCustomFeaturesInput, setShowCustomFeaturesInput] = useState(false);
   const [customFeatureInput, setCustomFeatureInput] = useState("");
   const [adminFeatures, setAdminFeatures] = useState<any[]>([]);
@@ -290,45 +308,77 @@ const StaysOnboarding = () => {
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, any[]>>({});
 
   // Discount state
-  const [firstUserDiscount, setFirstUserDiscount] = useState(true);
-  const [discountType, setDiscountType] = useState("percentage");
-  const [discountPercentage, setDiscountPercentage] = useState("");
-  const [finalPrice, setFinalPrice] = useState("");
-  const [festivalOffers, setFestivalOffers] = useState(false);
-  const [weeklyOffers, setWeeklyOffers] = useState(false);
-  const [specialOffers, setSpecialOffers] = useState(false);
+  const [firstUserDiscount, setFirstUserDiscount] = useState(_cached?.firstUserDiscount ?? true);
+  const [discountType, setDiscountType] = useState(_cached?.discountType ?? "percentage");
+  const [discountPercentage, setDiscountPercentage] = useState(_cached?.discountPercentage ?? "");
+  const [finalPrice, setFinalPrice] = useState(_cached?.finalPrice ?? "");
+  const [festivalOffers, setFestivalOffers] = useState(_cached?.festivalOffers ?? false);
+  const [weeklyOffers, setWeeklyOffers] = useState(_cached?.weeklyOffers ?? false);
+  const [specialOffers, setSpecialOffers] = useState(_cached?.specialOffers ?? false);
 
   // Business Details state
-  const [brandName, setBrandName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [gstNumber, setGstNumber] = useState("");
-  const [businessEmail, setBusinessEmail] = useState("");
-  const [businessPhone, setBusinessPhone] = useState("");
-  const [locality, setLocality] = useState("India");
-  const [state, setState] = useState("");
-  const [city, setCity] = useState("");
-  const [businessPincode, setBusinessPincode] = useState("");
-  const [personalPincode, setPersonalPincode] = useState("");
+  const [brandName, setBrandName] = useState(_cached?.brandName ?? "");
+  const [companyName, setCompanyName] = useState(_cached?.companyName ?? "");
+  const [gstNumber, setGstNumber] = useState(_cached?.gstNumber ?? "");
+  const [businessEmail, setBusinessEmail] = useState(_cached?.businessEmail ?? "");
+  const [businessPhone, setBusinessPhone] = useState(_cached?.businessPhone ?? "");
+  const [locality, setLocality] = useState(_cached?.locality ?? "India");
+  const [state, setState] = useState(_cached?.state ?? "");
+  const [city, setCity] = useState(_cached?.city ?? "");
+  const [businessPincode, setBusinessPincode] = useState(_cached?.businessPincode ?? "");
+  const [personalPincode, setPersonalPincode] = useState(_cached?.personalPincode ?? "");
 
   // Personal Details state
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [personalCountry, setPersonalCountry] = useState("India");
-  const [personalState, setPersonalState] = useState("");
-  const [personalCity, setPersonalCity] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [maritalStatus, setMaritalStatus] = useState("");
-  const [idProof, setIdProof] = useState("");
-  const [idProofImage, setIdProofImage] = useState<string | null>(null);
-  const [images, setImages] = useState<(string | null)[]>(Array(5).fill(null));
-  const [entireStayImages, setEntireStayImages] = useState<string[]>([]);
-  const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState(_cached?.firstName ?? "");
+  const [lastName, setLastName] = useState(_cached?.lastName ?? "");
+  const [personalCountry, setPersonalCountry] = useState(_cached?.personalCountry ?? "India");
+  const [personalState, setPersonalState] = useState(_cached?.personalState ?? "");
+  const [personalCity, setPersonalCity] = useState(_cached?.personalCity ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(_cached?.dateOfBirth ?? "");
+  const [maritalStatus, setMaritalStatus] = useState(_cached?.maritalStatus ?? "");
+  const [idProof, setIdProof] = useState(_cached?.idProof ?? "");
+  const [idProofImage, setIdProofImage] = useState<string | null>(_cached?.idProofImage ?? null);
+  const [images, setImages] = useState<(string | null)[]>(_cached?.images ?? Array(5).fill(null));
+  const [entireStayImages, setEntireStayImages] = useState<string[]>(_cached?.entireStayImages ?? []);
+  const [coverImage, setCoverImage] = useState<string | null>(_cached?.coverImage ?? null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selected, setSelected] = useState<CountryOption | null>(
     countries[100],
   );
   const [open, setOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // ─── Persist form data to sessionStorage ───────────────────────────────────
+  useEffect(() => {
+    try {
+      const snapshot = {
+        selectedProperties, selectedCategories, stayType,
+        entireStayRules, roomRules, optionalRules,
+        guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms, regularPrice,
+        rooms, selectedFeatures, customFeatures,
+        firstUserDiscount, discountType, discountPercentage, finalPrice,
+        festivalOffers, weeklyOffers, specialOffers,
+        brandName, companyName, gstNumber, businessEmail, businessPhone,
+        locality, state, city, businessPincode, personalPincode,
+        firstName, lastName, personalCountry, personalState, personalCity,
+        dateOfBirth, maritalStatus, idProof, idProofImage,
+        images: images.filter(Boolean), entireStayImages, coverImage,
+      };
+      sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(snapshot));
+    } catch { /* quota exceeded — ignore */ }
+  }, [
+    selectedProperties, selectedCategories, stayType,
+    entireStayRules, roomRules, optionalRules,
+    guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms, regularPrice,
+    rooms, selectedFeatures, customFeatures,
+    firstUserDiscount, discountType, discountPercentage, finalPrice,
+    festivalOffers, weeklyOffers, specialOffers,
+    brandName, companyName, gstNumber, businessEmail, businessPhone,
+    locality, state, city, businessPincode, personalPincode,
+    firstName, lastName, personalCountry, personalState, personalCity,
+    dateOfBirth, maritalStatus, idProof, idProofImage,
+    images, entireStayImages, coverImage,
+  ]);
 
   const { userDetails, updateUserDetails } = useUserDetails();
 
@@ -352,10 +402,10 @@ const StaysOnboarding = () => {
   const [data, setData] = useState([]);
   const [countryOption, setCoutryOption] = useState("India");
   const [countryOption2, setCoutryOption2] = useState("India");
-  const [stateOption, setStateOption] = useState("");
-  const [stateOption2, setStateOption2] = useState("");
-  const [cityOption, setCityOptions] = useState("");
-  const [cityOption2, setCityOptions2] = useState("");
+  const [stateOption, setStateOption] = useState(_cached?.personalState ?? "");
+  const [stateOption2, setStateOption2] = useState(_cached?.state ?? "");
+  const [cityOption, setCityOptions] = useState(_cached?.personalCity ?? "");
+  const [cityOption2, setCityOptions2] = useState(_cached?.city ?? "");
 
  useEffect(() => {
   setState(stateOption2);
@@ -485,7 +535,7 @@ useEffect(() => {
           console.log('firstUserDiscount:', doc.firstUserDiscount);
           setFirstUserDiscount(doc.firstUserDiscount ?? true);
           console.log('discountType:', doc.discountType);
-          setDiscountType(doc.discountType || "");
+          setDiscountType(doc.discountType || "percentage");
           console.log('discountPercentage:', doc.discountPercentage);
           setDiscountPercentage(String(doc.discountPercentage || ""));
           console.log('finalPrice:', doc.finalPrice);
@@ -546,6 +596,25 @@ useEffect(() => {
           }
 
           setTermsAccepted(false);
+
+          // Restore step: sessionStorage takes priority, otherwise compute from data
+          const savedStep = sessionStorage.getItem(STEP_STORAGE_KEY);
+          if (savedStep && parseInt(savedStep, 10) > 0) {
+            setCurrentStep(parseInt(savedStep, 10));
+          } else {
+            // Compute the furthest completed step based on existing data
+            let restoredStep = 0;
+            if (doc.selectedProperties && doc.selectedProperties.length > 0) restoredStep = 1;
+            if (doc.selectedCategories && doc.selectedCategories.length > 0) restoredStep = 2;
+            if (doc.stayType === "entire"
+              ? (doc.guestCapacity > 0 && doc.regularPrice)
+              : (doc.rooms && doc.rooms.length > 0 && doc.rooms[0]?.name)) restoredStep = 3;
+            if (doc.selectedFeatures && doc.selectedFeatures.length > 0) restoredStep = 4;
+            // Steps 5-7 (discount, business, personal) — check if business name exists
+            if (doc.brandName) restoredStep = Math.max(restoredStep, 5);
+            if (doc.firstName) restoredStep = Math.max(restoredStep, 6);
+            setCurrentStep(restoredStep);
+          }
         } else if (userDetails && user?.userType !== 'vendor') {
            // Auto-fill from user details if no draft exists and user is not a vendor (first time)
            setFirstName(userDetails.firstName || "");
@@ -772,9 +841,6 @@ useEffect(() => {
       if (!dateOfBirth) {
         newErrors.dateOfBirth = "Date of birth is required";
       }
-      if (!maritalStatus) {
-        newErrors.maritalStatus = "Marital status is required";
-      }
       if (!idProof) {
         newErrors.idProof = "ID proof type is required";
       }
@@ -910,6 +976,8 @@ useEffect(() => {
         sessionStorage.setItem('onboardingId', result.id);
         sessionStorage.setItem('onboardingType', 'stay');
         sessionStorage.setItem('id', result.id);
+        sessionStorage.removeItem(STEP_STORAGE_KEY);
+        sessionStorage.removeItem(FORM_STORAGE_KEY);
         updateUserType('vendor');
         toast.success('Stay onboarding saved successfully!');
         navigate("/onboarding/selfie-verification");
