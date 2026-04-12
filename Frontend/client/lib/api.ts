@@ -219,11 +219,12 @@ export const offersApi = {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   }),
-  setStatus: (id: string, status: 'pending' | 'approved' | 'cancelled', token?: string) => request<ApiItemResponse<OfferDTO>>(`/api/offers/${id}/status`, { 
-    method: 'PATCH', 
+  setStatus: (id: string, status: 'pending' | 'approved' | 'cancelled', token?: string) => request<ApiItemResponse<OfferDTO>>(`/api/offers/${id}/status`, {
+    method: 'PATCH',
     body: JSON.stringify({ status }),
-    headers: token ? { Authorization: `Bearer ${token}` } : {} 
+    headers: token ? { Authorization: `Bearer ${token}` } : {}
   }),
+  trackClick: (id: string) => request<{ success: boolean }>(`/api/offers/${id}/click`, { method: 'POST' }).catch(() => {}),
 };
 
 // Vendor Analytics API
@@ -232,7 +233,7 @@ export interface VendorAnalyticsCounts {
   upcoming: number;
   past: number;
   cancelled: number;
-  metrics?: { impressions: number; clicks: number };
+  metrics?: { impressions: number; clicks: number; visitors: number };
   payments?: { received: number; pending: number };
   properties?: { approved: number; pending: number };
 }

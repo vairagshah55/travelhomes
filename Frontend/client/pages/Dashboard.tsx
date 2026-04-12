@@ -316,10 +316,11 @@ const Dashboard = () => {
   // ── 5 stat cards ──
   const statCards = [
     { icon: Eye,            label: 'Impressions',      value: stats?.metrics?.impressions?.toLocaleString() ?? '0', border: 'border-t-cyan-400',    iconCls: 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-500'    },
+    { icon: MousePointer,   label: 'Clicks',           value: stats?.metrics?.clicks?.toLocaleString() ?? '0',     border: 'border-t-amber-400',   iconCls: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500'  },
+    { icon: Users,          label: 'Visitors',         value: stats?.metrics?.visitors?.toLocaleString() ?? '0',   border: 'border-t-pink-400',    iconCls: 'bg-pink-50 dark:bg-pink-500/10 text-pink-500'    },
     { icon: CheckSquare,    label: 'Total Bookings',   value: stats?.total?.toLocaleString() ?? '0',                border: 'border-t-blue-400',    iconCls: 'bg-blue-50 dark:bg-blue-500/10 text-blue-500'    },
     { icon: ClipboardCheck, label: 'Listed Properties',value: stats?.properties?.approved?.toLocaleString() ?? '0',border: 'border-t-violet-400',  iconCls: 'bg-violet-50 dark:bg-violet-500/10 text-violet-500'},
     { icon: Wallet,         label: 'Total Earnings',   value: `₹${stats?.payments?.received?.toLocaleString() ?? '0'}`, border: 'border-t-emerald-400', iconCls: 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500'},
-    { icon: MousePointer,   label: 'Clicks',           value: stats?.metrics?.clicks?.toLocaleString() ?? '0',     border: 'border-t-amber-400',   iconCls: 'bg-amber-50 dark:bg-amber-500/10 text-amber-500'  },
   ];
 
   // ── booking status strip ──
@@ -406,8 +407,31 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* ── 5 STAT CARDS ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {/* ── STAT CARDS ──────────────────────────────────────────────── */}
+            {/* DEV: Reset metrics button for testing */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  const token = localStorage.getItem('travel_auth_token');
+                  if (!token) return;
+                  if (!confirm('Reset all impressions, clicks & visitor data to 0?')) return;
+                  try {
+                    const API = import.meta.env.VITE_API_BASE_URL || '';
+                    const res = await fetch(`${API}/api/vendorAnalytics/reset`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                    const json = await res.json();
+                    if (json.success) {
+                      alert('Metrics reset! Refreshing…');
+                      window.location.reload();
+                    } else { alert('Failed: ' + json.message); }
+                  } catch (e: any) { alert('Error: ' + e.message); }
+                }}
+                style={{ fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: '1.5px solid #fca5a5', backgroundColor: 'rgba(239,68,68,0.04)', color: '#ef4444', cursor: 'pointer' }}
+              >
+                🔄 Reset Metrics (Dev)
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {statCards.map(({ icon: Icon, label, value, border, iconCls }) => (
                 loading
                   ? <div key={label} className={`bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border}`}>

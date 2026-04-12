@@ -18,6 +18,16 @@ const AdminAnalyticsMetricSchema = new Schema({
     default: 0,
     min: 0
   },
+  visitors: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  // Track unique visitor IDs per day to avoid double-counting
+  visitorIds: {
+    type: [String],
+    default: []
+  },
   serviceId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Management'

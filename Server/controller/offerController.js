@@ -212,42 +212,106 @@ const listOffers = async (req, res) => {
       Offer.countDocuments(query),
     ]);
     
-    res.json({ 
-      success: true, 
-      data, 
-      pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) } 
+    // Track impressions for returned offers (fire-and-forget)
+    // Only count when PUBLIC users browse (not when vendors view their own offers)
+    const isOwnerView = mine === 'true' || req.query.mine;
+    const isAdmin = req.user && (req.user.userType === 'admin' || req.user.type === 'admin' || req.user.type === 'superadmin' || req.user.role === 'admin');
+
+    if (data.length > 0 && !isOwnerView && !isAdmin) {
+      try {
+        const today = getToday();
+        const offerIds = data.map((o) => o._id);
+
+        // Bulk increment impressions on offer docs
+        Offer.updateMany({ _id: { $in: offerIds } }, { $inc: { impressions: 1 } }).exec();
+
+        // Bulk upsert daily metric records
+        const bulkOps = data.map((o) => ({
+          updateOne: {
+            filter: { serviceId: o._id, metricDate: today, category: getMetricCategory(o) },
+            update: { $inc: { impressions: 1 } },
+            upsert: true,
+          },
+        }));
+        AdminAnalyticsMetric.bulkWrite(bulkOps).catch(() => {});
+      } catch (impErr) {
+        console.error('Impression tracking error:', impErr.message);
+      }
+    }
+
+    res.json({
+      success: true,
+      data,
+      pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// Get single offer
+// Helper: get a visitor identifier from the request (IP + user agent hash, or user ID)
+function getVisitorId(req) {
+  if (req.user?._id || req.user?.id) return String(req.user._id || req.user.id);
+  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.connection?.remoteAddress || 'unknown';
+  const ua = (req.headers['user-agent'] || '').slice(0, 50);
+  return `${ip}:${ua}`;
+}
+
+// Helper: resolve metric category
+function getMetricCategory(offer) {
+  const cat = (offer.serviceType || offer.category || 'unique-stay').toLowerCase();
+  const valid = ['activity', 'camper-van', 'unique-stay'];
+  return valid.includes(cat) ? cat : 'unique-stay';
+}
+
+// Helper: get today at midnight
+function getToday() {
+  const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+}
+
+// Get single offer — tracks UNIQUE VISITORS (deduplicated per day)
 const getOffer = async (req, res) => {
   try {
     const offer = await Offer.findById(req.params.id);
     if (!offer) return res.status(404).json({ success: false, message: 'Offer not found' });
 
-    // Track impression (fire-and-forget, don't block response)
-    try {
-      // 1. Increment on the offer itself
-      Offer.updateOne({ _id: offer._id }, { $inc: { impressions: 1 } }).exec();
+    // Skip tracking if the viewer is the owner or admin
+    const userId = req.user ? String(req.user._id || req.user.id || '') : '';
+    const isOwner = userId && (offer.vendorId === userId || offer.userId === userId);
+    // Also check by email — vendorId might be a custom Vendor string, not User _id
+    let isOwnerByEmail = false;
+    if (req.user?.email && !isOwner) {
+      const v = await Vendor.findOne({ email: req.user.email }).lean();
+      if (v?.vendorId && offer.vendorId === v.vendorId) isOwnerByEmail = true;
+    }
+    const isAdmin = req.user && (req.user.userType === 'admin' || req.user.type === 'admin' || req.user.role === 'admin');
 
-      // 2. Increment on the analytics metric (upsert daily record)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const category = (offer.serviceType || offer.category || 'unique-stay').toLowerCase();
-      const validCategories = ['activity', 'camper-van', 'unique-stay'];
-      const metricCategory = validCategories.includes(category) ? category : 'unique-stay';
+    // Track unique visitor (fire-and-forget) — only for public users
+    if (!isOwner && !isOwnerByEmail && !isAdmin) try {
+      const visitorId = getVisitorId(req);
+      const today = getToday();
+      const category = getMetricCategory(offer);
 
-      AdminAnalyticsMetric.findOneAndUpdate(
-        { serviceId: offer._id, metricDate: today, category: metricCategory },
-        { $inc: { impressions: 1 } },
-        { upsert: true, new: true }
-      ).exec();
+      // Only increment if this visitor hasn't been seen today for this offer
+      const result = await AdminAnalyticsMetric.findOneAndUpdate(
+        { serviceId: offer._id, metricDate: today, category, visitorIds: { $ne: visitorId } },
+        { $inc: { visitors: 1 }, $push: { visitorIds: visitorId } },
+        { upsert: false, new: true }
+      );
+
+      // If no doc existed yet, create it
+      if (!result) {
+        await AdminAnalyticsMetric.findOneAndUpdate(
+          { serviceId: offer._id, metricDate: today, category },
+          { $inc: { visitors: 1 }, $addToSet: { visitorIds: visitorId } },
+          { upsert: true }
+        );
+      }
+
+      // Also increment on the Offer doc (simple counter, not deduplicated — dedupe is on daily metric)
+      Offer.updateOne({ _id: offer._id }, { $inc: { visitors: 1 } }).exec();
     } catch (trackErr) {
-      // Silently ignore tracking errors — don't fail the request
-      console.error('Impression tracking error:', trackErr.message);
+      console.error('Visitor tracking error:', trackErr.message);
     }
 
     res.json({ success: true, data: offer });
@@ -595,6 +659,34 @@ const updateOfferStatus = async (req, res) => {
   }
 };
 
+// Track click on an offer (called when user clicks a card to view details)
+const trackClick = async (req, res) => {
+  try {
+    const offer = await Offer.findById(req.params.id);
+    if (!offer) return res.status(404).json({ success: false, message: 'Offer not found' });
+
+    // Increment click on the offer
+    await Offer.updateOne({ _id: offer._id }, { $inc: { clicks: 1 } });
+
+    // Increment on the daily analytics metric
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const category = (offer.serviceType || offer.category || 'unique-stay').toLowerCase();
+    const validCategories = ['activity', 'camper-van', 'unique-stay'];
+    const metricCategory = validCategories.includes(category) ? category : 'unique-stay';
+
+    await AdminAnalyticsMetric.findOneAndUpdate(
+      { serviceId: offer._id, metricDate: today, category: metricCategory },
+      { $inc: { clicks: 1 } },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   createOffer,
   listOffers,
@@ -602,5 +694,6 @@ module.exports = {
   updateOffer,
   deleteOffer,
   rateOffer,
-  updateOfferStatus
+  updateOfferStatus,
+  trackClick
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { MoreHorizontal, Edit2, Eye, Trash2, MapPin, Users, Moon, Image as ImageIcon, IndianRupee } from "lucide-react";
-import { type OfferDTO } from "@/lib/api";
+import { type OfferDTO, offersApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
 const TEAL      = "#07e4e4";

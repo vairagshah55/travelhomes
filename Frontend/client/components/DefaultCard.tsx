@@ -8,6 +8,7 @@ import {
   removeWishlistItem,
   hasWishlistItem,
 } from "@/lib/wishlist";
+import { offersApi } from "@/lib/api";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -73,6 +74,7 @@ function DefaultCard({
           <Link
             key={item.id}
             to={item.id}
+            onClick={() => offersApi.trackClick(item.id)}
             className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
           >
             {/* Image */}

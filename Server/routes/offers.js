@@ -6,7 +6,8 @@ const {
   updateOffer,
   deleteOffer,
   updateOfferStatus,
-  rateOffer
+  rateOffer,
+  trackClick
 } = require('../controller/offerController');
 const { requireJwt } = require('../middleware/auth');
 const router = express.Router();
@@ -15,8 +16,8 @@ const router = express.Router();
 router.get('/', requireJwt({ optional: true }), listOffers); 
 // Create a new offer
 router.post('/', requireJwt(), createOffer); 
-// Get offer by id
-router.get('/:id', getOffer); 
+// Get offer by id (optional auth to skip tracking for owners)
+router.get('/:id', requireJwt({ optional: true }), getOffer); 
 // Update offer by id
 router.put('/:id', requireJwt(), updateOffer); 
 // Delete offer by id
@@ -24,6 +25,8 @@ router.delete('/:id', requireJwt(), deleteOffer);
 // Update offer status
 router.patch('/:id/status', requireJwt(), updateOfferStatus); 
 // Rate offer by id
-router.post('/:id/rate', requireJwt(), rateOffer); 
+router.post('/:id/rate', requireJwt(), rateOffer);
+// Track click on offer
+router.post('/:id/click', trackClick);
 
 module.exports = router;

@@ -4,82 +4,93 @@ const AdminAnalyticsMetric = require('../models/AdminAnalyticsMetric');
 const Payment = require('../models/Payment');
 const Management = require('../models/Management');
 const Offer = require('../models/Offer');
+const Vendor = require('../models/Vendor');
 
-// Compute counts from CalendarBooking
-async function computeCounts() {
+// Compute counts — optionally scoped to a single vendor
+async function computeCounts(vendorId) {
   try {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
+    // If vendorId is supplied, get the vendor's offer names first so we can
+    // filter CalendarBooking by resourceName (bookings reference the offer name).
+    let vendorOfferNames = null;
+    let vendorOfferIds = null;
+    let vendorOfferFilter = null;
+    if (vendorId) {
+      // Search by vendorId OR userId (offers use one or both)
+      vendorOfferFilter = { $or: [{ vendorId }, { userId: vendorId }] };
+      const vendorOffers = await Offer.find(
+        vendorOfferFilter,
+        { name: 1, _id: 1 }
+      ).lean();
+      vendorOfferNames = vendorOffers.map((o) => o.name);
+      vendorOfferIds = vendorOffers.map((o) => o._id);
+    }
+
+    // Booking filter
+    const bookingFilter = vendorOfferNames
+      ? { resourceName: { $in: vendorOfferNames } }
+      : {};
+
     const [total, cancelled] = await Promise.all([
-      CalendarBooking.countDocuments({}),
-      CalendarBooking.countDocuments({ status: 'cancelled' }),
+      CalendarBooking.countDocuments(bookingFilter),
+      CalendarBooking.countDocuments({ ...bookingFilter, status: 'cancelled' }),
     ]);
-    
+
     const [upcoming, past] = await Promise.all([
-      CalendarBooking.countDocuments({
-        startDate: { $gte: startOfToday }
-      }),
-      CalendarBooking.countDocuments({
-        endDate: { $lt: startOfToday }
-      }),
+      CalendarBooking.countDocuments({ ...bookingFilter, startDate: { $gte: startOfToday } }),
+      CalendarBooking.countDocuments({ ...bookingFilter, endDate: { $lt: startOfToday } }),
     ]);
-    
-    // Aggregated metrics (impressions/clicks) from Offer model + AdminAnalyticsMetric
-    const [offerMetricsAgg, analyticsMetricsAgg] = await Promise.all([
-      Offer.aggregate([
-        { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' } } }
-      ]),
-      AdminAnalyticsMetric.aggregate([
-        { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' } } }
-      ]),
-    ]);
-    const offerMetrics = offerMetricsAgg?.[0] || { impressions: 0, clicks: 0 };
-    const analyticsMetrics = analyticsMetricsAgg?.[0] || { impressions: 0, clicks: 0 };
-    // Use the higher value (Offer model is the source of truth now)
-    const metrics = {
-      impressions: Math.max(offerMetrics.impressions || 0, analyticsMetrics.impressions || 0),
-      clicks: Math.max(offerMetrics.clicks || 0, analyticsMetrics.clicks || 0),
-    };
-    
-    // Payments summary - Sum of amounts
+
+    // Impressions / clicks / visitors from the Offer model (vendor-scoped if possible)
+    const offerMatch = vendorOfferFilter ? { $match: vendorOfferFilter } : null;
+    const offerPipeline = [
+      ...(offerMatch ? [offerMatch] : []),
+      { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' }, visitors: { $sum: '$visitors' } } },
+    ];
+    const offerMetricsAgg = await Offer.aggregate(offerPipeline);
+    const metrics = offerMetricsAgg?.[0] || { impressions: 0, clicks: 0, visitors: 0 };
+
+    // Payments summary (global — no vendor link on Payment model yet)
     const [paymentsReceivedAgg, paymentsPendingAgg] = await Promise.all([
       Payment.aggregate([
         { $match: { status: { $in: ['completed', 'paid'] } } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+        { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
       Payment.aggregate([
         { $match: { status: 'pending' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+        { $group: { _id: null, total: { $sum: '$amount' } } },
       ]),
     ]);
-
     const paymentsReceived = paymentsReceivedAgg[0]?.total || 0;
     const paymentsPending = paymentsPendingAgg[0]?.total || 0;
-    
-    // Properties summary
+
+    // Listed properties — count from Offer model (vendor-scoped)
+    const propFilter = vendorOfferFilter || {};
     const [propertiesApproved, propertiesPending] = await Promise.all([
-      Management.countDocuments({ status: 'approved' }),
-      Management.countDocuments({ status: 'pending' }),
+      Offer.countDocuments({ ...propFilter, status: 'approved' }),
+      Offer.countDocuments({ ...propFilter, status: 'pending' }),
     ]);
-    
+
     return {
       total,
       upcoming,
       past,
       cancelled,
-      metrics: { 
-        impressions: metrics.impressions || 0, 
-        clicks: metrics.clicks || 0 
+      metrics: {
+        impressions: metrics.impressions || 0,
+        clicks: metrics.clicks || 0,
+        visitors: metrics.visitors || 0,
       },
       payments: {
         received: paymentsReceived,
-        pending: paymentsPending
+        pending: paymentsPending,
       },
       properties: {
         approved: propertiesApproved,
-        pending: propertiesPending
-      }
+        pending: propertiesPending,
+      },
     };
   } catch (error) {
     console.error('Error in computeCounts:', error);
@@ -89,7 +100,27 @@ async function computeCounts() {
 
 const getVendorAnalyticsCounts = async (req, res) => {
   try {
-    const counts = await computeCounts();
+    let vendorId = null;
+
+    if (req.user) {
+      // The JWT has _id (User doc ID) and email. Offers store Vendor.vendorId
+      // (a custom string like "VND-xxx"), OR userId (the User doc _id as string).
+      // We need to try both approaches to find the vendor's offers.
+      const userDocId = String(req.user._id || req.user.id || '');
+      const userEmail = req.user.email;
+
+      // 1. Try to find the Vendor record to get vendorId
+      if (userEmail) {
+        const vendor = await Vendor.findOne({ email: userEmail }).lean();
+        if (vendor?.vendorId) vendorId = vendor.vendorId;
+      }
+
+      // 2. If no vendorId from Vendor collection, use the user doc _id
+      //    (some offers store userId instead of vendorId)
+      if (!vendorId) vendorId = userDocId;
+    }
+
+    const counts = await computeCounts(vendorId);
     res.json({ success: true, data: counts });
   } catch (error) {
     console.error('Error in getVendorAnalyticsCounts:', error);
@@ -262,9 +293,26 @@ const getVendorAnalyticsGraphs = async (req, res) => {
   }
 };
 
+// Reset all impression, click, and visitor data
+const resetMetrics = async (req, res) => {
+  try {
+    // 1. Zero out impressions, clicks, visitors on all Offer docs
+    await Offer.updateMany({}, { $set: { impressions: 0, clicks: 0, visitors: 0 } });
+
+    // 2. Drop all AdminAnalyticsMetric records (daily tracking data)
+    await AdminAnalyticsMetric.deleteMany({});
+
+    res.json({ success: true, message: 'All impressions, clicks, and visitor data have been reset.' });
+  } catch (error) {
+    console.error('Error in resetMetrics:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 module.exports = {
   getVendorAnalyticsCounts,
   createVendorAnalyticsSnapshot,
   getLatestVendorAnalyticsSnapshot,
-  getVendorAnalyticsGraphs
+  getVendorAnalyticsGraphs,
+  resetMetrics
 };

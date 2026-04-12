@@ -102,6 +102,11 @@ const OfferSchema = new Schema(
       default: 0,
       min: 0
     },
+    visitors: {
+      type: Number,
+      default: 0,
+      min: 0
+    },
     ratingsCount: {
       type: Number,
       default: 0
