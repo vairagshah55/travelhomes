@@ -243,24 +243,27 @@ const ActivitySelfie = () => {
   }, [startCamera, stopCamera]);
 
   return (
-     <div className="h-screen overflow-hidden bg-white dark:bg-gray-900 flex flex-col">
+     <div className="onboarding-layout h-screen overflow-hidden bg-white dark:bg-gray-900 flex flex-col">
       {/* ================= Header ================= */}
-      <div className="flex items-center justify-center px-20 py-2 border-b border-gray-100 shrink-0">
-        <div className="flex items-center gap-6 w-full max-w-6xl">
-          <LogoWebsite />
-        </div>
+      <div className="flex h-14 w-full items-center justify-start px-6 lg:px-16 border-b border-gray-100 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-900">
+        <LogoWebsite />
       </div>
 
       {/* ================= Main Content ================= */}
-      <div className="flex-1 px-6 py-4 overflow-hidden pb-32">
-        <div className="flex flex-col items-center gap-4 h-full w-full max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-            Verification
-          </h1>
+      <div className="flex-1 px-6 py-8 overflow-hidden pb-32">
+        <div className="flex flex-col items-center gap-6 h-full w-full max-w-4xl mx-auto">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+              Identity Check
+            </span>
+            <h1 className="text-2xl lg:text-3xl font-semibold text-black dark:text-white text-center">
+              Take a selfie to verify
+            </h1>
+          </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-3xl">
             {/* Camera / Image Preview */}
-            <div className="relative w-full max-w-2xl h-80 bg-gray-100 rounded-lg overflow-hidden">
+            <div className="relative w-full max-w-2xl h-80 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
               {capturedImage ? (
                 <img
                   src={capturedImage}
@@ -286,7 +289,8 @@ const ActivitySelfie = () => {
                         <button
                           type="button"
                           onClick={startCamera}
-                          className="px-4 py-2 rounded-full bg-black text-white hover:bg-gray-800"
+                          className="px-4 py-2 rounded-full hover:brightness-110"
+                          style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
                         >
                           Start Camera
                         </button>
@@ -312,7 +316,8 @@ const ActivitySelfie = () => {
               <div className="flex items-center justify-center gap-6 mt-2">
                 <button
                   onClick={capturePhoto}
-                  className="w-20 h-20 bg-black border-4 border-white rounded-full flex items-center justify-center hover:bg-gray-800 transition"
+                  className="w-20 h-20 border-4 border-white rounded-full flex items-center justify-center hover:brightness-110 transition"
+                  style={{backgroundColor: 'var(--th-accent)'}}
                 >
                   <div className="w-10 h-10 bg-white rounded-full" />
                 </button>
@@ -334,12 +339,12 @@ const ActivitySelfie = () => {
 
       {/* ================= Fixed Footer ================= */}
       {capturedImage && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 px-20 py-4 shadow-lg z-50">
-          <div className="flex items-center justify-end gap-4 w-full max-w-6xl mx-auto">
+        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 lg:px-16 py-4 z-50">
+          <div className="flex items-center justify-end gap-3 w-full max-w-4xl mx-auto">
             <Button
               onClick={retakePhoto}
               variant="outline"
-              className="px-8 py-3 border border-black text-[#363F5E] rounded-full"
+              className="h-11 px-8 text-sm border-gray-200 dark:border-gray-600 rounded-full hover:border-gray-400 transition-colors"
             >
               Retake
             </Button>
@@ -347,7 +352,8 @@ const ActivitySelfie = () => {
             <Button
               onClick={submitPhoto}
               disabled={isLoading}
-              className="px-8 py-3 bg-black text-white rounded-full hover:bg-gray-800"
+              className="h-11 px-8 text-sm hover:brightness-110 font-semibold rounded-full transition-opacity disabled:opacity-50"
+              style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
             >
               {isLoading ? "Submitting..." : "Submit"}
             </Button>

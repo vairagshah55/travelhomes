@@ -1,47 +1,40 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
-import {
-  ArrowLeft,
-  Plus,
-  Minus,
-  ChevronDown,
-  X,
-  MoreHorizontal,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
 import { toast } from "sonner";
-import LogoWebsite from "@/components/ui/LogoWebsite";
-import Gallery from "../gallery";
-import * as Flags from "country-flag-icons/react/3x2";
 import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { FaUserTie } from "react-icons/fa6";
 import { GiBinoculars, GiCampCookingPot, GiCruiser } from "react-icons/gi";
-
 import { useUserDetails } from "@/hooks/useUserDetails";
-import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
+
+// Shared components
+import {
+  OnboardingLayout,
+  BusinessDetailsStep,
+  PersonalDetailsStep,
+  TermsConditionsStep,
+  DiscountOffersStep,
+} from "./components/shared";
+import type { CountryOption, DiscountOffer } from "./components/shared";
+
+// Activity-specific step components
+import {
+  TypeStep,
+  FeaturesStep,
+  DetailsStep,
+  PricingStep,
+  InclusionExclusionStep,
+} from "./components/activity";
 
 interface ActivityType {
   id: string;
   name: string;
   icon: string;
 }
-
-type CountryOption = {
-  isoCode: string;
-  name: string;
-  countryCode?: string;
-  dialCode?: string;
-};
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,
@@ -66,7 +59,6 @@ const ActivityOnboarding = () => {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [data, setData] = useState([]);
   const [countriesData, setCountriesData] = useState<any[]>([]); // For country-state-city data
-  const [photoCarouselScroll, setPhotoCarouselScroll] = useState(0);
   const photoCarouselRef = React.useRef<HTMLDivElement>(null);
 
   const { userDetails, updateUserDetails } = useUserDetails();
@@ -74,9 +66,12 @@ const ActivityOnboarding = () => {
   const [activityTypes, setActivityTypes] = useState<ActivityType[]>([]);
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
-const priceIncludeRef = useRef<HTMLInputElement>(null);
-const priceExcludeRef = useRef<HTMLInputElement>(null);
-const expectationRef = useRef<HTMLInputElement>(null);
+
+  // Country dialog state for BusinessDetailsStep
+  const [countryDialogOpen, setCountryDialogOpen] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState<CountryOption | null>(
+    countries.find((c) => c.isoCode === "IN") || null,
+  );
 
   // Form data for all steps
   const [formData, setFormData] = useState({
@@ -97,6 +92,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
     regularPrice: "",
     personCapacity: 1,
     timeDuration: "",
+    address: "",
     locality: "India",
     state: "",
     city: "",
@@ -167,8 +163,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
   const [ruleInput, setRuleInput] = useState("");
   const [adminFeatures, setAdminFeatures] = useState<any[]>([]);
 
-  // Load countries data (replace with your actual JSON path)
-  // Populate country list on mount
+  // Load countries data on mount
   useEffect(() => {
     // Check if Activity section is enabled
     cmsPublicApi.listHomepageSections().then((sections) => {
@@ -178,7 +173,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
         navigate("/");
       }
     }).catch(console.error);
-    fetch("/countries_states_cities.json") // remove ../../.. for public/ path
+    fetch("/countries_states_cities.json")
       .then((res) => res.json())
       .then((json) => setData(json))
       .catch((err) => console.error("Failed to load countries:", err));
@@ -193,17 +188,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
       const types = list
         .filter((f: any) => f.status === 'enable')
         .map((f: any) => ({
-          id: f.name, // Use name as ID for backward compatibility if names match old IDs, OR use f._id if we want to migrate to IDs. 
-                      // The old code used IDs like "hiking", "zipline". The backend likely returns "Hiking", "Zip-lining".
-                      // If we use ID, we must ensure formData stores ID.
-                      // If I change ID to be f._id (MongoDB ID), then existing drafts with old string IDs will break?
-                      // Wait, the user said "replace hardcoded array".
-                      // If I use `f.name` (e.g. "Hiking") as ID, it might match closer to what users expect or readable.
-                      // But usually IDs are better.
-                      // Let's use `f.name` as ID for now because `activityFeatureMap` uses keys like "hiking". 
-                      // Actually `activityFeatureMap` keys are lowercase "hiking".
-                      // If I use dynamic categories, `activityFeatureMap` is useless unless I map them.
-                      // I will use `f.name` as ID for simplicity in formData.
+          id: f.name,
           name: f.name,
           icon: f.icon
         }));
@@ -215,19 +200,10 @@ const expectationRef = useRef<HTMLInputElement>(null);
       try {
         const data = await getOnboardingData();
 
-        // Enforce single pending service - REMOVED per user request
-        // if (data && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
-        //     if (data.type !== 'activity') {
-        //       toast.info(`You have a pending ${data.type} application. Please complete it first.`);
-        //       navigate(`/onboarding/${data.type}`);
-        //       return;
-        //     }
-        // }
-
         if (data && data.type === 'activity' && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
           const doc = data.doc;
           console.log('Loading existing activity data:', doc);
-          
+
           console.log('--- DEBUG: Activity Data Fields ---');
           console.log('selectedActivities:', doc.selectedActivities);
           console.log('features:', doc.features);
@@ -246,12 +222,12 @@ const expectationRef = useRef<HTMLInputElement>(null);
           console.log('priceIncludes:', doc.priceIncludes);
           console.log('priceExcludes:', doc.priceExcludes);
           console.log('expectations:', doc.expectations);
-          
+
           console.log('Discounts - First User:', { active: doc.firstUserDiscount, type: doc.discountType, amount: doc.discountAmount, final: doc.finalPrice });
           console.log('Discounts - Festival:', { active: doc.festivalOffers, type: doc.festivalDiscountType, amount: doc.festivalDiscountAmount, final: doc.festivalFinalPrice });
           console.log('Discounts - Weekly:', { active: doc.weeklyOffers, type: doc.weeklyDiscountType, amount: doc.weeklyDiscountAmount, final: doc.weeklyFinalPrice });
           console.log('Discounts - Special:', { active: doc.specialOffers, type: doc.specialDiscountType, amount: doc.specialDiscountAmount, final: doc.specialFinalPrice });
-          
+
           console.log('Business Details:', {
             brandName: doc.brandName,
             legalCompanyName: doc.legalCompanyName,
@@ -263,7 +239,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
             businessCity: doc.businessCity,
             businessState: doc.businessState
           });
-          
+
           console.log('Personal Details:', {
             firstName: doc.firstName,
             lastName: doc.lastName,
@@ -277,7 +253,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
             idPhotos: doc.idPhotos
           });
           console.log('-----------------------------------');
-          
+
           setStatus(doc.status);
           setRejectionReason(doc.rejectionReason || "");
 
@@ -288,11 +264,10 @@ const expectationRef = useRef<HTMLInputElement>(null);
             features: doc.features || [],
             activityName: doc.activityName || "",
             description: doc.description || "",
-            // Handle string photos (URLs)
-            coverImage: doc.coverImage || null, 
+            coverImage: doc.coverImage || null,
             photos: doc.photos || [],
             rulesAndRegulations: doc.rulesAndRegulations || [],
-            
+
             regularPrice: String(doc.regularPrice || ""),
             personCapacity: doc.personCapacity || 1,
             timeDuration: doc.timeDuration || "",
@@ -300,32 +275,31 @@ const expectationRef = useRef<HTMLInputElement>(null);
             state: doc.state || "",
             city: doc.city || "",
             pincode: doc.pincode || "",
-            // priceDetails: doc.priceDetails || [], // Mapping might be complex if structure differs
-            
+
             priceIncludes: doc.priceIncludes || [],
             priceExcludes: doc.priceExcludes || [],
             expectations: doc.expectations || [],
-            
+
             firstUserDiscount: doc.firstUserDiscount ?? true,
             discountType: doc.discountType || "",
             discountAmount: String(doc.discountAmount || ""),
             finalPrice: String(doc.finalPrice || ""),
-            
+
             festivalOffers: doc.festivalOffers ?? false,
             festivalDiscountType: doc.festivalDiscountType || "",
             festivalDiscountAmount: String(doc.festivalDiscountAmount || ""),
             festivalFinalPrice: String(doc.festivalFinalPrice || ""),
-            
+
             weeklyOffers: doc.weeklyOffers ?? false,
             weeklyDiscountType: doc.weeklyDiscountType || "",
             weeklyDiscountAmount: String(doc.weeklyDiscountAmount || ""),
             weeklyFinalPrice: String(doc.weeklyFinalPrice || ""),
-            
+
             specialOffers: doc.specialOffers ?? false,
             specialDiscountType: doc.specialDiscountType || "",
             specialDiscountAmount: String(doc.specialDiscountAmount || ""),
             specialFinalPrice: String(doc.specialFinalPrice || ""),
-            
+
             brandName: doc.brandName || "",
             legalCompanyName: doc.legalCompanyName || "",
             gstNumber: doc.gstNumber || "",
@@ -335,7 +309,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
             businessPincode: doc.businessPincode || "",
             businessCity: doc.businessCity || "",
             businessState: doc.businessState || "",
-            
+
             firstName: doc.firstName || "",
             lastName: doc.lastName || "",
             personalLocality: doc.personalLocality || "India",
@@ -346,21 +320,12 @@ const expectationRef = useRef<HTMLInputElement>(null);
             maritalStatus: doc.maritalStatus || "",
             idProof: doc.idProof || "",
             idPhotos: doc.idPhotos || [],
-            
-            termsAccepted: false, // User must re-accept terms
-          }));
 
-          if (doc.idPhotos && doc.idPhotos.length > 0) {
-             // If ActivityOnboarding uses a separate state for ID proof image preview, set it here.
-             // Looking at the code, it uses formData.idPhotos directly in the render usually?
-             // Let's check if there is a setIdProofImage state. ActivityOnboarding doesn't seem to have setIdProofImage state in the read output.
-             // It uses formData.idPhotos. So this might not be needed if the UI uses formData.idPhotos.
-             // But Stays and Caravan seemed to use a separate state for preview.
-             // Let's re-read ActivityOnboarding variables.
-          }
+            termsAccepted: false,
+          }));
         } else if (userDetails && user?.userType !== 'vendor') {
            console.log("Auto-filling from userDetails:", userDetails);
-           
+
            console.log('--- DEBUG: User Details Auto-fill ---');
            console.log('Personal Details:', {
               firstName: userDetails.firstName,
@@ -374,7 +339,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
               idProof: userDetails.idProof,
               idPhotos: userDetails.idPhotos
            });
-           
+
            console.log('Business Details:', {
               brandName: userDetails.business?.brandName,
               legalCompanyName: userDetails.business?.legalCompanyName,
@@ -401,7 +366,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
               maritalStatus: userDetails.maritalStatus || "",
               idProof: userDetails.idProof || "",
               idPhotos: userDetails.idPhotos || [],
-              
+
               brandName: userDetails.business?.brandName || "",
               legalCompanyName: userDetails.business?.legalCompanyName || "",
               gstNumber: userDetails.business?.gstNumber || "",
@@ -417,7 +382,7 @@ const expectationRef = useRef<HTMLInputElement>(null);
         console.error("Failed to load existing onboarding data", err);
       }
     };
-    
+
     loadExistingData();
 
   }, [userDetails]);
@@ -440,33 +405,33 @@ const expectationRef = useRef<HTMLInputElement>(null);
         };
 
         if (prev.firstUserDiscount) {
-            const final = calculateFinal(prev.discountType, prev.discountAmount);
-            if (prev.finalPrice !== final) {
-                newData.finalPrice = final;
+            const final_ = calculateFinal(prev.discountType, prev.discountAmount);
+            if (prev.finalPrice !== final_) {
+                newData.finalPrice = final_;
                 changed = true;
             }
         }
-        
+
         if (prev.festivalOffers) {
-            const final = calculateFinal(prev.festivalDiscountType, prev.festivalDiscountAmount);
-            if (prev.festivalFinalPrice !== final) {
-                newData.festivalFinalPrice = final;
+            const final_ = calculateFinal(prev.festivalDiscountType, prev.festivalDiscountAmount);
+            if (prev.festivalFinalPrice !== final_) {
+                newData.festivalFinalPrice = final_;
                 changed = true;
             }
         }
 
         if (prev.weeklyOffers) {
-            const final = calculateFinal(prev.weeklyDiscountType, prev.weeklyDiscountAmount);
-            if (prev.weeklyFinalPrice !== final) {
-                newData.weeklyFinalPrice = final;
+            const final_ = calculateFinal(prev.weeklyDiscountType, prev.weeklyDiscountAmount);
+            if (prev.weeklyFinalPrice !== final_) {
+                newData.weeklyFinalPrice = final_;
                 changed = true;
             }
         }
 
         if (prev.specialOffers) {
-            const final = calculateFinal(prev.specialDiscountType, prev.specialDiscountAmount);
-            if (prev.specialFinalPrice !== final) {
-                newData.specialFinalPrice = final;
+            const final_ = calculateFinal(prev.specialDiscountType, prev.specialDiscountAmount);
+            if (prev.specialFinalPrice !== final_) {
+                newData.specialFinalPrice = final_;
                 changed = true;
             }
         }
@@ -475,19 +440,19 @@ const expectationRef = useRef<HTMLInputElement>(null);
       });
     }
   }, [
-      currentStep, 
+      currentStep,
       formData.regularPrice,
-      formData.firstUserDiscount, 
-      formData.discountType, 
+      formData.firstUserDiscount,
+      formData.discountType,
       formData.discountAmount,
-      formData.festivalOffers, 
-      formData.festivalDiscountType, 
+      formData.festivalOffers,
+      formData.festivalDiscountType,
       formData.festivalDiscountAmount,
-      formData.weeklyOffers, 
-      formData.weeklyDiscountType, 
+      formData.weeklyOffers,
+      formData.weeklyDiscountType,
       formData.weeklyDiscountAmount,
-      formData.specialOffers, 
-      formData.specialDiscountType, 
+      formData.specialOffers,
+      formData.specialDiscountType,
       formData.specialDiscountAmount
   ]);
 
@@ -551,13 +516,13 @@ const expectationRef = useRef<HTMLInputElement>(null);
       };
 
       const result = await submitOnboardingData("activity", clean);
-      
+
       // Update user details for auto-fill in future
       await updateUserDetails({
         firstName: clean.firstName,
         lastName: clean.lastName,
         phoneNumber: clean.businessPhone,
-        country: clean.personalCountry,
+        country: (clean as any).personalCountry,
         personalLocality: clean.personalLocality,
         personalPincode: clean.personalPincode,
         city: clean.personalCity,
@@ -823,29 +788,27 @@ const expectationRef = useRef<HTMLInputElement>(null);
   };
 
   // Add and remove list items (inclusions, exclusions, expectations)
-const addListItem = (
-  key: "priceIncludes" | "priceExcludes" | "expectations",
-  value: string
-) => {
-  if (!value.trim()) return;
+  const addListItem = (
+    key: "priceIncludes" | "priceExcludes" | "expectations",
+    value: string
+  ) => {
+    if (!value.trim()) return;
 
-  setFormData((prev) => ({
-    ...prev,
-    [key]: [...prev[key], value.trim()],
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      [key]: [...prev[key], value.trim()],
+    }));
+  };
 
-
-const removeListItem = (
-  key: "priceIncludes" | "priceExcludes" | "expectations",
-  index: number
-) => {
-  setFormData((prev) => ({
-    ...prev,
-    [key]: prev[key].filter((_, i) => i !== index),
-  }));
-};
-
+  const removeListItem = (
+    key: "priceIncludes" | "priceExcludes" | "expectations",
+    index: number
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: prev[key].filter((_, i) => i !== index),
+    }));
+  };
 
   const toggleFeature = (featureId: string) => {
     if (featureId === "others") {
@@ -898,7 +861,7 @@ const removeListItem = (
       }
       const newFiles = Array.from(files).slice(0, remainingSlots);
       const updatedFiles = [...currentFiles, ...newFiles];
-      
+
       // Clear errors if requirements met
       if (field === "photos" && updatedFiles.length >= 5 && errors.photos) {
           setErrors((prevErr) => {
@@ -914,7 +877,7 @@ const removeListItem = (
               return newErrors;
           });
       }
-      
+
       return {
         ...prev,
         [field]: updatedFiles,
@@ -938,20 +901,6 @@ const removeListItem = (
         [field]: prev[field].filter((_, i) => i !== index),
       };
     });
-  };
-
-  const scrollPhotoCarousel = (direction: "left" | "right") => {
-    if (photoCarouselRef.current) {
-      const scrollAmount = 140;
-      const newScroll =
-        photoCarouselRef.current.scrollLeft +
-        (direction === "right" ? scrollAmount : -scrollAmount);
-      photoCarouselRef.current.scrollTo({
-        left: newScroll,
-        behavior: "smooth",
-      });
-      setPhotoCarouselScroll(newScroll);
-    }
   };
 
   // Base activity features
@@ -990,20 +939,13 @@ const removeListItem = (
     stargazing: ["guide", "photography", "meals"],
   };
 
-  const getActivityFeatures = () => {
-    const features: typeof baseActivityFeatures = [...baseActivityFeatures];
-    return features;
-  };
-
-  const activityFeatures = getActivityFeatures();
+  const activityFeatures = [...baseActivityFeatures];
 
   // Disable Next if Terms not accepted on last step
   const canProceed = () => {
     if (currentStep === 8) return formData.termsAccepted;
     return true;
   };
-
-
 
   const businessMapQuery = `
   ${formData.businessCity || ""}
@@ -1012,9 +954,9 @@ const removeListItem = (
   India
 `;
 
-const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
-  businessMapQuery
-)}&output=embed`;
+  const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
+    businessMapQuery
+  )}&output=embed`;
 
   const renderImageSrc = (fileOrUrl: any) => {
     if (!fileOrUrl) return "";
@@ -1027,2244 +969,324 @@ const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
     }
   };
 
+  // --- Handlers for removing custom features (used by FeaturesStep) ---
+  const handleRemoveCustomFeature = (idx: number) => {
+    const featureName = customFeatures[idx];
+    setCustomFeatures((prev) => prev.filter((_, i) => i !== idx));
+    setFormData((prev) => ({
+      ...prev,
+      features: prev.features.filter((f) => f !== featureName),
+    }));
+  };
+
+  const handleAddCustomFeature = (feature: string) => {
+    setCustomFeatures((prev) => [...prev, feature]);
+    setFormData((prev) => ({
+      ...prev,
+      features: [...prev.features, feature],
+    }));
+  };
+
+  // --- Handlers for rules (used by DetailsStep) ---
+  const handleAddRule = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      rulesAndRegulations: [...prev.rulesAndRegulations, value],
+    }));
+  };
+
+  const handleRemoveRule = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      rulesAndRegulations: prev.rulesAndRegulations.filter((_, i) => i !== index),
+    }));
+  };
+
+  // --- Discount offers mapping for shared DiscountOffersStep ---
+  const discountOffers = {
+    firstUser: {
+      enabled: formData.firstUserDiscount,
+      type: formData.discountType,
+      value: formData.discountAmount,
+      finalPrice: formData.finalPrice,
+    } as DiscountOffer,
+    festival: {
+      enabled: formData.festivalOffers,
+      type: formData.festivalDiscountType,
+      value: formData.festivalDiscountAmount,
+      finalPrice: formData.festivalFinalPrice,
+    } as DiscountOffer,
+    weekly: {
+      enabled: formData.weeklyOffers,
+      type: formData.weeklyDiscountType,
+      value: formData.weeklyDiscountAmount,
+      finalPrice: formData.weeklyFinalPrice,
+    } as DiscountOffer,
+    special: {
+      enabled: formData.specialOffers,
+      type: formData.specialDiscountType,
+      value: formData.specialDiscountAmount,
+      finalPrice: formData.specialFinalPrice,
+    } as DiscountOffer,
+  };
+
+  const handleDiscountToggle = (key: "firstUser" | "festival" | "weekly" | "special") => {
+    const fieldMap: Record<string, string> = {
+      firstUser: "firstUserDiscount",
+      festival: "festivalOffers",
+      weekly: "weeklyOffers",
+      special: "specialOffers",
+    };
+    updateFormData(fieldMap[key], !formData[fieldMap[key] as keyof typeof formData]);
+  };
+
+  const handleDiscountOfferChange = (
+    key: "firstUser" | "festival" | "weekly" | "special",
+    field: keyof DiscountOffer,
+    value: string
+  ) => {
+    const fieldMap: Record<string, Record<string, string>> = {
+      firstUser: { type: "discountType", value: "discountAmount", finalPrice: "finalPrice" },
+      festival: { type: "festivalDiscountType", value: "festivalDiscountAmount", finalPrice: "festivalFinalPrice" },
+      weekly: { type: "weeklyDiscountType", value: "weeklyDiscountAmount", finalPrice: "weeklyFinalPrice" },
+      special: { type: "specialDiscountType", value: "specialDiscountAmount", finalPrice: "specialFinalPrice" },
+    };
+    const formField = fieldMap[key][field];
+    if (formField) {
+      updateFormData(formField, value);
+    }
+  };
+
+  // --- Business details mapping for shared BusinessDetailsStep ---
+  const handleBusinessChange = (field: string, value: string) => {
+    const fieldMap: Record<string, string> = {
+      brandName: "brandName",
+      companyName: "legalCompanyName",
+      gstNumber: "gstNumber",
+      businessEmail: "businessEmail",
+      businessPhone: "businessPhone",
+      pincode: "businessPincode",
+    };
+    updateFormData(fieldMap[field] || field, value);
+  };
+
+  const handleBusinessStateChange = (val: string) => {
+    updateFormData("businessState", val);
+    updateFormData("businessCity", "");
+  };
+
+  const handleBusinessCityChange = (val: string) => {
+    updateFormData("businessCity", val);
+  };
+
+  // --- Personal details mapping for shared PersonalDetailsStep ---
+  const handlePersonalChange = (field: string, value: string) => {
+    const fieldMap: Record<string, string> = {
+      firstName: "firstName",
+      lastName: "lastName",
+      pincode: "personalPincode",
+      dateOfBirth: "dateOfBirth",
+      maritalStatus: "maritalStatus",
+      idProof: "idProof",
+    };
+    updateFormData(fieldMap[field] || field, value);
+  };
+
+  const handlePersonalStateChange = (val: string) => {
+    updateFormData("personalState", val);
+    updateFormData("personalCity", "");
+  };
+
+  const handlePersonalCityChange = (val: string) => {
+    updateFormData("personalCity", val);
+  };
+
+  const handleIdProofUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileUpload("idPhotos", e.target.files);
+  };
+
+  // Get ID proof image for preview
+  const idProofImage = formData.idPhotos.length > 0
+    ? (typeof formData.idPhotos[0] === "string"
+        ? formData.idPhotos[0]
+        : (() => { try { return URL.createObjectURL(formData.idPhotos[0] as File); } catch { return null; } })())
+    : null;
+
   // Step components rendered conditionally
   return (
-    <div className=" w-full  flex flex-col gap-1 bg-white dark:bg-gray-900">
-      {/* Header */}
-      <div className="flex w-full bg-white  z-30 fixed items-center justify-start max-md:px-4 md:px-10 py-2">
-        <LogoWebsite />
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-full mx-auto w-full flex gap-10 px-6 lg:px-20 pb-20 h-full mt-16">
-     
-        <div className="flex-1 flex flex-col justify-center mb-20 items-center">
-          
-          {status === 'rejected' && (
-            <div className="w-full max-w-4xl mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
-              <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
-              <p className="text-red-700 text-sm">
-                Reason: {rejectionReason || 'No reason provided'}
-              </p>
-              <p className="text-red-600 text-xs mt-2">
-                Please update the details and resubmit for approval.
-              </p>
-            </div>
-          )}
-
-          {/* Step 0: Activity Types */}
-          {currentStep === 0 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-            <h1 className="text-3xl  font-bold text-black dark:text-white text-center">
-              Types of Activity
-            </h1>
-
-            <div className="max-w-2xl mx-auto flex flex-wrap items-center gap-3 w-full">
-              {activityTypes.map((activity) => {
-                const isSelected = formData.selectedActivities.includes(activity.id);
-                return (
-                  <button
-                    key={activity.id}
-                    onClick={() => toggleActivityType(activity.id)}
-                    className={`flex items-center gap-3 px-6 py-3 rounded-full border transition-all ${
-                      isSelected
-                        ? "bg-gray-200 border-black text-black"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-                    }`}
-                    type="button"
-                  >
-                    <span className="text-lg w-[20px] h-[20px]">
-                      <img 
-                        src={getImageUrl(activity.icon)} 
-                        alt={activity.name} 
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                           // Fallback if image fails or is empty
-                           e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </span>
-                    <span className="text-sm font-medium">{activity.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Step 1: Features */}
-        {currentStep === 1 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-            <div className="text-center ">
-              <h1 className="text-3xl font-bold text-black dark:text-white">
-                Activity Features
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
-                {formData.selectedActivities.length > 0
-                  ? `Select features for your ${formData.selectedActivities.length === 1 ? "activity" : "activities"}`
-                  : "Select features for your activity"}
-              </p>
-            </div>
-
-            <div className="max-w-4xl mx-auto flex flex-col gap-6 w-full">
-              {/* All features section with custom features displayed first */}
-              <div className="space-y-4 ">
-                <div className="flex gap-3  max-md:flex-col items-center justify-between">
-                  {formData.selectedActivities.length > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                        Select Features
-                      </h3>
-                      <span className="text-xs bg-gray-100 dark:bg-gray-400 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
-                        Based on your selection
-                      </span>
-                    </div>
-                  ) : (
-                    <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300">
-                      All Features
-                    </h3>
-                  )}
-                  {!showCustomFeaturesInput && customFeatures.length < 20 && (
-                    <button
-                      onClick={() => setShowCustomFeaturesInput(true)}
-                      className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-700"
-                    >
-                      + Add Custom Feature
-                    </button>
-                  )}
-                </div>
-
-                {/* Features display: custom features first, then standard features */}
-                <div className="flex flex-wrap gap-3">
-                  {/* Custom features */}
-                  {customFeatures.map((customFeature, idx) => (
-                    <button
-                      key={`custom-${idx}`}
-                      onClick={() => {
-                        setCustomFeatures((prev) =>
-                          prev.filter((_, i) => i !== idx),
-                        );
-                        setFormData((prev) => ({
-                          ...prev,
-                          features: prev.features.filter(
-                            (f) => f !== customFeature,
-                          ),
-                        }));
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-[48px] border transition-all duration-200 ${
-                        formData.features.includes(customFeature)
-                          ? "border-[#131313] dark:border-white bg-white dark:bg-gray-800 ring-2 ring-gray-400"
-                          : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[#131313] dark:hover:border-white"
-                      }`}
-                    >
-                      <div className="w-[22px] h-[22px]">
-                        <MoreHorizontal size={16} className="text-gray-600" />
-                      </div>
-                      <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
-                        {customFeature}
-                      </span>
-                      <X
-                        size={14}
-                        className="text-gray-600 hover:text-red-500"
-                      />
-                    </button>
-                  ))}
-
-                  {/* Standard features */}
-                  {activityFeatures.map((feature, idx) => {
-                    const isRecommended =
-                      formData.selectedActivities.length > 0 &&
-                      formData.selectedActivities.some((actId) =>
-                        activityFeatureMap[actId]?.includes(feature.value),
-                      );
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => toggleFeature(feature.value)}
-                        className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all duration-200 ${
-                          formData.features.includes(feature.value)
-                            ? "border-[#131313] dark:border-white bg-white dark:bg-gray-800 ring-2 ring-gray-400"
-                            : isRecommended
-                              ? "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/20 hover:border-gray-500"
-                              : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[#131313] dark:hover:border-white"
-                        }`}
-                      >
-                        <div className="w-[22px] h-[22px]">
-                          <feature.icon
-                            size={18}
-                            className={`${isRecommended ? "text-gray-600" : "text-gray-600"}`}
-                          />
-                        </div>
-                        <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
-                          {feature.label}
-                        </span>
-                        {isRecommended && (
-                          <span className="text-xs bg-gray-600 text-white px-2 py-0.5 rounded-full">
-                            Recommended
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-
-                  {/* Admin Features */}
-                  {adminFeatures.map((feature, idx) => (
-                    <button
-                      key={feature.id || `admin-${idx}`}
-                      onClick={() => toggleFeature(feature.name)}
-                      className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all duration-200 ${
-                        formData.features.includes(feature.name)
-                          ? "border-[#131313] dark:border-white bg-white dark:bg-gray-800 ring-2 ring-gray-400"
-                          : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[#131313] dark:hover:border-white"
-                      }`}
-                    >
-                      <div className="w-[22px] h-[22px]">
-                         <img src={getImageUrl(feature.icon)} alt="" className="w-full h-full object-contain" />
-                      </div>
-                      <span className="text-base max-sm:text-xs text-[#4B4B4B] dark:text-gray-300 font-medium">
-                        {feature.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom features input */}
-              {showCustomFeaturesInput && (
-                <div className="flex flex-col gap-3 bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={customFeatureInput}
-                      onChange={(e) => setCustomFeatureInput(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (
-                          e.key === "Enter" &&
-                          customFeatureInput.trim() &&
-                          customFeatures.length < 20
-                        ) {
-                          const newFeature = customFeatureInput.trim();
-                          setCustomFeatures((prev) => [...prev, newFeature]);
-                          setFormData((prev) => ({
-                            ...prev,
-                            features: [...prev.features, newFeature],
-                          }));
-                          setCustomFeatureInput("");
-                        }
-                      }}
-                      placeholder="Add custom feature..."
-                      maxLength={50}
-                      className="flex-1 h-[38px] px-3 py-3 border border-[#EAECF0] rounded-lg text-sm text-[#121213] font-plus-jakarta focus:outline-none focus:border-[#131313] dark:bg-gray-900 dark:border-gray-600 dark:text-white"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => {
-                        if (
-                          customFeatureInput.trim() &&
-                          customFeatures.length < 20
-                        ) {
-                          const newFeature = customFeatureInput.trim();
-                          setCustomFeatures((prev) => [...prev, newFeature]);
-                          setFormData((prev) => ({
-                            ...prev,
-                            features: [...prev.features, newFeature],
-                          }));
-                          setCustomFeatureInput("");
-                        }
-                      }}
-                      disabled={
-                        !customFeatureInput.trim() ||
-                        customFeatures.length >= 20
-                      }
-                      className="px-4 py-2 bg-[#131313] text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800"
-                    >
-                      Add
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowCustomFeaturesInput(false);
-                        setCustomFeatureInput("");
-                      }}
-                      className="px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                  {/* <p className="text-xs text-gray-500">
-                    {customFeatures.length}/20 custom features added
-                  </p> */}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Activity Details */}
-        {currentStep === 2 && (
-          <div className="w-full flex flex-col gap-9">
-              <div className="flex flex-col items-center gap-5 max-sm:gap-3">
-                <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Activity Details
-            </h1>
-
-            <div className="max-w-4xl mx-auto w-full space-y-6">
-              {/* Name */}
-         <div className="flex flex-col gap-2 w-full">
-  <div className="flex items-center gap-2 pl-1">
-    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans']">
-      Name
-    </label>
-  </div>
-
-  <div className="relative w-full">
-    <input
-      type="text"
-      value={formData.activityName}
-      onChange={(e) => {
-        updateFormData("activityName", e.target.value);
-
-        if (errors.activityName) {
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.activityName;
-            return newErrors;
-          });
-        }
-      }}
-      placeholder="Name of the Activity"
-      required
-      maxLength={50}
-      className={`w-full h-[50px] px-3 py-4 border ${
-        errors.activityName ? "border-red-500" : "border-[#EAECF0]"
-      } rounded-lg text-sm text-[#121213] font-['Plus_Jakarta_Sans'] 
-      focus:outline-none focus:border-[#131313] 
-      dark:bg-gray-800 dark:border-gray-600 dark:text-white`}
-    />
-
-    <div className="flex justify-between w-full">
-      <div>
-        {errors.activityName && (
-          <span className="text-xs text-red-500">
-            {errors.activityName}
-          </span>
-        )}
-      </div>
-
-      <div className="text-right text-xs text-[#334054] dark:text-gray-400 mt-1 px-[6px]">
-        {formData.activityName.length}/50
-      </div>
-    </div>
-  </div>
-</div>
-
-              {/* Description */}
-           <div className="flex flex-col gap-3 w-full">
-  <div className="flex items-center gap-2 pl-1">
-    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans']">
-      Descriptions
-    </label>
-  </div>
-
-  <div className="relative w-full">
-    <textarea
-      value={formData.description}
-      onChange={(e) => {
-        updateFormData("description", e.target.value);
-
-        if (errors.description) {
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.description;
-            return newErrors;
-          });
-        }
-      }}
-      placeholder="Write here..."
-      maxLength={200}
-      className={`w-full h-24 px-3 py-4 border ${
-        errors.description ? "border-red-500" : "border-[#EAECF0]"
-      } rounded-lg text-sm text-[#121213] font-['Plus_Jakarta_Sans'] 
-      resize-none focus:outline-none focus:border-[#131313] 
-      dark:bg-gray-800 dark:border-gray-600 dark:text-white`}
-    />
-
-    <div className="flex justify-between w-full">
-      <div>
-        {errors.description && (
-          <span className="text-xs text-red-500">
-            {errors.description}
-          </span>
-        )}
-      </div>
-
-      <div className="text-right text-xs text-[#334054] dark:text-gray-400 mt-1 px-[6px]">
-        {formData.description.length}/200
-      </div>
-    </div>
-  </div>
-</div>
-
-              {/* Upload Photos */}
-          <div className="space-y-4 w-full bg-white">
-
-  {/* ------------------ COVER PHOTO ------------------ */}
-  <div className="flex items-center justify-between">
-    <Label className="text-base text-[#334054] flex flex-col">
-      Upload Cover Photo
-      <span className="text-[10px] text-gray-500">
-        Please upload a thumbnail image that highlights your services and features.
-      </span>
-    </Label>
-
-    <div
-      className={`relative w-60 h-10 border ${
-        errors.coverImage ? "border-red-500" : "border-gray-200"
-      } rounded-lg flex items-center justify-center cursor-pointer`}
+    <OnboardingLayout
+      currentStep={currentStep}
+      totalSteps={9}
+      isLoading={isLoading}
+      canProceed={canProceed()}
+      termsAccepted={formData.termsAccepted}
+      onBack={handleBack}
+      onNext={handleNext}
     >
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) =>
-          handleCoverImageUpload(e.target.files)
-        }
-        className="absolute inset-0 opacity-0 cursor-pointer"
-      />
-      <Plus className="w-5 h-5 text-gray-500" />
-      <span className="text-gray-500 text-sm font-medium">
-        Cover Photo
-      </span>
-    </div>
-  </div>
-
-  {errors.coverImage && (
-    <span className="text-xs text-red-500">
-      {errors.coverImage}
-    </span>
-  )}
-
-  {/* Cover Preview */}
-  <div className="w-full relative h-64 max-w-xl border border-gray-200 rounded-xl overflow-hidden">
-    {formData?.coverImage ? (
-      <img
-        src={renderImageSrc(formData.coverImage)}
-        alt="Cover"
-        className="w-full h-full object-cover"
-      />
-    ) : (
-      <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-        No image selected
-      </div>
-    )}
-
-    {formData?.coverImage && (
-      <button
-        onClick={() => removeFile("coverImage")}
-        className="absolute top-2 right-2 w-7 h-7 bg-white shadow-md hover:bg-gray-100 rounded-full flex items-center justify-center transition"
-      >
-        <X className="w-4 h-4 text-gray-600" />
-      </button>
-    )}
-  </div>
-
-  {/* ------------------ ADDITIONAL PHOTOS ------------------ */}
-  <div className="flex items-center justify-between">
-    <Label className="text-base text-[#334054] flex flex-col">
-      Upload Photos
-      <span className="text-[10px] text-gray-500">
-        Please upload photos that best highlight your services and features
-      </span>
-    </Label>
-
-    <div
-      className={`relative w-60 h-10 border ${
-        errors.photos ? "border-red-500" : "border-gray-200"
-      } rounded-lg flex items-center justify-center cursor-pointer`}
-    >
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={(e) => {
-          handleFileUpload("photos", e.target.files);
-
-          if (errors.photos) {
-            setErrors((prev) => {
-              const newErrors = { ...prev };
-              delete newErrors.photos;
-              return newErrors;
-            });
-          }
-        }}
-        className="absolute inset-0 opacity-0 cursor-pointer"
-      />
-      <Plus className="w-5 h-5 text-gray-500" />
-      <span className="text-gray-500 text-sm font-medium">
-        Add Photos
-      </span>
-    </div>
-  </div>
-
-  {errors.photos && (
-    <span className="text-xs text-red-500">
-      {errors.photos}
-    </span>
-  )}
-
-  {/* ------------------ PHOTO CAROUSEL ------------------ */}
-  {formData.photos.length > 0 && (
-    <div className="relative">
-
-      {formData.photos.length > 5 && (
-        <button
-          onClick={() =>
-            photoCarouselRef.current?.scrollBy({ left: -300, behavior: "smooth" })
-          }
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow p-2 rounded-full"
-        >
-          <IoIosArrowBack />
-        </button>
+      {status === 'rejected' && (
+        <div className="w-full max-w-4xl mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
+          <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
+          <p className="text-red-700 text-sm">
+            Reason: {rejectionReason || 'No reason provided'}
+          </p>
+          <p className="text-red-600 text-xs mt-2">
+            Please update the details and resubmit for approval.
+          </p>
+        </div>
       )}
 
-      <div
-        ref={photoCarouselRef}
-        className="flex max-md:w-[350px] gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
-      >
-        {formData.photos.map((photo, index) => (
-          <div
-            key={index}
-            className="relative w-44 h-52 border border-gray-200 rounded-lg overflow-hidden flex-shrink-0"
-          >
-            <img
-              src={renderImageSrc(photo)}
-              alt={`Upload ${index + 1}`}
-              className="w-full h-full object-cover"
-            />
-
-            <button
-              onClick={() => removeFile("photos", index)}
-              className="absolute top-2 right-2 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center"
-            >
-              <X className="w-4 h-4 text-gray-700" />
-            </button>
-          </div>
-        ))}
-      </div>
-
-      {formData.photos.length > 5 && (
-        <button
-          onClick={() =>
-            photoCarouselRef.current?.scrollBy({ left: 300, behavior: "smooth" })
-          }
-          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow p-2 rounded-full"
-        >
-          <IoIosArrowForward />
-        </button>
+      {/* Step 0: Activity Types */}
+      {currentStep === 0 && (
+        <TypeStep
+          selectedActivities={formData.selectedActivities}
+          activityTypes={activityTypes}
+          onToggle={toggleActivityType}
+        />
       )}
-    </div>
-  )}
-</div>
 
-              {/* Rules and Regulations */}
-              <div className="space-y-4 border-t border-gray-200 pt-6">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base text-[#334054]">
-                    Rules & Regulations
-                    <span className="text-sm text-gray-500 ml-2">
-                      (Optional)
-                    </span>
-                  </Label>
-                </div>
-
-                <div className="space-y-2">
-                  {formData.rulesAndRegulations.map((rule, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                    >
-                      <span className="text-sm text-[#4B4B4B] dark:text-gray-300 flex-1 break-words">
-                        {rule}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            rulesAndRegulations:
-                              prev.rulesAndRegulations.filter(
-                                (_, i) => i !== index,
-                              ),
-                          }));
-                        }}
-                        className="text-red-500 hover:text-red-700 font-bold px-2 flex-shrink-0 mt-0.5"
-                        title="Remove rule"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Add a rule or regulation..."
-                    maxLength={100}
-                    value={ruleInput}
-                    onChange={(e) => setRuleInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        const value = ruleInput.trim();
-                        if (value) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            rulesAndRegulations: [
-                              ...prev.rulesAndRegulations,
-                              value,
-                            ],
-                          }));
-                          setRuleInput("");
-                        }
-                      }
-                    }}
-                    className="flex-1 h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm text-[#121213] focus:outline-none focus:border-[#131313] dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const value = ruleInput.trim();
-                      if (value) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          rulesAndRegulations: [
-                            ...prev.rulesAndRegulations,
-                            value,
-                          ],
-                        }));
-                        setRuleInput("");
-                      }
-                    }}
-                    className="px-4 py-2 bg-[#131313] text-white rounded-lg hover:bg-gray-800 text-sm font-medium"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          </div>
-        )}
-
-        {/* Step 3: Pricing Details */}
-        {currentStep === 3 && (
-          <div className="flex flex-col items-center gap-4 w-full h-full">
-            <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Pricing Details
-            </h1>
-
-            <div className="max-w-4xl mx-auto w-full space-y-6">
-              {/* Regular Price */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pl-1">
-                  <Label className="text-base text-[#334054]">
-                    Regular Price (in Rupees)
-                  </Label>
-                </div>
-                <Input
-                  type="number"
-                  value={formData.regularPrice}
-                  onChange={(e) =>
-                    updateFormData("regularPrice", e.target.value)
-                  }
-                  placeholder=" e.g., 1500"
-                  className={`border ${errors.regularPrice ? "border-red-500" : "border-gray-200"}`}
-                />
-                {errors.regularPrice && (
-                  <p className="text-sm text-red-500 pl-1">{errors.regularPrice}</p>
-                )}
-              </div>
-
-              {/* Person Capacity */}
-              <div className="border border-gray-200 rounded-lg p-3">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-2">
-                    <div className="text-base font-semibold text-black">
-                      Person Capacity
-                    </div>
-                    <div className="text-sm text-[#334054]">
-                      Lorem ipsum dolor sit amet, consectetur adipiscing elit,
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateFormData(
-                          "personCapacity",
-                          Math.max(1, formData.personCapacity - 1),
-                        )
-                      }
-                      className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center"
-                    >
-                      <Minus className="w-4 h-4 text-gray-600" />
-                    </button>
-                    <span className="text-base text-[#334054] w-4 text-center">
-                      {formData.personCapacity}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateFormData(
-                          "personCapacity",
-                          formData.personCapacity + 1,
-                        )
-                      }
-                      className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center"
-                    >
-                      <Plus className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Time Duration */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 pl-1">
-                  <Label className="text-base text-[#334054]">
-                    Time Duration
-                  </Label>
-                </div>
-                <div className="relative border border-gray-200 rounded-lg">
-                  <Input
-                    value={formData.timeDuration}
-                    onChange={(e) =>
-                      updateFormData("timeDuration", e.target.value)
-                    }
-                    className="border-0 pr-10"
-                    placeholder="1 hour"
-                  />
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                </div>
-              </div>
-
-              {/* Address with Country (India only) */}
-                <div className="flex flex-col gap-5">
-                 <div className="flex flex-col gap-2 pl-1">
-  <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans']">
-    Address
-  </label>
-
- <input
-  type="text"
-  placeholder="Enter your address"
-  value={formData.address}
-  onChange={(e) =>
-    setFormData((prev) => ({
-      ...prev,
-      address: e.target.value,
-    }))
-  }
-  className="w-full px-4 py-3 rounded-lg border border-[#EAECF0]"
-/>
-
-</div>
-                    <div className="w-full flex flex-col gap-5">
-                  <div className="w-full flex justify-between gap-5 md:items-center max-md:flex-col">
-                    <div className="flex-1 relative">
-                      <select
-                        name="country"
-                        value={formData.locality}
-                        onChange={(e) => {
-                          const countryVal = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            locality: countryVal,
-                            state: "",
-                            city: "", // reset city
-                          }));
-                        }}
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-[#121213] dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="India">
-                          India
-                        </option>
-                        {/* Render states from selected country */}
-                        {/* {data.map((Country: any, idx: number) => (
-                          <option key={idx} value={Country.name} >
-                            {Country.name}
-                          </option>
-                        ))} */}
-                       
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1 relative">
-                      <select
-                        name="state"
-                        value={formData.state}
-                        onChange={(e) => {
-                          const stateVal = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            state: stateVal,
-                            city: "", // reset city
-                          }));
-                        }}
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-[#121213] dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="" disabled>
-                          Select State
-                        </option>
-                        {/* Render states from selected country */}
-                        {data
-                          .find((c) => c.name === formData.locality)
-                          ?.states?.map((state: any, idx: number) => (
-                            <option key={idx} value={state.name}>
-                              {state.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    <div className="flex-1 relative">
-                      <select
-                        name="city"
-                        value={formData.city}
-                        onChange={(e) => {
-                          const cityVal = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            city: cityVal,
-                          }));
-                        }}
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-[#121213] dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="" disabled>
-                          Select City
-                        </option>
-                        {data
-                          .find((country) => country.name === formData.locality)
-                          ?.states.find((state) => state.name === formData.state)
-                          ?.cities.map((city: any, idx: number) => (
-                            <option key={idx} value={city.name}>
-                              {city.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-
-                 <input
-  type="text"
-  value={formData.pincode}
-  onChange={(e) =>
-    setFormData((prev) => ({
-      ...prev,
-      pincode: e.target.value.replace(/\D/g, ""), // only numbers
-    }))
-  }
-  maxLength={6}
-  inputMode="numeric"
-  placeholder="Pincode"
-  className="flex-1 h-[50px] px-3 py-3 border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-[#121213] dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-/>
-
-                  </div>
-                </div>
-                </div>
-
-
-            
-            </div>
-          </div>
-        )}
-
-        {/* Step 4: Inclusion & Exclusion */}
-        {currentStep === 4 && (
-          <div className="flex flex-col items-center gap-8 w-full ">
-            <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Inclusion & Exclusion
-            </h1>
-
-            <div className="max-w-4xl mx-auto w-full space-y-8">
-              {/* Price Includes */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pl-1">
-                  <Label className="text-base text-[#334054]">
-                    Above price includes
-                  </Label>
-                </div>
-
-                <div className="space-y-2 pl-1">
-                  {formData.priceIncludes.map((item, index) => (
-                    <div
-                      key={index}
-                      className="text-base font-semibold text-[#3A3A3A] flex justify-between items-center"
-                    >
-                      <span>{item}</span>
-                 <button
-  type="button"
-  onClick={() => removeListItem("priceIncludes", index)}
-  className="text-red-500 font-bold px-2"
->
-  ×
-</button>
-
-                    </div>
-                  ))}
-                </div>
-
-               <Input
-  ref={priceIncludeRef}
-  placeholder="Text here.."
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addListItem("priceIncludes", priceIncludeRef.current?.value || "");
-      if (priceIncludeRef.current) priceIncludeRef.current.value = "";
-    }
-  }}
-/>
-
-<button
-  type="button"
-  onClick={() => {
-    const value = priceIncludeRef.current?.value.trim() || "";
-
-    if (!value) return; // empty add nahi karega
-
-    addListItem("priceIncludes", value);
-
-    if (priceIncludeRef.current) {
-      priceIncludeRef.current.value = "";
-    }
-  }}
-  className="flex items-center gap-2 text-sm font-medium text-[#344054] hover:text-black transition-colors"
->
-  <Plus className="w-4 h-4" />
-  Add More
-</button>
-
-              </div>
-
-              {/* Price Excludes */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pl-1">
-                  <Label className="text-base text-[#334054]">
-                    Above price excludes
-                  </Label>
-                </div>
-
-                <div className="space-y-2">
-                  {formData.priceExcludes.map((item, index) => (
-                    <div
-                      key={index}
-                      className="text-base font-semibold text-[#3A3A3A] flex justify-between items-center"
-                    >
-                      <span>{item}</span>
-                     <button
-  type="button"
-  onClick={() => removeListItem("priceIncludes", index)}
-  className="text-red-500 font-bold px-2"
->
-  ×
-</button>
-
-                    </div>
-                  ))}
-                </div>
-
-                <Input
-  ref={priceExcludeRef }
-  placeholder="Text here.."
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addListItem("priceExcludes", priceExcludeRef .current?.value || "");
-      if (priceExcludeRef .current) priceExcludeRef .current.value = "";
-    }
-  }}
-/>
-
-<button
-  type="button"
-  onClick={() => {
-    addListItem("priceExcludes", priceExcludeRef .current?.value || "");
-    if (priceExcludeRef .current) priceExcludeRef .current.value = "";
-  }}
-className="flex items-center gap-2 text-sm font-medium text-[#344054] hover:text-black transition-colors"
->
-  <Plus className="w-4 h-4" />
-  Add More
-</button>
-
-              </div>
-
-              {/* Expectations */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 pl-1">
-                  <Label className="text-base text-[#334054]">
-                    What expected from enjoyer
-                  </Label>
-                </div>
-
-                <div className="space-y-2">
-                  {formData.expectations.map((item, index) => (
-                    <div
-                      key={index}
-                      className="text-base font-semibold text-[#3A3A3A] flex justify-between items-center"
-                    >
-                      <span>{item}</span>
-                    <button
-  type="button"
-  onClick={() => removeListItem("priceIncludes", index)}
-  className="text-red-500 font-bold px-2"
->
-  ×
-</button>
-
-                    </div>
-                  ))}
-                </div>
-
-              <Input
-  ref={expectationRef }
-  placeholder="Text here.."
-  onKeyDown={(e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      addListItem("expectations", expectationRef .current?.value || "");
-      if (expectationRef .current) expectationRef .current.value = "";
-    }
-  }}
-/>
-
-<button
-  type="button"
-  onClick={() => {
-    addListItem("expectations", expectationRef .current?.value || "");
-    if (expectationRef .current) expectationRef .current.value = "";
-  }}expectationRef 
-className="flex items-center gap-2 text-sm font-medium text-[#344054] hover:text-black transition-colors"
->
-  <Plus className="w-4 h-4" />
-  Add More
-</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 5: Types of Discount */}
-        {currentStep === 5 && (
-          <div className="flex flex-col items-center gap-8 w-full">
-            <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Types of Discount
-            </h1>
-
-            <div className="max-w-4xl mx-auto w-full space-y-4">
-              {/* First 5 User Discount */}
-              <div className="border border-gray-200 rounded-lg p-5 space-y-3">
-                <div className="flex items-center justify-between ">
-                  <span className="text-base font-bold text-[#334054]">
-                    First 5 User Discount
-                  </span>
-                  <label
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${formData.firstUserDiscount ? "bg-gray-600" : "bg-gray-300"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.firstUserDiscount}
-                      onChange={(e) =>
-                        updateFormData("firstUserDiscount", e.target.checked)
-                      }
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.firstUserDiscount ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                  </label>
-                </div>
-
-                <hr
-                  className="border-gray-200"
-                  style={{ borderStyle: "dashed" }}
-                />
-
-                {formData.firstUserDiscount && (
-                  <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-                    <div className="space-y-3">
-                      <Label className="text-base text-[#334054]">
-                        Discount Type
-                      </Label>
-                      <div className={`relative border rounded-lg ${errors.discountType ? "border-red-500" : "border-gray-400"}`}>
-                        <select
-                          value={formData.discountType}
-                          onChange={(e) =>
-                            updateFormData("discountType", e.target.value)
-                          }
-                          className="w-full h-10 px-3 rounded-lg appearance-none bg-transparent text-gray-600 focus:outline-none"
-                        >
-                            <option value="Percentage">Percentage</option>
-                            <option value="Fixed">Fixed Amount</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                      </div>
-                      {errors.discountType && <p className="text-xs text-red-500">{errors.discountType}</p>}
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-base text-[#334054]">
-                        Discount Percentage
-                      </Label>
-                      <Input
-                        type="number"
-                        maxLength={formData.discountType === 'Percentage' ? 2 : 10}
-                        value={formData.discountAmount}
-                        onChange={(e) =>
-                          updateFormData("discountAmount", e.target.value)
-                        }
-                        className={`border text-gray-600 ${errors.discountAmount ? "border-red-500" : "border-gray-400"}`}
-                        placeholder={formData.discountType === 'Percentage' ? "10%" : "Fixed Amount"}
-                      />
-                      {errors.discountAmount && <p className="text-xs text-red-500">{errors.discountAmount}</p>}
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label className="text-base text-[#334054]">
-                        Final Price
-                      </Label>
-                      <Input
-                        type="number"
-                        value={formData.finalPrice}
-                        onChange={(e) =>
-                          updateFormData("finalPrice", e.target.value)
-                        }
-                        className={`border text-gray-600 ${errors.finalPrice ? "border-red-500" : "border-gray-400"}`}
-                        placeholder="Enter Final Price"
-                      />
-                      {errors.finalPrice && <p className="text-xs text-red-500">{errors.finalPrice}</p>}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Festival Offers */}
-              <div className="border border-gray-200 rounded-lg p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-[#334054]">
-                    Festival Offers
-                  </span>
-                  <label
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${formData.festivalOffers ? "bg-gray-600" : "bg-gray-300"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.festivalOffers}
-                      onChange={(e) =>
-                        updateFormData("festivalOffers", e.target.checked)
-                      }
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.festivalOffers ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                  </label>
-                </div>
-
-                {formData.festivalOffers && (
-                  <>
-                    <hr
-                      className="border-gray-200"
-                      style={{ borderStyle: "dashed" }}
-                    />
-                    <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Type
-                        </Label>
-                        <div className={`relative border rounded-lg ${errors.festivalDiscountType ? "border-red-500" : "border-gray-400"}`}>
-                          <select
-                            value={formData.festivalDiscountType}
-                            onChange={(e) =>
-                              updateFormData("festivalDiscountType", e.target.value)
-                            }
-                            className="w-full h-10 px-3 rounded-lg appearance-none bg-transparent text-gray-600 focus:outline-none"
-                          >
-                              <option value="Percentage">Percentage</option>
-                              <option value="Fixed">Fixed Amount</option>
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        {errors.festivalDiscountType && <p className="text-xs text-red-500">{errors.festivalDiscountType}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Percentage
-                        </Label>
-                        <Input
-                          type="number"
-                          maxLength={formData.festivalDiscountType === 'Percentage' ? 2 : 10}
-                          value={formData.festivalDiscountAmount}
-                          onChange={(e) =>
-                            updateFormData("festivalDiscountAmount", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.festivalDiscountAmount ? "border-red-500" : "border-gray-400"}`}
-                          placeholder={formData.festivalDiscountType === 'Percentage' ? "10%" : "2000"}
-                        />
-                        {errors.festivalDiscountAmount && <p className="text-xs text-red-500">{errors.festivalDiscountAmount}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Final Price
-                        </Label>
-                        <Input
-                          type="number"
-                          value={formData.festivalFinalPrice}
-                          onChange={(e) =>
-                            updateFormData("festivalFinalPrice", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.festivalFinalPrice ? "border-red-500" : "border-gray-400"}`}
-                          placeholder="₹ 2000"
-                        />
-                        {errors.festivalFinalPrice && <p className="text-xs text-red-500">{errors.festivalFinalPrice}</p>}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Weekly or Monthly Offers */}
-              <div className="border border-gray-200 rounded-lg p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-[#334054]">
-                    Weekly or Monthly Offers
-                  </span>
-                  <label
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${formData.weeklyOffers ? "bg-gray-600" : "bg-gray-300"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.weeklyOffers}
-                      onChange={(e) =>
-                        updateFormData("weeklyOffers", e.target.checked)
-                      }
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.weeklyOffers ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                  </label>
-                </div>
-
-                {formData.weeklyOffers && (
-                  <>
-                    <hr
-                      className="border-gray-200"
-                      style={{ borderStyle: "dashed" }}
-                    />
-                    <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Type
-                        </Label>
-                        <div className={`relative border rounded-lg ${errors.weeklyDiscountType ? "border-red-500" : "border-gray-400"}`}>
-                          <select
-                            value={formData.weeklyDiscountType}
-                            onChange={(e) =>
-                              updateFormData("weeklyDiscountType", e.target.value)
-                            }
-                            className="w-full h-10 px-3 rounded-lg appearance-none bg-transparent text-gray-600 focus:outline-none"
-                          >
-                              <option value="Percentage">Percentage</option>
-                              <option value="Fixed">Fixed Amount</option>
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        {errors.weeklyDiscountType && <p className="text-xs text-red-500">{errors.weeklyDiscountType}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Percentage
-                        </Label>
-                        <Input
-                          type="number"
-                          maxLength={formData.weeklyDiscountType === 'Percentage' ? 2 : 10}
-                          value={formData.weeklyDiscountAmount}
-                          onChange={(e) =>
-                            updateFormData("weeklyDiscountAmount", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.weeklyDiscountAmount ? "border-red-500" : "border-gray-400"}`}
-                          placeholder={formData.weeklyDiscountType === 'Percentage' ? "10%" : "2000"}
-                        />
-                        {errors.weeklyDiscountAmount && <p className="text-xs text-red-500">{errors.weeklyDiscountAmount}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Final Price
-                        </Label>
-                        <Input
-                          type="number"
-                          value={formData.weeklyFinalPrice}
-                          onChange={(e) =>
-                            updateFormData("weeklyFinalPrice", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.weeklyFinalPrice ? "border-red-500" : "border-gray-400"}`}
-                          placeholder="₹ 2000"
-                        />
-                        {errors.weeklyFinalPrice && <p className="text-xs text-red-500">{errors.weeklyFinalPrice}</p>}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Special Offers */}
-              <div className="border border-gray-200 rounded-lg p-5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-bold text-[#334054]">
-                    Special Offers
-                  </span>
-                  <label
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${formData.specialOffers ? "bg-gray-600" : "bg-gray-300"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.specialOffers}
-                      onChange={(e) =>
-                        updateFormData("specialOffers", e.target.checked)
-                      }
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.specialOffers ? "translate-x-5" : "translate-x-0"}`}
-                    />
-                  </label>
-                </div>
-
-                {formData.specialOffers && (
-                  <>
-                    <hr
-                      className="border-gray-200"
-                      style={{ borderStyle: "dashed" }}
-                    />
-                    <div className="grid grid-cols-3 max-md:grid-cols-1 gap-5 ">
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Type
-                        </Label>
-                        <div className={`relative border rounded-lg ${errors.specialDiscountType ? "border-red-500" : "border-gray-400"}`}>
-                          <select
-                            value={formData.specialDiscountType}
-                            onChange={(e) =>
-                              updateFormData("specialDiscountType", e.target.value)
-                            }
-                            className="w-full h-10 px-3 rounded-lg appearance-none bg-transparent text-gray-600 focus:outline-none"
-                          >
-                              <option value="Percentage">Percentage</option>
-                              <option value="Fixed">Fixed Amount</option>
-                          </select>
-                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                        </div>
-                        {errors.specialDiscountType && <p className="text-xs text-red-500">{errors.specialDiscountType}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Discount Percentage
-                        </Label>
-                        <Input
-                          type="number"
-                          maxLength={formData.specialDiscountType === 'Percentage' ? 2 : 10}
-                          value={formData.specialDiscountAmount}
-                          onChange={(e) =>
-                            updateFormData("specialDiscountAmount", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.specialDiscountAmount ? "border-red-500" : "border-gray-400"}`}
-                          placeholder={formData.specialDiscountType === 'Percentage' ? "10%" : "2000"}
-                        />
-                        {errors.specialDiscountAmount && <p className="text-xs text-red-500">{errors.specialDiscountAmount}</p>}
-                      </div>
-
-                      <div className="space-y-3">
-                        <Label className="text-base text-[#334054]">
-                          Final Price
-                        </Label>
-                        <Input
-                          type="number"
-                          value={formData.specialFinalPrice}
-                          onChange={(e) =>
-                            updateFormData("specialFinalPrice", e.target.value)
-                          }
-                          className={`border text-gray-600 ${errors.specialFinalPrice ? "border-red-500" : "border-gray-400"}`}
-                          placeholder="₹ 2000"
-                        />
-                        {errors.specialFinalPrice && <p className="text-xs text-red-500">{errors.specialFinalPrice}</p>}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 6: Business Details */}
-        {currentStep === 6 && (
-          <div className="flex flex-col items-center gap-8 w-full">
-            <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Business Details
-            </h1>
-
-            <div className="max-w-4xl mx-auto w-full space-y-5">
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Brand Name
-                  </Label>
-                  <Input
-                    value={formData.brandName}
-                    onChange={(e) =>
-                      updateFormData("brandName", e.target.value)
-                    }
-                    className={`border ${errors.brandName ? "border-red-500" : "border-gray-200"}`}
-                    placeholder="Enter Your Brand Name"
-                  />
-                  {errors.brandName && <p className="text-xs text-red-500 pl-1">{errors.brandName}</p>}
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Legal Company Name
-                  </Label>
-                  <Input
-                    value={formData.legalCompanyName}
-                    onChange={(e) =>
-                      updateFormData("legalCompanyName", e.target.value)
-                    }
-                    className={`border ${errors.legalCompanyName ? "border-red-500" : "border-gray-200"}`}
-                    placeholder="Enter Your Company Name"
-                  />
-                  {errors.legalCompanyName && <p className="text-xs text-red-500 pl-1">{errors.legalCompanyName}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    GST Number
-                  </Label>
-                  <Input
-                    value={formData.gstNumber}
-                    onChange={(e) =>
-                      updateFormData("gstNumber", e.target.value)
-                    }
-                    className="border border-gray-200"
-                    placeholder=" GST Number (Optional)"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Business Email ID
-                  </Label>
-                  <Input
-                    value={formData.businessEmail}
-                    onChange={(e) =>
-                      updateFormData("businessEmail", e.target.value)
-                    }
-                    className="border border-gray-200"
-                    placeholder="Enter Business Email ID (Optional)"
-                  />
-                </div>
-              </div>
-
-             <div className="w-1/2 max-md:w-full space-y-3">
-  <Label className="text-base text-[#334054] pl-1">
-    Business Phone number
-  </Label>
-
-  <div className="flex items-center gap-3">
-    <div className="border h-10 border-gray-200 rounded-lg px-3 py-3 flex items-center gap-1">
-      <span className="text-lg">🇮🇳</span>
-      <span className="text-base text-gray-400">+91</span>
-    </div>
-
-    <Input
-      type="tel"
-      inputMode="numeric"
-      value={formData.businessPhone}
-      onChange={(e) => {
-        const onlyNumbers = e.target.value.replace(/\D/g, ""); // remove non-digits
-        updateFormData("businessPhone", onlyNumbers);
-
-        if (errors.businessPhone) {
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.businessPhone;
-            return newErrors;
-          });
-        }
-      }}
-      className={`border h-10 ${
-        errors.businessPhone ? "border-red-500" : "border-gray-200"
-      }`}
-      placeholder="Enter Business Phone Number"
-      maxLength={10}
-    />
-  </div>
-
-  {errors.businessPhone && (
-    <p className="text-xs text-red-500 pl-1">
-      {errors.businessPhone}
-    </p>
-  )}
-</div>
-
-              <div className="space-y-4">
-                <Label className="text-base text-[#334054] pl-1">
-                  Business Address
-                </Label>
-                <div className="space-y-5">
-                  {/* City & State */}
-                  <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                    {/* Country Select */}
-                    <div className="relative">
-                      <select
-                        name="country"
-                        value={formData.businessLocality}
-                        onChange={(e) => {
-                          updateFormData(
-                            "businessLocality",
-                            formData.businessLocality,
-                          );
-                          // Reset dependent fields on country change
-                          updateFormData("businessState", "");
-                          updateFormData("businessCity", "");
-                        }}
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-gray-100 dark:bg-gray-700 cursor-not-allowed appearance-none"
-                      >
-                        <option value="India" disabled>
-                          India
-                        </option>
-                        {/* {data.map((country: any, idx: number) => (
-      <option key={idx} value={country.name}>
-        {country.name}
-      </option>
-    ))} */}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* State Select */}
-                    <div className="relative">
-                      <select
-                        name="state"
-                        value={formData.businessState}
-                        onChange={(e) => {
-                          const stateVal = e.target.value;
-                          updateFormData("businessState", stateVal);
-                          // Reset city when state changes
-                          updateFormData("businessCity", "");
-                        }}
-                        disabled={!formData.businessLocality}
-                        className={`w-full h-[50px] px-3  border rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none ${errors.businessState ? "border-red-500" : "border-[#EAECF0] dark:border-gray-600"}`}
-                      >
-                        <option value="" disabled>
-                          Select State
-                        </option>
-                        {data
-                          .find(
-                            (c: any) => c.name === formData.businessLocality,
-                          )
-                          ?.states?.map((state: any, idx: number) => (
-                            <option key={idx} value={state.name}>
-                              {state.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                       {errors.businessState && <p className="absolute -bottom-5 text-xs text-red-500">{errors.businessState}</p>}
-                    </div>
-
-                    {/* City Select */}
-                    <div className="relative">
-                      <select
-                        name="city"
-                        value={formData.businessCity}
-                        onChange={(e) =>
-                          updateFormData("businessCity", e.target.value)
-                        }
-                        disabled={!formData.businessState}
-                        className={`w-full h-[50px] px-3 border rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none ${errors.businessCity ? "border-red-500" : "border-[#EAECF0] dark:border-gray-600"}`}
-                      >
-                        <option value="" disabled>
-                          Select City
-                        </option>
-                        {data
-                          .find(
-                            (country: any) =>
-                              country.name === formData.businessLocality,
-                          )
-                          ?.states.find(
-                            (state: any) =>
-                              state.name === formData.businessState,
-                          )
-                          ?.cities.map((city: any, idx: number) => (
-                            <option key={idx} value={city.name}>
-                              {city.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {errors.businessCity && <p className="absolute -bottom-5 text-xs text-red-500">{errors.businessCity}</p>}
-                    </div>
-                    {/* Locality & Pincode */}
-                   <div className="flex flex-col w-full">
-  <Input
-    type="tel"
-    inputMode="numeric"
-    value={formData.businessPincode}
-    maxlength={6}
-    onChange={(e) => {
-      const onlyNumbers = e.target.value.replace(/\D/g, ""); // remove non-digits
-      updateFormData("businessPincode", onlyNumbers);
-
-      if (errors.businessPincode) {
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors.businessPincode;
-          return newErrors;
-        });
-      }
-    }}
-    className={`border w-56 ${
-      errors.businessPincode ? "border-red-500" : "border-gray-200"
-    }`}
-    placeholder="Pincode"
-    maxLength={6}
-  />
-
-  {errors.businessPincode && (
-    <p className="text-xs text-red-500 mt-1">
-      {errors.businessPincode}
-    </p>
-  )}
-</div>
-                  </div>
-                </div>
-              </div>
-                        {/* Map Integration */}
-               <div className="h-96 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-  <iframe
-    src={mapSrcbusiness}
-    width="100%"
-    height="100%"
-    style={{ border: 0 }}
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-    title="Selected Location Map"
-  />
-</div>
-            </div>
-            
-          </div>
-        )}
-
-        {/* Step 7: Personal Details */}
-        {currentStep === 7 && (
-          <div className="flex mt-10 max-w-5xl w-full max-auto  flex-col items-center gap-10 ">
-            <h1 className="text-3xl font-bold text-black dark:text-white text-center">
-              Personal Details
-            </h1>
-
-            <div className=" mx-auto w-full space-y-5">
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                <div className="space-y-4">
-                  <Label className="text-base text-[#334054] pl-1">
-                    First Name
-                  </Label>
-                  <Input
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      updateFormData("firstName", e.target.value)
-                    }
-                    className={`border ${errors.firstName ? "border-red-500" : "border-gray-200"}`}
-                    placeholder="Enter Your First Name"
-                  />
-                  {errors.firstName && <p className="text-xs text-red-500 pl-1">{errors.firstName}</p>}
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Last Name
-                  </Label>
-                  <Input
-                    value={formData.lastName}
-                    onChange={(e) => updateFormData("lastName", e.target.value)}
-                    className={`border ${errors.lastName ? "border-red-500" : "border-gray-200"}`}
-                    placeholder="Enter Your Last Name"
-                  />
-                  {errors.lastName && <p className="text-xs text-red-500 pl-1">{errors.lastName}</p>}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1">
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Date of Birth
-                  </Label>
-                  <Input
-                    type="date"
-                    value={formData.dateOfBirth}
-                    onChange={(e) =>
-                      updateFormData("dateOfBirth", e.target.value)
-                    }
-                    className="border border-gray-200"
-                    placeholder="04/02/2002"
-                  />
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Marital Status
-                  </Label>
-                  <select
-                    className="border border-gray-200 rounded-lg px-3 py-2 w-full"
-                    value={formData.maritalStatus}
-                    onChange={(e) =>
-                      updateFormData("maritalStatus", e.target.value)
-                    }
-                  >
-                    <option value="" disabled>
-                      Select
-                    </option>
-                    <option value="single">Single</option>
-                    <option value="married">Married</option>
-                    <option value="divorced">Divorced</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 gap-5">
-                {/* ID Proof */}
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    ID Proof
-                  </Label>
-                  <select
-                    className="border border-gray-200 rounded-lg px-3 py-2 w-full"
-                    value={formData.idProof}
-                    onChange={(e) => updateFormData("idProof", e.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select
-                    </option>
-                    <option value="aadhar">Aadhar Card</option>
-                    <option value="passport">Passport</option>
-                    <option value="driving_license">Driving License</option>
-                  </select>
-                </div>
-
-                {/* ID Photos */}
-                <div className="flex flex-col gap-5">
-                  <Label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                    ID Photos
-                  </Label>
-                  <div className={`w-[242px] max-md:w-full h-[175px] flex flex-col items-center justify-center gap-4 bg-[#F9FAFB] dark:bg-gray-800 rounded-xl border ${errors.idPhotos ? "border-red-500" : "border-gray-200 dark:border-gray-600"} relative overflow-hidden`}>
-                    {formData.idPhotos.length > 0 ? (
-                    <div className="w-full h-full relative">
-                        <img 
-                        src={renderImageSrc(formData.idPhotos[0])} 
-                        alt="ID Proof" 
-                        className="w-full h-full object-cover absolute top-0 left-0"
-                      />
-                        <button
-                            type="button"
-                            onClick={() => removeFile("idPhotos", index)}
-                            className="absolute top-1 right-1 w-5 h-5 bg-gray-100 rounded-full flex items-center justify-center text-red-500 font-bold"
-                          >
-                            ×
-                          </button></div>
-                    ) : (
-                      <>
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M1.125 9H16.875"
-                            stroke="#98A2B3"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M9 16.875L9 1.125"
-                            stroke="#98A2B3"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span className="text-sm text-black font-['Plus_Jakarta_Sans'] z-1">
-                          Upload Here
-                        </span>
-                      </>
-                    )}
-                    
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      multiple
-                      onChange={(e) => handleFileUpload("idPhotos", e.target.files)}
-                      style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        opacity: 0,
-                        cursor: "pointer",
-                        left: 0,
-                        top: 0,
-                        zIndex: 10,
-                      }}
-                    />
-                  </div>
-                  {errors.idPhotos && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {errors.idPhotos}
-                    </p>
-                  )}
-            
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-5 max-md:grid-cols-1 ">
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">
-                    Country
-                  </Label>
-                  {/* Country Select */}
-                  <div className="relative">
-                    <select
-                      name="country"
-                      value={formData.personalLocality}
-                      onChange={(e) => {
-                        // const countryVal = e.target.value;
-                        updateFormData("personalLocality", "India");
-                        // Reset state and city when country changes
-                        updateFormData("personalState", "");
-                        updateFormData("personalCity", "");
-                      }}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-gray-100 dark:bg-gray-700 cursor-not-allowed appearance-none"
-                    >
-                      <option value="India">India</option>
-                      {/* {data.map((country: any, idx: number) => (
-                      <option key={idx} value={country.name}>
-                        {country.name}
-                      </option>
-                    ))} */}
-                    </select>
-                    <svg
-                      className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                    >
-                      <path
-                        d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                        stroke="#292D32"
-                        strokeWidth="1.5"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">State</Label>
-
-                  {/* State Select */}
-                  <div className="relative">
-                    <select
-                      name="state"
-                      value={formData.personalState}
-                      onChange={(e) => {
-                        const stateVal = e.target.value;
-                        updateFormData("personalState", stateVal);
-                        // Reset city when state changes
-                        updateFormData("personalCity", "");
-                      }}
-                      disabled={!formData.personalLocality}
-                      className={`w-full h-[50px] px-3  border rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none ${errors.personalState ? "border-red-500" : "border-[#EAECF0] dark:border-gray-600"}`}
-                    >
-                      <option value="" disabled>
-                        Select State
-                      </option>
-                      {data
-                        .find((c: any) => c.name === formData.personalLocality)
-                        ?.states?.map((state: any, idx: number) => (
-                          <option key={idx} value={state.name}>
-                            {state.name}
-                          </option>
-                        ))}
-                    </select>
-                    <svg
-                      className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                    >
-                      <path
-                        d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                        stroke="#292D32"
-                        strokeWidth="1.5"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    {errors.personalState && <p className="absolute -bottom-5 text-xs text-red-500">{errors.personalState}</p>}
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <Label className="text-base text-[#334054] pl-1">City</Label>
-
-                  {/* City Select */}
-                  <div className="relative">
-                    <select
-                      name="city"
-                      value={formData.personalCity}
-                      onChange={(e) =>
-                        updateFormData("personalCity", e.target.value)
-                      }
-                      disabled={!formData.personalState}
-                      className={`w-full h-[50px] px-3  border rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none ${errors.personalCity ? "border-red-500" : "border-[#EAECF0] dark:border-gray-600"}`}
-                    >
-                      <option value="" disabled>
-                        Select City
-                      </option>
-                      {data
-                        .find(
-                          (country: any) =>
-                            country.name === formData.personalLocality,
-                        )
-                        ?.states.find(
-                          (state: any) => state.name === formData.personalState,
-                        )
-                        ?.cities.map((city: any, idx: number) => (
-                          <option key={idx} value={city.name}>
-                            {city.name}
-                          </option>
-                        ))}
-                    </select>
-                    <svg
-                      className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                    >
-                      <path
-                        d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                        stroke="#292D32"
-                        strokeWidth="1.5"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    {errors.personalCity && <p className="absolute -bottom-5 text-xs text-red-500">{errors.personalCity}</p>}
-                  </div>
-                </div>
-                <div className="space-y-3">
-  <Label className="text-base text-[#334054] pl-1">
-    Pincode
-  </Label>
-
-  <Input
-    type="tel"
-    inputMode="numeric"
-    value={formData.personalPincode}
-    onChange={(e) => {
-      const onlyNumbers = e.target.value.replace(/\D/g, ""); // remove non-digits
-      updateFormData("personalPincode", onlyNumbers);
-
-      if (errors.personalPincode) {
-        setErrors((prev) => {
-          const newErrors = { ...prev };
-          delete newErrors.personalPincode;
-          return newErrors;
-        });
-      }
-    }}
-    className={`border ${
-      errors.personalPincode ? "border-red-500" : "border-gray-200"
-    }`}
-    placeholder="Pincode"
-    maxLength={6}
-  />
-
-  {errors.personalPincode && (
-    <p className="text-xs text-red-500 pl-1">
-      {errors.personalPincode}
-    </p>
-  )}
-</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Step 8: Terms & Conditions */}
-   {currentStep === 8 && (
-  <div className=" flex flex-col md:flex-row gap-6 max-h-screen overflow-y-auto scrollbar-hide p-4">
-
-    {/* Left Content */}
-    <div className="flex-1 flex flex-col gap-4">
-      <h1 className="text-[32px] md:text-[32px] text-base font-bold text-[#1C2939] dark:text-white">
-        Terms & Conditions for Verification
-      </h1>
-
-      <p className="text-sm md:text-base text-[#485467] dark:text-gray-400 leading-[155%]">
-        By proceeding with the verification process on{" "}
-        <span className="font-bold text-[#1C2939] dark:text-white">
-          Travel Homes
-        </span>
-        , you agree to the following terms and conditions:
-      </p>
-
-      {/* Terms */}
-      <div className="space-y-2">
-        <p className="text-sm md:text-base leading-[155%]">
-          <span className="font-bold text-[#101828] dark:text-white">
-            1. Accurate Information
-          </span>
-          <span className="text-[#334054] dark:text-gray-300">
-            {" "}– Provide truthful details; false information may lead to account suspension.
-          </span>
-        </p>
-
-        <p className="text-sm md:text-base leading-[155%]">
-          <span className="font-bold text-[#101828] dark:text-white">
-            2. Data Usage & Security
-          </span>
-          <span className="text-[#334054] dark:text-gray-300">
-            {" "}– Your data is securely stored and used only for verification; third-party services may assist.
-          </span>
-        </p>
-
-        <p className="text-sm md:text-base leading-[155%]">
-          <span className="font-bold text-[#101828] dark:text-white">
-            3. Verification Rights
-          </span>
-          <span className="text-[#334054] dark:text-gray-300">
-            {" "}– Verification may be denied if information is invalid; terms may change.
-          </span>
-        </p>
-      </div>
-
-      {/* Checkbox & Button */}
-      <div className="flex flex-col gap-6 mt-4">
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="terms"
-            checked={formData.termsAccepted}
-            onCheckedChange={(checked) =>
-              updateFormData("termsAccepted", Boolean(checked))
-            }
-          />
-          <Label
-            htmlFor="terms"
-            className="text-sm font-medium text-[#1C2939] dark:text-gray-300"
-          >
-            I accept the terms and conditions
-          </Label>
-        </div>
-
-        
-      </div>
-    </div>
-
-    {/* Right Image */}
-    <div className="flex justify-center items-center md:pb-4">
-      <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7e591c21d8b3bea0e51f3c5c2a65a03538099697?width=1000"
-        alt="Verification Illustration"
-        className="w-[280px] md:w-[500px] h-auto object-contain"
-      />
-    </div>
-  </div>
-)}
-
-      </div>
-
-      {/* Footer */}
-      <div className="flex  w-full z-30 fixed items-center justify-center bottom-0 left-0 lg:px-20   bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
-        <div className="w-4xl  flex gap-5 py-3 items-center justify-center w-full ">
-          {currentStep === 8 ? (
-            <div className="flex items-center gap-3 order-2">
-            <button
-          onClick={handleBack}
-          className="text-[13px] flex items-center gap-2 px-8 py-3 rounded-[60px] border border-gray-300 dark:border-gray-600"
-        >
-          <span>Back</span>
-        </button>
-            <Button
-          type="button"
-          onClick={handleNext}
-          disabled={isLoading || !formData.termsAccepted}
-          className="w-fit px-8 py-[14px] rounded-full bg-[#131313] text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
-        >
-          {isLoading ? "Loading..." : "Start Verification"}
-        </Button>
-        </div>) :
-        (
-          <>
-          <div className="flex items-center max-md:flex-col gap-6 order-1 py-2">
-     <span className="max-md:hidden text-lg font-bold text-black">
-              {currentStep + 0}/8 Completed
-            </span>
-            
-           <div className="md:hidden flex justify-between   gap-6">
-             <button
-          onClick={handleBack}
-        className=" flex items-center text-sm px-6 py-1 rounded-[60px] border border-gray-200 dark:border-gray-600"
-        >
-          <span>Back</span>
-        </button>
-          <span className="text-lg font-bold text-black">
-              {currentStep + 0}/8 Completed
-            </span>
-
-                 <button
-              onClick={handleNext}
-              className="flex items-center justify-center text-sm px-6 py-1 bg-[#131313] text-white rounded-full"
-       type="button"
-              disabled={isLoading || !canProceed()}
-            >
-              {isLoading
-                ? "Loading..."
-                : currentStep === 7
-                  ? "Complete"
-                  : "Next"}
-            </button>
-     </div>
-            <div className="flex items-center gap-1.5 w-72">
-              {Array.from({ length: 8 }, (_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 flex-1 rounded-full ${
-                    i <= currentStep ? "bg-black" : "bg-gray-200"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 order-2">
-            <button
-          onClick={handleBack}
-          className="max-md:hidden text-[13px] flex items-center gap-2 px-8 py-2 rounded-[60px] border border-gray-300 dark:border-gray-600"
-        >
-          <span>Back</span>
-        </button>
-
-            <button
-              onClick={handleNext}
-              className=" max-md:hidden px-8 py-2 bg-black text-white rounded-full hover:bg-gray-800"
-              type="button"
-              disabled={isLoading || !canProceed()}
-            >
-              {isLoading
-                ? "Loading..."
-                : currentStep === 7
-                  ? "Complete"
-                  : "Next"}
-            </button>
-          </div>
-          </>
-        )
-        }
-        </div>
-      </div>
-    </div>
-    </div>
+      {/* Step 1: Features */}
+      {currentStep === 1 && (
+        <FeaturesStep
+          selectedActivities={formData.selectedActivities}
+          selectedFeatures={formData.features}
+          activityFeatures={activityFeatures}
+          activityFeatureMap={activityFeatureMap}
+          adminFeatures={adminFeatures}
+          customFeatures={customFeatures}
+          showCustomFeaturesInput={showCustomFeaturesInput}
+          customFeatureInput={customFeatureInput}
+          onToggleFeature={toggleFeature}
+          onRemoveCustomFeature={handleRemoveCustomFeature}
+          onSetShowCustomFeaturesInput={setShowCustomFeaturesInput}
+          onSetCustomFeatureInput={setCustomFeatureInput}
+          onAddCustomFeature={handleAddCustomFeature}
+        />
+      )}
+
+      {/* Step 2: Activity Details */}
+      {currentStep === 2 && (
+        <DetailsStep
+          activityName={formData.activityName}
+          description={formData.description}
+          coverImage={formData.coverImage}
+          photos={formData.photos}
+          rulesAndRegulations={formData.rulesAndRegulations}
+          ruleInput={ruleInput}
+          errors={errors}
+          photoCarouselRef={photoCarouselRef as React.RefObject<HTMLDivElement>}
+          onUpdateFormData={updateFormData}
+          onCoverImageUpload={handleCoverImageUpload}
+          onPhotoUpload={(files) => handleFileUpload("photos", files)}
+          onRemoveFile={removeFile}
+          onSetRuleInput={setRuleInput}
+          onAddRule={handleAddRule}
+          onRemoveRule={handleRemoveRule}
+          renderImageSrc={renderImageSrc}
+          setErrors={setErrors}
+        />
+      )}
+
+      {/* Step 3: Pricing Details */}
+      {currentStep === 3 && (
+        <PricingStep
+          regularPrice={formData.regularPrice}
+          personCapacity={formData.personCapacity}
+          timeDuration={formData.timeDuration}
+          address={(formData as any).address || ""}
+          locality={formData.locality}
+          state={formData.state}
+          city={formData.city}
+          pincode={formData.pincode}
+          errors={errors}
+          locationData={data}
+          onUpdateFormData={updateFormData}
+          setFormData={setFormData as any}
+        />
+      )}
+
+      {/* Step 4: Inclusion & Exclusion */}
+      {currentStep === 4 && (
+        <InclusionExclusionStep
+          priceIncludes={formData.priceIncludes}
+          priceExcludes={formData.priceExcludes}
+          expectations={formData.expectations}
+          onAddListItem={addListItem}
+          onRemoveListItem={removeListItem}
+        />
+      )}
+
+      {/* Step 5: Types of Discount */}
+      {currentStep === 5 && (
+        <DiscountOffersStep
+          offers={discountOffers}
+          onToggle={handleDiscountToggle}
+          onOfferChange={handleDiscountOfferChange}
+          errors={errors}
+          weeklyLabel="Weekly or Monthly Offers"
+        />
+      )}
+
+      {/* Step 6: Business Details */}
+      {currentStep === 6 && (
+        <BusinessDetailsStep
+          values={{
+            brandName: formData.brandName,
+            companyName: formData.legalCompanyName,
+            gstNumber: formData.gstNumber,
+            businessEmail: formData.businessEmail,
+            businessPhone: formData.businessPhone,
+            pincode: formData.businessPincode,
+          }}
+          errors={errors}
+          onChange={handleBusinessChange}
+          selectedCountry={selectedCountry}
+          onCountrySelect={setSelectedCountry}
+          countryDialogOpen={countryDialogOpen}
+          setCountryDialogOpen={setCountryDialogOpen}
+          countries={countries}
+          locationData={data}
+          selectedState={formData.businessState}
+          selectedCity={formData.businessCity}
+          countryName={formData.businessLocality}
+          onStateChange={handleBusinessStateChange}
+          onCityChange={handleBusinessCityChange}
+          mapSrc={mapSrcbusiness}
+        />
+      )}
+
+      {/* Step 7: Personal Details */}
+      {currentStep === 7 && (
+        <PersonalDetailsStep
+          values={{
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            pincode: formData.personalPincode,
+            dateOfBirth: formData.dateOfBirth,
+            maritalStatus: formData.maritalStatus,
+            idProof: formData.idProof,
+          }}
+          errors={errors}
+          onChange={handlePersonalChange}
+          locationData={data}
+          selectedState={formData.personalState}
+          selectedCity={formData.personalCity}
+          countryName={formData.personalLocality}
+          onStateChange={handlePersonalStateChange}
+          onCityChange={handlePersonalCityChange}
+          idProofImage={idProofImage}
+          onIdProofUpload={handleIdProofUpload}
+          uploadError={errors.idPhotos}
+        />
+      )}
+
+      {/* Step 8: Terms & Conditions */}
+      {currentStep === 8 && (
+        <TermsConditionsStep
+          termsAccepted={formData.termsAccepted}
+          onTermsChange={(checked) => updateFormData("termsAccepted", checked)}
+        />
+      )}
+    </OnboardingLayout>
   );
 };
 

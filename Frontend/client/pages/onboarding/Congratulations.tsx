@@ -24,7 +24,7 @@ const Congratulations = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background dark-transition">
+    <div className="onboarding-layout min-h-screen bg-background dark-transition">
       {/* Header */}
       <div className="onboarding-header">
         <div className="flex items-center justify-center h-[50px]">
@@ -140,7 +140,8 @@ const Congratulations = () => {
          
             <button
               onClick={handleBackToHome}
-              className="flex items-center justify-center px-6 sm:px-8 py-[14px] h-[52px] bg-[#131313] hover:bg-gray-800 dark:bg-[#131313] dark:hover:bg-gray-700 text-white rounded-[60px] hover:shadow-lg transition-all duration-200 focus-ring"
+              className="flex items-center justify-center px-6 sm:px-8 py-[14px] h-[52px] hover:brightness-110 rounded-[60px] hover:shadow-lg transition-all duration-200 focus-ring"
+              style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
               aria-label="Go to dashboard"
             >
               <span className="text-sm sm:text-base font-medium font-geist tracking-[-0.32px] leading-[120%]">

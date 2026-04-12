@@ -316,7 +316,7 @@ export default function AirbnbHeader({
             : "0 0 0 rgba(0, 0, 0, 0)",
         }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-[backdrop-filter] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-[backdrop-filter] duration-500 ease-in-out ${
           isScrolled ? "backdrop-blur-md" : "backdrop-blur-none"
         }`}
       >
@@ -331,14 +331,14 @@ export default function AirbnbHeader({
             >
               {/* Dark logo (scrolled) */}
               <div
-                className="transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="transition-opacity duration-500 ease-in-out"
                 style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 1 : 0 }}
               >
                 <LogoWebsite />
               </div>
               {/* White logo (hero) — absolute overlaid, fades out on scroll */}
               <div
-                className="absolute inset-0 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="absolute inset-0 transition-opacity duration-500 ease-in-out"
                 style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 0 : 1 }}
               >
                 <HomeLogoWebsite variant="dark" />
@@ -538,7 +538,7 @@ export default function AirbnbHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
                       isScrolled
                         ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
@@ -562,7 +562,7 @@ export default function AirbnbHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
                       isScrolled
                         ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
@@ -574,7 +574,7 @@ export default function AirbnbHeader({
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className={`rounded-full px-5 h-9 text-sm font-semibold transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                    className={`rounded-full px-5 h-9 text-sm font-semibold transition-all duration-500 ease-in-out ${
                       isScrolled
                         ? "bg-gray-900 hover:bg-gray-700 text-white"
                         : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
@@ -589,7 +589,7 @@ export default function AirbnbHeader({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`lg:hidden p-2 rounded-full transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
+                className={`lg:hidden p-2 rounded-full transition-all duration-500 ease-in-out ${
                   isScrolled
                     ? "text-gray-800 hover:bg-gray-100"
                     : "text-white hover:bg-white/15"

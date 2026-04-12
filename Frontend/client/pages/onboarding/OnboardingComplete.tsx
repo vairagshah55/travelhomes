@@ -23,11 +23,11 @@ const OnboardingComplete = () => {
   };
 
   return (
- <div className="min-h-screen flex flex-col dark-transition">
+ <div className="onboarding-layout min-h-screen flex flex-col dark-transition">
 
   {/* ================= Header ================= */}
-  <header className="flex-none border-b">
-    <div className="flex items-center h-[56px] px-6">
+  <header className="flex-none border-b border-gray-100 dark:border-gray-800">
+    <div className="flex items-center h-14 px-6 lg:px-16">
       <img
         src="https://api.builder.io/api/v1/image/assets/TEMP/f6f09b434677d6443a1c0584231cf8b7ddcb9a02?width=160"
         alt="Travel Mines Logo"
@@ -71,29 +71,30 @@ const OnboardingComplete = () => {
   </main>
 
   {/* ================= Footer ================= */}
-  <footer className="flex-none border-t px-4 py-4">
+  <footer className="flex-none border-t border-gray-100 dark:border-gray-800 px-6 lg:px-16 py-4">
     <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
 
       {/* Back */}
       <button
         onClick={handleBack}
-        className="auth-back-button hover:opacity-70 transition order-2 sm:order-1"
+        className="flex items-center gap-1 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors order-2 sm:order-1"
       >
         ← Back
       </button>
 
       {/* Actions */}
-      <div className="flex items-center gap-4 order-1 sm:order-2">
+      <div className="flex items-center gap-3 order-1 sm:order-2">
         <button
           onClick={handleEdit}
-          className="px-8 py-[14px] h-[50px] border rounded-full"
+          className="h-11 px-8 text-sm border border-gray-200 dark:border-gray-600 rounded-full hover:border-gray-400 transition-colors"
         >
           Edit
         </button>
 
         <button
           onClick={handleBackToHome}
-          className="px-8 py-[14px] h-[52px] bg-black text-white rounded-full"
+          className="h-11 px-8 text-sm hover:brightness-110 font-semibold rounded-full transition-opacity"
+          style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
         >
           Back to Home
         </button>

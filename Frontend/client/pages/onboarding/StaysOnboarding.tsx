@@ -1,20 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { Button } from "../../components/ui/button";
-import { Checkbox } from "../../components/ui/checkbox";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
-import { ArrowLeft, ChevronUp, ChevronDown, Plus, Minus, X } from "lucide-react";
 import { toast } from "sonner";
-import LogoWebsite from "@/components/ui/LogoWebsite";
 import e from "express";
-import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
-import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { Country } from "country-state-city";
-import * as Flags from "country-flag-icons/react/3x2";
 import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import {
@@ -36,16 +27,25 @@ import {
   CookingPot,
   MoreHorizontal,
 } from "lucide-react";
-import { FaUserTie } from "react-icons/fa";
 import { useUserDetails } from "@/hooks/useUserDetails";
 
+// Shared components
+import {
+  OnboardingLayout,
+  BusinessDetailsStep,
+  PersonalDetailsStep,
+  TermsConditionsStep,
+  DiscountOffersStep,
+} from "./components/shared";
+import type { CountryOption, DiscountOffer } from "./components/shared";
 
-type CountryOption = {
-  isoCode: string;
-  name: string;
-  countryCode?: string;
-  dialCode?: string;
-};
+// Stays-specific step components
+import {
+  PropertyTypeStep,
+  CategorySelectionStep,
+  StayDetailsStep,
+  FeaturesStep,
+} from "./components/stays";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,
@@ -54,17 +54,9 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   dialCode: c.phonecode,
 }));
 
-// Property types data with icons - now fetched from API
-// const propertyTypes = [...]; 
-
 // Property categories based on property types
 const propertyCategories: Record<string, { id: string; name: string; icon: string }[]> = {
-  villa: [
-    // { id: "luxury", name: "Luxury Villa", icon: "🏰" },
-    // { id: "beachfront", name: "Beachfront Villa", icon: "🏖️" },
-    // { id: "mountain", name: "Mountain Villa", icon: "🏔️" },
-    // { id: "private", name: "Private Villa", icon: "🏡" },
-  ],
+  villa: [],
   cabin: [
     { id: "rustic", name: "Rustic Cabin", icon: "🏕️" },
     { id: "modern", name: "Modern Cabin", icon: "🏠" },
@@ -116,11 +108,6 @@ const propertyCategories: Record<string, { id: string; name: string; icon: strin
     { id: "cultural", name: "Cultural Village", icon: "🎭" },
     { id: "homestay", name: "Homestay Village", icon: "🏠" },
   ],
-  // treehouse: [
-  //   { id: "luxury", name: "Luxury Treehouse", icon: "🏰" },
-  //   { id: "adventure", name: "Adventure Treehouse", icon: "🧗" },
-  //   { id: "family", name: "Family Treehouse", icon: "👨‍👩‍👧‍👦" },
-  // ],
   container: [
     { id: "modern", name: "Modern Container", icon: "🏗️" },
     { id: "shipping", name: "Shipping Container", icon: "🚢" },
@@ -135,8 +122,8 @@ const propertyCategories: Record<string, { id: string; name: string; icon: strin
 
 // Dynamic features based on property types and categories
 const getFeaturesForProperty = (propertyType: string, category: string, stayType: string) => {
-  const baseFeatures = [
-   
+  const baseFeatures: { label: string; value: string; icon: string | React.ComponentType<any> }[] = [
+
   ];
 
   // Features for entire stay properties
@@ -154,7 +141,6 @@ const getFeaturesForProperty = (propertyType: string, category: string, stayType
       { label: "Spa", value: "spa", icon: "💆" },
     ];
 
-    // Add property-specific features
     switch (propertyType) {
       case "villa":
         return [
@@ -200,10 +186,9 @@ const getFeaturesForProperty = (propertyType: string, category: string, stayType
   else {
     const roomFeatures = [
       ...baseFeatures,
-     
+
     ];
 
-    // Add property-specific room features
     switch (propertyType) {
       case "tent":
         return [
@@ -291,7 +276,7 @@ const StaysOnboarding = () => {
       bathrooms: 1,
       price: 5934,
     },
-  
+
   ]);
   const [expandedRoom, setExpandedRoom] = useState<string>("1");
 
@@ -445,15 +430,6 @@ useEffect(() => {
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
-        
-        // Enforce single pending service - REMOVED per user request to allow multiple service creation
-        // if (data && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
-        //     if (data.type !== 'stay') {
-        //       toast.info(`You have a pending ${data.type} application. Please complete it first.`);
-        //       navigate(`/onboarding/${data.type}`);
-        //       return;
-        //     }
-        // }
 
         if (data && data.type === 'stay' && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
           const doc = data.doc;
@@ -480,7 +456,7 @@ useEffect(() => {
           setNumberOfBathrooms(doc.numberOfBathrooms || 0);
           console.log('regularPrice:', doc.regularPrice);
           setRegularPrice(String(doc.regularPrice || ""));
-          
+
           console.log('rooms:', doc.rooms);
           if (doc.rooms && doc.rooms.length > 0) {
             setRooms(doc.rooms);
@@ -496,7 +472,7 @@ useEffect(() => {
                setImages([...imgs, ...Array(Math.max(0, 5 - imgs.length)).fill(null)]);
             }
           }
-          
+
           console.log('selectedFeatures:', doc.selectedFeatures);
           setSelectedFeatures(doc.selectedFeatures || []);
           console.log('rules:', doc.rules);
@@ -505,7 +481,7 @@ useEffect(() => {
           setRoomRules(doc.roomRules || {});
           console.log('optionalRules:', doc.optionalRules);
           setOptionalRules(doc.optionalRules && doc.optionalRules.length > 0 ? doc.optionalRules : [""]);
-          
+
           console.log('firstUserDiscount:', doc.firstUserDiscount);
           setFirstUserDiscount(doc.firstUserDiscount ?? true);
           console.log('discountType:', doc.discountType);
@@ -514,14 +490,14 @@ useEffect(() => {
           setDiscountPercentage(String(doc.discountPercentage || ""));
           console.log('finalPrice:', doc.finalPrice);
           setFinalPrice(String(doc.finalPrice || ""));
-          
+
           console.log('festivalOffers:', doc.festivalOffers);
           setFestivalOffers(doc.festivalOffers ?? false);
           console.log('weeklyOffers:', doc.weeklyOffers);
           setWeeklyOffers(doc.weeklyOffers ?? false);
           console.log('specialOffers:', doc.specialOffers);
           setSpecialOffers(doc.specialOffers ?? false);
-          
+
           console.log('brandName:', doc.brandName);
           setBrandName(doc.brandName || "");
           console.log('companyName:', doc.companyName);
@@ -544,7 +520,7 @@ useEffect(() => {
           setBusinessPincode(doc.businessPincode || doc.pincode || "");
           console.log('personalPincode:', doc.personalPincode);
           setPersonalPincode(doc.personalPincode || "");
-          
+
           console.log('firstName:', doc.firstName);
           setFirstName(doc.firstName || "");
           console.log('lastName:', doc.lastName);
@@ -563,7 +539,7 @@ useEffect(() => {
           setMaritalStatus(doc.maritalStatus || "");
           console.log('idProof:', doc.idProof);
           setIdProof(doc.idProof || "");
-          
+
           console.log('idPhotos:', doc.idPhotos);
           if (doc.idPhotos && doc.idPhotos.length > 0) {
             setIdProofImage(doc.idPhotos[0]);
@@ -579,7 +555,7 @@ useEffect(() => {
            setPersonalCity(userDetails.city || "");
            setCityOptions(userDetails.city || "");
            setPersonalPincode(userDetails.personalPincode || "");
-           
+
            setPersonalCountry(userDetails.country || "India");
            if (userDetails.dateOfBirth) {
                setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split('T')[0]);
@@ -615,22 +591,15 @@ useEffect(() => {
     if (currentStep === 4) {
       const price = parseFloat(regularPrice) || 0;
       const discount = parseFloat(discountPercentage) || 0;
-      
+
       let calculatedPrice = 0;
       if (discountType === "percentage") {
-        // For percentage, discount is interpreted as X%
-        // If discount is > 100, it results in 0 price
         calculatedPrice = price - (price * discount / 100);
       } else {
-        // For fixed, discount is the amount to subtract
         calculatedPrice = price - discount;
       }
-      
-      // Ensure price doesn't go below 0
+
       calculatedPrice = Math.max(0, calculatedPrice);
-      
-      // Round to 2 decimal places or integer? Previous inputs suggest integer (e.g. "2000")
-      // But standard currency often uses decimals. Let's use toFixed(0) to match existing string defaults like "2000"
       setFinalPrice(calculatedPrice.toFixed(0));
     }
   }, [regularPrice, discountPercentage, discountType, currentStep]);
@@ -697,7 +666,6 @@ useEffect(() => {
         return;
       }
     } else if (currentStep === 1) {
-      // Check if any selected property has categories
       const hasCategories = selectedProperties.some((propId) => {
         const categories = getEffectiveCategories(propId);
         return categories && categories.length > 0;
@@ -711,100 +679,39 @@ useEffect(() => {
         return;
       }
     } else if (currentStep === 2) {
-      // Stay details validation
       if (stayType === "entire") {
-        if (!coverImage) {
-          toast.error("Please upload a cover photo");
-          return;
-        }
-        const validImages = entireStayImages;
-        if (validImages.length < 5) {
-          toast.error("Please upload at least 5 images");
-          return;
-        }
-
-        if (!regularPrice || Number(regularPrice) <= 0) {
-          toast.error("Please enter a valid regular price");
-          return;
-        }
-        if (guestCapacity <= 0) {
-          toast.error("Please enter a valid guest capacity");
-          return;
-        }
-        if (numberOfRooms <= 0) {
-          toast.error("Please enter a valid number of rooms");
-          return;
-        }
-        if (numberOfBeds <= 0) {
-          toast.error("Please enter a valid number of beds");
-          return;
-        }
-        if (numberOfBathrooms <= 0) {
-          toast.error("Please enter a valid number of bathrooms");
-          return;
-        }
-        // Check if at least one entire stay rule is filled
+        if (guestCapacity <= 0) newErrors.guestCapacity = "Guest capacity must be at least 1";
+        if (numberOfRooms <= 0) newErrors.numberOfRooms = "Add at least 1 room";
+        if (numberOfBeds <= 0) newErrors.numberOfBeds = "Add at least 1 bed";
+        if (numberOfBathrooms <= 0) newErrors.numberOfBathrooms = "Add at least 1 bathroom";
+        if (!regularPrice || Number(regularPrice) <= 0) newErrors.regularPrice = "Enter a valid price";
         const hasValidRule = entireStayRules.some((rule) => rule.trim() !== "");
-        if (!hasValidRule) {
-          toast.error("Please add at least one rule and regulation");
-          return;
-        }
+        if (!hasValidRule) newErrors.entireStayRules = "Add at least one rule";
+        if (!coverImage) newErrors.coverImage = "Cover photo is required";
+        if (entireStayImages.length < 5) newErrors.entireStayImages = `Upload at least 5 images (${entireStayImages.length}/5)`;
       } else if (stayType === "individual") {
-        if (!coverImage) {
-          toast.error("Please upload a cover photo");
-          return;
-        }
+        if (!coverImage) newErrors.coverImage = "Cover photo is required";
         if (!rooms || rooms.length === 0) {
-          toast.error("Please add at least one room");
-          return;
-        }
-        // Validate each room has required fields
-        for (let i = 0; i < rooms.length; i++) {
-          const room = rooms[i];
-          const validRoomImages = (room.photos || []).filter(p => p);
-          if (validRoomImages.length < 5) {
-             toast.error(`Please upload at least 5 images for Room ${i + 1}`);
-             return;
-          }
-          if (!room.name || !room.name.trim()) {
-            toast.error(`Please enter a name for Room ${i + 1}`);
-            return;
-          }
-          if (!room.description || !room.description.trim()) {
-            toast.error(`Please enter a description for Room ${i + 1}`);
-            return;
-          }
-          if (room.guestCapacity <= 0) {
-            toast.error(
-              `Please enter a valid guest capacity for Room ${i + 1}`
-            );
-            return;
-          }
-          if (room.beds <= 0) {
-            toast.error(
-              `Please enter a valid number of beds for Room ${i + 1}`
-            );
-            return;
-          }
-          if (room.bathrooms <= 0) {
-            toast.error(
-              `Please enter a valid number of bathrooms for Room ${i + 1}`
-            );
-            return;
-          }
-          if (!room.price || room.price <= 0) {
-            toast.error(`Please enter a valid price for Room ${i + 1}`);
-            return;
+          newErrors.rooms = "Add at least one room";
+        } else {
+          for (let i = 0; i < rooms.length; i++) {
+            const room = rooms[i];
+            const validRoomImages = (room.photos || []).filter(p => p);
+            if (!room.name || !room.name.trim()) newErrors[`room_${i}_name`] = "Room name is required";
+            if (!room.description || !room.description.trim()) newErrors[`room_${i}_description`] = "Description is required";
+            if (validRoomImages.length < 5) newErrors[`room_${i}_photos`] = `Upload at least 5 images (${validRoomImages.length}/5)`;
+            if (room.guestCapacity <= 0) newErrors[`room_${i}_guestCapacity`] = "Guest capacity must be at least 1";
+            if (room.beds <= 0) newErrors[`room_${i}_beds`] = "Add at least 1 bed";
+            if (room.bathrooms <= 0) newErrors[`room_${i}_bathrooms`] = "Add at least 1 bathroom";
+            if (!room.price || room.price <= 0) newErrors[`room_${i}_price`] = "Enter a valid price";
           }
         }
       }
     } else if (currentStep === 3) {
       if (!selectedFeatures || selectedFeatures.length === 0) {
-        toast.error("Please select at least one feature");
-        return;
+        newErrors.features = "Please select at least one feature";
       }
     } else if (currentStep === 4) {
-      // Discount step - optional, but if toggled on, fields are required
       if (
         firstUserDiscount ||
         festivalOffers ||
@@ -885,7 +792,6 @@ useEffect(() => {
         toast.error("You must accept the Terms & Conditions to proceed.");
         return;
       }
-      // Save on final step; navigation handled inside handleComplete
       handleComplete();
     } else {
       handleComplete();
@@ -896,14 +802,13 @@ useEffect(() => {
     try {
       setIsLoading(true);
 
-      // Ensure server receives photos in rooms[0].photos as it expects
       const gallery: string[] = (images || []).filter(Boolean) as string[];
       const entireStayGallery: string[] = entireStayImages || [];
       const roomsWithPhotos = [...rooms];
       if (!roomsWithPhotos.length) {
         roomsWithPhotos.push({ id: '1', name: '', description: '', photos: [], guestCapacity: 1, beds: 1, bathrooms: 1, price: Number(regularPrice) || 0 });
       }
-      
+
       if (stayType === "entire") {
         roomsWithPhotos[0] = { ...roomsWithPhotos[0], photos: entireStayGallery };
       }
@@ -956,24 +861,23 @@ useEffect(() => {
       if (!selectedProperties || selectedProperties.length === 0) {
         throw new Error('Please select at least one property type');
       }
-      
+
       const regPrice = Number(regularPrice);
       if (!regularPrice || isNaN(regPrice) || regPrice <= 0) {
         throw new Error('Please enter a valid regular price');
       }
-      
+
       if (!guestCapacity || Number(guestCapacity) <= 0) {
         throw new Error('Please enter a valid guest capacity');
       }
 
       const result = await submitOnboardingData('stay', payload);
-      
+
       if (result?.id) {
-         // Update user profile with personal & business details
          await updateUserDetails({
              firstName: firstName,
              lastName: lastName,
-             phoneNumber: businessPhone, // or personal phone if available
+             phoneNumber: businessPhone,
              country: personalCountry,
              state: personalState,
              city: personalCity,
@@ -983,7 +887,7 @@ useEffect(() => {
              maritalStatus: maritalStatus,
              idProof: idProof,
              idPhotos: idProofImage ? [idProofImage] : [],
-             
+
              business: {
                brandName: brandName,
                legalCompanyName: companyName,
@@ -1014,7 +918,8 @@ useEffect(() => {
       setIsLoading(false);
     }
   };
-const sliderRef = useRef(null);
+
+  const sliderRef = useRef(null);
 
   const togglePropertySelection = (propertyId: string) => {
     setSelectedProperties((prev) => {
@@ -1032,15 +937,26 @@ const sliderRef = useRef(null);
   };
 
   const canProceed = () => {
-    if (currentStep === 0) return selectedProperties.length > 0; // Property types step
-    if (currentStep === 1) return selectedCategories.length > 0; // Category selection step
-    if (currentStep === 2) return true; // Stay details step
-    if (currentStep === 3) return true; // Features step
-    if (currentStep === 4) return true; // Discount step
+    if (currentStep === 0) return selectedProperties.length > 0;
+    if (currentStep === 1) return selectedCategories.length > 0;
+    if (currentStep === 2) {
+      if (stayType === "entire") {
+        return guestCapacity > 0 && numberOfRooms > 0 && numberOfBeds > 0 && numberOfBathrooms > 0
+          && !!regularPrice && Number(regularPrice) > 0 && !!coverImage && entireStayImages.length >= 5;
+      }
+      if (stayType === "individual") {
+        return !!coverImage && rooms.length > 0 && rooms.every(r =>
+          r.name?.trim() && r.description?.trim() && r.guestCapacity > 0 && r.beds > 0 && r.bathrooms > 0 && r.price > 0 && (r.photos || []).length >= 5
+        );
+      }
+      return false;
+    }
+    if (currentStep === 3) return true;
+    if (currentStep === 4) return true;
     if (currentStep === 5)
-      return brandName.trim() !== "" && companyName.trim() !== ""; // Business details
+      return brandName.trim() !== "" && companyName.trim() !== "";
     if (currentStep === 6)
-      return firstName.trim() !== "" && lastName.trim() !== ""; // Personal details
+      return firstName.trim() !== "" && lastName.trim() !== "";
     return true;
   };
 
@@ -1160,17 +1076,10 @@ const sliderRef = useRef(null);
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation: only JPG/PNG
     if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
       toast.error("Only JPG and PNG images are allowed!");
       return;
     }
-
-    // Removed 1MB size restriction per request
-    // if (file.size > 1024 * 1024) {
-    //   alert("File size must be less than 1MB!");
-    //   return;
-    // }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -1188,7 +1097,6 @@ const sliderRef = useRef(null);
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validation: only JPG/PNG
     if (!["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
       toast.error("Only JPG and PNG images are allowed!");
       return;
@@ -1207,48 +1115,8 @@ const sliderRef = useRef(null);
     setEntireStayImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const CampingIcon = () => (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 30 30"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M3.75 26.8749V22.0724L14.2313 7.97118L12.8125 6.09118L13.8275 5.33618L15 6.93493L16.1975 5.33618L17.1875 6.09118L15.7938 7.97118L26.25 22.0712V26.8749H3.75ZM15 9.03118L5 22.4762V25.6249H9.0625L15 17.3324L20.9375 25.6249H25V22.4749L15 9.03118ZM10.6113 25.6249H19.39L15 19.4812L10.6113 25.6249Z"
-        fill="black"
-      />
-    </svg>
-  );
-
-  const HutIcon = () => (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 30 30"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M7.5 15H22.5L25 27.5H5L7.5 15Z"
-        stroke="black"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M11.25 27.5L12.0975 23.375C12.29 22.44 12.3862 21.9725 12.7325 21.6975C13.4525 21.1225 16.495 21.08 17.2675 21.6975C17.6138 21.9725 17.71 22.44 17.9025 23.3763L18.75 27.5M15 4L6.93 10.5475C4.64625 12.4012 3.505 13.3275 3.79375 14.1638C4.0825 15 5.54625 15 8.47 15H21.53C24.455 15 25.9175 15 26.205 14.1638C26.495 13.3275 25.3537 12.4012 23.07 10.5475L15 4ZM15 4L16.8488 2.5M15 4L13.1512 2.5M15 15V11.25M10 15V13.125M20 15V13.125M2.5 27.5H27.5"
-        stroke="black"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const handleUploadIDProof = (e) => {
-    const file = e.target.files[0];
+  const handleUploadIDProof = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     setError("");
     setFileName("");
 
@@ -1258,7 +1126,7 @@ const sliderRef = useRef(null);
         setError("Only JPG, PNG, or PDF files are allowed.");
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onload = () => {
         setIdProofImage(reader.result as string);
@@ -1325,7 +1193,7 @@ const sliderRef = useRef(null);
 
     const container = scrollRef.current;
     const firstChild = container.firstChild as HTMLElement;
-    
+
     if (!firstChild) return;
 
     const itemWidth = firstChild.offsetWidth;
@@ -1353,2517 +1221,324 @@ const sliderRef = useRef(null);
     }
   }, [carouselIndex]);
 
-const businessMapQuery = `
+  // Business map calculation
+  const businessMapQuery = `
   ${cityOption2 || ""}
   ${stateOption2 || ""}
   ${businessPincode || ""}
   India
 `;
 
-const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
-  businessMapQuery
-)}&output=embed`;
+  const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
+    businessMapQuery
+  )}&output=embed`;
+
+  // Compute features data for FeaturesStep
+  const primaryPropertyType = selectedProperties[0] || "";
+  const featuresData = getFeaturesForProperty(primaryPropertyType, "", stayType);
+
+  // Build discount offers object for DiscountOffersStep
+  const discountOffers = {
+    firstUser: {
+      enabled: firstUserDiscount,
+      type: discountType,
+      value: discountPercentage,
+      finalPrice: finalPrice,
+    },
+    festival: {
+      enabled: festivalOffers,
+      type: discountType,
+      value: discountPercentage,
+      finalPrice: finalPrice,
+    },
+    weekly: {
+      enabled: weeklyOffers,
+      type: discountType,
+      value: discountPercentage,
+      finalPrice: finalPrice,
+    },
+    special: {
+      enabled: specialOffers,
+      type: discountType,
+      value: discountPercentage,
+      finalPrice: finalPrice,
+    },
+  };
+
+  const handleDiscountToggle = (key: "firstUser" | "festival" | "weekly" | "special") => {
+    switch (key) {
+      case "firstUser": setFirstUserDiscount(!firstUserDiscount); break;
+      case "festival": setFestivalOffers(!festivalOffers); break;
+      case "weekly": setWeeklyOffers(!weeklyOffers); break;
+      case "special": setSpecialOffers(!specialOffers); break;
+    }
+  };
+
+  const handleDiscountOfferChange = (
+    _key: "firstUser" | "festival" | "weekly" | "special",
+    field: keyof DiscountOffer,
+    value: string,
+  ) => {
+    // All offers share the same discountType, discountPercentage, finalPrice
+    switch (field) {
+      case "type":
+        setDiscountType(value);
+        break;
+      case "value":
+        setDiscountPercentage(value);
+        clearError("discountPercentage");
+        break;
+      case "finalPrice":
+        setFinalPrice(value);
+        clearError("finalPrice");
+        break;
+    }
+  };
+
+  // Business details onChange handler
+  const handleBusinessChange = (field: string, value: string) => {
+    switch (field) {
+      case "brandName": setBrandName(value); clearError("brandName"); break;
+      case "companyName": setCompanyName(value); clearError("companyName"); break;
+      case "gstNumber": setGstNumber(value); break;
+      case "businessEmail": setBusinessEmail(value); clearError("businessEmail"); break;
+      case "businessPhone": setBusinessPhone(value); clearError("businessPhone"); break;
+      case "pincode": setBusinessPincode(value); clearError("businessPincode"); break;
+    }
+  };
+
+  const handleBusinessStateChange = (val: string) => {
+    setStateOption2(val);
+    setCityOptions2("");
+    clearError("state");
+  };
+
+  const handleBusinessCityChange = (val: string) => {
+    setCityOptions2(val);
+    clearError("city");
+  };
+
+  // Personal details onChange handler
+  const handlePersonalChange = (field: string, value: string) => {
+    switch (field) {
+      case "firstName": setFirstName(value); clearError("firstName"); break;
+      case "lastName": setLastName(value); clearError("lastName"); break;
+      case "pincode": setPersonalPincode(value); clearError("personalPincode"); break;
+      case "dateOfBirth": setDateOfBirth(value); clearError("dateOfBirth"); break;
+      case "maritalStatus": setMaritalStatus(value); clearError("maritalStatus"); break;
+      case "idProof": setIdProof(value); clearError("idProof"); break;
+    }
+  };
+
+  const handlePersonalStateChange = (val: string) => {
+    setStateOption(val);
+    setCityOptions("");
+    clearError("personalState");
+  };
+
+  const handlePersonalCityChange = (val: string) => {
+    setCityOptions(val);
+    clearError("personalCity");
+  };
+
+  const handleCategoryToggle = (categoryKey: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryKey)
+        ? prev.filter((id) => id !== categoryKey)
+        : [...prev, categoryKey]
+    );
+  };
+
+  // ---------- Render ----------
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <PropertyTypeStep
+            selectedProperties={selectedProperties}
+            propertyTypes={propertyTypes}
+            onToggle={togglePropertySelection}
+            errors={errors}
+          />
+        );
+
+      case 1:
+        return (
+          <CategorySelectionStep
+            selectedProperties={selectedProperties}
+            selectedCategories={selectedCategories}
+            propertyTypes={propertyTypes}
+            getEffectiveCategories={getEffectiveCategories}
+            onCategoryToggle={handleCategoryToggle}
+          />
+        );
+
+      case 2:
+        return (
+          <StayDetailsStep
+            stayType={stayType}
+            setStayType={setStayType}
+            guestCapacity={guestCapacity}
+            numberOfRooms={numberOfRooms}
+            numberOfBeds={numberOfBeds}
+            numberOfBathrooms={numberOfBathrooms}
+            regularPrice={regularPrice}
+            setRegularPrice={setRegularPrice}
+            incrementValue={incrementValue}
+            decrementValue={decrementValue}
+            setGuestCapacity={setGuestCapacity}
+            setNumberOfRooms={setNumberOfRooms}
+            setNumberOfBeds={setNumberOfBeds}
+            setNumberOfBathrooms={setNumberOfBathrooms}
+            entireStayRules={entireStayRules}
+            addEntireStayRule={addEntireStayRule}
+            removeEntireStayRule={removeEntireStayRule}
+            updateEntireStayRule={updateEntireStayRule}
+            roomRules={roomRules}
+            addRoomRule={addRoomRule}
+            removeRoomRule={removeRoomRule}
+            updateRoomRule={updateRoomRule}
+            coverImage={coverImage}
+            handleCoverImageUpload={handleCoverImageUpload}
+            removeCoverImage={removeCoverImage}
+            renderImageSrc={renderImageSrc}
+            entireStayImages={entireStayImages}
+            setEntireStayImages={setEntireStayImages}
+            removeEntireStayImage={removeEntireStayImage}
+            sliderRef={sliderRef}
+            rooms={rooms}
+            expandedRoom={expandedRoom}
+            setExpandedRoom={setExpandedRoom}
+            addRoom={addRoom}
+            removeRoom={removeRoom}
+            updateRoom={updateRoom}
+            handleRoomImageUpload={handleRoomImageUpload}
+            removeRoomImage={removeRoomImage}
+            errors={errors}
+            clearError={clearError}
+          />
+        );
+
+      case 3:
+        return (
+          <FeaturesStep
+            selectedFeatures={selectedFeatures}
+            toggleFeatureSelection={toggleFeatureSelection}
+            adminFeatures={adminFeatures}
+            customFeatures={customFeatures}
+            setCustomFeatures={setCustomFeatures}
+            setSelectedFeatures={setSelectedFeatures}
+            showCustomFeaturesInput={showCustomFeaturesInput}
+            setShowCustomFeaturesInput={setShowCustomFeaturesInput}
+            customFeatureInput={customFeatureInput}
+            setCustomFeatureInput={setCustomFeatureInput}
+            featuresData={featuresData}
+            errors={errors}
+          />
+        );
+
+      case 4:
+        return (
+          <DiscountOffersStep
+            offers={discountOffers}
+            onToggle={handleDiscountToggle}
+            onOfferChange={handleDiscountOfferChange}
+            errors={errors}
+            weeklyLabel="Weekly or Monthly Offers"
+          />
+        );
+
+      case 5:
+        return (
+          <BusinessDetailsStep
+            values={{
+              brandName,
+              companyName,
+              gstNumber,
+              businessEmail,
+              businessPhone,
+              pincode: businessPincode,
+            }}
+            errors={errors}
+            onChange={handleBusinessChange}
+            selectedCountry={selected}
+            onCountrySelect={setSelected}
+            countryDialogOpen={open}
+            setCountryDialogOpen={setOpen}
+            countries={countries}
+            locationData={data}
+            selectedState={stateOption2}
+            selectedCity={cityOption2}
+            countryName={countryOption2}
+            onStateChange={handleBusinessStateChange}
+            onCityChange={handleBusinessCityChange}
+            mapSrc={mapSrcbusiness}
+          />
+        );
+
+      case 6:
+        return (
+          <PersonalDetailsStep
+            values={{
+              firstName,
+              lastName,
+              pincode: personalPincode,
+              dateOfBirth,
+              maritalStatus,
+              idProof,
+            }}
+            errors={errors}
+            onChange={handlePersonalChange}
+            locationData={data}
+            selectedState={stateOption}
+            selectedCity={cityOption}
+            countryName={countryOption}
+            onStateChange={handlePersonalStateChange}
+            onCityChange={handlePersonalCityChange}
+            idProofImage={idProofImage}
+            onIdProofUpload={handleUploadIDProof}
+            uploadError={error}
+          />
+        );
+
+      case 7:
+        return (
+          <TermsConditionsStep
+            termsAccepted={termsAccepted}
+            onTermsChange={setTermsAccepted}
+          />
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
-    <div className="h-screen w-full flex flex-col bg-white dark:bg-gray-900 overflow-hidden">
-      {/* Header */}
-      <div className="flex h-16 w-full z-30 fixed items-center justify-start px-6 lg:px-20 py-5 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-        <LogoWebsite />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 w-full overflow-y-auto pt-14 pb-28">
-        <div className="max-w-7xl mx-auto w-full px-6 lg:px-20 flex flex-col items-center gap-10 py-8">
-          
-          {status === 'rejected' && (
-            <div className="w-full max-w-4xl p-4 border border-red-200 bg-red-50 rounded-md">
-              <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
-              <p className="text-red-700 text-sm">
-                Reason: {rejectionReason || 'No reason provided'}
-              </p>
-              <p className="text-red-600 text-xs mt-2">
-                Please update the details and resubmit for approval.
-              </p>
-            </div>
-          )}
-
-          {/* Step 0: Types of Property */}
-          {currentStep === 0 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-              <h1 className="text-xl lg:text-[32px] font-bold text-black dark:text-white font-geist leading-normal text-center">
-                Types of Property
-              </h1>
-
-              {/* Row 1 */}
-            <div className="max-w-6xl mx-auto 
-                grid 
-                grid-cols-2 
-                sm:grid-cols-3 
-                md:grid-cols-4 
-                lg:grid-cols-5 
-                gap-4">
-
-  {propertyTypes.map((property) => (
-    <div
-      key={property.id}
-      onClick={() => togglePropertySelection(property.id)}
-      className={`flex flex-col items-center justify-center gap-2 
-                  p-3 rounded-xl border cursor-pointer 
-                  transition-all duration-200 text-center
-        ${
-          selectedProperties.includes(property.id)
-            ? "border-[#131313] bg-[#F8F9FA] dark:border-white dark:bg-gray-700"
-            : "border-[#EAECF0] bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
-        }`}
+    <OnboardingLayout
+      currentStep={currentStep}
+      totalSteps={totalSteps}
+      isLoading={isLoading}
+      canProceed={canProceed()}
+      termsAccepted={termsAccepted}
+      onBack={handleBack}
+      onNext={handleNext}
     >
-      <img
-        src={getImageUrl(property.icon)}
-        alt={property.name}
-        className="w-6 h-6 object-contain"
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-      />
-
-      <p className="text-sm sm:text-base md:text-lg font-medium text-[#4B4B4B] dark:text-gray-300">
-        {property.name}
-      </p>
-    </div>
-  ))}
-</div>
-
-         
-            </div>
-          )}
-
-          {/* Step 1: Category Selection */}
-          {currentStep === 1 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-              <div className="w-full flex flex-col items-start gap-2.5">
-                <h1 className="text-2xl lg:text-[32px] font-bold text-black dark:text-white font-geist leading-normal text-center w-full">
-                  Category Selection
-                </h1>
-                <p className="text-lg text-[#5D5D5D] dark:text-gray-400 font-geist leading-normal text-center w-full">
-                  Select categories for your selected property types
-                </p>
-              </div>
-
-              {/* Categories based on selected property types */}
-            <div className="max-w-6xl mx-auto w-full">
-  {selectedProperties.map((propertyId) => {
-    const property = propertyTypes.find((p) => p.id === propertyId);
-    const categories = getEffectiveCategories(propertyId);
-
-    return (
-      <div key={propertyId} className="mb-8">
-
-        <div
-          className="
-            grid 
-            grid-cols-2 
-            sm:grid-cols-3 
-            md:grid-cols-4 
-            lg:grid-cols-5 
-            gap-4
-          "
-        >
-          {categories.map((category) => {
-            const categoryKey = `${propertyId}-${category.id}`;
-            const isSelected = selectedCategories.includes(categoryKey);
-
-            return (
-              <div
-                key={categoryKey}
-                onClick={() => {
-                  setSelectedCategories((prev) =>
-                    isSelected
-                      ? prev.filter((id) => id !== categoryKey)
-                      : [...prev, categoryKey]
-                  );
-                }}
-                className={`
-                  flex flex-col items-center justify-center
-                  p-4 rounded-xl border cursor-pointer
-                  transition-all duration-200 text-center
-                  ${
-                    isSelected
-                      ? "border-[#131313] bg-[#F8F9FA] dark:border-white dark:bg-gray-700"
-                      : "border-[#EAECF0] bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
-                  }
-                `}
-              >
-                <img
-                  src={getImageUrl(category.icon)}
-                  className="w-6 h-6 sm:w-7 sm:h-7 mb-2 object-contain"
-                  alt={category.name}
-                />
-
-                <p className="text-xs sm:text-sm md:text-base font-medium text-[#4B4B4B] dark:text-gray-300 text-center">
-                  {category.name}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  })}
-</div>
-
-              {/* {selectedCategories.length > 0 && (
-                <div className="max-w-4xl mx-auto text-sm text-gray-600 dark:text-gray-400">
-                  Selected categories: {selectedCategories.length}
-                </div>
-              )} */}
-            </div>
-          )}
-
-          {/* Step 2: Stay Details */}
-          {currentStep === 2 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-              <h1 className="text-2xl lg:text-[32px] font-bold text-black dark:text-white font-geist leading-normal text-center">
-                Stay Details
-              </h1>
-
-              <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-                {/* Stay Type Selection */}
-                <div className="flex flex-col gap-3">
-                  <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                    Select best what 3
-                  </h3>
-                  <div className="flex items-start gap-5">
-                    <button
-                      onClick={() => setStayType("entire")}
-                      className={`flex p-[14px_20px_14px_12px] flex-col justify-center items-center gap-2.5 rounded-[48px] border border-[#EAECF0] transition-all duration-200 ${
-                        stayType === "entire"
-                          ? "bg-[#131313] text-white"
-                          : "bg-white dark:bg-gray-800 text-[#4B4B4B] dark:text-gray-300 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-full border-[1.2px] flex items-center justify-center ${
-                            stayType === "entire"
-                              ? "border-white bg-white"
-                              : "border-[#667085] bg-white"
-                          }`}
-                        >
-                          {stayType === "entire" && (
-                            <div className="w-2 h-2 rounded-full bg-black"></div>
-                          )}
-                        </div>
-                        <span className="text-base font-medium font-plus-jakarta">
-                          Entire Stay
-                        </span>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => setStayType("individual")}
-                      className={`flex p-[14px_20px_14px_12px] flex-col justify-center items-center gap-2.5 rounded-[48px] border border-[#EAECF0] transition-all duration-200 ${
-                        stayType === "individual"
-                          ? "bg-[#131313] text-white"
-                          : "bg-white dark:bg-gray-800 text-[#4B4B4B] dark:text-gray-300 hover:border-gray-300"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-5 h-5 rounded-full border-[1.2px] flex items-center justify-center ${
-                            stayType === "individual"
-                              ? "border-white bg-white"
-                              : "border-[#667085] bg-white"
-                          }`}
-                        >
-                          {stayType === "individual" && (
-                            <div className="w-2 h-2 rounded-full bg-black"></div>
-                          )}
-                        </div>
-                        <span className="text-base font-medium font-plus-jakarta">
-                          Individual Room
-                        </span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Entire Stay Form */}
-                {stayType === "entire" && (
-                  <>
-                    {/* Guest Capacity */}
-                    <div className="flex items-center justify-between p-3">
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Guest Capacity
-                        </h3>
-                        <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit,
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() =>
-                            decrementValue(guestCapacity, setGuestCapacity)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Minus size={16} className="text-[#666666]" />
-                        </button>
-                        <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                          {guestCapacity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            incrementValue(guestCapacity, setGuestCapacity)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} className="text-[#666666]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="w-full h-px bg-[#EAECF0]"></div>
-
-                    {/* Number of Rooms */}
-                    <div className="flex items-center justify-between p-3">
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Number of Rooms
-                        </h3>
-                        <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit,
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() =>
-                            decrementValue(numberOfRooms, setNumberOfRooms)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Minus size={16} className="text-[#666666]" />
-                        </button>
-                        <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                          {numberOfRooms}
-                        </span>
-                        <button
-                          onClick={() =>
-                            incrementValue(numberOfRooms, setNumberOfRooms)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} className="text-[#666666]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="w-full h-px bg-[#EAECF0]"></div>
-
-                    {/* Number of Beds */}
-                    <div className="flex items-center justify-between p-3">
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Number of Bed
-                        </h3>
-                        <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit,
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() =>
-                            decrementValue(numberOfBeds, setNumberOfBeds)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Minus size={16} className="text-[#666666]" />
-                        </button>
-                        <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                          {numberOfBeds}
-                        </span>
-                        <button
-                          onClick={() =>
-                            incrementValue(numberOfBeds, setNumberOfBeds)
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} className="text-[#666666]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="w-full h-px bg-[#EAECF0]"></div>
-
-                    {/* Number of Bathrooms */}
-                    <div className="flex items-center justify-between p-3">
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Number of Bathroom
-                        </h3>
-                        <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit,
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() =>
-                            decrementValue(
-                              numberOfBathrooms,
-                              setNumberOfBathrooms,
-                            )
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Minus size={16} className="text-[#666666]" />
-                        </button>
-                        <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                          {numberOfBathrooms}
-                        </span>
-                        <button
-                          onClick={() =>
-                            incrementValue(
-                              numberOfBathrooms,
-                              setNumberOfBathrooms,
-                            )
-                          }
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} className="text-[#666666]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="w-full h-px bg-[#EAECF0]"></div>
-
-                    {/* Regular Price */}
-                    <div className="flex items-center gap-5">
-                      <div className="flex flex-col gap-3 flex-1">
-                        <div className="flex flex-col gap-3">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                            Regular Price (in Rupees)
-                          </Label>
-                          <Input
-                            name="regularPrice"
-                            placeholder="Enter regular price"
-                            value={regularPrice}
-                            onChange={(e) => setRegularPrice(e.target.value)}
-                            className="h-[38px] border-[#EAECF0] text-sm font-plus-jakarta"
-                          />
-                        </div>
-                        {/* <span className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                          Regular Price (in Rupees)
-                        </span>
-                        <div className="flex flex-col gap-3">
-                          <span className="text-2xl font-bold text-[#131313] dark:text-white font-plus-jakarta tracking-[-0.96px] pl-3">
-                            ₹ {regularPrice.toLocaleString()}
-                          </span>
-                          <div className="w-full h-px bg-[#EAECF0]"></div>
-                        </div>*/}
-                      </div>
-                    </div>
-
-                    {/* Rules and Regulations */}
-                    <div className="flex flex-col gap-5">
-                      <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                        Rules and Regulations
-                      </h3>
-
-                      {entireStayRules.map((rule, index) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <Input
-                            placeholder="Add rule and regulations..."
-                            value={rule}
-                            onChange={(e) => updateEntireStayRule(index, e.target.value)}
-                            className="flex-1 h-[38px] border-[#EAECF0] text-sm font-plus-jakarta"
-                          />
-                          <button
-                            onClick={() => removeEntireStayRule(index)}
-                            className="flex items-center justify-center w-[30px] h-[30px] rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                          >
-                            <X size={16} className="text-[#666666]" />
-                          </button>
-                        </div>
-                      ))}
-
-                      <button
-                        onClick={addEntireStayRule}
-                        className="flex items-center gap-2 text-[#131313] dark:text-white font-medium"
-                      >
-                        <Plus size={16} />
-                        <span>Add More Rules</span>
-                      </button>
-                    </div>
-
-                    {/* Cover Photo */}
-                    <div className="flex flex-col gap-5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Cover Photo
-                        </h3>
-                      </div>
-
-                       <div className="w-full relative h-64 max-w-xl border border-gray-200 rounded-xl overflow-hidden">
-                        {coverImage ? (
-                          <img
-                            src={renderImageSrc(coverImage)}
-                            alt="Cover"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <label className="w-full h-full flex items-center justify-center text-gray-400 text-sm cursor-pointer bg-[#F9FAFB] dark:bg-gray-700 hover:bg-gray-100 transition-colors">
-                            <div className="flex flex-col items-center gap-2">
-                                <Plus size={24} />
-                                <span>Add Cover Photo</span>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png"
-                              className="hidden"
-                              onChange={handleCoverImageUpload}
-                            />
-                          </label>
-                        )}
-
-                        {coverImage && (
-                          <button
-                            onClick={removeCoverImage}
-                            className="absolute top-2 right-2 w-7 h-7 bg-white shadow-md hover:bg-gray-100 rounded-full flex items-center justify-center transition"
-                          >
-                            <X className="w-4 h-4 text-gray-600" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Entire Stay Images */}
-                    <div className="flex flex-col gap-5">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Select Property Images
-                        </h3>
-                        {/* <span className="text-xs text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                          {entireStayImages.filter(img => img !== null).length}/15 images
-                        </span> */}
-                      </div>
-
-                      <label className="flex h-32  flex-col items-center justify-center w-full p-6 text-sm bg-[#F9FAFB] dark:bg-gray-700 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 transition-colors cursor-pointer">
-                        <div className="flex items-center gap-2">
-                          <Plus size={24} className="text-black" />
-                          <span className="text-base text-black font-plus-jakarta">
-                            Add Photos
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/png,image/jpeg"
-                          multiple
-                          className="hidden"
-                          onChange={(e) => {
-                            const files = e.target.files;
-                            if (!files || files.length === 0) return;
-
-                            const validFiles: File[] = [];
-                            for (let i = 0; i < files.length; i++) {
-                              const file = files[i];
-                              if (["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-                                validFiles.push(file);
-                              }
-                            }
-
-                            if (validFiles.length === 0) return;
-
-                            const readPromises = validFiles.map(file => {
-                                return new Promise<string>((resolve) => {
-                                    const reader = new FileReader();
-                                    reader.onload = () => resolve(reader.result as string);
-                                    reader.readAsDataURL(file);
-                                });
-                            });
-
-                            Promise.all(readPromises).then(base64Images => {
-                                setEntireStayImages(prev => [...prev, ...base64Images]);
-                            });
-                          }}
-                        />
-                      </label>
-
-{entireStayImages.length > 0 && (
-  <div className="flex relative items-center max-w-4xl mx-auto">
-
-     {/* Carousel Container */}
-        <div className="relative">
-          {/* Left Arrow */}
-          {entireStayImages.length > 5 && (
-            <button
-              onClick={() => sliderRef.current.scrollBy({ left: -300, behavior: "smooth" })}
-              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow p-2 rounded-full"
-            >
-            <IoIosArrowBack />
-            </button>
-          )}
-    
-          {/* Images Scrollable Row */}
-          <div
-            ref={sliderRef}
-            className="flex max-w-4xl max-md:w-[400px] items-start gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
-          >
-            {entireStayImages.map((photo, index) => (
-              <div
-                key={index}
-                className="relative w-44 h-52 max-sm:w-24 max-md:h- 24 border border-gray-200 rounded-lg overflow-hidden flex-shrink-0"
-                >
-                <img
-                  src={renderImageSrc(photo)}
-                  alt={`Upload ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-    
-                <button
-                  onClick={() => removeEntireStayImage(index)}
-                  className="absolute top-2 right-2 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-    
-          {/* Right Arrow */}
-          {entireStayImages.length > 5 && (
-            <button
-              onClick={() => sliderRef.current.scrollBy({ left: 300, behavior: "smooth" })}
-              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white shadow p-2 rounded-full"
-            >
-            <IoIosArrowForward />
-    
-            </button>
-          )}
-        </div>
-    
-  </div>
-)}
-
-
-                    </div>
-                  </>
-                )}
-
-                {/* Individual Room Form */}
-                {stayType === "individual" && (
-                  <>
-                  
-                    {/* Number of Rooms */}
-                    <div className="flex items-center justify-between p-3">
-                      <div className="flex flex-col gap-3">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Number of Rooms
-                        </h3>
-                        <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                          Lorem ipsum dolor sit amet, consectetur adipiscing
-                          elit,
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={removeRoom}
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Minus size={16} className="text-[#666666]" />
-                        </button>
-                        <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                          {numberOfRooms}
-                        </span>
-                        <button
-                          onClick={addRoom}
-                          className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                        >
-                          <Plus size={16} className="text-[#666666]" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Room Details */}
-                    {rooms.map((room, index) => (
-                      <div
-                        key={room.id}
-                        className="flex flex-col gap-3 p-5 rounded-xl border border-[#EAECF0] bg-white dark:bg-gray-800"
-                      >
-                        <div className="flex items-start justify-between">
-                          <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta flex-1">
-                            Room {index + 1}
-                          </h3>
-                          <button
-                            onClick={() =>
-                              setExpandedRoom(
-                                expandedRoom === room.id ? "" : room.id,
-                              )
-                            }
-                            className="flex items-center justify-center w-[18px] h-[18px]"
-                          >
-                            {expandedRoom === room.id ? (
-                              <ChevronUp size={18} className="text-[#292D32]" />
-                            ) : (
-                              <ChevronDown
-                                size={18}
-                                className="text-[#292D32]"
-                              />
-                            )}
-                          </button>
-                        </div>
-
-                        {expandedRoom === room.id && (
-                          <>
-                            <div className="w-full h-px bg-[#EAECF0] border-dashed"></div>
-
-                            <div className="flex flex-col gap-5">
-                              {/* Room Name */}
-                              <div className="flex flex-col gap-3">
-                                <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                                  Name
-                                </Label>
-                                <Input
-                                  placeholder="Name"
-                                  value={room.name}
-                                  onChange={(e) => updateRoom(room.id, "name", e.target.value)}
-                                  className="h-[38px] border-[#EAECF0] text-sm font-plus-jakarta"
-                                />
-                              </div>
-
-                              {/* Description */}
-                              <div className="flex flex-col gap-3">
-                                <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                                  Descriptions
-                                </Label>
-                                <div className="flex flex-col gap-1.5">
-                                  <textarea
-                                    placeholder="Write here..."
-                                    maxLength={200}
-                                    value={room.description}
-                                    onChange={(e) => updateRoom(room.id, "description", e.target.value)}
-                                    className="min-h-[96px] border border-[#EAECF0] rounded-lg px-3 py-3 text-sm font-plus-jakarta placeholder:text-black bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:border-[#131313] dark:focus:border-white transition-all duration-200"
-                                  />
-                                  <span className="text-xs text-[#334054] dark:text-gray-400 text-right font-plus-jakarta px-1.5">
-                                    {room.description?.length || 0}/200
-                                  </span>
-                                </div>
-                              </div>
-
-
-                                {/* Cover Photo */}
-                    <div className="flex flex-col gap-5 p-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                          Cover Photo
-                        </h3>
-                      </div>
-
-                       <div className="w-full relative h-64 max-w-xl border border-gray-200 rounded-xl overflow-hidden">
-                        {coverImage ? (
-                          <img
-                            src={renderImageSrc(coverImage)}
-                            alt="Cover"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <label className="w-full h-full flex items-center justify-center text-gray-400 text-sm cursor-pointer bg-[#F9FAFB] dark:bg-gray-700 hover:bg-gray-100 transition-colors">
-                            <div className="flex flex-col items-center gap-2">
-                                <Plus size={24} />
-                                <span>Add Cover Photo</span>
-                            </div>
-                            <input
-                              type="file"
-                              accept="image/jpeg,image/png"
-                              className="hidden"
-                              onChange={handleCoverImageUpload}
-                            />
-                          </label>
-                        )}
-
-                        {coverImage && (
-                          <button
-                            onClick={removeCoverImage}
-                            className="absolute top-2 right-2 w-7 h-7 bg-white shadow-md hover:bg-gray-100 rounded-full flex items-center justify-center transition"
-                          >
-                            <X className="w-4 h-4 text-gray-600" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-
-
-
-                                {/* Upload Photos */}
-                              <div className="flex flex-col gap-5">
-                                <div className="flex items-center gap-4">
-                                  <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta flex-1 pl-1">
-                                    Upload Photos
-                                  </Label>
-                                </div>
-
-                                <label className="flex h-32 flex-col items-center justify-center w-full p-6 text-sm bg-[#F9FAFB] dark:bg-gray-700 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 hover:border-gray-400 transition-colors cursor-pointer">
-                                    <div className="flex items-center gap-2">
-                                    <Plus size={24} className="text-black" />
-                                    <span className="text-base text-black font-plus-jakarta">
-                                        Add Photos
-                                    </span>
-                                    </div>
-                                    <input
-                                    type="file"
-                                    accept="image/png,image/jpeg"
-                                    multiple
-                                    className="hidden"
-                                    onChange={(e) => handleRoomImageUpload(e, room.id)}
-                                    />
-                                </label>
-
-                                {(room.photos || []).length > 0 && (
-                                  <div className="flex relative items-center w-full mx-auto">
-                                        <div className="relative w-full">
-                                          <div
-                                            className="flex w-full items-start gap-3 overflow-x-auto scrollbar-hide scroll-smooth"
-                                          >
-                                            {room.photos.map((photo, index) => (
-                                              <div
-                                                key={index}
-                                                className="relative w-44 h-52 max-sm:w-24 max-md:h- 24 border border-gray-200 rounded-lg overflow-hidden flex-shrink-0"
-                                                >
-                                                <img
-                                                  src={renderImageSrc(photo)}
-                                                  alt={`Upload ${index + 1}`}
-                                                  className="w-full h-full object-cover"
-                                                />
-                                    
-                                                <button
-                                                  onClick={() => removeRoomImage(room.id, index)}
-                                                  className="absolute top-2 right-2 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center"
-                                                >
-                                                  <X className="w-4 h-4" />
-                                                </button>
-                                              </div>
-                                            ))}
-                                          </div>
-                                        </div>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Room Statistics */}
-                              <div className="flex flex-col gap-5">
-                                {/* Guest Capacity */}
-                                <div className="flex items-center justify-between p-3">
-                                  <div className="flex flex-col gap-3">
-                                    <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                                      Guest Capacity
-                                    </h3>
-                                    <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px]">
-                                      Lorem ipsum dolor sit amet, consectetur
-                                      adipiscing elit,
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "guestCapacity", Math.max(1, room.guestCapacity - 1))}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Minus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                    <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                                      {room.guestCapacity}
-                                    </span>
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "guestCapacity", room.guestCapacity + 1)}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Plus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Number of Beds */}
-                                <div className="flex items-center justify-between p-3">
-                                  <div className="flex flex-col gap-3">
-                                    <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                                      Number of Bed
-                                    </h3>
-                                    <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px] max-w-[365px]">
-                                      Lorem ipsum dolor sit amet, consectetur
-                                      adipiscing elit,
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "beds", Math.max(1, room.beds - 1))}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Minus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                    <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                                      {room.beds}
-                                    </span>
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "beds", room.beds + 1)}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Plus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Number of Bathrooms */}
-                                <div className="flex items-center justify-between p-3">
-                                  <div className="flex flex-col gap-3">
-                                    <h3 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                                      Number of Bathroom
-                                    </h3>
-                                    <p className="text-sm text-[#334054] dark:text-gray-400 font-plus-jakarta leading-[21px] max-w-[365px]">
-                                      Lorem ipsum dolor sit amet, consectetur
-                                      adipiscing elit,
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-4">
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "bathrooms", Math.max(1, room.bathrooms - 1))}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Minus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                    <span className="text-base font-medium text-[#334054] dark:text-gray-300 font-plus-jakarta min-w-[20px] text-center">
-                                      {room.bathrooms}
-                                    </span>
-                                    <button 
-                                      onClick={() => updateRoom(room.id, "bathrooms", room.bathrooms + 1)}
-                                      className="flex w-[30px] h-[30px] items-center justify-center rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors">
-                                      <Plus
-                                        size={16}
-                                        className="text-[#666666]"
-                                      />
-                                    </button>
-                                  </div>
-                                </div>
-
-                                {/* Regular Price */}
-                                <div className="flex items-center gap-5">
-                                  <div className="flex flex-col gap-3 flex-1">
-                                    <div className="flex flex-col gap-3">
-                                      <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                                        Regular Price (in Rupees)
-                                      </Label>
-                                      <Input
-                                        type="number"
-                                        name="regularPrice"
-                                        placeholder="Enter regular price"
-                                        value={room.price}
-                                        onChange={(e) =>
-                                          updateRoom(room.id, "price", Number(e.target.value))
-                                        }
-                                        className="h-[38px] border-[#EAECF0] text-sm font-plus-jakarta"
-                                      />
-                                    </div>
-                                    {/* <span className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta pl-1">
-                          Regular Price (in Rupees)
-                        </span>
-                        <div className="flex flex-col gap-3">
-                          <span className="text-2xl font-bold text-[#131313] dark:text-white font-plus-jakarta tracking-[-0.96px] pl-3">
-                            ₹ {regularPrice.toLocaleString()}
-                          </span>
-                          <div className="w-full h-px bg-[#EAECF0]"></div>
-                        </div>*/}
-                                  </div>
-                                </div>
-
-                                {/* Room Rules and Regulations */}
-                                <div className="flex flex-col gap-5">
-                                  <h4 className="text-base font-semibold text-black dark:text-white font-plus-jakarta">
-                                    Room Rules and Regulations
-                                  </h4>
-
-                                  {(roomRules[room.id] || [""]).map((rule, ruleIndex) => (
-                                    <div key={ruleIndex} className="flex items-center gap-3">
-                                      <Input
-                                        placeholder="Add room rule and regulations..."
-                                        value={rule}
-                                        onChange={(e) => updateRoomRule(room.id, ruleIndex, e.target.value)}
-                                        className="flex-1 h-[38px] border-[#EAECF0] text-sm font-plus-jakarta"
-                                      />
-                                      <button
-                                        onClick={() => removeRoomRule(room.id, ruleIndex)}
-                                        className="flex items-center justify-center w-[30px] h-[30px] rounded-full border border-[#EAECF0] bg-white hover:bg-gray-50 transition-colors"
-                                      >
-                                        <X size={16} className="text-[#666666]" />
-                                      </button>
-                                    </div>
-                                  ))}
-
-                                  <button
-                                    onClick={() => addRoomRule(room.id)}
-                                    className="flex items-center gap-2 text-[#131313] dark:text-white font-medium"
-                                  >
-                                    <Plus size={16} />
-                                    <span>Add More Room Rules</span>
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
-
-              
-              </div>
-            </div>
-          )}
-
-  
-          {/* Step 3: Features */}
-      {currentStep === 3 && (
-  <div className="w-full flex flex-col items-center gap-9">
-    <h1 className="text-[32px] font-semibold text-black dark:text-white text-center">
-      Features
-    </h1>
-
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
-      <div className="flex flex-wrap gap-5">
-
-        {/* Dynamic property-based features */}
-        {(() => {
-          const primaryPropertyType = selectedProperties[0] || "";
-          const featuresData = getFeaturesForProperty(
-            primaryPropertyType,
-            "",
-            stayType
-          );
-
-          return featuresData
-            .filter(f => f.value !== "others")
-            .map((feature, idx) => (
-              <button
-                key={idx}
-                onClick={() => toggleFeatureSelection(feature.value)}
-                className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all ${
-                  selectedFeatures.includes(feature.value)
-                    ? "border-[#131313] dark:border-white bg-white dark:bg-gray-800"
-                    : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[#131313]"
-                }`}
-              >
-                <div className="w-[22px] h-[22px] flex items-center justify-center">
-                  {typeof feature.icon === "string" ? (
-                    <span>{feature.icon}</span>
-                  ) : (
-                    <feature.icon size={18} className="text-gray-600" />
-                  )}
-                </div>
-                <span className="text-base text-[#4B4B4B] dark:text-gray-300 font-medium">
-                  {feature.label}
-                </span>
-              </button>
-            ));
-        })()}
-
-        {/* Admin Features */}
-        {adminFeatures.map((feature, idx) => (
-          <button
-            key={feature.id || idx}
-            onClick={() => toggleFeatureSelection(feature.name)}
-            className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all ${
-              selectedFeatures.includes(feature.name)
-                ? "border-[#131313] dark:border-white bg-white dark:bg-gray-800"
-                : "border-[#EAECF0] dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-[#131313]"
-            }`}
-          >
-            <div className="w-[22px] h-[22px]">
-              <img
-                src={getImageUrl(feature.icon)}
-                alt=""
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <span className="text-base text-[#4B4B4B] dark:text-gray-300 font-medium">
-              {feature.name}
-            </span>
-          </button>
-        ))}
-
-        {/* Custom Features */}
-        {customFeatures.map((feature, idx) => (
-          <button
-            key={idx}
-            onClick={() => {
-              setCustomFeatures(prev => prev.filter((_, i) => i !== idx));
-              setSelectedFeatures(prev =>
-                prev.filter(f => f !== feature)
-              );
-            }}
-            className="flex items-center gap-3 px-4 py-2 rounded-[48px] border border-[#131313] bg-white dark:bg-gray-800"
-          >
-                     <div className="w-[22px] h-[22px]">
-      <svg viewBox="0 0 20 20" fill="none">
-      <path
-        d="M20 8.25L10 1.75L7.5 3.375V1.25H5V5L0 8.25L2.375 11.625L2.5 11.5V18.75H8.75V13.75H11.25V18.75H17.5V11.5L17.625 11.625L20 8.25ZM1.75 8.625L10 3.25L18.25 8.625L17.375 9.875L10 5L2.625 9.875L1.75 8.625ZM16.25 17.5H12.5V12.5H7.5V17.5H3.75V10.75L10 6.625L16.25 10.75V17.5Z"
-        fill="currentColor"
-      />
-    </svg>
-                      </div>
-            <span className="text-base text-[#4B4B4B] dark:text-gray-300 font-medium">
-              {feature}
-            </span>
-            <X size={16} />
-          </button>
-        ))}
-
-        {/* Others Button */}
-        <button
-          onClick={() => setShowCustomFeaturesInput(!showCustomFeaturesInput)}
-          className={`flex items-center gap-3 px-4 py-2 rounded-[48px] border transition-all ${
-            showCustomFeaturesInput
-              ? "border-[#131313] dark:border-white"
-              : "border-[#EAECF0] dark:border-gray-600 hover:border-[#131313]"
-          }`}
-        >
-          <Plus size={16} />
-          <span className="text-base text-[#4B4B4B] dark:text-gray-300 font-medium">
-            Other
-          </span>
-        </button>
-      </div>
-
-      {/* Custom Feature Input */}
-      {showCustomFeaturesInput && (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={customFeatureInput}
-            onChange={(e) => setCustomFeatureInput(e.target.value)}
-            placeholder="Add custom feature"
-            className="flex-1 h-[50px] px-3 border rounded-lg dark:bg-gray-800"
-          />
-          <button
-            onClick={() => {
-              if (
-                customFeatureInput.trim() &&
-                !selectedFeatures.includes(customFeatureInput)
-              ) {
-                setCustomFeatures(prev => [
-                  ...prev,
-                  customFeatureInput.trim()
-                ]);
-                setSelectedFeatures(prev => [
-                  ...prev,
-                  customFeatureInput.trim()
-                ]);
-                setCustomFeatureInput("");
-              }
-            }}
-            className="px-6 h-[50px] bg-[#131313] text-white rounded-lg"
-          >
-            Add
-          </button>
+      {status === 'rejected' && (
+        <div className="w-full max-w-4xl p-4 border border-red-200 bg-red-50 rounded-md">
+          <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
+          <p className="text-red-700 text-sm">
+            Reason: {rejectionReason || 'No reason provided'}
+          </p>
+          <p className="text-red-600 text-xs mt-2">
+            Please update the details and resubmit for approval.
+          </p>
         </div>
       )}
-    </div>
-  </div>
-)}
 
-
-          {/* Step 4: Types of Discount */}
-          {currentStep === 4 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-              <h1 className="text-2xl lg:text-[32px] font-bold text-black dark:text-white font-geist leading-normal text-center">
-                Types of Discount
-              </h1>
-
-              <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-                {/* First 5 User Discount */}
-                <div className="flex flex-col gap-3 p-5 rounded-xl border border-[#EAECF0] bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-[#334054] dark:text-white font-plus-jakarta">
-                      First 5 User Discount
-                    </h3>
-                    <button
-                      onClick={() => setFirstUserDiscount(!firstUserDiscount)}
-                      className={`w-9 h-5 rounded-full transition-colors duration-200 ${
-                        firstUserDiscount ? "bg-[#2563EB]" : "bg-[#D2D5DA]"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                          firstUserDiscount
-                            ? "translate-x-[18px]"
-                            : "translate-x-[2px]"
-                        }`}
-                      ></div>
-                    </button>
-                  </div>
-
-                  {firstUserDiscount && (
-                    <>
-                      <div className="w-full h-px bg-[#EAECF0] border-dashed"></div>
-                      <div className="flex md:items-start  w-full gap-5 max-md:flex-col">
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Type
-                          </Label>
-                          <div className="relative">
-                            <select
-                              value={discountType}
-                              onChange={(e) => setDiscountType(e.target.value)}
-                              className="w-full p-[14px_12px] border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta text-[#717171] bg-white dark:bg-gray-800 appearance-none"
-                            >
-                              <option value="percentage">Percentage</option>
-                              <option value="fixed">Fixed Amount</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 6L8 10L12 6"
-                                  stroke="#131313"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Percentage
-                          </Label>
-                        <Input
-  type="number"
-  maxLength={discountType === "percentage" ? 2 : 10}
-  placeholder={discountType === "percentage" ? "10%" : "Fixed Amount"}
-  value={discountPercentage || ""}
-  onChange={(e) => {
-    let value = e.target.value;
-
-    // percentage 0–99 tak
-    if (discountType === "percentage" && Number(value) > 99) return;
-
-    setDiscountPercentage(value);
-    clearError("discountPercentage");
-  }}
-  className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-/>
-
-                          {errors.discountPercentage && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.discountPercentage}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Final Price
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="Enter Final Price"
-                            value={finalPrice}
-                            onChange={(e) => {
-                              setFinalPrice(e.target.value);
-                              clearError("finalPrice");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.finalPrice && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.finalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Festival Offers */}
-                <div className="flex flex-col gap-3 p-5 rounded-xl border border-[#EAECF0] bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-[#334054] dark:text-white font-plus-jakarta">
-                      Festival Offers
-                    </h3>
-                    <button
-                      onClick={() => setFestivalOffers(!festivalOffers)}
-                      className={`w-9 h-5 rounded-full transition-colors duration-200 ${
-                        festivalOffers ? "bg-[#2563EB]" : "bg-[#D2D5DA]"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                          festivalOffers
-                            ? "translate-x-[18px]"
-                            : "translate-x-[2px]"
-                        }`}
-                      ></div>
-                    </button>
-                  </div>
-                  {festivalOffers && (
-                    <>
-                      <div className="w-full h-px bg-[#EAECF0] border-dashed"></div>
-                          <div className="flex md:items-start  w-full gap-5 max-md:flex-col">
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Type
-                          </Label>
-                          <div className="relative">
-                            <select
-                              value={discountType}
-                              onChange={(e) => setDiscountType(e.target.value)}
-                              className="w-full p-[14px_12px] border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta text-[#717171] bg-white dark:bg-gray-800 appearance-none"
-                            >
-                              <option value="percentage">Percentage</option>
-                              <option value="fixed">Fixed Amount</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 6L8 10L12 6"
-                                  stroke="#131313"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Percentage
-                          </Label>
-                          <Input
-                            type="number"
-                            maxLength={discountType === 'percentage' ? 2 : 10}
-                            placeholder={discountType === 'percentage' ? "10%" : "₹ 2000"}
-                            value={discountPercentage}
-                            onChange={(e) => {
-                              setDiscountPercentage(e.target.value);
-                              clearError("discountPercentage");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.discountPercentage && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.discountPercentage}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Final Price
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="₹ 2000"
-                            value={finalPrice}
-                            onChange={(e) => {
-                              setFinalPrice(e.target.value);
-                              clearError("finalPrice");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.finalPrice && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.finalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Weekly or Monthly Offers */}
-                <div className="flex flex-col gap-3 p-5 rounded-xl border border-[#EAECF0] bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-[#334054] dark:text-white font-plus-jakarta">
-                      Weekly or Monthly Offers
-                    </h3>
-                    <button
-                      onClick={() => setWeeklyOffers(!weeklyOffers)}
-                      className={`w-9 h-5 rounded-full transition-colors duration-200 ${
-                        weeklyOffers ? "bg-[#2563EB]" : "bg-[#D2D5DA]"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                          weeklyOffers
-                            ? "translate-x-[18px]"
-                            : "translate-x-[2px]"
-                        }`}
-                      ></div>
-                    </button>
-                  </div>
-                  {weeklyOffers && (
-                    <>
-                      <div className="w-full h-px bg-[#EAECF0] border-dashed"></div>
-                        <div className="flex md:items-start  w-full gap-5 max-md:flex-col">
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Type
-                          </Label>
-                          <div className="relative">
-                            <select
-                              value={discountType}
-                              onChange={(e) => setDiscountType(e.target.value)}
-                              className="w-full p-[14px_12px] border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta text-[#717171] bg-white dark:bg-gray-800 appearance-none"
-                            >
-                              <option value="percentage">Percentage</option>
-                              <option value="fixed">Fixed Amount</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 6L8 10L12 6"
-                                  stroke="#131313"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Percentage
-                          </Label>
-                          <Input
-                            type="number"
-                            maxLength={discountType === 'percentage' ? 2 : 10}
-                            placeholder={discountType === 'percentage' ? "10%" : "₹ 2000"}
-                            value={discountPercentage}
-                            onChange={(e) => {
-                              setDiscountPercentage(e.target.value);
-                              clearError("discountPercentage");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.discountPercentage && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.discountPercentage}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Final Price
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="₹ 2000"
-                            value={finalPrice}
-                            onChange={(e) => {
-                              setFinalPrice(e.target.value);
-                              clearError("finalPrice");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.finalPrice && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.finalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Special Offers */}
-                <div className="flex flex-col gap-3 p-5 rounded-xl border border-[#EAECF0] bg-white dark:bg-gray-800">
-                  <div className="flex items-center justify-between">
-                    {" "}
-                    <h3 className="text-base font-bold text-[#334054] dark:text-white font-plus-jakarta">
-                      Special Offers
-                    </h3>
-                    <button
-                      onClick={() => setSpecialOffers(!specialOffers)}
-                      className={`w-9 h-5 rounded-full transition-colors duration-200 ${
-                        specialOffers ? "bg-[#2563EB]" : "bg-[#D2D5DA]"
-                      }`}
-                    >
-                      <div
-                        className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform duration-200 ${
-                          specialOffers
-                            ? "translate-x-[18px]"
-                            : "translate-x-[2px]"
-                        }`}
-                      ></div>
-                    </button>
-                  </div>
-                  {specialOffers && (
-                    <>
-                      <div className="w-full h-px bg-[#EAECF0] border-dashed"></div>
-                          <div className="flex md:items-start  w-full gap-5 max-md:flex-col">    <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Type
-                          </Label>
-                          <div className="relative">
-                            <select
-                              value={discountType}
-                              onChange={(e) => setDiscountType(e.target.value)}
-                              className="w-full p-[14px_12px] border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta text-[#717171] bg-white dark:bg-gray-800 appearance-none"
-                            >
-                              <option value="percentage">Percentage</option>
-                              <option value="fixed">Fixed Amount</option>
-                            </select>
-                            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                              <svg
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M4 6L8 10L12 6"
-                                  stroke="#131313"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Discount Percentage
-                          </Label>
-                          <Input
-                            type="number"
-                            maxLength={discountType === 'percentage' ? 2 : 10}
-                            placeholder={discountType === 'percentage' ? "10%" : "₹ 2000"}
-                            value={discountPercentage}
-                            onChange={(e) => {
-                              setDiscountPercentage(e.target.value);
-                              clearError("discountPercentage");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.discountPercentage && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.discountPercentage}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-3 flex-1">
-                          <Label className="text-base text-[#334054] dark:text-gray-400 font-plus-jakarta">
-                            Final Price
-                          </Label>
-                          <Input
-                            type="number"
-                            placeholder="₹ 2000"
-                            value={finalPrice}
-                            onChange={(e) => {
-                              setFinalPrice(e.target.value);
-                              clearError("finalPrice");
-                            }}
-                            className="border-[#B0B0B0] text-sm font-plus-jakarta text-[#717171]"
-                          />
-                          {errors.finalPrice && (
-                            <span className="text-red-500 text-xs mt-1">
-                              {errors.finalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Business Details */}
-          {currentStep === 5 && (
-          <div className="max-w-7xl mx-auto flex flex-col items-center gap-8 w-full">
-              <h1 className="text-[32px] font-bold text-black dark:text-white font-sanse text-center">
-                Business Details
-              </h1>
-
-              <div className="w-full max-w-4xl mx-auto flex flex-col gap-5">
-                {/* Brand Name & Legal Company Name */}
-      <div className="flex  w-full gap-5 max-md:flex-col">
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Brand Name
-                    </label>
-                    <input
-                      type="text"
-                      value={brandName}
-                      onChange={(e) => {
-                        setBrandName(e.target.value);
-                        clearError("brandName");
-                      }}
-                      placeholder="Enter Brand Name"
-                      maxLength={50}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.brandName && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.brandName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Legal Company Name
-                    </label>
-                    <input
-                      type="text"
-                      value={companyName}
-                      onChange={(e) => {
-                        setCompanyName(e.target.value);
-                        clearError("companyName");
-                      }}
-                      placeholder="Enter Company Name"
-                        maxLength={50}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.companyName && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.companyName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* GST Number & Business Email */}
-                     <div className="flex  w-full gap-5 max-md:flex-col">
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      GST Number
-                    </label>
-                    <input
-                      type="text"
-                      value={gstNumber}
-                      onChange={(e) => setGstNumber(e.target.value)}
-                      placeholder=" GST Number (Optional)"
-                        maxLength={15}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                  </div>
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Business Email ID
-                    </label>
-                    <input
-                      type="email"
-                      value={businessEmail}
-                      onChange={(e) => {
-                        setBusinessEmail(e.target.value);
-                        clearError("businessEmail");
-                      }}
-                      placeholder="Enter Business Email ID (Optional)"
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.businessEmail && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.businessEmail}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Business Phone Number */}
-                <div className=" flex flex-col gap-3">
-                  <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                    Business Phone number
-                  </label>
-                  <div className="flex gap-3">
-                    <div
-                      onClick={(e) => setOpen(true)}
-                      className="cursor-pointer"
-                    >
-                      {selected && (
-                        <span
-                          onClick={() => {
-                            setSelected(selected);
-                          }}
-                          className="flex h-[50px] items-center px-5 py-2 border rounded-xl gap-2 text-base text-[#717171] font-['Plus_Jakarta_Sans']"
-                        >
-                          {" "}
-                          {React.createElement(
-                            (Flags as any)[selected.isoCode],
-                            {
-                              title: selected.name,
-                              style: { width: "24px" },
-                            },
-                          )}
-                          {selected.dialCode.charAt(0) !== "+"
-                            ? `+${selected.dialCode}`
-                            : selected.dialCode}
-                        </span>
-                      )}
-                    </div>
-
-                    <Dialog open={open} onClose={setOpen}>
-                      <DialogBackdrop
-                        transition
-                        className="inset-0  data-closed:opacity-1 data-enter:duration-300 data-enter:ease-out data-leave:duration-200 data-leave:ease-in"
-                      />
-                      {/* {isModalOpen && ( */}
-                      <div className="fixed inset-0 bg-opacity-60 flex items-center justify-center z-50">
-                        <DialogPanel className="w-[150px] shadow-md bg-[#f9fafc]  shadow-[#717171] h-[3 30px] scrollbar-hide  rounded-xl px-4 max-h-[80%] overflow-y-auto">
-                          <button
-                            onClick={() => setOpen(false)}
-                            className="fixed w-auto bg-[#f9fafc] p-3 text-[#717171] text-[16px]"
-                          >
-                            <span className="font-[22px] flex gap-0 items-center">
-                              <IoIosArrowBack size={24} />
-                              Back
-                            </span>
-                          </button>
-                          {/* <div className="w-full text-white mt-4 rounded-xl p-3 flex border focus:border-[#BED6FF] border-[#BED6FF] px-4">
-                                                <img src={SearchIcon} alt="" className="w-5 h-5" />
-                                                <input
-                                                  type="text"
-                                                  placeholder="Search for Countries"
-                                                  value={search}
-                                                  onChange={(e) => setSearch(e.target.value)}
-                                                  className="outline-none font-normal ml-1 placeholder:text-white px-2 text-sm w-full bg-transparent"
-                                                />
-                                              </div> */}
-
-                          <ul className="mt-6 py-5">
-                            {countries.map((c) => (
-                              <li
-                                key={c.isoCode}
-                                onClick={() => {
-                                  setSelected(c);
-                                  setOpen(false);
-                                }}
-                                className="flex items-center rounded-[5px] text-[#717171] text-sm font-normal px-3 py-2 cursor-pointer"
-                              >
-                                {React.createElement(
-                                  (Flags as any)[c.isoCode],
-                                  {
-                                    title: c.name,
-                                    style: {
-                                      width: "25px",
-                                      marginRight: "12px",
-                                    },
-                                  },
-                                )}{" "}
-                                {/* {c.name} */}
-                                {c.dialCode.charAt(0) !== "+"
-                                  ? `+${c.dialCode}`
-                                  : c.dialCode}
-                              </li>
-                            ))}
-                          </ul>
-                        </DialogPanel>
-                      </div>
-                      {/* )} */}
-                    </Dialog>
-                    {/* <Plus className="w-3 h-3 text-[#717171]" /> */}
-                    {/* <span className="text-base text-[#717171] font-['Plus_Jakarta_Sans']">
-                                                  91
-                                                </span> */}
-
-                    <input
-                      type="text"
-                      value={businessPhone}
-onChange={(e) => {
-  const value = e.target.value.replace(/\D/g, "") // remove all non-digit characters
-  setBusinessPhone(value)
-  clearError("businessPhone")
-}}
-                      
-                      maxLength={10}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                      placeholder="Mobile Number"
-                    />
-                    {errors.businessPhone && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.businessPhone}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="max-w-4xl mx-auto w-full flex flex-col gap-3">
-                <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                  Business Address
-                </label>
-<input
-                  type="text"
-                  // value={formData.businessAddress}
-                  // onChange={(e) => {
-                  //   setFormData((prev) => ({
-                  //     ...prev,
-                  //     businessAddress: e.target.value,
-                  //   }));
-                  // }}
-                  className="w-full h-[50px] px-3 py-4 border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-[#121213] dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                  placeholder="Business Address"
-                />
-                <div className="flex gap-5 max-md:flex-wrap">
-
-                    <div className="w-full relative">
-                      <select
-                        name="Country"
-                        value="India"
-                        disabled
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-gray-100 dark:bg-gray-700 cursor-not-allowed appearance-none"
-                      >
-                        <option value="India">
-                          India
-                        </option>
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                 
-                    <div className="w-full relative">
-                      <select
-                        name="state"
-                        value={stateOption2}
-                        onChange={(e) => {
-                          const stateVal = e.target.value;
-                          setStateOption2(stateVal);
-                          // setFormData((prev) => ({
-                          //   ...prev,
-                          //   state: stateVal,
-                          //   city: "", // reset city
-                          // }));
-                          setCityOptions2("");
-                          clearError("state");
-                        }}
-                          className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="" disabled>
-                          Select State
-                        </option>
-                        {/* Render states from selected country */}
-                        {data
-                          .find((c) => c.name === countryOption2)
-                          ?.states?.map((state: any, idx: number) => (
-                            <option key={idx} value={state.name}>
-                              {state.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {errors.state && (
-                        <span className="text-red-500 text-xs mt-1 block">
-                          {errors.state}
-                        </span>
-                      )}
-                    </div>
-                  
-                    <div className="w-full relative">
-                      <select
-                        name="city"
-                        value={cityOption2}
-                        onChange={(e) => {
-                          const cityVal = e.target.value;
-                          setCityOptions2(cityVal);
-                          // setFormData((prev) => ({
-                          //   ...prev,
-                          //   city: cityVal,
-                          // }));
-                          clearError("city");
-                        }}
-                          className="w-full h-[50px] px-3 border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="" disabled>
-                          Select City
-                        </option>
-                        {data
-                          .find((country) => country.name === countryOption2)
-                          ?.states.find((state) => state.name === stateOption2)
-                          ?.cities.map((city: any, idx: number) => (
-                            <option key={idx} value={city.name}>
-                              {city.name}
-                            </option>
-                          ))}
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {errors.city && (
-                        <span className="text-red-500 text-xs mt-1 block">
-                          {errors.city}
-                        </span>
-                      )}
-                    </div>
-                  
-                  <div className="flex flex-col flex-1">
-                    <input
-                      type="text"
-                      value={businessPincode}
-                      onChange={(e) => {
-                        setBusinessPincode(e.target.value.replace(/\D/g, ""));
-                        clearError("businessPincode");
-                      }}
-                      placeholder="Pincode"
-                      maxLength={6}
-                             inputMode="numeric"
-                      className="flex-1 h-[50px] px-3 py-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.businessPincode && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.businessPincode}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Map Integration */}
-               <div className="h-96 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-  <iframe
-    src={mapSrcbusiness}
-    width="100%"
-    height="100%"
-    style={{ border: 0 }}
-    loading="lazy"
-    referrerPolicy="no-referrer-when-downgrade"
-    title="Selected Location Map"
-  />
-</div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 6: Personal Details */}
-          {currentStep === 6 && (
-          <div className="flex flex-col items-center gap-8 w-full max-w-4xl">
-              <h1 className="text-2xl lg:text-[32px] font-bold text-black dark:text-white font-geist leading-normal text-center">
-                Personal Details
-              </h1>
-
-             
-
-              <div className="w-full max-w-4xl mx-auto flex flex-col gap-5">
-                {/* First Name & Last Name */}
-                <div className="flex gap-5 max-md:flex-col">
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => {
-                        setFirstName(e.target.value);
-                        clearError("firstName");
-                      }}
-                      placeholder="Enter Your First Name"
-                        maxLength={30}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.firstName && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.firstName}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => {
-                        setLastName(e.target.value);
-                        clearError("lastName");
-                      }}
-                      placeholder="Enter Your Last Name"
-                        maxLength={30}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.lastName && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.lastName}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* State & City */}
-                <div className="flex flex-col gap-3">
-                  <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                    Personal Address
-                  </label>
-
-                  <div className="flex max-md:flex-wrap gap-5">
-
-                      <div className="w-full relative">
-                        <select
-                          name="Country"
-                          value="India"
-                          disabled
-                          className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-gray-100 dark:bg-gray-700 cursor-not-allowed appearance-none"
-                        >
-                          <option value="India">
-                            India
-                          </option>
-                        </select>
-                        <svg
-                          className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                        >
-                          <path
-                            d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                            stroke="#292D32"
-                            strokeWidth="1.5"
-                            strokeMiterlimit="10"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </div>
-                   
-                      <div className="w-full relative">
-                        <select
-                          name="state"
-                          value={stateOption}
-                          onChange={(e) => {
-                            const stateVal = e.target.value;
-                            setStateOption(stateVal);
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   state: stateVal,
-                            //   city: "", // reset city
-                            // }));
-                            setCityOptions("");
-                            clearError("personalState");
-                          }}
-                          className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                        >
-                          <option value="" disabled>
-                            Select State
-                          </option>
-                          {/* Render states from selected country */}
-                          {data
-                            .find((c) => c.name === countryOption)
-                            ?.states?.map((state: any, idx: number) => (
-                              <option key={idx} value={state.name}>
-                                {state.name}
-                              </option>
-                            ))}
-                        </select>
-                        <svg
-                          className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                        >
-                          <path
-                            d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                            stroke="#292D32"
-                            strokeWidth="1.5"
-                            strokeMiterlimit="10"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        {errors.personalState && (
-                          <span className="text-red-500 text-xs mt-1 block">
-                            {errors.personalState}
-                          </span>
-                        )}
-                      </div>
-                   
-                      <div className="w-full relative">
-                        <select
-                          name="city"
-                          value={cityOption}
-                          onChange={(e) => {
-                            const cityVal = e.target.value;
-                            setCityOptions(cityVal);
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   city: cityVal,
-                            // }));
-                            clearError("personalCity");
-                          }}
-                          className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                        >
-                          <option value="" disabled>
-                            Select City
-                          </option>
-                          {data
-                            .find((country) => country.name === countryOption)
-                            ?.states.find((state) => state.name === stateOption)
-                            ?.cities.map((city: any, idx: number) => (
-                              <option key={idx} value={city.name}>
-                                {city.name}
-                              </option>
-                            ))}
-                        </select>
-                        <svg
-                          className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                        >
-                          <path
-                            d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                            stroke="#292D32"
-                            strokeWidth="1.5"
-                            strokeMiterlimit="10"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        {errors.personalCity && (
-                          <span className="text-red-500 text-xs mt-1 block">
-                            {errors.personalCity}
-                          </span>
-                        )}
-                      </div>
-                    
-                    <div className="flex-1 flex flex-col">
-                    <input
-                      type="text"
-                      value={personalPincode}
-                      onChange={(e) => {
-                        setPersonalPincode(e.target.value);
-                        clearError("personalPincode");
-                      }}
-                      placeholder="Pincode"
-                      maxLength={6}
-                      className="flex-1 h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.personalPincode && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.personalPincode}
-                      </span>
-                    )}
-                    </div>
-                  </div>
-                </div>
-
-                
-
-                {/* Date of Birth & Marital Status */}
-                <div className="flex gap-5">
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Date of Birth
-                    </label>
-                    <input
-                      type="date"
-                      value={dateOfBirth}
-                      onChange={(e) => {
-                        // setFormData((prev) => ({
-                        //   ...prev,
-                        //   dateOfBirth: e.target.value,
-                        // }))
-                        setDateOfBirth(e.target.value);
-                        clearError("dateOfBirth");
-                      }}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313]"
-                    />
-                    {errors.dateOfBirth && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.dateOfBirth}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col gap-3">
-                    <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                      Marital Status
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={maritalStatus}
-                        onChange={(e) => {
-                          // setFormData((prev) => ({
-                          //   ...prev,
-                          //   maritalStatus: e.target.value,
-                          // }))
-                          setMaritalStatus(e.target.value);
-                          clearError("maritalStatus");
-                        }}
-                        className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                      >
-                        <option value="">Select</option>
-                        <option value="single">Single</option>
-                        <option value="married">Married</option>
-                        <option value="divorced">Divorced</option>
-                      </select>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </div>
-                    {errors.maritalStatus && (
-                      <span className="text-red-500 text-xs mt-1">
-                        {errors.maritalStatus}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* ID Proof */}
-                <div className="flex flex-col gap-3">
-                  <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                    ID Proof
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={idProof}
-                      onChange={(e) => {
-                        // setFormData((prev) => ({
-                        //   ...prev,
-                        //   idProof: e.target.value,
-                        // }))
-                        setIdProof(e.target.value);
-                        clearError("idProof");
-                      }}
-                      className="w-full h-[50px] px-3  border border-[#EAECF0] dark:border-gray-600 rounded-lg text-sm text-black dark:text-gray-300 font-['Plus_Jakarta_Sans'] bg-white dark:bg-gray-800 focus:outline-none focus:border-[#131313] appearance-none"
-                    >
-                      <option value="">Select</option>
-                      <option value="aadhar">Aadhar Card</option>
-                      <option value="passport">Passport</option>
-                      <option value="driving_license">Driving License</option>
-                    </select>
-                    <span>
-                      <svg
-                        className="absolute right-5 top-1/2 transform -translate-y-1/2 w-[18px] h-[18px] pointer-events-none"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                      >
-                        <path
-                          d="M14.94 6.71249L10.05 11.6025C9.4725 12.18 8.5275 12.18 7.95 11.6025L3.06 6.71249"
-                          stroke="#292D32"
-                          strokeWidth="1.5"
-                          strokeMiterlimit="10"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    </span>
-                  </div>
-                  {errors.idProof && (
-                    <span className="text-red-500 text-xs mt-1">
-                      {errors.idProof}
-                    </span>
-                  )}
-                </div>
-
-                {/* ID Photos */}
-                <div className="flex flex-col gap-5">
-                  <label className="text-base text-[#334054] dark:text-gray-300 font-['Plus_Jakarta_Sans'] pl-1">
-                    ID Photos
-                  </label>
-                  <div className="w-[242px] max-md:w-full h-[175px] flex flex-col items-center justify-center gap-4 bg-[#F9FAFB] dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-600 relative overflow-hidden">
-                    {idProofImage ? (
-                      <img 
-                        src={getImageUrl(idProofImage)} 
-                        alt="ID Proof" 
-                        className="w-full h-full object-cover absolute top-0 left-0"
-                      />
-                    ) : (
-                      <>
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 18 18"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M1.125 9H16.875"
-                            stroke="#98A2B3"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <path
-                            d="M9 16.875L9 1.125"
-                            stroke="#98A2B3"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        <span className="text-sm text-black font-['Plus_Jakarta_Sans'] z-1">
-                          Upload Here
-                        </span>
-                      </>
-                    )}
-                    
-                    <input
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.pdf"
-                      onChange={handleUploadIDProof}
-                      style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                        opacity: 0,
-                        cursor: "pointer",
-                        left: 0,
-                        top: 0,
-                        zIndex: 10,
-                      }}
-                    />
-                    
-                    {/* Show error message */}
-                    {error && (
-                      <span className="text-xs text-red-500 mt-2 z-20 bg-white px-1 rounded absolute bottom-2">{error}</span>
-                    )}
-                  </div>
-                </div>
-           
-              </div>
-            </div>
-          )}
-
-          {/* Step 7: Terms & Conditions */}
-{currentStep === 7 && (
-  <div className="fixed flex max-md:flex-col max-md:gap-3 overflow-hidden">
-    
-    {/* Left Content */}
-    <div className="flex-1 flex flex-col gap-3">
-      <h1 className="text-[32px] max-md:text-base font-bold text-[#1C2939] dark:text-white">
-        Terms & Conditions for Verification
-      </h1>
-
-      <p className="max-md:text-xs text-base text-[#485467] dark:text-gray-400 font-['Poppins'] leading-[155%]">
-        By proceeding with the verification process on{" "}
-        <span className="font-bold text-[#1C2939] dark:text-white">
-          Travel Homes
-        </span>
-        , you agree to the following terms and conditions:
-      </p>
-
-      <p className="max-md:text-xs text-base font-['Poppins'] leading-[155%] mt-4">
-        <span className="font-bold text-[#101828] dark:text-white">
-          1. Accurate Information
-        </span>{" "}
-        <span className="text-[#334054] dark:text-gray-300">
-          – Provide truthful details; false information may lead to account suspension.
-        </span>
-      </p>
-
-      <p className="max-md:text-xs text-base font-['Poppins'] leading-[155%]">
-        <span className="font-bold text-[#101828] dark:text-white">
-          2. Data Usage & Security
-        </span>{" "}
-        <span className="text-[#334054] dark:text-gray-300">
-          – Your data is securely stored and used only for verification.
-        </span>
-      </p>
-
-      <p className="max-md:text-xs text-base font-['Poppins'] leading-[155%]">
-        <span className="font-bold text-[#101828] dark:text-white">
-          3. Verification Rights
-        </span>{" "}
-        <span className="text-[#334054] dark:text-gray-300">
-          – We may deny verification if information is invalid.
-        </span>
-      </p>
-
-      {/* Checkbox + Button */}
-      <div className="flex flex-col gap-4 mt-4">
-        <div className="flex items-center gap-3">
-          <Checkbox
-            id="terms"
-            checked={termsAccepted}
-            onCheckedChange={(checked) => setTermsAccepted(checked)}
-          />
-          <Label htmlFor="terms" className="text-sm">
-            I accept the terms and conditions
-          </Label>
-        </div>
-
-         {/* <Button
-          type="button"
-          onClick={handleNext}
-          disabled={isLoading || !termsAccepted}
-          className="w-full sm:w-[200px] px-8 py-3 bg-[#131313] hover:bg-gray-800 text-white rounded-full transition"
-        >
-          {isLoading ? "Loading..." : "Start Verification"}
-        </Button>  */}
-      </div>
-    </div>
-
-    {/* Right Image */}
-    <div className="flex justify-center items-center">
-      <img
-        src="https://api.builder.io/api/v1/image/assets/TEMP/7e591c21d8b3bea0e51f3c5c2a65a03538099697?width=1000"
-        alt="Verification Illustration"
-        className="w-[450px] max-md:w-[280px] h-auto object-contain"
-      />
-    </div>
-  </div>
-)}
-
-
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex w-full z-30 fixed bottom-0 items-center justify-center px-5 lg:px-20  bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 shadow-lg">
-  <div className="max-w-4xl mx-auto w-full flex justify-between items-center gap-5">
-
-    {/* LEFT SIDE */}
-    {currentStep !== 7 && (
-      <div className="flex items-center max-md:flex-col gap-6 py-4">
-      <span className="max-md:hidden text-lg font-semibold text-[#131313] dark:text-white">
-          {currentStep + 0}/{totalSteps - 1} Completed
-        </span>
-       <div className="md:hidden flex max-md:justify-between  md:items-center  gap-6">
-           <button
-          onClick={handleBack}
-     className=" flex items-center text-sm px-6 py-1 rounded-[60px] border border-gray-200 dark:border-gray-600"
-            >
-          <span>Back</span>
-        </button>
-        <span className="text-lg font-semibold text-[#131313] dark:text-white">
-          {currentStep + 0}/{totalSteps - 1} Completed
-        </span>
-
-        <button
-          onClick={handleNext}
-           className="flex items-center justify-center text-sm px-6 py-1 bg-[#131313] text-white rounded-full"
-      >
-          <span>Next</span>
-        </button>
-        </div>
-        <div className="flex gap-[6px] w-[294px] h-[6px]">
-          {Array.from({ length: 7 }, (_, i) => (
-            <div
-              key={i}
-              className={`flex-1 h-full rounded-2xl ${
-                i <= currentStep
-                  ? "bg-[#131313] dark:bg-white"
-                  : "bg-[#EAECF0] dark:bg-gray-600"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-    )}
-
-    {/* RIGHT SIDE */}
-    {currentStep === 7 ? (
-      //  ONLY VERIFICATION BUTTON
-      <div className="flex justify-center items-center gap-3">
-        <button
-          onClick={handleBack}
-          className="text-sm flex items-center gap-2 px-8 py-3 rounded-[60px] border border-gray-300 dark:border-gray-600"
-        >
-          <span>Back</span>
-        </button>
-         <button
-          type="button"
-          onClick={handleNext}
-          disabled={isLoading || !termsAccepted}
-          className="w-full sm:w-[200px] px-8 py-3 bg-[#131313] hover:bg-gray-800 text-white rounded-full transition"
-        >
-          {isLoading ? "Loading..." : "Start Verification"}
-        </button> 
-        </div>
-    ) : (
-      //  NORMAL NAVIGATION
-      <div className="max-md:hidden flex items-center gap-3">
-        <button
-          onClick={handleBack}
-          className="flex items-center gap-2 px-8 py-2 rounded-[60px] border border-gray-200 dark:border-gray-600"
-        >
-          <span>Back</span>
-        </button>
-
-        <button
-          onClick={handleNext}
-          className="flex items-center justify-center px-8 py-2 bg-[#131313] text-white rounded-[60px]"
-        >
-          <span>Next</span>
-        </button>
-      </div>
-    )}
-  </div>
-</div>
-    </div>
+      {renderStepContent()}
+    </OnboardingLayout>
   );
 };
 
