@@ -5,7 +5,7 @@ const AdminAnalyticsMetricSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: ['activity', 'camper-van', 'unique-stay'],
+    enum: ['activity', 'camper-van', 'unique-stay', 'listing'],
     index: true
   },
   impressions: {

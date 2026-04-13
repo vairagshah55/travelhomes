@@ -220,20 +220,22 @@ const listOffers = async (req, res) => {
     if (data.length > 0 && !isOwnerView && !isAdmin) {
       try {
         const today = getToday();
-        const offerIds = data.map((o) => o._id);
 
-        // Bulk increment impressions on offer docs
-        Offer.updateMany({ _id: { $in: offerIds } }, { $inc: { impressions: 1 } }).exec();
-
-        // Bulk upsert daily metric records
-        const bulkOps = data.map((o) => ({
+        // Track 1 impression per vendor per page load (not 1 per offer).
+        // Group results by vendor — use the first offer per vendor as the serviceId key.
+        const vendorFirstOffer = {};
+        for (const o of data) {
+          const vid = String(o.vendorId || o.userId || o._id);
+          if (!vendorFirstOffer[vid]) vendorFirstOffer[vid] = o;
+        }
+        const listingOps = Object.values(vendorFirstOffer).map((o) => ({
           updateOne: {
-            filter: { serviceId: o._id, metricDate: today, category: getMetricCategory(o) },
+            filter: { serviceId: o._id, metricDate: today, category: 'listing' },
             update: { $inc: { impressions: 1 } },
             upsert: true,
           },
         }));
-        AdminAnalyticsMetric.bulkWrite(bulkOps).catch(() => {});
+        if (listingOps.length) AdminAnalyticsMetric.bulkWrite(listingOps).catch(() => {});
       } catch (impErr) {
         console.error('Impression tracking error:', impErr.message);
       }

@@ -168,26 +168,39 @@ export interface OfferDTO {
   description: string;
   rules: string[];
   features: string[];
+  // Camper Van specific
   seatingCapacity?: number | string;
   sleepingCapacity?: number | string;
+  perKmCharge?: number | string;
+  perDayCharge?: number | string;
+  perKmIncludes?: string[];
+  perKmExcludes?: string[];
+  perDayIncludes?: string[];
+  perDayExcludes?: string[];
+  // Unique Stay specific
   guestCapacity?: number | string;
   numberOfRooms?: number | string;
   numberOfBeds?: number | string;
   numberOfBathrooms?: number | string;
-  perKmCharge?: number | string;
-  perDayCharge?: number | string;
+  stayType?: string;
+  // Activity specific
   personCapacity?: number | string;
   timeDuration?: string;
+  expectations?: string[];
+  // Common
   serviceType?: string;
   locality?: string;
   pincode?: string;
   city?: string;
   state?: string;
+  address?: string;
   regularPrice: number | string;
+  discountPrice?: number | null;
   priceIncludes: string[];
   priceExcludes: string[];
   photos: { coverUrl?: string; galleryUrls: string[] };
-  status: 'pending' | 'approved' | 'cancelled';
+  status: 'pending' | 'approved' | 'cancelled' | 'deactivated' | 'blocked' | 'rejected';
+  rejectionReason?: string;
   createdAt?: string;
   updatedAt?: string;
 }

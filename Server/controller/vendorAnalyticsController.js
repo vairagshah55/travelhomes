@@ -43,14 +43,40 @@ async function computeCounts(vendorId) {
       CalendarBooking.countDocuments({ ...bookingFilter, endDate: { $lt: startOfToday } }),
     ]);
 
-    // Impressions / clicks / visitors from the Offer model (vendor-scoped if possible)
+    // Clicks: per-offer counter on Offer model (1 per user click action — correct as-is)
     const offerMatch = vendorOfferFilter ? { $match: vendorOfferFilter } : null;
-    const offerPipeline = [
+    const clickPipeline = [
       ...(offerMatch ? [offerMatch] : []),
-      { $group: { _id: null, impressions: { $sum: '$impressions' }, clicks: { $sum: '$clicks' }, visitors: { $sum: '$visitors' } } },
+      { $group: { _id: null, clicks: { $sum: '$clicks' } } },
     ];
-    const offerMetricsAgg = await Offer.aggregate(offerPipeline);
-    const metrics = offerMetricsAgg?.[0] || { impressions: 0, clicks: 0, visitors: 0 };
+
+    // Impressions: 1 per page load per vendor (stored in AdminAnalyticsMetric with category='listing')
+    const listingFilter = vendorOfferIds
+      ? { serviceId: { $in: vendorOfferIds }, category: 'listing' }
+      : { category: 'listing' };
+
+    // Visitors: deduplicated per day per offer (stored in AdminAnalyticsMetric for offer-detail views)
+    const offerViewFilter = vendorOfferIds
+      ? { serviceId: { $in: vendorOfferIds }, category: { $in: ['activity', 'camper-van', 'unique-stay'] } }
+      : { category: { $in: ['activity', 'camper-van', 'unique-stay'] } };
+
+    const [clickAgg, impressionAgg, visitorAgg] = await Promise.all([
+      Offer.aggregate(clickPipeline),
+      AdminAnalyticsMetric.aggregate([
+        { $match: listingFilter },
+        { $group: { _id: null, total: { $sum: '$impressions' } } },
+      ]),
+      AdminAnalyticsMetric.aggregate([
+        { $match: offerViewFilter },
+        { $group: { _id: null, total: { $sum: '$visitors' } } },
+      ]),
+    ]);
+
+    const metrics = {
+      impressions: impressionAgg[0]?.total || 0,
+      clicks: clickAgg[0]?.clicks || 0,
+      visitors: visitorAgg[0]?.total || 0,
+    };
 
     // Payments summary (global — no vendor link on Payment model yet)
     const [paymentsReceivedAgg, paymentsPendingAgg] = await Promise.all([
@@ -257,8 +283,8 @@ const getVendorAnalyticsGraphs = async (req, res) => {
     // 1. Aggregation for Earnings (Payments)
     const earningsAgg = await Payment.aggregate(getPipeline('Payment', 'paymentDate', 'amount'));
 
-    // 2. Aggregation for Visitors (AdminAnalyticsMetric impressions)
-    const visitorsAgg = await AdminAnalyticsMetric.aggregate(getPipeline('AdminAnalyticsMetric', 'metricDate', 'impressions'));
+    // 2. Aggregation for Visitors (AdminAnalyticsMetric deduplicated visitors)
+    const visitorsAgg = await AdminAnalyticsMetric.aggregate(getPipeline('AdminAnalyticsMetric', 'metricDate', 'visitors'));
 
     // 3. Format data for frontend
     const data = [];
