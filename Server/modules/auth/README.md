@@ -53,17 +53,13 @@ Source files removed: `controller/Authcontroller.js`, `routes/AuthRoutes.js`,
 
 ## Sibling modules
 
-- **Vendor + user login / password reset** lives in
-  [`modules/vendor-auth/`](../vendor-auth/) — same layered shape, mounted at
-  `/api/vendorlogin`.
+- **Vendor + user login / password reset** —
+  [`modules/vendor-auth/`](../vendor-auth/) at `/api/vendorlogin`.
+- **Admin (staff + superadmin) login + getMe** —
+  [`modules/admin-auth/`](../admin-auth/) at `/api/admin/auth`.
 
 ## Pending migration
 
-Still in legacy controllers; their own modules will follow:
-
-- **Admin auth** (`routes/adminAuth.js` + `controller/adminAuthController.js`)
-  — `/api/admin/auth/login` for AdminStaff and `/api/admin/auth/login/superadmin`
-  for the superadmin Admin model. Belongs in `modules/admin-auth/`.
 - **Google OAuth browser flow** (`routes/googleAuth.js`) — passport-based
   redirect/callback. Less urgent; the SPA's code-exchange path now lives in
   this module.

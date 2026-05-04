@@ -6,7 +6,6 @@ const env = require("../config/env");
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
 const http = require("http");
 const pinoHttp = require("pino-http");
 const { connectDB, mongoStatus } = require("../config/db");
@@ -99,16 +98,6 @@ app.use(
   }),
 );
 
-// Rate limiter — protects legacy credential endpoints. The new auth module
-// owns its own OTP limiter inside modules/auth/auth.router.js.
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // 20 requests per window per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: "Too many requests. Please try again later." },
-});
-
 //passport.js — SESSION_SECRET already validated by config/env.js
 app.use(
   session({
@@ -138,7 +127,7 @@ const userroutes = require("../routes/userRoutes");
 console.log("Loading activities routes...");
 const activitiesRoutes = require("../routes/activities");
 const adminAnalyticsRoutes = require("../routes/adminAnalytics");
-const adminAuthRoutes = require("../routes/adminAuth");
+const adminAuthRouter = require("../modules/admin-auth/admin-auth.router");
 const adminCrmRoutes = require("../routes/adminCrm");
 const adminDashboardRoutes = require("../routes/adminDashboard");
 const adminRolesRoutes = require("../routes/adminRoles");
@@ -200,8 +189,9 @@ app.use("/api", googleAuthRoutes);
 // Rate limiters and validation are built into the module router.
 app.use("/api/vendorlogin", vendorAuthRouter);
 
-// 🔓 PUBLIC ADMIN AUTH ROUTES (NO JWT) — rate limited
-app.use("/api/admin/auth", authLimiter, adminAuthRoutes);
+// PUBLIC admin auth routes — rate limit + validate live inside the module router.
+// Mounted before the `/api/admin` JWT gate so login + superadmin login are reachable.
+app.use("/api/admin/auth", adminAuthRouter);
 
 // 🔐 Protect ALL other admin routes
 app.use("/api/admin", requireJwt({ adminOnly: true }));
