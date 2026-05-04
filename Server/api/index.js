@@ -136,6 +136,7 @@ const authModuleRouter = require("../modules/auth/auth.router");
 const blogsRoutes = require("../routes/blogs");
 const bookingDetailsRoutes = require("../routes/bookingDetails");
 const bookingsRoutes = require("../routes/bookings");
+const bookingsReadRouter = require("../modules/bookings/bookings.router");
 const calendarBookingRoutes = require("../routes/calendarbooking");
 const campervansRoutes = require("../routes/campervans");
 const cmsRoutes = require("../routes/cms");
@@ -234,6 +235,10 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/management", managementRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/vendors", vendorsRoutes);
+// New layered bookings module — read endpoints. Mounted BEFORE the legacy
+// router so its handlers win on overlapping GET paths; everything else
+// (POST / PUT / PATCH / DELETE) falls through to the legacy router.
+app.use("/api/bookings", bookingsReadRouter);
 app.use("/api/bookings", bookingsRoutes);
 app.use("/api/bookingDetails", bookingDetailsRoutes);
 app.use("/api/payments", paymentsRoutes);
@@ -253,6 +258,8 @@ app.use("/api/cms", cmsRoutes);
 app.use("/api/admin/management", managementRoutes);
 app.use("/api/admin/users", usersRoutes);
 app.use("/api/admin/vendors", vendorsRoutes);
+// Same co-mount under /api/admin: layered reads first, legacy writes fall through.
+app.use("/api/admin/bookings", bookingsReadRouter);
 app.use("/api/admin/bookings", bookingsRoutes);
 app.use("/api/admin/payments", paymentsRoutes);
 app.use("/api/admin/helpdesk", helpdeskRoutes);
