@@ -1,0 +1,28 @@
+# Build outputs
+**/dist/
+**/build/
+**/.next/
+**/.turbo/
+
+# Dependencies
+**/node_modules/
+
+# Generated
+**/coverage/
+**/*.tsbuildinfo
+
+# Lockfiles (preserve formatting)
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Static assets
+**/uploads/
+**/Photos/
+**/Travel-Dist/
+
+# Large bundled JSON
+Frontend/client/data/indian_cities.json
+
+# Misc
+**/.DS_Store

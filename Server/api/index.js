@@ -1,108 +1,119 @@
-const path = require('path');
-// Load environment variables from .env.production if in production mode
-const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env';
-require("dotenv").config({ path: path.join(__dirname, '..', envFile) });
+const path = require("path");
+// Validated environment — fails fast on missing/invalid vars. Must load before any other module
+// that reads from process.env (jwt, db, mailer, etc.).
+const env = require("../config/env");
 
 const express = require("express");
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const http = require('http');
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const http = require("http");
 const { connectDB, mongoStatus } = require("../config/db");
 const { requireJwt } = require("../middleware/auth");
-const { Server } = require('socket.io');
-const session = require('express-session');
-const passport = require('../config/passport');
-const googleAuthRoutes = require('../routes/googleAuth');
+const { Server } = require("socket.io");
+const session = require("express-session");
+const passport = require("../config/passport");
+const googleAuthRoutes = require("../routes/googleAuth");
 
 const app = express();
 const serverio = http.createServer(app);
 
 // Connect to MongoDB
 const startDB = async () => {
-  console.log('Initiating MongoDB connection...');
+  console.log("Initiating MongoDB connection...");
   await connectDB();
-  console.log('MongoDB connection attempt finished. Status:', mongoStatus());
+  console.log("MongoDB connection attempt finished. Status:", mongoStatus());
 };
 
 startDB();
 
 // Enhanced CORS configuration - allow all origins in dev to avoid CORS issues
-const allowedOrigins = ['http://localhost:8080', 'http://localhost:5173', 'http://localhost:8081', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000', 'http://localhost:3001','https://115.sofmatics.com', 'https://travel-f.erpbuz.com'];
+const allowedOrigins = [
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://localhost:8081",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://115.sofmatics.com",
+  "https://travel-f.erpbuz.com",
+];
 
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    credentials: true,
+  }),
+);
 
 // Security headers. crossOriginResourcePolicy relaxed so /uploads can be embedded by the SPA.
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false,
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+  }),
+);
 
 const io = new Server(serverio, {
   cors: {
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-  }
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  },
 });
 
 // Body size limits — 50MB was indiscriminate. JSON bodies should never approach 1MB;
 // upload routes use multer separately and are not gated by these limits.
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Rate limiters — protect credential and OTP endpoints from brute-force / abuse.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20,                  // 20 requests per window per IP
+  max: 20, // 20 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many requests. Please try again later.' },
+  message: { success: false, message: "Too many requests. Please try again later." },
 });
 const otpLimiter = rateLimit({
-  windowMs: 60 * 1000,       // 1 minute
-  max: 5,                    // 5 OTP requests per minute per IP
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // 5 OTP requests per minute per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Too many OTP requests. Please slow down.' },
+  message: { success: false, message: "Too many OTP requests. Please slow down." },
 });
 
-
-//passport.js
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
-  throw new Error('SESSION_SECRET is missing or too short. Set a strong secret (>=32 chars) in .env.');
-}
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+//passport.js — SESSION_SECRET already validated by config/env.js
+app.use(
+  session({
+    secret: env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: env.NODE_ENV === "production", // HTTPS only in production
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }),
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
 
 // Serve static uploads and invoices
-const uploadsDir = path.join(process.cwd(), 'uploads');
-app.use('/uploads', express.static(uploadsDir));
-const invoicesDir = path.join(process.cwd(), 'invoices');
-app.use('/invoices', express.static(invoicesDir));
+const uploadsDir = path.join(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsDir));
+const invoicesDir = path.join(process.cwd(), "invoices");
+app.use("/invoices", express.static(invoicesDir));
 
 // Import ALL routes
-console.log('Loading auth routes...');
+console.log("Loading auth routes...");
 const authroutes = require("../routes/AuthRoutes");
-console.log('Loading user routes...');
+console.log("Loading user routes...");
 const userroutes = require("../routes/userRoutes");
 
 // Import all migrated routes
-console.log('Loading activities routes...');
+console.log("Loading activities routes...");
 const activitiesRoutes = require("../routes/activities");
 const adminAnalyticsRoutes = require("../routes/adminAnalytics");
 const adminAuthRoutes = require("../routes/adminAuth");
@@ -125,7 +136,7 @@ const helpdeskRoutes = require("../routes/helpdesk");
 const loginRoutes = require("../routes/login");
 const managementRoutes = require("../routes/management");
 const marketingRoutes = require("../routes/marketing");
-console.log('Loading offers routes...');
+console.log("Loading offers routes...");
 const offersRoutes = require("../routes/offers");
 const onboardingRoutes = require("../routes/onboarding");
 const paymentsRoutes = require("../routes/payments");
@@ -145,135 +156,138 @@ const subscribersRoutes = require("../routes/subscribers");
 
 // Request logging middleware
 app.use((req, res, next) => {
-  if (req.path.includes('/cms/media') || req.path.includes('/admin')) {
-    console.log(`[API REQUEST] ${req.method} ${req.path} - Headers:`, { 
-      auth: req.headers.authorization ? 'present' : 'missing',
-      contentType: req.headers['content-type']
+  if (req.path.includes("/cms/media") || req.path.includes("/admin")) {
+    console.log(`[API REQUEST] ${req.method} ${req.path} - Headers:`, {
+      auth: req.headers.authorization ? "present" : "missing",
+      contentType: req.headers["content-type"],
     });
   }
   next();
 });
 
 // Public routes
-app.get('/api/ping', (req, res) => {
-  res.json({ message: 'pong', timestamp: new Date().toISOString() });
+app.get("/api/ping", (req, res) => {
+  res.json({ message: "pong", timestamp: new Date().toISOString() });
 });
 
-app.get('/api/health', (req, res) => {
+app.get("/api/health", (req, res) => {
   res.status(200).json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
-    mongodb: mongoStatus()
+    mongodb: mongoStatus(),
   });
 });
-
 
 // Legacy routes (keep for backward compatibility)
 app.use("/auth/", authLimiter, authroutes);
 app.use("/api/auth/", authLimiter, authroutes);
 app.use("/user/", userroutes);
-app.use('/api', googleAuthRoutes);
-app.use('/', googleAuthRoutes);
+app.use("/api", googleAuthRoutes);
+app.use("/", googleAuthRoutes);
 
 // Public login route -> delegates to admin login controller (DB validation only)
-app.use('/api', authLimiter, loginRoutes);
+app.use("/api", authLimiter, loginRoutes);
 
 // Public registration route (user or vendor) — also gates resend-otp by IP
-app.use('/api', otpLimiter, authRegisterRoutes);
+app.use("/api", otpLimiter, authRegisterRoutes);
 
 // Vendor login & password reset routes (otp + login surface)
-app.use('/api', authLimiter, vendorLoginRoutes);
+app.use("/api", authLimiter, vendorLoginRoutes);
 
 // 🔓 PUBLIC ADMIN AUTH ROUTES (NO JWT) — rate limited
-app.use('/api/admin/auth', authLimiter, adminAuthRoutes);
+app.use("/api/admin/auth", authLimiter, adminAuthRoutes);
 
 // 🔐 Protect ALL other admin routes
-app.use('/api/admin', requireJwt({ adminOnly: true }));
+app.use("/api/admin", requireJwt({ adminOnly: true }));
 // Demo route
-app.use('/api/demo', demoRoutes);
+app.use("/api/demo", demoRoutes);
 
 // Onboarding routes
-app.use('/api/onboarding', onboardingRoutes);
+app.use("/api/onboarding", onboardingRoutes);
 
 // Trips routes
-app.use('/api', tripsRoutes);
+app.use("/api", tripsRoutes);
 
 // Calendar Booking routes
-app.use('/api/calendarbooking', calendarBookingRoutes);
+app.use("/api/calendarbooking", calendarBookingRoutes);
 
 // Offers routes
-app.use('/api/offers', offersRoutes);
+app.use("/api/offers", offersRoutes);
 
 // New product details APIs
-app.use('/api/activities', activitiesRoutes);
-app.use('/api/campervans', campervansRoutes);
-app.use('/api/stays', staysRoutes);
+app.use("/api/activities", activitiesRoutes);
+app.use("/api/campervans", campervansRoutes);
+app.use("/api/stays", staysRoutes);
 
 // Profile routes
-app.use('/api/profile', profileRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Vendor Analytics
-app.use('/api', vendorAnalyticsRoutes);
+app.use("/api", vendorAnalyticsRoutes);
 
 // Marketing routes for Vendors (protected)
-app.use('/api/marketing', requireJwt(), marketingRoutes);
+app.use("/api/marketing", requireJwt(), marketingRoutes);
 
 // Blogs routes (public + admin)
-app.use('/api/blogs', blogsRoutes);
+app.use("/api/blogs", blogsRoutes);
 
 // Contact routes
-app.use('/api/contact', contactRoutes);
+app.use("/api/contact", contactRoutes);
 
 // Main API routes
-app.use('/api/management', managementRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/vendors', vendorsRoutes);
-app.use('/api/bookings', bookingsRoutes);
-app.use('/api/bookingDetails', bookingDetailsRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/helpdesk', helpdeskRoutes);
-app.use('/api/settings', settingsRoutes);
-app.use('/api/vendorsetting', vendorSettingRoutes);
-app.use('/api/vendorchats', vendorChatsRoutes);
-app.use('/api/subscribers', subscribersRoutes);
-app.use('/api/notifications', notificationsRoutes);
+app.use("/api/management", managementRoutes);
+app.use("/api/users", usersRoutes);
+app.use("/api/vendors", vendorsRoutes);
+app.use("/api/bookings", bookingsRoutes);
+app.use("/api/bookingDetails", bookingDetailsRoutes);
+app.use("/api/payments", paymentsRoutes);
+app.use("/api/helpdesk", helpdeskRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/vendorsetting", vendorSettingRoutes);
+app.use("/api/vendorchats", vendorChatsRoutes);
+app.use("/api/subscribers", subscribersRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 // Public CMS media (read-only for clients to fetch login/register images) - MUST be before /cms to take priority
-app.use('/api/cms/media', cmsMediaRoutes);
+app.use("/api/cms/media", cmsMediaRoutes);
 // Public CMS routes for testimonials (list + create)
-app.use('/api/cms', cmsRoutes);
+app.use("/api/cms", cmsRoutes);
 
 // Admin routes (using the same controllers — already protected above by /api/admin requireJwt mount)
-app.use('/api/admin/management', managementRoutes);
-app.use('/api/admin/users', (req, res, next) => {
-  console.log(`[AdminAPI] Incoming request: ${req.method} ${req.url}`);
-  next();
-}, usersRoutes);
-app.use('/api/admin/vendors', vendorsRoutes);
-app.use('/api/admin/bookings', bookingsRoutes);
-app.use('/api/admin/payments', paymentsRoutes);
-app.use('/api/admin/helpdesk', helpdeskRoutes);
-app.use('/api/admin/settings', settingsRoutes);
-app.use('/api/admin/crm', adminCrmRoutes);
-app.use('/api/admin/marketing', marketingRoutes);
-app.use('/api/admin/plugins', pluginsRoutes);
-app.use('/api/admin/staff', adminStaffRoutes);
-app.use('/api/admin/roles', adminRolesRoutes);
-app.use('/api/admin/blogs', blogsRoutes);
-app.use('/api/admin/notifications', notificationsRoutes);
+app.use("/api/admin/management", managementRoutes);
+app.use(
+  "/api/admin/users",
+  (req, res, next) => {
+    console.log(`[AdminAPI] Incoming request: ${req.method} ${req.url}`);
+    next();
+  },
+  usersRoutes,
+);
+app.use("/api/admin/vendors", vendorsRoutes);
+app.use("/api/admin/bookings", bookingsRoutes);
+app.use("/api/admin/payments", paymentsRoutes);
+app.use("/api/admin/helpdesk", helpdeskRoutes);
+app.use("/api/admin/settings", settingsRoutes);
+app.use("/api/admin/crm", adminCrmRoutes);
+app.use("/api/admin/marketing", marketingRoutes);
+app.use("/api/admin/plugins", pluginsRoutes);
+app.use("/api/admin/staff", adminStaffRoutes);
+app.use("/api/admin/roles", adminRolesRoutes);
+app.use("/api/admin/blogs", blogsRoutes);
+app.use("/api/admin/notifications", notificationsRoutes);
 
 // Admin CMS Media routes (upload/list/delete images for pages) - MUST be before /cms to take priority
-app.use('/api/admin/cms/media', cmsMediaRoutes);
+app.use("/api/admin/cms/media", cmsMediaRoutes);
 // Admin CMS routes (full management)
-app.use('/api/admin/cms', cmsRoutes);
-app.use('/api/admin/Globlsetting', globlsettingRoutes);
+app.use("/api/admin/cms", cmsRoutes);
+app.use("/api/admin/Globlsetting", globlsettingRoutes);
 
 // Admin Dashboard & Analytics endpoints
-app.use('/api', adminDashboardRoutes);
-app.use('/api/admin', adminAnalyticsRoutes);
+app.use("/api", adminDashboardRoutes);
+app.use("/api/admin", adminAnalyticsRoutes);
 
 // Admin contact routes (protected)
-app.use('/api/admin/contact', requireJwt({ adminOnly: true }), contactRoutes);
+app.use("/api/admin/contact", requireJwt({ adminOnly: true }), contactRoutes);
 
 //root route
 app.get("/", (req, res) => {
@@ -287,7 +301,7 @@ app.use((req, res) => {
     success: false,
     message: `Route not found: ${req.method} ${req.path}`,
     receivedPath: req.path,
-    receivedMethod: req.method
+    receivedMethod: req.method,
   });
 });
 
@@ -296,66 +310,65 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: 'Internal server error'
+    message: "Internal server error",
   });
 });
 
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   // When a user selects a chat, they join a specific room
-  socket.on('join_chat', (chatId) => {
+  socket.on("join_chat", (chatId) => {
     socket.join(chatId);
   });
 
   // Allow users/vendors to join a room specific to their ID for notifications
-  socket.on('join_identity', (identityId) => {
-      if (identityId) {
-          socket.join(identityId);
-          console.log(`Socket ${socket.id} joined identity room: ${identityId}`);
-      }
+  socket.on("join_identity", (identityId) => {
+    if (identityId) {
+      socket.join(identityId);
+      console.log(`Socket ${socket.id} joined identity room: ${identityId}`);
+    }
   });
 
-  socket.on('join_all_user_rooms', (chatIds) => {
+  socket.on("join_all_user_rooms", (chatIds) => {
     if (Array.isArray(chatIds)) {
-      chatIds.forEach(id => socket.join(id));
+      chatIds.forEach((id) => socket.join(id));
       console.log(`User joined ${chatIds.length} rooms for background updates`);
     }
   });
 
   // Listen for message from client
-  socket.on('send_message', (data) => {
-    console.log(`[Socket] send_message received:`, { 
-        chatId: data.chatId, 
-        recipientId: data.recipientId, 
-        senderId: data.senderId 
+  socket.on("send_message", (data) => {
+    console.log(`[Socket] send_message received:`, {
+      chatId: data.chatId,
+      recipientId: data.recipientId,
+      senderId: data.senderId,
     });
 
     // Broadcast the message ONLY to people in that specific chatId room
     if (data.chatId) {
-      io.to(data.chatId).emit('receive_message', data);
-    } 
-    
+      io.to(data.chatId).emit("receive_message", data);
+    }
+
     // Also broadcast to the recipient directly if they are not in the chat room yet
     if (data.recipientId) {
-        console.log(`[Socket] Broadcasting to recipient room: ${data.recipientId}`);
-        io.to(data.recipientId).emit('receive_message', data);
+      console.log(`[Socket] Broadcasting to recipient room: ${data.recipientId}`);
+      io.to(data.recipientId).emit("receive_message", data);
     }
 
     if (!data.chatId && !data.recipientId) {
       // Fallback: broadcast to all (standard behavior)
-      io.emit('receive_message', data);
+      io.emit("receive_message", data);
     }
   });
 
-  socket.on('disconnect', () => {
-    console.log('User Disconnected', socket.id);
+  socket.on("disconnect", () => {
+    console.log("User Disconnected", socket.id);
   });
 });
 
-const PORT = process.env.PORT || 3001;
-serverio.listen(PORT, () => {
-  console.log(`🚀 Travel Dashboard Server running on port ${PORT}`);
-  console.log(`📅 API available at http://localhost:${PORT}`);
-  console.log(`🔗 Health check at http://localhost:${PORT}/api/health`);
+serverio.listen(env.PORT, () => {
+  console.log(`🚀 Travel Dashboard Server running on port ${env.PORT} (${env.NODE_ENV})`);
+  console.log(`📅 API available at http://localhost:${env.PORT}`);
+  console.log(`🔗 Health check at http://localhost:${env.PORT}/api/health`);
 });
 
 module.exports = app;

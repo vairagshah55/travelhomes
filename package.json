@@ -1,0 +1,45 @@
+{
+  "name": "travelhomes",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TravelHomes monorepo: Frontend (user app), Admin (admin panel), Server (API).",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev:frontend": "npm --prefix Frontend run dev",
+    "dev:admin": "npm --prefix Admin run dev",
+    "dev:server": "npm --prefix Server run dev",
+    "build:frontend": "npm --prefix Frontend run build",
+    "build:admin": "npm --prefix Admin run build",
+    "test": "npm --prefix Frontend test && npm --prefix Admin test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm --prefix Frontend run typecheck && npm --prefix Admin run typecheck",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-react": "^7.37.4",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
+    "prettier": "^3.5.3",
+    "typescript-eslint": "^8.24.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css,yml,yaml}": [
+      "prettier --write"
+    ]
+  }
+}
