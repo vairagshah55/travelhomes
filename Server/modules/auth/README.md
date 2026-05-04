@@ -51,13 +51,16 @@ The following legacy endpoints were deleted because no client uses them:
 Source files removed: `controller/Authcontroller.js`, `routes/AuthRoutes.js`,
 `routes/login.js`.
 
+## Sibling modules
+
+- **Vendor + user login / password reset** lives in
+  [`modules/vendor-auth/`](../vendor-auth/) — same layered shape, mounted at
+  `/api/vendorlogin`.
+
 ## Pending migration
 
 Still in legacy controllers; their own modules will follow:
 
-- **Vendor login** (`routes/vendorlogin.js` + `controller/vendorLoginController.js`)
-  — large surface incl. password reset and change-email/change-mobile OTP flows.
-  Belongs in `modules/vendor-auth/`.
 - **Admin auth** (`routes/adminAuth.js` + `controller/adminAuthController.js`)
   — `/api/admin/auth/login` for AdminStaff and `/api/admin/auth/login/superadmin`
   for the superadmin Admin model. Belongs in `modules/admin-auth/`.

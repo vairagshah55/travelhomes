@@ -169,7 +169,7 @@ const tripsRoutes = require("../routes/trips");
 const usersRoutes = require("../routes/users");
 const vendorAnalyticsRoutes = require("../routes/vendorAnalytics");
 const vendorChatsRoutes = require("../routes/vendorChats");
-const vendorLoginRoutes = require("../routes/vendorlogin");
+const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
 const vendorsRoutes = require("../routes/vendors");
 const vendorSettingRoutes = require("../routes/vendorsetting");
 const notificationsRoutes = require("../routes/notifications");
@@ -196,8 +196,9 @@ app.use("/api/auth", authModuleRouter);
 app.use("/api/user", userroutes);
 app.use("/api", googleAuthRoutes);
 
-// Vendor login & password reset routes (otp + login surface)
-app.use("/api", authLimiter, vendorLoginRoutes);
+// Vendor (and user) login + password reset + account update.
+// Rate limiters and validation are built into the module router.
+app.use("/api/vendorlogin", vendorAuthRouter);
 
 // 🔓 PUBLIC ADMIN AUTH ROUTES (NO JWT) — rate limited
 app.use("/api/admin/auth", authLimiter, adminAuthRoutes);
