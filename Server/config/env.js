@@ -117,6 +117,7 @@ try {
   } else {
     console.error("[env] Failed to load environment:", err);
   }
+  // eslint-disable-next-line no-process-exit
   process.exit(1);
 }
 
@@ -124,6 +125,7 @@ try {
 const mongoUri = env.MONGO_URI || env.MONGODB_URI;
 if (!mongoUri) {
   console.error("[env] Missing MONGO_URI (or MONGODB_URI). Set one in .env.");
+  // eslint-disable-next-line no-process-exit
   process.exit(1);
 }
 env.MONGO_URI = mongoUri;

@@ -6,7 +6,7 @@ const auth = require("../config/auth");
 const axios = require("axios");
 const { twiliosms, smsStatus } = require("../config/smstwrilio");
 const nodemailer = require("nodemailer");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const sendOtpToMobile = async (mobile) => {

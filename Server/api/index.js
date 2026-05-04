@@ -8,21 +8,25 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const http = require("http");
+const pinoHttp = require("pino-http");
 const { connectDB, mongoStatus } = require("../config/db");
 const { requireJwt } = require("../middleware/auth");
 const { Server } = require("socket.io");
 const session = require("express-session");
 const passport = require("../config/passport");
 const googleAuthRoutes = require("../routes/googleAuth");
+const logger = require("../shared/logger");
+const requestId = require("../shared/requestId");
+const { notFoundHandler, errorHandler } = require("../shared/errorMiddleware");
 
 const app = express();
 const serverio = http.createServer(app);
 
 // Connect to MongoDB
 const startDB = async () => {
-  console.log("Initiating MongoDB connection...");
+  logger.info("Initiating MongoDB connection...");
   await connectDB();
-  console.log("MongoDB connection attempt finished. Status:", mongoStatus());
+  logger.info({ status: mongoStatus() }, "MongoDB connection attempt finished");
 };
 
 startDB();
@@ -67,6 +71,33 @@ const io = new Server(serverio, {
 // upload routes use multer separately and are not gated by these limits.
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// Per-request id (sets req.id and X-Request-Id response header).
+app.use(requestId);
+
+// Structured request logger. Skips noisy health/static routes.
+app.use(
+  pinoHttp({
+    logger,
+    genReqId: (req) => req.id,
+    autoLogging: {
+      ignore: (req) =>
+        req.url === "/api/health" ||
+        req.url === "/api/ping" ||
+        req.url.startsWith("/uploads") ||
+        req.url.startsWith("/invoices"),
+    },
+    customLogLevel: (_req, res, err) => {
+      if (err || res.statusCode >= 500) return "error";
+      if (res.statusCode >= 400) return "warn";
+      return "info";
+    },
+    serializers: {
+      req: (req) => ({ id: req.id, method: req.method, url: req.url }),
+      res: (res) => ({ statusCode: res.statusCode }),
+    },
+  }),
+);
 
 // Rate limiters — protect credential and OTP endpoints from brute-force / abuse.
 const authLimiter = rateLimit({
@@ -154,17 +185,6 @@ const vendorSettingRoutes = require("../routes/vendorsetting");
 const notificationsRoutes = require("../routes/notifications");
 const subscribersRoutes = require("../routes/subscribers");
 
-// Request logging middleware
-app.use((req, res, next) => {
-  if (req.path.includes("/cms/media") || req.path.includes("/admin")) {
-    console.log(`[API REQUEST] ${req.method} ${req.path} - Headers:`, {
-      auth: req.headers.authorization ? "present" : "missing",
-      contentType: req.headers["content-type"],
-    });
-  }
-  next();
-});
-
 // Public routes
 app.get("/api/ping", (req, res) => {
   res.json({ message: "pong", timestamp: new Date().toISOString() });
@@ -178,12 +198,11 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Legacy routes (keep for backward compatibility)
-app.use("/auth/", authLimiter, authroutes);
-app.use("/api/auth/", authLimiter, authroutes);
-app.use("/user/", userroutes);
+// Public auth + user routes — single mount under /api only.
+// (Legacy /auth and /user mounts removed: they duplicated the attack surface.)
+app.use("/api/auth", authLimiter, authroutes);
+app.use("/api/user", userroutes);
 app.use("/api", googleAuthRoutes);
-app.use("/", googleAuthRoutes);
 
 // Public login route -> delegates to admin login controller (DB validation only)
 app.use("/api", authLimiter, loginRoutes);
@@ -255,14 +274,7 @@ app.use("/api/cms", cmsRoutes);
 
 // Admin routes (using the same controllers — already protected above by /api/admin requireJwt mount)
 app.use("/api/admin/management", managementRoutes);
-app.use(
-  "/api/admin/users",
-  (req, res, next) => {
-    console.log(`[AdminAPI] Incoming request: ${req.method} ${req.url}`);
-    next();
-  },
-  usersRoutes,
-);
+app.use("/api/admin/users", usersRoutes);
 app.use("/api/admin/vendors", vendorsRoutes);
 app.use("/api/admin/bookings", bookingsRoutes);
 app.use("/api/admin/payments", paymentsRoutes);
@@ -294,25 +306,9 @@ app.get("/", (req, res) => {
   res.send(`Travel Dashboard Server is running! Mongo connection: ${mongoStatus()}`);
 });
 
-// 404 catch-all for debugging
-app.use((req, res) => {
-  console.log(`[404] ${req.method} ${req.path} - No matching route found`);
-  res.status(404).json({
-    success: false,
-    message: `Route not found: ${req.method} ${req.path}`,
-    receivedPath: req.path,
-    receivedMethod: req.method,
-  });
-});
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: "Internal server error",
-  });
-});
+// 404 + central error handler — must be the LAST middleware registered.
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 io.on("connection", (socket) => {
   // When a user selects a chat, they join a specific room
@@ -366,9 +362,10 @@ io.on("connection", (socket) => {
 });
 
 serverio.listen(env.PORT, () => {
-  console.log(`🚀 Travel Dashboard Server running on port ${env.PORT} (${env.NODE_ENV})`);
-  console.log(`📅 API available at http://localhost:${env.PORT}`);
-  console.log(`🔗 Health check at http://localhost:${env.PORT}/api/health`);
+  logger.info(
+    { port: env.PORT, env: env.NODE_ENV, url: `http://localhost:${env.PORT}` },
+    `Travel Dashboard Server running`,
+  );
 });
 
 module.exports = app;
