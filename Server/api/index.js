@@ -5,6 +5,8 @@ require("dotenv").config({ path: path.join(__dirname, '..', envFile) });
 
 const express = require("express");
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const http = require('http');
 const { connectDB, mongoStatus } = require("../config/db");
 const { requireJwt } = require("../middleware/auth");
@@ -34,6 +36,12 @@ app.use(cors({
   credentials: true
 }));
 
+// Security headers. crossOriginResourcePolicy relaxed so /uploads can be embedded by the SPA.
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false,
+}));
+
 const io = new Server(serverio, {
   cors: {
     origin: allowedOrigins,
@@ -41,13 +49,35 @@ const io = new Server(serverio, {
   }
 });
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true }));
+// Body size limits — 50MB was indiscriminate. JSON bodies should never approach 1MB;
+// upload routes use multer separately and are not gated by these limits.
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Rate limiters — protect credential and OTP endpoints from brute-force / abuse.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,                  // 20 requests per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please try again later.' },
+});
+const otpLimiter = rateLimit({
+  windowMs: 60 * 1000,       // 1 minute
+  max: 5,                    // 5 OTP requests per minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many OTP requests. Please slow down.' },
+});
 
 
 //passport.js
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET || SESSION_SECRET.length < 32) {
+  throw new Error('SESSION_SECRET is missing or too short. Set a strong secret (>=32 chars) in .env.');
+}
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-session-secret',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -139,26 +169,23 @@ app.get('/api/health', (req, res) => {
 
 
 // Legacy routes (keep for backward compatibility)
-app.use("/auth/", authroutes);
-app.use("/api/auth/", authroutes);
+app.use("/auth/", authLimiter, authroutes);
+app.use("/api/auth/", authLimiter, authroutes);
 app.use("/user/", userroutes);
 app.use('/api', googleAuthRoutes);
 app.use('/', googleAuthRoutes);
 
 // Public login route -> delegates to admin login controller (DB validation only)
-app.use('/api', loginRoutes);
+app.use('/api', authLimiter, loginRoutes);
 
-// Public registration route (user or vendor)
-app.use('/api', authRegisterRoutes);
+// Public registration route (user or vendor) — also gates resend-otp by IP
+app.use('/api', otpLimiter, authRegisterRoutes);
 
-// Vendor login & password reset routes
-app.use('/api', vendorLoginRoutes);
+// Vendor login & password reset routes (otp + login surface)
+app.use('/api', authLimiter, vendorLoginRoutes);
 
-// Secure admin auth routes
-// app.use('/api', adminAuthRoutes);
-
-// 🔓 PUBLIC ADMIN AUTH ROUTES (NO JWT)
-app.use('/api/admin/auth', adminAuthRoutes);
+// 🔓 PUBLIC ADMIN AUTH ROUTES (NO JWT) — rate limited
+app.use('/api/admin/auth', authLimiter, adminAuthRoutes);
 
 // 🔐 Protect ALL other admin routes
 app.use('/api/admin', requireJwt({ adminOnly: true }));
@@ -216,10 +243,7 @@ app.use('/api/cms/media', cmsMediaRoutes);
 // Public CMS routes for testimonials (list + create)
 app.use('/api/cms', cmsRoutes);
 
-// Protect ALL /api/admin/* routes
-app.use('/api/admin', requireJwt({ adminOnly: true }));
-
-// Admin routes (using the same controllers)
+// Admin routes (using the same controllers — already protected above by /api/admin requireJwt mount)
 app.use('/api/admin/management', managementRoutes);
 app.use('/api/admin/users', (req, res, next) => {
   console.log(`[AdminAPI] Incoming request: ${req.method} ${req.url}`);

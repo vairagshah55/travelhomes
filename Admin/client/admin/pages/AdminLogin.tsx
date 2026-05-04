@@ -6,19 +6,13 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Eye, EyeOff, ArrowLeft, Shield } from 'lucide-react';
 
-// Demo admin credentials
-const ADMIN_DEMO_CREDENTIALS = {
-  email: 'admin@travelhomes.com',
-  password: '123456789'
-};
-
 import { adminAuthService } from '@/services/api';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: ADMIN_DEMO_CREDENTIALS.email,
-    password: ADMIN_DEMO_CREDENTIALS.password
+    email: '',
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -42,26 +36,17 @@ const handleLogin = async (e: React.FormEvent) => {
       password: formData.password,
     });
 
-    console.log("LOGIN RESPONSE:", data);
-
     if (!data?.success) {
       toast.error(data?.message || "Invalid admin credentials");
       return;
     }
-console.log("LOGIN RESPONSE:", data.token);
-    // 🔑 SAFELY EXTRACT TOKEN
-    const token =
-      data.token ||
-      data?.data?.token ||
-      data?.accessToken;
+
+    const token = data.token || data?.data?.token || data?.accessToken;
 
     if (!token) {
       toast.error("Token not received from server");
       return;
     }
-
-    console.log("hello", token);
-    
 
     if (rememberMe) {
       localStorage.setItem("adminToken", token);
@@ -73,7 +58,6 @@ console.log("LOGIN RESPONSE:", data.token);
     navigate("/dashboard");
 
   } catch (error: any) {
-    console.error("ADMIN LOGIN ERROR:", error);
     toast.error(error?.message || "Admin login failed. Please try again.");
   } finally {
     setIsLoading(false);
@@ -104,23 +88,6 @@ console.log("LOGIN RESPONSE:", data.token);
             <ArrowLeft size={20} />
             <span className="text-sm font-medium">Back to homepage</span>
           </Link> */}
-
-          {/* Demo credentials notice */}
-          <div className="bg-purple-600/20 border border-purple-400/30 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-purple-100 mb-2 flex items-center gap-2">
-              <Shield size={16} />
-              Demo Admin Credentials
-            </h3>
-            <p className="text-sm text-purple-200 mb-3">Use these credentials for admin access:</p>
-            <div className="space-y-2 text-sm font-mono bg-black/20 rounded p-3">
-              <div className="text-purple-100">
-                <span className="text-purple-300">Email:</span> {ADMIN_DEMO_CREDENTIALS.email}
-              </div>
-              <div className="text-purple-100">
-                <span className="text-purple-300">Password:</span> {ADMIN_DEMO_CREDENTIALS.password}
-              </div>
-            </div>
-          </div>
 
           {/* Login form */}
           <form onSubmit={handleLogin} className="space-y-6">

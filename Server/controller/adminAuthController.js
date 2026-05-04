@@ -2,14 +2,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const AdminStaff = require('../models/AdminStaff');
 const Admin = require('../models/AdminModel');
+const { JWT_SECRET } = require('../config/auth');
 
 /**
  * Helper to sign JWT tokens for admin
  */
 function signToken(payload) {
-  const secret = process.env.JWT_SECRET || 'defaultsecret';
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign(payload, secret, { expiresIn });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
 }
 
 /**
@@ -123,55 +123,6 @@ const loginAdmin = async (req, res) => {
 };
 
 
-const registerAdmin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email and password are required',
-      });
-    }
-
-    const existingUser = await Admin.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return res.status(409).json({
-        success: false,
-        message: 'Email already exists',
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = new Admin({
-      uid: "45612378958",
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      role: 'superadmin',
-      isActive: true,
-    });
-
-    await newUser.save(); // 🔥 THIS WAS MISSING
-
-    return res.status(201).json({
-      success: true,
-      message: 'Admin registered successfully',
-      admin: {
-        id: newUser._id,
-        email: newUser.email,
-        role: newUser.role,
-      },
-    });
-  } catch (err) {
-    console.error('Admin register error:', err);
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error',
-    });
-  }
-};
-
 /**
  * GET /api/admin/auth/me
  * Get current admin info based on JWT.
@@ -218,6 +169,5 @@ const getMe = async (req, res) => {
 module.exports = {
   loginAdmin,
   loginAdmins,
-  registerAdmin,
   getMe,
 };

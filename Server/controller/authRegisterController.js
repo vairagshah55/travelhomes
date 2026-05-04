@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
@@ -6,6 +7,9 @@ const Register = require('../models/Register');
 const Notification = require('../models/Notification');
 const { sendOtpEmail } = require('../services/mailer');
 const { signInToken } = require('../config/auth');
+
+// Cryptographically secure 6-digit OTP.
+const generateOtp = () => String(crypto.randomInt(100000, 1000000));
 
 /**
  * POST /api/auth/register
@@ -47,8 +51,7 @@ const registerUserOrVendor = async (req, res) => {
     // 1) Persist raw registration in `register` collection
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // Static OTP for development — TODO: revert to random OTP before production
-    const otp = '123456';
+    const otp = generateOtp();
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -106,7 +109,8 @@ const registerUserOrVendor = async (req, res) => {
       created = await Vendor.findOneAndUpdate({ email: normalizedEmail }, payload, { upsert: true, new: true });
     }
 
-    return res.status(201).json({ success: true, message: 'Registration successful', registered, created, registerId: registered._id, otp }); // Sending OTP in response for testing/dev if needed, but usually it's in email
+    // OTP is delivered via email only — never include it in the HTTP response.
+    return res.status(201).json({ success: true, message: 'Registration successful', registered, created, registerId: registered._id });
   } catch (error) {
     if (error?.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((val) => val.message);
@@ -263,8 +267,7 @@ const resendRegisterOtp = async (req, res) => {
     if (!doc)
       return res.status(404).json({ success: false, message: "Registration not found" });
 
-    // Static OTP for development — TODO: revert to random OTP before production
-    const otp = '123456';
+    const otp = generateOtp();
     const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
     doc.otp = otp;

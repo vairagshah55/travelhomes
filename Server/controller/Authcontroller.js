@@ -234,38 +234,6 @@ const signIn = async (req, res) => {
   }
 };
 
-const deleteusers = async (req, res) => {
-  try {
-    const result = await User.deleteMany({});
-    res.status(200).json({ 
-      message: "All users deleted successfully",
-      deletedCount: result.deletedCount
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      "status": "error", 
-      "message": "Failed to delete users" 
-    });
-  }
-};
-
-const deleteadmins = async (req, res) => {
-  try {
-    const result = await Admin.deleteMany({});
-    res.status(200).json({ 
-      message: "All admins deleted successfully",
-      deletedCount: result.deletedCount
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ 
-      "status": "error", 
-      "message": "Failed to delete admins" 
-    });
-  }
-};
-
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -374,14 +342,12 @@ const googleAuth = async (req, res) => {
   }
 };
 
-module.exports = { 
+module.exports = {
   withMobile,
   verifyOtp,
   withEmail,
   signUp,
   signIn,
-  deleteusers,
   adminLogin,
-  deleteadmins,
   googleAuth
 };

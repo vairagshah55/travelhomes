@@ -125,22 +125,12 @@ const ForgotPassword = () => {
     inputRefs.current[Math.min(data.length, 5)]?.focus();
   };
 
-  const STATIC_OTP = "123456";
-
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const otpCode = otp.join("");
     if (otpCode.length !== 6) {
       setOtpError("Please enter the complete 6-digit code.");
-      return;
-    }
-
-    // TODO: remove static OTP before production
-    if (otpCode === STATIC_OTP) {
-      setResetToken(otpCode);
-      toast.success("OTP verified successfully");
-      setCurrentStep(3);
       return;
     }
 

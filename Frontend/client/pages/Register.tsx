@@ -452,21 +452,7 @@ const Register = () => {
         } as any);
       }
 
-      let success = false;
-      try {
-        success = await login(form.email, form.password, true, "user");
-      } catch {
-        // TODO: Remove this fallback before production — allows login even when
-        // server-side OTP was bypassed via static OTP during development/testing
-        console.log('DEV: Login failed (likely OTP not verified on server), using authenticateAfterRegister fallback');
-        authenticateAfterRegister({
-          email: form.email,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          userType: 'user',
-        });
-        success = true;
-      }
+      const success = await login(form.email, form.password, true, "user");
 
       if (success) {
         clearRegSession();
@@ -479,17 +465,8 @@ const Register = () => {
           navigate("/");
         }
       } else {
-        // TODO: Remove this fallback before production — same static OTP bypass
-        console.log('DEV: Login returned false, using authenticateAfterRegister fallback');
-        authenticateAfterRegister({
-          email: form.email,
-          firstName: form.firstName,
-          lastName: form.lastName,
-          userType: 'user',
-        });
-        clearRegSession();
-        toast.success("Registration complete!");
-        navigate("/");
+        toast.error("Could not sign you in. Please try logging in.");
+        navigate("/login");
       }
     } catch {
       toast.error("Failed to save details. Please try again.");

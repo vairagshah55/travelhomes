@@ -9,9 +9,7 @@ const {
   withEmail,
   signUp,
   signIn,
-  deleteusers,
   adminLogin,
-  deleteadmins,
   googleAuth
 } = require("../controller/Authcontroller");
 
@@ -47,7 +45,5 @@ router.post("/register/signup", signUp);
 router.post("/login", signIn);
 router.post("/adminlogin", adminLogin);
 router.post("/google", googleAuth);
-router.get("/deleteusers", deleteusers);
-router.get("/deleteadmins", deleteadmins);
 
 module.exports = router;

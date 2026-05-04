@@ -16,9 +16,10 @@ pids/
 *.seed
 *.pid.lock
 
-# dotenv environment files
+# dotenv environment files (NEVER commit real secrets)
 .env
-.env.*.local
+.env.*
+!.env.example
 
 # Build output
 dist/

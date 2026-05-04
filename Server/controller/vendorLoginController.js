@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Register = require('../models/Register');
@@ -517,9 +518,7 @@ const sendChangeOtp = async (req, res) => {
       }
     }
     
-    // Generate OTP
-    // const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otp = "123456"; // Fixed OTP as requested
+    const otp = String(crypto.randomInt(100000, 1000000));
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
     
     console.log('[sendChangeOtp] Generated OTP for user:', doc._id);

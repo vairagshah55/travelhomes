@@ -214,43 +214,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return true;
     }
 
-    // TODO: Remove this dev bypass before production — allows login even when
-    // server-side OTP was not verified (e.g. static OTP used during registration)
-    if (r.code === 403) {
-      console.log('DEV: OTP not verified on server, attempting force-verify then retry');
-      const { authApi } = await import('../lib/api');
-      try {
-        // Force-verify OTP so the server marks the user as verified
-        const regId = sessionStorage.getItem('reg_register_id');
-        if (regId) await authApi.verifyRegisterOtp(regId, '000000').catch(() => {});
-      } catch {}
-
-      // Retry login — should now succeed with a real JWT
-      const retry = await tryOnce('user');
-      if (retry.ok && retry.resp) {
-        const u = retry.resp.user;
-        const loggedInUser: User = {
-          id: u.id || (u as any)._id,
-          email: u.email,
-          firstName: u.firstName || '',
-          lastName: u.lastName || '',
-          userType: (u.userType as any)?.toLowerCase() as 'user' | 'vendor',
-        };
-        setUser(loggedInUser);
-        setIsAuthenticated(true);
-        setNeedsOnboarding(false);
-        const storage = rememberMe ? localStorage : sessionStorage;
-        const otherStorage = rememberMe ? sessionStorage : localStorage;
-        otherStorage.removeItem('travel_auth_token');
-        storage.setItem('travel_auth_user', JSON.stringify(loggedInUser));
-        storage.setItem('travel_onboarding_complete', 'true');
-        storage.setItem('travel_auth_token', retry.resp.token);
-        setToken(retry.resp.token);
-        return true;
-      }
-
-    }
-
     return false;
   };
 
@@ -362,12 +325,6 @@ const loginWithGoogle = async (): Promise<boolean> => {
         password: data.password,
       } as any);
       const regId = (res as any).registerId as string;
-      const otp = (res as any).otp as string;
-      if (otp) {
-        console.log("------------------------------------------");
-        console.log(`DEBUG: RECEIVED OTP FROM SERVER: ${otp}`);
-        console.log("------------------------------------------");
-      }
       if (regId) sessionStorage.setItem('reg_register_id', regId);
       setLastRegisterId(regId || null);
       return { ok: true, registerId: regId };
@@ -380,19 +337,9 @@ const loginWithGoogle = async (): Promise<boolean> => {
     }
   };
 
-  // TODO: Remove static OTP bypass before production — temporary for development/testing
-  const STATIC_OTP = '123456';
-
   const verifyOTP = async (otp: string): Promise<boolean> => {
     try {
       if (!lastRegisterId) return false;
-
-      // TODO: Remove this static OTP check before production
-      if (otp === STATIC_OTP) {
-        console.log('DEV: Static OTP accepted — skipping server verification');
-        return true;
-      }
-
       const { authApi } = await import('../lib/api');
       const resp = await authApi.verifyRegisterOtp(lastRegisterId, otp);
       return !!resp.success;
