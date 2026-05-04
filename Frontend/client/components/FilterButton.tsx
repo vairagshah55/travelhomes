@@ -26,10 +26,10 @@ function FilterButton({
         active
           ? isHero
             ? "bg-white text-gray-900 border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
-            : "bg-gray-900 text-white border-gray-900 shadow-md"
+            : "bg-blue-600 text-white border-blue-600 shadow-md"
           : isHero
           ? "bg-white/10 backdrop-blur-md text-white border-white/20 hover:bg-white/20 hover:border-white/40"
-          : "bg-white text-gray-700 border-gray-200 hover:border-gray-400 hover:bg-gray-50 shadow-sm"
+          : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 shadow-sm"
       }`}
     >
       {active && (
@@ -39,7 +39,7 @@ function FilterButton({
           style={{
             background: isHero
               ? "white"
-              : "linear-gradient(135deg, #1a1a1a 0%, #333 100%)",
+              : "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
           }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
         />
@@ -53,7 +53,7 @@ function FilterButton({
               ? "text-white/90"
               : active
               ? "text-white"
-              : "text-gray-500"
+              : "text-gray-500 group-hover:text-blue-500"
           }`}
         />
       </div>
