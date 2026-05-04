@@ -99,20 +99,14 @@ app.use(
   }),
 );
 
-// Rate limiters — protect credential and OTP endpoints from brute-force / abuse.
+// Rate limiter — protects legacy credential endpoints. The new auth module
+// owns its own OTP limiter inside modules/auth/auth.router.js.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // 20 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: "Too many requests. Please try again later." },
-});
-const otpLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // 5 OTP requests per minute per IP
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: "Too many OTP requests. Please slow down." },
 });
 
 //passport.js — SESSION_SECRET already validated by config/env.js
@@ -138,9 +132,6 @@ const invoicesDir = path.join(process.cwd(), "invoices");
 app.use("/invoices", express.static(invoicesDir));
 
 // Import ALL routes
-console.log("Loading auth routes...");
-const authroutes = require("../routes/AuthRoutes");
-console.log("Loading user routes...");
 const userroutes = require("../routes/userRoutes");
 
 // Import all migrated routes
@@ -152,7 +143,7 @@ const adminCrmRoutes = require("../routes/adminCrm");
 const adminDashboardRoutes = require("../routes/adminDashboard");
 const adminRolesRoutes = require("../routes/adminRoles");
 const adminStaffRoutes = require("../routes/adminStaff");
-const authRegisterRoutes = require("../routes/authRegister");
+const authModuleRouter = require("../modules/auth/auth.router");
 const blogsRoutes = require("../routes/blogs");
 const bookingDetailsRoutes = require("../routes/bookingDetails");
 const bookingsRoutes = require("../routes/bookings");
@@ -164,7 +155,6 @@ const contactRoutes = require("../routes/contact");
 const demoRoutes = require("../routes/demo");
 const globlsettingRoutes = require("../routes/globlsetting");
 const helpdeskRoutes = require("../routes/helpdesk");
-const loginRoutes = require("../routes/login");
 const managementRoutes = require("../routes/management");
 const marketingRoutes = require("../routes/marketing");
 console.log("Loading offers routes...");
@@ -198,17 +188,13 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Public auth + user routes — single mount under /api only.
-// (Legacy /auth and /user mounts removed: they duplicated the attack surface.)
-app.use("/api/auth", authLimiter, authroutes);
+// Public auth + user routes.
+// /api/auth registration + OTP + Google sign-in is owned by the layered auth module
+// (its own rate limiter is built in). The browser-redirect Google OAuth flow
+// (GET /api/auth/google + /callback) lives in routes/googleAuth.js, mounted next.
+app.use("/api/auth", authModuleRouter);
 app.use("/api/user", userroutes);
 app.use("/api", googleAuthRoutes);
-
-// Public login route -> delegates to admin login controller (DB validation only)
-app.use("/api", authLimiter, loginRoutes);
-
-// Public registration route (user or vendor) — also gates resend-otp by IP
-app.use("/api", otpLimiter, authRegisterRoutes);
 
 // Vendor login & password reset routes (otp + login surface)
 app.use("/api", authLimiter, vendorLoginRoutes);

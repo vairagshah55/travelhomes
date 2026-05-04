@@ -13,7 +13,8 @@
     "seed:demo-products": "node scripts/seed-demo-products.js",
     "seed:fresh": "node scripts/seed-fresh.js",
     "seed:faqs": "node migrations/seed-faqs.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "keywords": [
     "travel",
@@ -51,6 +52,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
-    "pino-pretty": "^11.3.0"
+    "pino-pretty": "^11.3.0",
+    "supertest": "^7.2.2",
+    "vitest": "^4.1.5"
   }
 }

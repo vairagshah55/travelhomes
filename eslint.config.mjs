@@ -98,7 +98,7 @@ export default [
     },
   },
 
-  // ── Server (CommonJS Node) ──────────────────────────────────────────────────
+  // ── Server (CommonJS + ESM) ─────────────────────────────────────────────────
   {
     files: ["Server/**/*.js"],
     languageOptions: {
@@ -114,18 +114,38 @@ export default [
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
       ],
       "no-empty": ["warn", { allowEmptyCatch: true }],
-      // Discourage console — but warn for now; Phase 2 introduces pino.
       "no-console": "off",
       "no-process-exit": "warn",
+    },
+  },
+  {
+    files: ["Server/**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      "no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+      "no-empty": ["warn", { allowEmptyCatch: true }],
     },
   },
 
   // ── Test files: relax a bit ─────────────────────────────────────────────────
   {
-    files: ["**/*.{spec,test}.{ts,tsx,js,jsx}", "**/__tests__/**"],
+    files: ["**/*.{spec,test}.{ts,tsx,js,jsx,mjs,cjs}", "**/__tests__/**"],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
       "no-unused-expressions": "off",
+      "no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
     },
   },
 
