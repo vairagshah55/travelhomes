@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SlArrowLeft } from "react-icons/sl";
 import { toast } from "sonner";
-import { API_BASE_URL } from "../lib/api";
+import { userProfileApi } from "../lib/api";
 import { getImageUrl } from "@/lib/utils";
-import { formatDate, formatDateTime } from '../utils/formateTime';
+import { formatDate, formatDateTime } from "../utils/formateTime";
 import { Loader } from "@/components/ui/Loader";
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
@@ -27,11 +27,22 @@ const VerificationStatus = ({ label, verified }: { label: string; verified: bool
   <div className="flex items-center gap-3">
     {verified ? (
       <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 19 20">
-        <path d="M3.16699 10L7.91699 14.75L15.8337 5.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M3.16699 10L7.91699 14.75L15.8337 5.25"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ) : (
       <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M6 18L18 6M6 6l12 12" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="1.5"
+          d="M6 18L18 6M6 6l12 12"
+        />
       </svg>
     )}
     <span className="text-sm font-plus-jakarta">{label}</span>
@@ -40,7 +51,10 @@ const VerificationStatus = ({ label, verified }: { label: string; verified: bool
 
 const MobileProfileEditHeader = ({ onBack }: { onBack: () => void }) => (
   <div className="md:hidden flex items-center gap-4 mb-6">
-    <button onClick={onBack} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors">
+    <button
+      onClick={onBack}
+      className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors"
+    >
       <SlArrowLeft size={20} />
     </button>
     <h1 className="text-xl font-bold font-poppins text-gray-800 dark:text-white">Edit Profile</h1>
@@ -51,7 +65,8 @@ const IdentityVerificationSection = () => (
   <div className="mb-8">
     <h3 className="text-lg font-bold font-geist mb-3">Identity Verification</h3>
     <p className="text-sm text-gray-300 font-plus-jakarta">
-      Whether you're traveling for leisure or business, we’re committed to making your stay smooth, enjoyable, and truly unforgettable.
+      Whether you're traveling for leisure or business, we’re committed to making your stay smooth,
+      enjoyable, and truly unforgettable.
     </p>
   </div>
 );
@@ -62,20 +77,44 @@ const EditProfileSidebar = ({ user, photoPreview, onPhotoFileChange, onBack }: a
       <div className="relative inline-block mb-3">
         <img
           src={photoPreview || (user?.photo ? getImageUrl(user.photo) : "/user-avatar.svg")}
-          onError={(e) => { e.currentTarget.src = "/user-avatar.svg"; }}
+          onError={(e) => {
+            e.currentTarget.src = "/user-avatar.svg";
+          }}
           alt={`${user?.firstName}'s avatar`}
           className="w-32 h-32 object-cover bg-white rounded-full"
         />
         <label className="absolute bottom-2 right-2 w-7 h-7 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center cursor-pointer hover:bg-white/70 transition-colors">
           <input type="file" accept="image/*" className="hidden" onChange={onPhotoFileChange} />
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 30 30">
-            <path d="M14.333 8.33325H12.9997C9.66634 8.33325 8.33301 9.66659 8.33301 12.9999V16.9999C8.33301 20.3333 9.66634 21.6666 12.9997 21.6666H16.9997C20.333 21.6666 21.6663 20.3333 21.6663 16.9999V15.6666" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M17.6933 9.0135L12.4399 14.2668C12.2399 14.4668 12.0399 14.8602 11.9999 15.1468L11.7133 17.1535C11.6066 17.8802 12.1199 18.3868 12.8466 18.2868L14.8533 18.0002C15.1333 17.9602 15.5266 17.7602 15.7333 17.5602L20.9866 12.3068C21.8933 11.4002 22.3199 10.3468 20.9866 9.0135C19.6533 7.68017 18.5999 8.10684 17.6933 9.0135Z" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M16.9395 9.76685C17.3861 11.3602 18.6328 12.6068 20.2328 13.0602" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M14.333 8.33325H12.9997C9.66634 8.33325 8.33301 9.66659 8.33301 12.9999V16.9999C8.33301 20.3333 9.66634 21.6666 12.9997 21.6666H16.9997C20.333 21.6666 21.6663 20.3333 21.6663 16.9999V15.6666"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M17.6933 9.0135L12.4399 14.2668C12.2399 14.4668 12.0399 14.8602 11.9999 15.1468L11.7133 17.1535C11.6066 17.8802 12.1199 18.3868 12.8466 18.2868L14.8533 18.0002C15.1333 17.9602 15.5266 17.7602 15.7333 17.5602L20.9866 12.3068C21.8933 11.4002 22.3199 10.3468 20.9866 9.0135C19.6533 7.68017 18.5999 8.10684 17.6933 9.0135Z"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeMiterlimit="10"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16.9395 9.76685C17.3861 11.3602 18.6328 12.6068 20.2328 13.0602"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </label>
       </div>
-      <button onClick={onBack} className="top-8 left-0 absolute flex items-center gap-1 ml-24 max-md:ml-4 mt-24">
+      <button
+        onClick={onBack}
+        className="top-8 left-0 absolute flex items-center gap-1 ml-24 max-md:ml-4 mt-24"
+      >
         <SlArrowLeft size={12} />
         <span className="text-sm">Back</span>
       </button>
@@ -85,10 +124,18 @@ const EditProfileSidebar = ({ user, photoPreview, onPhotoFileChange, onBack }: a
     <IdentityVerificationSection />
 
     <div className="space-y-4">
-      <h3 className="text-lg font-geist">{user?.firstName} {user?.lastName}</h3>
+      <h3 className="text-lg font-geist">
+        {user?.firstName} {user?.lastName}
+      </h3>
       <div className="space-y-2">
-        <VerificationStatus label={user?.email ? "Email Confirmed" : "Email Not Confirmed"} verified={!!user?.email} />
-        <VerificationStatus label={user?.mobileVerified ? "Mobile Confirmed" : "Mobile Not Confirmed"} verified={!!user?.mobileVerified} />
+        <VerificationStatus
+          label={user?.email ? "Email Confirmed" : "Email Not Confirmed"}
+          verified={!!user?.email}
+        />
+        <VerificationStatus
+          label={user?.mobileVerified ? "Mobile Confirmed" : "Mobile Not Confirmed"}
+          verified={!!user?.mobileVerified}
+        />
       </div>
     </div>
   </div>
@@ -97,7 +144,12 @@ const EditProfileSidebar = ({ user, photoPreview, onPhotoFileChange, onBack }: a
 const EditProfileHeader = ({ onSave }: { onSave: () => void }) => (
   <div className="hidden md:flex flex-col md:flex-row justify-between items-start md:items-center mb-9">
     <h1 className="text-2xl font-semibold text-gray-800 font-poppins mb-4 md:mb-0">Profile</h1>
-    <Button onClick={onSave} className="bg-black hover:bg-gray-800 text-white px-6 rounded-full font-geist">Save</Button>
+    <Button
+      onClick={onSave}
+      className="bg-black hover:bg-gray-800 text-white px-6 rounded-full font-geist"
+    >
+      Save
+    </Button>
   </div>
 );
 
@@ -105,7 +157,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
   <div className="space-y-8">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">Name</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          Name
+        </label>
         <Input
           value={formData.name}
           maxLength={30}
@@ -120,7 +174,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
         />
       </div>
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">Phone Number</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          Phone Number
+        </label>
         <Input
           type="tel"
           maxLength={10}
@@ -133,7 +189,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">Email</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          Email
+        </label>
         <Input
           maxLength={40}
           value={formData.email}
@@ -142,7 +200,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
         />
       </div>
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">Date of Birth</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          Date of Birth
+        </label>
         <Input
           type="date"
           value={formData.dateOfBirth}
@@ -154,7 +214,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
 
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">State</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          State
+        </label>
         <Input
           value={formData.state}
           onChange={(e) => handleInputChange("state", e.target.value)}
@@ -162,7 +224,9 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
         />
       </div>
       <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">City</label>
+        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
+          City
+        </label>
         <Input
           value={formData.city}
           onChange={(e) => handleInputChange("city", e.target.value)}
@@ -172,7 +236,10 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
     </div>
 
     <div className="lg:hidden flex items-start w-full mb-9 mt-6">
-      <Button onClick={onSave} className="bg-black hover:bg-gray-800 dark:bg-black dark:text-white text-white px-8 py-6 rounded-full w-full font-geist">
+      <Button
+        onClick={onSave}
+        className="bg-black hover:bg-gray-800 dark:bg-black dark:text-white text-white px-8 py-6 rounded-full w-full font-geist"
+      >
         Save
       </Button>
     </div>
@@ -184,7 +251,7 @@ const EditProfileForm = ({ formData, handleInputChange, onSave }: EditProfileFor
 const UserProfileEdit = () => {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     firstName: "",
@@ -212,14 +279,13 @@ const [loading, setLoading] = useState(true);
   React.useEffect(() => {
     const load = async () => {
       try {
-        const { userProfileApi } = await import("../lib/api");
         if (!user?.email) return;
         const res = await userProfileApi.get(user.email);
         const p = res.data || {};
-        
+
         const firstName = p.firstName || user.firstName || "";
         const lastName = p.lastName || user.lastName || "";
-        
+
         let dob = p.dateOfBirth || user.dateOfBirth || "";
         if (dob && dob !== "-") {
           try {
@@ -230,7 +296,7 @@ const [loading, setLoading] = useState(true);
         } else {
           dob = "";
         }
-        
+
         setFormData({
           name: [firstName, lastName].filter(Boolean).join(" ").trim(),
           firstName,
@@ -258,7 +324,6 @@ const [loading, setLoading] = useState(true);
 
   const handleSave = async () => {
     try {
-      const { userProfileApi } = await import("../lib/api");
       const payload = {
         email: formData.email || user?.email || "",
         firstName: formData.firstName,
@@ -269,7 +334,7 @@ const [loading, setLoading] = useState(true);
         state: formData.state,
       };
       const res = await userProfileApi.upsert(payload);
-      
+
       if (res.success) {
         let photoUrl = formData.photo;
         if (photoFile && payload.email) {
@@ -286,9 +351,7 @@ const [loading, setLoading] = useState(true);
         updateUser(updatedProfile);
 
         // Broadcast profile update for any other listeners
-        window.dispatchEvent(
-          new CustomEvent("profileUpdated", { detail: updatedProfile }),
-        );
+        window.dispatchEvent(new CustomEvent("profileUpdated", { detail: updatedProfile }));
 
         toast.success("Profile updated successfully!");
         navigate("/user-profile");
@@ -301,7 +364,6 @@ const [loading, setLoading] = useState(true);
     }
   };
 
-
   useEffect(() => {
     // Simulate dynamic data fetching
     const timer = setTimeout(() => {
@@ -310,23 +372,27 @@ const [loading, setLoading] = useState(true);
     return () => clearTimeout(timer);
   }, []);
 
-
   if (loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-      <div className="flex flex-col items-center gap-4">
-        <Loader size="xl" />
-        <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
-          Fetching profile details...
-        </p>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-4">
+          <Loader size="xl" />
+          <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
+            Fetching profile details...
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
-  
+    );
+  }
+
   return (
     <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header variant="transparent" className="fixed w-full z-50" callbackFun={() => {}} onNavigate={() => {}} />
+      <Header
+        variant="transparent"
+        className="fixed w-full z-50"
+        callbackFun={() => {}}
+        onNavigate={() => {}}
+      />
 
       {/* Main Content */}
       <div className="px-4 mt-20 md:px-20 py-10 max-md:py-0">

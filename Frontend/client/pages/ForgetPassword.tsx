@@ -5,11 +5,11 @@ import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import { IoIosArrowBack } from "react-icons/io";
 import Gallery from "./gallery";
+import { vendorAuthApi } from "../lib/api";
 
 /* ================= HELPERS ================= */
 
-const isEmail = (value: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
 const isStrongPassword = (pwd: string) =>
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
@@ -74,7 +74,6 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      const { vendorAuthApi } = await import("../lib/api");
       const resp = await vendorAuthApi.forgot({ email: input });
 
       if (resp?.success) {
@@ -105,10 +104,7 @@ const ForgotPassword = () => {
     }
   };
 
-  const handleOtpKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
@@ -136,7 +132,6 @@ const ForgotPassword = () => {
 
     setOtpIsLoading(true);
     try {
-      const { vendorAuthApi } = await import("../lib/api");
       const resp = await vendorAuthApi.verifyOtp({
         email: input,
         otp: otpCode,
@@ -163,7 +158,6 @@ const ForgotPassword = () => {
   const handleResendOtp = async () => {
     setResendLoading(true);
     try {
-      const { vendorAuthApi } = await import("../lib/api");
       await vendorAuthApi.forgot({ email: input });
 
       setOtp(["", "", "", "", "", ""]);
@@ -184,7 +178,8 @@ const ForgotPassword = () => {
 
     const newErrors: { [key: string]: string } = {};
     if (!password.trim()) newErrors.password = "Password is required.";
-    else if (!isStrongPassword(password)) newErrors.password = "Min 8 chars, with uppercase, lowercase, number & special symbol.";
+    else if (!isStrongPassword(password))
+      newErrors.password = "Min 8 chars, with uppercase, lowercase, number & special symbol.";
     if (!confirmPassword.trim()) newErrors.confirmPassword = "Please confirm your password.";
     else if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match.";
 
@@ -195,7 +190,6 @@ const ForgotPassword = () => {
 
     setResetLoading(true);
     try {
-      const { vendorAuthApi } = await import("../lib/api");
       const resp = await vendorAuthApi.reset({
         email: input,
         token: resetToken,
@@ -224,18 +218,17 @@ const ForgotPassword = () => {
       <div className="w-full max-w-6xl flex gap-5">
         <Gallery
           page={
-            currentStep === 1
-              ? "EnterEmail"
-              : currentStep === 2
-              ? "Verification"
-              : "ChangePassword"
+            currentStep === 1 ? "EnterEmail" : currentStep === 2 ? "Verification" : "ChangePassword"
           }
         />
 
         <div className="w-full lg:w-1/2 max-w-md mx-auto mt-8">
           {/* Back button */}
           {currentStep === 1 ? (
-            <Link to="/login" className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity">
+            <Link
+              to="/login"
+              className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity"
+            >
               <IoIosArrowBack size={18} /> Back to login
             </Link>
           ) : (
@@ -278,16 +271,18 @@ const ForgotPassword = () => {
                   type="text"
                   placeholder="Enter Your Email"
                   value={input}
-                  onChange={(e) => { setInput(e.target.value); clearError("email"); }}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    clearError("email");
+                  }}
                   onBlur={() => {
                     if (!input.trim()) setErrors((p) => ({ ...p, email: "Email is required." }));
-                    else if (!isEmail(input)) setErrors((p) => ({ ...p, email: "Enter a valid email address." }));
+                    else if (!isEmail(input))
+                      setErrors((p) => ({ ...p, email: "Enter a valid email address." }));
                   }}
                   className={`auth-input w-full ${errors.email ? "auth-input-error" : ""}`}
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
-                )}
+                {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
               </div>
 
               <button
@@ -318,9 +313,7 @@ const ForgotPassword = () => {
                   />
                 ))}
               </div>
-              {otpError && (
-                <p className="text-red-500 text-xs mt-1.5">{otpError}</p>
-              )}
+              {otpError && <p className="text-red-500 text-xs mt-1.5">{otpError}</p>}
 
               <div className="flex items-center gap-1">
                 <span className="text-sm text-gray-500 dark:text-gray-400">Didn't receive it?</span>
@@ -353,10 +346,19 @@ const ForgotPassword = () => {
                     type={showPassword ? "text" : "password"}
                     placeholder="New password"
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); clearError("password"); }}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearError("password");
+                    }}
                     onBlur={() => {
-                      if (!password.trim()) setErrors((p) => ({ ...p, password: "Password is required." }));
-                      else if (!isStrongPassword(password)) setErrors((p) => ({ ...p, password: "Min 8 chars, with uppercase, lowercase, number & special symbol." }));
+                      if (!password.trim())
+                        setErrors((p) => ({ ...p, password: "Password is required." }));
+                      else if (!isStrongPassword(password))
+                        setErrors((p) => ({
+                          ...p,
+                          password:
+                            "Min 8 chars, with uppercase, lowercase, number & special symbol.",
+                        }));
                     }}
                     className={`auth-input w-full pr-12 ${errors.password ? "auth-input-error" : ""}`}
                   />
@@ -382,7 +384,10 @@ const ForgotPassword = () => {
                         /\d/.test(password),
                         /[@$!%*?&]/.test(password),
                       ].map((met, i) => (
-                        <div key={i} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`} />
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors duration-300 ${met ? "bg-green-500" : "bg-gray-200 dark:bg-gray-700"}`}
+                        />
                       ))}
                     </div>
                     {isStrongPassword(password) && (
@@ -398,10 +403,18 @@ const ForgotPassword = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm password"
                     value={confirmPassword}
-                    onChange={(e) => { setConfirmPassword(e.target.value); clearError("confirmPassword"); }}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      clearError("confirmPassword");
+                    }}
                     onBlur={() => {
-                      if (!confirmPassword.trim()) setErrors((p) => ({ ...p, confirmPassword: "Please confirm your password." }));
-                      else if (password !== confirmPassword) setErrors((p) => ({ ...p, confirmPassword: "Passwords do not match." }));
+                      if (!confirmPassword.trim())
+                        setErrors((p) => ({
+                          ...p,
+                          confirmPassword: "Please confirm your password.",
+                        }));
+                      else if (password !== confirmPassword)
+                        setErrors((p) => ({ ...p, confirmPassword: "Passwords do not match." }));
                     }}
                     className={`auth-input w-full pr-12 ${errors.confirmPassword ? "auth-input-error" : ""}`}
                   />
@@ -417,7 +430,9 @@ const ForgotPassword = () => {
                   <p className="text-red-500 text-xs mt-1.5">{errors.confirmPassword}</p>
                 )}
                 {!errors.confirmPassword && confirmPassword && confirmPassword === password && (
-                  <p className="text-green-600 dark:text-green-400 text-xs mt-1.5">Passwords match</p>
+                  <p className="text-green-600 dark:text-green-400 text-xs mt-1.5">
+                    Passwords match
+                  </p>
                 )}
               </div>
 

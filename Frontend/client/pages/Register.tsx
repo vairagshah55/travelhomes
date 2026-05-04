@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { authApi } from "../lib/api";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -46,7 +47,6 @@ const PHONE_COUNTRIES: PhoneCountry[] = Country.getAllCountries().map((c) => ({
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PWD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
 
-
 /* ─── Validation (pure function) ────────────────────────── */
 
 const validate = (field: string, value: string, password = ""): string => {
@@ -85,8 +85,18 @@ const validate = (field: string, value: string, password = ""): string => {
 /* ─── DOB constants ──────────────────────────────────────── */
 
 const DOB_MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 const DOB_CURRENT_YEAR = new Date().getFullYear();
 const DOB_YEARS = Array.from({ length: 100 }, (_, i) => DOB_CURRENT_YEAR - i);
@@ -95,20 +105,27 @@ const DOB_YEARS = Array.from({ length: 100 }, (_, i) => DOB_CURRENT_YEAR - i);
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register, login, loginWithGoogle, verifyOTP, lastRegisterId, authenticateAfterRegister } = useAuth();
+  const { register, login, loginWithGoogle, verifyOTP, lastRegisterId, authenticateAfterRegister } =
+    useAuth();
 
   /* ── Step ─────────────────────────────────────────────── */
   const [step, setStep] = useState<number>(() => {
-    const s = parseInt(sessionStorage.getItem('reg_step') || '1');
+    const s = parseInt(sessionStorage.getItem("reg_step") || "1");
     return isNaN(s) || s < 1 || s > 3 ? 1 : s;
   });
 
   /* ── Step 1 – Credentials ─────────────────────────────── */
   const [form, setForm] = useState<FormData>({
-    email: sessionStorage.getItem('reg_email') || "",
-    mobile: "", password: "", confirmPassword: "",
-    firstName: "", lastName: "", dateOfBirth: "",
-    country: "India", state: "", city: "",
+    email: sessionStorage.getItem("reg_email") || "",
+    mobile: "",
+    password: "",
+    confirmPassword: "",
+    firstName: "",
+    lastName: "",
+    dateOfBirth: "",
+    country: "India",
+    state: "",
+    city: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState("");
@@ -240,7 +257,7 @@ const Register = () => {
   // Persist step so refresh / navigation away doesn't reset to step 1
   useEffect(() => {
     if (step > 1) {
-      sessionStorage.setItem('reg_step', String(step));
+      sessionStorage.setItem("reg_step", String(step));
     } else {
       clearRegSession();
     }
@@ -248,15 +265,13 @@ const Register = () => {
 
   // Persist email so it survives refresh (needed for OTP display + final login)
   useEffect(() => {
-    if (form.email) sessionStorage.setItem('reg_email', form.email);
+    if (form.email) sessionStorage.setItem("reg_email", form.email);
   }, [form.email]);
 
   /* ── Helpers ──────────────────────────────────────────── */
 
   const clearRegSession = () => {
-    ['reg_step', 'reg_email', 'reg_register_id'].forEach((k) =>
-      sessionStorage.removeItem(k)
-    );
+    ["reg_step", "reg_email", "reg_register_id"].forEach((k) => sessionStorage.removeItem(k));
   };
 
   const update = (field: keyof FormData, value: string) => {
@@ -271,9 +286,10 @@ const Register = () => {
   };
 
   const validateStep = (s: number): boolean => {
-    const fields = s === 1
-      ? ["email", "mobile", "password", "confirmPassword"]
-      : ["firstName", "lastName", "dateOfBirth"];
+    const fields =
+      s === 1
+        ? ["email", "mobile", "password", "confirmPassword"]
+        : ["firstName", "lastName", "dateOfBirth"];
 
     const newErrors: Record<string, string> = {};
     fields.forEach((f) => {
@@ -294,10 +310,8 @@ const Register = () => {
   const dialCode = (c: PhoneCountry) =>
     c.dialCode?.charAt(0) !== "+" ? `+${c.dialCode}` : (c.dialCode ?? "");
 
-  const countryStates =
-    (locationData.find((c: any) => c.name === country) as any)?.states ?? [];
-  const stateCities =
-    countryStates.find((s: any) => s.name === state)?.cities ?? [];
+  const countryStates = (locationData.find((c: any) => c.name === country) as any)?.states ?? [];
+  const stateCities = countryStates.find((s: any) => s.name === state)?.cities ?? [];
 
   /* ── Step 1 handlers ──────────────────────────────────── */
 
@@ -399,7 +413,6 @@ const Register = () => {
     if (!lastRegisterId) return;
     setResendLoading(true);
     try {
-      const { authApi } = await import("../lib/api");
       await authApi.resendRegisterOtp(lastRegisterId);
       toast.success("New code sent. Check your email.");
       setResendTimer(30);
@@ -437,7 +450,6 @@ const Register = () => {
 
     try {
       if (lastRegisterId) {
-        const { authApi } = await import("../lib/api");
         await authApi.updateRegister(lastRegisterId, {
           firstName: form.firstName,
           lastName: form.lastName,
@@ -671,9 +683,11 @@ const Register = () => {
           {errors.confirmPassword && (
             <p className="text-red-500 text-xs mt-1.5">{errors.confirmPassword}</p>
           )}
-          {!errors.confirmPassword && form.confirmPassword && form.confirmPassword === form.password && (
-            <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">Passwords match</p>
-          )}
+          {!errors.confirmPassword &&
+            form.confirmPassword &&
+            form.confirmPassword === form.password && (
+              <p className="text-xs text-green-600 dark:text-green-400 mt-1.5">Passwords match</p>
+            )}
         </div>
 
         {serverError && <p className="text-red-500 text-xs">{serverError}</p>}
@@ -714,7 +728,6 @@ const Register = () => {
           </div>
         </Button>
       </form>
-
     </>
   );
 
@@ -773,7 +786,10 @@ const Register = () => {
   const renderStep3 = () => (
     <>
       <form
-        onSubmit={(e) => { e.preventDefault(); handleSaveDetails(); }}
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSaveDetails();
+        }}
         className="space-y-3"
       >
         <div className="mb-1">
@@ -810,7 +826,6 @@ const Register = () => {
         {/* Date of Birth */}
         <div>
           <div className="flex gap-2" ref={dobWrapperRef}>
-
             {/* Day */}
             <div className="relative" style={{ width: "76px" }}>
               <button
@@ -820,14 +835,18 @@ const Register = () => {
                   errors.dateOfBirth && !dobDay
                     ? "border-red-500"
                     : dobOpenPanel === "day"
-                    ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                      ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
                 }`}
               >
-                <span className={dobDay ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                <span
+                  className={dobDay ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}
+                >
                   {dobDay || "DD"}
                 </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "day" ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "day" ? "rotate-180" : ""}`}
+                />
               </button>
               {dobOpenPanel === "day" && (
                 <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
@@ -852,7 +871,11 @@ const Register = () => {
                         return (
                           <li
                             key={d}
-                            onClick={() => { handleDobChange("day", val); setDobOpenPanel(null); setDobDaySearch(""); }}
+                            onClick={() => {
+                              handleDobChange("day", val);
+                              setDobOpenPanel(null);
+                              setDobDaySearch("");
+                            }}
                             className={`px-3 py-1.5 cursor-pointer text-sm text-center rounded-lg mx-1 transition-colors ${
                               dobDay === val
                                 ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
@@ -879,10 +902,16 @@ const Register = () => {
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
                 }`}
               >
-                <span className={dobMonth ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                <span
+                  className={
+                    dobMonth ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"
+                  }
+                >
                   {dobMonth ? DOB_MONTHS[parseInt(dobMonth) - 1] : "Month"}
                 </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "month" ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "month" ? "rotate-180" : ""}`}
+                />
               </button>
               {dobOpenPanel === "month" && (
                 <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
@@ -902,10 +931,15 @@ const Register = () => {
                   <ul className="max-h-44 overflow-y-auto py-1 scrollbar-hide">
                     {DOB_MONTHS.map((m, i) => {
                       const val = String(i + 1).padStart(2, "0");
-                      return m.toLowerCase().includes(dobMonthSearch.toLowerCase()) || !dobMonthSearch ? (
+                      return m.toLowerCase().includes(dobMonthSearch.toLowerCase()) ||
+                        !dobMonthSearch ? (
                         <li
                           key={i}
-                          onClick={() => { handleDobChange("month", val); setDobOpenPanel(null); setDobMonthSearch(""); }}
+                          onClick={() => {
+                            handleDobChange("month", val);
+                            setDobOpenPanel(null);
+                            setDobMonthSearch("");
+                          }}
                           className={`px-3 py-1.5 cursor-pointer text-sm rounded-lg mx-1 transition-colors ${
                             dobMonth === val
                               ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
@@ -932,10 +966,16 @@ const Register = () => {
                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
                 }`}
               >
-                <span className={dobYear ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"}>
+                <span
+                  className={
+                    dobYear ? "text-gray-900 dark:text-white font-medium" : "text-gray-400"
+                  }
+                >
                   {dobYear || "Year"}
                 </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "year" ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${dobOpenPanel === "year" ? "rotate-180" : ""}`}
+                />
               </button>
               {dobOpenPanel === "year" && (
                 <div className="absolute top-[calc(100%+6px)] right-0 z-50 w-32 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
@@ -953,28 +993,33 @@ const Register = () => {
                     </div>
                   </div>
                   <ul className="max-h-44 overflow-y-auto py-1 scrollbar-hide">
-                    {DOB_YEARS
-                      .filter((y) => !dobYearSearch || String(y).includes(dobYearSearch))
-                      .map((y) => (
-                        <li
-                          key={y}
-                          onClick={() => { handleDobChange("year", String(y)); setDobOpenPanel(null); setDobYearSearch(""); }}
-                          className={`px-3 py-1.5 cursor-pointer text-sm text-center rounded-lg mx-1 transition-colors ${
-                            dobYear === String(y)
-                              ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-                          }`}
-                        >
-                          {y}
-                        </li>
-                      ))}
+                    {DOB_YEARS.filter(
+                      (y) => !dobYearSearch || String(y).includes(dobYearSearch),
+                    ).map((y) => (
+                      <li
+                        key={y}
+                        onClick={() => {
+                          handleDobChange("year", String(y));
+                          setDobOpenPanel(null);
+                          setDobYearSearch("");
+                        }}
+                        className={`px-3 py-1.5 cursor-pointer text-sm text-center rounded-lg mx-1 transition-colors ${
+                          dobYear === String(y)
+                            ? "bg-gray-900 dark:bg-white text-white dark:text-black font-medium"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        }`}
+                      >
+                        {y}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}
             </div>
-
           </div>
-          {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1.5">{errors.dateOfBirth}</p>}
+          {errors.dateOfBirth && (
+            <p className="text-red-500 text-xs mt-1.5">{errors.dateOfBirth}</p>
+          )}
         </div>
 
         {/* Country (locked) */}
@@ -984,7 +1029,9 @@ const Register = () => {
           </SelectTrigger>
           <SelectContent>
             {locationData.map((c: any, i: number) => (
-              <SelectItem key={i} value={c.name}>{c.name}</SelectItem>
+              <SelectItem key={i} value={c.name}>
+                {c.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -993,19 +1040,24 @@ const Register = () => {
         <div className="relative" ref={stateDropdownRef}>
           <button
             type="button"
-            onClick={() => { setStateOpen((o) => !o); setCityOpen(false); }}
+            onClick={() => {
+              setStateOpen((o) => !o);
+              setCityOpen(false);
+            }}
             className={`h-11 w-full flex items-center justify-between border rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 ${
               errors.state
                 ? "border-red-500"
                 : stateOpen
-                ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
-                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                  ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                  : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
             }`}
           >
             <span className={state ? "text-gray-900 dark:text-white" : "text-gray-400 font-normal"}>
               {state || "State"}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${stateOpen ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${stateOpen ? "rotate-180" : ""}`}
+            />
           </button>
           {errors.state && <p className="text-red-500 text-xs mt-1.5">{errors.state}</p>}
 
@@ -1026,11 +1078,19 @@ const Register = () => {
               </div>
               <ul className="max-h-52 overflow-y-auto px-1.5 pb-2 scrollbar-hide">
                 {countryStates
-                  .filter((s: any) => !stateSearch || s.name.toLowerCase().includes(stateSearch.toLowerCase()))
+                  .filter(
+                    (s: any) =>
+                      !stateSearch || s.name.toLowerCase().includes(stateSearch.toLowerCase()),
+                  )
                   .map((s: any, i: number) => (
                     <li
                       key={i}
-                      onClick={() => { setState(s.name); setCity(""); setStateOpen(false); setStateSearch(""); }}
+                      onClick={() => {
+                        setState(s.name);
+                        setCity("");
+                        setStateOpen(false);
+                        setStateSearch("");
+                      }}
                       className={`px-2.5 py-2 rounded-xl cursor-pointer text-sm transition-colors ${
                         state === s.name
                           ? "bg-gray-100 dark:bg-gray-800 font-medium text-gray-900 dark:text-white"
@@ -1049,20 +1109,25 @@ const Register = () => {
         <div className="relative" ref={cityDropdownRef}>
           <button
             type="button"
-            onClick={() => { setCityOpen((o) => !o); setStateOpen(false); }}
+            onClick={() => {
+              setCityOpen((o) => !o);
+              setStateOpen(false);
+            }}
             disabled={!state}
             className={`h-11 w-full flex items-center justify-between border rounded-xl px-4 text-sm font-medium bg-gray-50/50 dark:bg-gray-800/50 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
               errors.city
                 ? "border-red-500"
                 : cityOpen
-                ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
-                : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
+                  ? "border-gray-900 dark:border-white shadow-[0_0_0_3px_rgba(0,0,0,0.06)] dark:shadow-[0_0_0_3px_rgba(255,255,255,0.08)]"
+                  : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-500"
             }`}
           >
             <span className={city ? "text-gray-900 dark:text-white" : "text-gray-400 font-normal"}>
               {city || "City"}
             </span>
-            <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${cityOpen ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${cityOpen ? "rotate-180" : ""}`}
+            />
           </button>
           {errors.city && <p className="text-red-500 text-xs mt-1.5">{errors.city}</p>}
 
@@ -1083,11 +1148,18 @@ const Register = () => {
               </div>
               <ul className="max-h-52 overflow-y-auto px-1.5 pb-2 scrollbar-hide">
                 {stateCities
-                  .filter((c: any) => !citySearch || c.name.toLowerCase().includes(citySearch.toLowerCase()))
+                  .filter(
+                    (c: any) =>
+                      !citySearch || c.name.toLowerCase().includes(citySearch.toLowerCase()),
+                  )
                   .map((c: any, i: number) => (
                     <li
                       key={i}
-                      onClick={() => { setCity(c.name); setCityOpen(false); setCitySearch(""); }}
+                      onClick={() => {
+                        setCity(c.name);
+                        setCityOpen(false);
+                        setCitySearch("");
+                      }}
                       className={`px-2.5 py-2 rounded-xl cursor-pointer text-sm transition-colors ${
                         city === c.name
                           ? "bg-gray-100 dark:bg-gray-800 font-medium text-gray-900 dark:text-white"
