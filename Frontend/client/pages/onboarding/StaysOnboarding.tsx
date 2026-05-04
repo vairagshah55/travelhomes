@@ -4,7 +4,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
-import e from "express";
 import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
@@ -122,9 +121,8 @@ const propertyCategories: Record<string, { id: string; name: string; icon: strin
 
 // Dynamic features based on property types and categories
 const getFeaturesForProperty = (propertyType: string, category: string, stayType: string) => {
-  const baseFeatures: { label: string; value: string; icon: string | React.ComponentType<any> }[] = [
-
-  ];
+  const baseFeatures: { label: string; value: string; icon: string | React.ComponentType<any> }[] =
+    [];
 
   // Features for entire stay properties
   if (stayType === "entire") {
@@ -184,10 +182,7 @@ const getFeaturesForProperty = (propertyType: string, category: string, stayType
 
   // Features for individual rooms
   else {
-    const roomFeatures = [
-      ...baseFeatures,
-
-    ];
+    const roomFeatures = [...baseFeatures];
 
     switch (propertyType) {
       case "tent":
@@ -234,13 +229,16 @@ const StaysOnboarding = () => {
 
   useEffect(() => {
     // Check if Unique Stays section is enabled
-    cmsPublicApi.listHomepageSections().then((sections) => {
-      const section = sections.find((s: any) => s.sectionKey === 'unique-stays');
-      if (section && !section.isVisible) {
-        toast.error("Stays onboarding is currently disabled.");
-        navigate("/");
-      }
-    }).catch(console.error);
+    cmsPublicApi
+      .listHomepageSections()
+      .then((sections) => {
+        const section = sections.find((s: any) => s.sectionKey === "unique-stays");
+        if (section && !section.isVisible) {
+          toast.error("Stays onboarding is currently disabled.");
+          navigate("/");
+        }
+      })
+      .catch(console.error);
 
     if (!isAuthenticated) {
       toast.error("Please login to continue");
@@ -256,7 +254,9 @@ const StaysOnboarding = () => {
     try {
       const raw = sessionStorage.getItem(FORM_STORAGE_KEY);
       return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   })();
 
   const [currentStep, setCurrentStep] = useState(() => {
@@ -271,12 +271,18 @@ const StaysOnboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // Form state
-  const [selectedProperties, setSelectedProperties] = useState<string[]>(_cached?.selectedProperties ?? []);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(_cached?.selectedCategories ?? []);
+  const [selectedProperties, setSelectedProperties] = useState<string[]>(
+    _cached?.selectedProperties ?? [],
+  );
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    _cached?.selectedCategories ?? [],
+  );
   const [stayType, setStayType] = useState<"entire" | "individual">(_cached?.stayType ?? "entire");
 
   // Rules and regulations state
-  const [entireStayRules, setEntireStayRules] = useState<string[]>(_cached?.entireStayRules ?? [""]);
+  const [entireStayRules, setEntireStayRules] = useState<string[]>(
+    _cached?.entireStayRules ?? [""],
+  );
   const [roomRules, setRoomRules] = useState<Record<string, string[]>>(_cached?.roomRules ?? {});
   const [optionalRules, setOptionalRules] = useState<string[]>(_cached?.optionalRules ?? [""]);
   const [guestCapacity, setGuestCapacity] = useState(_cached?.guestCapacity ?? 0);
@@ -284,27 +290,33 @@ const StaysOnboarding = () => {
   const [numberOfBeds, setNumberOfBeds] = useState(_cached?.numberOfBeds ?? 0);
   const [numberOfBathrooms, setNumberOfBathrooms] = useState(_cached?.numberOfBathrooms ?? 0);
   const [regularPrice, setRegularPrice] = useState(_cached?.regularPrice ?? "");
-  const [rooms, setRooms] = useState<Room[]>(_cached?.rooms ?? [
-    {
-      id: "1",
-      name: "",
-      description: "",
-      photos: [],
-      guestCapacity: 1,
-      beds: 1,
-      bathrooms: 1,
-      price: 5934,
-    },
-  ]);
+  const [rooms, setRooms] = useState<Room[]>(
+    _cached?.rooms ?? [
+      {
+        id: "1",
+        name: "",
+        description: "",
+        photos: [],
+        guestCapacity: 1,
+        beds: 1,
+        bathrooms: 1,
+        price: 5934,
+      },
+    ],
+  );
   const [expandedRoom, setExpandedRoom] = useState<string>("1");
 
   // Features state
-  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(_cached?.selectedFeatures ?? []);
+  const [selectedFeatures, setSelectedFeatures] = useState<string[]>(
+    _cached?.selectedFeatures ?? [],
+  );
   const [customFeatures, setCustomFeatures] = useState<string[]>(_cached?.customFeatures ?? []);
   const [showCustomFeaturesInput, setShowCustomFeaturesInput] = useState(false);
   const [customFeatureInput, setCustomFeatureInput] = useState("");
   const [adminFeatures, setAdminFeatures] = useState<any[]>([]);
-  const [propertyTypes, setPropertyTypes] = useState<{ id: string; name: string; icon: string }[]>([]);
+  const [propertyTypes, setPropertyTypes] = useState<{ id: string; name: string; icon: string }[]>(
+    [],
+  );
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, any[]>>({});
 
   // Discount state
@@ -339,12 +351,12 @@ const StaysOnboarding = () => {
   const [idProof, setIdProof] = useState(_cached?.idProof ?? "");
   const [idProofImage, setIdProofImage] = useState<string | null>(_cached?.idProofImage ?? null);
   const [images, setImages] = useState<(string | null)[]>(_cached?.images ?? Array(5).fill(null));
-  const [entireStayImages, setEntireStayImages] = useState<string[]>(_cached?.entireStayImages ?? []);
+  const [entireStayImages, setEntireStayImages] = useState<string[]>(
+    _cached?.entireStayImages ?? [],
+  );
   const [coverImage, setCoverImage] = useState<string | null>(_cached?.coverImage ?? null);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [selected, setSelected] = useState<CountryOption | null>(
-    countries[100],
-  );
+  const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
   const [open, setOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -352,32 +364,98 @@ const StaysOnboarding = () => {
   useEffect(() => {
     try {
       const snapshot = {
-        selectedProperties, selectedCategories, stayType,
-        entireStayRules, roomRules, optionalRules,
-        guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms, regularPrice,
-        rooms, selectedFeatures, customFeatures,
-        firstUserDiscount, discountType, discountPercentage, finalPrice,
-        festivalOffers, weeklyOffers, specialOffers,
-        brandName, companyName, gstNumber, businessEmail, businessPhone,
-        locality, state, city, businessPincode, personalPincode,
-        firstName, lastName, personalCountry, personalState, personalCity,
-        dateOfBirth, maritalStatus, idProof, idProofImage,
-        images: images.filter(Boolean), entireStayImages, coverImage,
+        selectedProperties,
+        selectedCategories,
+        stayType,
+        entireStayRules,
+        roomRules,
+        optionalRules,
+        guestCapacity,
+        numberOfRooms,
+        numberOfBeds,
+        numberOfBathrooms,
+        regularPrice,
+        rooms,
+        selectedFeatures,
+        customFeatures,
+        firstUserDiscount,
+        discountType,
+        discountPercentage,
+        finalPrice,
+        festivalOffers,
+        weeklyOffers,
+        specialOffers,
+        brandName,
+        companyName,
+        gstNumber,
+        businessEmail,
+        businessPhone,
+        locality,
+        state,
+        city,
+        businessPincode,
+        personalPincode,
+        firstName,
+        lastName,
+        personalCountry,
+        personalState,
+        personalCity,
+        dateOfBirth,
+        maritalStatus,
+        idProof,
+        idProofImage,
+        images: images.filter(Boolean),
+        entireStayImages,
+        coverImage,
       };
       sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(snapshot));
-    } catch { /* quota exceeded — ignore */ }
+    } catch {
+      /* quota exceeded — ignore */
+    }
   }, [
-    selectedProperties, selectedCategories, stayType,
-    entireStayRules, roomRules, optionalRules,
-    guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms, regularPrice,
-    rooms, selectedFeatures, customFeatures,
-    firstUserDiscount, discountType, discountPercentage, finalPrice,
-    festivalOffers, weeklyOffers, specialOffers,
-    brandName, companyName, gstNumber, businessEmail, businessPhone,
-    locality, state, city, businessPincode, personalPincode,
-    firstName, lastName, personalCountry, personalState, personalCity,
-    dateOfBirth, maritalStatus, idProof, idProofImage,
-    images, entireStayImages, coverImage,
+    selectedProperties,
+    selectedCategories,
+    stayType,
+    entireStayRules,
+    roomRules,
+    optionalRules,
+    guestCapacity,
+    numberOfRooms,
+    numberOfBeds,
+    numberOfBathrooms,
+    regularPrice,
+    rooms,
+    selectedFeatures,
+    customFeatures,
+    firstUserDiscount,
+    discountType,
+    discountPercentage,
+    finalPrice,
+    festivalOffers,
+    weeklyOffers,
+    specialOffers,
+    brandName,
+    companyName,
+    gstNumber,
+    businessEmail,
+    businessPhone,
+    locality,
+    state,
+    city,
+    businessPincode,
+    personalPincode,
+    firstName,
+    lastName,
+    personalCountry,
+    personalState,
+    personalCity,
+    dateOfBirth,
+    maritalStatus,
+    idProof,
+    idProofImage,
+    images,
+    entireStayImages,
+    coverImage,
   ]);
 
   const { userDetails, updateUserDetails } = useUserDetails();
@@ -407,29 +485,29 @@ const StaysOnboarding = () => {
   const [cityOption, setCityOptions] = useState(_cached?.personalCity ?? "");
   const [cityOption2, setCityOptions2] = useState(_cached?.city ?? "");
 
- useEffect(() => {
-  setState(stateOption2);
-}, [stateOption2]);
+  useEffect(() => {
+    setState(stateOption2);
+  }, [stateOption2]);
 
-useEffect(() => {
-  setCity(cityOption2);
-}, [cityOption2]);
+  useEffect(() => {
+    setCity(cityOption2);
+  }, [cityOption2]);
 
-useEffect(() => {
-  setLocality("India");
-}, []);
+  useEffect(() => {
+    setLocality("India");
+  }, []);
 
-useEffect(() => {
-  setPersonalState(stateOption);
-}, [stateOption]);
+  useEffect(() => {
+    setPersonalState(stateOption);
+  }, [stateOption]);
 
-useEffect(() => {
-  setPersonalCity(cityOption);
-}, [cityOption]);
+  useEffect(() => {
+    setPersonalCity(cityOption);
+  }, [cityOption]);
 
-useEffect(() => {
-  setPersonalCountry("India");
-}, []);
+  useEffect(() => {
+    setPersonalCountry("India");
+  }, []);
 
   // Populate country list on mount
   useEffect(() => {
@@ -439,158 +517,175 @@ useEffect(() => {
       .catch((err) => console.error("Failed to load countries:", err));
 
     // Fetch admin features (amenities)
-    cmsPublicApi.getFeatures("Unique Stay").then(list => {
-      // Filter for features or items without type (legacy)
-      setAdminFeatures(list.filter((f: any) => f.status === 'enable' && (!f.type || f.type === 'feature')));
-    }).catch(console.error);
+    cmsPublicApi
+      .getFeatures("Unique Stay")
+      .then((list) => {
+        // Filter for features or items without type (legacy)
+        setAdminFeatures(
+          list.filter((f: any) => f.status === "enable" && (!f.type || f.type === "feature")),
+        );
+      })
+      .catch(console.error);
 
     // Fetch property types (categories)
-    cmsPublicApi.getFeatures("Unique Stay", "category").then(list => {
-      const types = list
-        .filter((f: any) => f.status === 'enable')
-        .map((f: any) => ({
-           id: f.name.toLowerCase(),
-           realId: f.id || f._id,
-           name: f.name,
-           icon: f.icon
-        }));
-      setPropertyTypes(types);
+    cmsPublicApi
+      .getFeatures("Unique Stay", "category")
+      .then((list) => {
+        const types = list
+          .filter((f: any) => f.status === "enable")
+          .map((f: any) => ({
+            id: f.name.toLowerCase(),
+            realId: f.id || f._id,
+            name: f.name,
+            icon: f.icon,
+          }));
+        setPropertyTypes(types);
 
-      // Fetch dynamic sub-categories for each property type
-      types.forEach((type: any) => {
-        if (type.realId) {
-          cmsPublicApi.getFeatures(type.realId, "subcategory").then(subs => {
-             if (subs && subs.length > 0) {
-               setSubCategoriesMap(prev => ({
-                 ...prev,
-                 [type.id]: subs.map((s: any) => ({
-                    id: s.name.toLowerCase().replace(/\s+/g, '-'),
-                    name: s.name,
-                    icon: s.icon
-                 }))
-               }));
-             }
-          }).catch(console.error);
-        }
-      });
-
-    }).catch(console.error);
+        // Fetch dynamic sub-categories for each property type
+        types.forEach((type: any) => {
+          if (type.realId) {
+            cmsPublicApi
+              .getFeatures(type.realId, "subcategory")
+              .then((subs) => {
+                if (subs && subs.length > 0) {
+                  setSubCategoriesMap((prev) => ({
+                    ...prev,
+                    [type.id]: subs.map((s: any) => ({
+                      id: s.name.toLowerCase().replace(/\s+/g, "-"),
+                      name: s.name,
+                      icon: s.icon,
+                    })),
+                  }));
+                }
+              })
+              .catch(console.error);
+          }
+        });
+      })
+      .catch(console.error);
 
     // Check for existing data
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
 
-        if (data && data.type === 'stay' && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
+        if (
+          data &&
+          data.type === "stay" &&
+          data.doc &&
+          ["pending", "draft", "rejected"].includes(data.doc.status)
+        ) {
           const doc = data.doc;
-          console.log('Loading existing stay data:', doc);
+          console.log("Loading existing stay data:", doc);
 
-          console.log('status:', doc.status);
+          console.log("status:", doc.status);
           setStatus(doc.status);
-          console.log('rejectionReason:', doc.rejectionReason);
+          console.log("rejectionReason:", doc.rejectionReason);
           setRejectionReason(doc.rejectionReason || "");
 
-          console.log('selectedProperties:', doc.selectedProperties);
+          console.log("selectedProperties:", doc.selectedProperties);
           setSelectedProperties(doc.selectedProperties || []);
-          console.log('selectedCategories:', doc.selectedCategories);
+          console.log("selectedCategories:", doc.selectedCategories);
           setSelectedCategories(doc.selectedCategories || []);
-          console.log('stayType:', doc.stayType);
+          console.log("stayType:", doc.stayType);
           setStayType(doc.stayType || "entire");
-          console.log('guestCapacity:', doc.guestCapacity);
+          console.log("guestCapacity:", doc.guestCapacity);
           setGuestCapacity(doc.guestCapacity || 0);
-          console.log('numberOfRooms:', doc.numberOfRooms);
+          console.log("numberOfRooms:", doc.numberOfRooms);
           setNumberOfRooms(doc.numberOfRooms || 0);
-          console.log('numberOfBeds:', doc.numberOfBeds);
+          console.log("numberOfBeds:", doc.numberOfBeds);
           setNumberOfBeds(doc.numberOfBeds || 0);
-          console.log('numberOfBathrooms:', doc.numberOfBathrooms);
+          console.log("numberOfBathrooms:", doc.numberOfBathrooms);
           setNumberOfBathrooms(doc.numberOfBathrooms || 0);
-          console.log('regularPrice:', doc.regularPrice);
+          console.log("regularPrice:", doc.regularPrice);
           setRegularPrice(String(doc.regularPrice || ""));
 
-          console.log('rooms:', doc.rooms);
+          console.log("rooms:", doc.rooms);
           if (doc.rooms && doc.rooms.length > 0) {
             setRooms(doc.rooms);
             setCoverImage(doc.coverImage || null);
             // Handle images
-            if (doc.stayType === 'entire') {
-               console.log('entireStayImages:', doc.images);
-               const imgs = doc.images || [];
-               setEntireStayImages(imgs);
+            if (doc.stayType === "entire") {
+              console.log("entireStayImages:", doc.images);
+              const imgs = doc.images || [];
+              setEntireStayImages(imgs);
             } else {
-               console.log('images (room):', doc.rooms[0]?.photos);
-               const imgs = doc.rooms[0]?.photos || [];
-               setImages([...imgs, ...Array(Math.max(0, 5 - imgs.length)).fill(null)]);
+              console.log("images (room):", doc.rooms[0]?.photos);
+              const imgs = doc.rooms[0]?.photos || [];
+              setImages([...imgs, ...Array(Math.max(0, 5 - imgs.length)).fill(null)]);
             }
           }
 
-          console.log('selectedFeatures:', doc.selectedFeatures);
+          console.log("selectedFeatures:", doc.selectedFeatures);
           setSelectedFeatures(doc.selectedFeatures || []);
-          console.log('rules:', doc.rules);
+          console.log("rules:", doc.rules);
           setEntireStayRules(doc.rules && doc.rules.length > 0 ? doc.rules : [""]);
-          console.log('roomRules:', doc.roomRules);
+          console.log("roomRules:", doc.roomRules);
           setRoomRules(doc.roomRules || {});
-          console.log('optionalRules:', doc.optionalRules);
-          setOptionalRules(doc.optionalRules && doc.optionalRules.length > 0 ? doc.optionalRules : [""]);
+          console.log("optionalRules:", doc.optionalRules);
+          setOptionalRules(
+            doc.optionalRules && doc.optionalRules.length > 0 ? doc.optionalRules : [""],
+          );
 
-          console.log('firstUserDiscount:', doc.firstUserDiscount);
+          console.log("firstUserDiscount:", doc.firstUserDiscount);
           setFirstUserDiscount(doc.firstUserDiscount ?? true);
-          console.log('discountType:', doc.discountType);
+          console.log("discountType:", doc.discountType);
           setDiscountType(doc.discountType || "percentage");
-          console.log('discountPercentage:', doc.discountPercentage);
+          console.log("discountPercentage:", doc.discountPercentage);
           setDiscountPercentage(String(doc.discountPercentage || ""));
-          console.log('finalPrice:', doc.finalPrice);
+          console.log("finalPrice:", doc.finalPrice);
           setFinalPrice(String(doc.finalPrice || ""));
 
-          console.log('festivalOffers:', doc.festivalOffers);
+          console.log("festivalOffers:", doc.festivalOffers);
           setFestivalOffers(doc.festivalOffers ?? false);
-          console.log('weeklyOffers:', doc.weeklyOffers);
+          console.log("weeklyOffers:", doc.weeklyOffers);
           setWeeklyOffers(doc.weeklyOffers ?? false);
-          console.log('specialOffers:', doc.specialOffers);
+          console.log("specialOffers:", doc.specialOffers);
           setSpecialOffers(doc.specialOffers ?? false);
 
-          console.log('brandName:', doc.brandName);
+          console.log("brandName:", doc.brandName);
           setBrandName(doc.brandName || "");
-          console.log('companyName:', doc.companyName);
+          console.log("companyName:", doc.companyName);
           setCompanyName(doc.companyName || "");
-          console.log('gstNumber:', doc.gstNumber);
+          console.log("gstNumber:", doc.gstNumber);
           setGstNumber(doc.gstNumber || "");
-          console.log('businessEmail:', doc.businessEmail);
+          console.log("businessEmail:", doc.businessEmail);
           setBusinessEmail(doc.businessEmail || "");
-          console.log('businessPhone:', doc.businessPhone);
+          console.log("businessPhone:", doc.businessPhone);
           setBusinessPhone(doc.businessPhone || "");
-          console.log('locality:', doc.locality);
+          console.log("locality:", doc.locality);
           setLocality(doc.locality || "India");
-          console.log('state:', doc.state);
+          console.log("state:", doc.state);
           setState(doc.state || "");
           setStateOption2(doc.state || "");
-          console.log('city:', doc.city);
+          console.log("city:", doc.city);
           setCity(doc.city || "");
           setCityOptions2(doc.city || "");
-          console.log('businessPincode/pincode:', doc.businessPincode || doc.pincode);
+          console.log("businessPincode/pincode:", doc.businessPincode || doc.pincode);
           setBusinessPincode(doc.businessPincode || doc.pincode || "");
-          console.log('personalPincode:', doc.personalPincode);
+          console.log("personalPincode:", doc.personalPincode);
           setPersonalPincode(doc.personalPincode || "");
 
-          console.log('firstName:', doc.firstName);
+          console.log("firstName:", doc.firstName);
           setFirstName(doc.firstName || "");
-          console.log('lastName:', doc.lastName);
+          console.log("lastName:", doc.lastName);
           setLastName(doc.lastName || "");
-          console.log('personalCountry:', doc.personalCountry);
+          console.log("personalCountry:", doc.personalCountry);
           setPersonalCountry(doc.personalCountry || "India");
-          console.log('personalState:', doc.personalState);
+          console.log("personalState:", doc.personalState);
           setPersonalState(doc.personalState || "");
           setStateOption(doc.personalState || "");
-          console.log('personalCity:', doc.personalCity);
+          console.log("personalCity:", doc.personalCity);
           setPersonalCity(doc.personalCity || "");
           setCityOptions(doc.personalCity || "");
-          console.log('dateOfBirth:', doc.dateOfBirth);
+          console.log("dateOfBirth:", doc.dateOfBirth);
           setDateOfBirth(doc.dateOfBirth || "");
-          console.log('maritalStatus:', doc.maritalStatus);
+          console.log("maritalStatus:", doc.maritalStatus);
           setMaritalStatus(doc.maritalStatus || "");
-          console.log('idProof:', doc.idProof);
+          console.log("idProof:", doc.idProof);
           setIdProof(doc.idProof || "");
 
-          console.log('idPhotos:', doc.idPhotos);
+          console.log("idPhotos:", doc.idPhotos);
           if (doc.idPhotos && doc.idPhotos.length > 0) {
             setIdProofImage(doc.idPhotos[0]);
           }
@@ -606,53 +701,55 @@ useEffect(() => {
             let restoredStep = 0;
             if (doc.selectedProperties && doc.selectedProperties.length > 0) restoredStep = 1;
             if (doc.selectedCategories && doc.selectedCategories.length > 0) restoredStep = 2;
-            if (doc.stayType === "entire"
-              ? (doc.guestCapacity > 0 && doc.regularPrice)
-              : (doc.rooms && doc.rooms.length > 0 && doc.rooms[0]?.name)) restoredStep = 3;
+            if (
+              doc.stayType === "entire"
+                ? doc.guestCapacity > 0 && doc.regularPrice
+                : doc.rooms && doc.rooms.length > 0 && doc.rooms[0]?.name
+            )
+              restoredStep = 3;
             if (doc.selectedFeatures && doc.selectedFeatures.length > 0) restoredStep = 4;
             // Steps 5-7 (discount, business, personal) — check if business name exists
             if (doc.brandName) restoredStep = Math.max(restoredStep, 5);
             if (doc.firstName) restoredStep = Math.max(restoredStep, 6);
             setCurrentStep(restoredStep);
           }
-        } else if (userDetails && user?.userType !== 'vendor') {
-           // Auto-fill from user details if no draft exists and user is not a vendor (first time)
-           setFirstName(userDetails.firstName || "");
-           setLastName(userDetails.lastName || "");
-           setPersonalState(userDetails.state || "");
-           setStateOption(userDetails.state || "");
-           setPersonalCity(userDetails.city || "");
-           setCityOptions(userDetails.city || "");
-           setPersonalPincode(userDetails.personalPincode || "");
+        } else if (userDetails && user?.userType !== "vendor") {
+          // Auto-fill from user details if no draft exists and user is not a vendor (first time)
+          setFirstName(userDetails.firstName || "");
+          setLastName(userDetails.lastName || "");
+          setPersonalState(userDetails.state || "");
+          setStateOption(userDetails.state || "");
+          setPersonalCity(userDetails.city || "");
+          setCityOptions(userDetails.city || "");
+          setPersonalPincode(userDetails.personalPincode || "");
 
-           setPersonalCountry(userDetails.country || "India");
-           if (userDetails.dateOfBirth) {
-               setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split('T')[0]);
-           }
-           setMaritalStatus(userDetails.maritalStatus || "");
-           setIdProof(userDetails.idProof || "");
-           if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
-               setIdProofImage(userDetails.idPhotos[0]);
-           }
+          setPersonalCountry(userDetails.country || "India");
+          if (userDetails.dateOfBirth) {
+            setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split("T")[0]);
+          }
+          setMaritalStatus(userDetails.maritalStatus || "");
+          setIdProof(userDetails.idProof || "");
+          if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
+            setIdProofImage(userDetails.idPhotos[0]);
+          }
 
-           setBrandName(userDetails.business?.brandName || "");
-           setCompanyName(userDetails.business?.legalCompanyName || "");
-           setGstNumber(userDetails.business?.gstNumber || "");
-           setBusinessEmail(userDetails.business?.email || "");
-           setBusinessPhone(userDetails.business?.phoneNumber || "");
-           setLocality(userDetails.business?.locality || "India");
-           setState(userDetails.business?.state || "");
-           setStateOption2(userDetails.business?.state || "");
-           setCity(userDetails.business?.city || "");
-           setCityOptions2(userDetails.business?.city || "");
-           setBusinessPincode(userDetails.business?.pincode || "");
+          setBrandName(userDetails.business?.brandName || "");
+          setCompanyName(userDetails.business?.legalCompanyName || "");
+          setGstNumber(userDetails.business?.gstNumber || "");
+          setBusinessEmail(userDetails.business?.email || "");
+          setBusinessPhone(userDetails.business?.phoneNumber || "");
+          setLocality(userDetails.business?.locality || "India");
+          setState(userDetails.business?.state || "");
+          setStateOption2(userDetails.business?.state || "");
+          setCity(userDetails.business?.city || "");
+          setCityOptions2(userDetails.business?.city || "");
+          setBusinessPincode(userDetails.business?.pincode || "");
         }
       } catch (err) {
         console.error("Failed to load existing onboarding data", err);
       }
     };
     loadExistingData();
-
   }, [userDetails]);
 
   // Calculate final price based on regular price and discount
@@ -663,7 +760,7 @@ useEffect(() => {
 
       let calculatedPrice = 0;
       if (discountType === "percentage") {
-        calculatedPrice = price - (price * discount / 100);
+        calculatedPrice = price - (price * discount) / 100;
       } else {
         calculatedPrice = price - discount;
       }
@@ -740,10 +837,7 @@ useEffect(() => {
         return categories && categories.length > 0;
       });
 
-      if (
-        hasCategories &&
-        (!selectedCategories || selectedCategories.length === 0)
-      ) {
+      if (hasCategories && (!selectedCategories || selectedCategories.length === 0)) {
         toast.error("Please select at least one category");
         return;
       }
@@ -753,11 +847,13 @@ useEffect(() => {
         if (numberOfRooms <= 0) newErrors.numberOfRooms = "Add at least 1 room";
         if (numberOfBeds <= 0) newErrors.numberOfBeds = "Add at least 1 bed";
         if (numberOfBathrooms <= 0) newErrors.numberOfBathrooms = "Add at least 1 bathroom";
-        if (!regularPrice || Number(regularPrice) <= 0) newErrors.regularPrice = "Enter a valid price";
+        if (!regularPrice || Number(regularPrice) <= 0)
+          newErrors.regularPrice = "Enter a valid price";
         const hasValidRule = entireStayRules.some((rule) => rule.trim() !== "");
         if (!hasValidRule) newErrors.entireStayRules = "Add at least one rule";
         if (!coverImage) newErrors.coverImage = "Cover photo is required";
-        if (entireStayImages.length < 5) newErrors.entireStayImages = `Upload at least 5 images (${entireStayImages.length}/5)`;
+        if (entireStayImages.length < 5)
+          newErrors.entireStayImages = `Upload at least 5 images (${entireStayImages.length}/5)`;
       } else if (stayType === "individual") {
         if (!coverImage) newErrors.coverImage = "Cover photo is required";
         if (!rooms || rooms.length === 0) {
@@ -765,14 +861,20 @@ useEffect(() => {
         } else {
           for (let i = 0; i < rooms.length; i++) {
             const room = rooms[i];
-            const validRoomImages = (room.photos || []).filter(p => p);
-            if (!room.name || !room.name.trim()) newErrors[`room_${i}_name`] = "Room name is required";
-            if (!room.description || !room.description.trim()) newErrors[`room_${i}_description`] = "Description is required";
-            if (validRoomImages.length < 5) newErrors[`room_${i}_photos`] = `Upload at least 5 images (${validRoomImages.length}/5)`;
-            if (room.guestCapacity <= 0) newErrors[`room_${i}_guestCapacity`] = "Guest capacity must be at least 1";
+            const validRoomImages = (room.photos || []).filter((p) => p);
+            if (!room.name || !room.name.trim())
+              newErrors[`room_${i}_name`] = "Room name is required";
+            if (!room.description || !room.description.trim())
+              newErrors[`room_${i}_description`] = "Description is required";
+            if (validRoomImages.length < 5)
+              newErrors[`room_${i}_photos`] =
+                `Upload at least 5 images (${validRoomImages.length}/5)`;
+            if (room.guestCapacity <= 0)
+              newErrors[`room_${i}_guestCapacity`] = "Guest capacity must be at least 1";
             if (room.beds <= 0) newErrors[`room_${i}_beds`] = "Add at least 1 bed";
             if (room.bathrooms <= 0) newErrors[`room_${i}_bathrooms`] = "Add at least 1 bathroom";
-            if (!room.price || room.price <= 0) newErrors[`room_${i}_price`] = "Enter a valid price";
+            if (!room.price || room.price <= 0)
+              newErrors[`room_${i}_price`] = "Enter a valid price";
           }
         }
       }
@@ -781,14 +883,8 @@ useEffect(() => {
         newErrors.features = "Please select at least one feature";
       }
     } else if (currentStep === 4) {
-      if (
-        firstUserDiscount ||
-        festivalOffers ||
-        weeklyOffers ||
-        specialOffers
-      ) {
-        if (!discountPercentage)
-          newErrors.discountPercentage = "Discount Percentage is required";
+      if (firstUserDiscount || festivalOffers || weeklyOffers || specialOffers) {
+        if (!discountPercentage) newErrors.discountPercentage = "Discount Percentage is required";
         if (!finalPrice) newErrors.finalPrice = "Final Price is required";
       }
     } else if (currentStep === 5) {
@@ -877,7 +973,16 @@ useEffect(() => {
       const entireStayGallery: string[] = entireStayImages || [];
       const roomsWithPhotos = [...rooms];
       if (!roomsWithPhotos.length) {
-        roomsWithPhotos.push({ id: '1', name: '', description: '', photos: [], guestCapacity: 1, beds: 1, bathrooms: 1, price: Number(regularPrice) || 0 });
+        roomsWithPhotos.push({
+          id: "1",
+          name: "",
+          description: "",
+          photos: [],
+          guestCapacity: 1,
+          beds: 1,
+          bathrooms: 1,
+          price: Number(regularPrice) || 0,
+        });
       }
 
       if (stayType === "entire") {
@@ -896,9 +1001,9 @@ useEffect(() => {
         regularPrice: Number(regularPrice),
         rooms: roomsWithPhotos,
         selectedFeatures,
-        entireStayRules: entireStayRules.filter(rule => rule.trim() !== ""),
+        entireStayRules: entireStayRules.filter((rule) => rule.trim() !== ""),
         roomRules,
-        optionalRules: optionalRules.filter(rule => rule.trim() !== ""),
+        optionalRules: optionalRules.filter((rule) => rule.trim() !== ""),
         firstUserDiscount,
         discountType,
         discountPercentage: Number(discountPercentage),
@@ -930,63 +1035,63 @@ useEffect(() => {
 
       // Basic validation
       if (!selectedProperties || selectedProperties.length === 0) {
-        throw new Error('Please select at least one property type');
+        throw new Error("Please select at least one property type");
       }
 
       const regPrice = Number(regularPrice);
       if (!regularPrice || isNaN(regPrice) || regPrice <= 0) {
-        throw new Error('Please enter a valid regular price');
+        throw new Error("Please enter a valid regular price");
       }
 
       if (!guestCapacity || Number(guestCapacity) <= 0) {
-        throw new Error('Please enter a valid guest capacity');
+        throw new Error("Please enter a valid guest capacity");
       }
 
-      const result = await submitOnboardingData('stay', payload);
+      const result = await submitOnboardingData("stay", payload);
 
       if (result?.id) {
-         await updateUserDetails({
-             firstName: firstName,
-             lastName: lastName,
-             phoneNumber: businessPhone,
-             country: personalCountry,
-             state: personalState,
-             city: personalCity,
-             personalLocality: personalCountry,
-             personalPincode: personalPincode,
-             dateOfBirth: dateOfBirth,
-             maritalStatus: maritalStatus,
-             idProof: idProof,
-             idPhotos: idProofImage ? [idProofImage] : [],
+        await updateUserDetails({
+          firstName: firstName,
+          lastName: lastName,
+          phoneNumber: businessPhone,
+          country: personalCountry,
+          state: personalState,
+          city: personalCity,
+          personalLocality: personalCountry,
+          personalPincode: personalPincode,
+          dateOfBirth: dateOfBirth,
+          maritalStatus: maritalStatus,
+          idProof: idProof,
+          idPhotos: idProofImage ? [idProofImage] : [],
 
-             business: {
-               brandName: brandName,
-               legalCompanyName: companyName,
-               gstNumber: gstNumber,
-               email: businessEmail,
-               phoneNumber: businessPhone,
-               locality: locality,
-               state: state,
-               city: city,
-               pincode: businessPincode,
-             }
-         });
+          business: {
+            brandName: brandName,
+            legalCompanyName: companyName,
+            gstNumber: gstNumber,
+            email: businessEmail,
+            phoneNumber: businessPhone,
+            locality: locality,
+            state: state,
+            city: city,
+            pincode: businessPincode,
+          },
+        });
 
         onboardingService.setStayId(result.id);
-        sessionStorage.setItem('onboardingId', result.id);
-        sessionStorage.setItem('onboardingType', 'stay');
-        sessionStorage.setItem('id', result.id);
+        sessionStorage.setItem("onboardingId", result.id);
+        sessionStorage.setItem("onboardingType", "stay");
+        sessionStorage.setItem("id", result.id);
         sessionStorage.removeItem(STEP_STORAGE_KEY);
         sessionStorage.removeItem(FORM_STORAGE_KEY);
-        updateUserType('vendor');
-        toast.success('Stay onboarding saved successfully!');
+        updateUserType("vendor");
+        toast.success("Stay onboarding saved successfully!");
         navigate("/onboarding/selfie-verification");
         return;
       } else {
         toast.error("Could not save onboarding. Please try again.");
       }
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to save');
+      toast.error(e?.message || "Failed to save");
     } finally {
       setIsLoading(false);
     }
@@ -1035,19 +1140,11 @@ useEffect(() => {
     }
   };
 
-  const incrementValue = (
-    value: number,
-    setter: (val: number) => void,
-    max: number = 20,
-  ) => {
+  const incrementValue = (value: number, setter: (val: number) => void, max: number = 20) => {
     if (value < max) setter(value + 1);
   };
 
-  const decrementValue = (
-    value: number,
-    setter: (val: number) => void,
-    min: number = 1,
-  ) => {
+  const decrementValue = (value: number, setter: (val: number) => void, min: number = 1) => {
     if (value > min) setter(value - 1);
   };
 
@@ -1074,65 +1171,61 @@ useEffect(() => {
   };
 
   const updateRoom = (id: string, field: keyof Room, value: any) => {
-    setRooms((prev) =>
-      prev.map((room) => (room.id === id ? { ...room, [field]: value } : room))
-    );
+    setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, [field]: value } : room)));
   };
 
   const removeRoomImage = (roomId: string, index: number) => {
-    setRooms(prev => prev.map(room => {
-      if (room.id === roomId) {
-        return {
-          ...room,
-          photos: (room.photos || []).filter((_, i) => i !== index)
-        };
-      }
-      return room;
-    }));
+    setRooms((prev) =>
+      prev.map((room) => {
+        if (room.id === roomId) {
+          return {
+            ...room,
+            photos: (room.photos || []).filter((_, i) => i !== index),
+          };
+        }
+        return room;
+      }),
+    );
   };
 
-  const handleRoomImageUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    roomId: string
-  ) => {
+  const handleRoomImageUpload = (event: React.ChangeEvent<HTMLInputElement>, roomId: string) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
     const validFiles: File[] = [];
     for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        if (["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
-            validFiles.push(file);
-        }
+      const file = files[i];
+      if (["image/jpeg", "image/jpg", "image/png"].includes(file.type)) {
+        validFiles.push(file);
+      }
     }
 
     if (validFiles.length === 0) return;
 
-    const readPromises = validFiles.map(file => {
-        return new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(file);
-        });
+    const readPromises = validFiles.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
     });
 
-    Promise.all(readPromises).then(base64Images => {
-        setRooms(prev => prev.map(room => {
-            if (room.id === roomId) {
-                return {
-                    ...room,
-                    photos: [...(room.photos || []), ...base64Images]
-                };
-            }
-            return room;
-        }));
+    Promise.all(readPromises).then((base64Images) => {
+      setRooms((prev) =>
+        prev.map((room) => {
+          if (room.id === roomId) {
+            return {
+              ...room,
+              photos: [...(room.photos || []), ...base64Images],
+            };
+          }
+          return room;
+        }),
+      );
     });
   };
 
-  const handleImageUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-  ) => {
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -1172,7 +1265,7 @@ useEffect(() => {
   };
 
   const removeEntireStayImage = (index: number) => {
-    setEntireStayImages(prev => prev.filter((_, i) => i !== index));
+    setEntireStayImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUploadIDProof = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1205,51 +1298,51 @@ useEffect(() => {
 
   // Rules management functions
   const addEntireStayRule = () => {
-    setEntireStayRules(prev => [...prev, ""]);
+    setEntireStayRules((prev) => [...prev, ""]);
   };
 
   const removeEntireStayRule = (index: number) => {
-    setEntireStayRules(prev => prev.filter((_, i) => i !== index));
+    setEntireStayRules((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateEntireStayRule = (index: number, value: string) => {
-    setEntireStayRules(prev => prev.map((rule, i) => i === index ? value : rule));
+    setEntireStayRules((prev) => prev.map((rule, i) => (i === index ? value : rule)));
   };
 
   const addRoomRule = (roomId: string) => {
-    setRoomRules(prev => ({
+    setRoomRules((prev) => ({
       ...prev,
-      [roomId]: [...(prev[roomId] || [""]), ""]
+      [roomId]: [...(prev[roomId] || [""]), ""],
     }));
   };
 
   const removeRoomRule = (roomId: string, index: number) => {
-    setRoomRules(prev => {
+    setRoomRules((prev) => {
       const roomRulesList = prev[roomId] || [];
       return {
         ...prev,
-        [roomId]: roomRulesList.filter((_, i) => i !== index)
+        [roomId]: roomRulesList.filter((_, i) => i !== index),
       };
     });
   };
 
   const updateRoomRule = (roomId: string, index: number, value: string) => {
-    setRoomRules(prev => ({
+    setRoomRules((prev) => ({
       ...prev,
-      [roomId]: (prev[roomId] || []).map((rule, i) => i === index ? value : rule)
+      [roomId]: (prev[roomId] || []).map((rule, i) => (i === index ? value : rule)),
     }));
   };
 
   const addOptionalRule = () => {
-    setOptionalRules(prev => [...prev, ""]);
+    setOptionalRules((prev) => [...prev, ""]);
   };
 
   const removeOptionalRule = (index: number) => {
-    setOptionalRules(prev => prev.filter((_, i) => i !== index));
+    setOptionalRules((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateOptionalRule = (index: number, value: string) => {
-    setOptionalRules(prev => prev.map((rule, i) => i === index ? value : rule));
+    setOptionalRules((prev) => prev.map((rule, i) => (i === index ? value : rule)));
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1296,7 +1389,7 @@ useEffect(() => {
 `;
 
   const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
-    businessMapQuery
+    businessMapQuery,
   )}&output=embed`;
 
   // Compute features data for FeaturesStep
@@ -1333,10 +1426,18 @@ useEffect(() => {
 
   const handleDiscountToggle = (key: "firstUser" | "festival" | "weekly" | "special") => {
     switch (key) {
-      case "firstUser": setFirstUserDiscount(!firstUserDiscount); break;
-      case "festival": setFestivalOffers(!festivalOffers); break;
-      case "weekly": setWeeklyOffers(!weeklyOffers); break;
-      case "special": setSpecialOffers(!specialOffers); break;
+      case "firstUser":
+        setFirstUserDiscount(!firstUserDiscount);
+        break;
+      case "festival":
+        setFestivalOffers(!festivalOffers);
+        break;
+      case "weekly":
+        setWeeklyOffers(!weeklyOffers);
+        break;
+      case "special":
+        setSpecialOffers(!specialOffers);
+        break;
     }
   };
 
@@ -1364,12 +1465,29 @@ useEffect(() => {
   // Business details onChange handler
   const handleBusinessChange = (field: string, value: string) => {
     switch (field) {
-      case "brandName": setBrandName(value); clearError("brandName"); break;
-      case "companyName": setCompanyName(value); clearError("companyName"); break;
-      case "gstNumber": setGstNumber(value); break;
-      case "businessEmail": setBusinessEmail(value); clearError("businessEmail"); break;
-      case "businessPhone": setBusinessPhone(value); clearError("businessPhone"); break;
-      case "pincode": setBusinessPincode(value); clearError("businessPincode"); break;
+      case "brandName":
+        setBrandName(value);
+        clearError("brandName");
+        break;
+      case "companyName":
+        setCompanyName(value);
+        clearError("companyName");
+        break;
+      case "gstNumber":
+        setGstNumber(value);
+        break;
+      case "businessEmail":
+        setBusinessEmail(value);
+        clearError("businessEmail");
+        break;
+      case "businessPhone":
+        setBusinessPhone(value);
+        clearError("businessPhone");
+        break;
+      case "pincode":
+        setBusinessPincode(value);
+        clearError("businessPincode");
+        break;
     }
   };
 
@@ -1387,12 +1505,30 @@ useEffect(() => {
   // Personal details onChange handler
   const handlePersonalChange = (field: string, value: string) => {
     switch (field) {
-      case "firstName": setFirstName(value); clearError("firstName"); break;
-      case "lastName": setLastName(value); clearError("lastName"); break;
-      case "pincode": setPersonalPincode(value); clearError("personalPincode"); break;
-      case "dateOfBirth": setDateOfBirth(value); clearError("dateOfBirth"); break;
-      case "maritalStatus": setMaritalStatus(value); clearError("maritalStatus"); break;
-      case "idProof": setIdProof(value); clearError("idProof"); break;
+      case "firstName":
+        setFirstName(value);
+        clearError("firstName");
+        break;
+      case "lastName":
+        setLastName(value);
+        clearError("lastName");
+        break;
+      case "pincode":
+        setPersonalPincode(value);
+        clearError("personalPincode");
+        break;
+      case "dateOfBirth":
+        setDateOfBirth(value);
+        clearError("dateOfBirth");
+        break;
+      case "maritalStatus":
+        setMaritalStatus(value);
+        clearError("maritalStatus");
+        break;
+      case "idProof":
+        setIdProof(value);
+        clearError("idProof");
+        break;
     }
   };
 
@@ -1409,9 +1545,7 @@ useEffect(() => {
 
   const handleCategoryToggle = (categoryKey: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(categoryKey)
-        ? prev.filter((id) => id !== categoryKey)
-        : [...prev, categoryKey]
+      prev.includes(categoryKey) ? prev.filter((id) => id !== categoryKey) : [...prev, categoryKey],
     );
   };
 
@@ -1570,10 +1704,7 @@ useEffect(() => {
 
       case 7:
         return (
-          <TermsConditionsStep
-            termsAccepted={termsAccepted}
-            onTermsChange={setTermsAccepted}
-          />
+          <TermsConditionsStep termsAccepted={termsAccepted} onTermsChange={setTermsAccepted} />
         );
 
       default:
@@ -1591,12 +1722,10 @@ useEffect(() => {
       onBack={handleBack}
       onNext={handleNext}
     >
-      {status === 'rejected' && (
+      {status === "rejected" && (
         <div className="w-full max-w-4xl p-4 border border-red-200 bg-red-50 rounded-md">
           <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
-          <p className="text-red-700 text-sm">
-            Reason: {rejectionReason || 'No reason provided'}
-          </p>
+          <p className="text-red-700 text-sm">Reason: {rejectionReason || "No reason provided"}</p>
           <p className="text-red-600 text-xs mt-2">
             Please update the details and resubmit for approval.
           </p>

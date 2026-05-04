@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 interface User {
   id: string;
@@ -32,18 +32,23 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Demo credentials for testing
+// NOTE: This AuthContext is a legacy demo stub. Real admin authentication
+// runs through AdminLogin.tsx -> /api/admin/auth/login (see modules/admin-auth).
+// The simulated login below is intentionally non-functional — these values
+// are empty so no credentials live in source. Header.tsx and
+// ProfileDropdown.tsx still consume `useAuth().user`, so the file stays
+// until those components migrate to read the real adminToken.
 const DEMO_CREDENTIALS = {
-  email: 'demo@travel.com',
-  password: 'demo123',
-  otp: '22222'
+  email: "",
+  password: "",
+  otp: "",
 };
 
 const DEMO_USER: User = {
-  id: '1',
-  email: 'demo@travel.com',
-  firstName: 'Demo',
-  lastName: 'User'
+  id: "",
+  email: "",
+  firstName: "",
+  lastName: "",
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -53,26 +58,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check for stored authentication on app load
-    const storedUser = localStorage.getItem('travel_auth_user');
-    const onboardingStatus = localStorage.getItem('travel_onboarding_complete');
+    const storedUser = localStorage.getItem("travel_auth_user");
+    const onboardingStatus = localStorage.getItem("travel_onboarding_complete");
 
     if (storedUser) {
       setUser(JSON.parse(storedUser));
       setIsAuthenticated(true);
-      setNeedsOnboarding(onboardingStatus !== 'true');
+      setNeedsOnboarding(onboardingStatus !== "true");
     }
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     // Simulate API call with demo credentials
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
       setUser(DEMO_USER);
       setIsAuthenticated(true);
       setNeedsOnboarding(false); // Existing users don't need onboarding
-      localStorage.setItem('travel_auth_user', JSON.stringify(DEMO_USER));
-      localStorage.setItem('travel_onboarding_complete', 'true'); // Mark onboarding as complete for existing users
+      localStorage.setItem("travel_auth_user", JSON.stringify(DEMO_USER));
+      localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for existing users
       return true;
     }
     return false;
@@ -80,12 +85,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithGoogle = async (): Promise<boolean> => {
     // Simulate Google OAuth
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     setUser(DEMO_USER);
     setIsAuthenticated(true);
     setNeedsOnboarding(false); // Existing users don't need onboarding
-    localStorage.setItem('travel_auth_user', JSON.stringify(DEMO_USER));
-    localStorage.setItem('travel_onboarding_complete', 'true'); // Mark onboarding as complete for existing users
+    localStorage.setItem("travel_auth_user", JSON.stringify(DEMO_USER));
+    localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for existing users
     return true;
   };
 
@@ -93,32 +98,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
     setIsAuthenticated(false);
     setNeedsOnboarding(false);
-    localStorage.removeItem('travel_auth_user');
-    localStorage.removeItem('travel_onboarding_complete');
+    localStorage.removeItem("travel_auth_user");
+    localStorage.removeItem("travel_onboarding_complete");
   };
 
   const register = async (data: RegisterData): Promise<boolean> => {
     // Simulate registration API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     return true;
   };
 
   const verifyOTP = async (otp: string): Promise<boolean> => {
     // Simulate OTP verification
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise((resolve) => setTimeout(resolve, 800));
 
     if (otp === DEMO_CREDENTIALS.otp) {
       const newUser = {
-        id: '2',
-        email: 'newuser@travel.com',
-        firstName: 'New',
-        lastName: 'User'
+        id: "2",
+        email: "newuser@travel.com",
+        firstName: "New",
+        lastName: "User",
       };
       setUser(newUser);
       setIsAuthenticated(true);
       setNeedsOnboarding(false); // Skip onboarding for new users
-      localStorage.setItem('travel_auth_user', JSON.stringify(newUser));
-      localStorage.setItem('travel_onboarding_complete', 'true'); // Mark onboarding as complete for new users
+      localStorage.setItem("travel_auth_user", JSON.stringify(newUser));
+      localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for new users
       return true;
     }
     return false;
@@ -126,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const completeOnboarding = () => {
     setNeedsOnboarding(false);
-    localStorage.setItem('travel_onboarding_complete', 'true');
+    localStorage.setItem("travel_onboarding_complete", "true");
   };
 
   return (
@@ -140,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         register,
         verifyOTP,
-        completeOnboarding
+        completeOnboarding,
       }}
     >
       {children}
@@ -151,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
