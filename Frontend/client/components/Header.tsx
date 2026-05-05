@@ -3,7 +3,19 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import UserDropdown from "./UserDropdown";
-import { Bell, Menu, MessageCircle, MapPin, Calendar, Users, Search, X, Star, ChevronRight, LayoutDashboard } from "lucide-react";
+import {
+  Bell,
+  Menu,
+  MessageCircle,
+  MapPin,
+  Calendar,
+  Users,
+  Search,
+  X,
+  Star,
+  ChevronRight,
+  LayoutDashboard,
+} from "lucide-react";
 import { Sidebar } from "./Navigation";
 import ProfileDropdown from "./ProfileDropdown";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -16,36 +28,41 @@ import { CgLoadbarDoc } from "react-icons/cg";
 import { DateRange } from "react-date-range";
 import { notificationsApi } from "@/lib/api";
 
+// callbackFun + onNavigate are optional — most static marketing pages
+// (About, Contact, Help, Terms, Privacy, etc.) render Header without
+// passing them. The HomeHeader / HeaderWithFilters / Header functions
+// destructure with `() => {}` defaults so unused callbacks no-op
+// safely at runtime.
 interface HeaderProps {
   variant?: "transparent" | "white";
   className?: string;
-  callbackFun : any;
-  onNavigate : any;
+  callbackFun?: (filter: string) => void;
+  onNavigate?: (target: string) => void;
 }
 
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
 // ─── Breadcrumb label map ─────────────────────────────────────────────────────
 const ROUTE_LABELS: Record<string, string> = {
-  dashboard:    'Dashboard',
-  bookings:     'Bookings',
-  details:      'Booking Details',
-  offering:     'Offerings',
-  add:          'Add Offering',
-  edit:         'Edit',
-  revenue:      'Revenue',
-  marketing:    'Marketing',
-  offers:       'Offers',
-  analytics:    'Analytics',
-  dashchat:     'Chat',
-  'vendor-chat':'Chat',
-  settings:     'Settings',
-  account:      'Account',
-  preferences:  'Preferences',
-  notifications:'Notifications',
-  profile:      'Profile',
-  'user-profile':'User Profile',
-  help:         'Help',
+  dashboard: "Dashboard",
+  bookings: "Bookings",
+  details: "Booking Details",
+  offering: "Offerings",
+  add: "Add Offering",
+  edit: "Edit",
+  revenue: "Revenue",
+  marketing: "Marketing",
+  offers: "Offers",
+  analytics: "Analytics",
+  dashchat: "Chat",
+  "vendor-chat": "Chat",
+  settings: "Settings",
+  account: "Account",
+  preferences: "Preferences",
+  notifications: "Notifications",
+  profile: "Profile",
+  "user-profile": "User Profile",
+  help: "Help",
 };
 
 const isId = (s: string) =>
@@ -53,11 +70,11 @@ const isId = (s: string) =>
 
 function useBreadcrumbs() {
   const location = useLocation();
-  const segments = location.pathname.split('/').filter(Boolean);
+  const segments = location.pathname.split("/").filter(Boolean);
 
   return segments.map((seg, i) => ({
-    label: isId(seg) ? 'Details' : (ROUTE_LABELS[seg] ?? seg),
-    href: '/' + segments.slice(0, i + 1).join('/'),
+    label: isId(seg) ? "Details" : (ROUTE_LABELS[seg] ?? seg),
+    href: "/" + segments.slice(0, i + 1).join("/"),
     isLast: i === segments.length - 1,
   }));
 }
@@ -75,7 +92,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
-        const res = await notificationsApi.list(true, 1, 'vendor');
+        const res = await notificationsApi.list(true, 1, "vendor");
         if (res.success) setUnreadCount(res.totalUnread);
       } catch {
         // silent
@@ -87,7 +104,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   }, []);
 
   const handleSwitchToUser = async () => {
-    await updateUserType('user');
+    await updateUserType("user");
     navigate("/user-profile");
   };
 
@@ -101,7 +118,11 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         {/* Mobile drawer trigger */}
         <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="lg:hidden h-8 w-8 text-gray-500 dark:text-gray-400">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden h-8 w-8 text-gray-500 dark:text-gray-400"
+            >
               <Menu size={20} />
             </Button>
           </SheetTrigger>
@@ -124,7 +145,10 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
               </Link>
               {crumbs.map((crumb, i) => (
                 <React.Fragment key={crumb.href}>
-                  <ChevronRight size={10} className="text-gray-300 dark:text-gray-700 flex-shrink-0" />
+                  <ChevronRight
+                    size={10}
+                    className="text-gray-300 dark:text-gray-700 flex-shrink-0"
+                  />
                   {crumb.isLast ? (
                     <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
                       {crumb.label}
@@ -167,15 +191,15 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
           variant="ghost"
           size="icon"
           onClick={() => navigate("/notifications")}
-          className={`relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all motion-theme-toggle ${unreadCount > 0 ? 'notification-pulse' : ''}`}
+          className={`relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all motion-theme-toggle ${unreadCount > 0 ? "notification-pulse" : ""}`}
         >
           <Bell
             size={18}
-            className={`text-gray-600 dark:text-gray-300 ${unreadCount > 0 ? 'animate-bounce' : ''}`}
+            className={`text-gray-600 dark:text-gray-300 ${unreadCount > 0 ? "animate-bounce" : ""}`}
           />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white dark:border-gray-800 motion-unread-dot">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}
         </Button>
@@ -190,27 +214,29 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
           onLogoutClick={() => {}}
         />
 
-        <ChangePasswordModal
-          isOpen={isChangePasswordOpen}
-          onOpenChange={setIsChangePasswordOpen}
-        />
+        <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
       </div>
     </header>
   );
 }
 
-export function HomeHeader({ variant = "white", className = "", callbackFun = () => {}, onNavigate }: HeaderProps) {
+export function HomeHeader({
+  variant = "white",
+  className = "",
+  callbackFun = () => {},
+  onNavigate = () => {},
+}: HeaderProps) {
   const { user, updateUserType } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
- const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
+  const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) || "unique-stays",
   );
   const isTransparent = variant === "transparent";
 
   const [showFilters, setShowFilters] = useState(false);
   const [showHeaderSearchBar, setShowHeaderSearchBar] = useState(false);
-  
+
   const [selectedLocation, setSelectedLocation] = useState("");
   const [selectedLocationTo, setSelectedLocationTo] = useState("");
   const [checkInDate, setCheckInDate] = useState<Date | null>(null);
@@ -219,10 +245,10 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
     adults: 0,
     children: 0,
     infants: 0,
-    pet: 0
+    pet: 0,
   });
   const [activityName, setActivityName] = useState("Tracking");
-  
+
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showLocationToDropdown, setShowLocationToDropdown] = useState(false);
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
@@ -235,7 +261,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
   const calendarRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
 
- useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100) setShowFilters(true);
       else setShowFilters(false);
@@ -246,34 +272,19 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node)
-      ) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
         setShowCalendar(false);
       }
-      if (
-        locationRef.current &&
-        !locationRef.current.contains(event.target as Node)
-      ) {
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
       }
-      if (
-        locationToRef.current &&
-        !locationToRef.current.contains(event.target as Node)
-      ) {
+      if (locationToRef.current && !locationToRef.current.contains(event.target as Node)) {
         setShowLocationToDropdown(false);
       }
-      if (
-        guestRef.current &&
-        !guestRef.current.contains(event.target as Node)
-      ) {
+      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
         setShowGuestDropdown(false);
       }
-      if (
-        activityRef.current &&
-        !activityRef.current.contains(event.target as Node)
-      ) {
+      if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
         setShowActivityDropdown(false);
       }
     };
@@ -306,25 +317,25 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
   };
 
   const handleSwitchToVendor = async () => {
-    await updateUserType('vendor');
+    await updateUserType("vendor");
     navigate("/dashboard");
   };
-  
+
   // useEffect(() => {
   //   callbackFun(activeFilterHeader);
   // }, [callbackFun]);
- 
-  useEffect(() => {
-  if (typeof callbackFun === 'function') {
-    callbackFun(activeFilterHeader);
-  }
-}, [callbackFun, activeFilterHeader]);
 
-  
+  useEffect(() => {
+    if (typeof callbackFun === "function") {
+      callbackFun(activeFilterHeader);
+    }
+  }, [callbackFun, activeFilterHeader]);
+
   return (
-  <>
+    <>
       {/* Main Header */}
-      <nav className={`flex flex-col items-center bg-transparent justify-between w-full md:px-20 py-4 z-50 transition-all duration-300 ${showHeaderSearchBar ? 'bg-white dark:bg-gray-900' : ''}`}
+      <nav
+        className={`flex flex-col items-center bg-transparent justify-between w-full md:px-20 py-4 z-50 transition-all duration-300 ${showHeaderSearchBar ? "bg-white dark:bg-gray-900" : ""}`}
         // className={`flex items-center justify-between w-full md:px-20   py-4 z-50
         //   ${
         //     !user && isTransparent
@@ -338,31 +349,43 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
             <HomeLogoWebsite />
           </div>
 
-   {/* Sticky Filter Bar (only after scroll) */}
-     <div className="w-full">   {showFilters && !showHeaderSearchBar && (
-          <div className="max-md:hidden sticky top-0 z-30 w-full transition-all duration-300 animate-fade-in">
-            <div className="flex flex-wrap items-center gap-4 justify-center">
-              <FilterButton
-                icon={CamperVanIcon}
-                label="Camper Van"
-                active={activeFilterHeader === "camper-van"}
-                onClick={() => {setActiveFilterHeader("camper-van"), setShowHeaderSearchBar(true)}}
-              />
-              <FilterButton
-                icon={HomeIcon}
-                label="Unique Stays"
-                active={activeFilterHeader === "unique-stays"}
-                onClick={() => {setActiveFilterHeader("unique-stays"), setShowHeaderSearchBar(true)}}
-              />
-              <FilterButton
-                icon={RocketIcon}
-                label="Activity"
-                active={activeFilterHeader === "activity"}
-                onClick={() => {setActiveFilterHeader("activity"), setShowHeaderSearchBar(true)}}
-              />
-            </div>
+          {/* Sticky Filter Bar (only after scroll) */}
+          <div className="w-full">
+            {" "}
+            {showFilters && !showHeaderSearchBar && (
+              <div className="max-md:hidden sticky top-0 z-30 w-full transition-all duration-300 animate-fade-in">
+                <div className="flex flex-wrap items-center gap-4 justify-center">
+                  <FilterButton
+                    icon={CamperVanIcon}
+                    label="Camper Van"
+                    active={activeFilterHeader === "camper-van"}
+                    onClick={() => {
+                      setActiveFilterHeader("camper-van");
+                      setShowHeaderSearchBar(true);
+                    }}
+                  />
+                  <FilterButton
+                    icon={HomeIcon}
+                    label="Unique Stays"
+                    active={activeFilterHeader === "unique-stays"}
+                    onClick={() => {
+                      setActiveFilterHeader("unique-stays");
+                      setShowHeaderSearchBar(true);
+                    }}
+                  />
+                  <FilterButton
+                    icon={RocketIcon}
+                    label="Activity"
+                    active={activeFilterHeader === "activity"}
+                    onClick={() => {
+                      setActiveFilterHeader("activity");
+                      setShowHeaderSearchBar(true);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-        )}</div>
           {/* Nav Items */}
           <div className="hidden lg:flex items-center gap-10 flex-1 justify-center" />
 
@@ -378,7 +401,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
               onClick={() => navigate("/onboarding/service-selection")}
             >
               <div className="flex items-center gap-2">
-              <CgLoadbarDoc size={20}/>
+                <CgLoadbarDoc size={20} />
                 <span className="text-sm font-medium">List your offering</span>
               </div>
             </Button>
@@ -422,7 +445,9 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                         <input
                           type="text"
                           placeholder="Search location"
-                          value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
+                          value={
+                            selectedLocation === "Where are you going?" ? "" : selectedLocation
+                          }
                           onChange={(e) => {
                             setSelectedLocation(e.target.value);
                             setShowLocationDropdown(true);
@@ -445,10 +470,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Date Field */}
-                    <div
-                      ref={calendarRef}
-                      className="flex flex-col gap-2 flex-2 relative min-w-0"
-                    >
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-2 relative min-w-0">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-5 h-5" />
                         <span className="text-sm">Date</span>
@@ -496,10 +518,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Activity Name Field */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 min-w-0 relative"
-                      ref={activityRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 min-w-0 relative" ref={activityRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Star className="w-5 h-5" />
                         <span className="text-sm">Activity Name</span>
@@ -526,10 +545,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Guests Field */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 min-w-0 relative"
-                      ref={guestRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 min-w-0 relative" ref={guestRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="w-5 h-5" />
                         <span className="text-sm">Guests</span>
@@ -585,13 +601,17 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     >
                       <div className="flex items-center gap-2 text-gray-500">
                         <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">{activeFilterHeader === "camper-van" ? "Location From" : "Location"}</span>
+                        <span className="text-xs md:text-sm">
+                          {activeFilterHeader === "camper-van" ? "Location From" : "Location"}
+                        </span>
                       </div>
                       <div className="relative">
                         <input
                           type="text"
                           placeholder="Search location"
-                          value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
+                          value={
+                            selectedLocation === "Where are you going?" ? "" : selectedLocation
+                          }
                           onChange={(e) => {
                             setSelectedLocation(e.target.value);
                             setShowLocationDropdown(true);
@@ -629,7 +649,11 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                             <input
                               type="text"
                               placeholder="Search location"
-                              value={selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo}
+                              value={
+                                selectedLocationTo === "Where are you going?"
+                                  ? ""
+                                  : selectedLocationTo
+                              }
                               onChange={(e) => {
                                 setSelectedLocationTo(e.target.value);
                                 setShowLocationToDropdown(true);
@@ -655,13 +679,12 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Check-in/Checkout */}
-                    <div
-                      ref={calendarRef}
-                      className="flex flex-col gap-2 flex-1 relative min-w-0"
-                    >
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-1 relative min-w-0">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-5 h-5" />
-                        <span className="text-sm">{activeFilterHeader === "camper-van" ? "Check in" : "Check in"}</span>
+                        <span className="text-sm">
+                          {activeFilterHeader === "camper-van" ? "Check in" : "Check in"}
+                        </span>
                       </div>
                       <button
                         onClick={() => {
@@ -730,10 +753,7 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Guests */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 relative min-w-0"
-                      ref={guestRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 relative min-w-0" ref={guestRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="w-5 h-5" />
                         <span className="text-sm">Guests</span>
@@ -782,23 +802,27 @@ export function HomeHeader({ variant = "white", className = "", callbackFun = ()
           </div>
         )}
       </nav>
-     
     </>
   );
 }
 
-export function HeaderWithFilters({ variant = "white", className = "", callbackFun = () => {}, onNavigate }: HeaderProps) {
+export function HeaderWithFilters({
+  variant = "white",
+  className = "",
+  callbackFun = () => {},
+  onNavigate = () => {},
+}: HeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
- const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
+  const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) || "unique-stays",
   );
   const isTransparent = variant === "transparent";
 
   const [showFilters, setShowFilters] = useState(false);
 
- useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100) setShowFilters(true);
       else setShowFilters(false);
@@ -808,27 +832,24 @@ export function HeaderWithFilters({ variant = "white", className = "", callbackF
   }, []);
 
   const handleSwitchToVendor = () => navigate("/dashboard");
-  
+
   // useEffect(() => {
   //   callbackFun(activeFilterHeader);
   // }, [callbackFun]);
- 
-  useEffect(() => {
-  if (typeof callbackFun === 'function') {
-    callbackFun(activeFilterHeader);
-  }
-}, [callbackFun, activeFilterHeader]);
 
-  
+  useEffect(() => {
+    if (typeof callbackFun === "function") {
+      callbackFun(activeFilterHeader);
+    }
+  }, [callbackFun, activeFilterHeader]);
+
   return (
-  <>
+    <>
       {/* Main Header */}
       <nav
         className={`flex items-center bg-white justify-between w-full  md:px-20   py-1 z-30
           ${
-            !user && isTransparent
-              ? "bg-transparent"
-              : "bg-white dark:bg-black dark:text-white"
+            !user && isTransparent ? "bg-transparent" : "bg-white dark:bg-black dark:text-white"
           } ${className}`}
       >
         {/* Logo */}
@@ -836,31 +857,43 @@ export function HeaderWithFilters({ variant = "white", className = "", callbackF
           <LogoWebsite />
         </div>
 
- {/* Sticky Filter Bar (only after scroll) */}
-   <div className="w-full">   {showFilters && (
-        <div className="max-md:hidden sticky top-0 z-30 w-full transition-all duration-300 animate-fade-in">
-          <div className="flex flex-wrap items-center gap-4 justify-center">
-            <FilterButton
-              icon={CamperVanIcon}
-              label="Camper Van"
-              active={activeFilterHeader === "camper-van"}
-              onClick={() => {setActiveFilterHeader("camper-van"),onNavigate("Searchbar")}}
-            />
-            <FilterButton
-              icon={HomeIcon}
-              label="Unique Stays"
-              active={activeFilterHeader === "unique-stays"}
-              onClick={() => {setActiveFilterHeader("unique-stays"),onNavigate("Searchbar")}}
-            />
-            <FilterButton
-              icon={RocketIcon}
-              label="Activity"
-              active={activeFilterHeader === "activity"}
-              onClick={() => {setActiveFilterHeader("activity"),onNavigate("Searchbar")}}
-            />
-          </div>
+        {/* Sticky Filter Bar (only after scroll) */}
+        <div className="w-full">
+          {" "}
+          {showFilters && (
+            <div className="max-md:hidden sticky top-0 z-30 w-full transition-all duration-300 animate-fade-in">
+              <div className="flex flex-wrap items-center gap-4 justify-center">
+                <FilterButton
+                  icon={CamperVanIcon}
+                  label="Camper Van"
+                  active={activeFilterHeader === "camper-van"}
+                  onClick={() => {
+                    setActiveFilterHeader("camper-van");
+                    onNavigate("Searchbar");
+                  }}
+                />
+                <FilterButton
+                  icon={HomeIcon}
+                  label="Unique Stays"
+                  active={activeFilterHeader === "unique-stays"}
+                  onClick={() => {
+                    setActiveFilterHeader("unique-stays");
+                    onNavigate("Searchbar");
+                  }}
+                />
+                <FilterButton
+                  icon={RocketIcon}
+                  label="Activity"
+                  active={activeFilterHeader === "activity"}
+                  onClick={() => {
+                    setActiveFilterHeader("activity");
+                    onNavigate("Searchbar");
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
-      )}</div>
         {/* Nav Items */}
         <div className="hidden lg:flex items-center gap-10 flex-1 justify-center" />
 
@@ -876,7 +909,7 @@ export function HeaderWithFilters({ variant = "white", className = "", callbackF
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
-            <CgLoadbarDoc size={20}/>
+              <CgLoadbarDoc size={20} />
               <span className="text-sm font-medium">List your offering</span>
             </div>
           </Button>
@@ -898,23 +931,26 @@ export function HeaderWithFilters({ variant = "white", className = "", callbackF
           )}
         </div>
       </nav>
-
-     
     </>
   );
 }
-function Header({ variant = "white", className = "", callbackFun = () => {}, onNavigate }: HeaderProps) {
+function Header({
+  variant = "white",
+  className = "",
+  callbackFun = () => {},
+  onNavigate = () => {},
+}: HeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
- const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
+  const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) || "unique-stays",
   );
   const isTransparent = variant === "transparent";
 
   const [showFilters, setShowFilters] = useState(false);
 
- useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100) setShowFilters(true);
       else setShowFilters(false);
@@ -924,20 +960,19 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
   }, []);
 
   const handleSwitchToVendor = () => navigate("/dashboard");
-  
+
   // useEffect(() => {
   //   callbackFun(activeFilterHeader);
   // }, [callbackFun]);
- 
-  useEffect(() => {
-  if (typeof callbackFun === 'function') {
-    callbackFun(activeFilterHeader);
-  }
-}, [callbackFun, activeFilterHeader]);
 
-  
+  useEffect(() => {
+    if (typeof callbackFun === "function") {
+      callbackFun(activeFilterHeader);
+    }
+  }, [callbackFun, activeFilterHeader]);
+
   return (
-  <>
+    <>
       {/* Main Header */}
       <nav
         className={`sticky top-0 flex items-center justify-between px-4 md:px-10 py-2 z-50 border-b border-gray-100 dark:border-gray-800 backdrop-blur-sm shadow-sm
@@ -952,7 +987,6 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
           <LogoWebsite />
         </div>
 
- 
         {/* Nav Items */}
         <div className="hidden lg:flex items-center gap-10 flex-1 justify-center" />
 
@@ -968,7 +1002,7 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
-            <CgLoadbarDoc size={20}/>
+              <CgLoadbarDoc size={20} />
               <span className="text-sm font-medium">List your offering</span>
             </div>
           </Button>
@@ -990,8 +1024,6 @@ function Header({ variant = "white", className = "", callbackFun = () => {}, onN
           )}
         </div>
       </nav>
-
-     
     </>
   );
 }
@@ -1119,19 +1151,11 @@ function HeaderGuestDropdown({
   onClose,
 }: {
   guests: { adults: number; children: number; infants: number; pet: number };
-  onUpdate: (guests: {
-    adults: number;
-    children: number;
-    infants: number;
-    pet: number
-  }) => void;
+  onUpdate: (guests: { adults: number; children: number; infants: number; pet: number }) => void;
   onClose: () => void;
 }) {
-  const updateGuests = (
-    type: "adults" | "children" | "infants" | "pet",
-    increment: boolean
-  ) => {
-    const current = guests[type] || 0; 
+  const updateGuests = (type: "adults" | "children" | "infants" | "pet", increment: boolean) => {
+    const current = guests[type] || 0;
 
     onUpdate({
       ...guests,
@@ -1178,9 +1202,7 @@ function HeaderGuestDropdown({
             >
               -
             </button>
-            <span className="w-8 text-center text-black">
-              {guests.children}
-            </span>
+            <span className="w-8 text-center text-black">{guests.children}</span>
             <button
               onClick={() => updateGuests("children", true)}
               className="w-8 h-8 border border-gray-300 rounded-full flex items-center justify-center hover:border-black transition-colors"
@@ -1235,7 +1257,7 @@ function HeaderGuestDropdown({
             </button>
           </div>
         </div>
-        
+
         <Button
           onClick={onClose}
           className="w-full bg-black text-white rounded-full py-3 hover:bg-gray-800 transition-colors"
@@ -1254,13 +1276,7 @@ function HeaderActivityDropdown({
   onSelect: (activity: string) => void;
   onClose: () => void;
 }) {
-  const activities = [
-    "Tracking",
-    "Hiking",
-    "Camping",
-    "Photography",
-    "Bird Watching",
-  ];
+  const activities = ["Tracking", "Hiking", "Camping", "Photography", "Bird Watching"];
 
   return (
     <div className="absolute top-full left-0 mt-2 w-full max-w-sm bg-white rounded-3xl shadow-lg p-6 z-[9999] min-w-[300px]">

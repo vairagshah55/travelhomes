@@ -23,11 +23,12 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "dist/spa",
     },
-    plugins: [
-      react({
-        jsxRuntime: "classic",
-      }),
-    ],
+    // @vitejs/plugin-react-swc defaults to the automatic JSX runtime, which
+    // matches "jsx": "react-jsx" in tsconfig.json. Component files no longer
+    // need an explicit `import React`. The previous `jsxRuntime: "classic"`
+    // is no longer a valid option in the current plugin version (TS2353)
+    // and was forcing 82 UMD-global errors across 13 component files.
+    plugins: [react()],
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./client"),
