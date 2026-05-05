@@ -126,7 +126,7 @@ const usersRouter = require("../modules/users/users.router");
 // Import all migrated routes
 console.log("Loading activities routes...");
 const activitiesRoutes = require("../routes/activities");
-const adminAnalyticsRoutes = require("../routes/adminAnalytics");
+const adminAnalyticsRoutes = require("../modules/admin-analytics/admin-analytics.router");
 const adminAuthRouter = require("../modules/admin-auth/admin-auth.router");
 const adminCrmRoutes = require("../modules/admin-crm/admin-crm.router");
 const adminDashboardRoutes = require("../modules/admin-dashboard/admin-dashboard.router");
@@ -155,7 +155,7 @@ const settingsRoutes = require("../modules/settings/settings.router");
 const staysRoutes = require("../routes/stays");
 const tripsRoutes = require("../modules/trips/trips.router");
 const usersRoutes = require("../modules/users/users.router");
-const vendorAnalyticsRoutes = require("../routes/vendorAnalytics");
+const vendorAnalyticsRoutes = require("../modules/vendor-analytics/vendor-analytics.router");
 const vendorChatsRoutes = require("../routes/vendorChats");
 const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
 const vendorsRoutes = require("../modules/vendors/vendors.router");
@@ -218,7 +218,7 @@ app.use("/api/stays", staysRoutes);
 app.use("/api/profile", profileRoutes);
 
 // Vendor Analytics
-app.use("/api", vendorAnalyticsRoutes);
+app.use("/api/vendorAnalytics", vendorAnalyticsRoutes);
 
 // Marketing routes for Vendors (protected)
 app.use("/api/marketing", requireJwt(), marketingRoutes);
