@@ -1,151 +1,126 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+/**
+ * Admin auth context — backed by the real adminToken + /api/admin/auth/me.
+ *
+ * Replaces a previous demo stub that simulated login with hardcoded
+ * `demo@travel.com / demo123` credentials. Real admin login lives in
+ * `pages/AdminLogin.tsx` which posts to `/api/admin/auth/login` and stores
+ * the JWT under the `adminToken` localStorage / sessionStorage key.
+ *
+ * Responsibilities:
+ *   - On mount, read `adminToken` from storage; if present, fetch the
+ *     authenticated admin via /me.
+ *   - Expose `user`, `isAuthenticated`, `isLoading`, and a real `logout()`
+ *     that clears both storages and the in-memory state.
+ *
+ * The `firstName` / `lastName` fields are derived from the server's `name`
+ * field so existing consumers (`ProfileDropdown.tsx`) keep working without
+ * changes.
+ */
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { adminAuthService } from "@/services/api";
 
-interface User {
-  id: string;
+interface AdminUser {
   email: string;
+  name: string;
   firstName: string;
   lastName: string;
+  role?: string;
+  status?: string;
+  joinDate?: string;
+  lastLogin?: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AdminUser | null;
   isAuthenticated: boolean;
-  needsOnboarding: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  loginWithGoogle: () => Promise<boolean>;
+  /** True while we're checking the stored token + fetching /me on first mount. */
+  isLoading: boolean;
+  /** Clear the adminToken from both storages and the in-memory user. */
   logout: () => void;
-  register: (data: RegisterData) => Promise<boolean>;
-  verifyOTP: (otp: string) => Promise<boolean>;
-  completeOnboarding: () => void;
-}
-
-interface RegisterData {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  state: string;
-  city: string;
-  email: string;
-  mobile: string;
-  password: string;
+  /** Re-fetch the current admin from /me. Useful after profile updates. */
+  refresh: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// NOTE: This AuthContext is a legacy demo stub. Real admin authentication
-// runs through AdminLogin.tsx -> /api/admin/auth/login (see modules/admin-auth).
-// The simulated login below is intentionally non-functional — these values
-// are empty so no credentials live in source. Header.tsx and
-// ProfileDropdown.tsx still consume `useAuth().user`, so the file stays
-// until those components migrate to read the real adminToken.
-const DEMO_CREDENTIALS = {
-  email: "",
-  password: "",
-  otp: "",
-};
+function readAdminToken(): string | null {
+  return localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+}
 
-const DEMO_USER: User = {
-  id: "",
-  email: "",
-  firstName: "",
-  lastName: "",
-};
+function clearAdminToken() {
+  localStorage.removeItem("adminToken");
+  sessionStorage.removeItem("adminToken");
+}
+
+// Split "Alex Rivera" -> { firstName: "Alex", lastName: "Rivera" }.
+// Single-word names map to firstName only.
+function splitName(name: string | undefined): { firstName: string; lastName: string } {
+  const trimmed = String(name ?? "").trim();
+  if (!trimmed) return { firstName: "", lastName: "" };
+  const parts = trimmed.split(/\s+/);
+  const firstName = parts[0];
+  const lastName = parts.slice(1).join(" ");
+  return { firstName, lastName };
+}
+
+function toUser(adminPayload: Record<string, unknown> | null | undefined): AdminUser | null {
+  if (!adminPayload || typeof adminPayload !== "object") return null;
+  const a = adminPayload as Record<string, unknown>;
+  const name = (a.name as string) ?? "";
+  const { firstName, lastName } = splitName(name);
+  return {
+    email: (a.email as string) ?? "",
+    name,
+    firstName,
+    lastName,
+    role: a.role as string | undefined,
+    status: a.status as string | undefined,
+    joinDate: a.joinDate as string | undefined,
+    lastLogin: a.lastLogin as string | undefined,
+  };
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    // Check for stored authentication on app load
-    const storedUser = localStorage.getItem("travel_auth_user");
-    const onboardingStatus = localStorage.getItem("travel_onboarding_complete");
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-      setNeedsOnboarding(onboardingStatus !== "true");
+  const refresh = useCallback(async () => {
+    if (!readAdminToken()) {
+      setUser(null);
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const resp = await adminAuthService.getMe();
+      setUser(toUser(resp?.admin));
+    } catch {
+      // The api response interceptor already clears the token + redirects on
+      // 401. For other failures (network / 5xx), we keep the existing user
+      // (likely null) and stop loading; the next page-level fetch will
+      // surface a clearer error.
+      setUser(null);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call with demo credentials
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-    if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
-      setUser(DEMO_USER);
-      setIsAuthenticated(true);
-      setNeedsOnboarding(false); // Existing users don't need onboarding
-      localStorage.setItem("travel_auth_user", JSON.stringify(DEMO_USER));
-      localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for existing users
-      return true;
-    }
-    return false;
-  };
-
-  const loginWithGoogle = async (): Promise<boolean> => {
-    // Simulate Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setUser(DEMO_USER);
-    setIsAuthenticated(true);
-    setNeedsOnboarding(false); // Existing users don't need onboarding
-    localStorage.setItem("travel_auth_user", JSON.stringify(DEMO_USER));
-    localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for existing users
-    return true;
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
+    clearAdminToken();
     setUser(null);
-    setIsAuthenticated(false);
-    setNeedsOnboarding(false);
-    localStorage.removeItem("travel_auth_user");
-    localStorage.removeItem("travel_onboarding_complete");
-  };
-
-  const register = async (data: RegisterData): Promise<boolean> => {
-    // Simulate registration API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return true;
-  };
-
-  const verifyOTP = async (otp: string): Promise<boolean> => {
-    // Simulate OTP verification
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    if (otp === DEMO_CREDENTIALS.otp) {
-      const newUser = {
-        id: "2",
-        email: "newuser@travel.com",
-        firstName: "New",
-        lastName: "User",
-      };
-      setUser(newUser);
-      setIsAuthenticated(true);
-      setNeedsOnboarding(false); // Skip onboarding for new users
-      localStorage.setItem("travel_auth_user", JSON.stringify(newUser));
-      localStorage.setItem("travel_onboarding_complete", "true"); // Mark onboarding as complete for new users
-      return true;
-    }
-    return false;
-  };
-
-  const completeOnboarding = () => {
-    setNeedsOnboarding(false);
-    localStorage.setItem("travel_onboarding_complete", "true");
-  };
+  }, []);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
-        needsOnboarding,
-        login,
-        loginWithGoogle,
+        isAuthenticated: !!user,
+        isLoading,
         logout,
-        register,
-        verifyOTP,
-        completeOnboarding,
+        refresh,
       }}
     >
       {children}
@@ -153,12 +128,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
+export const useAuth = (): AuthContextType => {
+  const ctx = useContext(AuthContext);
+  if (ctx === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  return ctx;
 };
-
-export { DEMO_CREDENTIALS };
