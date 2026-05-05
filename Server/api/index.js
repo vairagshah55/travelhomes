@@ -142,7 +142,7 @@ const cmsRoutes = require("../routes/cms");
 const cmsMediaRoutes = require("../routes/cmsMedia");
 const contactRoutes = require("../modules/contact/contact.router");
 const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
-const managementRoutes = require("../routes/management");
+const managementRoutes = require("../modules/management/management.router");
 const marketingRoutes = require("../modules/marketing/marketing.router");
 console.log("Loading offers routes...");
 const offersRoutes = require("../routes/offers");
