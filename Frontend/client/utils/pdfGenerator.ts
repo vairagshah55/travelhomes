@@ -21,7 +21,7 @@ export const generatePDF = async (elementId: string, options: PDFOptions) => {
   const opt = {
     margin: 10,
     filename: options.filename || "document.pdf",
-    image: { type: "jpeg", quality: 0.98 },
+    image: { type: "jpeg" as const, quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true },
     jsPDF: {
       orientation: options.orientation || "portrait",
@@ -89,7 +89,7 @@ export const downloadDetailsAsPDF = async (
   const opt = {
     margin: 10,
     filename: filename,
-    image: { type: "jpeg", quality: 0.98 },
+    image: { type: "jpeg" as const, quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true },
     jsPDF: {
       orientation: "portrait" as const,

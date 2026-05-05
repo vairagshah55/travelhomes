@@ -66,16 +66,16 @@ export default function ShareModal({
       });
 
       const opt = {
-        margin: [10, 10, 10, 10], // top, left, bottom, right
+        margin: [10, 10, 10, 10] as [number, number, number, number], // top, left, bottom, right
         filename: `${title.replace(/\s+/g, "_")}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
+        image: { type: "jpeg" as const, quality: 0.98 },
         html2canvas: {
           scale: 2,
           useCORS: true,
           scrollY: 0,
           // Removed fixed windowWidth to let element determine its own layout
         },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
         pagebreak: { mode: ["avoid-all", "css", "legacy"] },
       };
 
