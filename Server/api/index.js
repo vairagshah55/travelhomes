@@ -133,7 +133,7 @@ const adminDashboardRoutes = require("../routes/adminDashboard");
 const adminRolesRoutes = require("../routes/adminRoles");
 const adminStaffRoutes = require("../routes/adminStaff");
 const authModuleRouter = require("../modules/auth/auth.router");
-const blogsRoutes = require("../routes/blogs");
+const blogsRoutes = require("../modules/blogs/blogs.router");
 const bookingDetailsRoutes = require("../modules/booking-details/booking-details.router");
 const bookingsRouter = require("../modules/bookings/bookings.router");
 const calendarBookingRoutes = require("../modules/calendar-bookings/calendar-bookings.router");
@@ -143,18 +143,18 @@ const cmsMediaRoutes = require("../routes/cmsMedia");
 const contactRoutes = require("../modules/contact/contact.router");
 const demoRoutes = require("../routes/demo");
 const globlsettingRoutes = require("../routes/globlsetting");
-const helpdeskRoutes = require("../routes/helpdesk");
+const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
 const managementRoutes = require("../routes/management");
-const marketingRoutes = require("../routes/marketing");
+const marketingRoutes = require("../modules/marketing/marketing.router");
 console.log("Loading offers routes...");
 const offersRoutes = require("../routes/offers");
 const onboardingRoutes = require("../routes/onboarding");
 const paymentsRouter = require("../modules/payments/payments.router");
-const pluginsRoutes = require("../routes/plugins");
+const pluginsRoutes = require("../modules/plugins/plugins.router");
 const profileRoutes = require("../routes/profile");
 const settingsRoutes = require("../routes/settings");
 const staysRoutes = require("../routes/stays");
-const tripsRoutes = require("../routes/trips");
+const tripsRoutes = require("../modules/trips/trips.router");
 const usersRoutes = require("../routes/users");
 const vendorAnalyticsRoutes = require("../routes/vendorAnalytics");
 const vendorChatsRoutes = require("../routes/vendorChats");
@@ -202,7 +202,7 @@ app.use("/api/demo", demoRoutes);
 app.use("/api/onboarding", onboardingRoutes);
 
 // Trips routes
-app.use("/api", tripsRoutes);
+app.use("/api/trips", tripsRoutes);
 
 // Calendar Booking routes
 app.use("/api/calendarbooking", calendarBookingRoutes);
