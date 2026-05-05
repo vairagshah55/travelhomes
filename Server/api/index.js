@@ -13,7 +13,7 @@ const { requireJwt } = require("../middleware/auth");
 const { Server } = require("socket.io");
 const session = require("express-session");
 const passport = require("../config/passport");
-const googleAuthRoutes = require("../routes/googleAuth");
+const googleAuthRoutes = require("../modules/google-auth/google-auth.router");
 const logger = require("../shared/logger");
 const requestId = require("../shared/requestId");
 const { notFoundHandler, errorHandler } = require("../shared/errorMiddleware");
@@ -176,10 +176,13 @@ app.get("/api/health", (req, res) => {
 // Public auth + user routes.
 // /api/auth registration + OTP + Google sign-in is owned by the layered auth module
 // (its own rate limiter is built in). The browser-redirect Google OAuth flow
-// (GET /api/auth/google + /callback) lives in routes/googleAuth.js, mounted next.
+// (GET /api/auth/google + GET /api/auth/google/callback) lives in
+// modules/google-auth — it has to share the /api/auth prefix so the passport
+// strategy's configured callbackURL (/api/auth/google/callback) resolves.
+// Layered auth owns POST /google; google-auth owns GET /google + GET /google/callback.
 app.use("/api/auth", authModuleRouter);
+app.use("/api/auth", googleAuthRoutes);
 app.use("/api/user", usersRouter);
-app.use("/api", googleAuthRoutes);
 
 // Vendor (and user) login + password reset + account update.
 // Rate limiters and validation are built into the module router.
