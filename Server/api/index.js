@@ -141,7 +141,6 @@ const campervansRoutes = require("../routes/campervans");
 const cmsRoutes = require("../routes/cms");
 const cmsMediaRoutes = require("../routes/cmsMedia");
 const contactRoutes = require("../modules/contact/contact.router");
-const demoRoutes = require("../routes/demo");
 const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
 const managementRoutes = require("../routes/management");
 const marketingRoutes = require("../modules/marketing/marketing.router");
@@ -156,7 +155,7 @@ const staysRoutes = require("../routes/stays");
 const tripsRoutes = require("../modules/trips/trips.router");
 const usersRoutes = require("../modules/users/users.router");
 const vendorAnalyticsRoutes = require("../modules/vendor-analytics/vendor-analytics.router");
-const vendorChatsRoutes = require("../routes/vendorChats");
+const vendorChatsRoutes = require("../modules/vendor-chats/vendor-chats.router");
 const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
 const vendorsRoutes = require("../modules/vendors/vendors.router");
 const vendorSettingRoutes = require("../modules/vendor-setting/vendor-setting.router");
@@ -194,8 +193,6 @@ app.use("/api/admin/auth", adminAuthRouter);
 
 // 🔐 Protect ALL other admin routes
 app.use("/api/admin", requireJwt({ adminOnly: true }));
-// Demo route
-app.use("/api/demo", demoRoutes);
 
 // Onboarding routes
 app.use("/api/onboarding", onboardingRoutes);
