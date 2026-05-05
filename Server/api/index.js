@@ -121,7 +121,7 @@ const invoicesDir = path.join(process.cwd(), "invoices");
 app.use("/invoices", express.static(invoicesDir));
 
 // Import ALL routes
-const userroutes = require("../routes/userRoutes");
+const usersRouter = require("../modules/users/users.router");
 
 // Import all migrated routes
 console.log("Loading activities routes...");
@@ -150,15 +150,15 @@ const offersRoutes = require("../routes/offers");
 const onboardingRoutes = require("../routes/onboarding");
 const paymentsRouter = require("../modules/payments/payments.router");
 const pluginsRoutes = require("../modules/plugins/plugins.router");
-const profileRoutes = require("../routes/profile");
+const profileRoutes = require("../modules/profile/profile.router");
 const settingsRoutes = require("../modules/settings/settings.router");
 const staysRoutes = require("../routes/stays");
 const tripsRoutes = require("../modules/trips/trips.router");
-const usersRoutes = require("../routes/users");
+const usersRoutes = require("../modules/users/users.router");
 const vendorAnalyticsRoutes = require("../routes/vendorAnalytics");
 const vendorChatsRoutes = require("../routes/vendorChats");
 const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
-const vendorsRoutes = require("../routes/vendors");
+const vendorsRoutes = require("../modules/vendors/vendors.router");
 const vendorSettingRoutes = require("../modules/vendor-setting/vendor-setting.router");
 const notificationsRoutes = require("../modules/notifications/notifications.router");
 const subscribersRoutes = require("../modules/subscribers/subscribers.router");
@@ -181,7 +181,7 @@ app.get("/api/health", (req, res) => {
 // (its own rate limiter is built in). The browser-redirect Google OAuth flow
 // (GET /api/auth/google + /callback) lives in routes/googleAuth.js, mounted next.
 app.use("/api/auth", authModuleRouter);
-app.use("/api/user", userroutes);
+app.use("/api/user", usersRouter);
 app.use("/api", googleAuthRoutes);
 
 // Vendor (and user) login + password reset + account update.
