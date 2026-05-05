@@ -281,7 +281,7 @@ const UserProfileEdit = () => {
       try {
         if (!user?.email) return;
         const res = await userProfileApi.get(user.email);
-        const p = res.data || {};
+        const p: Record<string, any> = res.data || {};
 
         const firstName = p.firstName || user.firstName || "";
         const lastName = p.lastName || user.lastName || "";

@@ -6,21 +6,13 @@ export function GuestDropdown({
   onUpdate,
   onClose,
 }: {
-  guests: { adults: number; children: number; infants: number; pet?: number };
-  onUpdate: (guests: {
-    adults: number;
-    children: number;
-    infants: number;
-    pet?: number;
-  }) => void;
+  guests: { adults: number; children: number; infants: number; pet: number };
+  onUpdate: (guests: { adults: number; children: number; infants: number; pet: number }) => void;
   onClose: () => void;
 }) {
   const [local, setLocal] = useState({ ...guests });
 
-  const updateLocal = (
-    type: "adults" | "children" | "infants" | "pet",
-    increment: boolean
-  ) => {
+  const updateLocal = (type: "adults" | "children" | "infants" | "pet", increment: boolean) => {
     const current = local[type] || 0;
     setLocal((prev) => ({
       ...prev,
@@ -46,7 +38,9 @@ export function GuestDropdown({
     min?: number;
     isLast?: boolean;
   }) => (
-    <div className={`flex items-center justify-between py-2.5 ${!isLast ? "border-b border-gray-100" : ""}`}>
+    <div
+      className={`flex items-center justify-between py-2.5 ${!isLast ? "border-b border-gray-100" : ""}`}
+    >
       <div className="text-left">
         <div className="font-semibold text-sm text-gray-900">{label}</div>
         <div className="text-[11px] text-gray-400 mt-px">{subtitle}</div>
@@ -59,7 +53,9 @@ export function GuestDropdown({
         >
           -
         </button>
-        <span className="w-5 text-center text-sm font-semibold text-gray-900 tabular-nums">{local[type] || 0}</span>
+        <span className="w-5 text-center text-sm font-semibold text-gray-900 tabular-nums">
+          {local[type] || 0}
+        </span>
         <button
           onClick={() => updateLocal(type, true)}
           className="w-7 h-7 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm hover:border-gray-900 hover:text-gray-900 transition-all duration-150"

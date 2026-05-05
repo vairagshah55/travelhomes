@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Calendar,
@@ -16,7 +16,7 @@ import {
   Pin,
   PinOff,
   Globe,
-} from 'lucide-react';
+} from "lucide-react";
 
 interface MenuItem {
   id: string;
@@ -27,63 +27,87 @@ interface MenuItem {
   badge?: number;
 }
 
+// Sidebar accepts a handful of shapes across the codebase — nothing is
+// required. The component reads `forceExpanded` and `defaultCollapsed`
+// internally; the rest of the props (`isCollapsed`, `onToggleCollapse`,
+// `setIsCollapsed`, `isMobile`) are accepted for compatibility with the
+// various call sites in pages/ but are ignored at the component level.
 interface SidebarProps {
   defaultCollapsed?: boolean;
   onToggle?: (collapsed: boolean) => void;
+  forceExpanded?: boolean;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  setIsCollapsed?: (collapsed: boolean) => void;
+  isMobile?: boolean;
 }
 
 const menuItems: MenuItem[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   {
-    id: 'bookings', label: 'Bookings', icon: Calendar, path: '/bookings',
+    id: "bookings",
+    label: "Bookings",
+    icon: Calendar,
+    path: "/bookings",
     children: [
-      { id: 'all-bookings',     label: 'All Bookings', icon: Calendar, path: '/bookings' },
-      { id: 'booking-details',  label: 'Details',      icon: FileText, path: '/bookings/details' },
+      { id: "all-bookings", label: "All Bookings", icon: Calendar, path: "/bookings" },
+      { id: "booking-details", label: "Details", icon: FileText, path: "/bookings/details" },
     ],
   },
   {
-    id: 'offering', label: 'Offerings', icon: Package, path: '/offering',
+    id: "offering",
+    label: "Offerings",
+    icon: Package,
+    path: "/offering",
     children: [
-      { id: 'all-offerings', label: 'All Offerings', icon: Package, path: '/offering' },
-      { id: 'add-offering',  label: 'Add New',       icon: Package, path: '/offering/add' },
+      { id: "all-offerings", label: "All Offerings", icon: Package, path: "/offering" },
+      { id: "add-offering", label: "Add New", icon: Package, path: "/offering/add" },
     ],
   },
-  { id: 'revenue',   label: 'Revenue',   icon: DollarSign,    path: '/revenue'    },
+  { id: "revenue", label: "Revenue", icon: DollarSign, path: "/revenue" },
   {
-    id: 'marketing', label: 'Marketing', icon: BarChart3, path: '/marketing',
+    id: "marketing",
+    label: "Marketing",
+    icon: BarChart3,
+    path: "/marketing",
     children: [
-      { id: 'marketing-home', label: 'Overview', icon: BarChart3, path: '/marketing' },
-      { id: 'offers',         label: 'Offers',   icon: Package,   path: '/marketing/offers' },
+      { id: "marketing-home", label: "Overview", icon: BarChart3, path: "/marketing" },
+      { id: "offers", label: "Offers", icon: Package, path: "/marketing/offers" },
     ],
   },
-  { id: 'analytics', label: 'Analytics', icon: BarChart3,     path: '/analytics'  },
-  { id: 'messages',  label: 'Messages',  icon: MessageSquare, path: '/vendor-chat' },
+  { id: "analytics", label: "Analytics", icon: BarChart3, path: "/analytics" },
+  { id: "messages", label: "Messages", icon: MessageSquare, path: "/vendor-chat" },
 ];
 
 const bottomMenuItems: MenuItem[] = [
-  { id: 'notifications', label: 'Notifications',  icon: Bell,        path: '/notifications', badge: 8 },
-  { id: 'settings',      label: 'Settings',        icon: Settings,    path: '/settings'       },
-  { id: 'help',          label: 'Help & Support',  icon: HelpCircle,  path: '/help'           },
-  { id: 'visit-site',    label: 'Visit Site',       icon: Globe,       path: '/'               },
+  { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications", badge: 8 },
+  { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
+  { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help" },
+  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/" },
 ];
 
 /* ─── small reusable badge ─── */
 const Badge = ({ count, active }: { count: number; active: boolean }) => (
-  <span className={`
+  <span
+    className={`
     inline-flex items-center justify-center
     text-[10px] font-bold leading-none
     min-w-[18px] h-[18px] px-1 rounded-full
-    ${active
-      ? 'bg-blue-600 text-white'
-      : 'bg-gray-100 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400'}
-  `}>
-    {count > 99 ? '99+' : count}
+    ${
+      active
+        ? "bg-blue-600 text-white"
+        : "bg-gray-100 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400"
+    }
+  `}
+  >
+    {count > 99 ? "99+" : count}
   </span>
 );
 
 /* ─── tooltip shown in collapsed mode ─── */
 const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) => (
-  <div className="
+  <div
+    className="
     pointer-events-none absolute left-full ml-4 z-50
     flex items-center gap-2
     px-3 py-2 rounded-xl whitespace-nowrap
@@ -92,10 +116,13 @@ const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) =
     opacity-0 invisible -translate-x-1
     group-hover:opacity-100 group-hover:visible group-hover:translate-x-0
     transition-all duration-150 ease-out
-  ">
+  "
+  >
     {/* arrow */}
-    <span className="absolute right-full top-1/2 -translate-y-1/2
-      border-[5px] border-transparent border-r-gray-900/95 dark:border-r-gray-800" />
+    <span
+      className="absolute right-full top-1/2 -translate-y-1/2
+      border-[5px] border-transparent border-r-gray-900/95 dark:border-r-gray-800"
+    />
     {label}
     {badge !== undefined && badge > 0 && (
       <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-500 rounded-full leading-none">
@@ -105,19 +132,16 @@ const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) =
   </div>
 );
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  defaultCollapsed = false,
-  onToggle,
-}) => {
-  const [pinned,        setPinned]        = useState(!defaultCollapsed);
-  const [hoverOpen,     setHoverOpen]     = useState(false);
+export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onToggle }) => {
+  const [pinned, setPinned] = useState(!defaultCollapsed);
+  const [hoverOpen, setHoverOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const sidebarRef   = useRef<HTMLDivElement>(null);
-  const hoverTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const isOpen    = pinned || hoverOpen;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isOpen = pinned || hoverOpen;
 
   const handleMouseEnter = () => {
     if (pinned) return;
@@ -125,7 +149,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
   const handleMouseLeave = () => {
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
-    if (!pinned) { setHoverOpen(false); setExpandedItems(new Set()); }
+    if (!pinned) {
+      setHoverOpen(false);
+      setExpandedItems(new Set());
+    }
   };
   const handlePinToggle = () => {
     const next = !pinned;
@@ -136,21 +163,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const toggleExpand = (id: string) => {
     if (!isOpen) return;
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const s = new Set(prev);
-      s.has(id) ? s.delete(id) : s.add(id);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
       return s;
     });
   };
 
-  const isActive       = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
-  const isParentActive = (item: MenuItem) => isActive(item.path) || (item.children?.some(c => isActive(c.path)) ?? false);
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+  const isParentActive = (item: MenuItem) =>
+    isActive(item.path) || (item.children?.some((c) => isActive(c.path)) ?? false);
 
   /* ─── single nav row (top-level) ─── */
   const renderItem = (item: MenuItem) => {
     const hasChildren = !!item.children?.length;
-    const expanded    = expandedItems.has(item.id);
-    const active      = isParentActive(item);
+    const expanded = expandedItems.has(item.id);
+    const active = isParentActive(item);
 
     return (
       <div key={item.id}>
@@ -158,13 +188,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {!isOpen ? (
           <div className="group relative flex justify-center py-1 px-2">
             <button
-              onClick={() => hasChildren ? toggleExpand(item.id) : navigate(item.path)}
+              onClick={() => (hasChildren ? toggleExpand(item.id) : navigate(item.path))}
               className={`
                 relative flex items-center justify-center w-10 h-10 rounded-xl
                 transition-all duration-150
-                ${active
-                  ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30'
-                  : 'text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200'}
+                ${
+                  active
+                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200"
+                }
               `}
             >
               <item.icon size={18} />
@@ -178,27 +210,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ) : (
           /* ── expanded state ── */
           <div
-            onClick={() => hasChildren ? toggleExpand(item.id) : navigate(item.path)}
+            onClick={() => (hasChildren ? toggleExpand(item.id) : navigate(item.path))}
             className={`
               group relative flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer select-none
               transition-all duration-150
-              ${active
-                ? 'bg-gradient-to-r from-blue-50 to-indigo-50/40 dark:from-blue-500/[0.12] dark:to-indigo-500/[0.04] text-blue-700 dark:text-blue-400'
-                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-100'}
+              ${
+                active
+                  ? "bg-gradient-to-r from-blue-50 to-indigo-50/40 dark:from-blue-500/[0.12] dark:to-indigo-500/[0.04] text-blue-700 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-100"
+              }
             `}
           >
             {/* gradient left bar */}
-            <span className={`
+            <span
+              className={`
               absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full
               bg-gradient-to-b from-blue-500 to-indigo-500
               transition-all duration-200
-              ${active ? 'h-6 opacity-100' : 'h-0 opacity-0'}
-            `} />
+              ${active ? "h-6 opacity-100" : "h-0 opacity-0"}
+            `}
+            />
 
             <item.icon
               size={16}
               className={`shrink-0 transition-all duration-150
-                ${active ? 'text-blue-600 dark:text-blue-400' : 'group-hover:scale-110'}
+                ${active ? "text-blue-600 dark:text-blue-400" : "group-hover:scale-110"}
               `}
             />
 
@@ -213,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {hasChildren && (
               <ChevronRight
                 size={13}
-                className={`text-gray-400 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
+                className={`text-gray-400 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
               />
             )}
           </div>
@@ -222,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* ── children (expanded only) ── */}
         {isOpen && hasChildren && expanded && (
           <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800/80 pl-3 pr-0">
-            {item.children!.map(child => {
+            {item.children!.map((child) => {
               const ca = isActive(child.path);
               return (
                 <div
@@ -231,14 +267,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`
                     group flex items-center gap-2 py-2 px-2.5 rounded-lg cursor-pointer
                     transition-colors duration-150 select-none
-                    ${ca
-                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400'
-                      : 'text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]'}
+                    ${
+                      ca
+                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                        : "text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                    }
                   `}
                 >
-                  <span className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
-                    ${ca ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400'}
-                  `} />
+                  <span
+                    className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
+                    ${ca ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400"}
+                  `}
+                  />
                   <span className="flex-1 text-[12px] font-medium whitespace-nowrap">
                     {child.label}
                   </span>
@@ -262,7 +302,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return (
         <div className="group relative flex justify-center py-1 px-2">
           <button
-            onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = "/login";
+            }}
             className="flex items-center justify-center w-10 h-10 rounded-xl text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
           >
             <LogOut size={18} />
@@ -273,14 +316,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
     return (
       <div
-        onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+        onClick={() => {
+          localStorage.clear();
+          window.location.href = "/login";
+        }}
         className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer select-none
           text-gray-400 dark:text-gray-500
           hover:bg-red-50 dark:hover:bg-red-500/10
           hover:text-red-600 dark:hover:text-red-400
           transition-all duration-150 group"
       >
-        <LogOut size={16} className="shrink-0 transition-transform duration-150 group-hover:scale-110" />
+        <LogOut
+          size={16}
+          className="shrink-0 transition-transform duration-150 group-hover:scale-110"
+        />
         <span className="text-[13px] font-medium whitespace-nowrap">Logout</span>
       </div>
     );
@@ -301,15 +350,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       "
     >
       {/* ─── Header ─── */}
-      <div className={`
+      <div
+        className={`
         flex items-center h-[60px] shrink-0 px-3.5
         shadow-[inset_0_-1px_0_#f0f0f0] dark:shadow-[inset_0_-1px_0_#1c1f26]
-        ${!isOpen ? 'justify-center' : ''}
-      `}>
+        ${!isOpen ? "justify-center" : ""}
+      `}
+      >
         {isOpen ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             {/* logo mark */}
-            <div className="w-8 h-8 shrink-0 rounded-xl
+            <div
+              className="w-8 h-8 shrink-0 rounded-xl
               bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
               shadow-lg shadow-blue-500/25
               flex items-center justify-center"
@@ -328,12 +380,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             <button
               onClick={handlePinToggle}
-              title={pinned ? 'Unpin sidebar' : 'Pin sidebar open'}
+              title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
               className={`
                 ml-auto shrink-0 p-1.5 rounded-lg transition-all duration-150
-                ${pinned
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10'
-                  : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5'
+                ${
+                  pinned
+                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10"
+                    : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
                 }
               `}
             >
@@ -341,7 +394,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
         ) : (
-          <div className="w-8 h-8 rounded-xl
+          <div
+            className="w-8 h-8 rounded-xl
             bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
             shadow-lg shadow-blue-500/25
             flex items-center justify-center"
@@ -352,7 +406,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* ─── Main nav ─── */}
-      <nav className="flex-1 overflow-y-auto overflow-x-hidden py-3
+      <nav
+        className="flex-1 overflow-y-auto overflow-x-hidden py-3
         scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 scrollbar-track-transparent"
       >
         {isOpen && (
@@ -360,9 +415,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             Main Menu
           </p>
         )}
-        <div className="space-y-0.5">
-          {menuItems.map(renderItem)}
-        </div>
+        <div className="space-y-0.5">{menuItems.map(renderItem)}</div>
       </nav>
 
       {/* ─── Bottom nav ─── */}

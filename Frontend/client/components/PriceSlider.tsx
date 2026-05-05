@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 
 const PriceSlider = () => {
   const [percent, setPercent] = useState(50); // Initial value at 50%
@@ -27,26 +27,22 @@ const PriceSlider = () => {
     const handleMouseUp = () => setIsDragging(false);
 
     if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging]);
 
   return (
     <div style={styles.wrapper}>
-      <div 
-        style={styles.track} 
-        ref={trackRef} 
-        onMouseDown={handleMouseDown}
-      >
+      <div style={styles.track} ref={trackRef} onMouseDown={handleMouseDown}>
         {/* Progress Bar (Black) */}
         <div style={{ ...styles.fill, width: `${percent}%` }} />
-        
+
         {/* Draggable Thumb */}
         <div style={{ ...styles.thumb, left: `${percent}%` }} />
       </div>
@@ -58,47 +54,47 @@ const PriceSlider = () => {
   );
 };
 
-const styles = {
+const styles: Record<string, React.CSSProperties> = {
   wrapper: {
-    width: '300px',
-    padding: '40px 20px',
-    background: '#fff',
-    userSelect: 'none', // Prevents text selection while dragging
+    width: "300px",
+    padding: "40px 20px",
+    background: "#fff",
+    userSelect: "none", // Prevents text selection while dragging
   },
   track: {
-    position: 'relative',
-    width: '100%',
-    height: '6px',
-    backgroundColor: '#e0e0e0',
-    borderRadius: '3px',
-    cursor: 'pointer',
+    position: "relative",
+    width: "100%",
+    height: "6px",
+    backgroundColor: "#e0e0e0",
+    borderRadius: "3px",
+    cursor: "pointer",
   },
   fill: {
-    position: 'absolute',
-    height: '100%',
-    backgroundColor: '#000',
-    borderRadius: '3px',
-    transition: 'width 0.1s ease-out',
+    position: "absolute",
+    height: "100%",
+    backgroundColor: "#000",
+    borderRadius: "3px",
+    transition: "width 0.1s ease-out",
   },
   thumb: {
-    position: 'absolute',
-    top: '50%',
-    width: '20px',
-    height: '20px',
-    backgroundColor: '#000',
-    borderRadius: '50%',
-    transform: 'translate(-50%, -50%)',
-    border: '2px solid #fff',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-    transition: 'left 0.1s ease-out',
-    cursor: 'grab',
+    position: "absolute",
+    top: "50%",
+    width: "20px",
+    height: "20px",
+    backgroundColor: "#000",
+    borderRadius: "50%",
+    transform: "translate(-50%, -50%)",
+    border: "2px solid #fff",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+    transition: "left 0.1s ease-out",
+    cursor: "grab",
   },
   label: {
-    marginTop: '20px',
-    fontFamily: 'Arial, sans-serif',
-    fontSize: '16px',
-    textAlign: 'center',
-  }
+    marginTop: "20px",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "16px",
+    textAlign: "center",
+  },
 };
 
 export default PriceSlider;

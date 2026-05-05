@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Menu,
-  X,
-  MapPin,
-  Calendar,
-  Users,
-  Star as StarIcon,
-  Search,
-} from "lucide-react";
+import { Menu, X, MapPin, Calendar, Users, Star as StarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LogoWebsite, { HomeLogoWebsite } from "./ui/LogoWebsite";
 import { useAuth } from "../contexts/AuthContext";
@@ -102,7 +94,7 @@ export default function AirbnbHeader({
     adults: number;
     children: number;
     infants: number;
-    pet?: number;
+    pet: number;
   }>({
     adults: 1,
     children: 0,
@@ -121,9 +113,9 @@ export default function AirbnbHeader({
 
   const isScrolled = showFilterButtons || showSearchSection;
   const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>({
-    'camper-van': true,
-    'unique-stays': true,
-    'best-activity': true,
+    "camper-van": true,
+    "unique-stays": true,
+    "best-activity": true,
   });
 
   useEffect(() => {
@@ -134,16 +126,18 @@ export default function AirbnbHeader({
         if (mounted && sections && sections.length > 0) {
           const nextState: Record<string, boolean> = {};
           sections.forEach((s: any) => {
-             nextState[s.sectionKey] = s.isVisible;
+            nextState[s.sectionKey] = s.isVisible;
           });
-          setVisibleSections(prev => ({...prev, ...nextState}));
+          setVisibleSections((prev) => ({ ...prev, ...nextState }));
         }
       } catch (error) {
         console.error("Failed to load header sections visibility", error);
       }
     };
     fetchSections();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -166,10 +160,10 @@ export default function AirbnbHeader({
         const scrollY = window.scrollY;
         const scrollDelta = Math.abs(scrollY - lastScrollY);
 
-        setShowFilterButtons(prev => {
+        setShowFilterButtons((prev) => {
           // Trigger when hero search bar has scrolled away, not when full hero is gone
           const threshold = (heroHeight ?? 200) - 150;
-          const next = prev ? scrollY > (threshold - 100) : scrollY > threshold;
+          const next = prev ? scrollY > threshold - 100 : scrollY > threshold;
           return prev !== next ? next : prev;
         });
 
@@ -198,40 +192,22 @@ export default function AirbnbHeader({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node)
-      ) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
         setShowCalendar(false);
       }
-      if (
-        calendarToRef.current &&
-        !calendarToRef.current.contains(event.target as Node)
-      ) {
+      if (calendarToRef.current && !calendarToRef.current.contains(event.target as Node)) {
         setShowCalendar(false);
       }
-      if (
-        locationRef.current &&
-        !locationRef.current.contains(event.target as Node)
-      ) {
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
       }
-      if (
-        locationToRef.current &&
-        !locationToRef.current.contains(event.target as Node)
-      ) {
+      if (locationToRef.current && !locationToRef.current.contains(event.target as Node)) {
         setShowLocationToDropdown(false);
       }
-      if (
-        guestRef.current &&
-        !guestRef.current.contains(event.target as Node)
-      ) {
+      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
         setShowGuestDropdown(false);
       }
-      if (
-        activityRef.current &&
-        !activityRef.current.contains(event.target as Node)
-      ) {
+      if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
         setShowActivityDropdown(false);
       }
     };
@@ -267,12 +243,44 @@ export default function AirbnbHeader({
     setIsMobileMenuOpen(false);
   };
 
-  useEffect(() => { if (selectedLocation) setSearchErrors((e) => { const { location, ...rest } = e; return rest; }); }, [selectedLocation]);
-  useEffect(() => { if (selectedLocationTo) setSearchErrors((e) => { const { locationTo, ...rest } = e; return rest; }); }, [selectedLocationTo]);
-  useEffect(() => { if (checkInDate) setSearchErrors((e) => { const { checkin, ...rest } = e; return rest; }); }, [checkInDate]);
-  useEffect(() => { if (checkOutDate) setSearchErrors((e) => { const { checkout, ...rest } = e; return rest; }); }, [checkOutDate]);
-  useEffect(() => { if (activityName && activityName !== "Tracking") setSearchErrors((e) => { const { activity, ...rest } = e; return rest; }); }, [activityName]);
-  useEffect(() => { setSearchErrors({}); }, [activeFilter]);
+  useEffect(() => {
+    if (selectedLocation)
+      setSearchErrors((e) => {
+        const { location, ...rest } = e;
+        return rest;
+      });
+  }, [selectedLocation]);
+  useEffect(() => {
+    if (selectedLocationTo)
+      setSearchErrors((e) => {
+        const { locationTo, ...rest } = e;
+        return rest;
+      });
+  }, [selectedLocationTo]);
+  useEffect(() => {
+    if (checkInDate)
+      setSearchErrors((e) => {
+        const { checkin, ...rest } = e;
+        return rest;
+      });
+  }, [checkInDate]);
+  useEffect(() => {
+    if (checkOutDate)
+      setSearchErrors((e) => {
+        const { checkout, ...rest } = e;
+        return rest;
+      });
+  }, [checkOutDate]);
+  useEffect(() => {
+    if (activityName && activityName !== "Tracking")
+      setSearchErrors((e) => {
+        const { activity, ...rest } = e;
+        return rest;
+      });
+  }, [activityName]);
+  useEffect(() => {
+    setSearchErrors({});
+  }, [activeFilter]);
 
   const handleSearch = () => {
     const errors: Record<string, string> = {};
@@ -280,7 +288,8 @@ export default function AirbnbHeader({
     if (activeFilter === "camper-van" && !selectedLocationTo.trim()) errors.locationTo = "Required";
     if (!checkInDate) errors.checkin = "Required";
     if (activeFilter !== "activity" && !checkOutDate) errors.checkout = "Required";
-    if (activeFilter === "activity" && (!activityName.trim() || activityName === "Tracking")) errors.activity = "Required";
+    if (activeFilter === "activity" && (!activityName.trim() || activityName === "Tracking"))
+      errors.activity = "Required";
 
     if (Object.keys(errors).length > 0) {
       setSearchErrors(errors);
@@ -303,7 +312,7 @@ export default function AirbnbHeader({
     { id: "camper-van", label: "Camper Van", icon: CamperVanIcon, sectionKey: "camper-van" },
     { id: "unique-stays", label: "Unique Stays", icon: HomeIcon, sectionKey: "unique-stays" },
     { id: "activity", label: "Activity", icon: RocketIcon, sectionKey: "best-activity" },
-  ].filter(tab => visibleSections[tab.sectionKey] !== false);
+  ].filter((tab) => visibleSections[tab.sectionKey] !== false);
 
   return (
     <>
@@ -311,9 +320,7 @@ export default function AirbnbHeader({
         initial={false}
         animate={{
           backgroundColor: isScrolled ? "rgba(255,255,255,1)" : "rgba(255,255,255,0)",
-          boxShadow: isScrolled
-            ? "0 1px 8px rgba(0, 0, 0, 0.08)"
-            : "0 0 0 rgba(0, 0, 0, 0)",
+          boxShadow: isScrolled ? "0 1px 8px rgba(0, 0, 0, 0.08)" : "0 0 0 rgba(0, 0, 0, 0)",
         }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         className={`fixed top-0 left-0 right-0 z-50 transition-[backdrop-filter] duration-500 ease-in-out ${
@@ -332,14 +339,18 @@ export default function AirbnbHeader({
               {/* Dark logo (scrolled) */}
               <div
                 className="transition-opacity duration-500 ease-in-out"
-                style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 1 : 0 }}
+                style={{
+                  opacity: showFilterButtons || location.pathname.includes("search") ? 1 : 0,
+                }}
               >
                 <LogoWebsite />
               </div>
               {/* White logo (hero) — absolute overlaid, fades out on scroll */}
               <div
                 className="absolute inset-0 transition-opacity duration-500 ease-in-out"
-                style={{ opacity: (showFilterButtons || location.pathname.includes("search")) ? 0 : 1 }}
+                style={{
+                  opacity: showFilterButtons || location.pathname.includes("search") ? 0 : 1,
+                }}
               >
                 <HomeLogoWebsite variant="dark" />
               </div>
@@ -370,7 +381,9 @@ export default function AirbnbHeader({
                             : "bg-transparent text-gray-700 hover:bg-gray-100"
                         }`}
                       >
-                        <IconComponent className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`} />
+                        <IconComponent
+                          className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`}
+                        />
                         <span>{tab.label}</span>
                       </motion.button>
                     );
@@ -392,41 +405,151 @@ export default function AirbnbHeader({
                   {activeFilter === "activity" && (
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-3.5 h-3.5" /><span className="text-xs font-medium">Location</span></div>
-                          <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
-                          {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
-                          {searchErrors.location && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={locationRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Location</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search location"
+                            value={
+                              selectedLocation === "Where are you going?" ? "" : selectedLocation
+                            }
+                            onChange={(e) => {
+                              setSelectedLocation(e.target.value);
+                              setShowLocationDropdown(true);
+                            }}
+                            onFocus={() => setShowLocationDropdown(true)}
+                            className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal"
+                          />
+                          {showLocationDropdown && (
+                            <LocationDropdown
+                              searchQuery={selectedLocation}
+                              onSelect={(location) => {
+                                setSelectedLocation(location);
+                                setShowLocationDropdown(false);
+                              }}
+                              onClose={() => setShowLocationDropdown(false)}
+                            />
+                          )}
+                          {searchErrors.location && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.location}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div ref={calendarRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-3.5 h-3.5" /><span className="text-xs font-medium">Date</span></div>
-                          <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
-                            {checkInDate ? `${checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - ${checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}` : "Add date"}
+                        <div
+                          ref={calendarRef}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Date</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowCalendar(!showCalendar);
+                              setShowLocationDropdown(false);
+                              setShowGuestDropdown(false);
+                            }}
+                            className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}
+                          >
+                            {checkInDate
+                              ? `${checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - ${checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : ""}`
+                              : "Add date"}
                           </button>
-                          {showCalendar && <CalendarDropdown onSelect={handleDateRangeSelect} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
-                          {searchErrors.checkin && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
+                          {showCalendar && (
+                            <CalendarDropdown
+                              onSelect={handleDateRangeSelect}
+                              onClose={() => setShowCalendar(false)}
+                              selectedRange={{ start: checkInDate, end: checkOutDate }}
+                            />
+                          )}
+                          {searchErrors.checkin && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.checkin}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={activityRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><StarIcon className="w-3.5 h-3.5" /><span className="text-xs font-medium">Activity</span></div>
-                          <button onClick={() => { setShowActivityDropdown(!showActivityDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowGuestDropdown(false); }} className={`${activityName !== "Tracking" ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={activityRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <StarIcon className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Activity</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowActivityDropdown(!showActivityDropdown);
+                              setShowLocationDropdown(false);
+                              setShowCalendar(false);
+                              setShowGuestDropdown(false);
+                            }}
+                            className={`${activityName !== "Tracking" ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                          >
                             {activityName !== "Tracking" ? activityName : "Select"}
                           </button>
-                          {showActivityDropdown && <ActivityDropdown onSelect={setActivityName} onClose={() => setShowActivityDropdown(false)} />}
-                          {searchErrors.activity && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.activity}</span>}
+                          {showActivityDropdown && (
+                            <ActivityDropdown
+                              onSelect={setActivityName}
+                              onClose={() => setShowActivityDropdown(false)}
+                            />
+                          )}
+                          {searchErrors.activity && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.activity}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-3.5 h-3.5" /><span className="text-xs font-medium">Guests</span></div>
-                          <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowActivityDropdown(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
-                            {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add"}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={guestRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Guests</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowGuestDropdown(!showGuestDropdown);
+                              setShowLocationDropdown(false);
+                              setShowCalendar(false);
+                              setShowActivityDropdown(false);
+                            }}
+                            className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                          >
+                            {guestsConfirmed
+                              ? `${guests.adults + guests.children + guests.infants} guests`
+                              : "Add"}
                           </button>
-                          {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                          {showGuestDropdown && (
+                            <GuestDropdown
+                              guests={guests}
+                              onUpdate={setGuests}
+                              onClose={() => {
+                                setShowGuestDropdown(false);
+                                setGuestsConfirmed(true);
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
-                        <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg" size="icon"><Search className="w-4 h-4" /></Button>
+                        <Button
+                          onClick={handleSearch}
+                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          size="icon"
+                        >
+                          <Search className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -435,49 +558,192 @@ export default function AirbnbHeader({
                   {activeFilter === "camper-van" && (
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-3.5 h-3.5" /><span className="text-xs font-medium">From</span></div>
-                          <input type="text" placeholder="Search" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
-                          {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
-                          {searchErrors.location && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={locationRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">From</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search"
+                            value={
+                              selectedLocation === "Where are you going?" ? "" : selectedLocation
+                            }
+                            onChange={(e) => {
+                              setSelectedLocation(e.target.value);
+                              setShowLocationDropdown(true);
+                            }}
+                            onFocus={() => setShowLocationDropdown(true)}
+                            className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal"
+                          />
+                          {showLocationDropdown && (
+                            <LocationDropdown
+                              searchQuery={selectedLocation}
+                              onSelect={(location) => {
+                                setSelectedLocation(location);
+                                setShowLocationDropdown(false);
+                              }}
+                              onClose={() => setShowLocationDropdown(false)}
+                            />
+                          )}
+                          {searchErrors.location && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.location}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationToRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-3.5 h-3.5" /><span className="text-xs font-medium">To</span></div>
-                          <input type="text" placeholder="Search" value={selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo} onChange={(e) => { setSelectedLocationTo(e.target.value); setShowLocationToDropdown(true); }} onFocus={() => setShowLocationToDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
-                          {showLocationToDropdown && <LocationDropdown searchQuery={selectedLocationTo} onSelect={(location) => { setSelectedLocationTo(location); setShowLocationToDropdown(false); }} onClose={() => setShowLocationToDropdown(false)} />}
-                          {searchErrors.locationTo && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.locationTo}</span>}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={locationToRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">To</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search"
+                            value={
+                              selectedLocationTo === "Where are you going?"
+                                ? ""
+                                : selectedLocationTo
+                            }
+                            onChange={(e) => {
+                              setSelectedLocationTo(e.target.value);
+                              setShowLocationToDropdown(true);
+                            }}
+                            onFocus={() => setShowLocationToDropdown(true)}
+                            className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal"
+                          />
+                          {showLocationToDropdown && (
+                            <LocationDropdown
+                              searchQuery={selectedLocationTo}
+                              onSelect={(location) => {
+                                setSelectedLocationTo(location);
+                                setShowLocationToDropdown(false);
+                              }}
+                              onClose={() => setShowLocationToDropdown(false)}
+                            />
+                          )}
+                          {searchErrors.locationTo && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.locationTo}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
-                          <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
-                            <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-3.5 h-3.5" /><span className="text-xs font-medium">Check in</span></div>
-                            <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
-                              {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                          <div
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          >
+                            <div className="flex items-center gap-1.5 text-gray-400">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span className="text-xs font-medium">Check in</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowCalendar(!showCalendar);
+                                setShowLocationDropdown(false);
+                                setShowGuestDropdown(false);
+                              }}
+                              className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}
+                            >
+                              {checkInDate
+                                ? checkInDate.toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "Add date"}
                             </button>
-                            {searchErrors.checkin && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
+                            {searchErrors.checkin && (
+                              <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                                {searchErrors.checkin}
+                              </span>
+                            )}
                           </div>
                           <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                          <div ref={calendarToRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
-                            <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-3.5 h-3.5" /><span className="text-xs font-medium">Check out</span></div>
-                            <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
-                              {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                          <div
+                            ref={calendarToRef}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          >
+                            <div className="flex items-center gap-1.5 text-gray-400">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span className="text-xs font-medium">Check out</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowCalendar(!showCalendar);
+                                setShowLocationDropdown(false);
+                                setShowGuestDropdown(false);
+                              }}
+                              className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}
+                            >
+                              {checkOutDate
+                                ? checkOutDate.toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "Add date"}
                             </button>
-                            {searchErrors.checkout && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkout}</span>}
+                            {searchErrors.checkout && (
+                              <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                                {searchErrors.checkout}
+                              </span>
+                            )}
                           </div>
-                          {showCalendar && <CalendarDropdown onSelect={handleDateRangeSelect} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
+                          {showCalendar && (
+                            <CalendarDropdown
+                              onSelect={handleDateRangeSelect}
+                              onClose={() => setShowCalendar(false)}
+                              selectedRange={{ start: checkInDate, end: checkOutDate }}
+                            />
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-3.5 h-3.5" /><span className="text-xs font-medium">Guests</span></div>
-                          <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
-                            {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add"}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={guestRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Guests</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowGuestDropdown(!showGuestDropdown);
+                              setShowLocationDropdown(false);
+                              setShowCalendar(false);
+                            }}
+                            className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                          >
+                            {guestsConfirmed
+                              ? `${guests.adults + guests.children + guests.infants} guests`
+                              : "Add"}
                           </button>
-                          {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                          {showGuestDropdown && (
+                            <GuestDropdown
+                              guests={guests}
+                              onUpdate={setGuests}
+                              onClose={() => {
+                                setShowGuestDropdown(false);
+                                setGuestsConfirmed(true);
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
-                        <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg" size="icon"><Search className="w-4 h-4" /></Button>
+                        <Button
+                          onClick={handleSearch}
+                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          size="icon"
+                        >
+                          <Search className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   )}
@@ -486,46 +752,155 @@ export default function AirbnbHeader({
                   {activeFilter === "unique-stays" && (
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={locationRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-3.5 h-3.5" /><span className="text-xs font-medium">Location</span></div>
-                          <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
-                          {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(location) => { setSelectedLocation(location); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
-                          {searchErrors.location && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.location}</span>}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={locationRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <MapPin className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Location</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Search location"
+                            value={
+                              selectedLocation === "Where are you going?" ? "" : selectedLocation
+                            }
+                            onChange={(e) => {
+                              setSelectedLocation(e.target.value);
+                              setShowLocationDropdown(true);
+                            }}
+                            onFocus={() => setShowLocationDropdown(true)}
+                            className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal"
+                          />
+                          {showLocationDropdown && (
+                            <LocationDropdown
+                              searchQuery={selectedLocation}
+                              onSelect={(location) => {
+                                setSelectedLocation(location);
+                                setShowLocationDropdown(false);
+                              }}
+                              onClose={() => setShowLocationDropdown(false)}
+                            />
+                          )}
+                          {searchErrors.location && (
+                            <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                              {searchErrors.location}
+                            </span>
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
-                          <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
-                            <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-3.5 h-3.5" /><span className="text-xs font-medium">Check in</span></div>
-                            <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
-                              {checkInDate ? checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                          <div
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          >
+                            <div className="flex items-center gap-1.5 text-gray-400">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span className="text-xs font-medium">Check in</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowCalendar(!showCalendar);
+                                setShowLocationDropdown(false);
+                                setShowGuestDropdown(false);
+                              }}
+                              className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}
+                            >
+                              {checkInDate
+                                ? checkInDate.toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "Add date"}
                             </button>
-                            {searchErrors.checkin && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkin}</span>}
+                            {searchErrors.checkin && (
+                              <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                                {searchErrors.checkin}
+                              </span>
+                            )}
                           </div>
                           <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                          <div ref={calendarToRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}>
-                            <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-3.5 h-3.5" /><span className="text-xs font-medium">Check out</span></div>
-                            <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
-                              {checkOutDate ? checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }) : "Add date"}
+                          <div
+                            ref={calendarToRef}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          >
+                            <div className="flex items-center gap-1.5 text-gray-400">
+                              <Calendar className="w-3.5 h-3.5" />
+                              <span className="text-xs font-medium">Check out</span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setShowCalendar(!showCalendar);
+                                setShowLocationDropdown(false);
+                                setShowGuestDropdown(false);
+                              }}
+                              className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}
+                            >
+                              {checkOutDate
+                                ? checkOutDate.toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })
+                                : "Add date"}
                             </button>
-                            {searchErrors.checkout && <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">{searchErrors.checkout}</span>}
+                            {searchErrors.checkout && (
+                              <span className="absolute -bottom-2.5 left-3 text-red-500 text-[10px] font-medium text-left whitespace-nowrap">
+                                {searchErrors.checkout}
+                              </span>
+                            )}
                           </div>
-                          {showCalendar && <CalendarDropdown onSelect={handleDateRangeSelect} onClose={() => setShowCalendar(false)} selectedRange={{ start: checkInDate, end: checkOutDate }} />}
+                          {showCalendar && (
+                            <CalendarDropdown
+                              onSelect={handleDateRangeSelect}
+                              onClose={() => setShowCalendar(false)}
+                              selectedRange={{ start: checkInDate, end: checkOutDate }}
+                            />
+                          )}
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
-                        <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`} ref={guestRef}>
-                          <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-3.5 h-3.5" /><span className="text-xs font-medium">Guests</span></div>
-                          <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
-                            {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add"}
+                        <div
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          ref={guestRef}
+                        >
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <Users className="w-3.5 h-3.5" />
+                            <span className="text-xs font-medium">Guests</span>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setShowGuestDropdown(!showGuestDropdown);
+                              setShowLocationDropdown(false);
+                              setShowCalendar(false);
+                            }}
+                            className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                          >
+                            {guestsConfirmed
+                              ? `${guests.adults + guests.children + guests.infants} guests`
+                              : "Add"}
                           </button>
-                          {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={setGuests} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                          {showGuestDropdown && (
+                            <GuestDropdown
+                              guests={guests}
+                              onUpdate={setGuests}
+                              onClose={() => {
+                                setShowGuestDropdown(false);
+                                setGuestsConfirmed(true);
+                              }}
+                            />
+                          )}
                         </div>
                       </div>
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
-                        <Button onClick={handleSearch} className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg" size="icon"><Search className="w-4 h-4" /></Button>
+                        <Button
+                          onClick={handleSearch}
+                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          size="icon"
+                        >
+                          <Search className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
                   )}
-
                 </motion.div>
               )}
             </AnimatePresence>
@@ -556,7 +931,7 @@ export default function AirbnbHeader({
                           : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
                       }`}
                       onClick={() => {
-                        updateUserType('vendor');
+                        updateUserType("vendor");
                         navigate("/dashboard");
                       }}
                     >
@@ -565,7 +940,7 @@ export default function AirbnbHeader({
                   )}
                   <UserDropdown
                     onSwitchToVendor={() => {
-                      updateUserType('vendor');
+                      updateUserType("vendor");
                       navigate("/dashboard");
                     }}
                   />
@@ -605,9 +980,7 @@ export default function AirbnbHeader({
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className={`lg:hidden p-2 rounded-full transition-all duration-500 ease-in-out ${
-                  isScrolled
-                    ? "text-gray-800 hover:bg-gray-100"
-                    : "text-white hover:bg-white/15"
+                  isScrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/15"
                 }`}
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}

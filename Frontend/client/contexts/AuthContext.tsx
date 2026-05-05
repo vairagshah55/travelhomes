@@ -23,6 +23,13 @@ interface User {
   dateOfBirth?: string;
   mobileVerified?: boolean;
   emailVerified?: boolean;
+  // Legacy field aliases — pages and product detail components still
+  // read user.name (display name) / user.avatar (photo) / user.phone
+  // (phoneNumber). They're optional and surfaced wherever the legacy
+  // call sites need them.
+  name?: string;
+  avatar?: string;
+  phone?: string;
 }
 
 interface AuthContextType {

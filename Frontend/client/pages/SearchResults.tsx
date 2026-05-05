@@ -22,19 +22,10 @@ import {
   CrossIcon,
   SidebarCloseIcon,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogBackdrop,
-  DialogPanel,
-  DialogTitle,
-} from "@headlessui/react";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import MobileUserNav from "@/components/MobileUserNav";
 import { CiFilter } from "react-icons/ci";
-import {
-  addWishlistItem,
-  removeWishlistItem,
-  hasWishlistItem,
-} from "@/lib/wishlist";
+import { addWishlistItem, removeWishlistItem, hasWishlistItem } from "@/lib/wishlist";
 import { cmsPublicApi } from "@/lib/api";
 import FilterButton from "@/components/FilterButton";
 import CardImageCarousel from "@/components/CardImageCarousel";
@@ -60,9 +51,7 @@ export default function SearchResults() {
   );
   const [activeFilterFromHeader, setActiveFilterFromHeader] = useState();
   // keep URL in sync when core params change
-  const [selectedLocation, setSelectedLocation] = useState(
-    searchParams.get("location"),
-  );
+  const [selectedLocation, setSelectedLocation] = useState(searchParams.get("location"));
   const [checkInDate, setCheckInDate] = useState<Date | null>(() => {
     const v = searchParams.get("checkin");
     return v ? new Date(v) : null;
@@ -73,18 +62,16 @@ export default function SearchResults() {
   });
   const [showTimeDropdown, setShowTimeDropdown] = useState(false);
 
-  const [activityName, setActivityName] = useState(
-    searchParams.get("activity") || "Tracking",
-  );
+  const [activityName, setActivityName] = useState(searchParams.get("activity") || "Tracking");
 
   const [selectedLocationTo, setSelectedLocationTo] = useState(
     searchParams.get("locationTo") || "India",
   );
 
   const [visibleSections, setVisibleSections] = useState<Record<string, boolean>>({
-    'camper-van': true,
-    'unique-stays': true,
-    'best-activity': true,
+    "camper-van": true,
+    "unique-stays": true,
+    "best-activity": true,
   });
 
   useEffect(() => {
@@ -95,27 +82,31 @@ export default function SearchResults() {
         if (mounted && sections && sections.length > 0) {
           const nextState: Record<string, boolean> = {};
           sections.forEach((s: any) => {
-             nextState[s.sectionKey] = s.isVisible;
+            nextState[s.sectionKey] = s.isVisible;
           });
-          setVisibleSections(prev => ({...prev, ...nextState}));
+          setVisibleSections((prev) => ({ ...prev, ...nextState }));
         }
       } catch (error) {
         console.error("Failed to load sections visibility", error);
       }
     };
     fetchSections();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {
     const filterMap: Record<string, string> = {
-      'camper-van': 'camper-van',
-      'unique-stays': 'unique-stays',
-      'activity': 'best-activity'
+      "camper-van": "camper-van",
+      "unique-stays": "unique-stays",
+      activity: "best-activity",
     };
 
     if (visibleSections[filterMap[activeFilter]] === false) {
-      const enabledFilter = Object.keys(filterMap).find(f => visibleSections[filterMap[f]] !== false);
+      const enabledFilter = Object.keys(filterMap).find(
+        (f) => visibleSections[filterMap[f]] !== false,
+      );
       if (enabledFilter) {
         setActiveFilter(enabledFilter as FilterType);
       }
@@ -232,28 +223,16 @@ export default function SearchResults() {
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        locationRef.current &&
-        !locationRef.current.contains(event.target as Node)
-      ) {
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
       }
-      if (
-        locationToRef.current &&
-        !locationToRef.current.contains(event.target as Node)
-      ) {
+      if (locationToRef.current && !locationToRef.current.contains(event.target as Node)) {
         setShowLocationToDropdown(false);
       }
-      if (
-        guestRef.current &&
-        !guestRef.current.contains(event.target as Node)
-      ) {
+      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
         setShowGuestDropdown(false);
       }
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node)
-      ) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
         setShowCalendar(false);
       }
       if (
@@ -262,10 +241,7 @@ export default function SearchResults() {
       ) {
         setShowCheckoutCalendar(false);
       }
-      if (
-        activityRef.current &&
-        !activityRef.current.contains(event.target as Node)
-      ) {
+      if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
         setShowActivityDropdown(false);
       }
     };
@@ -273,79 +249,81 @@ export default function SearchResults() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Get results title based on active filter
   const [serverItems, setServerItems] = useState<any[]>([]);
 
   // Fetch approved offers by city, then filter by category for current tab
   useEffect(() => {
-  let loc = (selectedLocation || "").trim();
+    const loc = (selectedLocation || "").trim();
 
-  const params = new URLSearchParams();
-  params.set("status", "approved");
-  if (loc) {
-    params.set("city", loc);
-    params.set("state", loc);
-  }
-  params.set("page", "1");
-  params.set("limit", "100");
+    const params = new URLSearchParams();
+    params.set("status", "approved");
+    if (loc) {
+      params.set("city", loc);
+      params.set("state", loc);
+    }
+    params.set("page", "1");
+    params.set("limit", "100");
 
-  const finalUrl = `/api/offers?${params.toString()}`;
+    const finalUrl = `/api/offers?${params.toString()}`;
 
-  setPage(1);
-  setIsLoading(true); // 🔥 start loading
+    setPage(1);
+    setIsLoading(true); // 🔥 start loading
 
-  fetch(finalUrl)
-    .then((r) => r.json())
-    .then((json) => {
-      const list = Array.isArray(json?.data) ? json.data : [];
+    fetch(finalUrl)
+      .then((r) => r.json())
+      .then((json) => {
+        const list = Array.isArray(json?.data) ? json.data : [];
 
-      const getNormCategory = (cat?: string, serviceType?: string) => {
-        const s = String(serviceType || "").toLowerCase();
-        if (s === "camper-van") return "caravan" as const;
-        if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
-        if (s === "activity") return "activity" as const;
+        const getNormCategory = (cat?: string, serviceType?: string) => {
+          const s = String(serviceType || "").toLowerCase();
+          if (s === "camper-van") return "caravan" as const;
+          if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
+          if (s === "activity") return "activity" as const;
 
-        const c = String(cat || "").toLowerCase();
-        const cClean = c.replace(/[\s_-]+/g, "");
-        if (
-          ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) =>
-            cClean.includes(k),
+          const c = String(cat || "").toLowerCase();
+          const cClean = c.replace(/[\s_-]+/g, "");
+          if (
+            ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) =>
+              cClean.includes(k),
+            )
           )
-        )
-          return "caravan" as const;
-        if (
-          cClean.includes("stay") ||
-          cClean === "uniquestays" ||
-          cClean === "unique" ||
-          cClean === "stays" ||
-          cClean === "glamping" ||
-          cClean === "resort" ||
-          cClean === "villa"
-        )
+            return "caravan" as const;
+          if (
+            cClean.includes("stay") ||
+            cClean === "uniquestays" ||
+            cClean === "unique" ||
+            cClean === "stays" ||
+            cClean === "glamping" ||
+            cClean === "resort" ||
+            cClean === "villa"
+          )
+            return "unique-stays" as const;
+          if (
+            cClean === "activity" ||
+            cClean === "activities" ||
+            cClean === "trekking" ||
+            cClean === "tour"
+          )
+            return "activity" as const;
           return "unique-stays" as const;
-        if (cClean === "activity" || cClean === "activities" || cClean === "trekking" || cClean === "tour")
-          return "activity" as const;
-        return "unique-stays" as const;
-      };
+        };
 
-      const want = activeFilter === "camper-van" ? "caravan" : activeFilter;
+        const want = activeFilter === "camper-van" ? "caravan" : activeFilter;
 
-      const filtered = list.filter(
-        (o: any) => getNormCategory(o.category, o.serviceType) === want,
-      );
+        const filtered = list.filter(
+          (o: any) => getNormCategory(o.category, o.serviceType) === want,
+        );
 
-      setServerItems(filtered);
-    })
-    .catch(() => setServerItems([]))
-    .finally(() => {
-      setIsLoading(false); // ✅ stop loading
-    });
-}, [activeFilter, selectedLocation, selectedLocationTo, activityName]);
-
-
-
+        setServerItems(filtered);
+      })
+      .catch(() => setServerItems([]))
+      .finally(() => {
+        setIsLoading(false); // ✅ stop loading
+      });
+  }, [activeFilter, selectedLocation, selectedLocationTo, activityName]);
 
   // Use server data
   const dataToUse = Array.isArray(serverItems) ? serverItems : [];
@@ -362,11 +340,7 @@ const [isLoading, setIsLoading] = useState(false);
       // Type filter
       if (selectedTypes.length > 0) {
         const itemType = item.type || item.category || "";
-        if (
-          !selectedTypes.some((type) =>
-            itemType.toLowerCase().includes(type.toLowerCase()),
-          )
-        ) {
+        if (!selectedTypes.some((type) => itemType.toLowerCase().includes(type.toLowerCase()))) {
           return false;
         }
       }
@@ -375,9 +349,7 @@ const [isLoading, setIsLoading] = useState(false);
       if (selectedCategories.length > 0) {
         const itemCategory = item.category || "";
         if (
-          !selectedCategories.some((cat) =>
-            itemCategory.toLowerCase().includes(cat.toLowerCase()),
-          )
+          !selectedCategories.some((cat) => itemCategory.toLowerCase().includes(cat.toLowerCase()))
         ) {
           return false;
         }
@@ -386,9 +358,7 @@ const [isLoading, setIsLoading] = useState(false);
       // Facilities filter
       if (selectedFacilities.length > 0) {
         const itemFacilities = item.facilities || item.amenities || [];
-        const facilitiesArray = Array.isArray(itemFacilities)
-          ? itemFacilities
-          : [itemFacilities];
+        const facilitiesArray = Array.isArray(itemFacilities) ? itemFacilities : [itemFacilities];
         if (
           !selectedFacilities.some((facility) =>
             facilitiesArray.some((itemFac) =>
@@ -425,22 +395,14 @@ const [isLoading, setIsLoading] = useState(false);
     const sorted = [...items];
     switch (sortBy) {
       case "price-low":
-        return sorted.sort(
-          (a, b) => Number(a.regularPrice || 0) - Number(b.regularPrice || 0),
-        );
+        return sorted.sort((a, b) => Number(a.regularPrice || 0) - Number(b.regularPrice || 0));
       case "price-high":
-        return sorted.sort(
-          (a, b) => Number(b.regularPrice || 0) - Number(a.regularPrice || 0),
-        );
+        return sorted.sort((a, b) => Number(b.regularPrice || 0) - Number(a.regularPrice || 0));
       case "rating":
-        return sorted.sort(
-          (a, b) => Number(b.rating || 0) - Number(a.rating || 0),
-        );
+        return sorted.sort((a, b) => Number(b.rating || 0) - Number(a.rating || 0));
       case "newest":
         return sorted.sort(
-          (a, b) =>
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime(),
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
         );
       case "recommended":
       default:
@@ -459,10 +421,7 @@ const [isLoading, setIsLoading] = useState(false);
       return {
         id: `/campervan/${doc?._id}`,
         title: doc?.name || "Camper Van",
-        details:
-          [doc?.city, doc?.state].filter(Boolean).join(", ") ||
-          doc?.category ||
-          "",
+        details: [doc?.city, doc?.state].filter(Boolean).join(", ") || doc?.category || "",
         price:
           typeof doc?.regularPrice === "number"
             ? `₹${doc.regularPrice}`
@@ -474,17 +433,14 @@ const [isLoading, setIsLoading] = useState(false);
     }
     if (activeFilter === "unique-stays") {
       const cover =
-       getImageUrl(doc?.photos?.coverUrl) ||
+        getImageUrl(doc?.photos?.coverUrl) ||
         getImageUrl(doc?.photos?.galleryUrls?.[0]) ||
         "https://api.builder.io/api/v1/image/assets/TEMP/25e2e450e32f87a421008f2fe2aed42df10fdc1d?width=610";
       return {
         id: `/unique-stay/${doc?._id}`,
         title: doc?.title || "Stay",
-        details: [doc?.address?.city, doc?.address?.state]
-          .filter(Boolean)
-          .join(", "),
-        price:
-          typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
+        details: [doc?.address?.city, doc?.address?.state].filter(Boolean).join(", "),
+        price: typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
         Maxprice: doc?.regularPrice || "0",
         unit: "/ night",
         image: cover,
@@ -498,8 +454,7 @@ const [isLoading, setIsLoading] = useState(false);
       id: `/activity/${doc?._id}`,
       title: doc?.name || "Activity",
       details: [doc?.city, doc?.state].filter(Boolean).join(", "),
-      price:
-        typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
+      price: typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
       Maxprice: doc?.regularPrice || "0",
       unit: "/ person",
       image: cover,
@@ -513,10 +468,7 @@ const [isLoading, setIsLoading] = useState(false);
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(computedItems.length / itemsPerPage);
-  const paginatedItems = computedItems.slice(
-    (page - 1) * itemsPerPage,
-    page * itemsPerPage,
-  );
+  const paginatedItems = computedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
 
   const ratingOptions = ["1+", "2+", "3+", "4+", "5+"];
 
@@ -539,13 +491,7 @@ const [isLoading, setIsLoading] = useState(false);
         return {
           types: ["Adventure", "Cultural", "Sports", "Relaxation"],
           categories: ["Luxury", "Standard", "Budget", "Eco"],
-          facilities: [
-            "Equipment Included",
-            "Guide",
-            "Transportation",
-            "Meals",
-            "Insurance",
-          ],
+          facilities: ["Equipment Included", "Guide", "Transportation", "Meals", "Insurance"],
         };
       default:
         return {
@@ -560,150 +506,157 @@ const [isLoading, setIsLoading] = useState(false);
 
   //for filter progress bar of price range filter
 
-const DualRangeSlider = ({ min, max, step, range, setRange, unit = "₹" }: any) => {
-  const [activeThumb, setActiveThumb] = useState<"min" | "max" | null>(null); // 'min' or 'max'
-  
-  const trackRef = useRef<HTMLDivElement>(null);
+  const DualRangeSlider = ({ min, max, step, range, setRange, unit = "₹" }: any) => {
+    const [activeThumb, setActiveThumb] = useState<"min" | "max" | null>(null); // 'min' or 'max'
 
-  // Helper to convert value to percentage
-  const getPercent = (value: number) => {
-    return Math.round(((value - min) / (max - min)) * 100);
-  };
+    const trackRef = useRef<HTMLDivElement>(null);
 
-  const calculatePercent = (clientX: number) => {
-    if (!trackRef.current) return 0;
-    const rect = trackRef.current.getBoundingClientRect();
-    let offset = (clientX - rect.left) / rect.width;
-    return Math.max(0, Math.min(100, offset * 100));
-  };
+    // Helper to convert value to percentage
+    const getPercent = (value: number) => {
+      return Math.round(((value - min) / (max - min)) * 100);
+    };
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const clickPercent = calculatePercent(e.clientX);
-    
-    // Determine which thumb is closer to the click point
+    const calculatePercent = (clientX: number) => {
+      if (!trackRef.current) return 0;
+      const rect = trackRef.current.getBoundingClientRect();
+      const offset = (clientX - rect.left) / rect.width;
+      return Math.max(0, Math.min(100, offset * 100));
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+      const clickPercent = calculatePercent(e.clientX);
+
+      // Determine which thumb is closer to the click point
+      const minPercent = getPercent(range.minVal);
+      const maxPercent = getPercent(range.maxVal);
+
+      const distanceToMin = Math.abs(clickPercent - minPercent);
+      const distanceToMax = Math.abs(clickPercent - maxPercent);
+
+      const thumb = distanceToMin < distanceToMax ? "min" : "max";
+      setActiveThumb(thumb);
+      updateValue(clickPercent, thumb);
+    };
+
+    const updateValue = (percent: number, thumb: string) => {
+      const rawValue = (percent / 100) * (max - min) + min;
+      // Snap to step if needed (simplified)
+      const value = Math.round(rawValue);
+
+      setRange((prev: any) => {
+        if (thumb === "min") {
+          const val = Math.min(value, prev.maxVal - (step || 1));
+          return { ...prev, minVal: Math.max(min, val) };
+        } else {
+          const val = Math.max(value, prev.minVal + (step || 1));
+          return { ...prev, maxVal: Math.min(max, val) };
+        }
+      });
+    };
+
+    useEffect(() => {
+      const handleMouseMove = (e: MouseEvent) => {
+        if (activeThumb) {
+          updateValue(calculatePercent(e.clientX), activeThumb);
+        }
+      };
+
+      const handleMouseUp = () => setActiveThumb(null);
+
+      if (activeThumb) {
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+      }
+
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }, [activeThumb]);
+
     const minPercent = getPercent(range.minVal);
     const maxPercent = getPercent(range.maxVal);
-    
-    const distanceToMin = Math.abs(clickPercent - minPercent);
-    const distanceToMax = Math.abs(clickPercent - maxPercent);
-    
-    const thumb = distanceToMin < distanceToMax ? 'min' : 'max';
-    setActiveThumb(thumb);
-    updateValue(clickPercent, thumb);
+
+    return (
+      <div style={styles.wrapper} className="px-5">
+        <div style={styles.track} ref={trackRef} onMouseDown={handleMouseDown}>
+          {/* Progress Bar (Black section between thumbs) */}
+          <div
+            style={{
+              ...styles.fill,
+              left: `${minPercent}%`,
+              width: `${maxPercent - minPercent}%`,
+            }}
+          />
+
+          {/* Min Thumb */}
+          <div style={{ ...styles.thumb, left: `${minPercent}%` }} />
+
+          {/* Max Thumb */}
+          <div style={{ ...styles.thumb, left: `${maxPercent}%` }} />
+        </div>
+
+        <div style={styles.label} className="flex justify-between items-center">
+          <span>
+            <strong>
+              {unit}
+              {range.minVal}
+            </strong>
+          </span>
+          <span>
+            <strong>
+              {unit}
+              {range.maxVal}
+            </strong>
+          </span>
+        </div>
+      </div>
+    );
   };
 
-  const updateValue = (percent: number, thumb: string) => {
-    const rawValue = (percent / 100) * (max - min) + min;
-    // Snap to step if needed (simplified)
-    const value = Math.round(rawValue);
-
-    setRange((prev: any) => {
-      if (thumb === 'min') {
-        const val = Math.min(value, prev.maxVal - (step || 1));
-        return { ...prev, minVal: Math.max(min, val) };
-      } else {
-        const val = Math.max(value, prev.minVal + (step || 1));
-        return { ...prev, maxVal: Math.min(max, val) };
-      }
-    });
+  const styles: Record<string, React.CSSProperties> = {
+    wrapper: {
+      width: "280px",
+      // padding: '10px 10px',
+      background: "#fff",
+      userSelect: "none",
+    },
+    track: {
+      position: "relative",
+      width: "100%",
+      height: "6px",
+      backgroundColor: "#e0e0e0",
+      borderRadius: "3px",
+      cursor: "pointer",
+    },
+    fill: {
+      position: "absolute",
+      height: "100%",
+      backgroundColor: "#000",
+      borderRadius: "3px",
+    },
+    thumb: {
+      position: "absolute",
+      top: "50%",
+      width: "20px",
+      height: "20px",
+      backgroundColor: "#000",
+      borderRadius: "50%",
+      transform: "translate(-50%, -50%)",
+      border: "2px solid #fff",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+      cursor: "grab",
+      zIndex: 2,
+    },
+    label: {
+      marginTop: "25px",
+      fontFamily: "Arial, sans-serif",
+      fontSize: "14px",
+      display: "flex",
+      justifyContent: "between",
+      alignItems: "center",
+    },
   };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (activeThumb) {
-        updateValue(calculatePercent(e.clientX), activeThumb);
-      }
-    };
-
-    const handleMouseUp = () => setActiveThumb(null);
-
-    if (activeThumb) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [activeThumb]);
-
-  const minPercent = getPercent(range.minVal);
-  const maxPercent = getPercent(range.maxVal);
-
-  return (
-    <div style={styles.wrapper} className="px-5">
-      <div 
-        style={styles.track} 
-        ref={trackRef} 
-        onMouseDown={handleMouseDown}
-      >
-        {/* Progress Bar (Black section between thumbs) */}
-        <div style={{ 
-          ...styles.fill, 
-          left: `${minPercent}%`, 
-          width: `${maxPercent - minPercent}%` 
-        }} />
-        
-        {/* Min Thumb */}
-        <div style={{ ...styles.thumb, left: `${minPercent}%` }} />
-        
-        {/* Max Thumb */}
-        <div style={{ ...styles.thumb, left: `${maxPercent}%` }} />
-      </div>
-
-      <div style={styles.label} className="flex justify-between items-center">
-        <span><strong>{unit}{range.minVal}</strong></span> 
-         <span><strong>{unit}{range.maxVal}</strong></span>
-      </div>
-    </div>
-  );
-};
-
-const styles = {
-  wrapper: {
-    width: '280px',
-    // padding: '10px 10px',
-    background: '#fff',
-    userSelect: 'none',
-  },
-  track: {
-    position: 'relative',
-    width: '100%',
-    height: '6px',
-    backgroundColor: '#e0e0e0',
-    borderRadius: '3px',
-    cursor: 'pointer',
-  },
-  fill: {
-    position: 'absolute',
-    height: '100%',
-    backgroundColor: '#000',
-    borderRadius: '3px',
-  },
-  thumb: {
-    position: 'absolute',
-    top: '50%',
-    width: '20px',
-    height: '20px',
-    backgroundColor: '#000',
-    borderRadius: '50%',
-    transform: 'translate(-50%, -50%)',
-    border: '2px solid #fff',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-    cursor: 'grab',
-    zIndex: 2,
-  },
-  label: {
-    marginTop: '25px',
-    fontFamily: 'Arial, sans-serif',
-    fontSize: '14px',
-    display: 'flex',
-    justifyContent: 'between',
-    alignItems: 'center',
-  }
-};
-
 
   // ---------------- FILTER SIDEBAR ----------------
   const FilterSidebar = () => {
@@ -722,7 +675,6 @@ const styles = {
               <X className="w-5 h-5" />
             </button>
           </div>
-
 
           {/* Price Range */}
           <div className="mb-2">
@@ -764,9 +716,7 @@ const styles = {
           {/* Sleeps (for camper-van) */}
           {activeFilter === "camper-van" && (
             <div className="mb-2">
-              <h4 className="text-base font-medium text-gray-900 mb-4">
-                Sleeps
-              </h4>
+              <h4 className="text-base font-medium text-gray-900 mb-4">Sleeps</h4>
               <DualRangeSlider
                 min={minSleep}
                 max={maxSleep}
@@ -781,9 +731,7 @@ const styles = {
           {/* Seating (for camper-van) */}
           {activeFilter === "camper-van" && (
             <div className="mb-2">
-              <h4 className="text-base font-medium text-gray-900 mb-2">
-                Seating
-              </h4>
+              <h4 className="text-base font-medium text-gray-900 mb-2">Seating</h4>
               <DualRangeSlider
                 min={minSeat}
                 max={maxSeat}
@@ -800,10 +748,7 @@ const styles = {
             <h4 className="text-base font-medium text-gray-900 mb-4">Type</h4>
             <div className="space-y-3">
               {filterOptions.types.map((item, index) => (
-                <label
-                  key={index}
-                  className="flex items-center gap-3 cursor-pointer text-gray-700"
-                >
+                <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
                   <input
                     type="checkbox"
                     checked={selectedTypes.includes(item)}
@@ -811,9 +756,7 @@ const styles = {
                       if (e.target.checked) {
                         setSelectedTypes([...selectedTypes, item]);
                       } else {
-                        setSelectedTypes(
-                          selectedTypes.filter((t) => t !== item),
-                        );
+                        setSelectedTypes(selectedTypes.filter((t) => t !== item));
                       }
                     }}
                     className="w-5 h-5 rounded border-gray-400"
@@ -826,15 +769,10 @@ const styles = {
 
           {/* Category */}
           <div className="mb-2">
-            <h4 className="text-base font-medium text-gray-900 mb-4">
-              Category
-            </h4>
+            <h4 className="text-base font-medium text-gray-900 mb-4">Category</h4>
             <div className="space-y-3">
               {filterOptions.categories.map((item, index) => (
-                <label
-                  key={index}
-                  className="flex items-center gap-3 cursor-pointer text-gray-700"
-                >
+                <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
                   <input
                     type="checkbox"
                     checked={selectedCategories.includes(item)}
@@ -842,9 +780,7 @@ const styles = {
                       if (e.target.checked) {
                         setSelectedCategories([...selectedCategories, item]);
                       } else {
-                        setSelectedCategories(
-                          selectedCategories.filter((c) => c !== item),
-                        );
+                        setSelectedCategories(selectedCategories.filter((c) => c !== item));
                       }
                     }}
                     className="w-5 h-5 rounded border-gray-400"
@@ -857,15 +793,10 @@ const styles = {
 
           {/* Facilities */}
           <div>
-            <h4 className="text-base font-medium text-gray-900 mb-2">
-              Facilities
-            </h4>
+            <h4 className="text-base font-medium text-gray-900 mb-2">Facilities</h4>
             <div className="space-y-3">
               {filterOptions.facilities.map((item, index) => (
-                <label
-                  key={index}
-                  className="flex items-center gap-3 cursor-pointer text-gray-700"
-                >
+                <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
                   <input
                     type="checkbox"
                     checked={selectedFacilities.includes(item)}
@@ -873,9 +804,7 @@ const styles = {
                       if (e.target.checked) {
                         setSelectedFacilities([...selectedFacilities, item]);
                       } else {
-                        setSelectedFacilities(
-                          selectedFacilities.filter((f) => f !== item),
-                        );
+                        setSelectedFacilities(selectedFacilities.filter((f) => f !== item));
                       }
                     }}
                     className="w-5 h-5 rounded border-gray-400"
@@ -911,7 +840,6 @@ const styles = {
     }
   }, [activeFilterFromHeader]);
 
-
   return (
     <div className="min-h-screen  flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
       {/* Airbnb Header */}
@@ -923,36 +851,33 @@ const styles = {
       </div>
       {/* Hero Section with Dynamic Filters */}
       <section className="mt-20  dark:bg-black dark:text-white py-6 pt-8">
-        <div
-          ref={SearchbarRef}
-          className="w-full mx-auto max-md:hidden"
-        >
+        <div ref={SearchbarRef} className="w-full mx-auto max-md:hidden">
           {/* Category Filters - Horizontally Scrollable */}
           <div className="sticky top-0 z-40 dark:dark-color py-4 overflow-x-auto scrollbar-hide">
             <div className="flex items-center gap-4 mb-2 justify-center min-w-max px-4">
-              {visibleSections['camper-van'] !== false && (
-              <FilterButton
-                icon={CamperVanIcon}
-                label="Camper Van"
-                active={activeFilter === "camper-van"}
-                onClick={() => setActiveFilter("camper-van")}
-              />
+              {visibleSections["camper-van"] !== false && (
+                <FilterButton
+                  icon={CamperVanIcon}
+                  label="Camper Van"
+                  active={activeFilter === "camper-van"}
+                  onClick={() => setActiveFilter("camper-van")}
+                />
               )}
-              {visibleSections['unique-stays'] !== false && (
-              <FilterButton
-                icon={HomeIcon}
-                label="Unique Stays"
-                active={activeFilter === "unique-stays"}
-                onClick={() => setActiveFilter("unique-stays")}
-              />
+              {visibleSections["unique-stays"] !== false && (
+                <FilterButton
+                  icon={HomeIcon}
+                  label="Unique Stays"
+                  active={activeFilter === "unique-stays"}
+                  onClick={() => setActiveFilter("unique-stays")}
+                />
               )}
-              {visibleSections['best-activity'] !== false && (
-              <FilterButton
-                icon={RocketIcon}
-                label="Activity"
-                active={activeFilter === "activity"}
-                onClick={() => setActiveFilter("activity")}
-              />
+              {visibleSections["best-activity"] !== false && (
+                <FilterButton
+                  icon={RocketIcon}
+                  label="Activity"
+                  active={activeFilter === "activity"}
+                  onClick={() => setActiveFilter("activity")}
+                />
               )}
             </div>
           </div>
@@ -982,9 +907,7 @@ const styles = {
                           type="text"
                           placeholder="Search location"
                           value={
-                            selectedLocation === "Where are you going?"
-                              ? ""
-                              : selectedLocation
+                            selectedLocation === "Where are you going?" ? "" : selectedLocation
                           }
                           onChange={(e) => {
                             setSelectedLocation(e.target.value);
@@ -1014,10 +937,7 @@ const styles = {
 
                     {/* Date Field */}
                     {/* Check-in */}
-                    <div
-                      ref={calendarRef}
-                      className="flex flex-col gap-2 flex-2 relative min-w-0"
-                    >
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-2 relative min-w-0">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-5 h-5" />
                         <span className="text-sm">Date</span>
@@ -1066,10 +986,7 @@ const styles = {
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Activity Name Field */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 min-w-0 relative"
-                      ref={activityRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 min-w-0 relative" ref={activityRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Star className="w-5 h-5" />
                         <span className="text-sm">Activity Name</span>
@@ -1082,9 +999,7 @@ const styles = {
                           setShowGuestDropdown(false);
                         }}
                         className={`font-medium text-lg md:text-lg text-left hover:text-gray-700 transition-colors ${
-                          activityName === "Tracking"
-                            ? "text-gray-400"
-                            : "text-black"
+                          activityName === "Tracking" ? "text-gray-400" : "text-black"
                         }`}
                       >
                         {activityName}
@@ -1100,10 +1015,7 @@ const styles = {
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Guests Field */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 min-w-0 relative"
-                      ref={guestRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 min-w-0 relative" ref={guestRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="w-5 h-5" />
                         <span className="text-sm">Guests</span>
@@ -1121,8 +1033,7 @@ const styles = {
                             : "text-gray-400"
                         }`}
                       >
-                        {guests.adults + guests.children + guests.infants ||
-                          "Add guests"}
+                        {guests.adults + guests.children + guests.infants || "Add guests"}
                       </button>
                       {showGuestDropdown && (
                         <GuestDropdown
@@ -1159,9 +1070,7 @@ const styles = {
                       {/* Label */}
                       <div className="flex items-center gap-2 text-gray-500">
                         <MapPin className="w-4 h-4 md:w-5 md:h-5" />
-                        <span className="text-xs md:text-sm">
-                          Location From
-                        </span>
+                        <span className="text-xs md:text-sm">Location From</span>
                       </div>
 
                       {/* Search Input */}
@@ -1170,9 +1079,7 @@ const styles = {
                           type="text"
                           placeholder="Search location"
                           value={
-                            selectedLocation === "Where are you going?"
-                              ? ""
-                              : selectedLocation
+                            selectedLocation === "Where are you going?" ? "" : selectedLocation
                           }
                           onChange={(e) => {
                             setSelectedLocation(e.target.value);
@@ -1219,9 +1126,7 @@ const styles = {
                           type="text"
                           placeholder="Search location"
                           value={
-                            selectedLocationTo === "Where are you going?"
-                              ? ""
-                              : selectedLocationTo
+                            selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo
                           }
                           onChange={(e) => {
                             setSelectedLocationTo(e.target.value);
@@ -1252,10 +1157,7 @@ const styles = {
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Check-in */}
-                    <div
-                      ref={calendarRef}
-                      className="flex flex-col gap-2 flex-1 relative min-w-0"
-                    >
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-1 relative min-w-0">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-5 h-5" />
                         <span className="text-sm">Check in</span>
@@ -1328,18 +1230,13 @@ const styles = {
                               year: "numeric",
                             })}
                       </button>
-
-                     
                     </div>
 
                     {/* Divider */}
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Guests */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 relative min-w-0"
-                      ref={guestRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 relative min-w-0" ref={guestRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="w-5 h-5" />
                         <span className="text-sm">Guests</span>
@@ -1356,11 +1253,7 @@ const styles = {
                             : "text-gray-400"
                         }`}
                       >
-                        {(guests.adults +
-                          guests.children +
-                          guests.infants +
-                          guests.pet >
-                          0 &&
+                        {(guests.adults + guests.children + guests.infants + guests.pet > 0 &&
                           `${guests.adults + guests.children + guests.infants + guests.pet} guests`) ||
                           "Add guests"}
                       </button>
@@ -1408,9 +1301,7 @@ const styles = {
                           type="text"
                           placeholder="Search location"
                           value={
-                            selectedLocation === "Where are you going?"
-                              ? ""
-                              : selectedLocation
+                            selectedLocation === "Where are you going?" ? "" : selectedLocation
                           }
                           onChange={(e) => {
                             setSelectedLocation(e.target.value);
@@ -1441,10 +1332,7 @@ const styles = {
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Check-in */}
-                    <div
-                      ref={calendarRef}
-                      className="flex flex-col gap-2 flex-1 relative min-w-0"
-                    >
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-1 relative min-w-0">
                       <div className="flex items-center gap-2 text-gray-500">
                         <Calendar className="w-5 h-5" />
                         <span className="text-sm">Check in</span>
@@ -1517,17 +1405,12 @@ const styles = {
                               year: "numeric",
                             })}
                       </button>
-
-           
                     </div>
 
                     <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
 
                     {/* Guests */}
-                    <div
-                      className="flex flex-col gap-2 flex-1 min-w-0 relative"
-                      ref={guestRef}
-                    >
+                    <div className="flex flex-col gap-2 flex-1 min-w-0 relative" ref={guestRef}>
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="w-5 h-5" />
                         <span className="text-sm">Guests</span>
@@ -1544,8 +1427,7 @@ const styles = {
                             : "text-gray-400"
                         }`}
                       >
-                        {guests.adults + guests.children + guests.infants ||
-                          "Add guests"}
+                        {guests.adults + guests.children + guests.infants || "Add guests"}
                       </button>
                       {showGuestDropdown && (
                         <GuestDropdown
@@ -1571,7 +1453,6 @@ const styles = {
             </div>
           </div>
         </div>
-       
       </section>
       {/* Main Content */}
       <div className="px-4 bg-white py-8 overflow-hidden">
@@ -1592,22 +1473,18 @@ const styles = {
             <DialogBackdrop className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" />
             <div className="fixed inset-0 overflow-y-auto">
               <div className="flex min-h-full items-center justify-center p-4">
-                <DialogPanel
-                  className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-0 shadow-2xl transition-all animate-zoom-in"
-                >
+                <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-0 shadow-2xl transition-all animate-zoom-in">
                   <FilterSidebar />
                 </DialogPanel>
               </div>
             </div>
           </Dialog>
-          
+
           {/* Results Section */}
           <div className="flex-1 max-w-7xl mx-auto flex flex-col h-full">
             {/* Results Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-              <h2 className="text-2xl font-semibold text-gray-900">
-                {getResultsTitle()}
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-900">{getResultsTitle()}</h2>
 
               <div className="flex items-center gap-4">
                 <button
@@ -1623,15 +1500,15 @@ const styles = {
             </div>
 
             {/* Results Cards Div - Scrollable */}
-            <div className="flex-1 overflow-y-auto pr-2 max-h-[750px] scrollbar-hide" style={{ minHeight: '400px' }}>
+            <div
+              className="flex-1 overflow-y-auto pr-2 max-h-[750px] scrollbar-hide"
+              style={{ minHeight: "400px" }}
+            >
               {isLoading ? (
-              <FullPageLoader fullPage={false} message="Searching for perfect stays..." />
-            ) : (paginatedItems.length > 0 ? (
+                <FullPageLoader fullPage={false} message="Searching for perfect stays..." />
+              ) : paginatedItems.length > 0 ? (
                 <>
-                  <DefaultCard
-                    CardData={paginatedItems}
-                    activeFilter={activeFilter}
-                  />
+                  <DefaultCard CardData={paginatedItems} activeFilter={activeFilter} />
                   <CustomPagination
                     currentPage={page}
                     totalPages={totalPages}
@@ -1645,25 +1522,23 @@ const styles = {
                   </div>
                   <h3 className="text-xl font-medium text-gray-900 mb-1">No results found</h3>
                   <p className="text-gray-500 text-center max-w-xs">
-                    We couldn't find anything matching your search. Try adjusting your filters or search area.
+                    We couldn't find anything matching your search. Try adjusting your filters or
+                    search area.
                   </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* <div>
         <MobileUserNav />
       </div> */}
-      <Footer/>
+      <Footer />
     </div>
   );
 }
-
-
-
 
 // Icon Components (reused from Index.tsx)
 function CamperVanIcon({ className }: { className?: string }) {
@@ -1706,6 +1581,3 @@ function RocketIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-
-
-
