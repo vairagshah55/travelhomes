@@ -140,7 +140,7 @@ const calendarBookingRoutes = require("../modules/calendar-bookings/calendar-boo
 const campervansRoutes = require("../routes/campervans");
 const cmsRoutes = require("../routes/cms");
 const cmsMediaRoutes = require("../routes/cmsMedia");
-const contactRoutes = require("../routes/contact");
+const contactRoutes = require("../modules/contact/contact.router");
 const demoRoutes = require("../routes/demo");
 const globlsettingRoutes = require("../routes/globlsetting");
 const helpdeskRoutes = require("../routes/helpdesk");
@@ -161,8 +161,8 @@ const vendorChatsRoutes = require("../routes/vendorChats");
 const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
 const vendorsRoutes = require("../routes/vendors");
 const vendorSettingRoutes = require("../routes/vendorsetting");
-const notificationsRoutes = require("../routes/notifications");
-const subscribersRoutes = require("../routes/subscribers");
+const notificationsRoutes = require("../modules/notifications/notifications.router");
+const subscribersRoutes = require("../modules/subscribers/subscribers.router");
 
 // Public routes
 app.get("/api/ping", (req, res) => {
