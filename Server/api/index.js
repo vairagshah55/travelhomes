@@ -138,8 +138,8 @@ const bookingDetailsRoutes = require("../modules/booking-details/booking-details
 const bookingsRouter = require("../modules/bookings/bookings.router");
 const calendarBookingRoutes = require("../modules/calendar-bookings/calendar-bookings.router");
 const campervansRoutes = require("../routes/campervans");
-const cmsRoutes = require("../routes/cms");
-const cmsMediaRoutes = require("../routes/cmsMedia");
+const cmsRoutes = require("../modules/cms/cms.router");
+const cmsMediaRoutes = require("../modules/cms-media/cms-media.router");
 const contactRoutes = require("../modules/contact/contact.router");
 const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
 const managementRoutes = require("../modules/management/management.router");
@@ -263,8 +263,17 @@ app.use("/api/admin/notifications", notificationsRoutes);
 
 // Admin CMS Media routes (upload/list/delete images for pages) - MUST be before /cms to take priority
 app.use("/api/admin/cms/media", cmsMediaRoutes);
-// Admin CMS routes (full management)
-app.use("/api/admin/cms", cmsRoutes);
+// Admin CMS routes — flag the request so the router's testimonials filter
+// and contact upsert can short-circuit the admin/public branch instead of
+// sniffing baseUrl.
+app.use(
+  "/api/admin/cms",
+  (req, _res, next) => {
+    req.isAdminContext = true;
+    next();
+  },
+  cmsRoutes,
+);
 
 // Admin Dashboard & Analytics endpoints
 app.use("/api", adminDashboardRoutes);
