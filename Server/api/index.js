@@ -128,8 +128,8 @@ console.log("Loading activities routes...");
 const activitiesRoutes = require("../routes/activities");
 const adminAnalyticsRoutes = require("../routes/adminAnalytics");
 const adminAuthRouter = require("../modules/admin-auth/admin-auth.router");
-const adminCrmRoutes = require("../routes/adminCrm");
-const adminDashboardRoutes = require("../routes/adminDashboard");
+const adminCrmRoutes = require("../modules/admin-crm/admin-crm.router");
+const adminDashboardRoutes = require("../modules/admin-dashboard/admin-dashboard.router");
 const adminRolesRoutes = require("../routes/adminRoles");
 const adminStaffRoutes = require("../routes/adminStaff");
 const authModuleRouter = require("../modules/auth/auth.router");
@@ -142,7 +142,6 @@ const cmsRoutes = require("../routes/cms");
 const cmsMediaRoutes = require("../routes/cmsMedia");
 const contactRoutes = require("../modules/contact/contact.router");
 const demoRoutes = require("../routes/demo");
-const globlsettingRoutes = require("../routes/globlsetting");
 const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
 const managementRoutes = require("../routes/management");
 const marketingRoutes = require("../modules/marketing/marketing.router");
@@ -152,7 +151,7 @@ const onboardingRoutes = require("../routes/onboarding");
 const paymentsRouter = require("../modules/payments/payments.router");
 const pluginsRoutes = require("../modules/plugins/plugins.router");
 const profileRoutes = require("../routes/profile");
-const settingsRoutes = require("../routes/settings");
+const settingsRoutes = require("../modules/settings/settings.router");
 const staysRoutes = require("../routes/stays");
 const tripsRoutes = require("../modules/trips/trips.router");
 const usersRoutes = require("../routes/users");
@@ -160,7 +159,7 @@ const vendorAnalyticsRoutes = require("../routes/vendorAnalytics");
 const vendorChatsRoutes = require("../routes/vendorChats");
 const vendorAuthRouter = require("../modules/vendor-auth/vendor-auth.router");
 const vendorsRoutes = require("../routes/vendors");
-const vendorSettingRoutes = require("../routes/vendorsetting");
+const vendorSettingRoutes = require("../modules/vendor-setting/vendor-setting.router");
 const notificationsRoutes = require("../modules/notifications/notifications.router");
 const subscribersRoutes = require("../modules/subscribers/subscribers.router");
 
@@ -270,7 +269,6 @@ app.use("/api/admin/notifications", notificationsRoutes);
 app.use("/api/admin/cms/media", cmsMediaRoutes);
 // Admin CMS routes (full management)
 app.use("/api/admin/cms", cmsRoutes);
-app.use("/api/admin/Globlsetting", globlsettingRoutes);
 
 // Admin Dashboard & Analytics endpoints
 app.use("/api", adminDashboardRoutes);
