@@ -124,8 +124,7 @@ app.use("/invoices", express.static(invoicesDir));
 const usersRouter = require("../modules/users/users.router");
 
 // Import all migrated routes
-console.log("Loading activities routes...");
-const activitiesRoutes = require("../routes/activities");
+const activitiesRoutes = require("../modules/activities/activities.router");
 const adminAnalyticsRoutes = require("../modules/admin-analytics/admin-analytics.router");
 const adminAuthRouter = require("../modules/admin-auth/admin-auth.router");
 const adminCrmRoutes = require("../modules/admin-crm/admin-crm.router");
@@ -137,7 +136,7 @@ const blogsRoutes = require("../modules/blogs/blogs.router");
 const bookingDetailsRoutes = require("../modules/booking-details/booking-details.router");
 const bookingsRouter = require("../modules/bookings/bookings.router");
 const calendarBookingRoutes = require("../modules/calendar-bookings/calendar-bookings.router");
-const campervansRoutes = require("../routes/campervans");
+const campervansRoutes = require("../modules/campervans/campervans.router");
 const cmsRoutes = require("../modules/cms/cms.router");
 const cmsMediaRoutes = require("../modules/cms-media/cms-media.router");
 const contactRoutes = require("../modules/contact/contact.router");
@@ -150,7 +149,7 @@ const paymentsRouter = require("../modules/payments/payments.router");
 const pluginsRoutes = require("../modules/plugins/plugins.router");
 const profileRoutes = require("../modules/profile/profile.router");
 const settingsRoutes = require("../modules/settings/settings.router");
-const staysRoutes = require("../routes/stays");
+const staysRoutes = require("../modules/stays/stays.router");
 const tripsRoutes = require("../modules/trips/trips.router");
 const usersRoutes = require("../modules/users/users.router");
 const vendorAnalyticsRoutes = require("../modules/vendor-analytics/vendor-analytics.router");
