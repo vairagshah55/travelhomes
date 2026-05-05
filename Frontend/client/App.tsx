@@ -91,7 +91,29 @@ const Career = lazy(() => import("./pages/Career"));
 const TermsAndConditions = lazy(() => import("./pages/TermsAndConditions"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 
-const queryClient = new QueryClient();
+// Default query options:
+//   - staleTime: 30s — listings, dashboards, and most reads tolerate ~30s
+//     of stale data, and this halves the request volume during navigation.
+//   - retry: 1 — retry once on transient failures, then surface the error.
+//     Network 5xx and timeouts are usually a single transient blip.
+//   - refetchOnWindowFocus: false — don't refetch every time a tab regains
+//     focus. The default true is too aggressive for this app's read pattern.
+//   - retryOnMount: false — if a query is still in error and the component
+//     re-mounts (e.g. tab switch), don't immediately re-hit the failed
+//     endpoint; let the user click retry or wait for an explicit invalidate.
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      retryOnMount: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => {
   useLayoutEffect(() => initDashboardAnimations(), []);

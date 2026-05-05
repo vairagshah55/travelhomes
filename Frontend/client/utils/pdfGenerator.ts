@@ -1,28 +1,32 @@
-import html2pdf from 'html2pdf.js';
+// html2pdf.js + html2canvas weigh ~944kB combined and are only invoked on
+// user action (e.g. "Download PDF" buttons). We lazy-import them inside
+// each function so neither lib lands in any route's initial chunk.
 
 export interface PDFOptions {
   filename: string;
   title?: string;
-  orientation?: 'portrait' | 'landscape';
+  orientation?: "portrait" | "landscape";
   compress?: boolean;
 }
 
-export const generatePDF = (elementId: string, options: PDFOptions) => {
+export const generatePDF = async (elementId: string, options: PDFOptions) => {
   const element = document.getElementById(elementId);
   if (!element) {
     console.error(`Element with id "${elementId}" not found`);
     return;
   }
 
+  const { default: html2pdf } = await import("html2pdf.js");
+
   const opt = {
     margin: 10,
-    filename: options.filename || 'document.pdf',
-    image: { type: 'jpeg', quality: 0.98 },
+    filename: options.filename || "document.pdf",
+    image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true },
     jsPDF: {
-      orientation: options.orientation || 'portrait',
-      unit: 'mm',
-      format: 'a4',
+      orientation: options.orientation || "portrait",
+      unit: "mm",
+      format: "a4",
       compress: options.compress !== false,
     },
   };
@@ -30,18 +34,21 @@ export const generatePDF = (elementId: string, options: PDFOptions) => {
   html2pdf().set(opt).from(element).save();
 };
 
-export const downloadDetailsAsPDF = (
+export const downloadDetailsAsPDF = async (
   data: Record<string, any>,
   filename: string,
-  title: string
+  title: string,
 ) => {
-  const element = document.createElement('div');
-  element.style.padding = '20px';
-  element.style.fontFamily = 'Arial, sans-serif';
-  element.style.backgroundColor = '#fff';
-  element.style.color = '#000';
+  const { default: html2pdf } = await import("html2pdf.js");
 
-  const logoUrl = 'https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160';
+  const element = document.createElement("div");
+  element.style.padding = "20px";
+  element.style.fontFamily = "Arial, sans-serif";
+  element.style.backgroundColor = "#fff";
+  element.style.color = "#000";
+
+  const logoUrl =
+    "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160";
 
   element.innerHTML = `
     <div style="text-align: center; margin-bottom: 30px;">
@@ -58,7 +65,7 @@ export const downloadDetailsAsPDF = (
               <div style="margin-bottom: 15px;">
                 <h3 style="color: #333; font-size: 14px; font-weight: bold; margin: 0 0 8px 0;">${formatKey(key)}</h3>
                 <ul style="margin: 0; padding-left: 20px;">
-                  ${value.map((item) => `<li style="margin: 4px 0; font-size: 12px;">${item}</li>`).join('')}
+                  ${value.map((item) => `<li style="margin: 4px 0; font-size: 12px;">${item}</li>`).join("")}
                 </ul>
               </div>
             `;
@@ -66,11 +73,11 @@ export const downloadDetailsAsPDF = (
           return `
             <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 12px;">
               <span style="font-weight: 500; color: #555;">${formatKey(key)}</span>
-              <span style="color: #333;">${value || 'N/A'}</span>
+              <span style="color: #333;">${value || "N/A"}</span>
             </div>
           `;
         })
-        .join('')}
+        .join("")}
     </div>
 
     <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e0e0e0; text-align: center; color: #999; font-size: 10px;">
@@ -82,12 +89,12 @@ export const downloadDetailsAsPDF = (
   const opt = {
     margin: 10,
     filename: filename,
-    image: { type: 'jpeg', quality: 0.98 },
+    image: { type: "jpeg", quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, allowTaint: true },
     jsPDF: {
-      orientation: 'portrait' as const,
-      unit: 'mm',
-      format: 'a4',
+      orientation: "portrait" as const,
+      unit: "mm",
+      format: "a4",
       compress: true,
     },
   };
@@ -97,7 +104,7 @@ export const downloadDetailsAsPDF = (
 
 const formatKey = (key: string): string => {
   return key
-    .replace(/([A-Z])/g, ' $1')
+    .replace(/([A-Z])/g, " $1")
     .replace(/^./, (str) => str.toUpperCase())
     .trim();
 };
