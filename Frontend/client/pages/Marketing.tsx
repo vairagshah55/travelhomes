@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import toast from 'react-hot-toast';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { 
+import React, { useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import toast from "react-hot-toast";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
   Bell,
   Menu,
   X,
@@ -15,43 +16,40 @@ import {
   AlignRight,
   Link2,
   Upload,
-  Trash2
-} from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Sidebar } from '@/components/Navigation';
-import { useNavigate } from 'react-router-dom';
-import ProfileDropdown from '@/components/ProfileDropdown';
-import MobileVendorNav from '@/components/MobileVendorNav';
-import { DashboardHeader } from '@/components/Header';
-import { marketingApi, adminCmsMediaApi, MarketingContentDTO, API_BASE_URL } from '@/lib/api';
+  Trash2,
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Sidebar } from "@/components/Navigation";
+import { useNavigate } from "react-router-dom";
+import ProfileDropdown from "@/components/ProfileDropdown";
+import MobileVendorNav from "@/components/MobileVendorNav";
+import { DashboardHeader } from "@/components/Header";
+import { marketingApi, adminCmsMediaApi, MarketingContentDTO, API_BASE_URL } from "@/lib/api";
 
 const Marketing = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [contentText, setContentText] = useState('');
+  const [contentText, setContentText] = useState("");
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
-  
-  const [items, setItems] = useState<MarketingContentDTO[]>([]);
+
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    loadItems();
-  }, []);
+  const marketingKey = ["marketing", "list"] as const;
+  const { data: items = [] } = useQuery<MarketingContentDTO[]>({
+    queryKey: marketingKey,
+    queryFn: () => marketingApi.list(),
+  });
 
-  const loadItems = async () => {
-    try {
-      const data = await marketingApi.list();
-      setItems(data);
-    } catch (error) {
-      console.error('Failed to load marketing content:', error);
-    }
+  const loadItems = () => {
+    queryClient.invalidateQueries({ queryKey: marketingKey });
   };
 
-  const insertFormat = (prefix: string, suffix: string = '') => {
+  const insertFormat = (prefix: string, suffix: string = "") => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
@@ -68,10 +66,7 @@ const Marketing = () => {
     // Defer focus and selection update to next tick
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(
-        start + prefix.length,
-        end + prefix.length
-      );
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
     }, 0);
   };
 
@@ -93,37 +88,39 @@ const Marketing = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const files = Array.from(e.dataTransfer.files);
-      setUploadedImages(prev => [...prev, ...files]);
+      setUploadedImages((prev) => [...prev, ...files]);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      setUploadedImages(prev => [...prev, ...files]);
+      setUploadedImages((prev) => [...prev, ...files]);
     }
   };
 
   const removeUploadedImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this content?')) return;
+    if (!window.confirm("Are you sure you want to delete this content?")) return;
     try {
       await marketingApi.delete(id);
-      setItems(prev => prev.filter(item => item._id !== id));
+      queryClient.setQueryData<MarketingContentDTO[]>(marketingKey, (prev) =>
+        (prev ?? []).filter((item) => item._id !== id),
+      );
     } catch (error) {
-      console.error('Failed to delete item:', error);
+      console.error("Failed to delete item:", error);
     }
   };
 
   const handleSubmit = async () => {
     if (!contentText && uploadedImages.length === 0) {
-      toast.error('Please add some content or images.');
+      toast.error("Please add some content or images.");
       return;
     }
 
@@ -132,7 +129,7 @@ const Marketing = () => {
       // 1. Upload images
       const imageUrls: string[] = [];
       for (const file of uploadedImages) {
-        const res = await adminCmsMediaApi.upload(file, 'marketing', 'content');
+        const res = await adminCmsMediaApi.upload(file, "marketing", "content");
         if (res.success && res.data?.url) {
           imageUrls.push(res.data.url);
         }
@@ -142,28 +139,28 @@ const Marketing = () => {
       // Calculate additionalCount (images.length - 1 because one is usually displayed as main, and the rest as +N)
       // Or if the display logic shows 1 image and +N for the REST, then N = total - 1.
       const additionalCount = Math.max(0, imageUrls.length - 1);
-      
+
       await marketingApi.create({
         content: contentText,
         images: imageUrls,
-        additionalCount: additionalCount
+        additionalCount: additionalCount,
       });
 
       // 3. Reset form & reload
-      setContentText('');
+      setContentText("");
       setUploadedImages([]);
       loadItems();
-      toast.success('Marketing content posted successfully!');
+      toast.success("Marketing content posted successfully!");
     } catch (error: any) {
-      console.error('Failed to submit marketing content:', error);
-      toast.error(`Failed to submit content: ${error.message || 'Unknown error'}`);
+      console.error("Failed to submit marketing content:", error);
+      toast.error(`Failed to submit content: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    setContentText('');
+    setContentText("");
     setUploadedImages([]);
   };
 
@@ -173,12 +170,11 @@ const Marketing = () => {
       <div className="hidden lg:block">
         <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col ">
         {/* Header */}
-               <DashboardHeader Headtitle={"Marketing"} />
-       
+        <DashboardHeader Headtitle={"Marketing"} />
 
         {/* Content Area */}
         <div className="mb-10 flex-1 flex flex-col pr-5 pb-5 overflow-y-auto scrollbar-hide">
@@ -194,7 +190,6 @@ const Marketing = () => {
           {/* Content */}
           <div className="flex-1 p-5 bg-white dark:bg-gray-800 rounded-b-3xl ">
             <div className="max-w-7xl mx-auto space-y-8">
-
               {/* Reel/Images Section */}
               <div className="space-y-6">
                 <div className="space-y-4">
@@ -206,15 +201,15 @@ const Marketing = () => {
                 {/* File Upload Area */}
                 <div
                   className={`relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                    dragActive 
-                      ? 'border-dashboard-primary bg-blue-50 dark:bg-blue-900/10' 
-                      : 'border-gray-300 dark:border-gray-600 hover:border-dashboard-primary'
+                    dragActive
+                      ? "border-dashboard-primary bg-blue-50 dark:bg-blue-900/10"
+                      : "border-gray-300 dark:border-gray-600 hover:border-dashboard-primary"
                   }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={handleDrop}
-                  onClick={() => document.getElementById('file-upload')?.click()}
+                  onClick={() => document.getElementById("file-upload")?.click()}
                 >
                   <div className="flex flex-col items-center gap-4">
                     <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
@@ -225,8 +220,7 @@ const Marketing = () => {
                       />
                     </div>
                     <p className="text-sm text-dashboard-body dark:text-gray-400 max-w-sm">
-                      Drag and drop choose file to upload your files.{' '}
-                      <br />
+                      Drag and drop choose file to upload your files. <br />
                       All pdf, doc, csv, xlsx types are supported
                     </p>
                   </div>
@@ -267,7 +261,7 @@ const Marketing = () => {
                 <h3 className="text-base font-medium text-dashboard-title dark:text-gray-300 pl-1 font-plus-jakarta">
                   Write an content
                 </h3>
-                
+
                 <div className="border border-dashboard-stroke dark:border-gray-600 rounded-lg overflow-hidden">
                   {/* Text Editor */}
                   <Textarea
@@ -277,29 +271,32 @@ const Marketing = () => {
                     placeholder="Enter your marketing content here..."
                     className="min-h-[140px] border-0 bg-dashboard-bg dark:bg-gray-700 resize-none focus:ring-0 text-sm text-dashboard-body dark:text-gray-400 placeholder:text-dashboard-icons"
                   />
-                  
+
                   {/* Toolbar */}
                   <div className="border-t border-dashboard-stroke dark:border-gray-600 p-3 bg-white dark:bg-gray-800">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         {/* Text Formatting */}
                         <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => insertFormat('**', '**')}
+                          <button
+                            onClick={() => insertFormat("**", "**")}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             title="Bold"
                           >
                             <Bold size={12} className="text-dashboard-body dark:text-gray-400" />
                           </button>
-                          <button 
-                            onClick={() => insertFormat('__', '__')}
+                          <button
+                            onClick={() => insertFormat("__", "__")}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             title="Underline"
                           >
-                            <Underline size={12} className="text-dashboard-body dark:text-gray-400" />
+                            <Underline
+                              size={12}
+                              className="text-dashboard-body dark:text-gray-400"
+                            />
                           </button>
-                          <button 
-                            onClick={() => insertFormat('*', '*')}
+                          <button
+                            onClick={() => insertFormat("*", "*")}
                             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             title="Italic"
                           >
@@ -309,8 +306,15 @@ const Marketing = () => {
 
                         {/* Alignment - these insert standard markers or just newlines if needed, but for plain text we might skip or use chars */}
                         <div className="flex items-center gap-2">
-                          <button onClick={() => insertFormat('\n')} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors" title="New Line">
-                            <AlignJustify size={16} className="text-dashboard-body dark:text-gray-400" />
+                          <button
+                            onClick={() => insertFormat("\n")}
+                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            title="New Line"
+                          >
+                            <AlignJustify
+                              size={16}
+                              className="text-dashboard-body dark:text-gray-400"
+                            />
                           </button>
                           {/* 
                           <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
@@ -323,10 +327,10 @@ const Marketing = () => {
                         </div>
 
                         {/* Link */}
-                        <button 
+                        <button
                           onClick={() => {
-                            const url = prompt('Enter URL:');
-                            if (url) insertFormat('[', `](${url})`);
+                            const url = prompt("Enter URL:");
+                            if (url) insertFormat("[", `](${url})`);
                           }}
                           className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                           title="Link"
@@ -362,36 +366,43 @@ const Marketing = () => {
               disabled={isSubmitting}
               className="bg-dashboard-primary text-white hover:bg-gray-800 rounded-full px-8 font-geist"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit'}
+              {isSubmitting ? "Submitting..." : "Submit"}
             </Button>
           </div>
 
           {/* Previous Marketing Posts */}
           <div className="mt-8 px-5">
-            <h3 className="text-lg font-bold text-dashboard-title dark:text-white mb-4">Previous Marketing Posts</h3>
+            <h3 className="text-lg font-bold text-dashboard-title dark:text-white mb-4">
+              Previous Marketing Posts
+            </h3>
             <div className="space-y-4">
               {items.map((item) => (
-                <div key={item._id} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700">
+                <div
+                  key={item._id}
+                  className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700"
+                >
                   <div className="flex gap-4">
                     {/* Images */}
                     {item.images && item.images.length > 0 && (
                       <div className="flex-shrink-0">
                         <div className="flex gap-2 flex-wrap max-w-[300px]">
-                        {item.images.map((img, idx) => (
-                          <img 
-                            key={idx} 
-                            src={img.startsWith('http') ? img : `${API_BASE_URL}${img}`} 
-                            alt={`Marketing ${idx}`} 
-                            className="w-24 h-24 object-cover rounded-lg"
-                          />
-                        ))}
+                          {item.images.map((img, idx) => (
+                            <img
+                              key={idx}
+                              src={img.startsWith("http") ? img : `${API_BASE_URL}${img}`}
+                              alt={`Marketing ${idx}`}
+                              className="w-24 h-24 object-cover rounded-lg"
+                            />
+                          ))}
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Content */}
                     <div className="flex-1">
-                      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{item.content}</p>
+                      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                        {item.content}
+                      </p>
                       <div className="mt-2 text-xs text-gray-500">
                         Posted on: {new Date(item.createdAt).toLocaleDateString()}
                       </div>
@@ -399,9 +410,9 @@ const Marketing = () => {
 
                     {/* Actions */}
                     <div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleDeleteItem(item._id)}
                         className="text-red-500 hover:text-red-700"
                       >
@@ -418,7 +429,9 @@ const Marketing = () => {
           </div>
         </div>
       </div>
-      <div className="fixed"><MobileVendorNav/></div>
+      <div className="fixed">
+        <MobileVendorNav />
+      </div>
     </div>
   );
 };

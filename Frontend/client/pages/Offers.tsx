@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,33 +42,30 @@ const Offers = () => {
 
   // Data
   const [tab, setTab] = useState<"pending" | "approved" | "cancelled">("pending");
-  const [items, setItems] = useState<OfferDTO[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
 
   // Edit modal state
   const [editing, setEditing] = useState<OfferDTO | null>(null);
   const [editForm, setEditForm] = useState<Partial<OfferDTO>>({});
 
-  const load = async () => {
-    try {
-      setLoading(true);
+  const offersKey = ["offers", "tab", tab] as const;
+  const { data: items = [], isLoading: loading } = useQuery<OfferDTO[]>({
+    queryKey: offersKey,
+    queryFn: async () => {
       const token =
         localStorage.getItem("travel_auth_token") || sessionStorage.getItem("travel_auth_token");
-      const res = await offersApi.list(tab, token || undefined, { mine: true });
-      setItems(Array.isArray((res as any).data) ? (res as any).data : []);
-    } catch (e: any) {
-      setAlertType("error");
-      setAlertMessage(e?.message || "Failed to load offers");
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 4000);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, [tab]);
+      try {
+        const res = await offersApi.list(tab, token || undefined, { mine: true });
+        return Array.isArray((res as any).data) ? (res as any).data : [];
+      } catch (e: any) {
+        setAlertType("error");
+        setAlertMessage(e?.message || "Failed to load offers");
+        setShowAlert(true);
+        setTimeout(() => setShowAlert(false), 4000);
+        throw e;
+      }
+    },
+  });
 
   const handleToggleCollapse = () => setIsCollapsed(!isCollapsed);
 
@@ -89,7 +87,9 @@ const Offers = () => {
     try {
       const res = await offersApi.update(editing._id, editForm);
       const updated = res.data;
-      setItems((prev) => prev.map((i) => (i._id === updated._id ? updated : i)));
+      queryClient.setQueryData<OfferDTO[]>(offersKey, (prev) =>
+        (prev ?? []).map((i) => (i._id === updated._id ? updated : i)),
+      );
       setEditing(null);
       setAlertType("success");
       setAlertMessage("Offer updated");
@@ -106,7 +106,9 @@ const Offers = () => {
   const onCancelOffer = async (id: string) => {
     try {
       await offersApi.setStatus(id, "cancelled");
-      setItems((prev) => prev.filter((i) => i._id !== id));
+      queryClient.setQueryData<OfferDTO[]>(offersKey, (prev) =>
+        (prev ?? []).filter((i) => i._id !== id),
+      );
     } catch (e: any) {
       setAlertType("error");
       setAlertMessage("Failed to cancel");
@@ -118,7 +120,9 @@ const Offers = () => {
     if (!confirm("Delete this offer?")) return;
     try {
       await offersApi.remove(id);
-      setItems((prev) => prev.filter((i) => i._id !== id));
+      queryClient.setQueryData<OfferDTO[]>(offersKey, (prev) =>
+        (prev ?? []).filter((i) => i._id !== id),
+      );
     } catch (e: any) {
       setAlertType("error");
       setAlertMessage("Failed to delete");
