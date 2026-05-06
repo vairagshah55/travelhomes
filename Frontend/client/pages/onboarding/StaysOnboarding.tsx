@@ -9,6 +9,7 @@ import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useFeatures } from "@/hooks/useFeatures";
 import {
   Bath,
   Flame,
@@ -507,59 +508,58 @@ const StaysOnboarding = () => {
     setPersonalCountry("India");
   }, []);
 
-  // Populate country list on mount (countries are loaded by the
-  // useCountriesData hook above; this effect now only fetches CMS-driven
-  // amenity data).
+  // Top-level Unique Stay features + categories (shared cache).
+  const { data: stayFeatures } = useFeatures("Unique Stay");
+  const { data: stayCategories } = useFeatures("Unique Stay", "category");
+
   useEffect(() => {
-    // Fetch admin features (amenities)
-    cmsPublicApi
-      .getFeatures("Unique Stay")
-      .then((list) => {
-        // Filter for features or items without type (legacy)
-        setAdminFeatures(
-          list.filter((f: any) => f.status === "enable" && (!f.type || f.type === "feature")),
-        );
-      })
-      .catch(console.error);
+    if (!stayFeatures) return;
+    // Filter for features or items without type (legacy)
+    setAdminFeatures(
+      stayFeatures.filter((f: any) => f.status === "enable" && (!f.type || f.type === "feature")),
+    );
+  }, [stayFeatures]);
 
-    // Fetch property types (categories)
-    cmsPublicApi
-      .getFeatures("Unique Stay", "category")
-      .then((list) => {
-        const types = list
-          .filter((f: any) => f.status === "enable")
-          .map((f: any) => ({
-            id: f.name.toLowerCase(),
-            realId: f.id || f._id,
-            name: f.name,
-            icon: f.icon,
-          }));
-        setPropertyTypes(types);
+  useEffect(() => {
+    if (!stayCategories) return;
+    const types = stayCategories
+      .filter((f: any) => f.status === "enable")
+      .map((f: any) => ({
+        id: f.name.toLowerCase(),
+        realId: f.id || f._id,
+        name: f.name,
+        icon: f.icon,
+      }));
+    setPropertyTypes(types);
 
-        // Fetch dynamic sub-categories for each property type
-        types.forEach((type: any) => {
-          if (type.realId) {
-            cmsPublicApi
-              .getFeatures(type.realId, "subcategory")
-              .then((subs) => {
-                if (subs && subs.length > 0) {
-                  setSubCategoriesMap((prev) => ({
-                    ...prev,
-                    [type.id]: subs.map((s: any) => ({
-                      id: s.name.toLowerCase().replace(/\s+/g, "-"),
-                      name: s.name,
-                      icon: s.icon,
-                    })),
-                  }));
-                }
-              })
-              .catch(console.error);
-          }
-        });
-      })
-      .catch(console.error);
+    // Fetch dynamic sub-categories for each property type. Keeping this
+    // as an inline N+1 since each subcategory is keyed by a runtime
+    // `type.realId`; useQueries() would also work but the cache benefit
+    // is small (called once per page mount, dominated by the top two
+    // queries above).
+    types.forEach((type: any) => {
+      if (type.realId) {
+        cmsPublicApi
+          .getFeatures(type.realId, "subcategory")
+          .then((subs) => {
+            if (subs && subs.length > 0) {
+              setSubCategoriesMap((prev) => ({
+                ...prev,
+                [type.id]: subs.map((s: any) => ({
+                  id: s.name.toLowerCase().replace(/\s+/g, "-"),
+                  name: s.name,
+                  icon: s.icon,
+                })),
+              }));
+            }
+          })
+          .catch(console.error);
+      }
+    });
+  }, [stayCategories]);
 
-    // Check for existing data
+  // Check for existing data (resubmission flow)
+  useEffect(() => {
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();

@@ -12,6 +12,7 @@ import { GiBinoculars, GiCampCookingPot, GiCruiser } from "react-icons/gi";
 import { useUserDetails } from "@/hooks/useUserDetails";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useFeatures } from "@/hooks/useFeatures";
 
 // Shared components
 import {
@@ -210,32 +211,29 @@ const ActivityOnboarding = () => {
   }, [homepageSections, navigate]);
 
   // Load CMS-driven feature/category data on mount.
+  // Activity features + categories (shared cache with Index).
+  const { data: activityFeaturesData } = useFeatures("Activity");
+  const { data: activityCategories } = useFeatures("Activity", "category");
+
   useEffect(() => {
-    // Countries data is loaded by the useCountriesData hook above.
+    if (activityFeaturesData) {
+      setAdminFeatures(activityFeaturesData.filter((f: any) => f.status === "enable"));
+    }
+  }, [activityFeaturesData]);
 
-    // Fetch admin features
-    cmsPublicApi
-      .getFeatures("Activity")
-      .then((list) => {
-        setAdminFeatures(list.filter((f: any) => f.status === "enable"));
-      })
-      .catch(console.error);
+  useEffect(() => {
+    if (!activityCategories) return;
+    const types = activityCategories
+      .filter((f: any) => f.status === "enable")
+      .map((f: any) => ({
+        id: f.name,
+        name: f.name,
+        icon: f.icon,
+      }));
+    setActivityTypes(types);
+  }, [activityCategories]);
 
-    // Fetch activity categories (types)
-    cmsPublicApi
-      .getFeatures("Activity", "category")
-      .then((list) => {
-        const types = list
-          .filter((f: any) => f.status === "enable")
-          .map((f: any) => ({
-            id: f.name,
-            name: f.name,
-            icon: f.icon,
-          }));
-        setActivityTypes(types);
-      })
-      .catch(console.error);
-
+  useEffect(() => {
     // Check for existing data (resubmission)
     const loadExistingData = async () => {
       try {

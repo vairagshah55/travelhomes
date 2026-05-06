@@ -8,6 +8,7 @@ import { getImageUrl } from "@/lib/utils";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useFeatures } from "@/hooks/useFeatures";
 import { onboardingService } from "@/lib/onboardingService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useUserDetails } from "@/hooks/useUserDetails";
@@ -256,19 +257,17 @@ const CaravanOnboarding = () => {
 
   const { userDetails, updateUserDetails } = useUserDetails();
 
-  // Populate country list (via shared useCountriesData hook above).
+  // Camper Van features (cached + shared with other consumers).
+  const { data: camperVanFeatures } = useFeatures("Camper Van");
   useEffect(() => {
-    // Fetch admin features
-    cmsPublicApi
-      .getFeatures("Camper Van")
-      .then((list) => {
-        const enabled = list.filter((f: any) => f.status === "enable");
-        setDynamicCategories(enabled.filter((f: any) => f.type === "category"));
-        setDynamicFeatures(enabled.filter((f: any) => f.type === "feature" || !f.type));
-      })
-      .catch(console.error);
+    if (!camperVanFeatures) return;
+    const enabled = camperVanFeatures.filter((f: any) => f.status === "enable");
+    setDynamicCategories(enabled.filter((f: any) => f.type === "category"));
+    setDynamicFeatures(enabled.filter((f: any) => f.type === "feature" || !f.type));
+  }, [camperVanFeatures]);
 
-    // Check for existing data
+  // Check for existing data
+  useEffect(() => {
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
