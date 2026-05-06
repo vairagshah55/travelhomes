@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Search, Filter, MoreHorizontal, Bell, Loader2, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,27 +41,19 @@ const BookingManagement: React.FC = () => {
   >("all-bookings");
   const [activeServiceType, setActiveServiceType] = useState("caravan");
   const [showBookingDetails, setShowBookingDetails] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(
-    null,
-  );
+  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
 
   // New state for API-backed data
-  const [bookings, setBookings] = useState<BookingData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("bookingId");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
   const handleTabChange = (
-    tabId:
-      | "all-bookings"
-      | "upcoming-bookings"
-      | "past-booking"
-      | "cancelled-bookings",
+    tabId: "all-bookings" | "upcoming-bookings" | "past-booking" | "cancelled-bookings",
   ) => {
     setActiveTab(tabId);
     // Reset service type based on new tab
@@ -80,11 +73,18 @@ const BookingManagement: React.FC = () => {
     return "bookingId"; // default for "booking-id" or others
   };
 
-  // Fetch bookings from API
-  const fetchBookings = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  // Bookings list — keyed by every filter that influences the request
+  // so changing any of them refetches once and caches the result.
+  const bookingsKey = [
+    "bookings",
+    activeTab,
+    activeServiceType,
+    searchTerm || "",
+    mapSortValue(sortBy),
+  ] as const;
+  const bookingsQuery = useQuery<BookingData[]>({
+    queryKey: bookingsKey,
+    queryFn: async () => {
       const params = {
         tab: activeTab,
         serviceType: activeServiceType,
@@ -93,23 +93,19 @@ const BookingManagement: React.FC = () => {
         sortDir: "asc" as const,
       };
       const response = await bookingService.getBookings(params);
-      if (response && response.data) {
-        setBookings(response.data);
-      } else if (Array.isArray(response)) {
-        setBookings(response as any);
-      } else {
-        setBookings([]);
-      }
-    } catch (err: any) {
-      console.error("Error fetching bookings", err);
-      setError(typeof err === "string" ? err : "Failed to fetch bookings.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (response && response.data) return response.data;
+      if (Array.isArray(response)) return response as any;
+      return [];
+    },
+  });
+  const bookings = bookingsQuery.data ?? [];
+  const loading = bookingsQuery.isLoading;
+  const error = bookingsQuery.error
+    ? (bookingsQuery.error as Error).message || "Failed to fetch bookings."
+    : null;
+  const fetchBookings = () => queryClient.invalidateQueries({ queryKey: bookingsKey });
 
   useEffect(() => {
-    fetchBookings();
     setCurrentPage(1);
   }, [activeTab, activeServiceType, searchTerm, sortBy]);
 
@@ -198,27 +194,19 @@ const BookingManagement: React.FC = () => {
     <div className="min-h-screen bg-[#F9FAFB] flex">
       {/* Sidebar */}
       <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
       </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Bookings"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
+        <AdminHeader Headtitle={"Bookings"} setMobileSidebarOpen={setMobileOpen} />
 
         {/* Main Content */}
         <div className="flex-1 p-5 pr-0 ">
           <div className="bg-white rounded-3xl border border-gray-200 h-full">
             {/* Content Header */}
             <div className="p-5 border-b border-gray-200 rounded-t-3xl">
-              <h2 className="text-xl font-bold text-gray-900">
-                Booking Details
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
             </div>
 
             <div className="p-5 flex flex-col gap-7">
@@ -279,9 +267,7 @@ const BookingManagement: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="booking-id">Booking ID</SelectItem>
                         <SelectItem value="client-name">Client Name</SelectItem>
-                        <SelectItem value="service-name">
-                          Service Name
-                        </SelectItem>
+                        <SelectItem value="service-name">Service Name</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -323,85 +309,67 @@ const BookingManagement: React.FC = () => {
                   </thead>
                   <tbody>
                     {bookings
-                      .slice(
-                        (currentPage - 1) * itemsPerPage,
-                        currentPage * itemsPerPage,
-                      )
+                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                       .map((booking) => (
-                        <tr
-                          key={booking._id}
-                          className="text-sm border-t border-gray-100"
-                        >
-                        <td className="px-4 py-4">
-                          <span className="text-sm font-bold text-black">
-                            {booking.bookingId}
-                          </span>
-                        </td>
-                        <td className="text-sm px-3 py-4 text-gray-600">
-                          {booking.clientName}
-                        </td>
-                        <td className="text-sm px-3 py-4 text-gray-600">
-                          {booking.serviceName}
-                        </td>
-                        <td className="text-sm px-3 py-4 text-black">
-                          {formatDate(booking.checkIn)}
-                        </td>
-                        <td className="text-sm px-3 py-4">
-                          <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm">
-                            {formatDate(booking.checkOut)}
-                          </span>
-                        </td>
-                        <td className="text-sm px-3 py-4">
-                          <span
-                            className={` px-3 py-1 rounded-lg text-sm ${getStatusColor(booking.status)}`}
-                          >
-                            {booking.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-4">
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setShowActionMenu(
-                                  showActionMenu === booking._id
-                                    ? null
-                                    : booking._id,
-                                )
-                              }
-                              className="text-gray-400 hover:text-gray-600"
+                        <tr key={booking._id} className="text-sm border-t border-gray-100">
+                          <td className="px-4 py-4">
+                            <span className="text-sm font-bold text-black">
+                              {booking.bookingId}
+                            </span>
+                          </td>
+                          <td className="text-sm px-3 py-4 text-gray-600">{booking.clientName}</td>
+                          <td className="text-sm px-3 py-4 text-gray-600">{booking.serviceName}</td>
+                          <td className="text-sm px-3 py-4 text-black">
+                            {formatDate(booking.checkIn)}
+                          </td>
+                          <td className="text-sm px-3 py-4">
+                            <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm">
+                              {formatDate(booking.checkOut)}
+                            </span>
+                          </td>
+                          <td className="text-sm px-3 py-4">
+                            <span
+                              className={` px-3 py-1 rounded-lg text-sm ${getStatusColor(booking.status)}`}
                             >
-                              <MoreHorizontal className="w-5 h-5" />
-                            </button>
+                              {booking.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4">
+                            <div className="relative">
+                              <button
+                                onClick={() =>
+                                  setShowActionMenu(
+                                    showActionMenu === booking._id ? null : booking._id,
+                                  )
+                                }
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                <MoreHorizontal className="w-5 h-5" />
+                              </button>
 
-                            {/* Action Menu Dropdown */}
-                            {showActionMenu === booking._id && (
-                              <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg p-1 z-50 w-32">
-                                <button
-                                  className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                  onClick={() => handleViewBooking(booking)}
-                                >
-                                  <Eye size={16} className="text-gray-600" />
-                                  <span className="text-sm text-gray-700">
-                                    View
-                                  </span>
-                                </button>
-                                <button
-                                  className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                  onClick={() =>
-                                    handleDeleteBooking(booking._id)
-                                  }
-                                >
-                                  <Trash2 size={16} className="text-red-500" />
-                                  <span className="text-sm text-red-600">
-                                    Delete
-                                  </span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {/* Action Menu Dropdown */}
+                              {showActionMenu === booking._id && (
+                                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg p-1 z-50 w-32">
+                                  <button
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                    onClick={() => handleViewBooking(booking)}
+                                  >
+                                    <Eye size={16} className="text-gray-600" />
+                                    <span className="text-sm text-gray-700">View</span>
+                                  </button>
+                                  <button
+                                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                    onClick={() => handleDeleteBooking(booking._id)}
+                                  >
+                                    <Trash2 size={16} className="text-red-500" />
+                                    <span className="text-sm text-red-600">Delete</span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     {!loading && bookings.length === 0 && (
                       <tr>
                         <td className="px-4 py-6 text-gray-500" colSpan={7}>
@@ -418,9 +386,7 @@ const BookingManagement: React.FC = () => {
                   <div className="text-sm text-gray-500 px-3">Loading...</div>
                 </div>
               )}
-              {error && (
-                <div className="text-sm text-red-600 px-3">{error}</div>
-              )}
+              {error && <div className="text-sm text-red-600 px-3">{error}</div>}
 
               <Pagination
                 currentPage={currentPage}

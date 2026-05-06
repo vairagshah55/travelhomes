@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Filter, MoreHorizontal, Bell, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,28 +37,21 @@ interface PaymentData {
 }
 
 const PaymentManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<
-    "payment-received" | "vendor" | "refund-status"
-  >("payment-received");
+  const [activeTab, setActiveTab] = useState<"payment-received" | "vendor" | "refund-status">(
+    "payment-received",
+  );
   const [activeServiceType, setActiveServiceType] = useState("camper-van");
   const [showPaymentDetails, setShowPaymentDetails] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentData | null>(
-    null,
-  );
+  const [selectedPayment, setSelectedPayment] = useState<PaymentData | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // New state for API-backed data
-  const [payments, setPayments] = useState<PaymentData[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("paymentId");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const handleTabChange = (
-    tabId: "payment-received" | "vendor" | "refund-status",
-  ) => {
+  const handleTabChange = (tabId: "payment-received" | "vendor" | "refund-status") => {
     setActiveTab(tabId);
     // Reset service type based on new tab
     if (tabId === "payment-received") {
@@ -74,35 +68,30 @@ const PaymentManagement: React.FC = () => {
     return "paymentId"; // default for "camper-van" or others
   };
 
-  // Fetch payments from API whenever filters change
+  // Payments list — keyed by every filter that influences the request.
+  const paymentsQuery = useQuery<PaymentData[]>({
+    queryKey: ["payments", activeTab, activeServiceType, searchTerm || "", mapSortValue(sortBy)],
+    queryFn: async () => {
+      const params = {
+        tab: activeTab,
+        serviceType: activeServiceType,
+        search: searchTerm || undefined,
+        sortBy: mapSortValue(sortBy),
+        sortDir: "asc" as const,
+      };
+      const response = await paymentService.getPayments(params);
+      if (response && response.data) return response.data;
+      if (Array.isArray(response)) return response as any;
+      return [];
+    },
+  });
+  const payments = paymentsQuery.data ?? [];
+  const loading = paymentsQuery.isLoading;
+  const error = paymentsQuery.error
+    ? (paymentsQuery.error as Error).message || "Failed to fetch payments."
+    : null;
+
   useEffect(() => {
-    const fetchPayments = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const params = {
-          tab: activeTab,
-          serviceType: activeServiceType,
-          search: searchTerm || undefined,
-          sortBy: mapSortValue(sortBy),
-          sortDir: "asc" as const,
-        };
-        const response = await paymentService.getPayments(params);
-        if (response && response.data) {
-          setPayments(response.data);
-        } else if (Array.isArray(response)) {
-          setPayments(response as any);
-        } else {
-          setPayments([]);
-        }
-      } catch (err: any) {
-        console.error("Error fetching payments", err);
-        setError(typeof err === "string" ? err : "Failed to fetch payments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPayments();
     setCurrentPage(1);
   }, [activeTab, activeServiceType, searchTerm, sortBy]);
 
@@ -153,28 +142,22 @@ const PaymentManagement: React.FC = () => {
   };
 
   return (
-     <div className="min-h-screen bg-[#F9FAFB] flex">
-       {/* Sidebar */}
-       <div className="fixed">
-
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-        />
-        </div>
+    <div className="min-h-screen bg-[#F9FAFB] flex">
+      {/* Sidebar */}
+      <div className="fixed">
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
+      </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         {/* Top Header */}
-        <AdminHeader Headtitle={"Payments"} setMobileSidebarOpen={setMobileOpen}/>
+        <AdminHeader Headtitle={"Payments"} setMobileSidebarOpen={setMobileOpen} />
 
         {/* Main Content */}
         <div className="flex-1 p-5 pr-0 ">
           <div className="bg-white rounded-3xl border border-gray-200 h-full">
             {/* Content Header */}
             <div className="p-5 border-b border-gray-200 rounded-t-3xl">
-              <h2 className="text-xl font-bold text-gray-900">
-                Payment Details
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">Payment Details</h2>
             </div>
 
             <div className="p-5 flex flex-col gap-7">
@@ -277,94 +260,89 @@ const PaymentManagement: React.FC = () => {
                   </thead>
                   <tbody>
                     {payments
-                      .slice(
-                        (currentPage - 1) * itemsPerPage,
-                        currentPage * itemsPerPage,
-                      )
+                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
                       .map((payment) => (
                         <tr key={payment._id} className="border-t border-gray-100">
-                        <td className="px-4 py-4">
-                          <span className="text-sm font-bold text-black">
-                            {payment.paymentId}
-                          </span>
-                        </td>
-                        <td className="text-sm px-3 py-4 text-gray-600">
-                          {payment.businessName}
-                        </td>
-                        <td className="text-sm px-3 py-4 text-gray-600">
-                          {payment.personName}
-                        </td>
-                        <td className="text-sm px-3 py-4 text-black">
-                          {payment.servicesId}
-                        </td>
-                        <td className="px-3 py-4">
-                          <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm">
-                            {payment.servicesNames}
-                          </span>
-                        </td>
-                        <td className="px-3 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-lg text-sm ${getStatusColor(payment.status)}`}
-                          >
-                            {payment.status}
-                          </span>
-                        </td>
-                        <td className="px-3 py-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button className="text-gray-400 hover:text-gray-600">
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-white border-gray-200">
-                              <DropdownMenuItem
-                                onClick={() => handleViewPayment(payment)}
-                                className="cursor-pointer"
-                              >
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </td>
-                      </tr>
-                    ))}
-                    {(!loading && payments.length === 0) && (
+                          <td className="px-4 py-4">
+                            <span className="text-sm font-bold text-black">
+                              {payment.paymentId}
+                            </span>
+                          </td>
+                          <td className="text-sm px-3 py-4 text-gray-600">
+                            {payment.businessName}
+                          </td>
+                          <td className="text-sm px-3 py-4 text-gray-600">{payment.personName}</td>
+                          <td className="text-sm px-3 py-4 text-black">{payment.servicesId}</td>
+                          <td className="px-3 py-4">
+                            <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm">
+                              {payment.servicesNames}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4">
+                            <span
+                              className={`px-3 py-1 rounded-lg text-sm ${getStatusColor(payment.status)}`}
+                            >
+                              {payment.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button className="text-gray-400 hover:text-gray-600">
+                                  <MoreHorizontal className="w-5 h-5" />
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-white border-gray-200">
+                                <DropdownMenuItem
+                                  onClick={() => handleViewPayment(payment)}
+                                  className="cursor-pointer"
+                                >
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50">
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    {!loading && payments.length === 0 && (
                       <tr>
-                        <td className="px-4 py-6 text-gray-500" colSpan={7}>No records</td>
+                        <td className="px-4 py-6 text-gray-500" colSpan={7}>
+                          No records
+                        </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
-              {  error &&
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {/* Error State */}
-                <p>{error}</p>
-                <Button
-                  variant="outline"
-                  className="mt-2 text-red-700 border-red-300"
-                  // onClick={() => {
-                  //   // Retry fetching payments
-                  //   setError(null);
-                  //   setLoading(true); 
-                  //   setTimeout(() => setLoading(false), 500);
-                  // }}              
-                >
-                  Try Again
-                </Button>
-              </div>}
-              
-            {loading && 
-              <div className="w-full flex justify-center items-center py-10">
-                {/* Loading State */}
-                <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
-                <span className="ml-2 text-dashboard-primary">Loading...</span>
-              </div>}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {/* Error State */}
+                  <p>{error}</p>
+                  <Button
+                    variant="outline"
+                    className="mt-2 text-red-700 border-red-300"
+                    // onClick={() => {
+                    //   // Retry fetching payments
+                    //   setError(null);
+                    //   setLoading(true);
+                    //   setTimeout(() => setLoading(false), 500);
+                    // }}
+                  >
+                    Try Again
+                  </Button>
+                </div>
+              )}
+
+              {loading && (
+                <div className="w-full flex justify-center items-center py-10">
+                  {/* Loading State */}
+                  <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
+                  <span className="ml-2 text-dashboard-primary">Loading...</span>
+                </div>
+              )}
 
               <Pagination
                 currentPage={currentPage}
@@ -385,7 +363,6 @@ const PaymentManagement: React.FC = () => {
         />
       )}
     </div>
-    
   );
 };
 
