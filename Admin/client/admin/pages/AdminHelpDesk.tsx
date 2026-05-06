@@ -1,13 +1,6 @@
-import React, { useEffect, useState } from "react";
-import {
-  Search,
-  Filter,
-  ChevronDown,
-  Eye,
-  MoreHorizontal,
-  X,
-  Bell,
-} from "lucide-react";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Search, Filter, ChevronDown, Eye, MoreHorizontal, X, Bell } from "lucide-react";
 import AdminSidebar from "../components/AdminSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,40 +50,42 @@ const AdminHelpDesk: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<"all" | "Pending" | "Resolved">("all");
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const [items, setItems] = useState<HelpDeskItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const apiSortBy = sortBy === "date" ? "date" : sortBy === "status" ? "status" : "createdAt";
 
-  // Fetch items from API
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const apiSortBy = sortBy === 'date' ? 'date' : sortBy === 'status' ? 'status' : 'createdAt';
-        const response = await helpDeskService.getItems({
-          search: searchTerm || undefined,
-          sortBy: apiSortBy as any,
-          sortDir: 'desc',
-          status: statusFilter,
-        });
-        const data = (response && response.data) ? response.data : (Array.isArray(response) ? response : []);
-        setItems(data as HelpDeskItem[]);
-      } catch (err: any) {
-        setError(typeof err === 'string' ? err : 'Failed to fetch help desk items.');
-        console.error('Error fetching help desk items:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchItems();
-  }, [searchTerm, sortBy, statusFilter]);
+  // Help desk items — keyed by every filter that influences the request.
+  const itemsKey = ["helpDesk", "items", searchTerm || "", apiSortBy, statusFilter] as const;
+  const itemsQuery = useQuery<HelpDeskItem[]>({
+    queryKey: itemsKey,
+    queryFn: async () => {
+      const response = await helpDeskService.getItems({
+        search: searchTerm || undefined,
+        sortBy: apiSortBy as any,
+        sortDir: "desc",
+        status: statusFilter,
+      });
+      const data =
+        response && response.data ? response.data : Array.isArray(response) ? response : [];
+      return data as HelpDeskItem[];
+    },
+  });
+  const items = itemsQuery.data ?? [];
+  const loading = itemsQuery.isLoading;
+  const error = itemsQuery.error
+    ? (itemsQuery.error as Error).message || "Failed to fetch help desk items."
+    : null;
+  const setItems = (next: HelpDeskItem[]) => {
+    queryClient.setQueryData<HelpDeskItem[]>(itemsKey, next);
+  };
+  const setLoading = (_: boolean) => {
+    /* noop — useQuery owns the list-loading flag */
+  };
 
   const formatDate = (d: string | Date) => {
     try {
       const dt = new Date(d);
       if (isNaN(dt.getTime())) return String(d);
-      return dt.toLocaleDateString('en-GB'); // DD/MM/YYYY
+      return dt.toLocaleDateString("en-GB"); // DD/MM/YYYY
     } catch {
       return String(d);
     }
@@ -103,19 +98,20 @@ const AdminHelpDesk: React.FC = () => {
   const handleResolve = async (id: string) => {
     try {
       setLoading(true);
-      await helpDeskService.updateStatus(id, 'Resolved');
+      await helpDeskService.updateStatus(id, "Resolved");
       // Refresh list after update
-      const apiSortBy = sortBy === 'date' ? 'date' : sortBy === 'status' ? 'status' : 'createdAt';
+      const apiSortBy = sortBy === "date" ? "date" : sortBy === "status" ? "status" : "createdAt";
       const refreshed = await helpDeskService.getItems({
         search: searchTerm || undefined,
         sortBy: apiSortBy as any,
-        sortDir: 'desc',
+        sortDir: "desc",
         status: statusFilter,
       });
-      const data = (refreshed && refreshed.data) ? refreshed.data : (Array.isArray(refreshed) ? refreshed : []);
+      const data =
+        refreshed && refreshed.data ? refreshed.data : Array.isArray(refreshed) ? refreshed : [];
       setItems(data as HelpDeskItem[]);
     } catch (err) {
-      console.error('Failed to update status', err);
+      console.error("Failed to update status", err);
     } finally {
       setLoading(false);
     }
@@ -123,20 +119,13 @@ const AdminHelpDesk: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex">
- <div className="fixed">
-
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-        />
-        </div>
+      <div className="fixed">
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
+      </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Help Desk"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
+        <AdminHeader Headtitle={"Help Desk"} setMobileSidebarOpen={setMobileOpen} />
 
         {/* Main Content */}
         <div className="flex-1 p-5">
@@ -166,9 +155,7 @@ const AdminHelpDesk: React.FC = () => {
 
                 <div className="flex items-center gap-4  max-md:flex-wrap ">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-dashboard-body font-poppins">
-                      Sort By
-                    </span>
+                    <span className="text-sm text-dashboard-body font-poppins">Sort By</span>
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="w-[159px] h-10 border-dashboard-stroke text-sm font-poppins text-dashboard-body">
                         <SelectValue placeholder="Camper Van" />
@@ -188,7 +175,7 @@ const AdminHelpDesk: React.FC = () => {
                         className="h-10 px-5 border-dashboard-stroke text-dashboard-body font-poppins gap-2"
                       >
                         <Filter className="w-[18px] h-[18px]" />
-                        {statusFilter === 'all' ? 'Filters' : statusFilter}
+                        {statusFilter === "all" ? "Filters" : statusFilter}
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-48 bg-white">
@@ -250,12 +237,12 @@ const AdminHelpDesk: React.FC = () => {
                   >
                     <div className="w-[164px] px-4 py-3.5">
                       <span className="text-sm text-dashboard-primary font-plus-jakarta">
-                        {item.vendorName || item.name || 'N/A'}
+                        {item.vendorName || item.name || "N/A"}
                       </span>
                     </div>
                     <div className="w-[256px] px-3 py-3.5">
                       <span className="text-sm text-dashboard-body font-poppins">
-                        {item.companyName || item.email || 'N/A'}
+                        {item.companyName || item.email || "N/A"}
                       </span>
                     </div>
                     <div className="w-[260px] px-3 py-3.5">
@@ -291,19 +278,12 @@ const AdminHelpDesk: React.FC = () => {
                         </Button> */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                            >
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
                               <MoreHorizontal className="w-6 h-6 text-dashboard-body" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onClick={() => handleView(item)}
-                              className="gap-2"
-                            >
+                            <DropdownMenuItem onClick={() => handleView(item)} className="gap-2">
                               <svg
                                 width="18"
                                 height="18"
@@ -385,8 +365,6 @@ const AdminHelpDesk: React.FC = () => {
       {/* Help Desk Details Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
         <DialogContent className="max-w-3xl p-8">
-          
-
           <DialogHeader className="space-y-7">
             <DialogTitle className="text-2xl font-bold text-dashboard-heading font-geist tracking-tight">
               Help Desk
@@ -402,7 +380,7 @@ const AdminHelpDesk: React.FC = () => {
                     Name
                   </label>
                   <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.vendorName || selectedItem.name || 'N/A'}
+                    {selectedItem.vendorName || selectedItem.name || "N/A"}
                   </p>
                 </div>
                 <div className="flex-1 space-y-3">
@@ -410,7 +388,7 @@ const AdminHelpDesk: React.FC = () => {
                     Email / Company
                   </label>
                   <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.companyName || selectedItem.email || 'N/A'}
+                    {selectedItem.companyName || selectedItem.email || "N/A"}
                   </p>
                 </div>
                 <div className="flex-1 space-y-3">
@@ -429,9 +407,7 @@ const AdminHelpDesk: React.FC = () => {
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Status
                   </label>
-                  <p className="text-sm text-dashboard-text font-poppins">
-                    {selectedItem.status}
-                  </p>
+                  <p className="text-sm text-dashboard-text font-poppins">{selectedItem.status}</p>
                 </div>
                 <div className="flex-1 space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
@@ -446,7 +422,7 @@ const AdminHelpDesk: React.FC = () => {
                     Phone
                   </label>
                   <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.phoneNumber || 'N/A'}
+                    {selectedItem.phoneNumber || "N/A"}
                   </p>
                 </div>
               </div>
@@ -457,7 +433,7 @@ const AdminHelpDesk: React.FC = () => {
                   Description
                 </label>
                 <p className="text-sm text-dashboard-body font-plus-jakarta leading-6 tracking-[0.16px]">
-                  {selectedItem.message || selectedItem.description || 'N/A'}
+                  {selectedItem.message || selectedItem.description || "N/A"}
                 </p>
               </div>
             </div>
