@@ -1,21 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Plus, Minus, Search } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { cmsPublicApi, PublicFaq, helpDeskApi } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
-import { Loader } from '@/components/ui/Loader';
+import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Minus, Search } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { cmsPublicApi, PublicFaq, helpDeskApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader } from "@/components/ui/Loader";
 
 /* ---------------- TAB MAP (single source of truth) ---------------- */
 const tabLabelMap: Record<string, string> = {
-  guest: 'Guest',
-  booking: 'Booking',
-  common: 'Common Questions',
-  locations: 'Locations',
+  guest: "Guest",
+  booking: "Booking",
+  common: "Common Questions",
+  locations: "Locations",
 };
 
 interface FAQItem {
@@ -26,33 +27,35 @@ interface FAQItem {
 }
 
 const Help = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('guest');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("guest");
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
-    name: `${user?.firstName} ${user?.lastName}` || '',
-    phoneNumber: user?.phoneNumber || '',
-    subject: '',
-    email: user?.email || '',
-    description: '',
+    name: [user?.firstName, user?.lastName].filter(Boolean).join(" "),
+    phoneNumber: user?.phoneNumber || "",
+    subject: "",
+    email: user?.email || "",
+    description: "",
   });
 
-  const [allFaqs, setAllFaqs] = useState<PublicFaq[]>([]);
   const [faqItems, setFaqItems] = useState<FAQItem[]>([]);
   const [visibleTabs, setVisibleTabs] = useState<string[]>([]);
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   /* ---------------- FETCH FAQs ---------------- */
-  useEffect(() => {
-    (async () => {
+  const { data: allFaqs = [] } = useQuery<PublicFaq[]>({
+    queryKey: ["cms", "faqs", "public"],
+    queryFn: async () => {
       try {
         const list = await cmsPublicApi.listFaqs();
-        setAllFaqs(list || []);
+        return list || [];
       } catch (err) {
-        console.error('Failed to fetch FAQs', err);
+        console.error("Failed to fetch FAQs", err);
+        return [];
       }
-    })();
-  }, []);
+    },
+  });
 
   /* ---------------- CALCULATE VISIBLE TABS ---------------- */
   useEffect(() => {
@@ -63,17 +66,15 @@ const [loading, setLoading] = useState(true);
 
     const tabsWithFaqs = Object.keys(tabLabelMap).filter((tabKey) =>
       allFaqs.some(
-        (faq) =>
-          (faq.category || '').toLowerCase() ===
-          tabLabelMap[tabKey].toLowerCase()
-      )
+        (faq) => (faq.category || "").toLowerCase() === tabLabelMap[tabKey].toLowerCase(),
+      ),
     );
 
     setVisibleTabs(tabsWithFaqs);
 
     // active tab agar remove ho jaye to first valid tab set karo
     if (!tabsWithFaqs.includes(activeTab)) {
-      setActiveTab(tabsWithFaqs[0] || '');
+      setActiveTab(tabsWithFaqs[0] || "");
     }
   }, [allFaqs]);
 
@@ -85,15 +86,11 @@ const [loading, setLoading] = useState(true);
     }
 
     const filtered = allFaqs
-      .filter(
-        (f) =>
-          (f.category || '').toLowerCase() ===
-          tabLabelMap[activeTab]?.toLowerCase()
-      )
+      .filter((f) => (f.category || "").toLowerCase() === tabLabelMap[activeTab]?.toLowerCase())
       .map((f) => ({
         id: f._id,
         question: f.question,
-        answer: f.answer || '',
+        answer: f.answer || "",
         isOpen: false,
       }));
 
@@ -103,9 +100,7 @@ const [loading, setLoading] = useState(true);
   /* ---------------- TOGGLE FAQ ---------------- */
   const toggleFAQ = (id: string) => {
     setFaqItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, isOpen: !item.isOpen } : item
-      )
+      items.map((item) => (item.id === id ? { ...item, isOpen: !item.isOpen } : item)),
     );
   };
 
@@ -117,54 +112,51 @@ const [loading, setLoading] = useState(true);
   const handleSubmit = async () => {
     try {
       await helpDeskApi.create(formData);
-      toast.success('Ticket raised successfully!', {
+      toast.success("Ticket raised successfully!", {
         duration: 4000,
-        position: 'top-right',
+        position: "top-right",
         style: {
-          background: '#10B981',
-          color: '#fff',
-          fontWeight: '500',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)',
+          background: "#10B981",
+          color: "#fff",
+          fontWeight: "500",
+          borderRadius: "12px",
+          padding: "16px",
+          boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
         },
         iconTheme: {
-          primary: '#fff',
-          secondary: '#10B981',
+          primary: "#fff",
+          secondary: "#10B981",
         },
       });
-      setFormData((prev) => ({ ...prev, subject: '', description: '' }));
+      setFormData((prev) => ({ ...prev, subject: "", description: "" }));
     } catch (error) {
-      console.error('Failed to submit ticket:', error);
-      toast.error('Failed to submit ticket. Please try again.', {
+      console.error("Failed to submit ticket:", error);
+      toast.error("Failed to submit ticket. Please try again.", {
         duration: 4000,
-        position: 'top-right',
+        position: "top-right",
         style: {
-          background: '#EF4444',
-          color: '#fff',
-          fontWeight: '500',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.4)',
+          background: "#EF4444",
+          color: "#fff",
+          fontWeight: "500",
+          borderRadius: "12px",
+          padding: "16px",
+          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
         },
         iconTheme: {
-          primary: '#fff',
-          secondary: '#EF4444',
+          primary: "#fff",
+          secondary: "#EF4444",
         },
       });
     }
   };
 
   /* ---------------- SEARCH FILTER ---------------- */
-const filteredFAQs = searchQuery.trim()
-  ? faqItems.filter((faq) => {
-      const q = searchQuery.toLowerCase();
-      return (
-        faq.question.toLowerCase().includes(q) ||
-        faq.answer.toLowerCase().includes(q)
-      );
-    })
-  : faqItems;
+  const filteredFAQs = searchQuery.trim()
+    ? faqItems.filter((faq) => {
+        const q = searchQuery.toLowerCase();
+        return faq.question.toLowerCase().includes(q) || faq.answer.toLowerCase().includes(q);
+      })
+    : faqItems;
 
   useEffect(() => {
     // Simulate dynamic data fetching
@@ -178,25 +170,23 @@ const filteredFAQs = searchQuery.trim()
     <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
       <Header variant="transparent" className="fixed w-full z-50" />
 
-
       {loading && (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size="xl" />
-          <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
-           Fetching help information...
-          </p>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+          <div className="flex flex-col items-center gap-4">
+            <Loader size="xl" />
+            <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
+              Fetching help information...
+            </p>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )}
 
       <main className="px-4 mt-10 md:mt-20 sm:px-6 lg:px-10 py-10">
         <div className="max-w-5xl mx-auto w-full">
           {/* Page Header */}
           <div className="text-center mb-10 px-2">
             <h1 className="text-2xl sm:text-3xl lg:text-[32px] font-semibold text-dashboard-heading font-poppins leading-tight mb-6">
-              👋🏻 Hi {formData.name || 'there'}, how can we help?
+              👋🏻 Hi {formData.name || "there"}, how can we help?
             </h1>
 
             {/* Search Bar */}
@@ -221,8 +211,8 @@ const filteredFAQs = searchQuery.trim()
                   onClick={() => setActiveTab(tabKey)}
                   className={`px-5 py-2 text-sm sm:text-base font-semibold transition-colors ${
                     activeTab === tabKey
-                      ? 'text-dashboard-primary border-b-2 border-dashboard-primary'
-                      : 'text-gray-400 hover:text-dashboard-primary'
+                      ? "text-dashboard-primary border-b-2 border-dashboard-primary"
+                      : "text-gray-400 hover:text-dashboard-primary"
                   }`}
                 >
                   {tabLabelMap[tabKey]}
@@ -239,8 +229,8 @@ const filteredFAQs = searchQuery.trim()
                   key={item.id}
                   className={`rounded-lg border transition-all ${
                     item.isOpen
-                      ? 'bg-gray-100 dark:bg-gray-800 dark:text-white border-gray-200'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? "bg-gray-100 dark:bg-gray-800 dark:text-white border-gray-200"
+                      : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
                   <button
@@ -286,8 +276,8 @@ const filteredFAQs = searchQuery.trim()
                   </label>
                   <Input
                     value={formData.name}
-                    placeholder='Enter your name'
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    placeholder="Enter your name"
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     className="border-gray-400 rounded-lg w-full"
                   />
                 </div>
@@ -297,8 +287,8 @@ const filteredFAQs = searchQuery.trim()
                   </label>
                   <Input
                     value={formData.phoneNumber}
-                      placeholder='Enter your phone number'
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                    placeholder="Enter your phone number"
+                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
                     className="border-gray-400 rounded-lg w-full"
                   />
                 </div>
@@ -312,8 +302,8 @@ const filteredFAQs = searchQuery.trim()
                   </label>
                   <Input
                     value={formData.subject}
-                      placeholder='Enter your subject'
-                    onChange={(e) => handleInputChange('subject', e.target.value)}
+                    placeholder="Enter your subject"
+                    onChange={(e) => handleInputChange("subject", e.target.value)}
                     className="border-gray-400 rounded-lg w-full"
                   />
                 </div>
@@ -323,8 +313,8 @@ const filteredFAQs = searchQuery.trim()
                   </label>
                   <Input
                     value={formData.email}
-                      placeholder='Enter your email'
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="Enter your email"
+                    onChange={(e) => handleInputChange("email", e.target.value)}
                     className="border-gray-400 rounded-lg w-full outline-none"
                   />
                 </div>
@@ -335,13 +325,12 @@ const filteredFAQs = searchQuery.trim()
                 <label className="block text-sm sm:text-base text-dashboard-title font-plus-jakarta mb-2  ">
                   Description
                 </label>
-               <Textarea
-  value={formData.description}
-  placeholder="Enter description of your issue"
-  onChange={(e) => handleInputChange('description', e.target.value)}
-  className="border-gray-400 h-32 rounded-lg resize-none w-full outline-none  transition-colors"
-/>
-
+                <Textarea
+                  value={formData.description}
+                  placeholder="Enter description of your issue"
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  className="border-gray-400 h-32 rounded-lg resize-none w-full outline-none  transition-colors"
+                />
               </div>
 
               {/* Submit Button */}

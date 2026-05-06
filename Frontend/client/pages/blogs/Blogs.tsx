@@ -2,6 +2,7 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
@@ -20,54 +21,46 @@ type BlogDTO = {
   createdAt?: string;
 };
 
-export default function Blog() {
-  const [articles, setArticles] = useState<Array<{
-    id: string | number;
-    category?: string;
-    blogDetail?: string;
-    title: string;
-    description?: string;
-    author?: string;
-    authorImg?: string;
-    authorrole?: string;
-    date?: string;
-    image?: string;
-  }>>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type BlogCard = {
+  id: string | number;
+  category?: string;
+  blogDetail?: string;
+  title: string;
+  description?: string;
+  author?: string;
+  authorImg?: string;
+  authorrole?: string;
+  date?: string;
+  image?: string;
+};
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`${API_BASE_URL}/api/blogs?status=published&limit=10`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json() as { success: boolean; data: BlogDTO[] };
-        const mapped = (data.data || []).map((b) => ({
+export default function Blog() {
+  const [loading, setLoading] = useState(true);
+
+  const { data: articles = [], error } = useQuery<BlogCard[], Error>({
+    queryKey: ["blogs", "published", 10],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE_URL}/api/blogs?status=published&limit=10`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as { success: boolean; data: BlogDTO[] };
+      return (data.data || []).map(
+        (b): BlogCard => ({
           id: b._id,
           category: b.category,
           blogDetail: `/blogsDetials?slug=${b.slug}`,
           title: b.title,
-          description: b.description,
+          description: b.description ?? "",
           author: b.authorName,
           authorImg: b.authorImg,
           authorrole: b.authorRole,
           date: b.createdAt ? new Date(b.createdAt).toLocaleDateString() : undefined,
           image: b.coverImage,
-        }));
-        setArticles(mapped);
-      } catch (e: any) {
-        setError(e.message || 'Failed to load');
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
+        }),
+      );
+    },
+  });
 
-
-    useEffect(() => {
+  useEffect(() => {
     // Simulate dynamic data fetching
     const timer = setTimeout(() => {
       setLoading(false);
@@ -75,22 +68,21 @@ export default function Blog() {
     return () => clearTimeout(timer);
   }, []);
 
-
   return (
     <>
       <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
         <Header variant="transparent" className="fixed w-full z-50" />
-    {loading && (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <Loader size="xl" />
-          <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
-            Fetching the latest articles...
-          </p>
-        </div>
-      </div>
-    )
-  }    <section className="relative h-[380px]  md:h-[280px] max-md:mt-20 md:mt-10 overflow-visible z-10">
+        {loading && (
+          <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+            <div className="flex flex-col items-center gap-4">
+              <Loader size="xl" />
+              <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
+                Fetching the latest articles...
+              </p>
+            </div>
+          </div>
+        )}{" "}
+        <section className="relative h-[380px]  md:h-[280px] max-md:mt-20 md:mt-10 overflow-visible z-10">
           {/* Background Image */}
           <div className="absolute inset-0">
             <img
@@ -116,78 +108,71 @@ export default function Blog() {
             </div>
           </div>
         </section>
-
         <div className="dark:bg-gray-900 dark:text-white bg-white text-black min-h-screen p-8 md:p-16 font-sans">
           <main className="max-w-6xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-semibold tracking-wide">All News</h2>
               <button className="dark:bg-white dark:text-black font-medium bg-gray-300 rounded-lg py-2 px-4 text-black text-sm">
-                {loading ? 'Loading…' : `${articles.length} Articles`}
+                {loading ? "Loading…" : `${articles.length} Articles`}
               </button>
             </div>
 
-            {error && (
-              <div className="text-red-600 mb-6">{error}</div>
+            {error && <div className="text-red-600 mb-6">{error.message || "Failed to load"}</div>}
+
+            {/* First big featured article */}
+            {articles.length > 0 && (
+              <article className="w-full flex max-md:flex-col mb-10 bg-white dark:bg-black dark:text-white dark:border-slate-300 border rounded-lg overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)] mx-auto">
+                <Link to={articles[0].blogDetail!} className="flex max-md:flex-col w-full">
+                  {/* Image */}
+                  <img
+                    src={getImageUrl(articles[0].image) || "/blog1.jpg"}
+                    alt={articles[0].title}
+                    className="w-full h-64 m-4 object-cover rounded-xl"
+                  />
+
+                  {/* Content */}
+                  <div className="p-6 w-full">
+                    <div className="flex lg:justify-between lg:items-start w-full">
+                      <p className="text-sm text-indigo-400 bg-indigo-100 inline-block px-3 py-1 rounded-[8px] font-semibold mb-2">
+                        {articles[0].category}
+                      </p>
+                      <time className="text-sm">{articles[0].date}</time>
+                    </div>
+
+                    <h3 className="text-2xl font-bold mb-3 dark:text-white hover:text-indigo-400 cursor-pointer">
+                      {articles[0].title}
+                    </h3>
+
+                    <p className="text-black mb-6 dark:text-white line-clamp-2">
+                      {articles[0].description}
+                    </p>
+
+                    {/* Footer */}
+                    <footer className="flex items-center gap-3 text-black text-sm">
+                      <img
+                        //  src="/blog1.jpg"
+                        src={getImageUrl(articles[0].image) || "/blog1.jpg"}
+                        className="h-12 w-12 rounded-full object-cover"
+                      />
+                      <div>
+                        <p className="text-lg font-semibold dark:text-white">
+                          {articles[0].author}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-white">
+                          {articles[0].authorrole}
+                        </p>
+                      </div>
+                    </footer>
+                  </div>
+                </Link>
+              </article>
             )}
-
-          {/* First big featured article */}
-{articles.length > 0 && (
-  <article className="w-full flex max-md:flex-col mb-10 bg-white dark:bg-black dark:text-white dark:border-slate-300 border rounded-lg overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)] mx-auto">
-    <Link to={articles[0].blogDetail!} className="flex max-md:flex-col w-full">
-      
-      {/* Image */}
-      <img
-        src={getImageUrl(articles[0].image) || '/blog1.jpg'}
-        alt={articles[0].title}
-        className="w-full h-64 m-4 object-cover rounded-xl"
-      />
-
-      {/* Content */}
-      <div className="p-6 w-full">
-        <div className="flex lg:justify-between lg:items-start w-full">
-          <p className="text-sm text-indigo-400 bg-indigo-100 inline-block px-3 py-1 rounded-[8px] font-semibold mb-2">
-            {articles[0].category}
-          </p>
-          <time className="text-sm">{articles[0].date}</time>
-        </div>
-
-        <h3 className="text-2xl font-bold mb-3 dark:text-white hover:text-indigo-400 cursor-pointer">
-          {articles[0].title}
-        </h3>
-
-    <p className="text-black mb-6 dark:text-white line-clamp-2">
-  {articles[0].description}
-</p>
-
-        {/* Footer */}
-        <footer className="flex items-center gap-3 text-black text-sm">
-          <img
-          //  src="/blog1.jpg"
-             src={getImageUrl(articles[0].image) || '/blog1.jpg'}
-            className="h-12 w-12 rounded-full object-cover"
-          />
-          <div>
-            <p className="text-lg font-semibold dark:text-white">
-              {articles[0].author}
-            </p>
-            <p className="text-xs text-gray-400 dark:text-white">
-              {articles[0].authorrole}
-            </p>
-          </div>
-        </footer>
-      </div>
-    </Link>
-  </article>
-)}
-
 
             {/* Grid for next articles */}
             <div className="grid grid-cols-1 md:grid-cols-3 h-full gap-6 ">
               {articles.slice(1).map((article) => (
                 <Link to={article.blogDetail!} key={article.id} className="block">
-                  <article
-                    className="dark:bg-gray-800 dark:text-white h-[450px] border dark:border-slate-300 bg-white text-black rounded-lg overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col hover:shadow-lg transition-shadow"
-                  >
+                  <article className="dark:bg-gray-800 dark:text-white h-[450px] border dark:border-slate-300 bg-white text-black rounded-lg overflow-hidden shadow-[0_4px_30px_rgba(0,0,0,0.1)] flex flex-col hover:shadow-lg transition-shadow">
                     <img
                       src={article.image}
                       alt={article.title}
@@ -203,18 +188,16 @@ export default function Blog() {
                       <h4 className="text-lg font-semibold mb-2 hover:text-indigo-400 cursor-pointer">
                         {article.title}
                       </h4>
-                    <p className="text-black dark:text-white flex-grow line-clamp-2">
-  {article.description}
-</p>
+                      <p className="text-black dark:text-white flex-grow line-clamp-2">
+                        {article.description}
+                      </p>
                       <footer className="flex items-center justify-start gap-2  text-black text-xs">
                         <img
                           // src={article.authorImg}
                           src="/blog1.jpg"
                           className="w-12 h-12 rounded-full object-cover mb-3"
                         />
-                        <p className="text-sm font-semibold dark:text-white">
-                          {article.author}
-                        </p>
+                        <p className="text-sm font-semibold dark:text-white">{article.author}</p>
                         <p className="text-xs text-gray-400 dark:text-white">
                           {article.authorrole}
                         </p>
