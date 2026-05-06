@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { X, Download } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { downloadDetailsAsPDF } from "@/utils/pdfGenerator";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import { LocationDropdown } from "@/components/LocationDropdown";
 import { GuestDropdown } from "@/components/GuestDropdown";
 import { CalendarDropdown } from "@/components/CalendarDropdown";
@@ -15,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
 
 export default function PaymentPage() {
-  const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7002';
+  const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
   const location = useLocation();
   const navigate = useNavigate();
   const { user, login, isAuthenticated } = useAuth();
@@ -35,7 +36,7 @@ export default function PaymentPage() {
   useEffect(() => {
     if (user) {
       console.log(user);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         name: `${user.firstName} ${user.lastName}`.trim(),
         email: user.email || "",
@@ -53,7 +54,9 @@ export default function PaymentPage() {
         location: service?.city ? `${service.city}, ${service.state}` : "Mumbai, Maharashtra",
         guests: guests || { adults: 2, children: 0, infants: 0, pet: 0 },
         checkInDate: checkInDate ? new Date(checkInDate) : new Date(),
-        checkOutDate: checkOutDate ? new Date(checkOutDate) : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        checkOutDate: checkOutDate
+          ? new Date(checkOutDate)
+          : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       });
     }
   }, [service, checkInDate, checkOutDate, guests]);
@@ -74,7 +77,9 @@ export default function PaymentPage() {
     location: service?.city ? `${service.city}, ${service.state}` : "Mumbai, Maharashtra",
     guests: guests || { adults: 2, children: 0, infants: 0, pet: 0 },
     checkInDate: checkInDate ? new Date(checkInDate) : new Date(),
-    checkOutDate: checkOutDate ? new Date(checkOutDate) : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    checkOutDate: checkOutDate
+      ? new Date(checkOutDate)
+      : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
   });
 
   const calculateDays = (start: Date, end: Date) => {
@@ -82,13 +87,17 @@ export default function PaymentPage() {
     return Math.ceil(diff / (1000 * 3600 * 24));
   };
 
-  const totalGuests = (editableBookingData.guests.adults || 0) + (editableBookingData.guests.children || 0);
-  const days = Math.max(1, calculateDays(editableBookingData.checkInDate, editableBookingData.checkOutDate));
+  const totalGuests =
+    (editableBookingData.guests.adults || 0) + (editableBookingData.guests.children || 0);
+  const days = Math.max(
+    1,
+    calculateDays(editableBookingData.checkInDate, editableBookingData.checkOutDate),
+  );
   const pricePerNight = Number(service?.regularPrice) || 600;
-  
+
   let basePrice = pricePerNight * days;
-  if (type === 'activity') {
-     basePrice = pricePerNight * Math.max(1, totalGuests);
+  if (type === "activity") {
+    basePrice = pricePerNight * Math.max(1, totalGuests);
   }
 
   const gst = Math.round(basePrice * 0.18);
@@ -106,7 +115,10 @@ export default function PaymentPage() {
     numberOfNights: days,
     location: service?.city || "Unknown Location",
     propertyName: service?.name || "Service Name",
-    address: `${formData.address1}, ${formData.address2}, ${formData.city}, ${formData.state}, ${formData.pincode}` || "Address not provided",
+    address:
+      [formData.address1, formData.address2, formData.city, formData.state, formData.pincode]
+        .filter(Boolean)
+        .join(", ") || "Address not provided",
     description: service?.description || "No description",
     notes: "Please arrive before 2 PM. Late checkout available upon request.",
     perNightRate: pricePerNight,
@@ -122,22 +134,26 @@ export default function PaymentPage() {
     advancePaid: totalAmount / 2,
     billingDate: new Date().toLocaleDateString(),
     serviceId: service?._id,
-    userId: user?.id
+    userId: user?.id,
   });
 
   // Update bookingData when editable changes or form changes
   useEffect(() => {
-    const totalGuests = (editableBookingData.guests.adults || 0) + (editableBookingData.guests.children || 0);
-    const d = Math.max(1, calculateDays(editableBookingData.checkInDate, editableBookingData.checkOutDate));
-    
+    const totalGuests =
+      (editableBookingData.guests.adults || 0) + (editableBookingData.guests.children || 0);
+    const d = Math.max(
+      1,
+      calculateDays(editableBookingData.checkInDate, editableBookingData.checkOutDate),
+    );
+
     let bp = pricePerNight * d;
-    if (type === 'activity') {
-        bp = pricePerNight * Math.max(1, totalGuests);
+    if (type === "activity") {
+      bp = pricePerNight * Math.max(1, totalGuests);
     }
 
     const g = Math.round(bp * 0.18);
     const tot = bp + g + 50;
-    setBookingData(prev => ({
+    setBookingData((prev) => ({
       ...prev,
       checkInDate: editableBookingData.checkInDate.toLocaleDateString(),
       checkOutDate: editableBookingData.checkOutDate.toLocaleDateString(),
@@ -151,7 +167,7 @@ export default function PaymentPage() {
       guestPhone: formData.phone,
       guestEmail: formData.email,
       address: `${formData.address1}, ${formData.address2}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
-      userId: user?.id
+      userId: user?.id,
     }));
   }, [editableBookingData, formData, pricePerNight, user, type]);
 
@@ -159,20 +175,23 @@ export default function PaymentPage() {
     setFormData({ ...formData, [field]: value });
   };
   const [inputDisabled, setInputesEnable] = useState(false);
-  
+
   // Proceed Logic
   const handleProceedClick = async () => {
     if (!isAuthenticated) {
-        sessionStorage.setItem('pending_booking', JSON.stringify({
-            service,
-            type,
-            checkInDate: editableBookingData.checkInDate,
-            checkOutDate: editableBookingData.checkOutDate,
-            guests: editableBookingData.guests
-        }));
-        sessionStorage.setItem('auth_redirect', location.pathname);
-        navigate('/login');
-        return;
+      sessionStorage.setItem(
+        "pending_booking",
+        JSON.stringify({
+          service,
+          type,
+          checkInDate: editableBookingData.checkInDate,
+          checkOutDate: editableBookingData.checkOutDate,
+          guests: editableBookingData.guests,
+        }),
+      );
+      sessionStorage.setItem("auth_redirect", location.pathname);
+      navigate("/login");
+      return;
     }
     handlePayment();
   };
@@ -180,24 +199,22 @@ export default function PaymentPage() {
   // Recover state if missing (e.g. after auth redirect)
   useEffect(() => {
     if (!service) {
-        const stored = sessionStorage.getItem('pending_booking');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            navigate(".", { replace: true, state: parsed });
-            sessionStorage.removeItem('pending_booking');
-        }
+      const stored = sessionStorage.getItem("pending_booking");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        navigate(".", { replace: true, state: parsed });
+        sessionStorage.removeItem("pending_booking");
+      }
     }
   }, [service, navigate]);
-
 
   const handleProceed = () => {
     setShowSuccess(true);
     setInputesEnable(true);
-  }
+  };
   const handleClose = () => setShowSuccess(false);
   // const navigate = useNavigate(); // Already defined
-  const [data, setData] = useState([]);
-
+  const data = useCountriesData();
 
   const handleDownloadPDF = () => {
     const pdfData = {
@@ -208,12 +225,12 @@ export default function PaymentPage() {
       "Guest Phone": bookingData.guestPhone,
       "Guest Email": bookingData.guestEmail,
       "Property Name": bookingData.propertyName,
-      "Location": bookingData.location,
+      Location: bookingData.location,
       "Check-in Date": bookingData.checkInDate,
       "Check-out Date": bookingData.checkOutDate,
       "Number of Nights": bookingData.numberOfNights,
       "Base Price": `₹${bookingData.basePrice}`,
-      "Discount": `₹${bookingData.discount}`,
+      Discount: `₹${bookingData.discount}`,
       "Cleaning Fee": `₹${bookingData.cleaningFee}`,
       "Service Fee": `₹${bookingData.serviceFee}`,
       "GST (18%)": `₹${bookingData.gst}`,
@@ -223,40 +240,21 @@ export default function PaymentPage() {
       "Billing Date": bookingData.billingDate,
     };
 
-    downloadDetailsAsPDF(
-      pdfData,
-      `Booking-${bookingData.bookingId}.pdf`,
-      "Booking Confirmation"
-    );
+    downloadDetailsAsPDF(pdfData, `Booking-${bookingData.bookingId}.pdf`, "Booking Confirmation");
   };
 
-  // Populate country list on mount
-  useEffect(() => {
-    fetch("/countries_states_cities.json") // remove ../../.. for public/ path
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.error("Failed to load countries:", err));
-  }, []);
+  // Country list is loaded by the useCountriesData hook above.
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        locationRef.current &&
-        !locationRef.current.contains(event.target as Node)
-      ) {
+      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
       }
 
-      if (
-        guestRef.current &&
-        !guestRef.current.contains(event.target as Node)
-      ) {
+      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
         setShowGuestDropdown(false);
       }
-      if (
-        calendarRef.current &&
-        !calendarRef.current.contains(event.target as Node)
-      ) {
+      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
         setShowCalendarDropdown(false);
       }
       if (
@@ -265,68 +263,68 @@ export default function PaymentPage() {
       ) {
         setShowCalendarDropdown(false);
       }
-
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-    const loadRazorpay = () => {
-      return new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
-        document.body.appendChild(script);
-      });
-    };
-  
-    const handlePayment = async () => {
-      if (!formData.name || !formData.name.trim()) {
-        toast.error("Please enter your name");
-        return;
-      }
-      if (!formData.email || !formData.email.trim()) {
-        toast.error("Please enter your email");
-        return;
-      }
-      if (!formData.phone || !formData.phone.trim()) {
-        toast.error("Please enter your phone number");
-        return;
-      }
+  const loadRazorpay = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
 
-      const res = await loadRazorpay();
-  
-      if (!res) {
-        toast.error("Razorpay SDK failed to load");
-        return;
-      }
-  
-      // 1️⃣ Create order from backend
-      const orderResult = await axios.post(
-        `${VITE_API_BASE_URL}/api/payments/razor/create-order`,
-        { amount: bookingData.amountPaid } // ₹500
-      );
-  
-      const { id, amount, currency } = orderResult.data;
-  
-      // 2️⃣ Razorpay options
-      const options = {
-        key: import.meta.env.VITE_RAZOR_KEY, // public key
-        amount: amount,
-        currency: currency,
-        name: "Travel Homes",
-        description: "Test Transaction",
-        order_id: id,
-        handler: async function (response) {
-          try {
-            const bookingPayload = {
+  const handlePayment = async () => {
+    if (!formData.name || !formData.name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+    if (!formData.email || !formData.email.trim()) {
+      toast.error("Please enter your email");
+      return;
+    }
+    if (!formData.phone || !formData.phone.trim()) {
+      toast.error("Please enter your phone number");
+      return;
+    }
+
+    const res = await loadRazorpay();
+
+    if (!res) {
+      toast.error("Razorpay SDK failed to load");
+      return;
+    }
+
+    // 1️⃣ Create order from backend
+    const orderResult = await axios.post(
+      `${VITE_API_BASE_URL}/api/payments/razor/create-order`,
+      { amount: bookingData.amountPaid }, // ₹500
+    );
+
+    const { id, amount, currency } = orderResult.data;
+
+    // 2️⃣ Razorpay options
+    const options = {
+      key: import.meta.env.VITE_RAZOR_KEY, // public key
+      amount: amount,
+      currency: currency,
+      name: "Travel Homes",
+      description: "Test Transaction",
+      order_id: id,
+      handler: async function (response) {
+        try {
+          const bookingPayload = {
             ...bookingData,
             clientName: formData.name,
             clientEmail: formData.email,
             clientPhone: formData.phone,
-            serviceName: type === "van" ? "camper-van" : type === "activity" ? "activity" : "unique-stay",
+            serviceName:
+              type === "van" ? "camper-van" : type === "activity" ? "activity" : "unique-stay",
             numberOfGuests: editableBookingData.guests.adults + editableBookingData.guests.children,
             checkInDate: editableBookingData.checkInDate,
             checkOutDate: editableBookingData.checkOutDate,
@@ -334,61 +332,65 @@ export default function PaymentPage() {
             baseAmount: bookingData.basePrice,
             bookingStatus: "confirmed",
             paymentDetails: {
-                amount: bookingData.amountPaid,
-                currency: "INR",
-                paymentMethod: "razorpay",
-                transactionId: response.razorpay_payment_id,
-                paymentStatus: "completed",
-                paidAt: new Date()
-            }
+              amount: bookingData.amountPaid,
+              currency: "INR",
+              paymentMethod: "razorpay",
+              transactionId: response.razorpay_payment_id,
+              paymentStatus: "completed",
+              paidAt: new Date(),
+            },
           };
 
-          console.log('Sending booking payload:', bookingPayload);
+          console.log("Sending booking payload:", bookingPayload);
 
           const verifyResult = await axios.post(
             `${VITE_API_BASE_URL}/api/payments/razor/verify-payment`,
-            { 
+            {
               razorpay_signature: response.razorpay_signature,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
-              booking: bookingPayload
-             } 
+              booking: bookingPayload,
+            },
           );
-            console.log('Payment verification response:', verifyResult.data);
-            if(verifyResult.data.success){
-              console.log('Payment successful! Opening success dialog');
-              setShowSuccess(true);
-              setInputesEnable(true); 
-            } else {
-              console.error('Payment verification failed:', verifyResult.data);
-              toast.error('Payment verification failed: ' + (verifyResult.data.message || 'Unknown error'));
-            }
-          } catch (error) {
-            console.error('Error in payment handler:', error);
-            toast.error('Error processing payment: ' + (error.response?.data?.message || error.message));
+          console.log("Payment verification response:", verifyResult.data);
+          if (verifyResult.data.success) {
+            console.log("Payment successful! Opening success dialog");
+            setShowSuccess(true);
+            setInputesEnable(true);
+          } else {
+            console.error("Payment verification failed:", verifyResult.data);
+            toast.error(
+              "Payment verification failed: " + (verifyResult.data.message || "Unknown error"),
+            );
           }
-          /*
+        } catch (error) {
+          console.error("Error in payment handler:", error);
+          toast.error(
+            "Error processing payment: " + (error.response?.data?.message || error.message),
+          );
+        }
+        /*
           response.razorpay_payment_id
           response.razorpay_order_id
           response.razorpay_signature
           */
-  
-          // Send to backend for verification
-        },
-        prefill: {
-          name: formData.name,
-          email: formData.email,
-          contact: formData.phone,
-        },
-        theme: {
-          color: "#3399cc",
-        },
-      };
-  
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.open();
+
+        // Send to backend for verification
+      },
+      prefill: {
+        name: formData.name,
+        email: formData.email,
+        contact: formData.phone,
+      },
+      theme: {
+        color: "#3399cc",
+      },
     };
-  
+
+    const paymentObject = new window.Razorpay(options);
+    paymentObject.open();
+  };
+
   return (
     <>
       {/* Fixed Header */}
@@ -432,17 +434,19 @@ export default function PaymentPage() {
               >
                 {!isEditingBookingDetails ? "Edit" : "Save"}
               </Button>
-
             </div>
             {isEditingBookingDetails ? (
               <div className="space-y-4 mb-6">
                 <div ref={calendarRef} className="relative">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Date</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Date
+                  </label>
                   <button
                     onClick={() => setShowCalendarDropdown(!showCalendarDropdown)}
                     className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-gray-400 transition-colors"
                   >
-                    {editableBookingData.checkInDate.toLocaleDateString()} - {editableBookingData.checkOutDate.toLocaleDateString()}
+                    {editableBookingData.checkInDate.toLocaleDateString()} -{" "}
+                    {editableBookingData.checkOutDate.toLocaleDateString()}
                   </button>
                   {showCalendarDropdown && (
                     <CalendarDropdown
@@ -464,12 +468,16 @@ export default function PaymentPage() {
                 </div>
 
                 <div ref={guestRef} className="relative">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Guests</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Guests
+                  </label>
                   <button
                     onClick={() => setShowGuestDropdown(!showGuestDropdown)}
                     className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 text-left bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:border-gray-400 transition-colors"
                   >
-                    Adults: {editableBookingData.guests.adults}, Children: {editableBookingData.guests.children}, Infants: {editableBookingData.guests.infants}
+                    Adults: {editableBookingData.guests.adults}, Children:{" "}
+                    {editableBookingData.guests.children}, Infants:{" "}
+                    {editableBookingData.guests.infants}
                   </button>
                   {showGuestDropdown && (
                     <GuestDropdown
@@ -486,7 +494,9 @@ export default function PaymentPage() {
                 </div>
 
                 <div ref={locationRef} className="relative">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Location
+                  </label>
                   <input
                     type="text"
                     value={tempLocationSearch}
@@ -517,7 +527,8 @@ export default function PaymentPage() {
                   <p className="flex flex-col">
                     Date:{" "}
                     <span className="font-medium text-xs text-gray-500 dark:text-gray-300">
-                      {editableBookingData.checkInDate.toLocaleDateString()} – {editableBookingData.checkOutDate.toLocaleDateString()}
+                      {editableBookingData.checkInDate.toLocaleDateString()} –{" "}
+                      {editableBookingData.checkOutDate.toLocaleDateString()}
                     </span>
                   </p>
                   <p className="flex flex-col">
@@ -542,33 +553,29 @@ export default function PaymentPage() {
             <div className="space-y-4">
               {/* Name & Phone */}
               <div className="flex flex-col sm:flex-row gap-4">
-             <Input
-  placeholder="Name"
-  value={formData.name}
-  onChange={(e) => handleChange("name", e.target.value)}
-  className="border-gray-400 rounded-[10px]"
-/>
+                <Input
+                  placeholder="Name"
+                  value={formData.name}
+                  onChange={(e) => handleChange("name", e.target.value)}
+                  className="border-gray-400 rounded-[10px]"
+                />
 
-              <Input
-  placeholder="Phone Number"
-  value={formData.phone}
-  maxLength={10}
-  onChange={(e) =>
-    handleChange("phone", e.target.value.replace(/\D/g, ""))
-  }
-  className="border-gray-400 rounded-[10px]"
-/>
-
+                <Input
+                  placeholder="Phone Number"
+                  value={formData.phone}
+                  maxLength={10}
+                  onChange={(e) => handleChange("phone", e.target.value.replace(/\D/g, ""))}
+                  className="border-gray-400 rounded-[10px]"
+                />
               </div>
 
               {/* Email */}
-         <Input
-  placeholder="Email"
-  value={formData.email}
-  onChange={(e) => handleChange("email", e.target.value)}
-  className="border-gray-400 rounded-[10px]"
-/>
-
+              <Input
+                placeholder="Email"
+                value={formData.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                className="border-gray-400 rounded-[10px]"
+              />
 
               {/* Address */}
               <div className="mt-6">
@@ -626,7 +633,6 @@ export default function PaymentPage() {
                   </select>
 
                   <div className="w-full">
-
                     <Input
                       type="text"
                       maxLength={6}
@@ -675,7 +681,9 @@ export default function PaymentPage() {
                 <h3 className="font-medium text-base">Price details</h3>
 
                 <div className="flex justify-between text-gray-500">
-                  <p>₹{pricePerNight} × {bookingData.numberOfNights} nights</p>
+                  <p>
+                    ₹{pricePerNight} × {bookingData.numberOfNights} nights
+                  </p>
                   <p>₹{bookingData.basePrice}</p>
                 </div>
                 {/* <div className="flex justify-between text-gray-500">
@@ -690,7 +698,7 @@ export default function PaymentPage() {
                   <p>Service fee</p>
                   <p>₹{bookingData.serviceFee}</p>
                 </div>
-                 <div className="flex justify-between text-gray-500">
+                <div className="flex justify-between text-gray-500">
                   <p>GST (18%)</p>
                   <p>₹{bookingData.gst}</p>
                 </div>
@@ -735,12 +743,9 @@ export default function PaymentPage() {
 
             {/* Message */}
             <h2 className="text-xl font-semibold mb-1">Congrats!!</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-2">
-              Your payment is successful
-            </p>
+            <p className="text-gray-600 dark:text-gray-300 mb-2">Your payment is successful</p>
             <p className="text-gray-400 text-sm mb-6">
-              Lorem ipsum dolor sit amet consectetur. Nulla cursus scelerisque
-              massa sed bibendum.
+              Lorem ipsum dolor sit amet consectetur. Nulla cursus scelerisque massa sed bibendum.
             </p>
 
             {/* Buttons */}
@@ -753,7 +758,7 @@ export default function PaymentPage() {
               </Button>
               <Button
                 onClick={() => {
-                    navigate("/user-trips");
+                  navigate("/user-trips");
                 }}
                 className="rounded-full w-full bg-black text-white px-5 py-2 hover:bg-gray-800"
               >
@@ -798,9 +803,7 @@ export default function PaymentPage() {
               {/* Trip & Booking Type */}
               <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                    TRIP TYPE
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">TRIP TYPE</p>
                   <p className="text-sm font-semibold text-black dark:text-white mt-1">
                     {bookingData.tripType}
                   </p>
@@ -817,9 +820,7 @@ export default function PaymentPage() {
 
               {/* Guest Information */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Guest Information
-                </h3>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Guest Information</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Name:</span>
@@ -844,9 +845,7 @@ export default function PaymentPage() {
 
               {/* Property & Location */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Property Details
-                </h3>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Property Details</h3>
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Property:</span>
@@ -856,9 +855,7 @@ export default function PaymentPage() {
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Location:</span>
-                    <p className="font-medium text-black dark:text-white">
-                      {bookingData.location}
-                    </p>
+                    <p className="font-medium text-black dark:text-white">{bookingData.location}</p>
                   </div>
                   <div>
                     <span className="text-gray-600 dark:text-gray-400">Description:</span>
@@ -871,19 +868,13 @@ export default function PaymentPage() {
 
               {/* Billing Address */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Billing Address
-                </h3>
-                <p className="text-sm text-black dark:text-white">
-                  {bookingData.address}
-                </p>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Billing Address</h3>
+                <p className="text-sm text-black dark:text-white">{bookingData.address}</p>
               </div>
 
               {/* Dates */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Stay Duration
-                </h3>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Stay Duration</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Check-in:</span>
@@ -898,9 +889,7 @@ export default function PaymentPage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      Number of Nights:
-                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">Number of Nights:</span>
                     <span className="font-medium text-black dark:text-white">
                       {bookingData.numberOfNights}
                     </span>
@@ -910,9 +899,7 @@ export default function PaymentPage() {
 
               {/* Price Breakdown */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Price Breakdown
-                </h3>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Price Breakdown</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-gray-600 dark:text-gray-400">
                     <span>
@@ -941,9 +928,7 @@ export default function PaymentPage() {
 
               {/* Payment Summary */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="font-semibold text-black dark:text-white mb-3">
-                  Payment Summary
-                </h3>
+                <h3 className="font-semibold text-black dark:text-white mb-3">Payment Summary</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between font-semibold text-black dark:text-white">
                     <span>Total Amount:</span>

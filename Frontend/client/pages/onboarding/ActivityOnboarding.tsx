@@ -10,6 +10,7 @@ import { onboardingService } from "@/lib/onboardingService";
 import { FaUserTie } from "react-icons/fa6";
 import { GiBinoculars, GiCampCookingPot, GiCruiser } from "react-icons/gi";
 import { useUserDetails } from "@/hooks/useUserDetails";
+import { useCountriesData } from "@/hooks/useCountriesData";
 
 // Shared components
 import {
@@ -68,7 +69,7 @@ const ActivityOnboarding = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [data, setData] = useState([]);
+  const data = useCountriesData();
   const [countriesData, setCountriesData] = useState<any[]>([]); // For country-state-city data
   const photoCarouselRef = React.useRef<HTMLDivElement>(null);
 
@@ -207,10 +208,7 @@ const ActivityOnboarding = () => {
         }
       })
       .catch(console.error);
-    fetch("/countries_states_cities.json")
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.error("Failed to load countries:", err));
+    // Countries data is loaded by the useCountriesData hook above.
 
     // Fetch admin features
     cmsPublicApi

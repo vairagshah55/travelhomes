@@ -6,6 +6,7 @@ import { MoreHorizontal } from "lucide-react";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import { onboardingService } from "@/lib/onboardingService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useUserDetails } from "@/hooks/useUserDetails";
@@ -53,7 +54,7 @@ interface FormData {
   // Step 3 - Capacity and Address
   seatingCapacity: number;
   sleepingCapacity: number;
-  address:string;
+  address: string;
   locality: string;
   state: string;
   city: string;
@@ -96,7 +97,7 @@ interface FormData {
   gstNumber: string;
   businessEmailId: string;
   businessPhoneNumber: string;
-  businessAddress:string;
+  businessAddress: string;
   businessLocality: string;
   personalLocality: string;
   businessState: string;
@@ -122,13 +123,16 @@ const CaravanOnboarding = () => {
 
   useEffect(() => {
     // Check if Caravan section is enabled
-    cmsPublicApi.listHomepageSections().then((sections) => {
-      const section = sections.find((s: any) => s.sectionKey === 'camper-van');
-      if (section && !section.isVisible) {
-        toast.error("Caravan onboarding is currently disabled.");
-        navigate("/");
-      }
-    }).catch(console.error);
+    cmsPublicApi
+      .listHomepageSections()
+      .then((sections) => {
+        const section = sections.find((s: any) => s.sectionKey === "camper-van");
+        if (section && !section.isVisible) {
+          toast.error("Caravan onboarding is currently disabled.");
+          navigate("/");
+        }
+      })
+      .catch(console.error);
 
     if (!isAuthenticated) {
       toast.error("Please login to continue");
@@ -153,12 +157,12 @@ const CaravanOnboarding = () => {
     description: "",
     rules: [],
     photos: [],
-    coverImage:[],
+    coverImage: [],
     category: null,
     features: [],
     seatingCapacity: 1,
     sleepingCapacity: 0,
-    address:'',
+    address: "",
     locality: "India",
     state: "",
     city: "",
@@ -197,7 +201,7 @@ const CaravanOnboarding = () => {
     gstNumber: "",
     businessEmailId: "",
     businessPhoneNumber: "",
-    businessAddress:"",
+    businessAddress: "",
     businessLocality: "India",
     personalLocality: "India",
     businessState: "",
@@ -237,9 +241,7 @@ const CaravanOnboarding = () => {
   }, [formData]);
 
   console.log("Form Data:", formData);
-  const [selected, setSelected] = useState<CountryOption | null>(
-    countries[100],
-  );
+  const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
   const [open, setOpen] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -247,7 +249,7 @@ const CaravanOnboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const totalSteps = 9;
   const completedSteps = currentStep;
-  const [data, setData] = useState([]);
+  const data = useCountriesData();
   const [idProofImage, setIdProofImage] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [dynamicCategories, setDynamicCategories] = useState<any[]>([]);
@@ -255,212 +257,224 @@ const CaravanOnboarding = () => {
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
 
-
   const { userDetails, updateUserDetails } = useUserDetails();
 
-  // Populate country list on mount
+  // Populate country list (via shared useCountriesData hook above).
   useEffect(() => {
-    fetch("/countries_states_cities.json") // remove ../../.. for public/ path
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.error("Failed to load countries:", err));
+    // Fetch admin features
+    cmsPublicApi
+      .getFeatures("Camper Van")
+      .then((list) => {
+        const enabled = list.filter((f: any) => f.status === "enable");
+        setDynamicCategories(enabled.filter((f: any) => f.type === "category"));
+        setDynamicFeatures(enabled.filter((f: any) => f.type === "feature" || !f.type));
+      })
+      .catch(console.error);
 
-      // Fetch admin features
-      cmsPublicApi.getFeatures("Camper Van").then(list => {
-        const enabled = list.filter((f: any) => f.status === 'enable');
-        setDynamicCategories(enabled.filter((f: any) => f.type === 'category'));
-        setDynamicFeatures(enabled.filter((f: any) => f.type === 'feature' || !f.type));
-      }).catch(console.error);
+    // Check for existing data
+    const loadExistingData = async () => {
+      try {
+        const data = await getOnboardingData();
+        console.log("Fetched Onboarding Data:", data);
 
-      // Check for existing data
-      const loadExistingData = async () => {
-        try {
-          const data = await getOnboardingData();
-          console.log("Fetched Onboarding Data:", data);
-
-          if (data) {
-            console.log("Data Type:", data.type);
-            console.log("Has Doc:", !!data.doc);
-            if (data.doc) {
-              console.log("Doc Status:", data.doc.status);
-              console.log("Full Doc Object:", data.doc);
-            }
+        if (data) {
+          console.log("Data Type:", data.type);
+          console.log("Has Doc:", !!data.doc);
+          if (data.doc) {
+            console.log("Doc Status:", data.doc.status);
+            console.log("Full Doc Object:", data.doc);
           }
-
-          if (data && data.type === 'caravan' && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
-            const doc = data.doc;
-            console.log('Loading existing caravan data into form:', doc);
-
-            // Debug specific fields if they are missing
-            console.log("Mapping fields - Name:", doc.name, "Category:", doc.category, "Photos:", doc.photos);
-
-            console.log("Business Details (Draft):", {
-              brandName: doc.brandName,
-              legalCompanyName: doc.legalCompanyName,
-              businessEmailId: doc.businessEmailId,
-              businessPhoneNumber: doc.businessPhoneNumber,
-              businessAddress: {
-                locality: doc.businessLocality,
-                state: doc.businessState,
-                city: doc.businessCity,
-                pincode: doc.businessPincode
-              }
-            });
-
-            console.log("Personal Details (Draft):", {
-              firstName: doc.firstName,
-              lastName: doc.lastName,
-              personalState: doc.personalState,
-              personalCity: doc.personalCity,
-              personalPincode: doc.personalPincode,
-              dateOfBirth: doc.dateOfBirth,
-              maritalStatus: doc.maritalStatus,
-              idProof: doc.idProof
-            });
-
-            setFormData(prev => ({
-              ...prev,
-              name: doc.name || "",
-              description: doc.description || "",
-              rules: doc.rules || [],
-              photos: Array.isArray(doc.photos) ? doc.photos : [],
-              coverImage: Array.isArray(doc.coverImage) ? doc.coverImage : (typeof doc.coverImage === 'string' ? [doc.coverImage] : []),
-              category: doc.category || null,
-              features: doc.features || [],
-              seatingCapacity: doc.seatingCapacity || 1,
-              sleepingCapacity: doc.sleepingCapacity || 0,
-              address: doc.address || "",
-              locality: doc.locality || "India",
-              state: doc.state || "",
-              city: doc.city || "",
-              pincode: doc.pincode || "",
-              perKmCharge: String(doc.perKmCharge || ""),
-              perDayCharge: String(doc.perDayCharge || ""),
-              perKmIncludes: doc.perKmIncludes || [],
-              perKmExcludes: doc.perKmExcludes || [],
-              perDayIncludes: doc.perDayIncludes || [],
-              perDayExcludes: doc.perDayExcludes || [],
-              priceIncludes: doc.priceIncludes || [],
-              priceExcludes: doc.priceExcludes || [],
-
-              firstUserDiscount: doc.firstUserDiscount ?? false,
-              firstUserDiscountType: doc.firstUserDiscountType || "percentage",
-              firstUserDiscountValue: String(doc.firstUserDiscountValue || ""),
-              firstUserDiscountFinalPrice: String(doc.firstUserDiscountFinalPrice || ""),
-
-              festivalOffers: doc.festivalOffers ?? false,
-              festivalOffersType: doc.festivalOffersType || "percentage",
-              festivalOffersValue: String(doc.festivalOffersValue || ""),
-              festivalOffersFinalPrice: String(doc.festivalOffersFinalPrice || ""),
-
-              weeklyMonthlyOffers: doc.weeklyMonthlyOffers ?? false,
-              weeklyMonthlyOffersType: doc.weeklyMonthlyOffersType || "percentage",
-              weeklyMonthlyOffersValue: String(doc.weeklyMonthlyOffersValue || ""),
-              weeklyMonthlyOffersFinalPrice: String(doc.weeklyMonthlyOffersFinalPrice || ""),
-
-              specialOffers: doc.specialOffers ?? false,
-              specialOffersType: doc.specialOffersType || "percentage",
-              specialOffersValue: String(doc.specialOffersValue || ""),
-              specialOffersFinalPrice: String(doc.specialOffersFinalPrice || ""),
-
-              brandName: doc.brandName || "",
-              legalCompanyName: doc.legalCompanyName || "",
-              gstNumber: doc.gstNumber || "",
-              businessEmailId: doc.businessEmailId || "",
-              businessPhoneNumber: doc.businessPhoneNumber || "",
-              businessLocality: doc.businessLocality || "India",
-              personalLocality: doc.personalLocality || "India",
-              businessState: doc.businessState || "",
-              businessCity: doc.businessCity || "",
-              businessPincode: doc.businessPincode || "",
-
-              firstName: doc.firstName || "",
-              lastName: doc.lastName || "",
-              personalState: doc.personalState || "",
-              personalCity: doc.personalCity || "",
-              personalPincode: doc.personalPincode || "",
-              dateOfBirth: doc.dateOfBirth || "",
-              maritalStatus: doc.maritalStatus || "",
-              idProof: doc.idProof || "",
-              idPhotos: (Array.isArray(doc.idPhotos) && doc.idPhotos.length > 0)
-                  ? doc.idPhotos
-                  : [],
-
-              termsAccepted: false,
-            }));
-
-            if (doc.idPhotos && doc.idPhotos.length > 0) {
-              setIdProofImage(doc.idPhotos[0]);
-            }
-          } else if (userDetails && user?.userType !== 'vendor') {
-             console.log("No valid draft found. Auto-filling from userDetails:", userDetails);
-
-             console.log("Business Details (Auto-fill):", {
-                brandName: userDetails.business?.brandName,
-                legalCompanyName: userDetails.business?.legalCompanyName,
-                businessEmailId: userDetails.business?.email,
-                businessPhoneNumber: userDetails.business?.phoneNumber,
-                businessAddress: {
-                  locality: userDetails.business?.locality,
-                  state: userDetails.business?.state,
-                  city: userDetails.business?.city,
-                  pincode: userDetails.business?.pincode
-                }
-             });
-
-             console.log("Personal Details (Auto-fill):", {
-                firstName: userDetails.firstName,
-                lastName: userDetails.lastName,
-                personalState: userDetails.state,
-                personalCity: userDetails.city,
-                personalPincode: userDetails.personalPincode,
-                dateOfBirth: userDetails.dateOfBirth,
-                maritalStatus: userDetails.maritalStatus,
-                idProof: userDetails.idProof
-             });
-
-             // Auto-fill from user details if no draft exists
-             setFormData(prev => ({
-                ...prev,
-                firstName: userDetails.firstName || "",
-                lastName: userDetails.lastName || "",
-                personalState: userDetails.state || "",
-                personalCity: userDetails.city || "",
-                personalPincode: userDetails.personalPincode || "",
-                personalLocality: userDetails.personalLocality || "India",
-                dateOfBirth: userDetails.dateOfBirth ? new Date(userDetails.dateOfBirth).toISOString().split('T')[0] : "",
-                maritalStatus: userDetails.maritalStatus || "",
-                idProof: userDetails.idProof || "",
-                idPhotos: userDetails.idPhotos || [],
-
-                brandName: userDetails.business?.brandName || "",
-                legalCompanyName: userDetails.business?.legalCompanyName || "",
-                gstNumber: userDetails.business?.gstNumber || "",
-                businessEmailId: userDetails.business?.email || "",
-                businessPhoneNumber: userDetails.business?.phoneNumber || "",
-                businessLocality: userDetails.business?.locality || "India",
-                businessState: userDetails.business?.state || "",
-                businessCity: userDetails.business?.city || "",
-                businessPincode: userDetails.business?.pincode || "",
-             }));
-             if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
-               setIdProofImage(userDetails.idPhotos[0]);
-             }
-          }
-        } catch (err) {
-          console.error("Failed to load existing onboarding data", err);
         }
-      };
-      loadExistingData();
 
+        if (
+          data &&
+          data.type === "caravan" &&
+          data.doc &&
+          ["pending", "draft", "rejected"].includes(data.doc.status)
+        ) {
+          const doc = data.doc;
+          console.log("Loading existing caravan data into form:", doc);
+
+          // Debug specific fields if they are missing
+          console.log(
+            "Mapping fields - Name:",
+            doc.name,
+            "Category:",
+            doc.category,
+            "Photos:",
+            doc.photos,
+          );
+
+          console.log("Business Details (Draft):", {
+            brandName: doc.brandName,
+            legalCompanyName: doc.legalCompanyName,
+            businessEmailId: doc.businessEmailId,
+            businessPhoneNumber: doc.businessPhoneNumber,
+            businessAddress: {
+              locality: doc.businessLocality,
+              state: doc.businessState,
+              city: doc.businessCity,
+              pincode: doc.businessPincode,
+            },
+          });
+
+          console.log("Personal Details (Draft):", {
+            firstName: doc.firstName,
+            lastName: doc.lastName,
+            personalState: doc.personalState,
+            personalCity: doc.personalCity,
+            personalPincode: doc.personalPincode,
+            dateOfBirth: doc.dateOfBirth,
+            maritalStatus: doc.maritalStatus,
+            idProof: doc.idProof,
+          });
+
+          setFormData((prev) => ({
+            ...prev,
+            name: doc.name || "",
+            description: doc.description || "",
+            rules: doc.rules || [],
+            photos: Array.isArray(doc.photos) ? doc.photos : [],
+            coverImage: Array.isArray(doc.coverImage)
+              ? doc.coverImage
+              : typeof doc.coverImage === "string"
+                ? [doc.coverImage]
+                : [],
+            category: doc.category || null,
+            features: doc.features || [],
+            seatingCapacity: doc.seatingCapacity || 1,
+            sleepingCapacity: doc.sleepingCapacity || 0,
+            address: doc.address || "",
+            locality: doc.locality || "India",
+            state: doc.state || "",
+            city: doc.city || "",
+            pincode: doc.pincode || "",
+            perKmCharge: String(doc.perKmCharge || ""),
+            perDayCharge: String(doc.perDayCharge || ""),
+            perKmIncludes: doc.perKmIncludes || [],
+            perKmExcludes: doc.perKmExcludes || [],
+            perDayIncludes: doc.perDayIncludes || [],
+            perDayExcludes: doc.perDayExcludes || [],
+            priceIncludes: doc.priceIncludes || [],
+            priceExcludes: doc.priceExcludes || [],
+
+            firstUserDiscount: doc.firstUserDiscount ?? false,
+            firstUserDiscountType: doc.firstUserDiscountType || "percentage",
+            firstUserDiscountValue: String(doc.firstUserDiscountValue || ""),
+            firstUserDiscountFinalPrice: String(doc.firstUserDiscountFinalPrice || ""),
+
+            festivalOffers: doc.festivalOffers ?? false,
+            festivalOffersType: doc.festivalOffersType || "percentage",
+            festivalOffersValue: String(doc.festivalOffersValue || ""),
+            festivalOffersFinalPrice: String(doc.festivalOffersFinalPrice || ""),
+
+            weeklyMonthlyOffers: doc.weeklyMonthlyOffers ?? false,
+            weeklyMonthlyOffersType: doc.weeklyMonthlyOffersType || "percentage",
+            weeklyMonthlyOffersValue: String(doc.weeklyMonthlyOffersValue || ""),
+            weeklyMonthlyOffersFinalPrice: String(doc.weeklyMonthlyOffersFinalPrice || ""),
+
+            specialOffers: doc.specialOffers ?? false,
+            specialOffersType: doc.specialOffersType || "percentage",
+            specialOffersValue: String(doc.specialOffersValue || ""),
+            specialOffersFinalPrice: String(doc.specialOffersFinalPrice || ""),
+
+            brandName: doc.brandName || "",
+            legalCompanyName: doc.legalCompanyName || "",
+            gstNumber: doc.gstNumber || "",
+            businessEmailId: doc.businessEmailId || "",
+            businessPhoneNumber: doc.businessPhoneNumber || "",
+            businessLocality: doc.businessLocality || "India",
+            personalLocality: doc.personalLocality || "India",
+            businessState: doc.businessState || "",
+            businessCity: doc.businessCity || "",
+            businessPincode: doc.businessPincode || "",
+
+            firstName: doc.firstName || "",
+            lastName: doc.lastName || "",
+            personalState: doc.personalState || "",
+            personalCity: doc.personalCity || "",
+            personalPincode: doc.personalPincode || "",
+            dateOfBirth: doc.dateOfBirth || "",
+            maritalStatus: doc.maritalStatus || "",
+            idProof: doc.idProof || "",
+            idPhotos: Array.isArray(doc.idPhotos) && doc.idPhotos.length > 0 ? doc.idPhotos : [],
+
+            termsAccepted: false,
+          }));
+
+          if (doc.idPhotos && doc.idPhotos.length > 0) {
+            setIdProofImage(doc.idPhotos[0]);
+          }
+        } else if (userDetails && user?.userType !== "vendor") {
+          console.log("No valid draft found. Auto-filling from userDetails:", userDetails);
+
+          console.log("Business Details (Auto-fill):", {
+            brandName: userDetails.business?.brandName,
+            legalCompanyName: userDetails.business?.legalCompanyName,
+            businessEmailId: userDetails.business?.email,
+            businessPhoneNumber: userDetails.business?.phoneNumber,
+            businessAddress: {
+              locality: userDetails.business?.locality,
+              state: userDetails.business?.state,
+              city: userDetails.business?.city,
+              pincode: userDetails.business?.pincode,
+            },
+          });
+
+          console.log("Personal Details (Auto-fill):", {
+            firstName: userDetails.firstName,
+            lastName: userDetails.lastName,
+            personalState: userDetails.state,
+            personalCity: userDetails.city,
+            personalPincode: userDetails.personalPincode,
+            dateOfBirth: userDetails.dateOfBirth,
+            maritalStatus: userDetails.maritalStatus,
+            idProof: userDetails.idProof,
+          });
+
+          // Auto-fill from user details if no draft exists
+          setFormData((prev) => ({
+            ...prev,
+            firstName: userDetails.firstName || "",
+            lastName: userDetails.lastName || "",
+            personalState: userDetails.state || "",
+            personalCity: userDetails.city || "",
+            personalPincode: userDetails.personalPincode || "",
+            personalLocality: userDetails.personalLocality || "India",
+            dateOfBirth: userDetails.dateOfBirth
+              ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
+              : "",
+            maritalStatus: userDetails.maritalStatus || "",
+            idProof: userDetails.idProof || "",
+            idPhotos: userDetails.idPhotos || [],
+
+            brandName: userDetails.business?.brandName || "",
+            legalCompanyName: userDetails.business?.legalCompanyName || "",
+            gstNumber: userDetails.business?.gstNumber || "",
+            businessEmailId: userDetails.business?.email || "",
+            businessPhoneNumber: userDetails.business?.phoneNumber || "",
+            businessLocality: userDetails.business?.locality || "India",
+            businessState: userDetails.business?.state || "",
+            businessCity: userDetails.business?.city || "",
+            businessPincode: userDetails.business?.pincode || "",
+          }));
+          if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
+            setIdProofImage(userDetails.idPhotos[0]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load existing onboarding data", err);
+      }
+    };
+    loadExistingData();
   }, [userDetails]);
 
   // Auto-calculate final prices for discounts
   useEffect(() => {
     if (currentStep === 5) {
-      setFormData(prev => {
+      setFormData((prev) => {
         const basePrice = parseFloat(prev.perDayCharge) || parseFloat(prev.perKmCharge) || 0;
-        let newData = { ...prev };
+        const newData = { ...prev };
         let changed = false;
 
         // Only auto-seed when basePrice is known AND the field is still empty
@@ -468,57 +482,57 @@ const CaravanOnboarding = () => {
         if (basePrice <= 0) return prev;
 
         const calculateFinal = (type: string, value: string) => {
-           const val = parseFloat(value) || 0;
-           if (type === 'percentage') {
-               return Math.max(0, basePrice - (basePrice * val / 100)).toFixed(0);
-           } else {
-               return Math.max(0, basePrice - val).toFixed(0);
-           }
+          const val = parseFloat(value) || 0;
+          if (type === "percentage") {
+            return Math.max(0, basePrice - (basePrice * val) / 100).toFixed(0);
+          } else {
+            return Math.max(0, basePrice - val).toFixed(0);
+          }
         };
 
         if (prev.firstUserDiscount && !prev.firstUserDiscountFinalPrice) {
-            const final = calculateFinal(prev.firstUserDiscountType, prev.firstUserDiscountValue);
-            newData.firstUserDiscountFinalPrice = final;
-            changed = true;
+          const final = calculateFinal(prev.firstUserDiscountType, prev.firstUserDiscountValue);
+          newData.firstUserDiscountFinalPrice = final;
+          changed = true;
         }
 
         if (prev.festivalOffers && !prev.festivalOffersFinalPrice) {
-            const final = calculateFinal(prev.festivalOffersType, prev.festivalOffersValue);
-            newData.festivalOffersFinalPrice = final;
-            changed = true;
+          const final = calculateFinal(prev.festivalOffersType, prev.festivalOffersValue);
+          newData.festivalOffersFinalPrice = final;
+          changed = true;
         }
 
         if (prev.weeklyMonthlyOffers && !prev.weeklyMonthlyOffersFinalPrice) {
-            const final = calculateFinal(prev.weeklyMonthlyOffersType, prev.weeklyMonthlyOffersValue);
-            newData.weeklyMonthlyOffersFinalPrice = final;
-            changed = true;
+          const final = calculateFinal(prev.weeklyMonthlyOffersType, prev.weeklyMonthlyOffersValue);
+          newData.weeklyMonthlyOffersFinalPrice = final;
+          changed = true;
         }
 
         if (prev.specialOffers && !prev.specialOffersFinalPrice) {
-            const final = calculateFinal(prev.specialOffersType, prev.specialOffersValue);
-            newData.specialOffersFinalPrice = final;
-            changed = true;
+          const final = calculateFinal(prev.specialOffersType, prev.specialOffersValue);
+          newData.specialOffersFinalPrice = final;
+          changed = true;
         }
 
         return changed ? newData : prev;
       });
     }
   }, [
-      currentStep,
-      formData.perDayCharge,
-      formData.perKmCharge,
-      formData.firstUserDiscount,
-      formData.firstUserDiscountType,
-      formData.firstUserDiscountValue,
-      formData.festivalOffers,
-      formData.festivalOffersType,
-      formData.festivalOffersValue,
-      formData.weeklyMonthlyOffers,
-      formData.weeklyMonthlyOffersType,
-      formData.weeklyMonthlyOffersValue,
-      formData.specialOffers,
-      formData.specialOffersType,
-      formData.specialOffersValue
+    currentStep,
+    formData.perDayCharge,
+    formData.perKmCharge,
+    formData.firstUserDiscount,
+    formData.firstUserDiscountType,
+    formData.firstUserDiscountValue,
+    formData.festivalOffers,
+    formData.festivalOffersType,
+    formData.festivalOffersValue,
+    formData.weeklyMonthlyOffers,
+    formData.weeklyMonthlyOffersType,
+    formData.weeklyMonthlyOffersValue,
+    formData.specialOffers,
+    formData.specialOffersType,
+    formData.specialOffersValue,
   ]);
 
   const handleBack = () => {
@@ -604,8 +618,14 @@ const CaravanOnboarding = () => {
       const newErrors: Record<string, string> = {};
       let hasError = false;
 
-      const hasPerKm = formData.perKmCharge && !isNaN(Number(formData.perKmCharge)) && Number(formData.perKmCharge) > 0;
-      const hasPerDay = formData.perDayCharge && !isNaN(Number(formData.perDayCharge)) && Number(formData.perDayCharge) > 0;
+      const hasPerKm =
+        formData.perKmCharge &&
+        !isNaN(Number(formData.perKmCharge)) &&
+        Number(formData.perKmCharge) > 0;
+      const hasPerDay =
+        formData.perDayCharge &&
+        !isNaN(Number(formData.perDayCharge)) &&
+        Number(formData.perDayCharge) > 0;
 
       if (!hasPerKm && !hasPerDay) {
         newErrors.pricing = "At least one price (Per KM or Per Day) is required";
@@ -728,7 +748,11 @@ const CaravanOnboarding = () => {
         newErrors.businessPincode = "Pincode must be 6 digits";
         hasError = true;
       }
-      if (!formData.businessPhoneNumber || !formData.businessPhoneNumber.trim() || formData.businessPhoneNumber.length !== 10) {
+      if (
+        !formData.businessPhoneNumber ||
+        !formData.businessPhoneNumber.trim() ||
+        formData.businessPhoneNumber.length !== 10
+      ) {
         newErrors.businessPhoneNumber = "Valid business phone number is required";
         hasError = true;
       }
@@ -831,13 +855,13 @@ const CaravanOnboarding = () => {
       // Merge includes and excludes
       const mergedIncludes = [
         ...(formData.perKmIncludes || []),
-        ...(formData.perDayIncludes || [])
-      ].filter(i => i && i.trim());
+        ...(formData.perDayIncludes || []),
+      ].filter((i) => i && i.trim());
 
       const mergedExcludes = [
         ...(formData.perKmExcludes || []),
-        ...(formData.perDayExcludes || [])
-      ].filter(i => i && i.trim());
+        ...(formData.perDayExcludes || []),
+      ].filter((i) => i && i.trim());
 
       // Convert File objects to data URLs so server can persist Offer.photos
       const photosData: string[] = await Promise.all(
@@ -877,39 +901,39 @@ const CaravanOnboarding = () => {
       if (result?.id) {
         // Update user profile with personal & business details
         await updateUserDetails({
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            phoneNumber: formData.businessPhoneNumber,
-            country: (formData as any).personalCountry,
-            state: formData.personalState,
-            city: formData.personalCity,
-            personalPincode: formData.personalPincode,
-            personalLocality: formData.personalLocality,
-            dateOfBirth: formData.dateOfBirth,
-            maritalStatus: formData.maritalStatus,
-            idProof: formData.idProof,
-            idPhotos: idPhotosData,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.businessPhoneNumber,
+          country: (formData as any).personalCountry,
+          state: formData.personalState,
+          city: formData.personalCity,
+          personalPincode: formData.personalPincode,
+          personalLocality: formData.personalLocality,
+          dateOfBirth: formData.dateOfBirth,
+          maritalStatus: formData.maritalStatus,
+          idProof: formData.idProof,
+          idPhotos: idPhotosData,
 
-            business: {
-              brandName: formData.brandName,
-              legalCompanyName: formData.legalCompanyName,
-              gstNumber: formData.gstNumber,
-              email: formData.businessEmailId,
-              phoneNumber: formData.businessPhoneNumber,
-              locality: formData.businessLocality,
-              state: formData.businessState,
-              city: formData.businessCity,
-              pincode: formData.businessPincode,
-            }
+          business: {
+            brandName: formData.brandName,
+            legalCompanyName: formData.legalCompanyName,
+            gstNumber: formData.gstNumber,
+            email: formData.businessEmailId,
+            phoneNumber: formData.businessPhoneNumber,
+            locality: formData.businessLocality,
+            state: formData.businessState,
+            city: formData.businessCity,
+            pincode: formData.businessPincode,
+          },
         });
 
         onboardingService.setCaravanId(result.id);
-        sessionStorage.setItem('onboardingId', result.id);
-        sessionStorage.setItem('onboardingType', 'caravan');
-        sessionStorage.setItem('id', result.id);
+        sessionStorage.setItem("onboardingId", result.id);
+        sessionStorage.setItem("onboardingType", "caravan");
+        sessionStorage.setItem("id", result.id);
         sessionStorage.removeItem("caravan_onboarding_step");
         sessionStorage.removeItem(FORM_STORAGE_KEY);
-        updateUserType('vendor');
+        updateUserType("vendor");
         toast.success("Caravan onboarding saved successfully!");
         navigate("/onboarding/selfie-verification");
         return;
@@ -946,7 +970,9 @@ const CaravanOnboarding = () => {
     }));
   };
 
-  const addPriceItem = (field: "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes") => {
+  const addPriceItem = (
+    field: "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes",
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: [...prev[field], ""],
@@ -964,12 +990,15 @@ const CaravanOnboarding = () => {
     }));
   };
 
-  const removePriceItem = (field: "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes", index: number) => {
+  const removePriceItem = (
+    field: "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes",
+    index: number,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index),
     }));
-  }
+  };
 
   const toggleFeature = (feature: string) => {
     setFormData((prev) => ({
@@ -980,24 +1009,15 @@ const CaravanOnboarding = () => {
     }));
   };
 
-  const adjustCapacity = (
-    type: "seating" | "sleeping",
-    direction: "increase" | "decrease",
-  ) => {
+  const adjustCapacity = (type: "seating" | "sleeping", direction: "increase" | "decrease") => {
     const field = type === "seating" ? "seatingCapacity" : "sleepingCapacity";
     setFormData((prev) => ({
       ...prev,
-      [field]:
-        direction === "increase"
-          ? prev[field] + 1
-          : Math.max(1, prev[field] - 1),
+      [field]: direction === "increase" ? prev[field] + 1 : Math.max(1, prev[field] - 1),
     }));
   };
 
-  const handleFileUpload = (
-    field: "photos" | "idPhotos",
-    files: FileList | null,
-  ) => {
+  const handleFileUpload = (field: "photos" | "idPhotos", files: FileList | null) => {
     if (!files) return;
 
     setFormData((prev) => {
@@ -1017,10 +1037,7 @@ const CaravanOnboarding = () => {
       };
     });
   };
-  const handleCoverFileUpload = (
-    field: "coverImage",
-    files: FileList | null,
-  ) => {
+  const handleCoverFileUpload = (field: "coverImage", files: FileList | null) => {
     if (!files) return;
 
     setFormData((prev) => {
@@ -1188,13 +1205,17 @@ const CaravanOnboarding = () => {
   const discountErrors: Record<string, string> = {};
   // Map caravan formData error keys to DiscountOffersStep error key format
   if (errors.firstUserDiscountValue) discountErrors.firstUserValue = errors.firstUserDiscountValue;
-  if (errors.firstUserDiscountFinalPrice) discountErrors.firstUserFinalPrice = errors.firstUserDiscountFinalPrice;
+  if (errors.firstUserDiscountFinalPrice)
+    discountErrors.firstUserFinalPrice = errors.firstUserDiscountFinalPrice;
   if (errors.festivalOffersValue) discountErrors.festivalValue = errors.festivalOffersValue;
-  if (errors.festivalOffersFinalPrice) discountErrors.festivalFinalPrice = errors.festivalOffersFinalPrice;
+  if (errors.festivalOffersFinalPrice)
+    discountErrors.festivalFinalPrice = errors.festivalOffersFinalPrice;
   if (errors.weeklyMonthlyOffersValue) discountErrors.weeklyValue = errors.weeklyMonthlyOffersValue;
-  if (errors.weeklyMonthlyOffersFinalPrice) discountErrors.weeklyFinalPrice = errors.weeklyMonthlyOffersFinalPrice;
+  if (errors.weeklyMonthlyOffersFinalPrice)
+    discountErrors.weeklyFinalPrice = errors.weeklyMonthlyOffersFinalPrice;
   if (errors.specialOffersValue) discountErrors.specialValue = errors.specialOffersValue;
-  if (errors.specialOffersFinalPrice) discountErrors.specialFinalPrice = errors.specialOffersFinalPrice;
+  if (errors.specialOffersFinalPrice)
+    discountErrors.specialFinalPrice = errors.specialOffersFinalPrice;
 
   // --- Business details mapping for shared BusinessDetailsStep ---
   const handleBusinessFieldChange = (field: string, value: string) => {
@@ -1268,10 +1289,10 @@ const CaravanOnboarding = () => {
   // --- Custom features handlers ---
   const handleRemoveCustomFeature = (idx: number) => {
     const featureName = customFeatures[idx].name;
-    setCustomFeatures(prev => prev.filter((_, i) => i !== idx));
-    setFormData(prev => ({
+    setCustomFeatures((prev) => prev.filter((_, i) => i !== idx));
+    setFormData((prev) => ({
       ...prev,
-      features: prev.features.filter(f => f !== featureName)
+      features: prev.features.filter((f) => f !== featureName),
     }));
   };
 
@@ -1283,10 +1304,10 @@ const CaravanOnboarding = () => {
         toast.error("This feature already exists");
         return;
       }
-      setCustomFeatures(prev => [...prev, { name: newFeatureName, icon: MoreHorizontal }]);
-      setFormData(prev => ({
+      setCustomFeatures((prev) => [...prev, { name: newFeatureName, icon: MoreHorizontal }]);
+      setFormData((prev) => ({
         ...prev,
-        features: [...prev.features, newFeatureName]
+        features: [...prev.features, newFeatureName],
       }));
       setCustomFeatureInput("");
     }
@@ -1312,7 +1333,9 @@ const CaravanOnboarding = () => {
             errors={errors}
             sliderRef={sliderRef}
             onNameChange={(value) => setFormData((prev) => ({ ...prev, name: value }))}
-            onDescriptionChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+            onDescriptionChange={(value) =>
+              setFormData((prev) => ({ ...prev, description: value }))
+            }
             onAddRule={addRule}
             onRemoveRule={removeRule}
             onUpdateRule={updateRule}
@@ -1328,7 +1351,9 @@ const CaravanOnboarding = () => {
           <CategoryStep
             category={formData.category}
             dynamicCategories={dynamicCategories}
-            onSelect={(categoryName) => setFormData((prev) => ({ ...prev, category: categoryName }))}
+            onSelect={(categoryName) =>
+              setFormData((prev) => ({ ...prev, category: categoryName }))
+            }
           />
         );
       case 2:
@@ -1361,7 +1386,9 @@ const CaravanOnboarding = () => {
             errors={errors}
             onAdjustCapacity={adjustCapacity}
             onAddressChange={(value) => setFormData((prev) => ({ ...prev, address: value }))}
-            onLocalityChange={(value) => setFormData((prev) => ({ ...prev, locality: value, state: "", city: "" }))}
+            onLocalityChange={(value) =>
+              setFormData((prev) => ({ ...prev, locality: value, state: "", city: "" }))
+            }
             onStateChange={(value) => setFormData((prev) => ({ ...prev, state: value, city: "" }))}
             onCityChange={(value) => setFormData((prev) => ({ ...prev, city: value }))}
             onPincodeChange={(value) => setFormData((prev) => ({ ...prev, pincode: value }))}
@@ -1378,8 +1405,12 @@ const CaravanOnboarding = () => {
             perDayIncludes={formData.perDayIncludes}
             perDayExcludes={formData.perDayExcludes}
             errors={errors}
-            onPerKmChargeChange={(value) => setFormData((prev) => ({ ...prev, perKmCharge: value }))}
-            onPerDayChargeChange={(value) => setFormData((prev) => ({ ...prev, perDayCharge: value }))}
+            onPerKmChargeChange={(value) =>
+              setFormData((prev) => ({ ...prev, perKmCharge: value }))
+            }
+            onPerDayChargeChange={(value) =>
+              setFormData((prev) => ({ ...prev, perDayCharge: value }))
+            }
             onAddPriceItem={addPriceItem}
             onUpdatePriceItem={updatePriceItem}
             onRemovePriceItem={removePriceItem}
@@ -1419,8 +1450,14 @@ const CaravanOnboarding = () => {
             selectedState={formData.businessState}
             selectedCity={formData.businessCity}
             countryName={formData.businessLocality}
-            onStateChange={(val) => { setFormData((prev) => ({ ...prev, businessState: val, businessCity: "" })); setErrors((prev) => ({ ...prev, businessState: "", businessCity: "" })); }}
-            onCityChange={(val) => { setFormData((prev) => ({ ...prev, businessCity: val })); setErrors((prev) => ({ ...prev, businessCity: "" })); }}
+            onStateChange={(val) => {
+              setFormData((prev) => ({ ...prev, businessState: val, businessCity: "" }));
+              setErrors((prev) => ({ ...prev, businessState: "", businessCity: "" }));
+            }}
+            onCityChange={(val) => {
+              setFormData((prev) => ({ ...prev, businessCity: val }));
+              setErrors((prev) => ({ ...prev, businessCity: "" }));
+            }}
             mapSrc={mapSrcbusiness}
           />
         );
@@ -1462,7 +1499,9 @@ const CaravanOnboarding = () => {
         return (
           <TermsConditionsStep
             termsAccepted={formData.termsAccepted}
-            onTermsChange={(checked) => setFormData((prev) => ({ ...prev, termsAccepted: checked }))}
+            onTermsChange={(checked) =>
+              setFormData((prev) => ({ ...prev, termsAccepted: checked }))
+            }
           />
         );
       default:

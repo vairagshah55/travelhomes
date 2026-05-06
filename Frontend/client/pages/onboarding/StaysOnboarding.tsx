@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import {
   Bath,
   Flame,
@@ -477,7 +478,7 @@ const StaysOnboarding = () => {
   };
 
   const [fileName, setFileName] = useState("");
-  const [data, setData] = useState([]);
+  const data = useCountriesData();
   const [countryOption, setCoutryOption] = useState("India");
   const [countryOption2, setCoutryOption2] = useState("India");
   const [stateOption, setStateOption] = useState(_cached?.personalState ?? "");
@@ -509,13 +510,10 @@ const StaysOnboarding = () => {
     setPersonalCountry("India");
   }, []);
 
-  // Populate country list on mount
+  // Populate country list on mount (countries are loaded by the
+  // useCountriesData hook above; this effect now only fetches CMS-driven
+  // amenity data).
   useEffect(() => {
-    fetch("/countries_states_cities.json") // remove ../../.. for public/ path
-      .then((res) => res.json())
-      .then((json) => setData(json))
-      .catch((err) => console.error("Failed to load countries:", err));
-
     // Fetch admin features (amenities)
     cmsPublicApi
       .getFeatures("Unique Stay")

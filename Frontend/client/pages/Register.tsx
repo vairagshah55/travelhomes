@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { authApi } from "../lib/api";
@@ -149,7 +150,7 @@ const Register = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   /* ── Step 3 – Location ────────────────────────────────── */
-  const [locationData, setLocationData] = useState<any[]>([]);
+  const locationData = useCountriesData();
   const [country, setCountry] = useState("India");
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
@@ -171,13 +172,6 @@ const Register = () => {
   const dobWrapperRef = useRef<HTMLDivElement>(null);
 
   /* ── Effects ──────────────────────────────────────────── */
-
-  useEffect(() => {
-    fetch("/countries_states_cities.json")
-      .then((r) => r.json())
-      .then(setLocationData)
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (step === 2) inputRefs.current[0]?.focus();
