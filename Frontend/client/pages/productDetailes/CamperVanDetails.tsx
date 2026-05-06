@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
@@ -189,15 +190,50 @@ export default function UniqueStayDetails() {
   };
 
   // Loaded stay data from API + vendor details
-  const [stay, setStay] = useState<OfferDTO | null>(null);
-  const [loadingStay, setLoadingStay] = useState<boolean>(true);
-  const [vendor, setVendor] = useState<any>(null);
-  const [loadingVendor, setLoadingVendor] = useState<boolean>(false);
   const [pages, setPages] = useState<{ caravan: number; "unique-stays": number; activity: number }>(
     { caravan: 1, "unique-stays": 1, activity: 1 },
   );
   const pageSize = 12;
-  const [offers, setOffers] = useState<OfferDTO[]>([]);
+
+  // ─── Camper-van detail (by id) ───────────────────────────────────────
+  const stayQuery = useQuery<OfferDTO | null>({
+    queryKey: ["offer", id],
+    enabled: !!id,
+    queryFn: async () => {
+      const res = await offersApi.get(id!);
+      return ((res as any)?.data ?? null) as OfferDTO | null;
+    },
+  });
+  const stay = stayQuery.data ?? null;
+  const loadingStay = stayQuery.isLoading;
+  const vendorId = (stay as any)?.vendorId;
+
+  const vendorQuery = useQuery<any | null>({
+    queryKey: ["vendor", "public", vendorId],
+    enabled: !!vendorId,
+    queryFn: async () => {
+      try {
+        const v = await vendorPublicApi.get(vendorId);
+        return v?.data ?? null;
+      } catch {
+        return null;
+      }
+    },
+  });
+  const vendor = vendorQuery.data ?? null;
+  const loadingVendor = vendorQuery.isLoading;
+
+  const { data: offers = [] } = useQuery<OfferDTO[]>({
+    queryKey: ["offers", "list", "approved"],
+    queryFn: async () => {
+      try {
+        const res = await offersApi.list("approved");
+        return res.data || [];
+      } catch {
+        return [];
+      }
+    },
+  });
 
   const approved = offers.filter((o) => o.status === "approved");
   const caravanCards: CardItem[] = approved
@@ -218,37 +254,7 @@ export default function UniqueStayDetails() {
   const stayShown = stayCards.slice(0, pages["unique-stays"] * pageSize);
   const activityShown = activityCards.slice(0, pages.activity * pageSize);
 
-  useEffect(() => {
-    if (!id) return;
-    let mounted = true;
-    setLoadingStay(true);
-    setVendor(null);
-    (async () => {
-      try {
-        const res = await offersApi.get(id);
-        if (!mounted) return;
-        const doc = (res as any)?.data || null;
-        setStay(doc);
-        const vId = (doc as any)?.vendorId;
-        if (vId) {
-          setLoadingVendor(true);
-          vendorPublicApi
-            .get(vId)
-            .then((v) => mounted && setVendor(v?.data || null))
-            .catch(() => mounted && setVendor(null))
-            .finally(() => mounted && setLoadingVendor(false));
-        }
-        console.log("Offer detail response:", res);
-      } catch (err) {
-        console.error("Offer fetch error:", err);
-      } finally {
-        if (mounted) setLoadingStay(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+  // Stay + vendor are fetched by the useQuery hooks above.
   const [openInclusions, setOpenInclusions] = useState(false);
   const [openExclusions, setOpenExclusions] = useState(false);
   const [openReviewsDialog, setOpenReviewsDialog] = useState(false);

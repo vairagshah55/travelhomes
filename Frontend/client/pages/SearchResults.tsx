@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -252,78 +253,77 @@ export default function SearchResults() {
   const [isLoading, setIsLoading] = useState(false);
 
   // Get results title based on active filter
-  const [serverItems, setServerItems] = useState<any[]>([]);
 
   // Fetch approved offers by city, then filter by category for current tab
+  // Reset pagination on every filter change.
   useEffect(() => {
-    const loc = (selectedLocation || "").trim();
-
-    const params = new URLSearchParams();
-    params.set("status", "approved");
-    if (loc) {
-      params.set("city", loc);
-      params.set("state", loc);
-    }
-    params.set("page", "1");
-    params.set("limit", "100");
-
-    const finalUrl = `/api/offers?${params.toString()}`;
-
     setPage(1);
-    setIsLoading(true); // 🔥 start loading
-
-    fetch(finalUrl)
-      .then((r) => r.json())
-      .then((json) => {
-        const list = Array.isArray(json?.data) ? json.data : [];
-
-        const getNormCategory = (cat?: string, serviceType?: string) => {
-          const s = String(serviceType || "").toLowerCase();
-          if (s === "camper-van") return "caravan" as const;
-          if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
-          if (s === "activity") return "activity" as const;
-
-          const c = String(cat || "").toLowerCase();
-          const cClean = c.replace(/[\s_-]+/g, "");
-          if (
-            ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) =>
-              cClean.includes(k),
-            )
-          )
-            return "caravan" as const;
-          if (
-            cClean.includes("stay") ||
-            cClean === "uniquestays" ||
-            cClean === "unique" ||
-            cClean === "stays" ||
-            cClean === "glamping" ||
-            cClean === "resort" ||
-            cClean === "villa"
-          )
-            return "unique-stays" as const;
-          if (
-            cClean === "activity" ||
-            cClean === "activities" ||
-            cClean === "trekking" ||
-            cClean === "tour"
-          )
-            return "activity" as const;
-          return "unique-stays" as const;
-        };
-
-        const want = activeFilter === "camper-van" ? "caravan" : activeFilter;
-
-        const filtered = list.filter(
-          (o: any) => getNormCategory(o.category, o.serviceType) === want,
-        );
-
-        setServerItems(filtered);
-      })
-      .catch(() => setServerItems([]))
-      .finally(() => {
-        setIsLoading(false); // ✅ stop loading
-      });
   }, [activeFilter, selectedLocation, selectedLocationTo, activityName]);
+
+  // ─── Search results ─────────────────────────────────────────────────
+  // useQuery keyed by (activeFilter, location). The category-normalization
+  // logic is the same as the legacy fetch; just lifted into the queryFn.
+  const searchQuery = useQuery<any[]>({
+    queryKey: ["search", "offers", activeFilter, (selectedLocation || "").trim()],
+    queryFn: async () => {
+      const loc = (selectedLocation || "").trim();
+      const params = new URLSearchParams();
+      params.set("status", "approved");
+      if (loc) {
+        params.set("city", loc);
+        params.set("state", loc);
+      }
+      params.set("page", "1");
+      params.set("limit", "100");
+      const r = await fetch(`/api/offers?${params.toString()}`);
+      const json = await r.json();
+      const list: any[] = Array.isArray(json?.data) ? json.data : [];
+
+      const getNormCategory = (cat?: string, serviceType?: string) => {
+        const s = String(serviceType || "").toLowerCase();
+        if (s === "camper-van") return "caravan" as const;
+        if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
+        if (s === "activity") return "activity" as const;
+
+        const c = String(cat || "").toLowerCase();
+        const cClean = c.replace(/[\s_-]+/g, "");
+        if (
+          ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) =>
+            cClean.includes(k),
+          )
+        )
+          return "caravan" as const;
+        if (
+          cClean.includes("stay") ||
+          cClean === "uniquestays" ||
+          cClean === "unique" ||
+          cClean === "stays" ||
+          cClean === "glamping" ||
+          cClean === "resort" ||
+          cClean === "villa"
+        )
+          return "unique-stays" as const;
+        if (
+          cClean === "activity" ||
+          cClean === "activities" ||
+          cClean === "trekking" ||
+          cClean === "tour"
+        )
+          return "activity" as const;
+        return "unique-stays" as const;
+      };
+
+      const want = activeFilter === "camper-van" ? "caravan" : activeFilter;
+      return list.filter((o) => getNormCategory(o.category, o.serviceType) === want);
+    },
+  });
+  const serverItems = searchQuery.data ?? [];
+  // Mirror useQuery's loading state into the existing setIsLoading state so
+  // the rest of the page (which reads isLoading from useState) renders the
+  // skeleton without changes.
+  useEffect(() => {
+    setIsLoading(searchQuery.isLoading || searchQuery.isFetching);
+  }, [searchQuery.isLoading, searchQuery.isFetching]);
 
   // Use server data
   const dataToUse = Array.isArray(serverItems) ? serverItems : [];
