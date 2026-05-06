@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import MobileUserNav from "@/components/MobileUserNav";
 import { offersApi, OfferDTO, API_BASE_URL, cmsPublicApi, PublicFaq } from "@/lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useFaqs } from "@/hooks/useFaqs";
 import { testimonialsApi, PublicTestimonial } from "@/lib/testimonials";
 import { useAuth } from "../contexts/AuthContext";
 import Section from "@/components/Section";
@@ -155,11 +156,7 @@ export default function Index() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: faqsData } = useQuery({
-    queryKey: ["faqs"],
-    queryFn: cmsPublicApi.listFaqs,
-    staleTime: 10 * 60 * 1000,
-  });
+  const { data: faqsData } = useFaqs();
 
   const { data: blogsData } = useQuery({
     queryKey: ["homepage-blogs"],

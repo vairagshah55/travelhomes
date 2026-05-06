@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useFaqs } from "@/hooks/useFaqs";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,19 +43,8 @@ const Help = () => {
   const [visibleTabs, setVisibleTabs] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  /* ---------------- FETCH FAQs ---------------- */
-  const { data: allFaqs = [] } = useQuery<PublicFaq[]>({
-    queryKey: ["cms", "faqs", "public"],
-    queryFn: async () => {
-      try {
-        const list = await cmsPublicApi.listFaqs();
-        return list || [];
-      } catch (err) {
-        console.error("Failed to fetch FAQs", err);
-        return [];
-      }
-    },
-  });
+  /* ---------------- FETCH FAQs (shared cache) ---------------- */
+  const { data: allFaqs = [] } = useFaqs();
 
   /* ---------------- CALCULATE VISIBLE TABS ---------------- */
   useEffect(() => {

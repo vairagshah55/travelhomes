@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useFaqs } from "@/hooks/useFaqs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -141,17 +142,7 @@ export default function VacationRentalPlatform() {
     },
   });
 
-  const { data: faqs = [] } = useQuery<PublicFaq[]>({
-    queryKey: ["cms", "faqs", "public"],
-    queryFn: async () => {
-      try {
-        return (await cmsPublicApi.listFaqs()) || [];
-      } catch (err) {
-        console.error("Failed to fetch FAQs", err);
-        return [];
-      }
-    },
-  });
+  const { data: faqs = [] } = useFaqs();
 
   const scrollLeft = () => {
     scrollRef.current.scrollBy({
