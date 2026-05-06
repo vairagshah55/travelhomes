@@ -12,6 +12,7 @@ import { ActivityDropdown } from "./ActivityDropdown";
 import { CalendarDropdown } from "./CalendarDropdown";
 import { CgLoadbarDoc } from "react-icons/cg";
 import { cmsPublicApi } from "@/lib/api";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 
 function CamperVanIcon({ className }: { className?: string }) {
   return (
@@ -118,27 +119,15 @@ export default function AirbnbHeader({
     "best-activity": true,
   });
 
+  const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
-    let mounted = true;
-    const fetchSections = async () => {
-      try {
-        const sections = await cmsPublicApi.listHomepageSections();
-        if (mounted && sections && sections.length > 0) {
-          const nextState: Record<string, boolean> = {};
-          sections.forEach((s: any) => {
-            nextState[s.sectionKey] = s.isVisible;
-          });
-          setVisibleSections((prev) => ({ ...prev, ...nextState }));
-        }
-      } catch (error) {
-        console.error("Failed to load header sections visibility", error);
-      }
-    };
-    fetchSections();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (!homepageSections || homepageSections.length === 0) return;
+    const nextState: Record<string, boolean> = {};
+    (homepageSections as any[]).forEach((s: any) => {
+      nextState[s.sectionKey] = s.isVisible;
+    });
+    setVisibleSections((prev) => ({ ...prev, ...nextState }));
+  }, [homepageSections]);
 
   useEffect(() => {
     // Reset dropdowns when filter changes

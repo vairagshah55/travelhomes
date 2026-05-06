@@ -8,6 +8,7 @@ import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { useCountriesData } from "@/hooks/useCountriesData";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 import {
   Bath,
   Flame,
@@ -228,19 +229,15 @@ const StaysOnboarding = () => {
   const navigate = useNavigate();
   const { updateUserType, isAuthenticated, user } = useAuth();
 
+  const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
-    // Check if Unique Stays section is enabled
-    cmsPublicApi
-      .listHomepageSections()
-      .then((sections) => {
-        const section = sections.find((s: any) => s.sectionKey === "unique-stays");
-        if (section && !section.isVisible) {
-          toast.error("Stays onboarding is currently disabled.");
-          navigate("/");
-        }
-      })
-      .catch(console.error);
-
+    if (homepageSections) {
+      const section = (homepageSections as any[]).find((s: any) => s.sectionKey === "unique-stays");
+      if (section && !section.isVisible) {
+        toast.error("Stays onboarding is currently disabled.");
+        navigate("/");
+      }
+    }
     if (!isAuthenticated) {
       toast.error("Please login to continue");
       navigate("/login");

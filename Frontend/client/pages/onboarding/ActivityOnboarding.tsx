@@ -11,6 +11,7 @@ import { FaUserTie } from "react-icons/fa6";
 import { GiBinoculars, GiCampCookingPot, GiCruiser } from "react-icons/gi";
 import { useUserDetails } from "@/hooks/useUserDetails";
 import { useCountriesData } from "@/hooks/useCountriesData";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 
 // Shared components
 import {
@@ -195,19 +196,21 @@ const ActivityOnboarding = () => {
   const [ruleInput, setRuleInput] = useState("");
   const [adminFeatures, setAdminFeatures] = useState<any[]>([]);
 
-  // Load countries data on mount
+  // Check if Activity section is enabled (uses shared cache).
+  const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
-    // Check if Activity section is enabled
-    cmsPublicApi
-      .listHomepageSections()
-      .then((sections) => {
-        const activitySection = sections.find((s: any) => s.sectionKey === "best-activity");
-        if (activitySection && !activitySection.isVisible) {
-          toast.error("Activity onboarding is currently disabled.");
-          navigate("/");
-        }
-      })
-      .catch(console.error);
+    if (!homepageSections) return;
+    const activitySection = (homepageSections as any[]).find(
+      (s: any) => s.sectionKey === "best-activity",
+    );
+    if (activitySection && !activitySection.isVisible) {
+      toast.error("Activity onboarding is currently disabled.");
+      navigate("/");
+    }
+  }, [homepageSections, navigate]);
+
+  // Load CMS-driven feature/category data on mount.
+  useEffect(() => {
     // Countries data is loaded by the useCountriesData hook above.
 
     // Fetch admin features

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { Link, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -75,27 +76,15 @@ export default function SearchResults() {
     "best-activity": true,
   });
 
+  const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
-    let mounted = true;
-    const fetchSections = async () => {
-      try {
-        const sections = await cmsPublicApi.listHomepageSections();
-        if (mounted && sections && sections.length > 0) {
-          const nextState: Record<string, boolean> = {};
-          sections.forEach((s: any) => {
-            nextState[s.sectionKey] = s.isVisible;
-          });
-          setVisibleSections((prev) => ({ ...prev, ...nextState }));
-        }
-      } catch (error) {
-        console.error("Failed to load sections visibility", error);
-      }
-    };
-    fetchSections();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    if (!homepageSections || homepageSections.length === 0) return;
+    const nextState: Record<string, boolean> = {};
+    (homepageSections as any[]).forEach((s: any) => {
+      nextState[s.sectionKey] = s.isVisible;
+    });
+    setVisibleSections((prev) => ({ ...prev, ...nextState }));
+  }, [homepageSections]);
 
   useEffect(() => {
     const filterMap: Record<string, string> = {

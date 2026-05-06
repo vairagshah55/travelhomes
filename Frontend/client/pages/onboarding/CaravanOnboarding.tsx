@@ -7,6 +7,7 @@ import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
 import { useCountriesData } from "@/hooks/useCountriesData";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { onboardingService } from "@/lib/onboardingService";
 import { useAuth } from "../../contexts/AuthContext";
 import { useUserDetails } from "@/hooks/useUserDetails";
@@ -121,24 +122,20 @@ const CaravanOnboarding = () => {
   const navigate = useNavigate();
   const { updateUserType, isAuthenticated, user } = useAuth();
 
+  const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
-    // Check if Caravan section is enabled
-    cmsPublicApi
-      .listHomepageSections()
-      .then((sections) => {
-        const section = sections.find((s: any) => s.sectionKey === "camper-van");
-        if (section && !section.isVisible) {
-          toast.error("Caravan onboarding is currently disabled.");
-          navigate("/");
-        }
-      })
-      .catch(console.error);
-
+    if (homepageSections) {
+      const section = (homepageSections as any[]).find((s: any) => s.sectionKey === "camper-van");
+      if (section && !section.isVisible) {
+        toast.error("Caravan onboarding is currently disabled.");
+        navigate("/");
+      }
+    }
     if (!isAuthenticated) {
       toast.error("Please login to continue");
       navigate("/login");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, homepageSections]);
 
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = sessionStorage.getItem("caravan_onboarding_step");

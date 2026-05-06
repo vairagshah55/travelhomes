@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { IndianRupee, MapPin, FileText, Camera, Tag, Tent, Percent, Check } from "lucide-react";
 import { Sidebar } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
@@ -263,27 +264,25 @@ const AddOfferings = () => {
       reader.readAsDataURL(file);
     });
 
-  // ─── Init ──────────────────────────────────────────────────────────────────
+  // ─── Init — homepage sections (which categories are enabled) ─────────
+  const { data: homepageSections } = useHomepageSections();
+
   useEffect(() => {
-    cmsPublicApi
-      .listHomepageSections()
-      .then((sections) => {
-        const next: Record<string, boolean> = {
-          "camper-van": true,
-          "unique-stays": true,
-          "best-activity": true,
-        };
-        sections.forEach((s: any) => {
-          next[s.sectionKey] = s.isVisible;
-        });
-        setEnabledSections(next);
-        if (!next["camper-van"]) {
-          if (next["unique-stays"]) setActiveTab("unique-stay");
-          else if (next["best-activity"]) setActiveTab("activity");
-        }
-      })
-      .catch(console.error);
-  }, []);
+    if (!homepageSections) return;
+    const next: Record<string, boolean> = {
+      "camper-van": true,
+      "unique-stays": true,
+      "best-activity": true,
+    };
+    (homepageSections as any[]).forEach((s: any) => {
+      next[s.sectionKey] = s.isVisible;
+    });
+    setEnabledSections(next);
+    if (!next["camper-van"]) {
+      if (next["unique-stays"]) setActiveTab("unique-stay");
+      else if (next["best-activity"]) setActiveTab("activity");
+    }
+  }, [homepageSections]);
 
   // ─── Validation ────────────────────────────────────────────────────────────
   const validate = (): boolean => {
