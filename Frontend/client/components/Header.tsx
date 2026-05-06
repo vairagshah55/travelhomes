@@ -27,6 +27,7 @@ import { MdOutlineSpaceDashboard } from "react-icons/md";
 import { CgLoadbarDoc } from "react-icons/cg";
 import { DateRange } from "react-date-range";
 import { notificationsApi } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 // callbackFun + onNavigate are optional — most static marketing pages
 // (About, Contact, Help, Terms, Privacy, etc.) render Header without
@@ -84,24 +85,24 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   const { updateUserType } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Poll for unread vendor notifications every 30s. useQuery dedupes if
+  // multiple Header instances ever mount on the same page (which can
+  // happen briefly during page transitions) and silences itself on
+  // failure (errors return 0 instead of throwing).
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["notifications", "unread", "vendor"],
+    queryFn: async () => {
+      const res = await notificationsApi.list(true, 1, "vendor");
+      return res.success ? res.totalUnread : 0;
+    },
+    refetchInterval: 30_000,
+    staleTime: 25_000,
+    retry: false,
+  });
 
   const crumbs = useBreadcrumbs();
   const isNested = crumbs.length > 1;
-
-  useEffect(() => {
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await notificationsApi.list(true, 1, "vendor");
-        if (res.success) setUnreadCount(res.totalUnread);
-      } catch {
-        // silent
-      }
-    };
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSwitchToUser = async () => {
     await updateUserType("user");
