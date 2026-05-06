@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,8 +71,7 @@ const UserManagement = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { toast } = useToast();
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const [activeTab, setActiveTab] = useState("all-users");
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
@@ -83,14 +83,74 @@ const UserManagement = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("userSince");
-  const [users, setUsers] = useState<User[]>([]);
+  const queryClient = useQueryClient();
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const ITEMS_PER_PAGE = 10;
 
-const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
 
- // Derived list with search + sort + filters
+  // Users list — keyed by tab so switching is instant after first fetch.
+  const usersKey = ["users", activeTab] as const;
+  const usersQuery = useQuery<User[]>({
+    queryKey: usersKey,
+    queryFn: async () => {
+      let query = "";
+      let endpoint = `${API_BASE_URL}/api/users`;
+
+      if (activeTab === "subscribers") {
+        endpoint = `${API_BASE_URL}/api/subscribers`;
+      } else if (activeTab !== "all-users") {
+        const statusMap: Record<string, string> = {
+          "active-users": "active",
+          "inactive-users": "inactive",
+          "banned-users": "banned",
+          "unverified-email": "unverified-email",
+          "unverified-mobile": "unverified-mobile",
+        };
+        const status = statusMap[activeTab];
+        if (status) {
+          query = `?status=${status}`;
+          endpoint += query;
+        }
+      }
+
+      const response = await fetch(endpoint, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new Error(responseData.message || "Failed to fetch users");
+      }
+
+      let usersList: User[] = responseData.data || [];
+
+      if (activeTab === "subscribers") {
+        usersList = usersList.map((sub: any) => ({
+          _id: sub._id,
+          userId: "SUB",
+          photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sub.email}`,
+          name: "Subscriber",
+          email: sub.email,
+          phone: "-",
+          location: "-",
+          bookedServices: "0",
+          userSince: sub.createdAt || sub.subscribedAt || new Date().toISOString(),
+          status: sub.status,
+        }));
+      }
+
+      return usersList;
+    },
+  });
+  const users = usersQuery.data ?? [];
+
+  // Refetch helper used by the action handlers below — they used to call
+  // `fetchUsers()` to refresh the list after mutate.
+  const fetchUsers = () => queryClient.invalidateQueries({ queryKey: usersKey });
+
+  // Derived list with search + sort + filters
   const filteredSortedUsers = React.useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = users;
@@ -109,11 +169,7 @@ const [currentPage, setCurrentPage] = useState(1);
       );
 
       list = list.filter((u) => {
-        if (
-          filterObj.location &&
-          filterObj.location !== "all" &&
-          u.location !== filterObj.location
-        )
+        if (filterObj.location && filterObj.location !== "all" && u.location !== filterObj.location)
           return false;
         if (
           filterObj.service &&
@@ -121,11 +177,7 @@ const [currentPage, setCurrentPage] = useState(1);
           !u.bookedServices?.includes(filterObj.service)
         )
           return false;
-        if (
-          filterObj.status &&
-          filterObj.status !== "all" &&
-          u.status !== filterObj.status
-        )
+        if (filterObj.status && filterObj.status !== "all" && u.status !== filterObj.status)
           return false;
 
         if (filterObj.dateFrom || filterObj.dateTo) {
@@ -170,25 +222,28 @@ const [currentPage, setCurrentPage] = useState(1);
     });
   }, [users, searchTerm, sortBy, activeFilters]);
 
-useEffect(() => {
-  setCurrentPage(1);
-}, [searchTerm, sortBy, activeFilters, activeTab]);
-const totalPages = Math.ceil(
-  filteredSortedUsers.length / ITEMS_PER_PAGE,
-);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, sortBy, activeFilters, activeTab]);
+  const totalPages = Math.ceil(filteredSortedUsers.length / ITEMS_PER_PAGE);
 
-const paginatedUsers = React.useMemo(() => {
-  const start = (currentPage - 1) * ITEMS_PER_PAGE;
-  const end = start + ITEMS_PER_PAGE;
-  return filteredSortedUsers.slice(start, end);
-}, [filteredSortedUsers, currentPage]);
+  const paginatedUsers = React.useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    return filteredSortedUsers.slice(start, end);
+  }, [filteredSortedUsers, currentPage]);
 
-
- 
-  // API state
-
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // API state — mutationLoading/mutationError are local to the action
+  // handlers below (create/ban/delete). The combined `loading` and
+  // `error` below also surface useQuery's list state.
+  const [mutationLoading, setMutationLoading] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const setLoading = setMutationLoading;
+  const setError = setMutationError;
+  const loading = usersQuery.isLoading || mutationLoading;
+  const error =
+    mutationError ??
+    (usersQuery.error ? (usersQuery.error as Error).message || "Failed to fetch users." : null);
 
   // Form state
   const [formData, setFormData] = useState<Partial<User>>({
@@ -204,79 +259,6 @@ const paginatedUsers = React.useMemo(() => {
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     navigate("/admin/login");
-  };
-
-  // Fetch users based on active tab
-  useEffect(() => {
-    fetchUsers();
-  }, [activeTab]);
-
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      let query = "";
-      let endpoint = `${API_BASE_URL}/api/users`;
-
-      if (activeTab === "subscribers") {
-        endpoint = `${API_BASE_URL}/api/subscribers`;
-      } else if (activeTab !== "all-users") {
-        const statusMap: Record<string, string> = {
-          "active-users": "active",
-          "inactive-users": "inactive",
-          "banned-users": "banned",
-          "unverified-email": "unverified-email",
-          "unverified-mobile": "unverified-mobile",
-        };
-        const status = statusMap[activeTab];
-        if (status) {
-          query = `?status=${status}`;
-          endpoint += query;
-        }
-      }
-
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.message || "Failed to fetch users");
-      }
-
-      let usersList = responseData.data || [];
-
-      if (activeTab === "subscribers") {
-        usersList = usersList.map((sub: any) => ({
-          _id: sub._id,
-          userId: "SUB",
-          photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sub.email}`,
-          name: "Subscriber",
-          email: sub.email,
-          phone: "-",
-          location: "-",
-          bookedServices: "0",
-          userSince: sub.createdAt || sub.subscribedAt || new Date().toISOString(),
-          status: sub.status,
-        }));
-      }
-
-      setUsers(usersList);
-    } catch (err: any) {
-      const msg =
-        typeof err === "string"
-          ? err
-          : err?.message || "Failed to fetch users. Please try again.";
-      setError(msg);
-      console.error("Error fetching users:", err);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const tabs = [
@@ -359,9 +341,7 @@ const paginatedUsers = React.useMemo(() => {
     setShowAddUserModal(true);
   };
 
-  const handleFormChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
-  ) => {
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -412,16 +392,13 @@ const paginatedUsers = React.useMemo(() => {
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `${API_BASE_URL}/api/users/${selectedUser._id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+      const response = await fetch(`${API_BASE_URL}/api/users/${selectedUser._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify(formData),
+      });
 
       const data = await response.json();
 
@@ -466,18 +443,12 @@ const paginatedUsers = React.useMemo(() => {
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex">
       <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
       </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Management"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
+        <AdminHeader Headtitle={"Management"} setMobileSidebarOpen={setMobileOpen} />
         {/* Page Content */}
         <main className="flex-1 pr-5 pb-5 ">
           {/* Content Header */}
@@ -534,10 +505,7 @@ const paginatedUsers = React.useMemo(() => {
               <div className="flex items-center gap-3  max-md:flex-wrap">
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-32 h-10 border-[#D0D5DD]">
-                    <SelectValue
-                      placeholder="Sort By"
-                      className="text-[#667085] font-poppins"
-                    />
+                    <SelectValue placeholder="Sort By" className="text-[#667085] font-poppins" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="name">Name</SelectItem>
@@ -547,19 +515,27 @@ const paginatedUsers = React.useMemo(() => {
                 </Select>
 
                 {activeFilters.map((filter) => {
-                    const [key, value] = filter.split(":");
-                    if (!value || value === "all") return null;
-                     return (
-                        <div key={filter} className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200">
-                            <span className="capitalize text-gray-700">{key}: {value}</span>
-                            <button onClick={() => {
-                                setActiveFilters(prev => prev.filter(f => f !== filter));
-                            }} className="ml-1">
-                                <X size={14} className="text-gray-500 hover:text-red-500" />
-                            </button>
-                        </div>
-                     )
-                  })}
+                  const [key, value] = filter.split(":");
+                  if (!value || value === "all") return null;
+                  return (
+                    <div
+                      key={filter}
+                      className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200"
+                    >
+                      <span className="capitalize text-gray-700">
+                        {key}: {value}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setActiveFilters((prev) => prev.filter((f) => f !== filter));
+                        }}
+                        className="ml-1"
+                      >
+                        <X size={14} className="text-gray-500 hover:text-red-500" />
+                      </button>
+                    </div>
+                  );
+                })}
 
                 <Button
                   variant="outline"
@@ -578,150 +554,141 @@ const paginatedUsers = React.useMemo(() => {
               {activeTab === "subscribers" ? (
                 <div className="w-full bg-white">
                   {!loading && !error && filteredSortedUsers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No subscribers found
-                    </div>
+                    <div className="text-center py-8 text-gray-500">No subscribers found</div>
                   ) : (
                     <div className="divide-y divide-gray-100">
                       <div className="px-6 py-3 bg-[#F2F4F7] flex justify-between">
-                         <span className="font-bold text-[#334054] font-plus-jakarta">Email</span>
-                         <span className="font-bold text-[#334054] font-plus-jakarta">Date</span>
+                        <span className="font-bold text-[#334054] font-plus-jakarta">Email</span>
+                        <span className="font-bold text-[#334054] font-plus-jakarta">Date</span>
                       </div>
                       {paginatedUsers.map((user) => (
-                        <div key={user._id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
-                          <span className="text-[#485467] font-poppins font-medium">{user.email}</span>
-                          <span className="text-sm text-gray-400 font-poppins">{formatDate(user.userSince)}</span>
+                        <div
+                          key={user._id}
+                          className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
+                        >
+                          <span className="text-[#485467] font-poppins font-medium">
+                            {user.email}
+                          </span>
+                          <span className="text-sm text-gray-400 font-poppins">
+                            {formatDate(user.userSince)}
+                          </span>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               ) : (
-              <Table>
-                <TableHeader className="bg-[#F2F4F7]">
-                  <TableRow>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      User ID
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      Photo
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      Name
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      User Since
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      Booked Services
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                      Location
-                    </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta w-40">
-                      Action
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {!loading && !error && filteredSortedUsers.length === 0 ? (
+                <Table>
+                  <TableHeader className="bg-[#F2F4F7]">
                     <TableRow>
-                      <TableCell
-                        colSpan={7}
-                        className="text-center py-8 text-gray-500"
-                      >
-                        No users found
-                      </TableCell>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        User ID
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        Photo
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        Name
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        User Since
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        Booked Services
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                        Location
+                      </TableHead>
+                      <TableHead className="font-bold text-[#334054] font-plus-jakarta w-40">
+                        Action
+                      </TableHead>
                     </TableRow>
-                  ) : (
-                    paginatedUsers.map((user) => (
+                  </TableHeader>
 
-                      <TableRow
-                        key={user._id}
-                        className="border-b border-[#F2F4F7]"
-                      >
-                        <TableCell className="text-sm font-bold text-[#131313] font-plus-jakarta py-4">
-                          {user.userId}
-                        </TableCell>
-                        <TableCell>
-                          <Avatar className="w-10 h-10">
-                            <AvatarImage src={user.photo} />
-                            <AvatarFallback>
-                              {user.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        </TableCell>
-                        <TableCell className="text-sm text-[#485467] font-poppins">
-                          {user.name}
-                        </TableCell>
-                        <TableCell className="text-sm text-[#485467] font-poppins">
-                        {formatDate(user.userSince)}
-                        </TableCell>
-                        <TableCell className="text-sm text-[#485467] font-poppins">
-                          {user.bookedServices || "0"}
-                        </TableCell>
-                        <TableCell className="text-sm text-[#485467] font-poppins">
-                          {user.location}
-                        </TableCell>
-                        <TableCell>
-                          <div className="relative ">
-                            <button
-                              onClick={() =>
-                                setShowActionMenu(
-                                  showActionMenu === user._id ? null : user._id,
-                                )
-                              }
-                              className="text-[#667085] hover:text-[#485467]"
-                            >
-                              <MoreHorizontal size={20} />
-                            </button>
-
-                            {/* Action Menu Dropdown */}
-                            {showActionMenu === user._id && (
-                              <div className="absolute right-0 top-8 bg-white border border-[#F8F8F8] rounded-xl shadow-lg p-1 z-10 w-48">
-                                <button
-                                  className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
-                                  onClick={() => handleView(user)}
-                                >
-                                  <Eye size={18} className="text-black" />
-                                  <span className="text-sm font-poppins text-[#2A2A2A]">
-                                    View
-                                  </span>
-                                </button>
-                                <button
-                                  className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
-                                  onClick={() => handleEdit(user)}
-                                >
-                                  <Edit size={18} className="text-[#0066FF]" />
-                                  <span className="text-sm font-poppins text-[#0066FF]">
-                                    Edit
-                                  </span>
-                                </button>
-                                <button
-                                  className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                  onClick={() => {
-                                    setSelectedUser(user);
-                                    setShowDeleteConfirm(true);
-                                  }}
-                                >
-                                  <Trash2
-                                    size={18}
-                                    className="text-[#D30000]"
-                                  />
-                                  <span className="text-sm font-poppins text-[#D30000]">
-                                    Banned USers
-                                  </span>
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                  <TableBody>
+                    {!loading && !error && filteredSortedUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                          No users found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      paginatedUsers.map((user) => (
+                        <TableRow key={user._id} className="border-b border-[#F2F4F7]">
+                          <TableCell className="text-sm font-bold text-[#131313] font-plus-jakarta py-4">
+                            {user.userId}
+                          </TableCell>
+                          <TableCell>
+                            <Avatar className="w-10 h-10">
+                              <AvatarImage src={user.photo} />
+                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                          </TableCell>
+                          <TableCell className="text-sm text-[#485467] font-poppins">
+                            {user.name}
+                          </TableCell>
+                          <TableCell className="text-sm text-[#485467] font-poppins">
+                            {formatDate(user.userSince)}
+                          </TableCell>
+                          <TableCell className="text-sm text-[#485467] font-poppins">
+                            {user.bookedServices || "0"}
+                          </TableCell>
+                          <TableCell className="text-sm text-[#485467] font-poppins">
+                            {user.location}
+                          </TableCell>
+                          <TableCell>
+                            <div className="relative ">
+                              <button
+                                onClick={() =>
+                                  setShowActionMenu(showActionMenu === user._id ? null : user._id)
+                                }
+                                className="text-[#667085] hover:text-[#485467]"
+                              >
+                                <MoreHorizontal size={20} />
+                              </button>
+
+                              {/* Action Menu Dropdown */}
+                              {showActionMenu === user._id && (
+                                <div className="absolute right-0 top-8 bg-white border border-[#F8F8F8] rounded-xl shadow-lg p-1 z-10 w-48">
+                                  <button
+                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
+                                    onClick={() => handleView(user)}
+                                  >
+                                    <Eye size={18} className="text-black" />
+                                    <span className="text-sm font-poppins text-[#2A2A2A]">
+                                      View
+                                    </span>
+                                  </button>
+                                  <button
+                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
+                                    onClick={() => handleEdit(user)}
+                                  >
+                                    <Edit size={18} className="text-[#0066FF]" />
+                                    <span className="text-sm font-poppins text-[#0066FF]">
+                                      Edit
+                                    </span>
+                                  </button>
+                                  <button
+                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setShowDeleteConfirm(true);
+                                    }}
+                                  >
+                                    <Trash2 size={18} className="text-[#D30000]" />
+                                    <span className="text-sm font-poppins text-[#D30000]">
+                                      Banned USers
+                                    </span>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               )}
               <div className="pt-4">
                 <Pagination
@@ -748,9 +715,7 @@ const paginatedUsers = React.useMemo(() => {
                 <div className="w-full flex justify-center items-center py-10">
                   {/* Loading State */}
                   <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
-                  <span className="ml-2 text-dashboard-primary">
-                    Loading...
-                  </span>
+                  <span className="ml-2 text-dashboard-primary">Loading...</span>
                 </div>
               )}
             </div>
@@ -772,9 +737,7 @@ const paginatedUsers = React.useMemo(() => {
 
             {/* Header */}
             <div className="mb-7">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">
-                User Details
-              </h2>
+              <h2 className="text-2xl font-bold text-[#131313] font-geist">User Details</h2>
             </div>
 
             {/* User Details Content */}
@@ -871,17 +834,13 @@ const paginatedUsers = React.useMemo(() => {
             </button>
 
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">
-                Add New User
-              </h2>
+              <h2 className="text-2xl font-bold text-[#131313] font-geist">Add New User</h2>
             </div>
 
             <form onSubmit={handleSubmitAdd} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Name
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Name</label>
                   <Input
                     name="name"
                     value={formData.name}
@@ -892,9 +851,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Email
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Email</label>
                   <Input
                     name="email"
                     type="email"
@@ -906,9 +863,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Phone
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Phone</label>
                   <Input
                     name="phone"
                     value={formData.phone}
@@ -918,9 +873,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Location
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Location</label>
                   <Input
                     name="location"
                     value={formData.location}
@@ -931,9 +884,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    User Since
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">User Since</label>
                   <Input
                     name="userSince"
                     value={formData.userSince}
@@ -943,14 +894,10 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Status
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Status</label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger className="w-full border-[#D0D5DD] rounded-lg">
                       <SelectValue placeholder="Select status" />
@@ -959,12 +906,8 @@ const paginatedUsers = React.useMemo(() => {
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
                       <SelectItem value="banned">Banned</SelectItem>
-                      <SelectItem value="unverified-email">
-                        Unverified Email
-                      </SelectItem>
-                      <SelectItem value="unverified-mobile">
-                        Unverified Mobile
-                      </SelectItem>
+                      <SelectItem value="unverified-email">Unverified Email</SelectItem>
+                      <SelectItem value="unverified-mobile">Unverified Mobile</SelectItem>
                       <SelectItem value="subscriber">Subscriber</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1012,17 +955,13 @@ const paginatedUsers = React.useMemo(() => {
             </button>
 
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">
-                Edit User
-              </h2>
+              <h2 className="text-2xl font-bold text-[#131313] font-geist">Edit User</h2>
             </div>
 
             <form onSubmit={handleSubmitEdit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Name
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Name</label>
                   <Input
                     name="name"
                     value={formData.name}
@@ -1033,9 +972,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Email
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Email</label>
                   <Input
                     name="email"
                     type="email"
@@ -1047,9 +984,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Phone
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Phone</label>
                   <Input
                     name="phone"
                     value={formData.phone}
@@ -1059,9 +994,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Location
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Location</label>
                   <Input
                     name="location"
                     value={formData.location}
@@ -1072,9 +1005,7 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    User Since
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">User Since</label>
                   <Input
                     name="userSince"
                     value={formData.userSince}
@@ -1084,14 +1015,10 @@ const paginatedUsers = React.useMemo(() => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">
-                    Status
-                  </label>
+                  <label className="text-sm font-medium text-[#344054]">Status</label>
                   <Select
                     value={formData.status}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, status: value })
-                    }
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger className="w-full border-[#D0D5DD] rounded-lg">
                       <SelectValue placeholder="Select status" />
@@ -1100,12 +1027,8 @@ const paginatedUsers = React.useMemo(() => {
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="inactive">Inactive</SelectItem>
                       <SelectItem value="banned">Banned</SelectItem>
-                      <SelectItem value="unverified-email">
-                        Unverified Email
-                      </SelectItem>
-                      <SelectItem value="unverified-mobile">
-                        Unverified Mobile
-                      </SelectItem>
+                      <SelectItem value="unverified-email">Unverified Email</SelectItem>
+                      <SelectItem value="unverified-mobile">Unverified Mobile</SelectItem>
                       <SelectItem value="subscriber">Subscriber</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1151,8 +1074,7 @@ const paginatedUsers = React.useMemo(() => {
               </div>
               <h3 className="text-lg font-bold text-gray-900">Delete User</h3>
               <p className="mt-2 text-sm text-gray-500">
-                Are you sure you want to delete this user? This action cannot be
-                undone.
+                Are you sure you want to delete this user? This action cannot be undone.
               </p>
             </div>
             <div className="flex justify-center gap-3">
