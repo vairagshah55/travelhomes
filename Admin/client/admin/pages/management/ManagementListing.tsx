@@ -11,7 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Loader2, Edit, Trash2, MoreHorizontal, Eye, XCircle, CheckCircle, Filter, User, X } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Edit,
+  Trash2,
+  MoreHorizontal,
+  Eye,
+  XCircle,
+  CheckCircle,
+  Filter,
+  User,
+  X,
+} from "lucide-react";
 import ViewDetailsPopup from "@/components/ViewDetailsPopup";
 import VendorDetailsPopup from "@/components/VendorDetailsPopup";
 import Pagination from "@/components/Pagination";
@@ -20,6 +32,7 @@ import ListingFilterPopup from "@/components/ListingFilterPopup";
 import RejectReasonPopup from "@/components/RejectReasonPopup";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { offersService, vendorService } from "@/services/api";
@@ -32,12 +45,13 @@ const ManagementListing = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [mobileOpen, setMobileOpen] = useState(false);
-  
+
   // State for offers
-  const [offersTab, setOffersTab] = useState<"pending" | "approved" | "cancelled" | "modified" | "rejected">("pending");
-  const [offers, setOffers] = useState<any[]>([]);
-  const [offersLoading, setOffersLoading] = useState(false);
-  
+  const [offersTab, setOffersTab] = useState<
+    "pending" | "approved" | "cancelled" | "modified" | "rejected"
+  >("pending");
+  const queryClient = useQueryClient();
+
   // State for form/modals
   const [showManagementForm, setShowManagementForm] = useState(false);
   const [showViewDetailsPopup, setShowViewDetailsPopup] = useState(false);
@@ -61,26 +75,38 @@ const ManagementListing = () => {
   const [isVendorLoading, setIsVendorLoading] = useState(false);
   const [vendorError, setVendorError] = useState<string | null>(null);
 
-  // Fetch offers when tab changes
+  // Reset pagination on tab change
   useEffect(() => {
     setCurrentPage(1);
-    fetchOffers();
   }, [offersTab]);
 
-  const fetchOffers = async () => {
-    try {
-      setOffersLoading(true);
-      const res = await offersService.list(offersTab);
-      setOffers(res?.data || []);
-    } catch (e) {
-      console.error("Failed to load offers", e);
-      toast({
-        title: "Error",
-        description: "Failed to load listings.",
-        variant: "destructive",
-      });
-    } finally {
-      setOffersLoading(false);
+  // Offers list — keyed by tab so switching is instant after first fetch.
+  const offersKey = ["adminOffers", offersTab] as const;
+  const offersQuery = useQuery<any[]>({
+    queryKey: offersKey,
+    queryFn: async () => {
+      try {
+        const res = await offersService.list(offersTab);
+        return res?.data || [];
+      } catch (e) {
+        console.error("Failed to load offers", e);
+        toast({
+          title: "Error",
+          description: "Failed to load listings.",
+          variant: "destructive",
+        });
+        return [];
+      }
+    },
+  });
+  const offers = offersQuery.data ?? [];
+  const offersLoading = offersQuery.isLoading;
+  const fetchOffers = () => queryClient.invalidateQueries({ queryKey: offersKey });
+  const setOffers = (next: any[] | ((prev: any[]) => any[])) => {
+    if (typeof next === "function") {
+      queryClient.setQueryData<any[]>(offersKey, (prev) => next(prev ?? []));
+    } else {
+      queryClient.setQueryData<any[]>(offersKey, next);
     }
   };
 
@@ -91,21 +117,21 @@ const ManagementListing = () => {
   };
 
   const mapOfferToForm = (offer: any): Offer => {
-      return {
-        _id: offer._id,
-        name: offer.name || "",
-        category: offer.category || "",
-        regularPrice: offer.regularPrice || "",
-        finalPrice: offer.finalPrice || "",
-        locality: offer.locality || "",
-        city: offer.city || "",
-        state: offer.state || "",
-        pincode: offer.pincode || "",
-        description: offer.description || "",
-        features: offer.features || "",
-        status: offer.status
+    return {
+      _id: offer._id,
+      name: offer.name || "",
+      category: offer.category || "",
+      regularPrice: offer.regularPrice || "",
+      finalPrice: offer.finalPrice || "",
+      locality: offer.locality || "",
+      city: offer.city || "",
+      state: offer.state || "",
+      pincode: offer.pincode || "",
+      description: offer.description || "",
+      features: offer.features || "",
+      status: offer.status,
     };
-  }
+  };
 
   const handleEdit = (offer: any) => {
     const formData = mapOfferToForm(offer);
@@ -127,13 +153,13 @@ const ManagementListing = () => {
 
   const confirmDelete = async () => {
     if (!selectedOffer?._id) return;
-    
+
     try {
       setIsSubmitting(true);
       await offersService.remove(selectedOffer._id);
-      
+
       setOffers((prev) => prev.filter((x) => x._id !== selectedOffer._id));
-      
+
       toast({
         title: "Deleted",
         description: "Listing deleted successfully",
@@ -154,9 +180,9 @@ const ManagementListing = () => {
   const handleFormSubmit = async (data: Partial<Offer>) => {
     try {
       setIsSubmitting(true);
-      
+
       const idToUpdate = data._id || (isEditing && selectedOffer?._id);
-      
+
       if (idToUpdate) {
         await offersService.update(idToUpdate, data);
         toast({
@@ -170,7 +196,7 @@ const ManagementListing = () => {
           description: "Listing created successfully",
         });
       }
-      
+
       setShowManagementForm(false);
       fetchOffers(); // Refresh list
     } catch (e) {
@@ -185,7 +211,10 @@ const ManagementListing = () => {
     }
   };
 
-  const handleStatusChange = async (offer: any, status: "pending" | "approved" | "cancelled" | "rejected") => {
+  const handleStatusChange = async (
+    offer: any,
+    status: "pending" | "approved" | "cancelled" | "rejected",
+  ) => {
     if (status === "cancelled" || status === "rejected") {
       setRejectOffer(offer);
       setRejectAction(status);
@@ -195,17 +224,17 @@ const ManagementListing = () => {
 
     try {
       await offersService.setStatus(offer._id, status);
-      
-      // If we're filtering by status, remove it from the list. 
+
+      // If we're filtering by status, remove it from the list.
       // Or if we want to keep it and update status:
       // setOffers((prev) => prev.map(x => x._id === offer._id ? { ...x, status } : x));
-      
+
       // Based on current behavior (tabs), we should probably remove it if it doesn't match the tab
       if (offersTab !== status) {
-          setOffers((prev) => prev.filter((x) => x._id !== offer._id));
+        setOffers((prev) => prev.filter((x) => x._id !== offer._id));
       } else {
-          // In case we are viewing 'all' or something similar, update it
-          setOffers((prev) => prev.map(x => x._id === offer._id ? { ...x, status } : x));
+        // In case we are viewing 'all' or something similar, update it
+        setOffers((prev) => prev.map((x) => (x._id === offer._id ? { ...x, status } : x)));
       }
 
       toast({
@@ -228,16 +257,18 @@ const ManagementListing = () => {
     try {
       setIsSubmitting(true);
       await offersService.setStatus(rejectOffer._id, rejectAction, reason);
-      
+
       if (offersTab !== rejectAction) {
         setOffers((prev) => prev.filter((x) => x._id !== rejectOffer._id));
       } else {
-        setOffers((prev) => prev.map(x => x._id === rejectOffer._id ? { ...x, status: rejectAction } : x));
+        setOffers((prev) =>
+          prev.map((x) => (x._id === rejectOffer._id ? { ...x, status: rejectAction } : x)),
+        );
       }
 
       toast({
         title: "Status Updated",
-        description: `Listing marked as ${rejectAction === 'cancelled' ? 'Deactivated' : 'Rejected'}`,
+        description: `Listing marked as ${rejectAction === "cancelled" ? "Deactivated" : "Rejected"}`,
       });
       setShowRejectPopup(false);
       setRejectOffer(null);
@@ -260,73 +291,75 @@ const ManagementListing = () => {
 
   const handleVendorClick = async (vendorId: string) => {
     if (!vendorId || vendorId === "-") return;
-    
+
     try {
       setIsVendorLoading(true);
       setVendorError(null);
       setShowVendorDetails(true);
       // Pass the vendorId to show at least that if loading fails
-      setSelectedVendor({ vendorId }); 
-      
+      setSelectedVendor({ vendorId });
+
       const res = await vendorService.getVendor(vendorId);
       setSelectedVendor(res?.data || res);
     } catch (e: any) {
       console.error("Failed to load vendor details", e);
-      setVendorError(typeof e === 'string' ? e : e.message || "Failed to load vendor details.");
+      setVendorError(typeof e === "string" ? e : e.message || "Failed to load vendor details.");
       // Keep showVendorDetails as true so the dialog stays open
     } finally {
       setIsVendorLoading(false);
     }
   };
 
-  const filteredOffers = offers.filter((offer) => {
-    // Brand Name -> Match name (fuzzy)
-    if (activeFilters.brandName && !offer.name?.toLowerCase().includes(activeFilters.brandName.toLowerCase())) {
+  const filteredOffers = offers
+    .filter((offer) => {
+      // Brand Name -> Match name (fuzzy)
+      if (
+        activeFilters.brandName &&
+        !offer.name?.toLowerCase().includes(activeFilters.brandName.toLowerCase())
+      ) {
         return false;
-    }
-    // Person Name -> Match vendor name? offer.vendorId is ID. 
-    // Assuming for now we ignore or match name as well? 
-    // Let's match against offer.name too just in case, or maybe specific field if available.
-    // Since we don't have vendor name populated, we'll skip for now or try to match if offer has user details.
-    
-    // Service Name -> Category
-    if (activeFilters.serviceName && activeFilters.serviceName !== offer.category) {
+      }
+      // Person Name -> Match vendor name? offer.vendorId is ID.
+      // Assuming for now we ignore or match name as well?
+      // Let's match against offer.name too just in case, or maybe specific field if available.
+      // Since we don't have vendor name populated, we'll skip for now or try to match if offer has user details.
+
+      // Service Name -> Category
+      if (activeFilters.serviceName && activeFilters.serviceName !== offer.category) {
         return false;
-    }
-    // Location -> City/Locality
-    if (activeFilters.location) {
+      }
+      // Location -> City/Locality
+      if (activeFilters.location) {
         const loc = activeFilters.location.toLowerCase();
         const city = (offer.city || "").toLowerCase();
         const locality = (offer.locality || "").toLowerCase();
         if (!city.includes(loc) && !locality.includes(loc)) return false;
-    }
-    return true;
-  }).sort((a, b) => {
-    if (sortBy === "price-low-high") {
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === "price-low-high") {
         return (Number(a.finalPrice) || 0) - (Number(b.finalPrice) || 0);
-    } else if (sortBy === "price-high-low") {
+      } else if (sortBy === "price-high-low") {
         return (Number(b.finalPrice) || 0) - (Number(a.finalPrice) || 0);
-    } else if (sortBy === "name-a-z") {
+      } else if (sortBy === "name-a-z") {
         return (a.name || "").localeCompare(b.name || "");
-    }
-    return 0;
-  });
+      }
+      return 0;
+    });
 
   const totalPages = Math.max(1, Math.ceil(filteredOffers.length / itemsPerPage));
   const paginatedOffers = filteredOffers.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex">
       <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
       </div>
-      
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         <AdminHeader Headtitle={"Management"} setMobileSidebarOpen={setMobileOpen} />
@@ -337,7 +370,7 @@ const ManagementListing = () => {
             <h2 className="text-xl font-bold text-[#101828] font-geist tracking-tight">
               Listing Management
             </h2>
-            
+
             {/* <Button 
               onClick={handleAddNew}
               className="bg-[#131313] text-white rounded-full px-4 py-2 flex items-center gap-2 hover:bg-[#2A2A2A]"
@@ -352,13 +385,13 @@ const ManagementListing = () => {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex gap-2">
-                  {(["pending", "approved", "cancelled" , "modified"] as const).map((t) => (
+                  {(["pending", "approved", "cancelled", "modified"] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() => setOffersTab(t)}
                       className={`px-4 py-2 capitalize rounded-full text-sm transition-colors ${
-                        offersTab === t 
-                          ? "bg-dashboard-primary text-white" 
+                        offersTab === t
+                          ? "bg-dashboard-primary text-white"
                           : "text-dashboard-primary hover:bg-gray-50 border border-gray-200"
                       }`}
                     >
@@ -367,37 +400,45 @@ const ManagementListing = () => {
                     </button>
                   ))}
                 </div>
-                
+
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">Sort By</span>
                     <Select value={sortBy} onValueChange={setSortBy}>
-                        <SelectTrigger className="w-[160px]">
-                            <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="default">Default</SelectItem>
-                            <SelectItem value="price-low-high">Price: Low to High</SelectItem>
-                            <SelectItem value="price-high-low">Price: High to Low</SelectItem>
-                            <SelectItem value="name-a-z">Name: A-Z</SelectItem>
-                        </SelectContent>
+                      <SelectTrigger className="w-[160px]">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="price-low-high">Price: Low to High</SelectItem>
+                        <SelectItem value="price-high-low">Price: High to Low</SelectItem>
+                        <SelectItem value="name-a-z">Name: A-Z</SelectItem>
+                      </SelectContent>
                     </Select>
                   </div>
 
                   {Object.entries(activeFilters).map(([key, value]) => {
-                     if (!value) return null;
-                     return (
-                        <div key={key} className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200">
-                            <span className="capitalize text-gray-700">{key.replace(/([A-Z])/g, ' $1').trim()}: {String(value)}</span>
-                            <button onClick={() => {
-                                const newFilters = { ...activeFilters };
-                                delete newFilters[key];
-                                setActiveFilters(newFilters);
-                            }} className="ml-1">
-                                <X size={14} className="text-gray-500 hover:text-red-500" />
-                            </button>
-                        </div>
-                     )
+                    if (!value) return null;
+                    return (
+                      <div
+                        key={key}
+                        className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200"
+                      >
+                        <span className="capitalize text-gray-700">
+                          {key.replace(/([A-Z])/g, " $1").trim()}: {String(value)}
+                        </span>
+                        <button
+                          onClick={() => {
+                            const newFilters = { ...activeFilters };
+                            delete newFilters[key];
+                            setActiveFilters(newFilters);
+                          }}
+                          className="ml-1"
+                        >
+                          <X size={14} className="text-gray-500 hover:text-red-500" />
+                        </button>
+                      </div>
+                    );
                   })}
 
                   <Button
@@ -420,16 +461,16 @@ const ManagementListing = () => {
                   <div className=" text-center col-span-2">Location</div>
                   <div className=" text-center col-span-1 ">Actions</div>
                 </div>
-                
+
                 {offersLoading ? (
                   <div className="p-12 text-center text-dashboard-body flex gap-3 items-center justify-center">
                     <Loader2 className="animate-spin h-8 w-8 text-gray-600" />
                     <span>Loading...</span>
                   </div>
                 ) : filteredOffers.length === 0 ? (
-                    <div className="p-12 text-center text-gray-500">
-                        {offers.length === 0 ? "No listings found" : "No listings match your filters"}
-                    </div>
+                  <div className="p-12 text-center text-gray-500">
+                    {offers.length === 0 ? "No listings found" : "No listings match your filters"}
+                  </div>
                 ) : (
                   paginatedOffers.map((o, idx) => (
                     <div
@@ -438,7 +479,7 @@ const ManagementListing = () => {
                         idx !== paginatedOffers.length - 1 ? "border border-gray-100" : ""
                       }`}
                     >
-                      <div 
+                      <div
                         className="text-sm col-span-1 text-center  hover:underline cursor-pointer border-r px-4 py-4 h-full font-medium text-blue-600"
                         onClick={() => handleVendorClick(o.vendorId)}
                       >
@@ -456,12 +497,14 @@ const ManagementListing = () => {
                         )}
                         <div className="font-medium  text-sm">{o.name}</div>
                       </div>
-                      <div className="col-span-2 text-center  border-r px-4 py-4 h-full text-sm">{o.category}</div>
-                      <div className="col-span-2 text-center  border-r px-4 py-4 h-full font-medium text-sm">₹{o.regularPrice ?? "-"}</div>
+                      <div className="col-span-2 text-center  border-r px-4 py-4 h-full text-sm">
+                        {o.category}
+                      </div>
+                      <div className="col-span-2 text-center  border-r px-4 py-4 h-full font-medium text-sm">
+                        ₹{o.regularPrice ?? "-"}
+                      </div>
                       <div className="col-span-2 text-center  border-r px-4 py-4 h-full text-sm text-gray-600">
-                        {[o.locality, o.city, o.state]
-                          .filter(Boolean)
-                          .join(", ")}
+                        {[o.locality, o.city, o.state].filter(Boolean).join(", ")}
                       </div>
                       <div className="col-span-1 text-center  border-r px-6  py-4 h-full flex items-center justify-end gap-2">
                         {/* Action Buttons Dropdown */}
@@ -494,16 +537,20 @@ const ManagementListing = () => {
                               </DropdownMenuItem>
                             )}
                             {o.status !== "cancelled" && (
-                                <DropdownMenuItem onClick={() => handleStatusChange(o, "cancelled")}>
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Cancel
-                                </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleStatusChange(o, "cancelled")}>
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Cancel
+                              </DropdownMenuItem>
                             )}
-                          {o.status === "cancelled" &&
-                          <DropdownMenuItem onClick={() => handleDeleteClick(o)} className="text-red-600 focus:text-red-600">
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>} 
+                            {o.status === "cancelled" && (
+                              <DropdownMenuItem
+                                onClick={() => handleDeleteClick(o)}
+                                className="text-red-600 focus:text-red-600"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -528,29 +575,29 @@ const ManagementListing = () => {
         initialData={selectedOffer || undefined}
         isLoading={isSubmitting}
       />
-      
+
       <ViewDetailsPopup
         isOpen={showViewDetailsPopup}
         onClose={() => setShowViewDetailsPopup(false)}
         listingData={viewOffer}
         onApprove={
-            viewOffer?.status !== 'approved'
+          viewOffer?.status !== "approved"
             ? () => {
                 if (viewOffer) {
-                    handleStatusChange(viewOffer, "approved");
-                    setShowViewDetailsPopup(false);
+                  handleStatusChange(viewOffer, "approved");
+                  setShowViewDetailsPopup(false);
                 }
-            }
+              }
             : undefined
         }
         onReject={
-            viewOffer?.status !== 'rejected' && viewOffer?.status !== 'cancelled'
+          viewOffer?.status !== "rejected" && viewOffer?.status !== "cancelled"
             ? () => {
                 if (viewOffer) {
-                    handleStatusChange(viewOffer, "rejected");
-                    setShowViewDetailsPopup(false);
+                  handleStatusChange(viewOffer, "rejected");
+                  setShowViewDetailsPopup(false);
                 }
-            }
+              }
             : undefined
         }
       />
@@ -564,8 +611,8 @@ const ManagementListing = () => {
       <RejectReasonPopup
         isOpen={showRejectPopup}
         onClose={() => {
-            setShowRejectPopup(false);
-            setRejectOffer(null);
+          setShowRejectPopup(false);
+          setRejectOffer(null);
         }}
         onSubmit={handleRejectSubmit}
         isLoading={isSubmitting}
