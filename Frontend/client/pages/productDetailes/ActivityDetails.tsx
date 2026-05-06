@@ -1183,7 +1183,7 @@ export default function UniqueStayDetails() {
             <ShareModal
               isOpen={showShareModal}
               onClose={() => setShowShareModal(false)}
-              title={stay?.title || "Activity"}
+              title={stay?.name || "Activity"}
               url={window.location.href}
               contentRef={pdfRef}
               isDarkMode={isDarkMode}

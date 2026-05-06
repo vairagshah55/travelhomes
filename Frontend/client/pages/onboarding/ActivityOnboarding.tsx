@@ -116,7 +116,7 @@ const ActivityOnboarding = () => {
     }>,
 
     // Step 4: Inclusion & Exclusion
-    priceIncludes: [ "" ] as string[],
+    priceIncludes: [""] as string[],
     priceExcludes: [] as string[],
     expectations: [] as string[],
 
@@ -197,69 +197,103 @@ const ActivityOnboarding = () => {
   // Load countries data on mount
   useEffect(() => {
     // Check if Activity section is enabled
-    cmsPublicApi.listHomepageSections().then((sections) => {
-      const activitySection = sections.find((s: any) => s.sectionKey === 'best-activity');
-      if (activitySection && !activitySection.isVisible) {
-        toast.error("Activity onboarding is currently disabled.");
-        navigate("/");
-      }
-    }).catch(console.error);
+    cmsPublicApi
+      .listHomepageSections()
+      .then((sections) => {
+        const activitySection = sections.find((s: any) => s.sectionKey === "best-activity");
+        if (activitySection && !activitySection.isVisible) {
+          toast.error("Activity onboarding is currently disabled.");
+          navigate("/");
+        }
+      })
+      .catch(console.error);
     fetch("/countries_states_cities.json")
       .then((res) => res.json())
       .then((json) => setData(json))
       .catch((err) => console.error("Failed to load countries:", err));
 
     // Fetch admin features
-    cmsPublicApi.getFeatures("Activity").then(list => {
-      setAdminFeatures(list.filter((f: any) => f.status === 'enable'));
-    }).catch(console.error);
+    cmsPublicApi
+      .getFeatures("Activity")
+      .then((list) => {
+        setAdminFeatures(list.filter((f: any) => f.status === "enable"));
+      })
+      .catch(console.error);
 
     // Fetch activity categories (types)
-    cmsPublicApi.getFeatures("Activity", "category").then(list => {
-      const types = list
-        .filter((f: any) => f.status === 'enable')
-        .map((f: any) => ({
-          id: f.name,
-          name: f.name,
-          icon: f.icon
-        }));
-      setActivityTypes(types);
-    }).catch(console.error);
+    cmsPublicApi
+      .getFeatures("Activity", "category")
+      .then((list) => {
+        const types = list
+          .filter((f: any) => f.status === "enable")
+          .map((f: any) => ({
+            id: f.name,
+            name: f.name,
+            icon: f.icon,
+          }));
+        setActivityTypes(types);
+      })
+      .catch(console.error);
 
     // Check for existing data (resubmission)
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
 
-        if (data && data.type === 'activity' && data.doc && ['pending', 'draft', 'rejected'].includes(data.doc.status)) {
+        if (
+          data &&
+          data.type === "activity" &&
+          data.doc &&
+          ["pending", "draft", "rejected"].includes(data.doc.status)
+        ) {
           const doc = data.doc;
-          console.log('Loading existing activity data:', doc);
+          console.log("Loading existing activity data:", doc);
 
-          console.log('--- DEBUG: Activity Data Fields ---');
-          console.log('selectedActivities:', doc.selectedActivities);
-          console.log('features:', doc.features);
-          console.log('activityName:', doc.activityName);
-          console.log('description:', doc.description);
-          console.log('coverImage:', doc.coverImage);
-          console.log('photos:', doc.photos);
-          console.log('rulesAndRegulations:', doc.rulesAndRegulations);
-          console.log('regularPrice:', doc.regularPrice);
-          console.log('personCapacity:', doc.personCapacity);
-          console.log('timeDuration:', doc.timeDuration);
-          console.log('locality:', doc.locality);
-          console.log('state:', doc.state);
-          console.log('city:', doc.city);
-          console.log('pincode:', doc.pincode);
-          console.log('priceIncludes:', doc.priceIncludes);
-          console.log('priceExcludes:', doc.priceExcludes);
-          console.log('expectations:', doc.expectations);
+          console.log("--- DEBUG: Activity Data Fields ---");
+          console.log("selectedActivities:", doc.selectedActivities);
+          console.log("features:", doc.features);
+          console.log("activityName:", doc.activityName);
+          console.log("description:", doc.description);
+          console.log("coverImage:", doc.coverImage);
+          console.log("photos:", doc.photos);
+          console.log("rulesAndRegulations:", doc.rulesAndRegulations);
+          console.log("regularPrice:", doc.regularPrice);
+          console.log("personCapacity:", doc.personCapacity);
+          console.log("timeDuration:", doc.timeDuration);
+          console.log("locality:", doc.locality);
+          console.log("state:", doc.state);
+          console.log("city:", doc.city);
+          console.log("pincode:", doc.pincode);
+          console.log("priceIncludes:", doc.priceIncludes);
+          console.log("priceExcludes:", doc.priceExcludes);
+          console.log("expectations:", doc.expectations);
 
-          console.log('Discounts - First User:', { active: doc.firstUserDiscount, type: doc.discountType, amount: doc.discountAmount, final: doc.finalPrice });
-          console.log('Discounts - Festival:', { active: doc.festivalOffers, type: doc.festivalDiscountType, amount: doc.festivalDiscountAmount, final: doc.festivalFinalPrice });
-          console.log('Discounts - Weekly:', { active: doc.weeklyOffers, type: doc.weeklyDiscountType, amount: doc.weeklyDiscountAmount, final: doc.weeklyFinalPrice });
-          console.log('Discounts - Special:', { active: doc.specialOffers, type: doc.specialDiscountType, amount: doc.specialDiscountAmount, final: doc.specialFinalPrice });
+          console.log("Discounts - First User:", {
+            active: doc.firstUserDiscount,
+            type: doc.discountType,
+            amount: doc.discountAmount,
+            final: doc.finalPrice,
+          });
+          console.log("Discounts - Festival:", {
+            active: doc.festivalOffers,
+            type: doc.festivalDiscountType,
+            amount: doc.festivalDiscountAmount,
+            final: doc.festivalFinalPrice,
+          });
+          console.log("Discounts - Weekly:", {
+            active: doc.weeklyOffers,
+            type: doc.weeklyDiscountType,
+            amount: doc.weeklyDiscountAmount,
+            final: doc.weeklyFinalPrice,
+          });
+          console.log("Discounts - Special:", {
+            active: doc.specialOffers,
+            type: doc.specialDiscountType,
+            amount: doc.specialDiscountAmount,
+            final: doc.specialFinalPrice,
+          });
 
-          console.log('Business Details:', {
+          console.log("Business Details:", {
             brandName: doc.brandName,
             legalCompanyName: doc.legalCompanyName,
             gstNumber: doc.gstNumber,
@@ -268,10 +302,10 @@ const ActivityOnboarding = () => {
             businessLocality: doc.businessLocality,
             businessPincode: doc.businessPincode,
             businessCity: doc.businessCity,
-            businessState: doc.businessState
+            businessState: doc.businessState,
           });
 
-          console.log('Personal Details:', {
+          console.log("Personal Details:", {
             firstName: doc.firstName,
             lastName: doc.lastName,
             personalLocality: doc.personalLocality,
@@ -281,15 +315,15 @@ const ActivityOnboarding = () => {
             dateOfBirth: doc.dateOfBirth,
             maritalStatus: doc.maritalStatus,
             idProof: doc.idProof,
-            idPhotos: doc.idPhotos
+            idPhotos: doc.idPhotos,
           });
-          console.log('-----------------------------------');
+          console.log("-----------------------------------");
 
           setStatus(doc.status);
           setRejectionReason(doc.rejectionReason || "");
 
           // Map backend data to frontend formData
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             selectedActivities: doc.selectedActivities || [],
             features: doc.features || [],
@@ -354,60 +388,62 @@ const ActivityOnboarding = () => {
 
             termsAccepted: false,
           }));
-        } else if (userDetails && user?.userType !== 'vendor') {
-           console.log("Auto-filling from userDetails:", userDetails);
+        } else if (userDetails && user?.userType !== "vendor") {
+          console.log("Auto-filling from userDetails:", userDetails);
 
-           console.log('--- DEBUG: User Details Auto-fill ---');
-           console.log('Personal Details:', {
-              firstName: userDetails.firstName,
-              lastName: userDetails.lastName,
-              personalLocality: userDetails.personalLocality,
-              personalPincode: userDetails.personalPincode,
-              personalCity: userDetails.city,
-              personalState: userDetails.state,
-              dateOfBirth: userDetails.dateOfBirth,
-              maritalStatus: userDetails.maritalStatus,
-              idProof: userDetails.idProof,
-              idPhotos: userDetails.idPhotos
-           });
+          console.log("--- DEBUG: User Details Auto-fill ---");
+          console.log("Personal Details:", {
+            firstName: userDetails.firstName,
+            lastName: userDetails.lastName,
+            personalLocality: userDetails.personalLocality,
+            personalPincode: userDetails.personalPincode,
+            personalCity: userDetails.city,
+            personalState: userDetails.state,
+            dateOfBirth: userDetails.dateOfBirth,
+            maritalStatus: userDetails.maritalStatus,
+            idProof: userDetails.idProof,
+            idPhotos: userDetails.idPhotos,
+          });
 
-           console.log('Business Details:', {
-              brandName: userDetails.business?.brandName,
-              legalCompanyName: userDetails.business?.legalCompanyName,
-              gstNumber: userDetails.business?.gstNumber,
-              businessEmail: userDetails.business?.email,
-              businessPhone: userDetails.business?.phoneNumber,
-              businessLocality: userDetails.business?.locality,
-              businessPincode: userDetails.business?.pincode,
-              businessCity: userDetails.business?.city,
-              businessState: userDetails.business?.state
-           });
-           console.log('-------------------------------------');
+          console.log("Business Details:", {
+            brandName: userDetails.business?.brandName,
+            legalCompanyName: userDetails.business?.legalCompanyName,
+            gstNumber: userDetails.business?.gstNumber,
+            businessEmail: userDetails.business?.email,
+            businessPhone: userDetails.business?.phoneNumber,
+            businessLocality: userDetails.business?.locality,
+            businessPincode: userDetails.business?.pincode,
+            businessCity: userDetails.business?.city,
+            businessState: userDetails.business?.state,
+          });
+          console.log("-------------------------------------");
 
-           // Auto-fill from user details if no draft exists
-           setFormData(prev => ({
-              ...prev,
-              firstName: userDetails.firstName || "",
-              lastName: userDetails.lastName || "",
-              personalLocality: userDetails.personalLocality || "India",
-              personalPincode: userDetails.personalPincode || "",
-              personalCity: userDetails.city || "",
-              personalState: userDetails.state || "",
-              dateOfBirth: userDetails.dateOfBirth ? new Date(userDetails.dateOfBirth).toISOString().split('T')[0] : "",
-              maritalStatus: userDetails.maritalStatus || "",
-              idProof: userDetails.idProof || "",
-              idPhotos: userDetails.idPhotos || [],
+          // Auto-fill from user details if no draft exists
+          setFormData((prev) => ({
+            ...prev,
+            firstName: userDetails.firstName || "",
+            lastName: userDetails.lastName || "",
+            personalLocality: userDetails.personalLocality || "India",
+            personalPincode: userDetails.personalPincode || "",
+            personalCity: userDetails.city || "",
+            personalState: userDetails.state || "",
+            dateOfBirth: userDetails.dateOfBirth
+              ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
+              : "",
+            maritalStatus: userDetails.maritalStatus || "",
+            idProof: userDetails.idProof || "",
+            idPhotos: userDetails.idPhotos || [],
 
-              brandName: userDetails.business?.brandName || "",
-              legalCompanyName: userDetails.business?.legalCompanyName || "",
-              gstNumber: userDetails.business?.gstNumber || "",
-              businessEmail: userDetails.business?.email || "",
-              businessPhone: userDetails.business?.phoneNumber || "",
-              businessLocality: userDetails.business?.locality || "India",
-              businessPincode: userDetails.business?.pincode || "",
-              businessCity: userDetails.business?.city || "",
-              businessState: userDetails.business?.state || "",
-           }));
+            brandName: userDetails.business?.brandName || "",
+            legalCompanyName: userDetails.business?.legalCompanyName || "",
+            gstNumber: userDetails.business?.gstNumber || "",
+            businessEmail: userDetails.business?.email || "",
+            businessPhone: userDetails.business?.phoneNumber || "",
+            businessLocality: userDetails.business?.locality || "India",
+            businessPincode: userDetails.business?.pincode || "",
+            businessCity: userDetails.business?.city || "",
+            businessState: userDetails.business?.state || "",
+          }));
         }
       } catch (err) {
         console.error("Failed to load existing onboarding data", err);
@@ -415,15 +451,14 @@ const ActivityOnboarding = () => {
     };
 
     loadExistingData();
-
   }, [userDetails]);
 
   // Auto-calculate final prices for discounts
   useEffect(() => {
     if (currentStep === 5) {
-      setFormData(prev => {
+      setFormData((prev) => {
         const basePrice = parseFloat(prev.regularPrice) || 0;
-        let newData = { ...prev };
+        const newData = { ...prev };
         let changed = false;
 
         // Only auto-seed when basePrice is known AND the field is still empty
@@ -431,52 +466,61 @@ const ActivityOnboarding = () => {
         if (basePrice <= 0) return prev;
 
         const calculateFinal = (type: string, value: string) => {
-           const val = parseFloat(value) || 0;
-           if (type === 'percentage') {
-               return Math.max(0, basePrice - (basePrice * val / 100)).toFixed(0);
-           } else {
-               return Math.max(0, basePrice - val).toFixed(0);
-           }
+          const val = parseFloat(value) || 0;
+          if (type === "percentage") {
+            return Math.max(0, basePrice - (basePrice * val) / 100).toFixed(0);
+          } else {
+            return Math.max(0, basePrice - val).toFixed(0);
+          }
         };
 
         if (prev.firstUserDiscount && !prev.finalPrice) {
-            newData.finalPrice = calculateFinal(prev.discountType, prev.discountAmount);
-            changed = true;
+          newData.finalPrice = calculateFinal(prev.discountType, prev.discountAmount);
+          changed = true;
         }
 
         if (prev.festivalOffers && !prev.festivalFinalPrice) {
-            newData.festivalFinalPrice = calculateFinal(prev.festivalDiscountType, prev.festivalDiscountAmount);
-            changed = true;
+          newData.festivalFinalPrice = calculateFinal(
+            prev.festivalDiscountType,
+            prev.festivalDiscountAmount,
+          );
+          changed = true;
         }
 
         if (prev.weeklyOffers && !prev.weeklyFinalPrice) {
-            newData.weeklyFinalPrice = calculateFinal(prev.weeklyDiscountType, prev.weeklyDiscountAmount);
-            changed = true;
+          newData.weeklyFinalPrice = calculateFinal(
+            prev.weeklyDiscountType,
+            prev.weeklyDiscountAmount,
+          );
+          changed = true;
         }
 
         if (prev.specialOffers && !prev.specialFinalPrice) {
-            newData.specialFinalPrice = calculateFinal(prev.specialDiscountType, prev.specialDiscountAmount);
-            changed = true;
+          newData.specialFinalPrice = calculateFinal(
+            prev.specialDiscountType,
+            prev.specialDiscountAmount,
+          );
+          changed = true;
         }
 
         return changed ? newData : prev;
       });
     }
   }, [
-      currentStep,
-      formData.regularPrice,
-      formData.firstUserDiscount,
-      formData.discountType,
-      formData.discountAmount,
-      formData.festivalOffers,
-      formData.festivalDiscountType,
-      formData.festivalDiscountAmount,
-      formData.weeklyOffers,
-      formData.weeklyDiscountType,
-      formData.weeklyDiscountAmount,
-      formData.specialOffers,
-      formData.specialDiscountType,
-      formData.specialDiscountAmount
+    currentStep,
+    formData.regularPrice,
+    formData.firstUserDiscount,
+    formData.discountType,
+    formData.discountAmount,
+    formData.festivalOffers,
+    formData.festivalDiscountType,
+    formData.festivalDiscountAmount,
+    formData.weeklyOffers,
+    formData.weeklyDiscountType,
+    formData.weeklyDiscountAmount,
+    formData.specialOffers,
+    formData.specialDiscountType,
+    formData.specialDiscountAmount,
   ]);
 
   // Navigation Handlers
@@ -505,10 +549,7 @@ const ActivityOnboarding = () => {
         throw new Error("Activity name is required");
       }
 
-      if (
-        !formData.selectedActivities ||
-        formData.selectedActivities.length === 0
-      ) {
+      if (!formData.selectedActivities || formData.selectedActivities.length === 0) {
         throw new Error("Please select at least one activity type");
       }
 
@@ -519,7 +560,9 @@ const ActivityOnboarding = () => {
 
       // Convert selected photos to data URLs so server can map to Offer.photos
       const coverImageData = formData.coverImage
-        ? (formData.coverImage instanceof File ? await fileToDataUrl(formData.coverImage) : formData.coverImage)
+        ? formData.coverImage instanceof File
+          ? await fileToDataUrl(formData.coverImage)
+          : formData.coverImage
         : null;
       const photosData = await Promise.all(
         (formData.photos || []).map((f: any) => (f instanceof File ? fileToDataUrl(f) : f)),
@@ -564,10 +607,10 @@ const ActivityOnboarding = () => {
           pincode: clean.businessPincode,
           city: clean.businessCity,
           state: clean.businessState,
-        }
+        },
       });
 
-      updateUserType('vendor');
+      updateUserType("vendor");
       toast.success("Activity onboarding saved successfully!");
       return result;
     } catch (e: any) {
@@ -580,15 +623,12 @@ const ActivityOnboarding = () => {
 
   const handleNext = async () => {
     setErrors({});
-    let newErrors: { [key: string]: string } = {};
+    const newErrors: { [key: string]: string } = {};
     let isValid = true;
 
     // Per-step validation
     if (currentStep === 0) {
-      if (
-        !formData.selectedActivities ||
-        formData.selectedActivities.length === 0
-      ) {
+      if (!formData.selectedActivities || formData.selectedActivities.length === 0) {
         toast.error("Please select at least one activity type");
         return;
       }
@@ -758,9 +798,9 @@ const ActivityOnboarding = () => {
         const saved = await submitActivity();
         if (saved?.id) {
           onboardingService.setActivityId(saved.id);
-          sessionStorage.setItem('onboardingId', saved.id);
-          sessionStorage.setItem('onboardingType', 'activity');
-          sessionStorage.setItem('id', saved.id);
+          sessionStorage.setItem("onboardingId", saved.id);
+          sessionStorage.setItem("onboardingType", "activity");
+          sessionStorage.setItem("id", saved.id);
           sessionStorage.removeItem(STEP_STORAGE_KEY);
           sessionStorage.removeItem(FORM_STORAGE_KEY);
           navigate("/onboarding/selfie-verification");
@@ -810,10 +850,7 @@ const ActivityOnboarding = () => {
   };
 
   // Add and remove list items (inclusions, exclusions, expectations)
-  const addListItem = (
-    key: "priceIncludes" | "priceExcludes" | "expectations",
-    value: string
-  ) => {
+  const addListItem = (key: "priceIncludes" | "priceExcludes" | "expectations", value: string) => {
     if (!value.trim()) return;
 
     setFormData((prev) => ({
@@ -824,7 +861,7 @@ const ActivityOnboarding = () => {
 
   const removeListItem = (
     key: "priceIncludes" | "priceExcludes" | "expectations",
-    index: number
+    index: number,
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -857,18 +894,15 @@ const ActivityOnboarding = () => {
     }));
     // Clear error
     if (errors.coverImage) {
-        setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors.coverImage;
-            return newErrors;
-        });
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.coverImage;
+        return newErrors;
+      });
     }
   };
 
-  const handleFileUpload = (
-    field: "photos" | "idPhotos",
-    files: FileList | null,
-  ) => {
+  const handleFileUpload = (field: "photos" | "idPhotos", files: FileList | null) => {
     if (!files) return;
 
     const maxSize = 5 * 1024 * 1024; // 5 MB
@@ -900,18 +934,18 @@ const ActivityOnboarding = () => {
 
       // Clear errors if requirements met
       if (field === "photos" && updatedFiles.length >= 5 && errors.photos) {
-          setErrors((prevErr) => {
-              const newErrors = { ...prevErr };
-              delete newErrors.photos;
-              return newErrors;
-          });
+        setErrors((prevErr) => {
+          const newErrors = { ...prevErr };
+          delete newErrors.photos;
+          return newErrors;
+        });
       }
       if (field === "idPhotos" && updatedFiles.length > 0 && errors.idPhotos) {
-          setErrors((prevErr) => {
-              const newErrors = { ...prevErr };
-              delete newErrors.idPhotos;
-              return newErrors;
-          });
+        setErrors((prevErr) => {
+          const newErrors = { ...prevErr };
+          delete newErrors.idPhotos;
+          return newErrors;
+        });
       }
 
       return {
@@ -921,10 +955,7 @@ const ActivityOnboarding = () => {
     });
   };
 
-  const removeFile = (
-    field: "photos" | "idPhotos" | "coverImage",
-    index?: number,
-  ) => {
+  const removeFile = (field: "photos" | "idPhotos" | "coverImage", index?: number) => {
     setFormData((prev) => {
       if (field === "coverImage") {
         return {
@@ -991,7 +1022,7 @@ const ActivityOnboarding = () => {
 `;
 
   const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(
-    businessMapQuery
+    businessMapQuery,
   )}&output=embed`;
 
   const renderImageSrc = (fileOrUrl: any) => {
@@ -1079,13 +1110,25 @@ const ActivityOnboarding = () => {
   const handleDiscountOfferChange = (
     key: "firstUser" | "festival" | "weekly" | "special",
     field: keyof DiscountOffer,
-    value: string
+    value: string,
   ) => {
     const fieldMap: Record<string, Record<string, string>> = {
       firstUser: { type: "discountType", value: "discountAmount", finalPrice: "finalPrice" },
-      festival: { type: "festivalDiscountType", value: "festivalDiscountAmount", finalPrice: "festivalFinalPrice" },
-      weekly: { type: "weeklyDiscountType", value: "weeklyDiscountAmount", finalPrice: "weeklyFinalPrice" },
-      special: { type: "specialDiscountType", value: "specialDiscountAmount", finalPrice: "specialFinalPrice" },
+      festival: {
+        type: "festivalDiscountType",
+        value: "festivalDiscountAmount",
+        finalPrice: "festivalFinalPrice",
+      },
+      weekly: {
+        type: "weeklyDiscountType",
+        value: "weeklyDiscountAmount",
+        finalPrice: "weeklyFinalPrice",
+      },
+      special: {
+        type: "specialDiscountType",
+        value: "specialDiscountAmount",
+        finalPrice: "specialFinalPrice",
+      },
     };
     const formField = fieldMap[key][field];
     if (formField) {
@@ -1146,11 +1189,18 @@ const ActivityOnboarding = () => {
   };
 
   // Get ID proof image for preview
-  const idProofImage = formData.idPhotos.length > 0
-    ? (typeof formData.idPhotos[0] === "string"
+  const idProofImage =
+    formData.idPhotos.length > 0
+      ? typeof formData.idPhotos[0] === "string"
         ? formData.idPhotos[0]
-        : (() => { try { return URL.createObjectURL(formData.idPhotos[0] as File); } catch { return null; } })())
-    : null;
+        : (() => {
+            try {
+              return URL.createObjectURL(formData.idPhotos[0] as File);
+            } catch {
+              return null;
+            }
+          })()
+      : null;
 
   // Step components rendered conditionally
   return (
@@ -1163,12 +1213,10 @@ const ActivityOnboarding = () => {
       onBack={handleBack}
       onNext={handleNext}
     >
-      {status === 'rejected' && (
+      {status === "rejected" && (
         <div className="w-full max-w-4xl mb-6 p-4 border border-red-200 bg-red-50 rounded-md">
           <h3 className="text-red-800 font-semibold mb-1">Service Rejected</h3>
-          <p className="text-red-700 text-sm">
-            Reason: {rejectionReason || 'No reason provided'}
-          </p>
+          <p className="text-red-700 text-sm">Reason: {rejectionReason || "No reason provided"}</p>
           <p className="text-red-600 text-xs mt-2">
             Please update the details and resubmit for approval.
           </p>
@@ -1276,6 +1324,10 @@ const ActivityOnboarding = () => {
             gstNumber: formData.gstNumber,
             businessEmail: formData.businessEmail,
             businessPhone: formData.businessPhone,
+            // ActivityOnboarding doesn't carry a discrete businessAddress
+            // field — the locality/city/state are kept separately. Pass an
+            // empty string so the shared step renders without crashing.
+            businessAddress: "",
             pincode: formData.businessPincode,
           }}
           errors={errors}

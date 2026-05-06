@@ -26,8 +26,7 @@ const Interchange = () => {
   useEffect(() => {
     // Generate random vehicles
     const interval = setInterval(() => {
-      const type =
-        VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
+      const type = VEHICLE_TYPES[Math.floor(Math.random() * VEHICLE_TYPES.length)];
       const pathKeys = Object.keys(paths);
       const pathKey = pathKeys[Math.floor(Math.random() * pathKeys.length)];
 
@@ -48,13 +47,20 @@ const Interchange = () => {
     <div className="relative w-full h-screen bg-green-900 flex items-center justify-center overflow-hidden">
       <div className="absolute left-72 top-10 text-white text-center z-10">
         <div className="flex justify-center items-center w-20 h-20 max-w-60 max-h-60">
-         <img src="https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162" className="w-full h-full object-cover" alt="logo" />
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"
+            className="w-full h-full object-cover"
+            alt="logo"
+          />
         </div>
       </div>
       <div className="absolute right-72 top-10 text-white text-center z-10">
         <h1 className="text-5xl font-bold uppercase tracking-widest">404</h1>
         <p className="text-sm opacity-70">Page Not Found !</p>
-        <a href="/" className="text-gray-500 hover:text-gray-700 bottom rounded-[10px] bg-white px-5 py-2 mt-5 inline-block">
+        <a
+          href="/"
+          className="text-gray-500 hover:text-gray-700 bottom rounded-[10px] bg-white px-5 py-2 mt-5 inline-block"
+        >
           Return to Home
         </a>
       </div>
@@ -83,13 +89,7 @@ const Interchange = () => {
         </g>
 
         {/* Road Markings (White dashed lines) */}
-        <g
-          stroke="white"
-          strokeWidth="1"
-          fill="none"
-          strokeDasharray="10,10"
-          opacity="0.5"
-        >
+        <g stroke="white" strokeWidth="1" fill="none" strokeDasharray="10,10" opacity="0.5">
           <path d={paths.horizontal} />
           <path d={paths.vertical} />
           <path d={paths.loopNW} />
@@ -113,7 +113,13 @@ const Interchange = () => {
         ))}
       </svg>
 
-      <style jsx>{`
+      {/* The `jsx` attribute on <style> requires the styled-jsx plugin,
+        which isn't installed in this project. Use a plain <style> tag
+        with dangerouslySetInnerHTML so the CSS is injected globally;
+        it scopes nothing but keeps the keyframes available. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         @keyframes move {
           from {
             offset-distance: 0%;
@@ -126,7 +132,9 @@ const Interchange = () => {
           offset-rotate: auto 180deg;
           anchor-point: center;
         }
-      `}</style>
+      `,
+        }}
+      />
     </div>
   );
 };

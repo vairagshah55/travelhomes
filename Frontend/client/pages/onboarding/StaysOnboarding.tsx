@@ -1658,6 +1658,10 @@ const StaysOnboarding = () => {
               gstNumber,
               businessEmail,
               businessPhone,
+              // StaysOnboarding doesn't carry a discrete businessAddress
+              // field — the locality/city/state are kept separately. Pass an
+              // empty string so the shared step renders without crashing.
+              businessAddress: "",
               pincode: businessPincode,
             }}
             errors={errors}
