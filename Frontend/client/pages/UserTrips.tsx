@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
@@ -18,6 +19,7 @@ import { Loader } from "@/components/ui/Loader";
 
 const UserTrips = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"upcoming" | "previous" | "delete">("upcoming");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -26,9 +28,28 @@ const UserTrips = () => {
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<BookingDTO | null>(null);
   const [selectedTrips, setSelectedTrips] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [allBookings, setAllBookings] = useState<BookingDTO[]>([]);
   const [page, setPage] = useState(1);
+
+  const uid = user?.id || (user as any)?._id;
+  const tripsKey = ["bookings", "userTrips", uid] as const;
+
+  // useQuery handles loading state, dedups in-flight requests, and caches
+  // across navigation. The legacy version refetched on every component
+  // mount (e.g. after navigating into trip details and back).
+  const { data: allBookings = [], isLoading: loading } = useQuery<BookingDTO[]>({
+    queryKey: tripsKey,
+    enabled: !!uid,
+    queryFn: async () => {
+      const token =
+        localStorage.getItem("travel_auth_token") ||
+        sessionStorage.getItem("travel_auth_token") ||
+        "";
+      const res = await bookingsApi.getUserBookings(uid, token);
+      if (res.success) return res.bookings;
+      toast.error("Failed to load your trips. Please try again.");
+      throw new Error("getUserBookings: success=false");
+    },
+  });
 
   useEffect(() => {
     setPage(1);
@@ -36,38 +57,6 @@ const UserTrips = () => {
       setSelectedTrips([]);
     }
   }, [activeTab]);
-
-  useEffect(() => {
-    const fetchBookings = async () => {
-      const uid = user?.id || (user as any)?._id;
-      if (!uid) {
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        console.log("Fetching bookings for user:", uid);
-        const token =
-          localStorage.getItem("travel_auth_token") ||
-          sessionStorage.getItem("travel_auth_token") ||
-          "";
-        const res = await bookingsApi.getUserBookings(uid, token);
-        console.log("Bookings response:", res);
-        if (res.success) {
-          setAllBookings(res.bookings);
-        } else {
-          console.error("Failed to fetch bookings:", res);
-          toast.error("Failed to load your trips. Please try again.");
-        }
-      } catch (error) {
-        console.error("Error fetching bookings:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBookings();
-  }, [user?.id, (user as any)?._id]);
 
   const upcomingTrips = allBookings.filter((b) =>
     ["confirmed", "pending", "active", "checked-in"].includes(b.bookingStatus?.toLowerCase()),
@@ -106,7 +95,6 @@ const UserTrips = () => {
     }
 
     try {
-      setLoading(true);
       const token =
         localStorage.getItem("travel_auth_token") ||
         sessionStorage.getItem("travel_auth_token") ||
@@ -115,14 +103,16 @@ const UserTrips = () => {
       const deletePromises = selectedTrips.map((id) => bookingsApi.delete(id, token));
       await Promise.all(deletePromises);
 
-      setAllBookings((prev) => prev.filter((b) => !selectedTrips.includes(b._id)));
+      // Drop deleted rows from the cache rather than refetching the
+      // whole list — the deleteMany endpoint is best-effort.
+      queryClient.setQueryData<BookingDTO[]>(tripsKey, (prev) =>
+        (prev ?? []).filter((b) => !selectedTrips.includes(b._id)),
+      );
       setSelectedTrips([]);
       toast.success("Selected trips deleted successfully");
     } catch (error) {
       console.error("Error deleting trips:", error);
       toast.error("Failed to delete some trips");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -140,8 +130,8 @@ const UserTrips = () => {
         "";
       const res = await bookingsApi.updateStatus(trip._id, "cancelled", token);
       if (res.success) {
-        setAllBookings((prev) =>
-          prev.map((b) => (b._id === trip._id ? { ...b, bookingStatus: "cancelled" } : b)),
+        queryClient.setQueryData<BookingDTO[]>(tripsKey, (prev) =>
+          (prev ?? []).map((b) => (b._id === trip._id ? { ...b, bookingStatus: "cancelled" } : b)),
         );
         setIsCancelModalOpen(false);
         setcancelled(true);

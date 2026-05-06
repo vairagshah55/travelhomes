@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Bell, Menu, Loader2, Trash2, CheckSquare, Square, X } from 'lucide-react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { Sidebar } from '@/components/Navigation';
-import ProfileDropdown from '@/components/ProfileDropdown';
-import ChangePasswordModal from '@/components/ChangePasswordModal';
-import { DashboardHeader } from '@/components/Header';
-import { notificationsApi, NotificationDTO } from '@/lib/api';
-import { formatDistanceToNow } from 'date-fns';
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Bell, Trash2 } from "lucide-react";
+import { Sidebar } from "@/components/Navigation";
+import ChangePasswordModal from "@/components/ChangePasswordModal";
+import { DashboardHeader } from "@/components/Header";
+import { notificationsApi } from "@/lib/api";
+import { formatDistanceToNow } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -18,98 +16,91 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import toast from 'react-hot-toast';
+import toast from "react-hot-toast";
+
+const NOTIFICATIONS_KEY = ["notifications", "list", "vendor"] as const;
 
 const Notifications = () => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all');
+  const queryClient = useQueryClient();
+  const [activeFilter, setActiveFilter] = useState("all");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
+
   // Selection and Modal states
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedNotification, setSelectedNotification] = useState<any | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  // ─── Fetch ───────────────────────────────────────────────────────────
+  const { data: notifications = [], isLoading: loading } = useQuery<any[]>({
+    queryKey: NOTIFICATIONS_KEY,
+    queryFn: async () => {
+      const res = await notificationsApi.list(false, 50, "vendor");
+      if (res.success) return res.data;
+      return [];
+    },
+  });
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const res = await notificationsApi.list(false, 50, 'vendor');
-      if (res.success) {
-        setNotifications(res.data);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      toast.error('Failed to load notifications');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const filteredNotifications =
+    activeFilter === "unread" ? notifications.filter((n) => !n.isRead) : notifications;
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const filteredNotifications = activeFilter === 'unread' 
-    ? notifications.filter(n => !n.isRead)
-    : notifications;
-
+  // ─── Optimistic mutations ────────────────────────────────────────────
+  // All three mutations update the cache in place — the previous code
+  // mixed setState in success and error branches; useQuery's setQueryData
+  // makes the optimistic intent explicit and keeps the cache aligned.
   const handleMarkAllAsRead = async () => {
+    queryClient.setQueryData<any[]>(NOTIFICATIONS_KEY, (prev) =>
+      (prev ?? []).map((n) => ({ ...n, isRead: true })),
+    );
     try {
       await notificationsApi.markAllAsRead();
-      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-      toast.success('All marked as read');
+      toast.success("All marked as read");
     } catch (error) {
-      console.error('Error marking all as read:', error);
+      console.error("Error marking all as read:", error);
+      // Refetch to re-sync if the optimistic update was wrong.
+      queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
     }
   };
 
   const handleMarkAsRead = async (id: string) => {
+    queryClient.setQueryData<any[]>(NOTIFICATIONS_KEY, (prev) =>
+      (prev ?? []).map((n) => (n.id === id || n._id === id ? { ...n, isRead: true } : n)),
+    );
     try {
       await notificationsApi.markAsRead(id);
-      setNotifications(notifications.map(n => (n.id === id || n._id === id) ? { ...n, isRead: true } : n));
     } catch (error) {
-      console.error('Error marking as read:', error);
-      setNotifications(notifications.map(n => (n.id === id || n._id === id) ? { ...n, isRead: true } : n));
+      console.error("Error marking as read:", error);
+      // Optimistic state is kept on error to match the legacy UX.
     }
   };
 
   const handleDeleteSelected = async () => {
     if (selectedIds.length === 0) return;
-    
+
+    const loadingToast = toast.loading("Deleting notifications...");
+    queryClient.setQueryData<any[]>(NOTIFICATIONS_KEY, (prev) =>
+      (prev ?? []).filter((n) => !selectedIds.includes(n.id || n._id)),
+    );
+    setSelectedIds([]);
     try {
-      const loadingToast = toast.loading('Deleting notifications...');
       await notificationsApi.deleteMany(selectedIds);
-      setNotifications(notifications.filter(n => !selectedIds.includes(n.id || n._id)));
-      setSelectedIds([]);
       toast.dismiss(loadingToast);
-      toast.success('Deleted successfully');
+      toast.success("Deleted successfully");
     } catch (error) {
-      console.error('Error deleting:', error);
-      // Fallback for demo
-      setNotifications(notifications.filter(n => !selectedIds.includes(n.id || n._id)));
-      setSelectedIds([]);
-      toast.success('Deleted (Demo Mode)');
+      console.error("Error deleting:", error);
+      toast.dismiss(loadingToast);
+      toast.success("Deleted (Demo Mode)");
     }
   };
 
   const handleToggleSelect = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   const handleSelectAll = () => {
     if (selectedIds.length === filteredNotifications.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredNotifications.map(n => n.id || n._id));
+      setSelectedIds(filteredNotifications.map((n) => n.id || n._id));
     }
   };
 
@@ -139,7 +130,7 @@ const Notifications = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-       <DashboardHeader Headtitle={"Notifications"}/>
+        <DashboardHeader Headtitle={"Notifications"} />
 
         {/* Notifications Content */}
         <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-gray-900 dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto motion-surface-card">
@@ -148,12 +139,18 @@ const Notifications = () => {
             <div className="flex items-center gap-4">
               {/* Select All Checkbox */}
               <div className="flex items-center gap-2 pr-4 border-r border-dashboard-stroke">
-                <Checkbox 
-                  checked={filteredNotifications.length > 0 && selectedIds.length === filteredNotifications.length}
+                <Checkbox
+                  checked={
+                    filteredNotifications.length > 0 &&
+                    selectedIds.length === filteredNotifications.length
+                  }
                   onCheckedChange={handleSelectAll}
                   id="select-all"
                 />
-                <label htmlFor="select-all" className="text-sm font-geist cursor-pointer select-none">
+                <label
+                  htmlFor="select-all"
+                  className="text-sm font-geist cursor-pointer select-none"
+                >
                   All
                 </label>
               </div>
@@ -161,23 +158,23 @@ const Notifications = () => {
               {/* Filter Tabs */}
               <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
                 <button
-                  onClick={() => setActiveFilter('all')}
-                  data-active={activeFilter === 'all' ? "true" : "false"}
+                  onClick={() => setActiveFilter("all")}
+                  data-active={activeFilter === "all" ? "true" : "false"}
                   className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
-                    activeFilter === 'all'
-                      ? 'bg-dashboard-primary text-white'
-                      : 'text-dashboard-heading hover:text-dashboard-primary'
+                    activeFilter === "all"
+                      ? "bg-dashboard-primary text-white"
+                      : "text-dashboard-heading hover:text-dashboard-primary"
                   } motion-tab-trigger`}
                 >
                   All
                 </button>
                 <button
-                  onClick={() => setActiveFilter('unread')}
-                  data-active={activeFilter === 'unread' ? "true" : "false"}
+                  onClick={() => setActiveFilter("unread")}
+                  data-active={activeFilter === "unread" ? "true" : "false"}
                   className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
-                    activeFilter === 'unread'
-                      ? 'bg-dashboard-primary text-white'
-                      : 'text-dashboard-heading hover:text-dashboard-primary'
+                    activeFilter === "unread"
+                      ? "bg-dashboard-primary text-white"
+                      : "text-dashboard-heading hover:text-dashboard-primary"
                   } motion-tab-trigger`}
                 >
                   Unread
@@ -195,7 +192,7 @@ const Notifications = () => {
                   Delete ({selectedIds.length})
                 </button>
               )}
-              
+
               <button
                 onClick={handleMarkAllAsRead}
                 className="px-4 py-1.5 text-sm font-bold text-dashboard-heading font-geist hover:text-dashboard-primary transition-colors"
@@ -210,7 +207,10 @@ const Notifications = () => {
             {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4 bg-white dark:bg-gray-900">
+                  <div
+                    key={i}
+                    className="border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-center gap-4 bg-white dark:bg-gray-900"
+                  >
                     <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-800 animate-pulse shrink-0" />
                     <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 animate-pulse shrink-0" />
                     <div className="flex-1 space-y-2">
@@ -228,29 +228,39 @@ const Notifications = () => {
                   data-animate="notification-item"
                   data-animate-item
                   className={`border border-dashboard-stroke rounded-2xl dark:bg-gray-900 dark:text-white bg-white hover:shadow-sm transition-all cursor-pointer max-w-[1096px] group flex items-center motion-notification-card ${
-                    !notification.isRead ? 'border-l-4 border-l-dashboard-primary bg-blue-50/5' : ''
+                    !notification.isRead ? "border-l-4 border-l-dashboard-primary bg-blue-50/5" : ""
                   }`}
                 >
                   {/* Checkbox Container */}
                   <div className="pl-4" onClick={(e) => e.stopPropagation()}>
-                    <Checkbox 
+                    <Checkbox
                       checked={selectedIds.includes(notification.id || notification._id)}
-                      onCheckedChange={() => handleToggleSelect(notification.id || notification._id)}
+                      onCheckedChange={() =>
+                        handleToggleSelect(notification.id || notification._id)
+                      }
                     />
                   </div>
 
-                  <div className="p-[18px] flex-1" onClick={() => handleOpenNotification(notification)}>
+                  <div
+                    className="p-[18px] flex-1"
+                    onClick={() => handleOpenNotification(notification)}
+                  >
                     <div className="flex items-start gap-5">
                       {/* Avatar */}
                       <img
-                        src={notification.avatar || 'https://api.builder.io/api/v1/image/assets/TEMP/601b0cb8de879e2bb353a2eb82394808d5046f75?width=76'}
+                        src={
+                          notification.avatar ||
+                          "https://api.builder.io/api/v1/image/assets/TEMP/601b0cb8de879e2bb353a2eb82394808d5046f75?width=76"
+                        }
                         alt="User"
                         className="w-[38px] h-[38px] rounded-full flex-shrink-0 object-cover"
                       />
 
                       {/* Content */}
                       <div className="flex-1 space-y-0.5">
-                        <h4 className={`text-sm font-geist leading-[150%] ${!notification.isRead ? 'font-bold text-dashboard-heading' : 'font-normal text-dashboard-title'}`}>
+                        <h4
+                          className={`text-sm font-geist leading-[150%] ${!notification.isRead ? "font-bold text-dashboard-heading" : "font-normal text-dashboard-title"}`}
+                        >
                           {notification.title}
                         </h4>
                         <p className="text-xs text-dashboard-body font-geist leading-[150%] max-w-[906px] line-clamp-1">
@@ -278,16 +288,18 @@ const Notifications = () => {
 
           {/* Empty State */}
           {!loading && filteredNotifications.length === 0 && (
-            <div data-animate="section" className="flex flex-col items-center justify-center py-16 text-center motion-section-reveal">
+            <div
+              data-animate="section"
+              className="flex flex-col items-center justify-center py-16 text-center motion-section-reveal"
+            >
               <Bell size={48} className="text-gray-300 mb-4" />
               <h3 className="text-lg font-semibold text-dashboard-heading font-geist mb-2">
                 No notifications
               </h3>
               <p className="text-dashboard-body font-plus-jakarta">
-                {activeFilter === 'unread' 
+                {activeFilter === "unread"
                   ? "You don't have any unread notifications"
-                  : "You don't have any notifications yet"
-                }
+                  : "You don't have any notifications yet"}
               </p>
             </div>
           )}
@@ -299,8 +311,11 @@ const Notifications = () => {
         <DialogContent className="sm:max-w-[500px] rounded-3xl p-6 motion-modal-surface">
           <DialogHeader>
             <div className="flex items-center gap-4 mb-2">
-               <img
-                src={selectedNotification?.avatar || 'https://api.builder.io/api/v1/image/assets/TEMP/601b0cb8de879e2bb353a2eb82394808d5046f75?width=76'}
+              <img
+                src={
+                  selectedNotification?.avatar ||
+                  "https://api.builder.io/api/v1/image/assets/TEMP/601b0cb8de879e2bb353a2eb82394808d5046f75?width=76"
+                }
                 alt="Avatar"
                 className="w-12 h-12 rounded-full object-cover"
               />
@@ -320,7 +335,7 @@ const Notifications = () => {
             </p>
           </div>
           <DialogFooter>
-            <Button 
+            <Button
               onClick={() => setIsViewModalOpen(false)}
               className="bg-dashboard-primary text-black hover:bg-dashboard-primary/90 rounded-full px-8"
             >
@@ -331,10 +346,7 @@ const Notifications = () => {
       </Dialog>
 
       {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onOpenChange={setIsChangePasswordOpen}
-      />
+      <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
     </div>
   );
 };
