@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,34 +72,46 @@ const Settings = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    (async () => {
+  // Vendor settings — try to fetch, create defaults if not found.
+  const settingsQuery = useQuery<VendorSettingDTO | null>({
+    queryKey: ["vendorSettings", vendorId],
+    enabled: !!vendorId,
+    retry: false,
+    queryFn: async () => {
       try {
         const res = await vendorSettingApi.get(vendorId);
-        const data = res.data;
-        setGeneral(data.general || general);
-        setAccount(data.account || account);
-        setPreferences(data.preferences || preferences);
-        // Update favicon and title when loaded
-        if (data.general?.faviconUrl) {
-          const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
-          if (link) link.href = data.general.faviconUrl;
-        }
-        if (data.general?.siteName) {
-          document.title = data.general.siteName;
-        }
-      } catch (e) {
-        // If not found, create default
-        await vendorSettingApi.create({
+        return res.data ?? null;
+      } catch {
+        // First-time login — create the row with the current local
+        // defaults. The created row is returned for caching.
+        const created = await vendorSettingApi.create({
           vendorId,
           general: general as VendorSettingDTO["general"],
           account,
           preferences,
         });
+        return created.data ?? null;
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [vendorId]);
+    },
+  });
+
+  useEffect(() => {
+    const data = settingsQuery.data;
+    if (!data) return;
+    if (data.general) setGeneral(data.general);
+    if (data.account) setAccount(data.account);
+    if (data.preferences) setPreferences(data.preferences);
+    // Update favicon and title when loaded
+    if (data.general?.faviconUrl) {
+      const link = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+      if (link) link.href = data.general.faviconUrl;
+    }
+    if (data.general?.siteName) {
+      document.title = data.general.siteName;
+    }
+  }, [settingsQuery.data]);
+
+  // (Settings useEffect collapsed into the useQuery above.)
 
   const handleToggleCollapse = () => setIsCollapsed(!isCollapsed);
 
