@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ interface Vendor {
   listedServices: number;
   location: string;
   status: string;
-  action: string ;
+  action: string;
 }
 
 const VendorManagement = () => {
@@ -53,10 +54,24 @@ const VendorManagement = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("brandName");
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-   const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const queryClient = useQueryClient();
+  // Local mutation/validation state — distinct from `loading` which
+  // useQuery owns for the list fetch. The handlers below route into
+  // these so the create/ban/delete/view flows still surface progress
+  // and validation errors. Mutations refresh the list via
+  // queryClient.invalidateQueries (or setQueryData for optimistic).
+  const [mutationLoading, setMutationLoading] = useState(false);
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const setLoading = setMutationLoading;
+  const setError = setMutationError;
+  const refreshVendors = (next?: Vendor[]) => {
+    if (next !== undefined) {
+      queryClient.setQueryData<Vendor[]>(vendorsKey, next);
+    } else {
+      queryClient.invalidateQueries({ queryKey: vendorsKey });
+    }
+  };
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
   const [formData, setFormData] = useState<Partial<Vendor>>({
     vendorId: "",
     photo: "",
@@ -67,30 +82,44 @@ const VendorManagement = () => {
     action: "",
   });
 
-
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
     navigate("/admin/login");
   };
 
-  // Fetch vendors on tab change
+  // Reset pagination when tab changes
   useEffect(() => {
     setCurrentPage(1);
-    const fetchVendors = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const list = await vendorService.getVendors(activeTab);
-        setVendors(Array.isArray(list) ? list : []);
-      } catch (err: any) {
-        setError(typeof err === 'string' ? err : 'Failed to fetch vendors.');
-        console.error('Error fetching vendors:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchVendors();
   }, [activeTab]);
+
+  // Vendors list — keyed by tab so switching is instant after first fetch.
+  const vendorsKey = ["vendors", activeTab] as const;
+  const {
+    data: vendors = [],
+    isLoading: listLoading,
+    error: queryError,
+  } = useQuery<Vendor[]>({
+    queryKey: vendorsKey,
+    queryFn: async () => {
+      try {
+        const list = await vendorService.getVendors(activeTab);
+        return Array.isArray(list) ? list : [];
+      } catch (err: any) {
+        console.error("Error fetching vendors:", err);
+        throw err;
+      }
+    },
+  });
+  // `loading` covers both the initial list fetch AND any in-flight
+  // mutation so the existing button-disabled logic keeps working.
+  const loading = listLoading || mutationLoading;
+  const error =
+    mutationError ??
+    (queryError
+      ? typeof queryError === "string"
+        ? queryError
+        : "Failed to fetch vendors."
+      : null);
 
   // Derived list with search + sort + filters
   const filteredSortedVendors = useMemo(() => {
@@ -100,48 +129,48 @@ const VendorManagement = () => {
       list = list.filter((v) =>
         [v.brandName, v.personName, v.location, v.vendorId]
           .filter(Boolean)
-          .some((val) => String(val).toLowerCase().includes(term))
+          .some((val) => String(val).toLowerCase().includes(term)),
       );
     }
 
     if (activeFilters.length > 0) {
-      const locationFilter = activeFilters.find(f => f.startsWith('location:'))?.split(':')[1];
-      const statusFilter = activeFilters.find(f => f.startsWith('status:'))?.split(':')[1];
-      const serviceFilter = activeFilters.find(f => f.startsWith('service:'))?.split(':')[1];
-      const dateFromFilter = activeFilters.find(f => f.startsWith('dateFrom:'))?.split(':')[1];
-      const dateToFilter = activeFilters.find(f => f.startsWith('dateTo:'))?.split(':')[1];
+      const locationFilter = activeFilters.find((f) => f.startsWith("location:"))?.split(":")[1];
+      const statusFilter = activeFilters.find((f) => f.startsWith("status:"))?.split(":")[1];
+      const serviceFilter = activeFilters.find((f) => f.startsWith("service:"))?.split(":")[1];
+      const dateFromFilter = activeFilters.find((f) => f.startsWith("dateFrom:"))?.split(":")[1];
+      const dateToFilter = activeFilters.find((f) => f.startsWith("dateTo:"))?.split(":")[1];
 
-      if (locationFilter && locationFilter !== 'all') {
-          list = list.filter(v => v.location?.toLowerCase() === locationFilter.toLowerCase());
+      if (locationFilter && locationFilter !== "all") {
+        list = list.filter((v) => v.location?.toLowerCase() === locationFilter.toLowerCase());
       }
-      
-      if (statusFilter && statusFilter !== 'all') {
-            list = list.filter(v => v.status?.toLowerCase() === statusFilter.toLowerCase());
+
+      if (statusFilter && statusFilter !== "all") {
+        list = list.filter((v) => v.status?.toLowerCase() === statusFilter.toLowerCase());
       }
-      
+
       if (dateFromFilter) {
-          const fromDate = new Date(dateFromFilter).getTime();
-          list = list.filter(v => {
-              const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
-              return created >= fromDate;
-          });
+        const fromDate = new Date(dateFromFilter).getTime();
+        list = list.filter((v) => {
+          const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
+          return created >= fromDate;
+        });
       }
-      
+
       if (dateToFilter) {
-            const toDate = new Date(dateToFilter).getTime();
-            // Add 1 day to include the end date fully
-            const toDateInclusive = toDate + 86400000; 
-            list = list.filter(v => {
-              const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
-              return created < toDateInclusive;
-          });
+        const toDate = new Date(dateToFilter).getTime();
+        // Add 1 day to include the end date fully
+        const toDateInclusive = toDate + 86400000;
+        list = list.filter((v) => {
+          const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
+          return created < toDateInclusive;
+        });
       }
     }
 
     const sortKey = sortBy as keyof Vendor;
     return [...list].sort((a, b) => {
-      const av = String(a[sortKey] ?? '').toLowerCase();
-      const bv = String(b[sortKey] ?? '').toLowerCase();
+      const av = String(a[sortKey] ?? "").toLowerCase();
+      const bv = String(b[sortKey] ?? "").toLowerCase();
       if (av < bv) return -1;
       if (av > bv) return 1;
       return 0;
@@ -158,8 +187,7 @@ const VendorManagement = () => {
     { id: "kyc-unverified", label: "KYC Unverified" },
   ];
 
-
- const handleAddVendor = () => {
+  const handleAddVendor = () => {
     setFormData({
       vendorId: "",
       photo: "",
@@ -180,15 +208,15 @@ const VendorManagement = () => {
 
       // Validate required fields
       if (!formData.brandName?.trim()) {
-        setError('Brand Name is required');
+        setError("Brand Name is required");
         return;
       }
       if (!formData.personName?.trim()) {
-        setError('Person Name is required');
+        setError("Person Name is required");
         return;
       }
       if (!formData.location?.trim()) {
-        setError('Location is required');
+        setError("Location is required");
         return;
       }
 
@@ -204,15 +232,15 @@ const VendorManagement = () => {
       };
 
       // Call API to create vendor
-      console.log('Sending vendor data:', vendorData);
+      console.log("Sending vendor data:", vendorData);
       const response = await vendorService.createVendor(vendorData);
-      console.log('Create vendor response:', response);
-      
+      console.log("Create vendor response:", response);
+
       // If successful, refresh the vendors list
       const refreshedList = await vendorService.getVendors(activeTab);
-      console.log('Refreshed list response:', refreshedList);
-      setVendors(Array.isArray(refreshedList) ? refreshedList : []);
-      
+      console.log("Refreshed list response:", refreshedList);
+      refreshVendors(Array.isArray(refreshedList) ? refreshedList : []);
+
       // Close modal and reset form
       setShowAddVendorModal(false);
       setFormData({
@@ -225,12 +253,12 @@ const VendorManagement = () => {
         action: "",
       });
 
-      console.log('Vendor created successfully:', response);
+      console.log("Vendor created successfully:", response);
     } catch (err: any) {
-      console.error('Full error object:', err);
-      let errorMessage = 'Failed to create vendor.';
-      
-      if (typeof err === 'string') {
+      console.error("Full error object:", err);
+      let errorMessage = "Failed to create vendor.";
+
+      if (typeof err === "string") {
         errorMessage = err;
       } else if (err?.message) {
         errorMessage = err.message;
@@ -239,15 +267,13 @@ const VendorManagement = () => {
       } else if (err?.response?.data?.message) {
         errorMessage = err.response.data.message;
       }
-      
+
       setError(errorMessage);
-      console.error('Error creating vendor:', err);
+      console.error("Error creating vendor:", err);
     } finally {
       setLoading(false);
     }
   };
-
-
 
   const handleView = async (vendor: Vendor) => {
     try {
@@ -257,7 +283,7 @@ const VendorManagement = () => {
       setSelectedVendor(res?.data || res || vendor);
       setShowVendorDetails(true);
     } catch (err) {
-      console.error('Failed to fetch vendor details:', err);
+      console.error("Failed to fetch vendor details:", err);
       // Fallback to basic vendor data from list
       setSelectedVendor(vendor);
       setShowVendorDetails(true);
@@ -270,13 +296,13 @@ const VendorManagement = () => {
   const handleBan = async (vendor: Vendor) => {
     try {
       setLoading(true);
-      await vendorService.updateVendorStatus(vendor._id, 'banned');
+      await vendorService.updateVendorStatus(vendor._id, "banned");
       // refresh list
       const refreshed = await vendorService.getVendors(activeTab);
-      setVendors(Array.isArray(refreshed) ? refreshed : []);
+      refreshVendors(Array.isArray(refreshed) ? refreshed : []);
     } catch (err) {
-      console.error('Failed to update vendor status', err);
-      setError('Failed to update vendor status');
+      console.error("Failed to update vendor status", err);
+      setError("Failed to update vendor status");
     } finally {
       setLoading(false);
       setShowActionMenu(null);
@@ -284,7 +310,9 @@ const VendorManagement = () => {
   };
 
   const handleDelete = async (vendor: Vendor) => {
-    if (!window.confirm("Are you sure you want to delete this vendor? This action cannot be undone.")) {
+    if (
+      !window.confirm("Are you sure you want to delete this vendor? This action cannot be undone.")
+    ) {
       return;
     }
 
@@ -293,10 +321,10 @@ const VendorManagement = () => {
       await vendorService.deleteVendor(vendor._id);
       // refresh list
       const refreshed = await vendorService.getVendors(activeTab);
-      setVendors(Array.isArray(refreshed) ? refreshed : []);
+      refreshVendors(Array.isArray(refreshed) ? refreshed : []);
     } catch (err) {
-      console.error('Failed to delete vendor', err);
-      setError('Failed to delete vendor');
+      console.error("Failed to delete vendor", err);
+      setError("Failed to delete vendor");
     } finally {
       setLoading(false);
       setShowActionMenu(null);
@@ -312,17 +340,14 @@ const VendorManagement = () => {
   const totalPages = Math.ceil(filteredSortedVendors.length / itemsPerPage);
   const paginatedVendors = filteredSortedVendors.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex">
       {/* Sidebar */}
       <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
+        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
       </div>
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
@@ -337,7 +362,7 @@ const VendorManagement = () => {
               Vendor Management
             </h2>
 
-              {/* <Button
+            {/* <Button
                               className="bg-dashboard-primary text-white rounded-full px-4 py-2 flex items-center gap-2"
                                onClick={handleAddVendor}
                             >
@@ -362,10 +387,7 @@ const VendorManagement = () => {
                   >
                     {tab.label}
                   </button>
-                  
                 ))}
-
-               
               </div>
             </div>
 
@@ -389,10 +411,7 @@ const VendorManagement = () => {
               <div className="flex items-center gap-3  max-md:flex-wrap">
                 <Select value={sortBy} onValueChange={setSortBy}>
                   <SelectTrigger className="w-32 h-10 border-[#D0D5DD]">
-                    <SelectValue
-                      placeholder="Sort By"
-                      className="text-[#667085] font-poppins"
-                    />
+                    <SelectValue placeholder="Sort By" className="text-[#667085] font-poppins" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="brandName">Name</SelectItem>
@@ -402,19 +421,27 @@ const VendorManagement = () => {
                 </Select>
 
                 {activeFilters.map((filter) => {
-                    const [key, value] = filter.split(":");
-                    if (!value || value === "all") return null;
-                     return (
-                        <div key={filter} className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200">
-                            <span className="capitalize text-gray-700">{key}: {value}</span>
-                            <button onClick={() => {
-                                setActiveFilters(prev => prev.filter(f => f !== filter));
-                            }} className="ml-1">
-                                <X size={14} className="text-gray-500 hover:text-red-500" />
-                            </button>
-                        </div>
-                     )
-                  })}
+                  const [key, value] = filter.split(":");
+                  if (!value || value === "all") return null;
+                  return (
+                    <div
+                      key={filter}
+                      className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200"
+                    >
+                      <span className="capitalize text-gray-700">
+                        {key}: {value}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setActiveFilters((prev) => prev.filter((f) => f !== filter));
+                        }}
+                        className="ml-1"
+                      >
+                        <X size={14} className="text-gray-500 hover:text-red-500" />
+                      </button>
+                    </div>
+                  );
+                })}
 
                 <Button
                   variant="outline"
@@ -426,8 +453,6 @@ const VendorManagement = () => {
                 </Button>
               </div>
             </div>
-
-           
 
             {/* Table */}
             <div className="border border-[#EAECF0] rounded-xl overflow-scroll">
@@ -458,19 +483,16 @@ const VendorManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                   {/* Loading State */}
-                   {!loading && paginatedVendors.length === 0 && (
+                  {/* Loading State */}
+                  {!loading && paginatedVendors.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-4">
                         No vendors found.
                       </TableCell>
-                    </TableRow> 
+                    </TableRow>
                   )}
                   {paginatedVendors.map((vendor) => (
-                    <TableRow
-                      key={vendor._id}
-                      className="border-b border-[#F2F4F7]"
-                    >
+                    <TableRow key={vendor._id} className="border-b border-[#F2F4F7]">
                       <TableCell className="py-4">
                         <button
                           onClick={() => handleView(vendor)}
@@ -482,9 +504,7 @@ const VendorManagement = () => {
                       <TableCell>
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={vendor.photo} />
-                          <AvatarFallback>
-                            {vendor.personName?.charAt(0)}
-                          </AvatarFallback>
+                          <AvatarFallback>{vendor.personName?.charAt(0)}</AvatarFallback>
                         </Avatar>
                       </TableCell>
                       <TableCell className="text-[#485467] font-poppins">
@@ -503,9 +523,7 @@ const VendorManagement = () => {
                         <div className="relative">
                           <button
                             onClick={() =>
-                              setShowActionMenu(
-                                showActionMenu === vendor._id ? null : vendor._id,
-                              )
+                              setShowActionMenu(showActionMenu === vendor._id ? null : vendor._id)
                             }
                             className="text-[#667085] hover:text-[#485467]"
                           >
@@ -520,9 +538,7 @@ const VendorManagement = () => {
                                 onClick={() => handleView(vendor)}
                               >
                                 <Eye size={18} className="text-black" />
-                                <span className="text-sm font-poppins text-[#2A2A2A]">
-                                  View
-                                </span>
+                                <span className="text-sm font-poppins text-[#2A2A2A]">View</span>
                               </button>
                               {/* <button
                                 className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
@@ -533,14 +549,12 @@ const VendorManagement = () => {
                                   Ban
                                 </span>
                               </button> */}
-                               <button
+                              <button
                                 className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
                                 onClick={() => handleDelete(vendor)}
                               >
                                 <Trash2 size={18} className="text-[#D30000]" />
-                                <span className="text-sm font-poppins text-[#D30000]">
-                                  Delete
-                                </span>
+                                <span className="text-sm font-poppins text-[#D30000]">Delete</span>
                               </button>
                             </div>
                           )}
@@ -549,22 +563,22 @@ const VendorManagement = () => {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>  
-               {loading && (
-              <div className="flex justify-center items-center py-10">
-                <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
-                <span className="ml-2 text-dashboard-primary">Loading...</span>
-              </div>
-            )}
+              </Table>
+              {loading && (
+                <div className="flex justify-center items-center py-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
+                  <span className="ml-2 text-dashboard-primary">Loading...</span>
+                </div>
+              )}
 
-            {/* Error State */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
-                <p>{error}</p>
-              </div>
-            )}
+              {/* Error State */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
+                  <p>{error}</p>
+                </div>
+              )}
             </div>
-            
+
             <div className="pt-4">
               <Pagination
                 currentPage={currentPage}
@@ -577,92 +591,91 @@ const VendorManagement = () => {
       </div>
 
       {/* Add Vendor Modal */}
-{showAddVendorModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-    <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-      <h2 className="text-xl font-bold mb-4 text-gray-800">Add New Vendor</h2>
+      {showAddVendorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">Add New Vendor</h2>
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-          <p>{error}</p>
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                <p>{error}</p>
+              </div>
+            )}
+
+            {/* Form Inputs */}
+            <div className="space-y-4">
+              <Input
+                placeholder="Vendor ID"
+                value={formData.vendorId}
+                onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
+                disabled={loading}
+              />
+              <Input
+                placeholder="Photo URL"
+                value={formData.photo}
+                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
+                disabled={loading}
+              />
+              <Input
+                placeholder="Brand Name *"
+                value={formData.brandName}
+                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
+                disabled={loading}
+                required
+              />
+              <Input
+                placeholder="Person Name *"
+                value={formData.personName}
+                onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
+                disabled={loading}
+                required
+              />
+              <Input
+                placeholder="Listed Services"
+                value={formData.listedServices}
+                onChange={(e) => setFormData({ ...formData, listedServices: e.target.value })}
+                disabled={loading}
+                type="number"
+              />
+              <Input
+                placeholder="Location *"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                disabled={loading}
+                required
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-end mt-6 gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowAddVendorModal(false)}
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-dashboard-primary text-white flex items-center gap-2"
+                onClick={handleSaveVendor}
+                disabled={loading}
+              >
+                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                {loading ? "Saving..." : "Save Vendor"}
+              </Button>
+            </div>
+
+            {/* Close Button (Top Right) */}
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowAddVendorModal(false)}
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
-
-      {/* Form Inputs */}
-      <div className="space-y-4">
-        <Input
-          placeholder="Vendor ID"
-          value={formData.vendorId}
-          onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-          disabled={loading}
-        />
-        <Input
-          placeholder="Photo URL"
-          value={formData.photo}
-          onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-          disabled={loading}
-        />
-        <Input
-          placeholder="Brand Name *"
-          value={formData.brandName}
-          onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-          disabled={loading}
-          required
-        />
-        <Input
-          placeholder="Person Name *"
-          value={formData.personName}
-          onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-          disabled={loading}
-          required
-        />
-        <Input
-          placeholder="Listed Services"
-          value={formData.listedServices}
-          onChange={(e) => setFormData({ ...formData, listedServices: e.target.value })}
-          disabled={loading}
-          type="number"
-        />
-        <Input
-          placeholder="Location *"
-          value={formData.location}
-          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-          disabled={loading}
-          required
-        />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end mt-6 gap-3">
-        <Button
-          variant="outline"
-          onClick={() => setShowAddVendorModal(false)}
-          disabled={loading}
-        >
-          Cancel
-        </Button>
-        <Button
-          className="bg-dashboard-primary text-white flex items-center gap-2"
-          onClick={handleSaveVendor}
-          disabled={loading}
-        >
-          {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-          {loading ? 'Saving...' : 'Save Vendor'}
-        </Button>
-      </div>
-
-      {/* Close Button (Top Right) */}
-      <button
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-        onClick={() => setShowAddVendorModal(false)}
-      >
-        ×
-      </button>
-    </div>
-  </div>
-)}
-
 
       {/* Vendor Details Popup */}
       <VendorDetailsPopup

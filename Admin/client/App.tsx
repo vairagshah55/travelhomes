@@ -31,7 +31,24 @@ import Notifications from "./admin/pages/Notifications";
 import Help from "./admin/pages/Help";
 import AdminSEOMeta from "./admin/components/AdminSEOMeta";
 
-const queryClient = new QueryClient();
+// Match the Frontend SPA's defaults so the migration patterns we use
+// across both apps share a single mental model:
+//   - 30s stale time keeps page-to-page navigation snappy
+//   - retry once on transient failures, then surface
+//   - no refetch on window focus / no auto-retry on remount
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+      retryOnMount: false,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -43,7 +60,6 @@ const App = () => (
           <BrowserRouter basename="/admin">
             <AdminSEOMeta />
             <Routes>
-
               {/* Public Routes */}
               <Route path="/" element={<AdminLogin />} />
               <Route path="/login" element={<AdminLogin />} />
@@ -231,7 +247,6 @@ const App = () => (
 
               {/* Catch All */}
               <Route path="*" element={<NotFound />} />
-
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
