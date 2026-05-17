@@ -1,20 +1,21 @@
 import React from "react";
 import { IndianRupee, Percent, Tag } from "lucide-react";
 import { type DiscountOffer } from "./types";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Header/active-badge use primary ds-deep. Per-offer category colors
-// (purple / amber / emerald / rose) are intentional semantic accents.
-const TEAL = "#185FA5";
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const NAVY = "#042C53";
-const BLACK = "#042C53";
-const GRAY_500 = "#2C2C2A";
-const GRAY_400 = "#888780";
-const GRAY_200 = "#D3D1C7";
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA";
-const ERROR = "#ef4444";
+import {
+  TEAL,
+  TEAL_BG,
+  BLACK,
+  WHITE,
+  SURFACE,
+  GRAY_400,
+  GRAY_500,
+  GRAY_200,
+  ERROR_SOFT,
+  ERROR_BG,
+  ERROR_RING,
+  ErrorMsg,
+  StepHeader,
+} from "./primitives";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
@@ -65,7 +66,6 @@ const OFFER_CONFIG: Record<
   },
 };
 
-/* ─── iOS Toggle ──────────────────────────────────────────────────────────── */
 const Toggle = ({
   enabled,
   onToggle,
@@ -111,7 +111,6 @@ const Toggle = ({
   </button>
 );
 
-/* ─── Segmented type selector ─────────────────────────────────────────────── */
 const TypeSegment = ({
   value,
   onChange,
@@ -167,7 +166,6 @@ const TypeSegment = ({
   </div>
 );
 
-/* ─── Amount input ────────────────────────────────────────────────────────── */
 const AmountInput = ({
   value,
   onChange,
@@ -191,13 +189,13 @@ const AmountInput = ({
         alignItems: "center",
         borderRadius: 12,
         overflow: "hidden",
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? color : "transparent"}`,
-        backgroundColor: error ? "rgba(239,68,68,0.04)" : focused ? WHITE : SURFACE,
+        border: `1.5px solid ${error ? ERROR_SOFT : focused ? color : "transparent"}`,
+        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
         boxShadow:
           focused && !error
             ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
             : error
-              ? "0 0 0 3px rgba(239,68,68,0.1)"
+              ? `0 0 0 3px ${ERROR_RING}`
               : "none",
         transition: "all 0.15s",
       }}
@@ -260,19 +258,6 @@ const AmountInput = ({
   );
 };
 
-/* ─── Error message ───────────────────────────────────────────────────────── */
-const ErrorMsg = ({ message }: { message?: string }) =>
-  message ? (
-    <div className="flex items-center gap-1.5 mt-0.5">
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <p style={{ fontSize: 11, color: ERROR }}>{message}</p>
-    </div>
-  ) : null;
-
-/* ─── Offer card ──────────────────────────────────────────────────────────── */
 const OfferCard = ({
   offerKey,
   customLabel,
@@ -308,7 +293,7 @@ const OfferCard = ({
     <div
       style={{
         backgroundColor: WHITE,
-        border: `1.5px solid ${offer.enabled ? cfg.color : "#EBEBEB"}`,
+        border: `1.5px solid ${offer.enabled ? cfg.color : GRAY_200}`,
         borderRadius: 20,
         overflow: "hidden",
         boxShadow: offer.enabled
@@ -317,7 +302,6 @@ const OfferCard = ({
         transition: "all 0.2s",
       }}
     >
-      {/* Header row */}
       <div
         style={{
           display: "flex",
@@ -383,18 +367,16 @@ const OfferCard = ({
         </div>
       </div>
 
-      {/* Expanded form */}
       {offer.enabled && (
         <div
           style={{
             padding: "0 20px 20px",
-            backgroundColor: offer.enabled ? cfg.bg : WHITE,
+            backgroundColor: cfg.bg,
           }}
         >
           <div style={{ height: 1, backgroundColor: `${cfg.color}25`, marginBottom: 18 }} />
 
           <div className="flex flex-col gap-4">
-            {/* Discount type */}
             <div className="flex flex-col gap-1.5">
               <label
                 style={{
@@ -414,7 +396,6 @@ const OfferCard = ({
               />
             </div>
 
-            {/* Value + Final Price */}
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label
@@ -439,7 +420,7 @@ const OfferCard = ({
                   color={cfg.color}
                   error={!!valueError}
                 />
-                <ErrorMsg message={valueError} />
+                <ErrorMsg message={valueError} size={11} iconSize={11} marginTop={2} />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -461,11 +442,10 @@ const OfferCard = ({
                   color={cfg.color}
                   error={!!finalPriceError}
                 />
-                <ErrorMsg message={finalPriceError} />
+                <ErrorMsg message={finalPriceError} size={11} iconSize={11} marginTop={2} />
               </div>
             </div>
 
-            {/* Final price hint */}
             {offer.value && offer.finalPrice && (
               <div
                 style={{
@@ -491,7 +471,6 @@ const OfferCard = ({
   );
 };
 
-/* ─── Main component ──────────────────────────────────────────────────────── */
 const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   offers,
   onToggle,
@@ -510,63 +489,35 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Promotions
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Discount Offers
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Set up promotional offers to attract more bookings. All optional.
-        </p>
+      <StepHeader
+        kicker="Promotions"
+        title="Discount Offers"
+        subtitle="Set up promotional offers to attract more bookings. All optional."
+        extra={
+          activeCount > 0 ? (
+            <div className="flex justify-center mt-1">
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: TEAL,
+                  backgroundColor: TEAL_BG,
+                  border: "1px solid rgba(24, 95, 165, 0.30)",
+                  borderRadius: 99,
+                  padding: "4px 14px",
+                }}
+              >
+                <Tag size={11} strokeWidth={2.5} />
+                {activeCount} offer{activeCount > 1 ? "s" : ""} active
+              </span>
+            </div>
+          ) : null
+        }
+      />
 
-        {activeCount > 0 && (
-          <div className="flex justify-center mt-1">
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 12,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: "1px solid rgba(24, 95, 165, 0.30)",
-                borderRadius: 99,
-                padding: "4px 14px",
-              }}
-            >
-              <Tag size={11} strokeWidth={2.5} />
-              {activeCount} offer{activeCount > 1 ? "s" : ""} active
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Offer cards ── */}
       <div className="w-full flex flex-col gap-3">
         {offerEntries.map(({ offerKey, customLabel }) => (
           <OfferCard

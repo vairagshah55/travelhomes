@@ -1,21 +1,22 @@
 import React from "react";
-import { Minus, Plus, IndianRupee, Clock, Users, MapPin } from "lucide-react";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
-const TEAL = "#185FA5"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.10)";
+import { IndianRupee, Clock, Users, MapPin } from "lucide-react";
+import {
+  TEAL,
+  TEAL_FOCUS,
+  BLACK,
+  WHITE,
+  SURFACE,
+  GRAY_400,
+  GRAY_200,
+  ERROR_BG,
+  ERROR_RING,
+  SectionCard,
+  Field,
+  StyledInput,
+  StyledSelect,
+  Stepper,
+  StepHeader,
+} from "../shared/primitives";
 
 interface PricingStepProps {
   regularPrice: string;
@@ -43,212 +44,6 @@ const DURATION_OPTIONS = [
   "Multi-day",
 ];
 
-/* ─── Section card ────────────────────────────────────────────────────────── */
-const SectionCard = ({
-  icon,
-  title,
-  subtitle,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: "1.5px solid #D3D1C7",
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
-    <div className="flex items-center gap-3 mb-5">
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(24,95,165,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
-          {title}
-        </p>
-        {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
-      </div>
-    </div>
-    {children}
-  </div>
-);
-
-/* ─── Field wrapper ───────────────────────────────────────────────────────── */
-const Field = ({
-  label,
-  required,
-  error,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    <label
-      style={{
-        fontSize: 12,
-        fontWeight: 600,
-        color: GRAY_500,
-        letterSpacing: "0.03em",
-        textTransform: "uppercase",
-      }}
-    >
-      {label}
-      {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
-    </label>
-    {children}
-    {error && (
-      <div className="flex items-center gap-1.5">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
-      </div>
-    )}
-  </div>
-);
-
-/* ─── Styled input ────────────────────────────────────────────────────────── */
-const StyledInput = ({
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  inputMode,
-  error,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      placeholder={placeholder}
-      maxLength={maxLength}
-      inputMode={inputMode}
-      style={{
-        width: "100%",
-        height: 52,
-        padding: "0 16px",
-        fontSize: 14,
-        color: BLACK,
-        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-        borderRadius: 13,
-        outline: "none",
-        boxShadow:
-          focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-        fontWeight: 450,
-      }}
-    />
-  );
-};
-
-/* ─── Styled select ───────────────────────────────────────────────────────── */
-const StyledSelect = ({
-  value,
-  onChange,
-  children,
-  error,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  children: React.ReactNode;
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div style={{ position: "relative" }}>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          width: "100%",
-          height: 52,
-          padding: "0 40px 0 16px",
-          fontSize: 14,
-          color: value ? BLACK : GRAY_400,
-          backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-          border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-          borderRadius: 13,
-          outline: "none",
-          appearance: "none",
-          boxShadow:
-            focused && !error
-              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-              : error
-                ? `0 0 0 3px ${ERROR_RING}`
-                : "none",
-          transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-          cursor: "pointer",
-          fontWeight: 450,
-        }}
-      >
-        {children}
-      </select>
-      <svg
-        style={{
-          position: "absolute",
-          right: 14,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path
-          d="M4 6l4 4 4-4"
-          stroke={GRAY_400}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-};
-
-/* ─── Main component ──────────────────────────────────────────────────────── */
 const PricingStep: React.FC<PricingStepProps> = ({
   regularPrice,
   personCapacity,
@@ -266,49 +61,19 @@ const PricingStep: React.FC<PricingStepProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Pricing & Location
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Pricing &amp; Location
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Set your price, capacity and where the activity takes place.
-        </p>
-      </div>
+      <StepHeader
+        kicker="Pricing & Location"
+        title={<>Pricing &amp; Location</>}
+        subtitle="Set your price, capacity and where the activity takes place."
+      />
 
       <div className="w-full flex flex-col gap-4">
-        {/* ── Pricing card ── */}
         <SectionCard
           icon={<IndianRupee size={16} color={TEAL} strokeWidth={2.5} />}
           title="Pricing"
           subtitle="How much guests pay per booking"
         >
           <div className="flex flex-col gap-5">
-            {/* Price per person */}
             <Field label="Price per Person" required error={errors.regularPrice}>
               <div
                 style={{
@@ -372,7 +137,6 @@ const PricingStep: React.FC<PricingStepProps> = ({
               </div>
             </Field>
 
-            {/* Duration */}
             <Field label="Duration">
               <div style={{ position: "relative" }}>
                 <Clock
@@ -426,7 +190,6 @@ const PricingStep: React.FC<PricingStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Capacity card ── */}
         <SectionCard
           icon={<Users size={16} color={TEAL} strokeWidth={2.5} />}
           title="Capacity"
@@ -450,7 +213,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   height: 38,
                   borderRadius: 11,
                   backgroundColor: WHITE,
-                  border: "1.5px solid #EBEBEB",
+                  border: `1.5px solid ${GRAY_200}`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -466,84 +229,16 @@ const PricingStep: React.FC<PricingStepProps> = ({
                 </p>
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onUpdateFormData("personCapacity", Math.max(1, personCapacity - 1))}
-                disabled={personCapacity <= 1}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  border: `1.5px solid ${GRAY_200}`,
-                  backgroundColor: WHITE,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: personCapacity <= 1 ? "not-allowed" : "pointer",
-                  opacity: personCapacity <= 1 ? 0.35 : 1,
-                  transition: "all 0.15s",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}
-                onMouseEnter={(e) => {
-                  if (personCapacity > 1) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = ERROR;
-                    (e.currentTarget as HTMLButtonElement).style.color = ERROR;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                  (e.currentTarget as HTMLButtonElement).style.color = BLACK;
-                }}
-              >
-                <Minus size={14} />
-              </button>
-
-              <span
-                style={{
-                  width: 36,
-                  textAlign: "center",
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: BLACK,
-                }}
-              >
-                {personCapacity}
-              </span>
-
-              <button
-                type="button"
-                onClick={() => onUpdateFormData("personCapacity", personCapacity + 1)}
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: "50%",
-                  border: `1.5px solid ${GRAY_200}`,
-                  backgroundColor: WHITE,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                  (e.currentTarget as HTMLButtonElement).style.color = TEAL;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                  (e.currentTarget as HTMLButtonElement).style.color = BLACK;
-                }}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
+            <Stepper
+              value={personCapacity}
+              onDecrease={() => onUpdateFormData("personCapacity", Math.max(1, personCapacity - 1))}
+              onIncrease={() => onUpdateFormData("personCapacity", personCapacity + 1)}
+              min={1}
+              outlined
+            />
           </div>
         </SectionCard>
 
-        {/* ── Location card ── */}
         <SectionCard
           icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
           title="Location"
@@ -559,6 +254,8 @@ const PricingStep: React.FC<PricingStepProps> = ({
                 }}
                 placeholder="e.g. 12, MG Road, Lal Chowk"
                 error={!!errors.address}
+                softErrorBg
+                fontSize={14}
               />
             </Field>
 
@@ -586,6 +283,8 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   maxLength={6}
                   inputMode="numeric"
                   error={!!errors.pincode}
+                  softErrorBg
+                  fontSize={14}
                 />
               </Field>
             </div>

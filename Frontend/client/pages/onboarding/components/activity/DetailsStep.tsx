@@ -1,22 +1,26 @@
 import React from "react";
 import { ImagePlus, X, Plus, Check, Type, Camera, ShieldCheck } from "lucide-react";
-import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
-const TEAL = "#185FA5"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.10)";
+import {
+  TEAL,
+  TEAL_BG,
+  TEAL_BORDER,
+  TEAL_FOCUS,
+  BLACK,
+  WHITE,
+  SURFACE,
+  GRAY_400,
+  GRAY_200,
+  ERROR,
+  ERROR_BG,
+  SUCCESS,
+  SectionCard,
+  Field,
+  StyledInput,
+  StyledTextarea,
+  CharCount,
+  StepHeader,
+  useObjectURL,
+} from "../shared/primitives";
 
 interface DetailsStepProps {
   activityName: string;
@@ -38,232 +42,168 @@ interface DetailsStepProps {
   setErrors: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>;
 }
 
-const localRenderSrc = (fileOrUrl: any): string => {
-  if (!fileOrUrl) return "";
-  if (typeof fileOrUrl === "string") return getImageUrl(fileOrUrl);
-  return URL.createObjectURL(fileOrUrl);
-};
-
 const GALLERY_TARGET = 5;
 
-/* ─── Section card ────────────────────────────────────────────────────────── */
-const SectionCard = ({
-  icon,
-  title,
-  subtitle,
-  action,
-  children,
+const CoverPreview = ({
+  file,
+  onUpload,
+  onRemove,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: "1.5px solid #D3D1C7",
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
-    <div className="flex items-start justify-between mb-5">
-      <div className="flex items-center gap-3">
+  file: File | string;
+  onUpload: (files: FileList | null) => void;
+  onRemove: () => void;
+}) => {
+  const src = useObjectURL(file);
+  return (
+    <>
+      <img
+        src={src}
+        alt="Cover"
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundColor: "rgba(0,0,0,0)",
+          transition: "background-color 0.2s",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(0,0,0,0.28)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(0,0,0,0)";
+        }}
+      >
+        <label
+          style={{
+            cursor: "pointer",
+            backgroundColor: "rgba(255,255,255,0.92)",
+            color: BLACK,
+            fontSize: 12,
+            fontWeight: 700,
+            padding: "6px 18px",
+            borderRadius: 99,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            opacity: 0,
+            transition: "opacity 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLLabelElement).style.opacity = "1";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLLabelElement).style.opacity = "0";
+          }}
+        >
+          Change Photo
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => onUpload(e.target.files)}
+            className="hidden"
+          />
+        </label>
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          backgroundColor: "rgba(255,255,255,0.9)",
+          border: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
+        }}
+      >
+        <X size={13} color={GRAY_400} />
+      </button>
+    </>
+  );
+};
+
+const PhotoThumb = ({
+  photo,
+  index,
+  onRemove,
+}: {
+  photo: File | string;
+  index: number;
+  onRemove: () => void;
+}) => {
+  const src = useObjectURL(photo);
+  return (
+    <div
+      style={{
+        position: "relative",
+        aspectRatio: "1",
+        borderRadius: 11,
+        overflow: "hidden",
+        border: `1.5px solid ${GRAY_200}`,
+      }}
+      className="group"
+    >
+      <img
+        src={src}
+        alt={`Photo ${index + 1}`}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
+      {index < GALLERY_TARGET && (
         <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 11,
-            backgroundColor: TEAL_BG,
-            border: "1.5px solid rgba(24,95,165,0.25)",
+            position: "absolute",
+            top: 6,
+            left: 6,
+            width: 18,
+            height: 18,
+            borderRadius: "50%",
+            backgroundColor: SUCCESS,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexShrink: 0,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
           }}
         >
-          {icon}
+          <Check size={9} color={WHITE} strokeWidth={2.5} />
         </div>
-        <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
-            {title}
-          </p>
-          {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
-        </div>
-      </div>
-      {action}
-    </div>
-    {children}
-  </div>
-);
-
-/* ─── Field wrapper ───────────────────────────────────────────────────────── */
-const Field = ({
-  label,
-  required,
-  error,
-  right,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  error?: string;
-  right?: React.ReactNode;
-  children: React.ReactNode;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    <div className="flex items-center justify-between mb-0.5">
-      <label
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
         style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: GRAY_500,
-          letterSpacing: "0.03em",
-          textTransform: "uppercase",
+          position: "absolute",
+          top: 6,
+          right: 6,
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          border: "none",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: 0,
+          transition: "opacity 0.15s",
         }}
+        className="group-hover:!opacity-100"
       >
-        {label}
-        {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
-      </label>
-      {right}
+        <X size={11} color={WHITE} />
+      </button>
     </div>
-    {children}
-    {error && (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
-      </div>
-    )}
-  </div>
-);
-
-/* ─── Styled input ────────────────────────────────────────────────────────── */
-const StyledInput = ({
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  error,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  const active = focused && !error;
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      placeholder={placeholder}
-      maxLength={maxLength}
-      style={{
-        width: "100%",
-        height: 52,
-        padding: "0 16px",
-        fontSize: 14.5,
-        color: BLACK,
-        backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? ERROR : focused ? TEAL : "transparent"}`,
-        borderRadius: 13,
-        outline: "none",
-        boxShadow: active
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-            ? `0 0 0 3px ${ERROR_RING}`
-            : "none",
-        transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-        fontWeight: 450,
-        letterSpacing: "-0.005em",
-      }}
-    />
   );
 };
 
-/* ─── Styled textarea ─────────────────────────────────────────────────────── */
-const StyledTextarea = ({
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  rows = 4,
-  error,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-  rows?: number;
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  const active = focused && !error;
-  return (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
-      placeholder={placeholder}
-      maxLength={maxLength}
-      rows={rows}
-      style={{
-        width: "100%",
-        padding: "14px 16px",
-        fontSize: 14.5,
-        color: BLACK,
-        backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? ERROR : focused ? TEAL : "transparent"}`,
-        borderRadius: 13,
-        outline: "none",
-        resize: "none",
-        boxShadow: active
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-            ? `0 0 0 3px ${ERROR_RING}`
-            : "none",
-        transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-        lineHeight: 1.65,
-        fontWeight: 450,
-        letterSpacing: "-0.005em",
-      }}
-    />
-  );
-};
-
-/* ─── Character count pill ────────────────────────────────────────────────── */
-const CharCount = ({ value, max }: { value: number; max: number }) => {
-  const pct = value / max;
-  const color = pct >= 0.9 ? "#f59e0b" : pct >= 0.7 ? GRAY_500 : GRAY_400;
-  return (
-    <span
-      style={{
-        fontSize: 11,
-        fontWeight: 600,
-        color,
-        backgroundColor: pct >= 0.9 ? "rgba(245,158,11,0.1)" : SURFACE,
-        borderRadius: 99,
-        padding: "2px 8px",
-        border: `1px solid ${pct >= 0.9 ? "rgba(245,158,11,0.25)" : GRAY_200}`,
-        transition: "all 0.2s",
-      }}
-    >
-      {value}/{max}
-    </span>
-  );
-};
-
-/* ─── Main component ──────────────────────────────────────────────────────── */
 const DetailsStep: React.FC<DetailsStepProps> = ({
   activityName,
   description,
@@ -279,10 +219,8 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
   onSetRuleInput,
   onAddRule,
   onRemoveRule,
-  renderImageSrc,
   setErrors,
 }) => {
-  const getImgSrc = renderImageSrc ?? localRenderSrc;
   const galleryFilled = Math.min(photos.length, GALLERY_TARGET);
   const galleryPct = (galleryFilled / GALLERY_TARGET) * 100;
 
@@ -304,42 +242,13 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Activity Details
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Tell guests about your activity
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Great photos and a clear description help guests choose you.
-        </p>
-      </div>
+      <StepHeader
+        kicker="Activity Details"
+        title="Tell guests about your activity"
+        subtitle="Great photos and a clear description help guests choose you."
+      />
 
       <div className="w-full flex flex-col gap-4">
-        {/* ── Identity card ── */}
         <SectionCard
           icon={<Type size={16} color={TEAL} strokeWidth={2.5} />}
           title="Identity"
@@ -361,6 +270,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 placeholder="e.g. Sunrise Trek to Triund"
                 maxLength={50}
                 error={!!errors.activityName}
+                hardErrorBorder
               />
             </Field>
 
@@ -385,14 +295,12 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Photos card ── */}
         <SectionCard
           icon={<Camera size={16} color={TEAL} strokeWidth={2.5} />}
           title="Photos"
           subtitle="Cover photo + gallery shown to guests"
         >
           <div className="flex flex-col gap-6">
-            {/* Cover photo */}
             <Field label="Cover Photo" required error={errors.coverImage}>
               <div
                 style={{
@@ -407,84 +315,14 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 }}
               >
                 {coverImage ? (
-                  <>
-                    <img
-                      src={getImgSrc(coverImage)}
-                      alt="Cover"
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                    />
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundColor: "rgba(0,0,0,0)",
-                        transition: "background-color 0.2s",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor =
-                          "rgba(0,0,0,0.28)";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(0,0,0,0)";
-                      }}
-                    >
-                      <label
-                        style={{
-                          cursor: "pointer",
-                          backgroundColor: "rgba(255,255,255,0.92)",
-                          color: BLACK,
-                          fontSize: 12,
-                          fontWeight: 700,
-                          padding: "6px 18px",
-                          borderRadius: 99,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                          opacity: 0,
-                          transition: "opacity 0.2s",
-                        }}
-                        onMouseEnter={(e) => {
-                          (e.currentTarget as HTMLLabelElement).style.opacity = "1";
-                        }}
-                        onMouseLeave={(e) => {
-                          (e.currentTarget as HTMLLabelElement).style.opacity = "0";
-                        }}
-                      >
-                        Change Photo
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => {
-                            onCoverImageUpload(e.target.files);
-                            if (errors.coverImage) clearError("coverImage");
-                          }}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => onRemoveFile("coverImage")}
-                      style={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        backgroundColor: "rgba(255,255,255,0.9)",
-                        border: "none",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-                      }}
-                    >
-                      <X size={13} color={GRAY_500} />
-                    </button>
-                  </>
+                  <CoverPreview
+                    file={coverImage}
+                    onUpload={(files) => {
+                      onCoverImageUpload(files);
+                      if (errors.coverImage) clearError("coverImage");
+                    }}
+                    onRemove={() => onRemoveFile("coverImage")}
+                  />
                 ) : (
                   <label
                     style={{
@@ -511,7 +349,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                     >
                       <ImagePlus size={20} color={GRAY_400} />
                     </div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: GRAY_500 }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: BLACK }}>
                       Upload cover photo
                     </p>
                     <p style={{ fontSize: 12, color: GRAY_400 }}>Click to browse</p>
@@ -529,7 +367,6 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
               </div>
             </Field>
 
-            {/* Gallery */}
             <Field
               label="Gallery Photos"
               error={errors.photos}
@@ -545,7 +382,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                     cursor: "pointer",
                     padding: "3px 10px",
                     borderRadius: 99,
-                    border: `1px solid ${errors.photos ? ERROR : "rgba(24,95,165,0.3)"}`,
+                    border: `1px solid ${errors.photos ? ERROR : TEAL_BORDER}`,
                     backgroundColor: errors.photos ? ERROR_BG : TEAL_BG,
                   }}
                 >
@@ -564,7 +401,6 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 </label>
               }
             >
-              {/* Progress bar */}
               <div className="flex items-center gap-2 mb-3">
                 <div
                   style={{
@@ -580,7 +416,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                       height: "100%",
                       borderRadius: 99,
                       width: `${galleryPct}%`,
-                      backgroundColor: galleryFilled >= GALLERY_TARGET ? "#22c55e" : TEAL,
+                      backgroundColor: galleryFilled >= GALLERY_TARGET ? SUCCESS : TEAL,
                       transition: "width 0.4s ease",
                     }}
                   />
@@ -589,7 +425,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: galleryFilled >= GALLERY_TARGET ? "#22c55e" : GRAY_400,
+                    color: galleryFilled >= GALLERY_TARGET ? SUCCESS : GRAY_400,
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -600,65 +436,12 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
               {photos.length > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {photos.map((photo, index) => (
-                    <div
+                    <PhotoThumb
                       key={index}
-                      style={{
-                        position: "relative",
-                        aspectRatio: "1",
-                        borderRadius: 11,
-                        overflow: "hidden",
-                        border: `1.5px solid ${GRAY_200}`,
-                      }}
-                      className="group"
-                    >
-                      <img
-                        src={getImgSrc(photo)}
-                        alt={`Photo ${index + 1}`}
-                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                      />
-                      {index < GALLERY_TARGET && (
-                        <div
-                          style={{
-                            position: "absolute",
-                            top: 6,
-                            left: 6,
-                            width: 18,
-                            height: 18,
-                            borderRadius: "50%",
-                            backgroundColor: "#22c55e",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-                          }}
-                        >
-                          <Check size={9} color={WHITE} strokeWidth={2.5} />
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => onRemoveFile("photos", index)}
-                        style={{
-                          position: "absolute",
-                          top: 6,
-                          right: 6,
-                          width: 22,
-                          height: 22,
-                          borderRadius: "50%",
-                          backgroundColor: "rgba(0,0,0,0.5)",
-                          border: "none",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          opacity: 0,
-                          transition: "opacity 0.15s",
-                        }}
-                        className="group-hover:!opacity-100"
-                      >
-                        <X size={11} color={WHITE} />
-                      </button>
-                    </div>
+                      photo={photo}
+                      index={index}
+                      onRemove={() => onRemoveFile("photos", index)}
+                    />
                   ))}
                 </div>
               ) : (
@@ -685,7 +468,6 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Rules card ── */}
         <SectionCard
           icon={<ShieldCheck size={16} color={TEAL} strokeWidth={2.5} />}
           title="Rules & Regulations"
@@ -713,7 +495,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                         height: 22,
                         borderRadius: "50%",
                         backgroundColor: TEAL_BG,
-                        border: "1.5px solid rgba(24,95,165,0.25)",
+                        border: `1.5px solid ${TEAL_BORDER}`,
                         color: TEAL,
                         fontSize: 10,
                         fontWeight: 800,

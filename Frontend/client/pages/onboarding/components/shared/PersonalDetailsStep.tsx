@@ -5,28 +5,29 @@ import {
   Calendar,
   Heart,
   ShieldCheck,
-  ChevronDown,
   Upload,
   ImageIcon,
   Fingerprint,
 } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
-const TEAL = "#185FA5"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.10)";
+import {
+  TEAL,
+  TEAL_BG,
+  BLACK,
+  WHITE,
+  SURFACE,
+  GRAY_400,
+  GRAY_200,
+  ERROR,
+  ERROR_SOFT,
+  ERROR_BG,
+  ERROR_RING,
+  SectionCard,
+  Field,
+  IconInput,
+  IconSelect,
+  StepHeader,
+} from "./primitives";
 
 interface PersonalDetailsStepProps {
   values: {
@@ -50,280 +51,6 @@ interface PersonalDetailsStepProps {
   uploadError?: string;
 }
 
-/* ─── Section card ────────────────────────────────────────────────────────── */
-const SectionCard = ({
-  icon,
-  title,
-  subtitle,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: "1.5px solid #EBEBEB",
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
-    <div className="flex items-center gap-3 mb-5">
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(24, 95, 165, 0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
-          {title}
-        </p>
-        {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
-      </div>
-    </div>
-    <div className="flex flex-col gap-4">{children}</div>
-  </div>
-);
-
-/* ─── Field wrapper ───────────────────────────────────────────────────────── */
-const Field = ({
-  label,
-  required,
-  optional,
-  error,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  optional?: boolean;
-  error?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="flex flex-col gap-1.5">
-    <div className="flex items-center gap-2">
-      <label
-        style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: GRAY_500,
-          textTransform: "uppercase",
-          letterSpacing: "0.03em",
-        }}
-      >
-        {label}
-        {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
-      </label>
-      {optional && (
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            color: GRAY_400,
-            backgroundColor: SURFACE,
-            border: `1px solid ${GRAY_200}`,
-            borderRadius: 99,
-            padding: "1px 7px",
-          }}
-        >
-          Optional
-        </span>
-      )}
-    </div>
-    {children}
-    {error && (
-      <div className="flex items-center gap-1.5 mt-0.5">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
-      </div>
-    )}
-  </div>
-);
-
-/* ─── Icon input ──────────────────────────────────────────────────────────── */
-const IconInput = ({
-  icon,
-  value,
-  onChange,
-  placeholder,
-  maxLength,
-  inputMode,
-  type = "text",
-  error,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  maxLength?: number;
-  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
-  type?: string;
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderRadius: 13,
-        overflow: "hidden",
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow:
-          focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "all 0.15s",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          height: 52,
-          borderRight: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.25)" : GRAY_200}`,
-          backgroundColor: focused ? TEAL_BG : SURFACE,
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
-      >
-        <span style={{ color: focused ? TEAL : GRAY_400 }}>{icon}</span>
-      </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        inputMode={inputMode}
-        style={{
-          flex: 1,
-          height: 52,
-          padding: "0 14px",
-          fontSize: 14,
-          color: value ? BLACK : GRAY_400,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          fontWeight: 450,
-          letterSpacing: "-0.005em",
-        }}
-      />
-    </div>
-  );
-};
-
-/* ─── Icon select ─────────────────────────────────────────────────────────── */
-const IconSelect = ({
-  icon,
-  value,
-  onChange,
-  disabled,
-  children,
-  error,
-}: {
-  icon: React.ReactNode;
-  value: string;
-  onChange?: (v: string) => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-  error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderRadius: 13,
-        overflow: "hidden",
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-        backgroundColor: disabled ? SURFACE : error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow:
-          focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "all 0.15s",
-        opacity: disabled ? 0.6 : 1,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          height: 52,
-          borderRight: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.25)" : GRAY_200}`,
-          backgroundColor: focused && !disabled ? TEAL_BG : SURFACE,
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
-      >
-        <span style={{ color: focused && !disabled ? TEAL : GRAY_400 }}>{icon}</span>
-      </div>
-      <div style={{ position: "relative", flex: 1 }}>
-        <select
-          value={value}
-          onChange={(e) => onChange?.(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-          disabled={disabled}
-          style={{
-            width: "100%",
-            height: 52,
-            padding: "0 36px 0 14px",
-            fontSize: 14,
-            color: value ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
-            backgroundColor: "transparent",
-            border: "none",
-            outline: "none",
-            appearance: "none",
-            cursor: disabled ? "not-allowed" : "pointer",
-            fontWeight: 450,
-          }}
-        >
-          {children}
-        </select>
-        <ChevronDown
-          size={15}
-          style={{
-            position: "absolute",
-            right: 12,
-            top: "50%",
-            transform: "translateY(-50%)",
-            pointerEvents: "none",
-            color: GRAY_400,
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-/* ─── Main component ──────────────────────────────────────────────────────── */
 const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
   values,
   errors,
@@ -347,46 +74,18 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Account
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Personal Details
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Tell us a bit about yourself for account verification.
-        </p>
-      </div>
+      <StepHeader
+        kicker="Account"
+        title="Personal Details"
+        subtitle="Tell us a bit about yourself for account verification."
+      />
 
       <div className="w-full flex flex-col gap-4">
-        {/* ── Personal Info ── */}
         <SectionCard
           icon={<User size={16} color={TEAL} strokeWidth={2.5} />}
           title="Personal Info"
           subtitle="Your full legal name"
+          bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="First Name" required error={errors.firstName}>
@@ -413,11 +112,11 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Personal Details ── */}
         <SectionCard
           icon={<Calendar size={16} color={TEAL} strokeWidth={2.5} />}
           title="Personal Details"
           subtitle="Date of birth and relationship status"
+          bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Date of Birth" required error={errors.dateOfBirth}>
@@ -446,11 +145,11 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Personal Address ── */}
         <SectionCard
           icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
           title="Personal Address"
           subtitle="Your current residential address"
+          bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Country">
@@ -545,11 +244,11 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        {/* ── Identity Verification ── */}
         <SectionCard
           icon={<ShieldCheck size={16} color={TEAL} strokeWidth={2.5} />}
           title="Identity Verification"
           subtitle="Government-issued ID for verification"
+          bodyGap
         >
           <Field label="ID Proof Type" required error={errors.idProof}>
             <IconSelect
@@ -576,14 +275,12 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 height: 180,
                 borderRadius: 16,
                 cursor: "pointer",
-                border: `2px dashed ${uploadHasError ? "#fca5a5" : idProofImage ? TEAL : GRAY_200}`,
+                border: `2px dashed ${uploadHasError ? ERROR_SOFT : idProofImage ? TEAL : GRAY_200}`,
                 backgroundColor: uploadHasError
                   ? ERROR_BG
-                  : idProofImage
+                  : idProofImage || uploadHovered
                     ? TEAL_BG
-                    : uploadHovered
-                      ? TEAL_BG
-                      : SURFACE,
+                    : SURFACE,
                 boxShadow: uploadHasError
                   ? `0 0 0 3px ${ERROR_RING}`
                   : idProofImage
@@ -651,7 +348,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                       height: 50,
                       borderRadius: 15,
                       backgroundColor: WHITE,
-                      border: `1.5px solid ${uploadHasError ? "#fca5a5" : GRAY_200}`,
+                      border: `1.5px solid ${uploadHasError ? ERROR_SOFT : GRAY_200}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",

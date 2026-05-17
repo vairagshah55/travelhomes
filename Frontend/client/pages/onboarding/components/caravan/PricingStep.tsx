@@ -1,21 +1,23 @@
 import React from "react";
 import { Plus, X, Check, IndianRupee, Car, Calendar } from "lucide-react";
-
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-// designe.md tokens — primary ds-deep #185FA5, navy headings.
-const TEAL = "#185FA5";
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA";
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.10)";
+import {
+  TEAL,
+  TEAL_BG,
+  TEAL_BORDER,
+  TEAL_FOCUS,
+  BLACK,
+  WHITE,
+  SURFACE,
+  GRAY_400,
+  GRAY_500,
+  GRAY_200,
+  ERROR,
+  ERROR_SOFT,
+  ERROR_BG,
+  ERROR_RING,
+  ErrorMsg,
+  StepHeader,
+} from "../shared/primitives";
 
 type PriceField = "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes";
 
@@ -35,19 +37,6 @@ interface PricingStepProps {
   clearError: (field: string) => void;
 }
 
-/* ─── Error message ───────────────────────────────────────────────────────── */
-const ErrorMsg = ({ message }: { message?: string }) =>
-  message ? (
-    <div className="flex items-center gap-1.5 mt-0.5">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <p style={{ fontSize: 11.5, color: ERROR }}>{message}</p>
-    </div>
-  ) : null;
-
-/* ─── Price input ─────────────────────────────────────────────────────────── */
 const PriceInput = ({
   value,
   onChange,
@@ -65,7 +54,7 @@ const PriceInput = ({
         alignItems: "center",
         borderRadius: 13,
         overflow: "hidden",
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
+        border: `1.5px solid ${error ? ERROR_SOFT : focused ? TEAL : "transparent"}`,
         backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
         boxShadow:
           focused && !error
@@ -83,7 +72,7 @@ const PriceInput = ({
           gap: 4,
           padding: "0 12px",
           height: 52,
-          borderRight: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.30)" : GRAY_200}`,
+          borderRight: `1.5px solid ${focused ? TEAL_BORDER : GRAY_200}`,
           backgroundColor: focused ? TEAL_BG : SURFACE,
           transition: "all 0.15s",
           flexShrink: 0,
@@ -130,14 +119,13 @@ const PriceInput = ({
   );
 };
 
-/* ─── Item row (include / exclude) ───────────────────────────────────────── */
 const ItemRow = ({
   value,
-  index,
   type,
   field,
   onUpdate,
   onRemove,
+  index,
 }: {
   value: string;
   index: number;
@@ -227,7 +215,6 @@ const ItemRow = ({
   );
 };
 
-/* ─── Include / Exclude list ──────────────────────────────────────────────── */
 const ItemList = ({
   items,
   field,
@@ -287,7 +274,7 @@ const ItemList = ({
             padding: "10px 14px",
             borderRadius: 10,
             backgroundColor: error ? ERROR_BG : SURFACE,
-            border: `1.5px dashed ${error ? "#fca5a5" : GRAY_200}`,
+            border: `1.5px dashed ${error ? ERROR_SOFT : GRAY_200}`,
           }}
         >
           <p style={{ fontSize: 12, color: error ? ERROR : GRAY_400 }}>
@@ -307,14 +294,13 @@ const ItemList = ({
               onRemove={onRemove}
             />
           ))}
-          {error && <ErrorMsg message={error} />}
+          <ErrorMsg message={error} marginTop={2} />
         </div>
       )}
     </div>
   );
 };
 
-/* ─── Price card ──────────────────────────────────────────────────────────── */
 const PriceCard = ({
   icon,
   title,
@@ -357,7 +343,7 @@ const PriceCard = ({
     <div
       style={{
         backgroundColor: WHITE,
-        border: `1.5px solid ${error ? "#fca5a5" : "#D3D1C7"}`,
+        border: `1.5px solid ${error ? ERROR_SOFT : GRAY_200}`,
         borderRadius: 20,
         padding: "20px 22px 22px",
         boxShadow: error
@@ -366,7 +352,6 @@ const PriceCard = ({
         transition: "all 0.15s",
       }}
     >
-      {/* Card header */}
       <div className="flex items-center gap-3 mb-5">
         <div
           style={{
@@ -374,7 +359,7 @@ const PriceCard = ({
             height: 36,
             borderRadius: 11,
             backgroundColor: hasValue ? TEAL_BG : SURFACE,
-            border: `1.5px solid ${hasValue ? "rgba(24, 95, 165, 0.25)" : GRAY_200}`,
+            border: `1.5px solid ${hasValue ? TEAL_BORDER : GRAY_200}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -407,7 +392,6 @@ const PriceCard = ({
         )}
       </div>
 
-      {/* Price input */}
       <div className="flex flex-col gap-1 mb-1">
         <label
           style={{
@@ -435,10 +419,9 @@ const PriceCard = ({
           }}
           error={!!error}
         />
-        {error && <ErrorMsg message={error} />}
+        <ErrorMsg message={error} marginTop={2} />
       </div>
 
-      {/* Only show includes/excludes if a value is entered */}
       {hasValue && (
         <>
           <div style={{ height: 1, backgroundColor: "#F0F0F0", margin: "18px 0" }} />
@@ -468,7 +451,6 @@ const PriceCard = ({
   );
 };
 
-/* ─── Main component ──────────────────────────────────────────────────────── */
 const PricingStep: React.FC<PricingStepProps> = ({
   perKmCharge,
   perDayCharge,
@@ -486,41 +468,12 @@ const PricingStep: React.FC<PricingStepProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Pricing
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Pricing Details
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Set your pricing for different travel modes. At least one is required.
-        </p>
-      </div>
+      <StepHeader
+        kicker="Pricing"
+        title="Pricing Details"
+        subtitle="Set your pricing for different travel modes. At least one is required."
+      />
 
-      {/* Top-level "at least one price" error */}
       {errors.pricing && (
         <div
           className="flex items-center gap-2 w-full"
