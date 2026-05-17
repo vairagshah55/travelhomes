@@ -68,35 +68,62 @@ async function sendOtpEmail(to, otp) {
     process.env.SMTP_USER ||
     process.env.MAIL_USERNAME ||
     'no-reply@travel-homes.local';
-  const subject = 'Your OTP Code - Travel Homes Registration';
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
-      <div style="background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h2 style="color: #333; margin-top: 0;">Travel Homes Verification</h2>
-        <p style="color: #666; font-size: 16px;">Hello,</p>
-        <p style="color: #666; font-size: 16px;">Thank you for registering with Travel Homes. Please use the following one-time password (OTP) to verify your email address:</p>
-        
-        <div style="text-align: center; margin: 30px 0;">
-          <div style="font-size: 2.5em; font-weight: bold; color: #007bff; letter-spacing: 5px; background-color: #f0f0f0; padding: 15px; border-radius: 8px; font-family: monospace;">
-            ${otp}
-          </div>
-        </div>
-        
-        <p style="color: #666; font-size: 14px;">
-          <strong>Important:</strong> This OTP will expire in 5 minutes. Do not share this code with anyone.
-        </p>
-        
-        <p style="color: #999; font-size: 13px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">
-          If you did not request this code, please ignore this email or contact our support team immediately.
-        </p>
-        
-        <p style="color: #999; font-size: 12px;">
-          Travel Homes Team<br>
-          © 2024 Travel Homes. All rights reserved.
-        </p>
-      </div>
-    </div>
-  `;
+  const subject = 'Verify your email – Travel Homes';
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#F1EFE8;font-family:'Inter',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F1EFE8;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(24,95,165,0.10);">
+
+        <!-- Header bar -->
+        <tr>
+          <td style="background-color:#042C53;padding:24px 32px;">
+            <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">TravelHomes</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#B5D4F4;letter-spacing:0.08em;text-transform:uppercase;font-weight:500;">Email Verification</p>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:36px 32px 28px;">
+            <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#042C53;letter-spacing:-0.5px;">Verify your email</p>
+            <p style="margin:0 0 24px;font-size:15px;color:#888780;line-height:1.6;">
+              Use the code below to complete your registration. It expires in <strong style="color:#2C2C2A;">5 minutes</strong>.
+            </p>
+
+            <!-- OTP box -->
+            <div style="background:#E6F1FB;border:1.5px solid #B5D4F4;border-radius:12px;padding:28px 16px;text-align:center;margin:0 0 28px;">
+              <p style="margin:0 0 6px;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#378ADD;">One-Time Password</p>
+              <p style="margin:0;font-size:40px;font-weight:800;letter-spacing:12px;color:#185FA5;font-family:'Courier New',monospace;">${otp}</p>
+            </div>
+
+            <p style="margin:0 0 24px;font-size:14px;color:#888780;line-height:1.6;">
+              Never share this code with anyone. Travel Homes will never ask for your OTP via phone or chat.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #D3D1C7;margin:0 0 24px;">
+
+            <p style="margin:0;font-size:13px;color:#888780;line-height:1.6;">
+              Didn't create an account? You can safely ignore this email.<br>
+              Need help? Reply to this email or visit our Help Center.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#F1EFE8;padding:20px 32px;text-align:center;">
+            <p style="margin:0;font-size:12px;color:#888780;">© 2025 TravelHomes. All rights reserved.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
   const text = `Your OTP code is ${otp}. It expires in 5 minutes. Do not share this code with anyone.`;
   try {
     const info = await transporter.sendMail({ from, to, subject, text, html });
