@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, MapPin, Calendar, Users, Star as StarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,8 @@ export default function AirbnbHeader({
   scrollHighlightFilter,
 }: AirbnbHeaderProps) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isSearchPage = pathname === "/search";
   const { user, updateUserType } = useAuth();
 
   const [showFilterButtons, setShowFilterButtons] = useState(false);
@@ -346,7 +348,7 @@ export default function AirbnbHeader({
             </motion.div>
 
             <AnimatePresence mode="wait">
-              {showFilterButtons && (
+              {showFilterButtons && !isSearchPage && (
                 <motion.div
                   initial={{ opacity: 0, y: -12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -382,7 +384,7 @@ export default function AirbnbHeader({
             </AnimatePresence>
 
             <AnimatePresence>
-              {showSearchSection && (
+              {showSearchSection && !isSearchPage && (
                 <motion.div
                   initial={{ opacity: 0, y: -10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
