@@ -52,6 +52,17 @@ function errorHandler(err, req, res, _next) {
     status = 401;
     code = "INVALID_TOKEN";
     message = "Invalid or expired token";
+  } else if (typeof err?.status === "number" && err.status >= 400 && err.status < 600) {
+    // body-parser / http-errors style exceptions (PayloadTooLargeError, etc.)
+    // already carry an HTTP status — honor it instead of masking as a 500.
+    status = err.status;
+    code = err.type || err.code || (err.status >= 500 ? "INTERNAL_SERVER_ERROR" : "BAD_REQUEST");
+    message = err.message || message;
+  } else if (typeof err?.message === "string" && err.message) {
+    // Unknown 500. Keep status/code at the catch-all but surface the raw
+    // message so devs can debug. The body-level production check below still
+    // suppresses this for non-test prod responses.
+    message = err.message;
   }
 
   // Log: stack only for unexpected errors. Operational AppErrors are noise at warn.

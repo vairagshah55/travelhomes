@@ -30,6 +30,7 @@ import {
   FeaturesStep,
   CapacityAddressStep,
   PricingStep,
+  CaravanCardPreview,
 } from "./components/caravan";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
@@ -117,6 +118,39 @@ interface FormData {
   idProof: string;
   idPhotos: (string | File)[];
   termsAccepted: boolean;
+}
+
+// Pick the first enabled discount slot with a valid final price so the preview
+// card can mirror what guests see (strikethrough original + discounted price).
+// Falls back to per-km rate when per-day isn't set, since the preview uses
+// whichever rate is filled in.
+const DISCOUNT_SLOTS: {
+  enabledKey: keyof FormData;
+  finalKey: keyof FormData;
+  label: string;
+}[] = [
+  { enabledKey: "firstUserDiscount", finalKey: "firstUserDiscountFinalPrice", label: "Welcome offer" },
+  { enabledKey: "festivalOffers", finalKey: "festivalOffersFinalPrice", label: "Festival offer" },
+  { enabledKey: "weeklyMonthlyOffers", finalKey: "weeklyMonthlyOffersFinalPrice", label: "Long stay offer" },
+  { enabledKey: "specialOffers", finalKey: "specialOffersFinalPrice", label: "Special offer" },
+];
+
+function pickActiveDiscount(formData: FormData) {
+  const originalPrice =
+    Number(formData.perDayCharge) > 0
+      ? Number(formData.perDayCharge)
+      : Number(formData.perKmCharge) > 0
+        ? Number(formData.perKmCharge)
+        : 0;
+  if (originalPrice <= 0) return null;
+
+  for (const slot of DISCOUNT_SLOTS) {
+    if (!formData[slot.enabledKey]) continue;
+    const finalPrice = Number(formData[slot.finalKey]);
+    if (!Number.isFinite(finalPrice) || finalPrice <= 0 || finalPrice >= originalPrice) continue;
+    return { originalPrice, finalPrice, label: slot.label };
+  }
+  return null;
 }
 
 const CaravanOnboarding = () => {
@@ -374,32 +408,50 @@ const CaravanOnboarding = () => {
             specialOffersValue: String(doc.specialOffersValue || ""),
             specialOffersFinalPrice: String(doc.specialOffersFinalPrice || ""),
 
-            brandName: doc.brandName || "",
-            legalCompanyName: doc.legalCompanyName || "",
-            gstNumber: doc.gstNumber || "",
-            businessEmailId: doc.businessEmailId || "",
-            businessPhoneNumber: doc.businessPhoneNumber || "",
-            businessLocality: doc.businessLocality || "India",
-            personalLocality: doc.personalLocality || "India",
-            businessState: doc.businessState || "",
-            businessCity: doc.businessCity || "",
-            businessPincode: doc.businessPincode || "",
+            // Personal + business fields are NOT persisted on the caravan
+            // onboarding doc (Mongoose strict mode drops the unknown field
+            // names the form sends). They live on Profile via syncUserProfile.
+            // Fall back to userDetails so resumed drafts aren't empty.
+            brandName: doc.brandName || userDetails?.business?.brandName || "",
+            legalCompanyName:
+              doc.legalCompanyName || userDetails?.business?.legalCompanyName || "",
+            gstNumber: doc.gstNumber || userDetails?.business?.gstNumber || "",
+            businessEmailId: doc.businessEmailId || userDetails?.business?.email || "",
+            businessPhoneNumber:
+              doc.businessPhoneNumber || userDetails?.business?.phoneNumber || "",
+            businessAddress:
+              doc.businessAddress || userDetails?.business?.address || "",
+            businessLocality:
+              doc.businessLocality || userDetails?.business?.locality || "India",
+            personalLocality:
+              doc.personalLocality || userDetails?.personalLocality || "India",
+            businessState: doc.businessState || userDetails?.business?.state || "",
+            businessCity: doc.businessCity || userDetails?.business?.city || "",
+            businessPincode: doc.businessPincode || userDetails?.business?.pincode || "",
 
-            firstName: doc.firstName || "",
-            lastName: doc.lastName || "",
-            personalState: doc.personalState || "",
-            personalCity: doc.personalCity || "",
-            personalPincode: doc.personalPincode || "",
-            dateOfBirth: doc.dateOfBirth || "",
-            maritalStatus: doc.maritalStatus || "",
-            idProof: doc.idProof || "",
-            idPhotos: Array.isArray(doc.idPhotos) && doc.idPhotos.length > 0 ? doc.idPhotos : [],
+            firstName: doc.firstName || userDetails?.firstName || "",
+            lastName: doc.lastName || userDetails?.lastName || "",
+            personalState: doc.personalState || userDetails?.state || "",
+            personalCity: doc.personalCity || userDetails?.city || "",
+            personalPincode: doc.personalPincode || userDetails?.personalPincode || "",
+            dateOfBirth:
+              doc.dateOfBirth ||
+              (userDetails?.dateOfBirth
+                ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
+                : ""),
+            maritalStatus: doc.maritalStatus || userDetails?.maritalStatus || "",
+            idProof: doc.idProof || userDetails?.idProof || "",
+            idPhotos:
+              Array.isArray(doc.idPhotos) && doc.idPhotos.length > 0
+                ? doc.idPhotos
+                : userDetails?.idPhotos || [],
 
             termsAccepted: false,
           }));
 
-          if (doc.idPhotos && doc.idPhotos.length > 0) {
-            setIdProofImage(doc.idPhotos[0]);
+          const draftIdPhoto = doc.idPhotos?.[0] || userDetails?.idPhotos?.[0];
+          if (draftIdPhoto) {
+            setIdProofImage(draftIdPhoto);
           }
         } else if (userDetails && user?.userType !== "vendor") {
           console.log("No valid draft found. Auto-filling from userDetails:", userDetails);
@@ -449,6 +501,7 @@ const CaravanOnboarding = () => {
             gstNumber: userDetails.business?.gstNumber || "",
             businessEmailId: userDetails.business?.email || "",
             businessPhoneNumber: userDetails.business?.phoneNumber || "",
+            businessAddress: userDetails.business?.address || "",
             businessLocality: userDetails.business?.locality || "India",
             businessState: userDetails.business?.state || "",
             businessCity: userDetails.business?.city || "",
@@ -916,6 +969,7 @@ const CaravanOnboarding = () => {
             gstNumber: formData.gstNumber,
             email: formData.businessEmailId,
             phoneNumber: formData.businessPhoneNumber,
+            address: formData.businessAddress,
             locality: formData.businessLocality,
             state: formData.businessState,
             city: formData.businessCity,
@@ -1509,6 +1563,21 @@ const CaravanOnboarding = () => {
     <OnboardingLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
+      preview={
+        currentStep <= 5 ? (
+          <CaravanCardPreview
+            name={formData.name}
+            description={formData.description}
+            coverImage={formData.coverImage}
+            photos={formData.photos}
+            city={formData.city}
+            state={formData.state}
+            perDayCharge={formData.perDayCharge}
+            perKmCharge={formData.perKmCharge}
+            activeDiscount={pickActiveDiscount(formData)}
+          />
+        ) : undefined
+      }
       isLoading={isLoading}
       canProceed={canProceed}
       termsAccepted={formData.termsAccepted}

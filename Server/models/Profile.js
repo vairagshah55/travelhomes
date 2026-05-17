@@ -50,6 +50,7 @@ const ProfileSchema = new Schema(
       gstNumber: { type: String, trim: true, default: '' },
       email: { type: String, trim: true, default: '' },
       phoneNumber: { type: String, trim: true, default: '' },
+      address: { type: String, trim: true, default: '' },
       locality: { type: String, trim: true, default: '' },
       state: { type: String, trim: true, default: '' },
       city: { type: String, trim: true, default: '' },

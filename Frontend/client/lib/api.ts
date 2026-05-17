@@ -2,6 +2,24 @@
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+// Server returns errors as { success: false, error: { code, message, details? } }.
+// Pull out a useful string for `new Error(...)` so toasts never show "[object Object]".
+function extractApiErrorMessage(errorData: any): string | undefined {
+  if (!errorData) return undefined;
+  const nested = errorData.error;
+  if (nested && typeof nested === "object") {
+    if (typeof nested.message === "string" && nested.message) return nested.message;
+    if (Array.isArray(nested.details) && nested.details.length) {
+      const first = nested.details[0];
+      if (first?.path && first?.message) return `${first.path}: ${first.message}`;
+    }
+    if (typeof nested.code === "string" && nested.code) return nested.code;
+  }
+  if (typeof nested === "string" && nested) return nested;
+  if (typeof errorData.message === "string" && errorData.message) return errorData.message;
+  return undefined;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = {
     ...(options && options.headers ? options.headers : {}),
@@ -414,6 +432,7 @@ export interface UserProfileDTO {
     gstNumber?: string;
     email?: string;
     phoneNumber?: string;
+    address?: string;
     locality?: string;
     state?: string;
     city?: string;
@@ -708,7 +727,7 @@ export const submitOnboardingData = async (type: "activity" | "caravan" | "stay"
       try {
         const errorData = await response.json();
         console.error("Server error response:", errorData);
-        errorMessage = errorData.message || errorData.error || errorMessage;
+        errorMessage = extractApiErrorMessage(errorData) ?? errorMessage;
       } catch (parseError) {
         console.error("Could not parse error response:", parseError);
         const textError = await response.text().catch(() => "Unknown error");
@@ -769,7 +788,9 @@ export const submitSelfieVerification = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: "Network error" }));
-      throw new Error(errorData.message || "Failed to submit selfie verification");
+      throw new Error(
+        extractApiErrorMessage(errorData) || "Failed to submit selfie verification",
+      );
     }
 
     const result = await response.json();

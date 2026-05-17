@@ -10,6 +10,9 @@ interface OnboardingLayoutProps {
   onBack: () => void;
   onNext: () => void;
   children: React.ReactNode;
+  // Optional side panel rendered on the right at lg+ screens. Used by listing-
+  // content steps to show a live preview of how the listing will appear to guests.
+  preview?: React.ReactNode;
 }
 
 const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
@@ -21,6 +24,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
   onBack,
   onNext,
   children,
+  preview,
 }) => {
   const isLastStep = currentStep === totalSteps - 1;
 
@@ -38,12 +42,22 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto pt-16 pb-24">
-        <div
-          key={currentStep}
-          className="max-w-7xl mx-auto w-full px-6 lg:px-20 flex flex-col items-center gap-10 py-8 onb-fade-up"
-        >
-          {children}
-        </div>
+        {preview ? (
+          <div
+            key={currentStep}
+            className="max-w-7xl mx-auto w-full px-6 lg:px-20 py-8 onb-fade-up flex flex-col items-center gap-10 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-12 lg:items-start"
+          >
+            <div className="w-full flex justify-center lg:justify-end">{children}</div>
+            <aside className="hidden lg:block lg:sticky lg:top-24">{preview}</aside>
+          </div>
+        ) : (
+          <div
+            key={currentStep}
+            className="max-w-7xl mx-auto w-full px-6 lg:px-20 flex flex-col items-center gap-10 py-8 onb-fade-up"
+          >
+            {children}
+          </div>
+        )}
       </div>
 
       {/* Fixed Footer */}

@@ -159,6 +159,8 @@ async function syncUserProfile(email, data) {
     if (data.businessPhoneNumber) business.phoneNumber = data.businessPhoneNumber;
     if (data.businessPhone) business.phoneNumber = data.businessPhone;
 
+    if (data.businessAddress) business.address = data.businessAddress;
+
     if (data.businessLocality) business.locality = data.businessLocality;
     if (data.locality && data.type === "stay") business.locality = data.locality;
 
