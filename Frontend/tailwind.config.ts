@@ -17,17 +17,42 @@ export default {
       /* ─── FONT FAMILIES ────────────────────────────────── */
       /* Single font: DM Sans — closest free match to Airbnb Cereal */
       fontFamily: {
-        'sans':           ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
-        'display':        ['DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
-        'geist':          ['DM Sans', 'sans-serif'],
-        'plus-jakarta':   ['DM Sans', 'sans-serif'],
-        'poppins':        ['DM Sans', 'sans-serif'],
-        'heading':        ['DM Sans', 'sans-serif'],
+        'sans':           ['Inter', 'DM Sans', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Helvetica', 'Arial', 'sans-serif'],
+        'display':        ['DM Serif Display', 'Georgia', 'serif'],
+        'serif':          ['DM Serif Display', 'Georgia', 'serif'],
+        'inter':          ['Inter', 'DM Sans', 'sans-serif'],
+        'geist':          ['Inter', 'DM Sans', 'sans-serif'],
+        'plus-jakarta':   ['Inter', 'DM Sans', 'sans-serif'],
+        'poppins':        ['Inter', 'DM Sans', 'sans-serif'],
+        'heading':        ['DM Serif Display', 'Georgia', 'serif'],
         'mono':           ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
       },
 
       /* ─── COLORS ───────────────────────────────────────── */
       colors: {
+        /* ── designe.md tokens ── */
+        ds: {
+          sky:     "var(--ds-sky)",
+          mist:    "var(--ds-mist)",
+          ocean:   "var(--ds-ocean)",
+          deep:    "var(--ds-deep)",
+          navy:    "var(--ds-navy)",
+          sand:    "var(--ds-sand)",
+          dune:    "var(--ds-dune)",
+          rust:    "var(--ds-rust)",
+          lagoon:  "var(--ds-lagoon)",
+          palm:    "var(--ds-palm)",
+          forest:  "var(--ds-forest)",
+          linen:   "var(--ds-linen)",
+          pebble:  "var(--ds-pebble)",
+          slate:   "var(--ds-slate)",
+          charcoal:"var(--ds-charcoal)",
+          white:   "var(--ds-white)",
+          error:   "var(--ds-error)",
+          success: "var(--ds-success)",
+          warning: "var(--ds-warning)",
+        },
+
         /* TravelHomes design tokens */
         th: {
           brand:           "var(--th-brand)",

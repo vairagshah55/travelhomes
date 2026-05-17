@@ -3,6 +3,45 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM TOKENS  (designe.md)
+   Blue primary · Warm sand · Teal accents · Airy neutrals
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Primary — Blue (trust, ocean, sky) */
+  --ds-sky:    #E6F1FB;
+  --ds-mist:   #B5D4F4;
+  --ds-ocean:  #378ADD;
+  --ds-deep:   #185FA5;   /* main brand — CTAs, primary buttons */
+  --ds-navy:   #042C53;   /* dark headings, footer */
+
+  /* Accent — Warm Sand */
+  --ds-sand:   #FAEEDA;
+  --ds-dune:   #EF9F27;   /* ratings, warm icons */
+  --ds-rust:   #BA7517;   /* hover on warm elements */
+
+  /* Accent — Teal (nature, calm) */
+  --ds-lagoon: #E1F5EE;
+  --ds-palm:   #1D9E75;   /* success, superhost badge */
+  --ds-forest: #085041;
+
+  /* Neutrals */
+  --ds-linen:    #F1EFE8;   /* page background */
+  --ds-pebble:   #D3D1C7;   /* borders */
+  --ds-slate:    #888780;   /* muted text */
+  --ds-charcoal: #2C2C2A;   /* body text */
+
+  /* Surface & status */
+  --ds-white:   #FFFFFF;
+  --ds-error:   #E24B4A;
+  --ds-success: #1D9E75;
+  --ds-warning: #EF9F27;
+
+  /* Card shadow */
+  --ds-shadow-card:  0 4px 20px rgba(24, 95, 165, 0.10);
+  --ds-shadow-drop:  0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    TRAVELHOMES DESIGN SYSTEM
    Standardized tokens · Modern aesthetic · Dark mode ready
    ═══════════════════════════════════════════════════════════════ */
