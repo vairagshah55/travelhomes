@@ -117,13 +117,13 @@ const Field = ({
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: error ? "#E24B4A" : GRAY_500,
+          color: error ? "#ef4444" : GRAY_500,
           letterSpacing: "0.03em",
           textTransform: "uppercase",
         }}
       >
         {label}
-        {required && <span style={{ color: "#E24B4A", marginLeft: 3 }}>*</span>}
+        {required && <span style={{ color: "#ef4444", marginLeft: 3 }}>*</span>}
       </label>
       {right}
     </div>
@@ -131,10 +131,10 @@ const Field = ({
     {error && (
       <div className="flex items-center gap-1.5 mt-0.5">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke="#E24B4A" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
+        <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
       </div>
     )}
   </div>
@@ -172,13 +172,13 @@ const StyledInput = ({
         fontSize: 14.5,
         color: BLACK,
         backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#E24B4A" : focused ? TEAL : "transparent"}`,
+        border: `1.5px solid ${error ? "#ef4444" : focused ? TEAL : "transparent"}`,
         borderRadius: 13,
         outline: "none",
         boxShadow: active
           ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
           : error
-            ? "0 0 0 3px rgba(226,75,74,0.10)"
+            ? "0 0 0 3px rgba(239,68,68,0.10)"
             : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         fontWeight: 450,
@@ -221,14 +221,14 @@ const StyledTextarea = ({
         fontSize: 14.5,
         color: BLACK,
         backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#E24B4A" : focused ? TEAL : "transparent"}`,
+        border: `1.5px solid ${error ? "#ef4444" : focused ? TEAL : "transparent"}`,
         borderRadius: 13,
         outline: "none",
         resize: "none",
         boxShadow: active
           ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
           : error
-            ? "0 0 0 3px rgba(226,75,74,0.10)"
+            ? "0 0 0 3px rgba(239,68,68,0.10)"
             : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         lineHeight: 1.65,
@@ -534,8 +534,8 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                     gap: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    color: errors.photos ? "#E24B4A" : GRAY_700,
-                    border: `1.5px solid ${errors.photos ? "#E24B4A" : GRAY_200}`,
+                    color: errors.photos ? "#ef4444" : GRAY_700,
+                    border: `1.5px solid ${errors.photos ? "#ef4444" : GRAY_200}`,
                     borderRadius: 9,
                     padding: "6px 14px",
                     cursor: "pointer",
@@ -550,10 +550,10 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLLabelElement).style.borderColor = errors.photos
-                      ? "#E24B4A"
+                      ? "#ef4444"
                       : GRAY_200;
                     (e.currentTarget as HTMLLabelElement).style.color = errors.photos
-                      ? "#E24B4A"
+                      ? "#ef4444"
                       : GRAY_700;
                     (e.currentTarget as HTMLLabelElement).style.backgroundColor = WHITE;
                   }}
@@ -664,15 +664,15 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   {errors.photos && (
                     <div className="flex items-center gap-1.5">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+                        <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
                         <path
                           d="M6 3.5v3M6 8.25v.25"
-                          stroke="#E24B4A"
+                          stroke="#ef4444"
                           strokeWidth="1.5"
                           strokeLinecap="round"
                         />
                       </svg>
-                      <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{errors.photos}</p>
+                      <p style={{ fontSize: 11.5, color: "#ef4444" }}>{errors.photos}</p>
                     </div>
                   )}
                 </>
@@ -878,20 +878,20 @@ const CoverUpload = ({
           height: 170,
           border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`,
           borderRadius: 16,
-          backgroundColor: error ? "rgba(226,75,74,0.04)" : SURFACE,
-          boxShadow: error ? "0 0 0 3px rgba(226,75,74,0.08)" : "none",
+          backgroundColor: error ? "rgba(239,68,68,0.04)" : SURFACE,
+          boxShadow: error ? "0 0 0 3px rgba(239,68,68,0.08)" : "none",
           transition: "all 0.2s",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#E24B4A" : TEAL;
+          (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#ef4444" : TEAL;
           (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
-            ? "rgba(226,75,74,0.07)"
+            ? "rgba(239,68,68,0.07)"
             : TEAL_BG;
         }}
         onMouseLeave={(e) => {
           (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#fca5a5" : GRAY_200;
           (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
-            ? "rgba(226,75,74,0.04)"
+            ? "rgba(239,68,68,0.04)"
             : SURFACE;
         }}
       >
@@ -911,7 +911,7 @@ const CoverUpload = ({
           <ImagePlus size={22} color={error ? "#f87171" : GRAY_400} />
         </div>
         <div className="text-center">
-          <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#E24B4A" : BLACK }}>
+          <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#ef4444" : BLACK }}>
             Upload cover photo
           </p>
           <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
@@ -928,15 +928,15 @@ const CoverUpload = ({
       {error && (
         <div className="flex items-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+            <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
             <path
               d="M6 3.5v3M6 8.25v.25"
-              stroke="#E24B4A"
+              stroke="#ef4444"
               strokeWidth="1.5"
               strokeLinecap="round"
             />
           </svg>
-          <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
+          <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
         </div>
       )}
     </div>
@@ -1036,20 +1036,20 @@ const GalleryEmptyState = ({
         padding: "36px 24px",
         border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`,
         borderRadius: 16,
-        backgroundColor: error ? "rgba(226,75,74,0.04)" : SURFACE,
-        boxShadow: error ? "0 0 0 3px rgba(226,75,74,0.08)" : "none",
+        backgroundColor: error ? "rgba(239,68,68,0.04)" : SURFACE,
+        boxShadow: error ? "0 0 0 3px rgba(239,68,68,0.08)" : "none",
         transition: "all 0.2s",
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#E24B4A" : TEAL;
+        (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#ef4444" : TEAL;
         (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
-          ? "rgba(226,75,74,0.07)"
+          ? "rgba(239,68,68,0.07)"
           : TEAL_BG;
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#fca5a5" : GRAY_200;
         (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
-          ? "rgba(226,75,74,0.04)"
+          ? "rgba(239,68,68,0.04)"
           : SURFACE;
       }}
     >
@@ -1069,7 +1069,7 @@ const GalleryEmptyState = ({
         <FileImage size={24} color={error ? "#f87171" : GRAY_400} />
       </div>
       <div className="text-center">
-        <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#E24B4A" : BLACK }}>
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#ef4444" : BLACK }}>
           Add gallery photos
         </p>
         <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
@@ -1080,11 +1080,11 @@ const GalleryEmptyState = ({
         style={{
           fontSize: 12,
           fontWeight: 700,
-          color: error ? "#E24B4A" : TEAL,
-          border: `1.5px solid ${error ? "rgba(226,75,74,0.40)" : "rgba(24, 95, 165, 0.40)"}`,
+          color: error ? "#ef4444" : TEAL,
+          border: `1.5px solid ${error ? "rgba(239,68,68,0.40)" : "rgba(24, 95, 165, 0.40)"}`,
           borderRadius: 9,
           padding: "7px 18px",
-          backgroundColor: error ? "rgba(226,75,74,0.07)" : TEAL_BG,
+          backgroundColor: error ? "rgba(239,68,68,0.07)" : TEAL_BG,
           letterSpacing: "0.01em",
         }}
       >
@@ -1101,10 +1101,10 @@ const GalleryEmptyState = ({
     {error && (
       <div className="flex items-center gap-1.5">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke="#E24B4A" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
+        <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
       </div>
     )}
   </div>

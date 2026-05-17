@@ -13,9 +13,9 @@ const GRAY_400 = "#888780"; // muted → slate
 const GRAY_200 = "#D3D1C7"; // borders → pebble
 const WHITE = "#ffffff";
 const SURFACE = "#F7F8FA";
-const ERROR = "#E24B4A"; // ds-error
-const ERROR_BG = "rgba(226,75,74,0.04)";
-const ERROR_RING = "rgba(226,75,74,0.10)";
+const ERROR = "#ef4444"; // red-500
+const ERROR_BG = "rgba(239,68,68,0.04)";
+const ERROR_RING = "rgba(239,68,68,0.10)";
 
 type PriceField = "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes";
 
@@ -528,7 +528,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
             padding: "12px 16px",
             borderRadius: 12,
             backgroundColor: ERROR_BG,
-            border: `1.5px solid rgba(226,75,74,0.25)`,
+            border: `1.5px solid rgba(239,68,68,0.25)`,
             boxShadow: `0 0 0 3px ${ERROR_RING}`,
           }}
         >

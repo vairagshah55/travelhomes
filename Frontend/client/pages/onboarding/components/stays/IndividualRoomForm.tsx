@@ -23,9 +23,9 @@ const GRAY_400 = "#888780"; // muted → slate
 const GRAY_200 = "#D3D1C7"; // borders → pebble
 const WHITE = "#ffffff";
 const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#E24B4A"; // ds-error
-const ERROR_BG = "rgba(226,75,74,0.04)";
-const ERROR_RING = "rgba(226,75,74,0.10)";
+const ERROR = "#ef4444"; // red-500
+const ERROR_BG = "rgba(239,68,68,0.04)";
+const ERROR_RING = "rgba(239,68,68,0.10)";
 const GREEN = "#22c55e";
 
 interface Room {

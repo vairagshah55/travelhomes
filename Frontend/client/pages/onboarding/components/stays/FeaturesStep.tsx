@@ -16,8 +16,8 @@ const GRAY_400 = "#888780"; // muted → slate
 const GRAY_200 = "#D3D1C7"; // borders → pebble
 const WHITE = "#ffffff";
 const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#E24B4A"; // ds-error
-const ERROR_BG = "rgba(226,75,74,0.04)";
+const ERROR = "#ef4444"; // red-500
+const ERROR_BG = "rgba(239,68,68,0.04)";
 
 interface FeatureItem {
   label: string;
@@ -144,7 +144,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           borderRadius: 20,
           padding: "20px 22px 22px",
           boxShadow: hasError
-            ? "0 0 0 3px rgba(226,75,74,0.10)"
+            ? "0 0 0 3px rgba(239,68,68,0.10)"
             : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
           transition: "all 0.2s",
         }}

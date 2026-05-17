@@ -14,7 +14,7 @@ const GRAY_400 = "#888780";
 const GRAY_200 = "#D3D1C7";
 const WHITE = "#ffffff";
 const SURFACE = "#F7F8FA";
-const ERROR = "#E24B4A";
+const ERROR = "#ef4444";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
