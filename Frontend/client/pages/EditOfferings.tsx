@@ -18,6 +18,7 @@ import { Sidebar } from "@/components/Navigation";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardHeader } from "@/components/Header";
 import { offersApi, OfferDTO } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
@@ -121,9 +122,6 @@ const FEATURES: Record<string, string[]> = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-const getToken = () =>
-  localStorage.getItem("travel_auth_token") || sessionStorage.getItem("travel_auth_token") || "";
-
 // ─── Photo section (edit-aware: works with URLs + accepts new file uploads) ───
 const EditPhotoGrid = ({
   coverUrl,
@@ -134,6 +132,7 @@ const EditPhotoGrid = ({
   uploading,
   coverError,
   galleryError,
+  token,
 }: {
   coverUrl: string;
   galleryUrls: string[];
@@ -143,11 +142,11 @@ const EditPhotoGrid = ({
   uploading: boolean;
   coverError?: string;
   galleryError?: string;
+  token: string | null;
 }) => {
   const uploadFile = async (file: File): Promise<string> => {
     const fd = new FormData();
     fd.append("files", file);
-    const token = getToken();
     const res = await fetch(`${API_BASE_URL}/api/vendorchats/upload`, {
       method: "POST",
       body: fd,
@@ -351,6 +350,7 @@ const EditPhotoGrid = ({
 const EditOfferings = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("camper-van");
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -576,7 +576,6 @@ const EditOfferings = () => {
     if (!validate() || !id) return;
     setIsSubmitting(true);
     try {
-      const token = getToken();
       if (!token) throw new Error("Not authenticated");
 
       let specificData: any = {};
@@ -819,6 +818,7 @@ const EditOfferings = () => {
                 uploading={uploading}
                 coverError={errors.cover}
                 galleryError={errors.gallery}
+                token={token}
               />
             </SectionCard>
 

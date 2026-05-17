@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
 import { Plus } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, activitiesApi } from "@/lib/api";
+import { TEAL, BLACK, GRAY_400 } from "@/components/offering";
 
 import {
   type BookingData,
@@ -24,19 +24,11 @@ import {
   EditBookingModal,
 } from "@/components/bookings";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL = "#07e4e4";
-const BLACK = "#131313";
-const GRAY_400 = "#9a9a9a";
-
 const Bookings = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
   const queryClient = useQueryClient();
-  const token =
-    localStorage.getItem("travel_auth_token") ||
-    sessionStorage.getItem("travel_auth_token") ||
-    undefined;
+  const token = authToken ?? undefined;
 
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
@@ -270,127 +262,120 @@ const Bookings = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-plus-jakarta overflow-hidden">
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle="Bookings" />
-
-        <main className="flex-1 overflow-auto p-3 lg:p-5">
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              border: "1.5px solid #EBEBEB",
-              borderRadius: 20,
-              padding: "20px 22px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-              minHeight: "100%",
-            }}
-          >
-            {/* Header */}
-            <div
-              className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4"
-              style={{ borderBottom: "1.5px solid #EBEBEB" }}
-            >
-              <div>
-                <div className="flex items-center gap-2.5 mb-1">
-                  <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      color: GRAY_400,
-                    }}
-                  >
-                    Calendar
-                  </span>
-                </div>
-                <DateNavigation
-                  currentMonth={currentMonth}
-                  currentYear={currentYear}
-                  onMonthChange={setCurrentMonth}
-                  onYearChange={setCurrentYear}
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleNewBooking}
+    <DashboardLayout
+      title="Bookings"
+      outerClassName="overflow-hidden"
+      contentClassName="flex-1 overflow-auto p-3 lg:p-5"
+    >
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          border: "1.5px solid #EBEBEB",
+          borderRadius: 20,
+          padding: "20px 22px",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
+          minHeight: "100%",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4"
+          style={{ borderBottom: "1.5px solid #EBEBEB" }}
+        >
+          <div>
+            <div className="flex items-center gap-2.5 mb-1">
+              <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+              <span
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  height: 42,
-                  padding: "0 20px",
-                  borderRadius: 13,
-                  border: "none",
-                  backgroundColor: TEAL,
-                  fontSize: 13,
+                  fontSize: 10,
                   fontWeight: 700,
-                  color: BLACK,
-                  cursor: "pointer",
-                  boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
-                  width: "fit-content",
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  color: GRAY_400,
                 }}
               >
-                <Plus size={16} strokeWidth={2.5} /> New Booking
-              </button>
+                Calendar
+              </span>
             </div>
-
-            {/* Calendar */}
-            <div className="overflow-auto" key={`${currentYear}-${currentMonth}`}>
-              {loading ? (
-                <div
-                  className="flex items-center justify-center h-64 gap-2"
-                  style={{ color: GRAY_400 }}
-                >
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  <span style={{ fontSize: 13 }}>Loading bookings…</span>
-                </div>
-              ) : (
-                <CalendarGrid
-                  currentMonth={currentMonth}
-                  currentYear={currentYear}
-                  bookings={filteredBookings}
-                  onBookingClick={handleBookingClick}
-                  onBookingDrag={handleBookingDrag}
-                  onDateClick={handleDateClick}
-                  selectedDate={selectedDate}
-                  vehicleNames={vehicleNames}
-                />
-              )}
-            </div>
+            <DateNavigation
+              currentMonth={currentMonth}
+              currentYear={currentYear}
+              onMonthChange={setCurrentMonth}
+              onYearChange={setCurrentYear}
+            />
           </div>
-
-          <NewBookingModal
-            open={isNewModalOpen}
-            onOpenChange={setIsNewModalOpen}
-            form={newBookingForm}
-            setForm={setNewBookingForm}
-            vehicleNames={vehicleNames}
-            onCreate={handleCreateBooking}
-          />
-          <EditBookingModal
-            open={isEditModalOpen}
-            onOpenChange={setIsEditModalOpen}
-            booking={selectedBooking}
-            setBooking={setSelectedBooking}
-            onUpdate={handleUpdateBooking}
-            onDelete={handleDeleteBooking}
-            onPrint={(b) => {
-              try {
-                printInvoice(b, token);
-              } catch {
-                notify("error", "Failed to print invoice");
-              }
+          <button
+            type="button"
+            onClick={handleNewBooking}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              height: 42,
+              padding: "0 20px",
+              borderRadius: 13,
+              border: "none",
+              backgroundColor: TEAL,
+              fontSize: 13,
+              fontWeight: 700,
+              color: BLACK,
+              cursor: "pointer",
+              boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
+              width: "fit-content",
             }}
-          />
-        </main>
+          >
+            <Plus size={16} strokeWidth={2.5} /> New Booking
+          </button>
+        </div>
+
+        {/* Calendar */}
+        <div className="overflow-auto" key={`${currentYear}-${currentMonth}`}>
+          {loading ? (
+            <div
+              className="flex items-center justify-center h-64 gap-2"
+              style={{ color: GRAY_400 }}
+            >
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span style={{ fontSize: 13 }}>Loading bookings…</span>
+            </div>
+          ) : (
+            <CalendarGrid
+              currentMonth={currentMonth}
+              currentYear={currentYear}
+              bookings={filteredBookings}
+              onBookingClick={handleBookingClick}
+              onBookingDrag={handleBookingDrag}
+              onDateClick={handleDateClick}
+              selectedDate={selectedDate}
+              vehicleNames={vehicleNames}
+            />
+          )}
+        </div>
       </div>
 
+      <NewBookingModal
+        open={isNewModalOpen}
+        onOpenChange={setIsNewModalOpen}
+        form={newBookingForm}
+        setForm={setNewBookingForm}
+        vehicleNames={vehicleNames}
+        onCreate={handleCreateBooking}
+      />
+      <EditBookingModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        booking={selectedBooking}
+        setBooking={setSelectedBooking}
+        onUpdate={handleUpdateBooking}
+        onDelete={handleDeleteBooking}
+        onPrint={(b) => {
+          try {
+            printInvoice(b, token);
+          } catch {
+            notify("error", "Failed to print invoice");
+          }
+        }}
+      />
       <Toaster
         position="top-right"
         toastOptions={{
@@ -405,7 +390,7 @@ const Bookings = () => {
           },
         }}
       />
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,25 +8,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Bell,
-  Menu,
-  Plus,
-  Eye,
-  MousePointer,
-  ClipboardCheck,
-  ListChecks,
-  Wallet,
-  TrendingUp,
-  ChevronDown,
-} from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sidebar } from "@/components/Navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
-import MobileVendorNav from "@/components/MobileVendorNav";
-import { DashboardHeader } from "@/components/Header";
+import { Eye, MousePointer, ClipboardCheck, ListChecks, Wallet, TrendingUp } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 import { vendorAnalyticsApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AreaChart,
   Area,
@@ -55,10 +40,8 @@ const Analytics = () => {
   const [yearlyFilter, setYearlyFilter] = useState("yearly");
   const [dailyFilter, setDailyFilter] = useState("daily");
 
-  const token =
-    typeof window !== "undefined"
-      ? (localStorage.getItem("travel_auth_token") ?? undefined)
-      : undefined;
+  const { token: authToken } = useAuth();
+  const token = authToken ?? undefined;
 
   // Counts + metrics + payments + properties — single endpoint, single cache.
   const countsQuery = useQuery({
@@ -311,104 +294,90 @@ const Analytics = () => {
   );
 
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta motion-page-shell">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <DashboardHeader Headtitle={"Analytics"} />
-
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* All Metrics — single unified grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-              {loading
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3"
-                    >
-                      <Sk className="w-10 h-10 rounded-xl shrink-0" />
-                      <div className="flex-1 space-y-2 pt-1">
-                        <Sk className="h-3 w-20" />
-                        <Sk className="h-6 w-14" />
-                      </div>
-                    </div>
-                  ))
-                : [...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map(
-                    (metric, index) => <MetricCardComponent key={index} metric={metric} />,
-                  )}
-            </div>
-
-            {/* Charts row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {loading ? (
-                Array.from({ length: 2 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <Sk className="h-5 w-36" />
-                      <Sk className="h-7 w-24 rounded-lg" />
-                    </div>
-                    <Sk className="h-48 w-full" />
+    <DashboardLayout
+      title="Analytics"
+      outerClassName="motion-page-shell"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6"
+    >
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* All Metrics — single unified grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {loading
+            ? Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3"
+                >
+                  <Sk className="w-10 h-10 rounded-xl shrink-0" />
+                  <div className="flex-1 space-y-2 pt-1">
+                    <Sk className="h-3 w-20" />
+                    <Sk className="h-6 w-14" />
                   </div>
-                ))
-              ) : (
-                <>
-                  <ChartComponent
-                    title="Monthly Earnings"
-                    filter={monthlyFilter}
-                    onFilterChange={setMonthlyFilter}
-                    data={monthlyGraphData}
-                    dataKey="earnings"
-                    color="#3BD9DA"
-                  />
-                  <ChartComponent
-                    title="Yearly Earnings"
-                    filter={yearlyFilter}
-                    onFilterChange={setYearlyFilter}
-                    data={yearlyGraphData}
-                    dataKey="earnings"
-                    color="#8B5CF6"
-                  />
-                </>
+                </div>
+              ))
+            : [...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map(
+                (metric, index) => <MetricCardComponent key={index} metric={metric} />,
               )}
-            </div>
+        </div>
 
-            {/* Visitors chart full width */}
-            {loading ? (
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+        {/* Charts row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {loading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5"
+              >
                 <div className="flex items-center justify-between mb-4">
                   <Sk className="h-5 w-36" />
                   <Sk className="h-7 w-24 rounded-lg" />
                 </div>
                 <Sk className="h-48 w-full" />
               </div>
-            ) : (
+            ))
+          ) : (
+            <>
               <ChartComponent
-                title="Daily Visitors"
-                filter={dailyFilter}
-                onFilterChange={setDailyFilter}
-                data={dailyGraphData}
-                dataKey="visitors"
+                title="Monthly Earnings"
+                filter={monthlyFilter}
+                onFilterChange={setMonthlyFilter}
+                data={monthlyGraphData}
+                dataKey="earnings"
                 color="#3BD9DA"
               />
-            )}
-          </div>
+              <ChartComponent
+                title="Yearly Earnings"
+                filter={yearlyFilter}
+                onFilterChange={setYearlyFilter}
+                data={yearlyGraphData}
+                dataKey="earnings"
+                color="#8B5CF6"
+              />
+            </>
+          )}
         </div>
-      </div>
 
-      <div className="fixed lg:hidden ">
-        <MobileVendorNav />
+        {/* Visitors chart full width */}
+        {loading ? (
+          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <Sk className="h-5 w-36" />
+              <Sk className="h-7 w-24 rounded-lg" />
+            </div>
+            <Sk className="h-48 w-full" />
+          </div>
+        ) : (
+          <ChartComponent
+            title="Daily Visitors"
+            filter={dailyFilter}
+            onFilterChange={setDailyFilter}
+            data={dailyGraphData}
+            dataKey="visitors"
+            color="#3BD9DA"
+          />
+        )}
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

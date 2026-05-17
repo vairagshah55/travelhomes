@@ -18,7 +18,8 @@ import { CustomPagination } from "@/components/CustomPagination";
 import { Loader } from "@/components/ui/Loader";
 
 const UserTrips = () => {
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
+  const token = authToken ?? "";
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"upcoming" | "previous" | "delete">("upcoming");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -40,10 +41,6 @@ const UserTrips = () => {
     queryKey: tripsKey,
     enabled: !!uid,
     queryFn: async () => {
-      const token =
-        localStorage.getItem("travel_auth_token") ||
-        sessionStorage.getItem("travel_auth_token") ||
-        "";
       const res = await bookingsApi.getUserBookings(uid, token);
       if (res.success) return res.bookings;
       toast.error("Failed to load your trips. Please try again.");
@@ -95,11 +92,6 @@ const UserTrips = () => {
     }
 
     try {
-      const token =
-        localStorage.getItem("travel_auth_token") ||
-        sessionStorage.getItem("travel_auth_token") ||
-        "";
-
       const deletePromises = selectedTrips.map((id) => bookingsApi.delete(id, token));
       await Promise.all(deletePromises);
 
@@ -124,10 +116,6 @@ const UserTrips = () => {
 
   const handleCancelletion = async (trip: BookingDTO) => {
     try {
-      const token =
-        localStorage.getItem("travel_auth_token") ||
-        sessionStorage.getItem("travel_auth_token") ||
-        "";
       const res = await bookingsApi.updateStatus(trip._id, "cancelled", token);
       if (res.success) {
         queryClient.setQueryData<BookingDTO[]>(tripsKey, (prev) =>

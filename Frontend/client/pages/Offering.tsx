@@ -1,25 +1,23 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Award, MapPinOff } from "lucide-react";
-import toast from "react-hot-toast";
-import { Sidebar } from "@/components/Navigation";
+import { Plus, Award } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, type OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomPagination } from "@/components/CustomPagination";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
-import { OfferingCard, OfferPanel } from "@/components/offering";
-
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL = "#07e4e4";
-const TEAL_BG = "rgba(7, 228, 228, 0.07)";
-const BLACK = "#131313";
-const GRAY_500 = "#6b6b6b";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e4e4e4";
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA";
+import {
+  OfferingCard,
+  OfferPanel,
+  TEAL,
+  TEAL_BG,
+  BLACK,
+  GRAY_400,
+  GRAY_200,
+  WHITE,
+  SURFACE,
+} from "@/components/offering";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -30,8 +28,9 @@ const Offering = () => {
   const [activeTab, setActiveTab] = useState<"approved" | "pending">(initialTab);
   const [page, setPage] = useState(1);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
   const queryClient = useQueryClient();
+  const token = authToken ?? undefined;
 
   // Panel
   const [panelOpen, setPanelOpen] = useState(false);
@@ -40,11 +39,6 @@ const Offering = () => {
   useEffect(() => {
     setPage(1);
   }, [activeTab]);
-
-  const token =
-    localStorage.getItem("travel_auth_token") ||
-    sessionStorage.getItem("travel_auth_token") ||
-    undefined;
   const enabled = !!user?.id;
 
   // Two parallel queries — one per status. The legacy code refetched
@@ -101,15 +95,13 @@ const Offering = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 font-plus-jakarta overflow-hidden">
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle="Offerings" />
-
-        <div className="flex-1 flex flex-col overflow-hidden p-4 lg:p-5">
+    <>
+      <DashboardLayout
+        title="Offerings"
+        outerClassName="overflow-hidden"
+        contentClassName="flex-1 flex flex-col overflow-hidden p-4 lg:p-5"
+      >
+        <div className="flex-1 flex flex-col overflow-hidden">
           {/* ── Toolbar ── */}
           <div className="flex items-center justify-between pb-4">
             <div>
@@ -316,16 +308,14 @@ const Offering = () => {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Edit panel */}
+      </DashboardLayout>
       <OfferPanel
         open={panelOpen}
         initial={editing}
         onOpenChange={setPanelOpen}
         onSaved={onSaved}
       />
-    </div>
+    </>
   );
 };
 

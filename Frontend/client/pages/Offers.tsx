@@ -29,11 +29,14 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 import MobileVendorNav from "@/components/MobileVendorNav";
 import { DashboardHeader } from "@/components/Header";
 import { offersApi, type OfferDTO, API_BASE_URL } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
 
 const Offers = () => {
   const navigate = useNavigate();
+  const { token: authToken } = useAuth();
+  const token = authToken ?? undefined;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -52,10 +55,8 @@ const Offers = () => {
   const { data: items = [], isLoading: loading } = useQuery<OfferDTO[]>({
     queryKey: offersKey,
     queryFn: async () => {
-      const token =
-        localStorage.getItem("travel_auth_token") || sessionStorage.getItem("travel_auth_token");
       try {
-        const res = await offersApi.list(tab, token || undefined, { mine: true });
+        const res = await offersApi.list(tab, token, { mine: true });
         return Array.isArray((res as any).data) ? (res as any).data : [];
       } catch (e: any) {
         setAlertType("error");

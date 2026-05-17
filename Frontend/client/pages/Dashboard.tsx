@@ -444,16 +444,13 @@ const BookingTable = ({ data, loading }: { data: BookingDetailDTO[]; loading: bo
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   // ─── Dashboard data — three parallel queries keyed by user id. ──────────
   // Each query is independent so they can refresh on different cadences if
   // we ever want to (e.g. graphs every 5 min, counts every minute).
-  const token =
-    typeof window !== "undefined"
-      ? (localStorage.getItem("travel_auth_token") ?? undefined)
-      : undefined;
+  const token = authToken ?? undefined;
   const enabled = !!user && !!token;
 
   const params: Record<string, any> = { mine: true };
@@ -693,45 +690,6 @@ const Dashboard = () => {
             </div>
 
             {/* ── STAT CARDS ──────────────────────────────────────────────── */}
-            {/* DEV: Reset metrics button for testing */}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={async () => {
-                  const token = localStorage.getItem("travel_auth_token");
-                  if (!token) return;
-                  if (!confirm("Reset all impressions, clicks & visitor data to 0?")) return;
-                  try {
-                    const API = import.meta.env.VITE_API_BASE_URL || "";
-                    const res = await fetch(`${API}/api/vendorAnalytics/reset`, {
-                      method: "DELETE",
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    const json = await res.json();
-                    if (json.success) {
-                      alert("Metrics reset! Refreshing…");
-                      window.location.reload();
-                    } else {
-                      alert("Failed: " + json.message);
-                    }
-                  } catch (e: any) {
-                    alert("Error: " + e.message);
-                  }
-                }}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  padding: "5px 12px",
-                  borderRadius: 8,
-                  border: "1.5px solid #fca5a5",
-                  backgroundColor: "rgba(239,68,68,0.04)",
-                  color: "#ef4444",
-                  cursor: "pointer",
-                }}
-              >
-                🔄 Reset Metrics (Dev)
-              </button>
-            </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {statCards.map(({ icon: Icon, label, value, border, iconCls }) =>
                 loading ? (

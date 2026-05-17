@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
 import { DashboardHeader } from "@/components/Header";
 import { offersApi, cmsPublicApi } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
 
@@ -117,6 +118,7 @@ const FEATURES: Record<string, string[]> = {
 // ═════════════════════════════════════════════════════════════════════════════
 const AddOfferings = () => {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("camper-van");
@@ -354,8 +356,6 @@ const AddOfferings = () => {
         };
       }
 
-      const token =
-        localStorage.getItem("travel_auth_token") || sessionStorage.getItem("travel_auth_token");
       if (!token) throw new Error("User not authenticated");
 
       await offersApi.create(

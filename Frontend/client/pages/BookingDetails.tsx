@@ -37,18 +37,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import MobileVendorNav from "@/components/MobileVendorNav";
 import { SlidePanel } from "@/components/bookings";
+import {
+  TEAL,
+  TEAL_BG,
+  TEAL_FOCUS,
+  BLACK,
+  GRAY_500,
+  GRAY_400,
+  GRAY_200,
+  WHITE,
+  SURFACE,
+  ERROR,
+} from "@/components/offering";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL = "#07e4e4";
-const TEAL_BG = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
-const BLACK = "#131313";
-const GRAY_500 = "#6b6b6b";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e4e4e4";
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA";
-const ERROR = "#ef4444";
 const GREEN = "#16a34a";
 const AMBER = "#d97706";
 const BLUE = "#2563eb";
@@ -313,11 +314,8 @@ const LOCATIONS = [
 
 // ═════════════════════════════════════════════════════════════════════════════
 const BookingDetails = () => {
-  const { user } = useAuth();
-  const token =
-    localStorage.getItem("travel_auth_token") ||
-    sessionStorage.getItem("travel_auth_token") ||
-    undefined;
+  const { user, token: authToken } = useAuth();
+  const token = authToken ?? undefined;
 
   const [activeTab, setActiveTab] = useState("upcoming");
   const [timeFilter, setTimeFilter] = useState<"all" | "today" | "week" | "month">("all");

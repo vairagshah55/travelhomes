@@ -1,20 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sidebar } from "@/components/Navigation";
-import { DashboardHeader } from "@/components/Header";
 import { vendorAnalyticsApi, bookingDetailsApi } from "@/lib/api";
+import DashboardLayout from "@/components/DashboardLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { StatCards, EarningsChart, PaymentTable } from "@/components/revenue";
 import type { PaymentRecord } from "@/components/revenue";
-
-// ─── Brand tokens (header only) ──────────────────────────────────────────────
-const TEAL = "#07e4e4";
-const BLACK = "#131313";
-const GRAY_400 = "#9a9a9a";
+import { TEAL, BLACK, GRAY_400 } from "@/components/revenue/tokens";
 
 const Revenue = () => {
-  const token =
-    typeof window !== "undefined"
-      ? (localStorage.getItem("travel_auth_token") ?? undefined)
-      : undefined;
+  const { token: authToken } = useAuth();
+  const token = authToken ?? undefined;
   const enabled = !!token;
 
   // Three independent queries — counts (payments), monthly graphs, and
@@ -84,48 +78,42 @@ const Revenue = () => {
   const loading = countsQuery.isLoading || graphsQuery.isLoading || bookingsQuery.isLoading;
 
   return (
-    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 font-plus-jakarta overflow-hidden">
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle="Revenue" />
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
-            {/* Page header */}
-            <div>
-              <div className="flex items-center gap-2.5 mb-1">
-                <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: GRAY_400,
-                  }}
-                >
-                  Dashboard
-                </span>
-              </div>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: BLACK, letterSpacing: "-0.03em" }}>
-                Revenue Overview
-              </h1>
-            </div>
-
-            <StatCards loading={loading} data={revenueData} />
-            <EarningsChart
-              loading={loading}
-              chartData={chartData}
-              totalEarnings={revenueData.totalEarnings}
-            />
-            <PaymentTable loading={loading} data={paymentHistory} />
+    <DashboardLayout
+      title="Revenue"
+      outerClassName="w-full overflow-hidden"
+      contentClassName="flex-1 overflow-y-auto"
+    >
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
+        {/* Page header */}
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: GRAY_400,
+              }}
+            >
+              Dashboard
+            </span>
           </div>
-        </main>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: BLACK, letterSpacing: "-0.03em" }}>
+            Revenue Overview
+          </h1>
+        </div>
+
+        <StatCards loading={loading} data={revenueData} />
+        <EarningsChart
+          loading={loading}
+          chartData={chartData}
+          totalEarnings={revenueData.totalEarnings}
+        />
+        <PaymentTable loading={loading} data={paymentHistory} />
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

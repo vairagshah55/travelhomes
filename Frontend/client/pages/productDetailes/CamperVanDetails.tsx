@@ -6,13 +6,7 @@ import toast from "react-hot-toast";
 import { Button } from "../../components/ui/button";
 import Header, { HomeHeader } from "../../components/Header";
 import Footer from "../../components/Footer";
-import FAQSection, { uniqueStayFAQs } from "../../components/FAQSection";
 import PhotoGallery, { uniqueStayImages } from "../../components/PhotoGallery";
-import axios from "axios";
-import ReviewsSection, {
-  uniqueStayReviews,
-  uniqueStayCategories,
-} from "../../components/ReviewsSection";
 import {
   Calendar,
   Users,
