@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
-import indianCities from "../../public/indian_cities.json";
+import indianCities from "../data/indian_cities.json";
 
 interface ListingFilterPopupProps {
   isOpen: boolean;

@@ -87,7 +87,7 @@ const navigate = useNavigate();
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/adminDashboarde/admin/dashboard', {
+        const res = await fetch('/api/admin/dashboard', {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}`
           }
