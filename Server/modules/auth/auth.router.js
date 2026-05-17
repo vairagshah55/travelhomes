@@ -39,8 +39,10 @@ const otpLimiter =
 router.post("/register", otpLimiter, validate({ body: dto.registerBody }), controller.register);
 
 // PATCH /api/auth/register/:id — update remaining details after OTP verify.
+// Rate-limited to prevent abuse of the post-OTP update window.
 router.patch(
   "/register/:id",
+  otpLimiter,
   validate({ params: dto.updateRegisterParams, body: dto.updateRegisterBody }),
   controller.updateRegisterDetails,
 );

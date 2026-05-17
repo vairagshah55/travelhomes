@@ -15,7 +15,15 @@ const email = z
   .max(254)
   .transform((s) => s.toLowerCase());
 
-const password = z.string().min(8, "Password must be at least 8 characters").max(128);
+// Password: min 8, must contain at least one uppercase, lowercase, digit, and special char.
+const password = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(128)
+  .regex(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])/,
+    "Password must include uppercase, lowercase, number and special symbol",
+  );
 
 const mobile = z
   .string()
@@ -25,7 +33,22 @@ const mobile = z
 const userType = z.enum(["user", "vendor"]);
 
 // Date-of-birth: ISO datetime, ISO date (YYYY-MM-DD), or empty string.
-const dateOfBirth = z.union([z.iso.datetime(), z.iso.date(), z.literal("")]).optional();
+// When provided, the user must be at least 18 years old.
+const isAtLeast18 = (value) => {
+  if (!value) return true; // optional / empty handled elsewhere
+  const dob = new Date(value);
+  if (Number.isNaN(dob.getTime())) return false;
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age >= 18;
+};
+
+const dateOfBirth = z
+  .union([z.iso.datetime(), z.iso.date(), z.literal("")])
+  .optional()
+  .refine(isAtLeast18, { message: "You must be at least 18 years old" });
 
 // ─── POST /api/auth/register ─────────────────────────────────────────────────
 const registerBody = z

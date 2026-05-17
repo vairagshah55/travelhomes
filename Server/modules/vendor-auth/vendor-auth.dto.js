@@ -10,7 +10,7 @@ const { z } = require("zod");
 
 const emailOrMobile = z.string().trim().min(1, "Email or mobile is required").max(254);
 
-const password = z.string().min(1, "Password is required").max(128);
+const password = z.string().min(6, "Password must be at least 6 characters").max(128);
 const newPassword = z.string().min(8, "Password must be at least 8 characters").max(128);
 
 const otp = z

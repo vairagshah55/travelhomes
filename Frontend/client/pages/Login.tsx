@@ -30,15 +30,18 @@ const Login = () => {
     if (serverError) setServerError("");
   };
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const validateField = (field: "email" | "password") => {
     const value = formData[field];
     let msg = "";
     if (field === "email") {
       if (!value.trim()) msg = "Email is required.";
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) msg = "Enter a valid email address.";
+      else if (!EMAIL_RE.test(value)) msg = "Enter a valid email address.";
     }
     if (field === "password") {
       if (!value.trim()) msg = "Password is required.";
+      else if (value.length < 6) msg = "Password must be at least 6 characters.";
     }
     setErrors((prev) => ({ ...prev, [field]: msg }));
   };
@@ -48,8 +51,9 @@ const Login = () => {
 
     const newErrors: { email?: string; password?: string } = {};
     if (!formData.email.trim()) newErrors.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Enter a valid email address.";
+    else if (!EMAIL_RE.test(formData.email)) newErrors.email = "Enter a valid email address.";
     if (!formData.password.trim()) newErrors.password = "Password is required.";
+    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -80,7 +84,10 @@ const Login = () => {
       }
     } catch (err: any) {
       const msg = err?.message || '';
-      if (msg.includes('verify your OTP')) {
+      const status = err?.status ?? err?.statusCode ?? err?.response?.status;
+      if (status === 429 || /too many|rate.?limit/i.test(msg)) {
+        setServerError("Too many attempts. Please wait a minute and try again.");
+      } else if (msg.includes('verify your OTP')) {
         setServerError("Please verify your OTP first. Try registering again.");
       } else {
         setServerError("Something went wrong. Please try again.");
@@ -110,7 +117,8 @@ const Login = () => {
             {/* EMAIL */}
             <div>
               <input
-                type="text"
+                type="email"
+                autoComplete="email"
                 placeholder="Enter Your Email"
                 value={formData.email}
                 onChange={(e) => updateField("email", e.target.value)}

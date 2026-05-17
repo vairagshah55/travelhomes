@@ -75,9 +75,30 @@ const validate = (field: string, value: string, password = ""): string => {
     case "lastName":
       if (!value.trim()) return "Last name is required.";
       return "";
-    case "dateOfBirth":
+    case "dateOfBirth": {
       if (!value.trim()) return "Date of birth is required.";
+      // Expecting YYYY-MM-DD; verify it's a real calendar date (rejects Feb 31, Apr 31, etc.)
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+      if (!m) return "Enter a valid date.";
+      const [, ys, ms, ds] = m;
+      const y = Number(ys);
+      const mo = Number(ms);
+      const d = Number(ds);
+      const dob = new Date(y, mo - 1, d);
+      if (
+        dob.getFullYear() !== y ||
+        dob.getMonth() !== mo - 1 ||
+        dob.getDate() !== d
+      )
+        return "Enter a valid date.";
+      // Must be at least 18 years old.
+      const today = new Date();
+      let age = today.getFullYear() - y;
+      const md = today.getMonth() - (mo - 1);
+      if (md < 0 || (md === 0 && today.getDate() < d)) age--;
+      if (age < 18) return "You must be at least 18 years old.";
       return "";
+    }
     default:
       return "";
   }
@@ -312,6 +333,10 @@ const Register = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateStep(1)) return;
+    if (!phoneCountry || !phoneCountry.dialCode) {
+      setErrors((prev) => ({ ...prev, mobile: "Select a country code." }));
+      return;
+    }
 
     setIsLoading(true);
     try {
