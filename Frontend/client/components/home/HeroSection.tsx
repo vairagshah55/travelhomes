@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, MapPin, Calendar, Users, Star as StarIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import AirbnbHeader from "../AirbnbHeader";
+import SiteHeader from "../SiteHeader";
 import FilterButton from "../FilterButton";
 import CamperVanIcon from "../icons/CamperVanIcon";
 import HomeIcon from "../icons/HomeIcon";
@@ -187,7 +187,7 @@ export function HeroSection({
       <HeroSlideshow />
 
       <div className="relative flex-1 flex flex-col overflow-visible">
-        <AirbnbHeader
+        <SiteHeader
           variant="transparent"
           className="fixed w-full z-50"
           activeFilter={activeFilter}

@@ -4,7 +4,7 @@ import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { Link, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import AirbnbHeader from "../components/AirbnbHeader";
+import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
 import DefaultCard from "../components/DefaultCard";
 import {
@@ -831,9 +831,9 @@ export default function SearchResults() {
 
   return (
     <div className="min-h-screen  flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      {/* Airbnb Header */}
+      {/* Site Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
-        <AirbnbHeader
+        <SiteHeader
           activeFilter={activeFilter}
           onFilterChange={(filter) => setActiveFilter(filter as FilterType)}
         />

@@ -55,7 +55,7 @@ function RocketIcon({ className }: { className?: string }) {
   );
 }
 
-interface AirbnbHeaderProps {
+interface SiteHeaderProps {
   variant?: "transparent" | "white";
   className?: string;
   activeFilter?: string;
@@ -64,14 +64,14 @@ interface AirbnbHeaderProps {
   scrollHighlightFilter?: string | null;
 }
 
-export default function AirbnbHeader({
+export default function SiteHeader({
   variant = "white",
   className = "",
   activeFilter = "unique-stays",
   onFilterChange,
   heroHeight,
   scrollHighlightFilter,
-}: AirbnbHeaderProps) {
+}: SiteHeaderProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isSearchPage = pathname === "/search";
@@ -916,11 +916,7 @@ export default function AirbnbHeader({
                   </button>
                   {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
                     <button
-                      className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
-                        isScrolled
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md"
-                          : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
-                      }`}
+                      className="max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold bg-ds-deep text-white hover:bg-ds-navy shadow-sm hover:shadow-md transition-all duration-200 ease-out"
                       onClick={() => {
                         updateUserType("vendor");
                         navigate("/dashboard");

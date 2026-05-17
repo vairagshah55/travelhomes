@@ -119,7 +119,7 @@ export default function Index() {
   const contentRef = useRef<HTMLDivElement>(null);
 
   /* ── React Query — all data ───────────────────────────────────────────────── */
-  // Shared hook so AddOfferings, ServiceSelection, AirbnbHeader,
+  // Shared hook so AddOfferings, ServiceSelection, SiteHeader,
   // SearchResults, and the 3 onboarding flows hit the same cache.
   const { data: sectionsData } = useHomepageSections();
 
