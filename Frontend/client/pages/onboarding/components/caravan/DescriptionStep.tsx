@@ -117,7 +117,7 @@ const Field = ({
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: error ? "#ef4444" : GRAY_500,
+          color: GRAY_500,
           letterSpacing: "0.03em",
           textTransform: "uppercase",
         }}

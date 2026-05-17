@@ -421,7 +421,7 @@ const OfferCard = ({
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: valueError ? ERROR : GRAY_500,
+                    color: GRAY_500,
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
                   }}
@@ -447,7 +447,7 @@ const OfferCard = ({
                   style={{
                     fontSize: 11,
                     fontWeight: 700,
-                    color: finalPriceError ? ERROR : GRAY_500,
+                    color: GRAY_500,
                     textTransform: "uppercase",
                     letterSpacing: "0.04em",
                   }}

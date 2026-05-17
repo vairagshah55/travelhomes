@@ -413,7 +413,7 @@ const PriceCard = ({
           style={{
             fontSize: 11,
             fontWeight: 600,
-            color: error ? ERROR : GRAY_500,
+            color: GRAY_500,
             textTransform: "uppercase",
             letterSpacing: "0.04em",
           }}
