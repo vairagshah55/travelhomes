@@ -2,18 +2,20 @@ import React from "react";
 import { Plus, X, Check, IndianRupee, Car, Calendar } from "lucide-react";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL       = "#07e4e4";
-const TEAL_BG    = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
-const BLACK      = "#131313";
-const GRAY_500   = "#6b6b6b";
-const GRAY_400   = "#9a9a9a";
-const GRAY_200   = "#e4e4e4";
-const WHITE      = "#ffffff";
-const SURFACE    = "#F7F8FA";
-const ERROR      = "#ef4444";
-const ERROR_BG   = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.1)";
+// designe.md tokens — primary ds-deep #185FA5, navy headings.
+const TEAL = "#185FA5";
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA";
+const ERROR = "#E24B4A"; // ds-error
+const ERROR_BG = "rgba(226,75,74,0.04)";
+const ERROR_RING = "rgba(226,75,74,0.10)";
 
 type PriceField = "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes";
 
@@ -65,11 +67,12 @@ const PriceInput = ({
         overflow: "hidden",
         border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
         backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow: focused && !error
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-          ? `0 0 0 3px ${ERROR_RING}`
-          : "none",
+        boxShadow:
+          focused && !error
+            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+            : error
+              ? `0 0 0 3px ${ERROR_RING}`
+              : "none",
         transition: "all 0.15s",
       }}
     >
@@ -80,7 +83,7 @@ const PriceInput = ({
           gap: 4,
           padding: "0 12px",
           height: 52,
-          borderRight: `1.5px solid ${focused ? "rgba(7,228,228,0.3)" : GRAY_200}`,
+          borderRight: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.30)" : GRAY_200}`,
           backgroundColor: focused ? TEAL_BG : SURFACE,
           transition: "all 0.15s",
           flexShrink: 0,
@@ -169,10 +172,11 @@ const ItemRow = ({
           flexShrink: 0,
         }}
       >
-        {isInclude
-          ? <Check size={11} color="#22c55e" strokeWidth={2.5} />
-          : <X size={11} color="#f87171" strokeWidth={2.5} />
-        }
+        {isInclude ? (
+          <Check size={11} color="#22c55e" strokeWidth={2.5} />
+        ) : (
+          <X size={11} color="#f87171" strokeWidth={2.5} />
+        )}
       </div>
       <input
         type="text"
@@ -210,8 +214,12 @@ const ItemRow = ({
           flexShrink: 0,
           transition: "background-color 0.15s",
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+        }}
       >
         <X size={12} color={GRAY_400} />
       </button>
@@ -349,7 +357,7 @@ const PriceCard = ({
     <div
       style={{
         backgroundColor: WHITE,
-        border: `1.5px solid ${error ? "#fca5a5" : "#EBEBEB"}`,
+        border: `1.5px solid ${error ? "#fca5a5" : "#D3D1C7"}`,
         borderRadius: 20,
         padding: "20px 22px 22px",
         boxShadow: error
@@ -366,7 +374,7 @@ const PriceCard = ({
             height: 36,
             borderRadius: 11,
             backgroundColor: hasValue ? TEAL_BG : SURFACE,
-            border: `1.5px solid ${hasValue ? "rgba(7,228,228,0.25)" : GRAY_200}`,
+            border: `1.5px solid ${hasValue ? "rgba(24, 95, 165, 0.25)" : GRAY_200}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -377,7 +385,9 @@ const PriceCard = ({
           {icon}
         </div>
         <div className="flex-1">
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+            {title}
+          </p>
           <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>
         </div>
         {hasValue && (
@@ -408,11 +418,21 @@ const PriceCard = ({
             letterSpacing: "0.04em",
           }}
         >
-          Charge amount {error ? "" : <span style={{ color: GRAY_400, fontWeight: 400, textTransform: "none" }}>— optional if other mode is set</span>}
+          Charge amount{" "}
+          {error ? (
+            ""
+          ) : (
+            <span style={{ color: GRAY_400, fontWeight: 400, textTransform: "none" }}>
+              — optional if other mode is set
+            </span>
+          )}
         </label>
         <PriceInput
           value={value}
-          onChange={(v) => { onChange(v); if (error) clearError(errorKey); }}
+          onChange={(v) => {
+            onChange(v);
+            if (error) clearError(errorKey);
+          }}
           error={!!error}
         />
         {error && <ErrorMsg message={error} />}
@@ -466,7 +486,6 @@ const PricingStep: React.FC<PricingStepProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
@@ -485,11 +504,12 @@ const PricingStep: React.FC<PricingStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -508,7 +528,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
             padding: "12px 16px",
             borderRadius: 12,
             backgroundColor: ERROR_BG,
-            border: `1.5px solid rgba(239,68,68,0.25)`,
+            border: `1.5px solid rgba(226,75,74,0.25)`,
             boxShadow: `0 0 0 3px ${ERROR_RING}`,
           }}
         >
@@ -522,7 +542,13 @@ const PricingStep: React.FC<PricingStepProps> = ({
 
       <div className="w-full flex flex-col gap-4">
         <PriceCard
-          icon={<Car size={16} color={perKmCharge && Number(perKmCharge) > 0 ? TEAL : GRAY_400} strokeWidth={2} />}
+          icon={
+            <Car
+              size={16}
+              color={perKmCharge && Number(perKmCharge) > 0 ? TEAL : GRAY_400}
+              strokeWidth={2}
+            />
+          }
           title="Per Kilometer (KM)"
           subtitle="Charge per km traveled"
           value={perKmCharge}
@@ -542,7 +568,13 @@ const PricingStep: React.FC<PricingStepProps> = ({
         />
 
         <PriceCard
-          icon={<Calendar size={16} color={perDayCharge && Number(perDayCharge) > 0 ? TEAL : GRAY_400} strokeWidth={2} />}
+          icon={
+            <Calendar
+              size={16}
+              color={perDayCharge && Number(perDayCharge) > 0 ? TEAL : GRAY_400}
+              strokeWidth={2}
+            />
+          }
           title="Per Day"
           subtitle="Flat daily rental charge"
           value={perDayCharge}

@@ -1,30 +1,39 @@
 import React, { useState } from "react";
 import { Plus, X, Check, AlertCircle, Lightbulb } from "lucide-react";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL       = "#07e4e4";
-const TEAL_BG    = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
-const BLACK      = "#131313";
-const GRAY_500   = "#6b6b6b";
-const GRAY_400   = "#9a9a9a";
-const GRAY_200   = "#e4e4e4";
-const WHITE      = "#ffffff";
-const SURFACE    = "#F7F8FA";
+// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
+// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
+const TEAL = "#185FA5"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
 
 interface InclusionExclusionStepProps {
   priceIncludes: string[];
   priceExcludes: string[];
   expectations: string[];
   onAddListItem: (key: "priceIncludes" | "priceExcludes" | "expectations", value: string) => void;
-  onRemoveListItem: (key: "priceIncludes" | "priceExcludes" | "expectations", index: number) => void;
+  onRemoveListItem: (
+    key: "priceIncludes" | "priceExcludes" | "expectations",
+    index: number,
+  ) => void;
 }
 
 type ListKey = "priceIncludes" | "priceExcludes" | "expectations";
 
 /* ─── Section card ────────────────────────────────────────────────────────── */
 const SectionCard = ({
-  icon, title, subtitle, badge, children,
+  icon,
+  title,
+  subtitle,
+  badge,
+  children,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -35,7 +44,7 @@ const SectionCard = ({
   <div
     style={{
       backgroundColor: WHITE,
-      border: "1.5px solid #EBEBEB",
+      border: "1.5px solid #D3D1C7",
       borderRadius: 20,
       padding: "20px 22px 22px",
       boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -44,17 +53,23 @@ const SectionCard = ({
     <div className="flex items-center gap-3 mb-5">
       <div
         style={{
-          width: 36, height: 36, borderRadius: 11,
+          width: 36,
+          height: 36,
+          borderRadius: 11,
           backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(7,228,228,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1.5px solid rgba(24,95,165,0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
         }}
       >
         {icon}
       </div>
       <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          {title}
+        </p>
         {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
       </div>
       {badge}
@@ -82,12 +97,15 @@ const ChipList = ({
         <div
           key={index}
           style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
             padding: "5px 6px 5px 12px",
             borderRadius: 99,
             border: `1.5px solid ${accentColor}25`,
             backgroundColor: chipBg,
-            fontSize: 13, fontWeight: 500,
+            fontSize: 13,
+            fontWeight: 500,
             color: accentColor,
           }}
         >
@@ -96,14 +114,23 @@ const ChipList = ({
             type="button"
             onClick={() => onRemove(index)}
             style={{
-              width: 20, height: 20, borderRadius: "50%",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 20,
+              height: 20,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               backgroundColor: "transparent",
-              border: "none", cursor: "pointer",
+              border: "none",
+              cursor: "pointer",
               transition: "background-color 0.15s",
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accentColor}18`; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accentColor}18`;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+            }}
           >
             <X size={11} />
           </button>
@@ -140,20 +167,25 @@ const AddInput = ({
         value={value}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
+          if (e.key === "Enter") {
+            e.preventDefault();
+            handleAdd();
+          }
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
         style={{
-          flex: 1, height: 48, padding: "0 16px",
-          fontSize: 14, color: BLACK,
+          flex: 1,
+          height: 48,
+          padding: "0 16px",
+          fontSize: 14,
+          color: BLACK,
           backgroundColor: focused ? WHITE : SURFACE,
           border: `1.5px solid ${focused ? TEAL : "transparent"}`,
-          borderRadius: 13, outline: "none",
-          boxShadow: focused
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : "none",
+          borderRadius: 13,
+          outline: "none",
+          boxShadow: focused ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)` : "none",
           transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
           fontWeight: 450,
         }}
@@ -163,13 +195,17 @@ const AddInput = ({
         onClick={handleAdd}
         disabled={!value.trim()}
         style={{
-          height: 48, padding: "0 18px",
-          display: "flex", alignItems: "center", gap: 6,
+          height: 48,
+          padding: "0 18px",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
           borderRadius: 13,
           border: `1.5px solid ${value.trim() ? accentColor : GRAY_200}`,
           backgroundColor: value.trim() ? `${accentColor}10` : "transparent",
           color: value.trim() ? accentColor : GRAY_400,
-          fontSize: 13, fontWeight: 600,
+          fontSize: 13,
+          fontWeight: 600,
           cursor: value.trim() ? "pointer" : "not-allowed",
           transition: "all 0.15s",
           flexShrink: 0,
@@ -237,15 +273,17 @@ const InclusionExclusionStep: React.FC<InclusionExclusionStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
           <span
             style={{
-              fontSize: 10.5, fontWeight: 700,
-              letterSpacing: "0.13em", textTransform: "uppercase", color: GRAY_400,
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
             }}
           >
             Transparency
@@ -253,10 +291,13 @@ const InclusionExclusionStep: React.FC<InclusionExclusionStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800, color: BLACK,
-            letterSpacing: "-0.03em", lineHeight: 1.15,
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
+            lineHeight: 1.15,
           }}
         >
           Inclusions &amp; Exclusions
@@ -279,11 +320,13 @@ const InclusionExclusionStep: React.FC<InclusionExclusionStepProps> = ({
                 items.length > 0 ? (
                   <span
                     style={{
-                      fontSize: 11, fontWeight: 700,
+                      fontSize: 11,
+                      fontWeight: 700,
                       color: section.accentColor,
                       backgroundColor: section.chipBg,
                       border: `1.5px solid ${section.accentColor}25`,
-                      borderRadius: 99, padding: "2px 10px",
+                      borderRadius: 99,
+                      padding: "2px 10px",
                     }}
                   >
                     {items.length}

@@ -2,16 +2,19 @@ import React from "react";
 import { IndianRupee, Percent, Tag } from "lucide-react";
 import { type DiscountOffer } from "./types";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL      = "#07e4e4";
-const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
-const BLACK     = "#131313";
-const GRAY_500  = "#6b6b6b";
-const GRAY_400  = "#9a9a9a";
-const GRAY_200  = "#e4e4e4";
-const WHITE     = "#ffffff";
-const SURFACE   = "#F7F8FA";
-const ERROR     = "#ef4444";
+// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
+// Header/active-badge use primary ds-deep. Per-offer category colors
+// (purple / amber / emerald / rose) are intentional semantic accents.
+const TEAL = "#185FA5";
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const NAVY = "#042C53";
+const BLACK = "#042C53";
+const GRAY_500 = "#2C2C2A";
+const GRAY_400 = "#888780";
+const GRAY_200 = "#D3D1C7";
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA";
+const ERROR = "#E24B4A";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
@@ -190,11 +193,12 @@ const AmountInput = ({
         overflow: "hidden",
         border: `1.5px solid ${error ? "#fca5a5" : focused ? color : "transparent"}`,
         backgroundColor: error ? "rgba(239,68,68,0.04)" : focused ? WHITE : SURFACE,
-        boxShadow: focused && !error
-          ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-          ? "0 0 0 3px rgba(239,68,68,0.1)"
-          : "none",
+        boxShadow:
+          focused && !error
+            ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
+            : error
+              ? "0 0 0 3px rgba(239,68,68,0.1)"
+              : "none",
         transition: "all 0.15s",
       }}
     >
@@ -210,10 +214,11 @@ const AmountInput = ({
           transition: "all 0.15s",
         }}
       >
-        {isPercent
-          ? <Percent size={12} color={focused ? color : GRAY_400} />
-          : <IndianRupee size={12} color={focused ? color : GRAY_400} />
-        }
+        {isPercent ? (
+          <Percent size={12} color={focused ? color : GRAY_400} />
+        ) : (
+          <IndianRupee size={12} color={focused ? color : GRAY_400} />
+        )}
       </div>
       <input
         type="text"
@@ -238,7 +243,18 @@ const AmountInput = ({
         }}
       />
       {isPercent && (
-        <span style={{ paddingRight: 12, fontSize: 12, color: GRAY_400, fontWeight: 600, opacity: value ? 1 : 0, transition: "opacity 0.15s" }}>%</span>
+        <span
+          style={{
+            paddingRight: 12,
+            fontSize: 12,
+            color: GRAY_400,
+            fontWeight: 600,
+            opacity: value ? 1 : 0,
+            transition: "opacity 0.15s",
+          }}
+        >
+          %
+        </span>
       )}
     </div>
   );
@@ -275,8 +291,11 @@ const OfferCard = ({
   const cfg = OFFER_CONFIG[offerKey];
   const label = customLabel ?? cfg.label;
 
-  const valueError = errors[`${offerKey}Value`] ?? (offerKey === "firstUser" ? errors.discountPercentage : undefined);
-  const finalPriceError = errors[`${offerKey}FinalPrice`] ?? (offerKey === "firstUser" ? errors.finalPrice : undefined);
+  const valueError =
+    errors[`${offerKey}Value`] ??
+    (offerKey === "firstUser" ? errors.discountPercentage : undefined);
+  const finalPriceError =
+    errors[`${offerKey}FinalPrice`] ?? (offerKey === "firstUser" ? errors.finalPrice : undefined);
 
   const savingsHint =
     offer.enabled && offer.value
@@ -328,7 +347,15 @@ const OfferCard = ({
             {cfg.emoji}
           </div>
           <div>
-            <p style={{ fontSize: 13.5, fontWeight: 700, color: offer.enabled ? cfg.color : BLACK, letterSpacing: "-0.01em", transition: "color 0.2s" }}>
+            <p
+              style={{
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: offer.enabled ? cfg.color : BLACK,
+                letterSpacing: "-0.01em",
+                transition: "color 0.2s",
+              }}
+            >
               {label}
             </p>
             <p style={{ fontSize: 11.5, color: GRAY_500, marginTop: 2 }}>{cfg.description}</p>
@@ -483,7 +510,6 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
@@ -502,11 +528,12 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -527,7 +554,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
                 fontWeight: 700,
                 color: TEAL,
                 backgroundColor: TEAL_BG,
-                border: "1px solid rgba(7,228,228,0.3)",
+                border: "1px solid rgba(24, 95, 165, 0.30)",
                 borderRadius: 99,
                 padding: "4px 14px",
               }}

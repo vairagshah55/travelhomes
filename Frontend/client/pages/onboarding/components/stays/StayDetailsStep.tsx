@@ -2,16 +2,18 @@ import React from "react";
 import EntireStayForm from "./EntireStayForm";
 import IndividualRoomForm from "./IndividualRoomForm";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL      = "#07e4e4";
-const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
-const TEAL_RING = "rgba(7, 228, 228, 0.2)";
-const BLACK     = "#131313";
-const GRAY_500  = "#6b6b6b";
-const GRAY_400  = "#9a9a9a";
-const GRAY_200  = "#e4e4e4";
-const WHITE     = "#ffffff";
-const SURFACE   = "#F7F8FA";
+// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
+// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
+const TEAL = "#185FA5"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_RING = "rgba(24, 95, 165, 0.20)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
 
 interface Room {
   id: string;
@@ -73,17 +75,22 @@ interface StayDetailsStepProps {
   clearError: (field: string) => void;
 }
 
-const STAY_OPTIONS: { key: "entire" | "individual"; title: string; desc: string; emoji: string }[] = [
-  { key: "entire", title: "Entire Stay", desc: "Guests book the whole property", emoji: "🏡" },
-  { key: "individual", title: "Individual Room", desc: "Guests book specific rooms", emoji: "🛏️" },
-];
+const STAY_OPTIONS: { key: "entire" | "individual"; title: string; desc: string; emoji: string }[] =
+  [
+    { key: "entire", title: "Entire Stay", desc: "Guests book the whole property", emoji: "🏡" },
+    {
+      key: "individual",
+      title: "Individual Room",
+      desc: "Guests book specific rooms",
+      emoji: "🛏️",
+    },
+  ];
 
 const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
   const { stayType, setStayType } = props;
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
@@ -102,11 +109,12 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -118,12 +126,11 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
       </div>
 
       <div className="w-full flex flex-col gap-5">
-
         {/* ── Stay Type Selection ── */}
         <div
           style={{
             backgroundColor: WHITE,
-            border: "1.5px solid #EBEBEB",
+            border: "1.5px solid #D3D1C7",
             borderRadius: 20,
             padding: "20px 22px 22px",
             boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -194,7 +201,13 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
                       }}
                     >
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2.5 2.5L8 3" stroke={BLACK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d="M2 5l2.5 2.5L8 3"
+                          stroke={WHITE}
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </div>
                   )}

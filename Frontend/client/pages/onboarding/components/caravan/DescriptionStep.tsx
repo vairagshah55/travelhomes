@@ -3,16 +3,18 @@ import { ImagePlus, X, Plus, Check, FileImage, Type, ShieldCheck, Camera } from 
 import { getImageUrl } from "@/lib/utils";
 
 // ─── Brand tokens ────────────────────────────────────────────────────────────
-const TEAL        = "#07e4e4";
-const TEAL_BG     = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS  = "rgba(7, 228, 228, 0.15)";
-const BLACK       = "#131313";
-const GRAY_700    = "#444444";
-const GRAY_500    = "#6b6b6b";
-const GRAY_400    = "#9a9a9a";
-const GRAY_200    = "#e4e4e4";
-const SURFACE     = "#F7F8FA";
-const WHITE       = "#ffffff";
+// designe.md tokens — primary ds-deep #185FA5, navy headings.
+const TEAL = "#185FA5";
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_700 = "#2C2C2A"; // charcoal
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const SURFACE = "#F7F8FA";
+const WHITE = "#ffffff";
 
 interface DescriptionStepProps {
   name: string;
@@ -59,7 +61,7 @@ const SectionCard = ({
   <div
     style={{
       backgroundColor: WHITE,
-      border: "1.5px solid #EBEBEB",
+      border: "1.5px solid #D3D1C7",
       borderRadius: 20,
       padding: "20px 22px 22px",
       boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -73,7 +75,7 @@ const SectionCard = ({
             height: 36,
             borderRadius: 11,
             backgroundColor: TEAL_BG,
-            border: `1.5px solid rgba(7,228,228,0.25)`,
+            border: `1.5px solid rgba(24, 95, 165, 0.25)`,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -83,7 +85,9 @@ const SectionCard = ({
           {icon}
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+            {title}
+          </p>
           {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
         </div>
       </div>
@@ -113,13 +117,13 @@ const Field = ({
         style={{
           fontSize: 12,
           fontWeight: 600,
-          color: error ? "#ef4444" : GRAY_500,
+          color: error ? "#E24B4A" : GRAY_500,
           letterSpacing: "0.03em",
           textTransform: "uppercase",
         }}
       >
         {label}
-        {required && <span style={{ color: "#ef4444", marginLeft: 3 }}>*</span>}
+        {required && <span style={{ color: "#E24B4A", marginLeft: 3 }}>*</span>}
       </label>
       {right}
     </div>
@@ -127,10 +131,10 @@ const Field = ({
     {error && (
       <div className="flex items-center gap-1.5 mt-0.5">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+          <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke="#E24B4A" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
+        <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
       </div>
     )}
   </div>
@@ -168,14 +172,14 @@ const StyledInput = ({
         fontSize: 14.5,
         color: BLACK,
         backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#ef4444" : focused ? TEAL : "transparent"}`,
+        border: `1.5px solid ${error ? "#E24B4A" : focused ? TEAL : "transparent"}`,
         borderRadius: 13,
         outline: "none",
         boxShadow: active
           ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
           : error
-          ? "0 0 0 3px rgba(239,68,68,0.1)"
-          : "none",
+            ? "0 0 0 3px rgba(226,75,74,0.10)"
+            : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         fontWeight: 450,
         letterSpacing: "-0.005em",
@@ -217,15 +221,15 @@ const StyledTextarea = ({
         fontSize: 14.5,
         color: BLACK,
         backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#ef4444" : focused ? TEAL : "transparent"}`,
+        border: `1.5px solid ${error ? "#E24B4A" : focused ? TEAL : "transparent"}`,
         borderRadius: 13,
         outline: "none",
         resize: "none",
         boxShadow: active
           ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
           : error
-          ? "0 0 0 3px rgba(239,68,68,0.1)"
-          : "none",
+            ? "0 0 0 3px rgba(226,75,74,0.10)"
+            : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         lineHeight: 1.65,
         fontWeight: 450,
@@ -277,11 +281,10 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   clearError,
 }) => {
   const galleryFilled = Math.min(photos.length, GALLERY_TARGET);
-  const galleryPct    = (galleryFilled / GALLERY_TARGET) * 100;
+  const galleryPct = (galleryFilled / GALLERY_TARGET) * 100;
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
@@ -300,11 +303,12 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -316,7 +320,6 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
       </div>
 
       <div className="w-full flex flex-col gap-4">
-
         {/* ── Identity card (Name + Description) ── */}
         <SectionCard
           icon={<Type size={16} color={TEAL} strokeWidth={2.5} />}
@@ -332,7 +335,10 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             >
               <StyledInput
                 value={name}
-                onChange={(v) => { onNameChange(v); if (errors.name) clearError("name"); }}
+                onChange={(v) => {
+                  onNameChange(v);
+                  if (errors.name) clearError("name");
+                }}
                 placeholder="e.g. Cozy Mountain Camper"
                 maxLength={50}
                 error={!!errors.name}
@@ -347,14 +353,18 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             >
               <StyledTextarea
                 value={description}
-                onChange={(v) => { onDescriptionChange(v); if (errors.description) clearError("description"); }}
+                onChange={(v) => {
+                  onDescriptionChange(v);
+                  if (errors.description) clearError("description");
+                }}
                 placeholder="Describe the vibe, features, and what makes it special for travellers…"
                 maxLength={200}
                 rows={4}
                 error={!!errors.description}
               />
               <p style={{ fontSize: 11, color: GRAY_400, marginTop: 5 }}>
-                What makes your caravan unique? Mention the vibe, standout features, and ideal guests.
+                What makes your caravan unique? Mention the vibe, standout features, and ideal
+                guests.
               </p>
             </Field>
           </div>
@@ -375,16 +385,17 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 fontWeight: 700,
                 color: TEAL,
                 background: TEAL_BG,
-                border: `1.5px solid rgba(7,228,228,0.35)`,
+                border: `1.5px solid rgba(24, 95, 165, 0.35)`,
                 borderRadius: 9,
                 padding: "6px 14px",
                 cursor: "pointer",
                 letterSpacing: "0.01em",
               }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(7,228,228,0.14)";
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                  "rgba(24, 95, 165, 0.14)";
               }}
-              onMouseLeave={e => {
+              onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
               }}
             >
@@ -425,7 +436,12 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   }}
                 >
                   <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 4h12M2 8h8M2 12h5" stroke={GRAY_400} strokeWidth="1.5" strokeLinecap="round" />
+                    <path
+                      d="M2 4h12M2 8h8M2 12h5"
+                      stroke={GRAY_400}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </div>
                 <p style={{ fontSize: 12.5, color: GRAY_400 }}>No rules yet — add one above</p>
@@ -441,12 +457,19 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
           subtitle="High quality photos get more bookings"
         >
           <div className="flex flex-col gap-6">
-
             {/* Cover photo */}
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: GRAY_500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.03em",
+                    }}
+                  >
                     Cover Photo
                   </p>
                   <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>
@@ -471,7 +494,10 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
               </div>
               <CoverUpload
                 file={coverImage?.[0]}
-                onUpload={(files) => { onCoverUpload(files); if (errors.coverImage) clearError("coverImage"); }}
+                onUpload={(files) => {
+                  onCoverUpload(files);
+                  if (errors.coverImage) clearError("coverImage");
+                }}
                 onRemove={() => onRemoveCover(0)}
                 error={errors.coverImage}
               />
@@ -484,7 +510,15 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                  <p
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: GRAY_500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.03em",
+                    }}
+                  >
                     Gallery Photos
                   </p>
                   <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>
@@ -500,8 +534,8 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                     gap: 6,
                     fontSize: 12,
                     fontWeight: 700,
-                    color: errors.photos ? "#ef4444" : GRAY_700,
-                    border: `1.5px solid ${errors.photos ? "#ef4444" : GRAY_200}`,
+                    color: errors.photos ? "#E24B4A" : GRAY_700,
+                    border: `1.5px solid ${errors.photos ? "#E24B4A" : GRAY_200}`,
                     borderRadius: 9,
                     padding: "6px 14px",
                     cursor: "pointer",
@@ -509,14 +543,18 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                     transition: "all 0.15s",
                     letterSpacing: "0.01em",
                   }}
-                  onMouseEnter={e => {
+                  onMouseEnter={(e) => {
                     (e.currentTarget as HTMLLabelElement).style.borderColor = TEAL;
                     (e.currentTarget as HTMLLabelElement).style.color = TEAL;
                     (e.currentTarget as HTMLLabelElement).style.backgroundColor = TEAL_BG;
                   }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLLabelElement).style.borderColor = errors.photos ? "#ef4444" : GRAY_200;
-                    (e.currentTarget as HTMLLabelElement).style.color = errors.photos ? "#ef4444" : GRAY_700;
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLLabelElement).style.borderColor = errors.photos
+                      ? "#E24B4A"
+                      : GRAY_200;
+                    (e.currentTarget as HTMLLabelElement).style.color = errors.photos
+                      ? "#E24B4A"
+                      : GRAY_700;
                     (e.currentTarget as HTMLLabelElement).style.backgroundColor = WHITE;
                   }}
                 >
@@ -554,7 +592,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                       background:
                         galleryFilled >= GALLERY_TARGET
                           ? "linear-gradient(90deg, #22c55e, #16a34a)"
-                          : `linear-gradient(90deg, ${TEAL}, rgba(7,228,228,0.6))`,
+                          : `linear-gradient(90deg, ${TEAL}, rgba(24, 95, 165, 0.60))`,
                       transition: "width 0.5s cubic-bezier(0.16,1,0.3,1)",
                     }}
                   />
@@ -593,17 +631,26 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                           backgroundColor: SURFACE,
                           transition: "all 0.15s",
                         }}
-                        onMouseEnter={e => {
+                        onMouseEnter={(e) => {
                           (e.currentTarget as HTMLLabelElement).style.borderColor = TEAL;
                           (e.currentTarget as HTMLLabelElement).style.backgroundColor = TEAL_BG;
                         }}
-                        onMouseLeave={e => {
+                        onMouseLeave={(e) => {
                           (e.currentTarget as HTMLLabelElement).style.borderColor = GRAY_200;
                           (e.currentTarget as HTMLLabelElement).style.backgroundColor = SURFACE;
                         }}
                       >
                         <Plus size={15} color={GRAY_400} />
-                        <span style={{ fontSize: 9, color: GRAY_400, fontWeight: 700, letterSpacing: "0.05em" }}>ADD</span>
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: GRAY_400,
+                            fontWeight: 700,
+                            letterSpacing: "0.05em",
+                          }}
+                        >
+                          ADD
+                        </span>
                         <input
                           type="file"
                           multiple
@@ -617,10 +664,15 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                   {errors.photos && (
                     <div className="flex items-center gap-1.5">
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
-                        <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+                        <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+                        <path
+                          d="M6 3.5v3M6 8.25v.25"
+                          stroke="#E24B4A"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
                       </svg>
-                      <p style={{ fontSize: 11.5, color: "#ef4444" }}>{errors.photos}</p>
+                      <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{errors.photos}</p>
                     </div>
                   )}
                 </>
@@ -628,10 +680,8 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 <GalleryEmptyState onUpload={onPhotoUpload} error={errors.photos} />
               )}
             </div>
-
           </div>
         </SectionCard>
-
       </div>
     </div>
   );
@@ -668,7 +718,7 @@ const RuleRow = ({
           height: 24,
           borderRadius: "50%",
           backgroundColor: focused ? TEAL_BG : GRAY_200,
-          border: `1.5px solid ${focused ? "rgba(7,228,228,0.4)" : "transparent"}`,
+          border: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.40)" : "transparent"}`,
           color: focused ? TEAL : GRAY_400,
           fontSize: 10.5,
           fontWeight: 800,
@@ -717,10 +767,10 @@ const RuleRow = ({
           transition: "all 0.15s",
           flexShrink: 0,
         }}
-        onMouseEnter={e => {
+        onMouseEnter={(e) => {
           (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2";
         }}
-        onMouseLeave={e => {
+        onMouseLeave={(e) => {
           (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
         }}
       >
@@ -828,17 +878,21 @@ const CoverUpload = ({
           height: 170,
           border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`,
           borderRadius: 16,
-          backgroundColor: error ? "rgba(239,68,68,0.04)" : SURFACE,
-          boxShadow: error ? "0 0 0 3px rgba(239,68,68,0.08)" : "none",
+          backgroundColor: error ? "rgba(226,75,74,0.04)" : SURFACE,
+          boxShadow: error ? "0 0 0 3px rgba(226,75,74,0.08)" : "none",
           transition: "all 0.2s",
         }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#ef4444" : TEAL;
-          (e.currentTarget as HTMLLabelElement).style.backgroundColor = error ? "rgba(239,68,68,0.07)" : TEAL_BG;
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#E24B4A" : TEAL;
+          (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
+            ? "rgba(226,75,74,0.07)"
+            : TEAL_BG;
         }}
-        onMouseLeave={e => {
+        onMouseLeave={(e) => {
           (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#fca5a5" : GRAY_200;
-          (e.currentTarget as HTMLLabelElement).style.backgroundColor = error ? "rgba(239,68,68,0.04)" : SURFACE;
+          (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
+            ? "rgba(226,75,74,0.04)"
+            : SURFACE;
         }}
       >
         <div
@@ -857,8 +911,12 @@ const CoverUpload = ({
           <ImagePlus size={22} color={error ? "#f87171" : GRAY_400} />
         </div>
         <div className="text-center">
-          <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#ef4444" : BLACK }}>Upload cover photo</p>
-          <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>Click to browse · JPG, PNG, WEBP</p>
+          <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#E24B4A" : BLACK }}>
+            Upload cover photo
+          </p>
+          <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
+            Click to browse · JPG, PNG, WEBP
+          </p>
         </div>
         <input
           type="file"
@@ -870,10 +928,15 @@ const CoverUpload = ({
       {error && (
         <div className="flex items-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
-            <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+            <path
+              d="M6 3.5v3M6 8.25v.25"
+              stroke="#E24B4A"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
-          <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
+          <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
         </div>
       )}
     </div>
@@ -967,77 +1030,83 @@ const GalleryEmptyState = ({
   error?: string;
 }) => (
   <div className="flex flex-col gap-1.5">
-  <label
-    className="w-full flex flex-col items-center justify-center gap-3 cursor-pointer"
-    style={{
-      padding: "36px 24px",
-      border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`,
-      borderRadius: 16,
-      backgroundColor: error ? "rgba(239,68,68,0.04)" : SURFACE,
-      boxShadow: error ? "0 0 0 3px rgba(239,68,68,0.08)" : "none",
-      transition: "all 0.2s",
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#ef4444" : TEAL;
-      (e.currentTarget as HTMLLabelElement).style.backgroundColor = error ? "rgba(239,68,68,0.07)" : TEAL_BG;
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#fca5a5" : GRAY_200;
-      (e.currentTarget as HTMLLabelElement).style.backgroundColor = error ? "rgba(239,68,68,0.04)" : SURFACE;
-    }}
-  >
-    <div
+    <label
+      className="w-full flex flex-col items-center justify-center gap-3 cursor-pointer"
       style={{
-        width: 52,
-        height: 52,
-        borderRadius: 15,
-        backgroundColor: WHITE,
-        border: `1.5px solid ${error ? "#fca5a5" : GRAY_200}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+        padding: "36px 24px",
+        border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`,
+        borderRadius: 16,
+        backgroundColor: error ? "rgba(226,75,74,0.04)" : SURFACE,
+        boxShadow: error ? "0 0 0 3px rgba(226,75,74,0.08)" : "none",
+        transition: "all 0.2s",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#E24B4A" : TEAL;
+        (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
+          ? "rgba(226,75,74,0.07)"
+          : TEAL_BG;
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLLabelElement).style.borderColor = error ? "#fca5a5" : GRAY_200;
+        (e.currentTarget as HTMLLabelElement).style.backgroundColor = error
+          ? "rgba(226,75,74,0.04)"
+          : SURFACE;
       }}
     >
-      <FileImage size={24} color={error ? "#f87171" : GRAY_400} />
-    </div>
-    <div className="text-center">
-      <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#ef4444" : BLACK }}>Add gallery photos</p>
-      <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
-        Listings with 5+ photos get 40% more bookings
-      </p>
-    </div>
-    <span
-      style={{
-        fontSize: 12,
-        fontWeight: 700,
-        color: error ? "#ef4444" : TEAL,
-        border: `1.5px solid ${error ? "rgba(239,68,68,0.4)" : "rgba(7,228,228,0.4)"}`,
-        borderRadius: 9,
-        padding: "7px 18px",
-        backgroundColor: error ? "rgba(239,68,68,0.07)" : TEAL_BG,
-        letterSpacing: "0.01em",
-      }}
-    >
-      Browse Photos
-    </span>
-    <input
-      type="file"
-      multiple
-      accept="image/*"
-      onChange={(e) => onUpload(e.target.files)}
-      className="hidden"
-    />
-  </label>
-  {error && (
-    <div className="flex items-center gap-1.5">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <p style={{ fontSize: 11.5, color: "#ef4444" }}>{error}</p>
-    </div>
-  )}
+      <div
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 15,
+          backgroundColor: WHITE,
+          border: `1.5px solid ${error ? "#fca5a5" : GRAY_200}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
+        }}
+      >
+        <FileImage size={24} color={error ? "#f87171" : GRAY_400} />
+      </div>
+      <div className="text-center">
+        <p style={{ fontSize: 13.5, fontWeight: 700, color: error ? "#E24B4A" : BLACK }}>
+          Add gallery photos
+        </p>
+        <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
+          Listings with 5+ photos get 40% more bookings
+        </p>
+      </div>
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: error ? "#E24B4A" : TEAL,
+          border: `1.5px solid ${error ? "rgba(226,75,74,0.40)" : "rgba(24, 95, 165, 0.40)"}`,
+          borderRadius: 9,
+          padding: "7px 18px",
+          backgroundColor: error ? "rgba(226,75,74,0.07)" : TEAL_BG,
+          letterSpacing: "0.01em",
+        }}
+      >
+        Browse Photos
+      </span>
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={(e) => onUpload(e.target.files)}
+        className="hidden"
+      />
+    </label>
+    {error && (
+      <div className="flex items-center gap-1.5">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="5.25" stroke="#E24B4A" strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke="#E24B4A" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <p style={{ fontSize: 11.5, color: "#E24B4A" }}>{error}</p>
+      </div>
+    )}
   </div>
 );
 

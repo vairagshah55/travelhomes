@@ -1,19 +1,21 @@
 import React from "react";
 import { Minus, Plus, IndianRupee, Clock, Users, MapPin } from "lucide-react";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL       = "#07e4e4";
-const TEAL_BG    = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
-const BLACK      = "#131313";
-const GRAY_500   = "#6b6b6b";
-const GRAY_400   = "#9a9a9a";
-const GRAY_200   = "#e4e4e4";
-const WHITE      = "#ffffff";
-const SURFACE    = "#F7F8FA";
-const ERROR      = "#ef4444";
-const ERROR_BG   = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.1)";
+// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
+// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
+const TEAL = "#185FA5"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+const ERROR = "#E24B4A"; // ds-error
+const ERROR_BG = "rgba(226,75,74,0.04)";
+const ERROR_RING = "rgba(226,75,74,0.10)";
 
 interface PricingStepProps {
   regularPrice: string;
@@ -32,13 +34,21 @@ interface PricingStepProps {
 }
 
 const DURATION_OPTIONS = [
-  "30 minutes", "1 hour", "2 hours", "3 hours",
-  "Half day (4 hrs)", "Full day (8 hrs)", "Multi-day",
+  "30 minutes",
+  "1 hour",
+  "2 hours",
+  "3 hours",
+  "Half day (4 hrs)",
+  "Full day (8 hrs)",
+  "Multi-day",
 ];
 
 /* ─── Section card ────────────────────────────────────────────────────────── */
 const SectionCard = ({
-  icon, title, subtitle, children,
+  icon,
+  title,
+  subtitle,
+  children,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -48,7 +58,7 @@ const SectionCard = ({
   <div
     style={{
       backgroundColor: WHITE,
-      border: "1.5px solid #EBEBEB",
+      border: "1.5px solid #D3D1C7",
       borderRadius: 20,
       padding: "20px 22px 22px",
       boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -57,17 +67,23 @@ const SectionCard = ({
     <div className="flex items-center gap-3 mb-5">
       <div
         style={{
-          width: 36, height: 36, borderRadius: 11,
+          width: 36,
+          height: 36,
+          borderRadius: 11,
           backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(7,228,228,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1.5px solid rgba(24,95,165,0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
         }}
       >
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          {title}
+        </p>
         {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
       </div>
     </div>
@@ -77,7 +93,10 @@ const SectionCard = ({
 
 /* ─── Field wrapper ───────────────────────────────────────────────────────── */
 const Field = ({
-  label, required, error, children,
+  label,
+  required,
+  error,
+  children,
 }: {
   label: string;
   required?: boolean;
@@ -87,9 +106,11 @@ const Field = ({
   <div className="flex flex-col gap-1.5">
     <label
       style={{
-        fontSize: 12, fontWeight: 600,
+        fontSize: 12,
+        fontWeight: 600,
         color: error ? ERROR : GRAY_500,
-        letterSpacing: "0.03em", textTransform: "uppercase",
+        letterSpacing: "0.03em",
+        textTransform: "uppercase",
       }}
     >
       {label}
@@ -110,7 +131,12 @@ const Field = ({
 
 /* ─── Styled input ────────────────────────────────────────────────────────── */
 const StyledInput = ({
-  value, onChange, placeholder, maxLength, inputMode, error,
+  value,
+  onChange,
+  placeholder,
+  maxLength,
+  inputMode,
+  error,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -131,14 +157,21 @@ const StyledInput = ({
       maxLength={maxLength}
       inputMode={inputMode}
       style={{
-        width: "100%", height: 52, padding: "0 16px",
-        fontSize: 14, color: BLACK,
+        width: "100%",
+        height: 52,
+        padding: "0 16px",
+        fontSize: 14,
+        color: BLACK,
         backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
         border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-        borderRadius: 13, outline: "none",
-        boxShadow: focused && !error
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error ? `0 0 0 3px ${ERROR_RING}` : "none",
+        borderRadius: 13,
+        outline: "none",
+        boxShadow:
+          focused && !error
+            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+            : error
+              ? `0 0 0 3px ${ERROR_RING}`
+              : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         fontWeight: 450,
       }}
@@ -148,7 +181,10 @@ const StyledInput = ({
 
 /* ─── Styled select ───────────────────────────────────────────────────────── */
 const StyledSelect = ({
-  value, onChange, children, error,
+  value,
+  onChange,
+  children,
+  error,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -164,25 +200,49 @@ const StyledSelect = ({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={{
-          width: "100%", height: 52, padding: "0 40px 0 16px",
-          fontSize: 14, color: value ? BLACK : GRAY_400,
+          width: "100%",
+          height: 52,
+          padding: "0 40px 0 16px",
+          fontSize: 14,
+          color: value ? BLACK : GRAY_400,
           backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
           border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-          borderRadius: 13, outline: "none", appearance: "none",
-          boxShadow: focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error ? `0 0 0 3px ${ERROR_RING}` : "none",
+          borderRadius: 13,
+          outline: "none",
+          appearance: "none",
+          boxShadow:
+            focused && !error
+              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+              : error
+                ? `0 0 0 3px ${ERROR_RING}`
+                : "none",
           transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-          cursor: "pointer", fontWeight: 450,
+          cursor: "pointer",
+          fontWeight: 450,
         }}
       >
         {children}
       </select>
       <svg
-        style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-        width="16" height="16" viewBox="0 0 16 16" fill="none"
+        style={{
+          position: "absolute",
+          right: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
+        }}
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
       >
-        <path d="M4 6l4 4 4-4" stroke={GRAY_400} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M4 6l4 4 4-4"
+          stroke={GRAY_400}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );
@@ -206,15 +266,17 @@ const PricingStep: React.FC<PricingStepProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
           <span
             style={{
-              fontSize: 10.5, fontWeight: 700,
-              letterSpacing: "0.13em", textTransform: "uppercase", color: GRAY_400,
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
             }}
           >
             Pricing & Location
@@ -222,10 +284,13 @@ const PricingStep: React.FC<PricingStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800, color: BLACK,
-            letterSpacing: "-0.03em", lineHeight: 1.15,
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
+            lineHeight: 1.15,
           }}
         >
           Pricing &amp; Location
@@ -236,7 +301,6 @@ const PricingStep: React.FC<PricingStepProps> = ({
       </div>
 
       <div className="w-full flex flex-col gap-4">
-
         {/* ── Pricing card ── */}
         <SectionCard
           icon={<IndianRupee size={16} color={TEAL} strokeWidth={2.5} />}
@@ -244,13 +308,14 @@ const PricingStep: React.FC<PricingStepProps> = ({
           subtitle="How much guests pay per booking"
         >
           <div className="flex flex-col gap-5">
-
             {/* Price per person */}
             <Field label="Price per Person" required error={errors.regularPrice}>
               <div
                 style={{
-                  display: "flex", alignItems: "center",
-                  borderRadius: 13, overflow: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  borderRadius: 13,
+                  overflow: "hidden",
                   border: `1.5px solid ${errors.regularPrice ? "#fca5a5" : "transparent"}`,
                   backgroundColor: errors.regularPrice ? ERROR_BG : SURFACE,
                   boxShadow: errors.regularPrice ? `0 0 0 3px ${ERROR_RING}` : "none",
@@ -259,10 +324,14 @@ const PricingStep: React.FC<PricingStepProps> = ({
               >
                 <div
                   style={{
-                    display: "flex", alignItems: "center", gap: 4,
-                    padding: "0 14px", height: 52,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "0 14px",
+                    height: 52,
                     borderRight: `1.5px solid ${GRAY_200}`,
-                    backgroundColor: SURFACE, flexShrink: 0,
+                    backgroundColor: SURFACE,
+                    flexShrink: 0,
                   }}
                 >
                   <IndianRupee size={13} color={GRAY_400} />
@@ -275,16 +344,28 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   placeholder="0"
                   min="0"
                   style={{
-                    flex: 1, height: 52, padding: "0 16px",
-                    fontSize: 18, fontWeight: 700,
+                    flex: 1,
+                    height: 52,
+                    padding: "0 16px",
+                    fontSize: 18,
+                    fontWeight: 700,
                     color: regularPrice ? BLACK : GRAY_400,
                     backgroundColor: "transparent",
-                    border: "none", outline: "none",
+                    border: "none",
+                    outline: "none",
                     letterSpacing: "-0.02em",
                   }}
                 />
                 {regularPrice && Number(regularPrice) > 0 && (
-                  <span style={{ fontSize: 11, fontWeight: 600, color: TEAL, paddingRight: 14, flexShrink: 0 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: TEAL,
+                      paddingRight: 14,
+                      flexShrink: 0,
+                    }}
+                  >
                     / person
                   </span>
                 )}
@@ -295,8 +376,15 @@ const PricingStep: React.FC<PricingStepProps> = ({
             <Field label="Duration">
               <div style={{ position: "relative" }}>
                 <Clock
-                  size={15} color={GRAY_400}
-                  style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                  size={15}
+                  color={GRAY_400}
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    pointerEvents: "none",
+                  }}
                 />
                 <input
                   type="text"
@@ -305,11 +393,16 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   placeholder="e.g. 3 hours"
                   list="duration-options"
                   style={{
-                    width: "100%", height: 52, padding: "0 16px 0 42px",
-                    fontSize: 14, color: BLACK,
+                    width: "100%",
+                    height: 52,
+                    padding: "0 16px 0 42px",
+                    fontSize: 14,
+                    color: BLACK,
                     backgroundColor: SURFACE,
                     border: "1.5px solid transparent",
-                    borderRadius: 13, outline: "none", fontWeight: 450,
+                    borderRadius: 13,
+                    outline: "none",
+                    fontWeight: 450,
                     transition: "all 0.15s",
                   }}
                   onFocus={(e) => {
@@ -324,11 +417,12 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   }}
                 />
                 <datalist id="duration-options">
-                  {DURATION_OPTIONS.map((opt) => <option key={opt} value={opt} />)}
+                  {DURATION_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt} />
+                  ))}
                 </datalist>
               </div>
             </Field>
-
           </div>
         </SectionCard>
 
@@ -340,17 +434,26 @@ const PricingStep: React.FC<PricingStepProps> = ({
         >
           <div
             style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "16px 18px", borderRadius: 14,
-              backgroundColor: SURFACE, border: "1.5px solid transparent",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 18px",
+              borderRadius: 14,
+              backgroundColor: SURFACE,
+              border: "1.5px solid transparent",
             }}
           >
             <div className="flex items-center gap-3">
               <div
                 style={{
-                  width: 38, height: 38, borderRadius: 11,
-                  backgroundColor: WHITE, border: "1.5px solid #EBEBEB",
-                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 38,
+                  height: 38,
+                  borderRadius: 11,
+                  backgroundColor: WHITE,
+                  border: "1.5px solid #EBEBEB",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
                 }}
               >
@@ -358,7 +461,9 @@ const PricingStep: React.FC<PricingStepProps> = ({
               </div>
               <div>
                 <p style={{ fontSize: 13.5, fontWeight: 600, color: BLACK }}>Person Capacity</p>
-                <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>Max participants per session</p>
+                <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>
+                  Max participants per session
+                </p>
               </div>
             </div>
 
@@ -368,9 +473,14 @@ const PricingStep: React.FC<PricingStepProps> = ({
                 onClick={() => onUpdateFormData("personCapacity", Math.max(1, personCapacity - 1))}
                 disabled={personCapacity <= 1}
                 style={{
-                  width: 34, height: 34, borderRadius: "50%",
-                  border: `1.5px solid ${GRAY_200}`, backgroundColor: WHITE,
-                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  border: `1.5px solid ${GRAY_200}`,
+                  backgroundColor: WHITE,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                   cursor: personCapacity <= 1 ? "not-allowed" : "pointer",
                   opacity: personCapacity <= 1 ? 0.35 : 1,
                   transition: "all 0.15s",
@@ -390,7 +500,15 @@ const PricingStep: React.FC<PricingStepProps> = ({
                 <Minus size={14} />
               </button>
 
-              <span style={{ width: 36, textAlign: "center", fontSize: 17, fontWeight: 700, color: BLACK }}>
+              <span
+                style={{
+                  width: 36,
+                  textAlign: "center",
+                  fontSize: 17,
+                  fontWeight: 700,
+                  color: BLACK,
+                }}
+              >
                 {personCapacity}
               </span>
 
@@ -398,10 +516,16 @@ const PricingStep: React.FC<PricingStepProps> = ({
                 type="button"
                 onClick={() => onUpdateFormData("personCapacity", personCapacity + 1)}
                 style={{
-                  width: 34, height: 34, borderRadius: "50%",
-                  border: `1.5px solid ${GRAY_200}`, backgroundColor: WHITE,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  cursor: "pointer", transition: "all 0.15s",
+                  width: 34,
+                  height: 34,
+                  borderRadius: "50%",
+                  border: `1.5px solid ${GRAY_200}`,
+                  backgroundColor: WHITE,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                 }}
                 onMouseEnter={(e) => {
@@ -426,11 +550,13 @@ const PricingStep: React.FC<PricingStepProps> = ({
           subtitle="Where the activity takes place"
         >
           <div className="flex flex-col gap-4">
-
             <Field label="Street Address" error={errors.address}>
               <StyledInput
                 value={address || ""}
-                onChange={(v) => { setFormData((prev: any) => ({ ...prev, address: v })); clearError("address"); }}
+                onChange={(v) => {
+                  setFormData((prev: any) => ({ ...prev, address: v }));
+                  clearError("address");
+                }}
                 placeholder="e.g. 12, MG Road, Lal Chowk"
                 error={!!errors.address}
               />
@@ -440,7 +566,10 @@ const PricingStep: React.FC<PricingStepProps> = ({
               <Field label="Country" required>
                 <StyledSelect
                   value={locality}
-                  onChange={(v) => { setFormData((prev: any) => ({ ...prev, locality: v, state: "", city: "" })); clearError("locality"); }}
+                  onChange={(v) => {
+                    setFormData((prev: any) => ({ ...prev, locality: v, state: "", city: "" }));
+                    clearError("locality");
+                  }}
                 >
                   <option value="India">India</option>
                 </StyledSelect>
@@ -449,7 +578,10 @@ const PricingStep: React.FC<PricingStepProps> = ({
               <Field label="Pincode" required error={errors.pincode}>
                 <StyledInput
                   value={pincode}
-                  onChange={(v) => { setFormData((prev: any) => ({ ...prev, pincode: v.replace(/\D/g, "") })); clearError("pincode"); }}
+                  onChange={(v) => {
+                    setFormData((prev: any) => ({ ...prev, pincode: v.replace(/\D/g, "") }));
+                    clearError("pincode");
+                  }}
                   placeholder="6-digit code"
                   maxLength={6}
                   inputMode="numeric"
@@ -462,14 +594,22 @@ const PricingStep: React.FC<PricingStepProps> = ({
               <Field label="State" required error={errors.state}>
                 <StyledSelect
                   value={state}
-                  onChange={(v) => { setFormData((prev: any) => ({ ...prev, state: v, city: "" })); clearError("state"); clearError("city"); }}
+                  onChange={(v) => {
+                    setFormData((prev: any) => ({ ...prev, state: v, city: "" }));
+                    clearError("state");
+                    clearError("city");
+                  }}
                   error={!!errors.state}
                 >
-                  <option value="" disabled>Select State</option>
+                  <option value="" disabled>
+                    Select State
+                  </option>
                   {locationData
                     .find((c: any) => c.name === locality)
                     ?.states?.map((s: any, idx: number) => (
-                      <option key={idx} value={s.name}>{s.name}</option>
+                      <option key={idx} value={s.name}>
+                        {s.name}
+                      </option>
                     ))}
                 </StyledSelect>
               </Field>
@@ -477,23 +617,28 @@ const PricingStep: React.FC<PricingStepProps> = ({
               <Field label="City" required error={errors.city}>
                 <StyledSelect
                   value={city}
-                  onChange={(v) => { setFormData((prev: any) => ({ ...prev, city: v })); clearError("city"); }}
+                  onChange={(v) => {
+                    setFormData((prev: any) => ({ ...prev, city: v }));
+                    clearError("city");
+                  }}
                   error={!!errors.city}
                 >
-                  <option value="" disabled>Select City</option>
+                  <option value="" disabled>
+                    Select City
+                  </option>
                   {locationData
                     .find((c: any) => c.name === locality)
                     ?.states?.find((s: any) => s.name === state)
                     ?.cities?.map((c: any, idx: number) => (
-                      <option key={idx} value={c.name}>{c.name}</option>
+                      <option key={idx} value={c.name}>
+                        {c.name}
+                      </option>
                     ))}
                 </StyledSelect>
               </Field>
             </div>
-
           </div>
         </SectionCard>
-
       </div>
     </div>
   );

@@ -6,18 +6,26 @@ import { useAuth } from "../../contexts/AuthContext";
 import { getOnboardingData, cmsPublicApi } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 
-// ─── Brand tokens ────────────────────────────────────────────────────────────
-const TEAL = "#07e4e4";
-const TEAL_DARK = "#05c4c4";
-const TEAL_BG = "rgba(7, 228, 228, 0.07)";
-const TEAL_GLOW = "rgba(7, 228, 228, 0.18)";
-const TEAL_BORDER = "rgba(7, 228, 228, 0.35)";
-const BLACK = "#131313";
-const GRAY_600 = "#555555";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e8e8e8";
-const GRAY_100 = "#f5f5f5";
+// ─── Brand tokens (designe.md) ──────────────────────────────────────────────
+// Primary CTA color is ds-deep #185FA5 with ds-navy hover.
+const DEEP = "#185FA5"; // brand / CTA
+const NAVY = "#042C53"; // headings / dark hover
+const DEEP_BG = "rgba(24, 95, 165, 0.07)"; // selected card tint
+const DEEP_GLOW = "rgba(24, 95, 165, 0.22)"; // CTA shadow
+const DEEP_BORDER = "rgba(24, 95, 165, 0.35)"; // hover border accent
+const SKY = "#E6F1FB"; // hover card tint
+const CHARCOAL = "#2C2C2A"; // body text
+const SLATE = "#888780"; // muted text
+const PEBBLE = "#D3D1C7"; // borders
+const LINEN = "#F1EFE8"; // muted surface
 const WHITE = "#ffffff";
+
+// Legacy aliases preserved to minimize churn through the existing inline-style block.
+const GRAY_600 = CHARCOAL;
+const GRAY_400 = SLATE;
+const GRAY_200 = PEBBLE;
+const GRAY_100 = LINEN;
+const BLACK = NAVY;
 
 type ServiceType = "caravan" | "stay" | "activity";
 
@@ -199,7 +207,7 @@ const ServiceSelection = () => {
                     width: 26,
                     height: 26,
                     borderRadius: "50%",
-                    backgroundColor: step.done ? TEAL : GRAY_100,
+                    backgroundColor: step.done ? DEEP : GRAY_100,
                     color: step.done ? BLACK : GRAY_400,
                     transition: "all 0.2s",
                   }}
@@ -208,7 +216,7 @@ const ServiceSelection = () => {
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path
                         d="M2.5 6L5 8.5L9.5 3.5"
-                        stroke={BLACK}
+                        stroke={WHITE}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -263,7 +271,7 @@ const ServiceSelection = () => {
 
           {/* Step label */}
           <div className="flex items-center gap-2.5 mb-5">
-            <div style={{ width: 32, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+            <div style={{ width: 32, height: 3, borderRadius: 99, backgroundColor: DEEP }} />
             <span
               style={{
                 fontSize: 11,
@@ -277,15 +285,15 @@ const ServiceSelection = () => {
             </span>
           </div>
 
-          {/* Heading */}
+          {/* Heading — DM Serif Display per designe.md (H1, navy, weight 400). */}
           <h1
-            className="mb-3"
+            className="mb-3 font-serif"
             style={{
-              fontSize: "clamp(28px, 4vw, 42px)",
-              fontWeight: 800,
-              color: BLACK,
+              fontSize: "clamp(30px, 4.2vw, 42px)",
+              fontWeight: 400,
+              color: NAVY,
               lineHeight: 1.12,
-              letterSpacing: "-0.025em",
+              letterSpacing: "-0.015em",
             }}
           >
             Which service are
@@ -396,9 +404,9 @@ const ServiceSelection = () => {
               fontSize: 15,
               fontWeight: 700,
               letterSpacing: "-0.01em",
-              backgroundColor: TEAL,
-              color: BLACK,
-              boxShadow: `0 8px 28px ${TEAL_GLOW}`,
+              backgroundColor: DEEP,
+              color: WHITE,
+              boxShadow: `0 8px 28px ${DEEP_GLOW}`,
               width: "fit-content",
             }}
           >
@@ -424,7 +432,7 @@ const ServiceSelection = () => {
               width: 440,
               height: 440,
               borderRadius: "50%",
-              backgroundColor: TEAL,
+              backgroundColor: DEEP,
               opacity: 0.07,
               filter: "blur(90px)",
             }}
@@ -438,7 +446,7 @@ const ServiceSelection = () => {
               top: "25%",
               right: "10%",
               borderRadius: "50%",
-              backgroundColor: TEAL,
+              backgroundColor: DEEP,
               opacity: 0.05,
               filter: "blur(60px)",
             }}
@@ -540,7 +548,7 @@ const ServiceSelection = () => {
         }
         .ss-cta-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 36px ${TEAL_GLOW} !important;
+          box-shadow: 0 12px 36px ${DEEP_GLOW} !important;
         }
         .ss-cta-btn:active {
           transform: translateY(0);
@@ -572,7 +580,7 @@ const DotGrid = () => (
   <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
     {[0, 18, 36, 54].map((cy) =>
       [0, 18, 36, 54].map((cx) => (
-        <circle key={`${cx}-${cy}`} cx={cx + 6} cy={cy + 6} r="2.5" fill={TEAL} />
+        <circle key={`${cx}-${cy}`} cx={cx + 6} cy={cy + 6} r="2.5" fill={DEEP} />
       )),
     )}
   </svg>
@@ -650,13 +658,13 @@ const ServiceCard = ({
         position: "relative",
         overflow: "hidden",
         border: active
-          ? `2px solid ${TEAL}`
+          ? `2px solid ${DEEP}`
           : hovered
-            ? `1.5px solid ${TEAL_BORDER}`
+            ? `1.5px solid ${DEEP_BORDER}`
             : `1.5px solid ${GRAY_200}`,
-        backgroundColor: active ? TEAL_BG : hovered ? "rgba(7,228,228,0.025)" : WHITE,
+        backgroundColor: active ? DEEP_BG : hovered ? "rgba(24, 95, 165, 0.04)" : WHITE,
         boxShadow: active
-          ? `0 4px 24px ${TEAL_GLOW}`
+          ? `0 4px 24px ${DEEP_GLOW}`
           : hovered
             ? "0 2px 12px rgba(0,0,0,0.06)"
             : "0 1px 4px rgba(0,0,0,0.04)",
@@ -676,8 +684,8 @@ const ServiceCard = ({
             textTransform: "uppercase",
             padding: "3px 9px",
             borderRadius: 99,
-            backgroundColor: TEAL,
-            color: BLACK,
+            backgroundColor: DEEP,
+            color: WHITE,
           }}
         >
           {tag}
@@ -694,8 +702,8 @@ const ServiceCard = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: active ? TEAL : hovered ? "rgba(7,228,228,0.1)" : GRAY_100,
-          color: active ? BLACK : hovered ? TEAL : GRAY_400,
+          backgroundColor: active ? DEEP : hovered ? "rgba(24, 95, 165, 0.10)" : GRAY_100,
+          color: active ? WHITE : hovered ? DEEP : GRAY_400,
           transition: "all 0.2s",
         }}
       >
@@ -736,8 +744,8 @@ const ServiceCard = ({
             width: 22,
             height: 22,
             borderRadius: "50%",
-            border: active ? `2px solid ${TEAL}` : `2px solid ${GRAY_200}`,
-            backgroundColor: active ? TEAL : WHITE,
+            border: active ? `2px solid ${DEEP}` : `2px solid ${GRAY_200}`,
+            backgroundColor: active ? DEEP : WHITE,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -748,7 +756,7 @@ const ServiceCard = ({
             <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
               <path
                 d="M2 5.5L4.5 8L9 3"
-                stroke={BLACK}
+                stroke={WHITE}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"

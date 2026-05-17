@@ -2,24 +2,33 @@ import React, { useState, useMemo } from "react";
 import * as Flags from "country-flag-icons/react/3x2";
 import { Dialog, DialogBackdrop, DialogPanel } from "@headlessui/react";
 import {
-  Building2, Briefcase, Mail, Phone, Receipt,
-  MapPin, Search, X, ChevronDown, Navigation,
+  Building2,
+  Briefcase,
+  Mail,
+  Phone,
+  Receipt,
+  MapPin,
+  Search,
+  X,
+  ChevronDown,
+  Navigation,
 } from "lucide-react";
 import { type CountryOption } from "./types";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL       = "#07e4e4";
-const TEAL_BG    = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
-const BLACK      = "#131313";
-const GRAY_500   = "#6b6b6b";
-const GRAY_400   = "#9a9a9a";
-const GRAY_200   = "#e4e4e4";
-const WHITE      = "#ffffff";
-const SURFACE    = "#F7F8FA";
-const ERROR      = "#ef4444";
-const ERROR_BG   = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.1)";
+// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
+const TEAL = "#185FA5"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA";
+const ERROR = "#E24B4A"; // ds-error
+const ERROR_BG = "rgba(226,75,74,0.04)";
+const ERROR_RING = "rgba(226,75,74,0.10)";
 
 interface BusinessDetailsStepProps {
   values: {
@@ -71,17 +80,23 @@ const SectionCard = ({
     <div className="flex items-center gap-3 mb-5">
       <div
         style={{
-          width: 36, height: 36, borderRadius: 11,
+          width: 36,
+          height: 36,
+          borderRadius: 11,
           backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(7,228,228,0.25)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          border: "1.5px solid rgba(24, 95, 165, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
           flexShrink: 0,
         }}
       >
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          {title}
+        </p>
         {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
       </div>
     </div>
@@ -107,9 +122,11 @@ const Field = ({
     <div className="flex items-center gap-2">
       <label
         style={{
-          fontSize: 12, fontWeight: 600,
+          fontSize: 12,
+          fontWeight: 600,
           color: error ? ERROR : GRAY_500,
-          textTransform: "uppercase", letterSpacing: "0.03em",
+          textTransform: "uppercase",
+          letterSpacing: "0.03em",
         }}
       >
         {label}
@@ -118,9 +135,13 @@ const Field = ({
       {optional && (
         <span
           style={{
-            fontSize: 10, fontWeight: 600, color: GRAY_400,
-            backgroundColor: SURFACE, border: `1px solid ${GRAY_200}`,
-            borderRadius: 99, padding: "1px 7px",
+            fontSize: 10,
+            fontWeight: 600,
+            color: GRAY_400,
+            backgroundColor: SURFACE,
+            border: `1px solid ${GRAY_200}`,
+            borderRadius: 99,
+            padding: "1px 7px",
           }}
         >
           Optional
@@ -168,23 +189,31 @@ const IconInput = ({
   return (
     <div
       style={{
-        display: "flex", alignItems: "center",
-        borderRadius: 13, overflow: "hidden",
+        display: "flex",
+        alignItems: "center",
+        borderRadius: 13,
+        overflow: "hidden",
         border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
         backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow: focused && !error
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error ? `0 0 0 3px ${ERROR_RING}` : "none",
+        boxShadow:
+          focused && !error
+            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+            : error
+              ? `0 0 0 3px ${ERROR_RING}`
+              : "none",
         transition: "all 0.15s",
       }}
     >
       <div
         style={{
-          display: "flex", alignItems: "center",
-          padding: "0 12px", height: 52,
-          borderRight: `1.5px solid ${focused ? "rgba(7,228,228,0.25)" : GRAY_200}`,
+          display: "flex",
+          alignItems: "center",
+          padding: "0 12px",
+          height: 52,
+          borderRight: `1.5px solid ${focused ? "rgba(24, 95, 165, 0.25)" : GRAY_200}`,
           backgroundColor: focused ? TEAL_BG : SURFACE,
-          flexShrink: 0, transition: "all 0.15s",
+          flexShrink: 0,
+          transition: "all 0.15s",
         }}
       >
         <span style={{ color: focused ? TEAL : GRAY_400 }}>{icon}</span>
@@ -199,10 +228,16 @@ const IconInput = ({
         maxLength={maxLength}
         inputMode={inputMode}
         style={{
-          flex: 1, height: 52, padding: "0 14px",
-          fontSize: 14, color: value ? BLACK : GRAY_400,
-          backgroundColor: "transparent", border: "none", outline: "none",
-          fontWeight: 450, letterSpacing: mono ? "0.08em" : "-0.005em",
+          flex: 1,
+          height: 52,
+          padding: "0 14px",
+          fontSize: 14,
+          color: value ? BLACK : GRAY_400,
+          backgroundColor: "transparent",
+          border: "none",
+          outline: "none",
+          fontWeight: 450,
+          letterSpacing: mono ? "0.08em" : "-0.005em",
           fontFamily: mono ? "monospace" : "inherit",
         }}
       />
@@ -235,15 +270,22 @@ const StyledSelect = ({
         onBlur={() => setFocused(false)}
         disabled={disabled}
         style={{
-          width: "100%", height: 52,
+          width: "100%",
+          height: 52,
           padding: "0 40px 0 16px",
-          fontSize: 14, color: value ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
+          fontSize: 14,
+          color: value ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
           backgroundColor: disabled ? SURFACE : error ? ERROR_BG : focused ? WHITE : SURFACE,
           border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-          borderRadius: 13, outline: "none", appearance: "none",
-          boxShadow: focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error ? `0 0 0 3px ${ERROR_RING}` : "none",
+          borderRadius: 13,
+          outline: "none",
+          appearance: "none",
+          boxShadow:
+            focused && !error
+              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+              : error
+                ? `0 0 0 3px ${ERROR_RING}`
+                : "none",
           transition: "all 0.15s",
           cursor: disabled ? "not-allowed" : "pointer",
           fontWeight: 450,
@@ -254,8 +296,11 @@ const StyledSelect = ({
       <ChevronDown
         size={15}
         style={{
-          position: "absolute", right: 14, top: "50%",
-          transform: "translateY(-50%)", pointerEvents: "none",
+          position: "absolute",
+          right: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
           color: GRAY_400,
         }}
       />
@@ -283,7 +328,7 @@ const CountryPickerModal = ({
     const q = search.trim().toLowerCase();
     if (!q) return countries;
     return countries.filter(
-      (c) => c.name.toLowerCase().includes(q) || (c.dialCode ?? "").includes(q)
+      (c) => c.name.toLowerCase().includes(q) || (c.dialCode ?? "").includes(q),
     );
   }, [countries, search]);
 
@@ -291,27 +336,43 @@ const CountryPickerModal = ({
     <Dialog open={open} onClose={onClose}>
       <DialogBackdrop
         style={{
-          position: "fixed", inset: 0,
+          position: "fixed",
+          inset: 0,
           backgroundColor: "rgba(0,0,0,0.45)",
           backdropFilter: "blur(4px)",
           zIndex: 40,
         }}
       />
-      <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "center",
+          zIndex: 50,
+          padding: 16,
+        }}
+      >
         <DialogPanel
           style={{
-            width: "100%", maxWidth: 400,
+            width: "100%",
+            maxWidth: 400,
             backgroundColor: WHITE,
             borderRadius: 24,
             boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-            display: "flex", flexDirection: "column",
-            overflow: "hidden", maxHeight: "75vh",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            maxHeight: "75vh",
           }}
         >
           {/* Header */}
           <div
             style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               padding: "16px 20px",
               borderBottom: `1px solid ${GRAY_200}`,
               flexShrink: 0,
@@ -319,11 +380,19 @@ const CountryPickerModal = ({
           >
             <p style={{ fontSize: 14, fontWeight: 700, color: BLACK }}>Select Country Code</p>
             <button
-              onClick={() => { onClose(); setSearch(""); }}
+              onClick={() => {
+                onClose();
+                setSearch("");
+              }}
               style={{
-                width: 30, height: 30, borderRadius: "50%",
-                backgroundColor: SURFACE, border: "none",
-                display: "flex", alignItems: "center", justifyContent: "center",
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                backgroundColor: SURFACE,
+                border: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
                 cursor: "pointer",
               }}
             >
@@ -332,9 +401,20 @@ const CountryPickerModal = ({
           </div>
 
           {/* Search */}
-          <div style={{ padding: "12px 16px", borderBottom: `1px solid ${GRAY_200}`, flexShrink: 0 }}>
+          <div
+            style={{ padding: "12px 16px", borderBottom: `1px solid ${GRAY_200}`, flexShrink: 0 }}
+          >
             <div style={{ position: "relative" }}>
-              <Search size={14} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: GRAY_400 }} />
+              <Search
+                size={14}
+                style={{
+                  position: "absolute",
+                  left: 12,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: GRAY_400,
+                }}
+              />
               <input
                 type="text"
                 value={search}
@@ -342,21 +422,40 @@ const CountryPickerModal = ({
                 placeholder="Search country or code…"
                 autoFocus
                 style={{
-                  width: "100%", height: 40, paddingLeft: 36, paddingRight: 36,
-                  fontSize: 13, color: BLACK,
+                  width: "100%",
+                  height: 40,
+                  paddingLeft: 36,
+                  paddingRight: 36,
+                  fontSize: 13,
+                  color: BLACK,
                   backgroundColor: SURFACE,
                   border: `1.5px solid ${GRAY_200}`,
-                  borderRadius: 11, outline: "none",
+                  borderRadius: 11,
+                  outline: "none",
                   transition: "border-color 0.15s",
                   boxSizing: "border-box",
                 }}
-                onFocus={e => { e.target.style.borderColor = TEAL; e.target.style.boxShadow = `0 0 0 3px ${TEAL_FOCUS}`; }}
-                onBlur={e => { e.target.style.borderColor = GRAY_200; e.target.style.boxShadow = "none"; }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = TEAL;
+                  e.target.style.boxShadow = `0 0 0 3px ${TEAL_FOCUS}`;
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = GRAY_200;
+                  e.target.style.boxShadow = "none";
+                }}
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer" }}
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   <X size={12} color={GRAY_400} />
                 </button>
@@ -367,7 +466,16 @@ const CountryPickerModal = ({
           {/* List */}
           <div style={{ overflowY: "auto", flex: 1 }}>
             {filtered.length === 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 0", gap: 8 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "40px 0",
+                  gap: 8,
+                }}
+              >
                 <Search size={20} color={GRAY_200} />
                 <p style={{ fontSize: 13, color: GRAY_400 }}>No results for "{search}"</p>
               </div>
@@ -381,27 +489,73 @@ const CountryPickerModal = ({
                     <li key={c.isoCode}>
                       <button
                         type="button"
-                        onClick={() => { onSelect(c); onClose(); setSearch(""); }}
+                        onClick={() => {
+                          onSelect(c);
+                          onClose();
+                          setSearch("");
+                        }}
                         style={{
                           width: "100%",
-                          display: "flex", alignItems: "center", gap: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
                           padding: "10px 20px",
                           backgroundColor: isSelected ? TEAL_BG : "transparent",
-                          border: "none", cursor: "pointer",
+                          border: "none",
+                          cursor: "pointer",
                           transition: "background-color 0.1s",
                         }}
-                        onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE; }}
-                        onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected)
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected)
+                            (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                              "transparent";
+                        }}
                       >
-                        {FlagIcon && <FlagIcon style={{ width: 22, flexShrink: 0 }} title={c.name} />}
-                        <span style={{ flex: 1, fontSize: 13, color: isSelected ? TEAL : BLACK, fontWeight: isSelected ? 700 : 400, textAlign: "left", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {FlagIcon && (
+                          <FlagIcon style={{ width: 22, flexShrink: 0 }} title={c.name} />
+                        )}
+                        <span
+                          style={{
+                            flex: 1,
+                            fontSize: 13,
+                            color: isSelected ? TEAL : BLACK,
+                            fontWeight: isSelected ? 700 : 400,
+                            textAlign: "left",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
                           {c.name}
                         </span>
-                        <span style={{ fontSize: 12, color: GRAY_400, flexShrink: 0 }}>{dialCode}</span>
+                        <span style={{ fontSize: 12, color: GRAY_400, flexShrink: 0 }}>
+                          {dialCode}
+                        </span>
                         {isSelected && (
-                          <div style={{ width: 18, height: 18, borderRadius: "50%", backgroundColor: TEAL, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <div
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: "50%",
+                              backgroundColor: TEAL,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
                             <svg width="9" height="9" viewBox="0 0 8 8" fill="none">
-                              <path d="M1.5 4l2 2L6.5 2" stroke={BLACK} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              <path
+                                d="M1.5 4l2 2L6.5 2"
+                                stroke={WHITE}
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                           </div>
                         )}
@@ -444,20 +598,31 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase", color: GRAY_400 }}>
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
             Verification
           </span>
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)", fontWeight: 800,
-            color: BLACK, letterSpacing: "-0.03em", lineHeight: 1.15,
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
+            lineHeight: 1.15,
           }}
         >
           Business Details
@@ -468,7 +633,6 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
       </div>
 
       <div className="w-full flex flex-col gap-4">
-
         {/* ── Company Info ── */}
         <SectionCard
           icon={<Briefcase size={16} color={TEAL} strokeWidth={2.5} />}
@@ -540,8 +704,11 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
                 type="button"
                 onClick={() => setCountryDialogOpen(true)}
                 style={{
-                  display: "flex", alignItems: "center", gap: 8,
-                  height: 52, padding: "0 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  height: 52,
+                  padding: "0 14px",
                   backgroundColor: SURFACE,
                   border: `1.5px solid ${errors.businessPhone ? "#fca5a5" : "transparent"}`,
                   borderRadius: 13,
@@ -550,15 +717,32 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
                   transition: "all 0.15s",
                   boxShadow: errors.businessPhone ? `0 0 0 3px ${ERROR_RING}` : "none",
                 }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL; (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = errors.businessPhone ? "#fca5a5" : "transparent"; (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE; }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = errors.businessPhone
+                    ? "#fca5a5"
+                    : "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
+                }}
               >
                 {selectedCountry && (Flags as any)[selectedCountry.isoCode] ? (
                   React.createElement((Flags as any)[selectedCountry.isoCode], {
-                    style: { width: 20 }, title: selectedCountry.name,
+                    style: { width: 20 },
+                    title: selectedCountry.name,
                   })
                 ) : (
-                  <span style={{ width: 20, height: 14, backgroundColor: GRAY_200, borderRadius: 3, display: "block" }} />
+                  <span
+                    style={{
+                      width: 20,
+                      height: 14,
+                      backgroundColor: GRAY_200,
+                      borderRadius: 3,
+                      display: "block",
+                    }}
+                  />
                 )}
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: BLACK }}>{dialCode}</span>
                 <ChevronDown size={13} color={GRAY_400} />
@@ -618,32 +802,32 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="State" required error={errors.state}>
-              <StyledSelect
-                value={selectedState}
-                onChange={onStateChange}
-                error={!!errors.state}
-              >
-                <option value="" disabled>Select State</option>
+              <StyledSelect value={selectedState} onChange={onStateChange} error={!!errors.state}>
+                <option value="" disabled>
+                  Select State
+                </option>
                 {locationData
                   .find((c) => c.name === countryName)
                   ?.states?.map((s: any, idx: number) => (
-                    <option key={idx} value={s.name}>{s.name}</option>
+                    <option key={idx} value={s.name}>
+                      {s.name}
+                    </option>
                   ))}
               </StyledSelect>
             </Field>
 
             <Field label="City" required error={errors.city}>
-              <StyledSelect
-                value={selectedCity}
-                onChange={onCityChange}
-                error={!!errors.city}
-              >
-                <option value="" disabled>Select City</option>
+              <StyledSelect value={selectedCity} onChange={onCityChange} error={!!errors.city}>
+                <option value="" disabled>
+                  Select City
+                </option>
                 {locationData
                   .find((c) => c.name === countryName)
                   ?.states?.find((s: any) => s.name === selectedState)
                   ?.cities?.map((city: any, idx: number) => (
-                    <option key={idx} value={city.name}>{city.name}</option>
+                    <option key={idx} value={city.name}>
+                      {city.name}
+                    </option>
                   ))}
               </StyledSelect>
             </Field>
@@ -653,14 +837,19 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
           {mapSrc && (
             <div
               style={{
-                borderRadius: 16, overflow: "hidden",
+                borderRadius: 16,
+                overflow: "hidden",
                 border: `1.5px solid #EBEBEB`,
                 boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
               }}
             >
               <div
                 className="flex items-center gap-2"
-                style={{ padding: "10px 16px", backgroundColor: WHITE, borderBottom: "1.5px solid #EBEBEB" }}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: WHITE,
+                  borderBottom: "1.5px solid #EBEBEB",
+                }}
               >
                 <Navigation size={13} color={TEAL} />
                 <span style={{ fontSize: 12, fontWeight: 600, color: GRAY_500 }}>
@@ -679,7 +868,6 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             </div>
           )}
         </SectionCard>
-
       </div>
 
       <CountryPickerModal

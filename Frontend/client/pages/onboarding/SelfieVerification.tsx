@@ -1,17 +1,17 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Button } from '../../components/ui/button';
-import { Camera, RefreshCcw } from 'lucide-react';
-import { toast } from 'sonner';
-import LogoWebsite from '@/components/ui/LogoWebsite';
-import { submitSelfieVerification } from '@/lib/api';
-import { onboardingService } from '@/lib/onboardingService';
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { Button } from "../../components/ui/button";
+import { Camera, RefreshCcw } from "lucide-react";
+import { toast } from "sonner";
+import LogoWebsite from "@/components/ui/LogoWebsite";
+import { submitSelfieVerification } from "@/lib/api";
+import { onboardingService } from "@/lib/onboardingService";
 
 const ActivitySelfie = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  
+
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error("Please login to continue");
@@ -64,7 +64,7 @@ const ActivitySelfie = () => {
         // Some browsers require an initial prompt before enumerateDevices returns labels
         try {
           const tmp = await tryConstraints({ video: true, audio: false });
-          tmp.getTracks().forEach(t => t.stop());
+          tmp.getTracks().forEach((t) => t.stop());
         } catch {}
         vids = await listVideoDevices();
       }
@@ -100,7 +100,9 @@ const ActivitySelfie = () => {
         toast.error("Camera permission denied. Allow access in browser settings.");
       } else if (name === "NotFoundError") {
         // Give a more actionable message
-        toast.error("No camera found or it's in use. Check permissions or another app using camera.");
+        toast.error(
+          "No camera found or it's in use. Check permissions or another app using camera.",
+        );
       } else if (name === "OverconstrainedError") {
         toast.error("Requested camera not available. Cycling devices...");
         // Try cycling device index once automatically
@@ -186,14 +188,16 @@ const ActivitySelfie = () => {
 
       const { type, id } = onboarding;
       const result = await submitSelfieVerification(type, id, capturedImage);
-      
-      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} verification saved successfully!`);
-      
+
+      toast.success(
+        `${type.charAt(0).toUpperCase() + type.slice(1)} verification saved successfully!`,
+      );
+
       // Clear ids after success to avoid cross-flow confusion
       onboardingService.clearAll();
       navigate("/onboarding/complete", { state: { type } });
     } catch (e: any) {
-      toast.error(e?.message || 'Failed to save selfie verification');
+      toast.error(e?.message || "Failed to save selfie verification");
     } finally {
       setIsLoading(false);
     }
@@ -220,13 +224,13 @@ const ActivitySelfie = () => {
   useEffect(() => {
     const onboarding = onboardingService.getAnyId();
     if (!onboarding) {
-      toast.error('Please complete an onboarding form first.');
-      navigate('/onboarding/service-selection');
+      toast.error("Please complete an onboarding form first.");
+      navigate("/onboarding/service-selection");
     } else if (onboarding.id) {
       // Store IDs in session storage as requested
-      sessionStorage.setItem('onboardingId', onboarding.id);
-      sessionStorage.setItem('onboardingType', onboarding.type);
-      sessionStorage.setItem('id', onboarding.id);
+      sessionStorage.setItem("onboardingId", onboarding.id);
+      sessionStorage.setItem("onboardingType", onboarding.type);
+      sessionStorage.setItem("id", onboarding.id);
     }
   }, [navigate]);
 
@@ -243,9 +247,9 @@ const ActivitySelfie = () => {
   }, [startCamera, stopCamera]);
 
   return (
-     <div className="onboarding-layout h-screen overflow-hidden bg-white dark:bg-gray-900 flex flex-col">
+    <div className="onboarding-layout h-screen overflow-hidden bg-white flex flex-col">
       {/* ================= Header ================= */}
-      <div className="flex h-14 w-full items-center justify-start px-6 lg:px-16 border-b border-gray-100 dark:border-gray-800 shrink-0 bg-white dark:bg-gray-900">
+      <div className="flex h-14 w-full items-center justify-start px-6 lg:px-16 border-b border-ds-pebble shrink-0 bg-white">
         <LogoWebsite />
       </div>
 
@@ -253,17 +257,17 @@ const ActivitySelfie = () => {
       <div className="flex-1 px-6 py-8 overflow-hidden pb-32">
         <div className="flex flex-col items-center gap-6 h-full w-full max-w-4xl mx-auto">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+            <span className="text-xs font-semibold uppercase tracking-widest text-ds-slate">
               Identity Check
             </span>
-            <h1 className="text-2xl lg:text-3xl font-semibold text-black dark:text-white text-center">
+            <h1 className="font-serif text-[28px] lg:text-[34px] font-normal text-ds-navy leading-tight tracking-tight text-center">
               Take a selfie to verify
             </h1>
           </div>
 
           <div className="flex flex-col items-center gap-4 w-full max-w-3xl">
             {/* Camera / Image Preview */}
-            <div className="relative w-full max-w-2xl h-80 bg-gray-100 dark:bg-gray-800 rounded-2xl overflow-hidden">
+            <div className="relative w-full max-w-2xl h-80 bg-ds-linen rounded-2xl overflow-hidden">
               {capturedImage ? (
                 <img
                   src={capturedImage}
@@ -283,14 +287,14 @@ const ActivitySelfie = () => {
                   />
 
                   {!isStreaming && (
-                    <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center bg-gray-200">
-                      <Camera className="w-12 h-12 text-gray-400" />
+                    <div className="absolute inset-0 flex flex-col gap-4 items-center justify-center bg-ds-pebble">
+                      <Camera className="w-12 h-12 text-ds-slate" />
                       <div className="flex gap-3">
                         <button
                           type="button"
                           onClick={startCamera}
                           className="px-4 py-2 rounded-full hover:brightness-110"
-                          style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
+                          style={{ backgroundColor: "var(--ds-deep)", color: "#ffffff" }}
                         >
                           Start Camera
                         </button>
@@ -317,7 +321,7 @@ const ActivitySelfie = () => {
                 <button
                   onClick={capturePhoto}
                   className="w-20 h-20 border-4 border-white rounded-full flex items-center justify-center hover:brightness-110 transition"
-                  style={{backgroundColor: 'var(--th-accent)'}}
+                  style={{ backgroundColor: "var(--ds-deep)" }}
                 >
                   <div className="w-10 h-10 bg-white rounded-full" />
                 </button>
@@ -339,12 +343,12 @@ const ActivitySelfie = () => {
 
       {/* ================= Fixed Footer ================= */}
       {capturedImage && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 px-6 lg:px-16 py-4 z-50">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-ds-pebble px-6 lg:px-16 py-4 z-50">
           <div className="flex items-center justify-end gap-3 w-full max-w-4xl mx-auto">
             <Button
               onClick={retakePhoto}
               variant="outline"
-              className="h-11 px-8 text-sm border-gray-200 dark:border-gray-600 rounded-full hover:border-gray-400 transition-colors"
+              className="h-11 px-8 text-sm border-ds-pebble rounded-full hover:border-ds-slate transition-colors"
             >
               Retake
             </Button>
@@ -353,7 +357,7 @@ const ActivitySelfie = () => {
               onClick={submitPhoto}
               disabled={isLoading}
               className="h-11 px-8 text-sm hover:brightness-110 font-semibold rounded-full transition-opacity disabled:opacity-50"
-              style={{backgroundColor: 'var(--th-accent)', color: 'var(--th-accent-fg)'}}
+              style={{ backgroundColor: "var(--ds-deep)", color: "#ffffff" }}
             >
               {isLoading ? "Submitting..." : "Submit"}
             </Button>

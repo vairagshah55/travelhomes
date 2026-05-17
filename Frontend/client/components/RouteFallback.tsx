@@ -1,7 +1,7 @@
 // Skeleton screen shown while a lazy-loaded route chunk is downloading.
 // Mirrors the product-detail page layout so the transition feels seamless.
-const Sk = ({ className = "" }: { className?: string }) => (
-  <div className={`animate-pulse rounded-xl bg-ds-sky ${className}`} />
+const Sk = ({ className = "", style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={`animate-pulse rounded-xl bg-ds-sky ${className}`} style={style} />
 );
 
 const RouteFallback = () => (
@@ -49,7 +49,10 @@ const RouteFallback = () => (
       </div>
 
       {/* ── Image gallery skeleton — 1 large + 4 thumbnails ──── */}
-      <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden mb-8" style={{ height: 420 }}>
+      <div
+        className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden mb-8"
+        style={{ height: 420 }}
+      >
         <Sk className="rounded-none h-full w-full row-span-2 rounded-l-2xl" />
         <div className="grid grid-cols-2 gap-2">
           <Sk className="rounded-none h-full rounded-tr-2xl" style={{ height: 206 }} />
@@ -61,7 +64,6 @@ const RouteFallback = () => (
 
       {/* ── Two-column: content left + booking widget right ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-10">
-
         {/* Left — property info */}
         <div className="space-y-8">
           {/* Host row */}
@@ -127,8 +129,10 @@ const RouteFallback = () => (
 
         {/* Right — booking widget */}
         <div className="hidden lg:block">
-          <div className="sticky top-24 bg-white border border-ds-pebble rounded-2xl p-6 space-y-4"
-               style={{ boxShadow: "var(--ds-shadow-card)" }}>
+          <div
+            className="sticky top-24 bg-white border border-ds-pebble rounded-2xl p-6 space-y-4"
+            style={{ boxShadow: "var(--ds-shadow-card)" }}
+          >
             <div className="flex items-end gap-2">
               <Sk className="h-8 w-28 rounded-lg" />
               <Sk className="h-4 w-16 rounded mb-1" />

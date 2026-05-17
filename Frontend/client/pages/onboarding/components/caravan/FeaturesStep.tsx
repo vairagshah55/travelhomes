@@ -1,21 +1,37 @@
 import React from "react";
 import {
-  Wifi, Sun, Thermometer, Lightbulb, Wind, Droplets,
-  BedDouble, UtensilsCrossed, Zap, Tv2, Flame, Umbrella,
-  Bike, PawPrint, Plus, X, MoreHorizontal,
+  Wifi,
+  Sun,
+  Thermometer,
+  Lightbulb,
+  Wind,
+  Droplets,
+  BedDouble,
+  UtensilsCrossed,
+  Zap,
+  Tv2,
+  Flame,
+  Umbrella,
+  Bike,
+  PawPrint,
+  Plus,
+  X,
+  MoreHorizontal,
 } from "lucide-react";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL      = "#07e4e4";
-const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
-const TEAL_RING = "rgba(7, 228, 228, 0.2)";
-const BLACK     = "#131313";
-const GRAY_600  = "#555555";
-const GRAY_500  = "#6b6b6b";
-const GRAY_400  = "#9a9a9a";
-const GRAY_200  = "#e4e4e4";
-const WHITE     = "#ffffff";
-const SURFACE   = "#F7F8FA";
+// designe.md tokens — primary ds-deep #185FA5, navy headings.
+const TEAL = "#185FA5";
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_RING = "rgba(24, 95, 165, 0.20)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_600 = "#2C2C2A"; // charcoal
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA";
 
 interface CustomFeature {
   name: string;
@@ -36,20 +52,20 @@ interface FeaturesStepProps {
 }
 
 const STATIC_FEATURES: { name: string; icon: React.ReactNode }[] = [
-  { name: "Wi-Fi / Internet",      icon: <Wifi size={17} /> },
-  { name: "Solar Power",           icon: <Sun size={17} /> },
-  { name: "Insulation",            icon: <Thermometer size={17} /> },
-  { name: "Lighting",              icon: <Lightbulb size={17} /> },
-  { name: "Air Conditioning",      icon: <Wind size={17} /> },
-  { name: "Shower",                icon: <Droplets size={17} /> },
-  { name: "Sleeping Beds",         icon: <BedDouble size={17} /> },
-  { name: "Kitchen / Cooking Area",icon: <UtensilsCrossed size={17} /> },
-  { name: "Generator",             icon: <Zap size={17} /> },
-  { name: "TV / Entertainment",    icon: <Tv2 size={17} /> },
-  { name: "Heating",               icon: <Flame size={17} /> },
-  { name: "Awning",                icon: <Umbrella size={17} /> },
-  { name: "Bike Rack",             icon: <Bike size={17} /> },
-  { name: "Pet Friendly",          icon: <PawPrint size={17} /> },
+  { name: "Wi-Fi / Internet", icon: <Wifi size={17} /> },
+  { name: "Solar Power", icon: <Sun size={17} /> },
+  { name: "Insulation", icon: <Thermometer size={17} /> },
+  { name: "Lighting", icon: <Lightbulb size={17} /> },
+  { name: "Air Conditioning", icon: <Wind size={17} /> },
+  { name: "Shower", icon: <Droplets size={17} /> },
+  { name: "Sleeping Beds", icon: <BedDouble size={17} /> },
+  { name: "Kitchen / Cooking Area", icon: <UtensilsCrossed size={17} /> },
+  { name: "Generator", icon: <Zap size={17} /> },
+  { name: "TV / Entertainment", icon: <Tv2 size={17} /> },
+  { name: "Heating", icon: <Flame size={17} /> },
+  { name: "Awning", icon: <Umbrella size={17} /> },
+  { name: "Bike Rack", icon: <Bike size={17} /> },
+  { name: "Pet Friendly", icon: <PawPrint size={17} /> },
 ];
 
 const FeaturesStep: React.FC<FeaturesStepProps> = ({
@@ -67,7 +83,6 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
@@ -86,11 +101,12 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -106,7 +122,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
         style={{
           width: "100%",
           backgroundColor: WHITE,
-          border: "1.5px solid #EBEBEB",
+          border: "1.5px solid #D3D1C7",
           borderRadius: 20,
           padding: "20px 22px 22px",
           boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -114,7 +130,15 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
       >
         {/* Selected count badge */}
         <div className="flex items-center justify-between mb-4">
-          <p style={{ fontSize: 12, fontWeight: 700, color: GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+          <p
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: GRAY_500,
+              textTransform: "uppercase",
+              letterSpacing: "0.03em",
+            }}
+          >
             Features
           </p>
           {selectedCount > 0 && (
@@ -156,20 +180,26 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   transition: "all 0.15s",
                   color: selected ? TEAL : GRAY_600,
                 }}
-                onMouseEnter={e => {
+                onMouseEnter={(e) => {
                   if (!selected) {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
                     (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
                   }
                 }}
-                onMouseLeave={e => {
+                onMouseLeave={(e) => {
                   if (!selected) {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
                     (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
                   }
                 }}
               >
-                <span style={{ color: selected ? TEAL : GRAY_400, display: "flex", alignItems: "center" }}>
+                <span
+                  style={{
+                    color: selected ? TEAL : GRAY_400,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   {feature.icon}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
@@ -223,13 +253,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
               transition: "all 0.15s",
               color: showCustomFeaturesInput ? TEAL : GRAY_600,
             }}
-            onMouseEnter={e => {
+            onMouseEnter={(e) => {
               if (!showCustomFeaturesInput) {
                 (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
               }
             }}
-            onMouseLeave={e => {
+            onMouseLeave={(e) => {
               if (!showCustomFeaturesInput) {
                 (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
@@ -237,9 +267,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             }}
           >
             <Plus size={15} style={{ color: showCustomFeaturesInput ? TEAL : GRAY_400 }} />
-            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
-              Others
-            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>Others</span>
           </button>
         </div>
 
@@ -265,12 +293,12 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 outline: "none",
                 transition: "border-color 0.15s, box-shadow 0.15s",
               }}
-              onFocus={e => {
+              onFocus={(e) => {
                 e.target.style.borderColor = TEAL;
                 e.target.style.boxShadow = `0 0 0 3px ${TEAL_RING}`;
                 e.target.style.backgroundColor = WHITE;
               }}
-              onBlur={e => {
+              onBlur={(e) => {
                 e.target.style.borderColor = GRAY_200;
                 e.target.style.boxShadow = "none";
                 e.target.style.backgroundColor = SURFACE;
@@ -286,7 +314,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 borderRadius: 12,
                 border: "none",
                 backgroundColor: !customFeatureInput.trim() ? GRAY_200 : TEAL,
-                color: !customFeatureInput.trim() ? GRAY_400 : BLACK,
+                color: !customFeatureInput.trim() ? GRAY_400 : WHITE,
                 fontSize: 13,
                 fontWeight: 700,
                 cursor: !customFeatureInput.trim() ? "not-allowed" : "pointer",

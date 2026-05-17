@@ -2,18 +2,20 @@ import React from "react";
 import { Users, BedDouble, Minus, Plus, MapPin, Navigation } from "lucide-react";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL      = "#07e4e4";
-const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
-const TEAL_FOCUS= "rgba(7, 228, 228, 0.15)";
-const BLACK     = "#131313";
-const GRAY_500  = "#6b6b6b";
-const GRAY_400  = "#9a9a9a";
-const GRAY_200  = "#e4e4e4";
-const WHITE     = "#ffffff";
-const SURFACE   = "#F7F8FA";
-const ERROR     = "#ef4444";
-const ERROR_BG  = "rgba(239,68,68,0.04)";
-const ERROR_RING= "rgba(239,68,68,0.1)";
+// designe.md tokens — primary ds-deep #185FA5, navy headings.
+const TEAL = "#185FA5";
+const TEAL_BG = "rgba(24, 95, 165, 0.07)";
+const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
+const NAVY = "#042C53";
+const BLACK = "#042C53"; // headings → navy per spec
+const GRAY_500 = "#2C2C2A"; // body → charcoal
+const GRAY_400 = "#888780"; // muted → slate
+const GRAY_200 = "#D3D1C7"; // borders → pebble
+const WHITE = "#ffffff";
+const SURFACE = "#F7F8FA";
+const ERROR = "#E24B4A"; // ds-error
+const ERROR_BG = "rgba(226,75,74,0.04)";
+const ERROR_RING = "rgba(226,75,74,0.10)";
 
 interface CapacityAddressStepProps {
   seatingCapacity: number;
@@ -50,7 +52,7 @@ const SectionCard = ({
   <div
     style={{
       backgroundColor: WHITE,
-      border: "1.5px solid #EBEBEB",
+      border: "1.5px solid #D3D1C7",
       borderRadius: 20,
       padding: "20px 22px 22px",
       boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
@@ -63,7 +65,7 @@ const SectionCard = ({
           height: 36,
           borderRadius: 11,
           backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(7,228,228,0.25)",
+          border: "1.5px solid rgba(24, 95, 165, 0.25)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -73,7 +75,9 @@ const SectionCard = ({
         {icon}
       </div>
       <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
+        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          {title}
+        </p>
         {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
       </div>
     </div>
@@ -156,11 +160,12 @@ const StyledInput = ({
         border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
         borderRadius: 13,
         outline: "none",
-        boxShadow: focused && !error
-          ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-          ? `0 0 0 3px ${ERROR_RING}`
-          : "none",
+        boxShadow:
+          focused && !error
+            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+            : error
+              ? `0 0 0 3px ${ERROR_RING}`
+              : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         fontWeight: 450,
       }}
@@ -199,11 +204,12 @@ const StyledSelect = ({
           borderRadius: 13,
           outline: "none",
           appearance: "none",
-          boxShadow: focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-            ? `0 0 0 3px ${ERROR_RING}`
-            : "none",
+          boxShadow:
+            focused && !error
+              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
+              : error
+                ? `0 0 0 3px ${ERROR_RING}`
+                : "none",
           transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
           cursor: "pointer",
           fontWeight: 450,
@@ -212,10 +218,25 @@ const StyledSelect = ({
         {children}
       </select>
       <svg
-        style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
-        width="16" height="16" viewBox="0 0 16 16" fill="none"
+        style={{
+          position: "absolute",
+          right: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
+        }}
+        width="16"
+        height="16"
+        viewBox="0 0 16 16"
+        fill="none"
       >
-        <path d="M4 6l4 4 4-4" stroke={GRAY_400} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M4 6l4 4 4-4"
+          stroke={GRAY_400}
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </div>
   );
@@ -244,128 +265,133 @@ const CapacityRow = ({
   error?: string;
 }) => (
   <div className="flex flex-col gap-1.5">
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "16px 18px",
-      borderRadius: 14,
-      backgroundColor: error ? ERROR_BG : SURFACE,
-      border: `1.5px solid ${error ? "#fca5a5" : "transparent"}`,
-      boxShadow: error ? `0 0 0 3px ${ERROR_RING}` : "none",
-      transition: "all 0.15s",
-    }}
-  >
-    <div className="flex items-center gap-3">
-      <div
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 11,
-          backgroundColor: WHITE,
-          border: "1.5px solid #EBEBEB",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-        }}
-      >
-        {icon}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "16px 18px",
+        borderRadius: 14,
+        backgroundColor: error ? ERROR_BG : SURFACE,
+        border: `1.5px solid ${error ? "#fca5a5" : "transparent"}`,
+        boxShadow: error ? `0 0 0 3px ${ERROR_RING}` : "none",
+        transition: "all 0.15s",
+      }}
+    >
+      <div className="flex items-center gap-3">
+        <div
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 11,
+            backgroundColor: WHITE,
+            border: "1.5px solid #D3D1C7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+          }}
+        >
+          {icon}
+        </div>
+        <div>
+          <p style={{ fontSize: 13.5, fontWeight: 600, color: BLACK, letterSpacing: "-0.01em" }}>
+            {label}
+          </p>
+          {description && (
+            <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>{description}</p>
+          )}
+        </div>
       </div>
-      <div>
-        <p style={{ fontSize: 13.5, fontWeight: 600, color: BLACK, letterSpacing: "-0.01em" }}>{label}</p>
-        {description && <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>{description}</p>}
+
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onDecrease}
+          disabled={value <= min}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            border: `1.5px solid ${value <= min ? GRAY_200 : GRAY_200}`,
+            backgroundColor: WHITE,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: value <= min ? "not-allowed" : "pointer",
+            opacity: value <= min ? 0.35 : 1,
+            transition: "all 0.15s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+          onMouseEnter={(e) => {
+            if (value > min) {
+              (e.currentTarget as HTMLButtonElement).style.borderColor = ERROR;
+              (e.currentTarget as HTMLButtonElement).style.color = ERROR;
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
+            (e.currentTarget as HTMLButtonElement).style.color = BLACK;
+          }}
+        >
+          <Minus size={14} />
+        </button>
+
+        <span
+          style={{
+            width: 36,
+            textAlign: "center",
+            fontSize: 17,
+            fontWeight: 700,
+            color: value > 0 ? BLACK : GRAY_400,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {value}
+        </span>
+
+        <button
+          type="button"
+          onClick={onIncrease}
+          disabled={value >= max}
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: "50%",
+            border: `1.5px solid ${TEAL}`,
+            backgroundColor: TEAL_BG,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: value >= max ? "not-allowed" : "pointer",
+            opacity: value >= max ? 0.35 : 1,
+            transition: "all 0.15s",
+            color: TEAL,
+            boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+          onMouseEnter={(e) => {
+            if (value < max) {
+              (e.currentTarget as HTMLButtonElement).style.backgroundColor =
+                "rgba(24, 95, 165, 0.18)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
+          }}
+        >
+          <Plus size={14} />
+        </button>
       </div>
     </div>
-
-    <div className="flex items-center gap-3">
-      <button
-        type="button"
-        onClick={onDecrease}
-        disabled={value <= min}
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: "50%",
-          border: `1.5px solid ${value <= min ? GRAY_200 : GRAY_200}`,
-          backgroundColor: WHITE,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: value <= min ? "not-allowed" : "pointer",
-          opacity: value <= min ? 0.35 : 1,
-          transition: "all 0.15s",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-        }}
-        onMouseEnter={e => {
-          if (value > min) {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = ERROR;
-            (e.currentTarget as HTMLButtonElement).style.color = ERROR;
-          }
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-          (e.currentTarget as HTMLButtonElement).style.color = BLACK;
-        }}
-      >
-        <Minus size={14} />
-      </button>
-
-      <span
-        style={{
-          width: 36,
-          textAlign: "center",
-          fontSize: 17,
-          fontWeight: 700,
-          color: value > 0 ? BLACK : GRAY_400,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {value}
-      </span>
-
-      <button
-        type="button"
-        onClick={onIncrease}
-        disabled={value >= max}
-        style={{
-          width: 34,
-          height: 34,
-          borderRadius: "50%",
-          border: `1.5px solid ${TEAL}`,
-          backgroundColor: TEAL_BG,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: value >= max ? "not-allowed" : "pointer",
-          opacity: value >= max ? 0.35 : 1,
-          transition: "all 0.15s",
-          color: TEAL,
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-        }}
-        onMouseEnter={e => {
-          if (value < max) {
-            (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(7,228,228,0.18)";
-          }
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-        }}
-      >
-        <Plus size={14} />
-      </button>
-    </div>
-  </div>
-  {error && (
-    <div className="flex items-center gap-1.5">
-      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-      <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
-    </div>
-  )}
+    {error && (
+      <div className="flex items-center gap-1.5">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
+      </div>
+    )}
   </div>
 );
 
@@ -393,22 +419,30 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase", color: GRAY_400 }}>
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
             Setup
           </span>
           <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
         </div>
         <h1
+          className="font-serif"
           style={{
-            fontSize: "clamp(22px, 3.5vw, 30px)",
-            fontWeight: 800,
-            color: BLACK,
-            letterSpacing: "-0.03em",
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
             lineHeight: 1.15,
           }}
         >
@@ -420,7 +454,6 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
       </div>
 
       <div className="w-full flex flex-col gap-4">
-
         {/* ── Capacity card ── */}
         <SectionCard
           icon={<Users size={16} color={TEAL} strokeWidth={2.5} />}
@@ -444,7 +477,10 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               description="Guests who can sleep overnight"
               value={sleepingCapacity}
               onDecrease={() => onAdjustCapacity("sleeping", "decrease")}
-              onIncrease={() => { onAdjustCapacity("sleeping", "increase"); clear("sleepingCapacity"); }}
+              onIncrease={() => {
+                onAdjustCapacity("sleeping", "increase");
+                clear("sleepingCapacity");
+              }}
               min={0}
               max={20}
               error={errors.sleepingCapacity}
@@ -459,12 +495,14 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
           subtitle="Where guests can find your caravan"
         >
           <div className="flex flex-col gap-4">
-
             {/* Street address */}
             <Field label="Street Address" required error={errors.address}>
               <StyledInput
                 value={address}
-                onChange={(v) => { onAddressChange(v); clear("address"); }}
+                onChange={(v) => {
+                  onAddressChange(v);
+                  clear("address");
+                }}
                 placeholder="e.g. 12 MG Road, Bengaluru"
                 error={!!errors.address}
               />
@@ -475,7 +513,10 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               <Field label="Country" required error={errors.locality}>
                 <StyledSelect
                   value={locality}
-                  onChange={(v) => { onLocalityChange(v); clear("locality"); }}
+                  onChange={(v) => {
+                    onLocalityChange(v);
+                    clear("locality");
+                  }}
                   error={!!errors.locality}
                 >
                   <option value="India">India</option>
@@ -485,7 +526,10 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               <Field label="Pincode" required error={errors.pincode}>
                 <StyledInput
                   value={pincode}
-                  onChange={(v) => { onPincodeChange(v.replace(/\D/g, "")); clear("pincode"); }}
+                  onChange={(v) => {
+                    onPincodeChange(v.replace(/\D/g, ""));
+                    clear("pincode");
+                  }}
                   placeholder="e.g. 560001"
                   maxLength={6}
                   inputMode="numeric"
@@ -499,14 +543,21 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               <Field label="State" required error={errors.state}>
                 <StyledSelect
                   value={state}
-                  onChange={(v) => { onStateChange(v); clear("state"); }}
+                  onChange={(v) => {
+                    onStateChange(v);
+                    clear("state");
+                  }}
                   error={!!errors.state}
                 >
-                  <option value="" disabled>Select State</option>
+                  <option value="" disabled>
+                    Select State
+                  </option>
                   {locationData
                     .find((c: any) => c.name === locality)
                     ?.states?.map((st: any, idx: number) => (
-                      <option key={idx} value={st.name}>{st.name}</option>
+                      <option key={idx} value={st.name}>
+                        {st.name}
+                      </option>
                     ))}
                 </StyledSelect>
               </Field>
@@ -514,20 +565,26 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               <Field label="City" required error={errors.city}>
                 <StyledSelect
                   value={city}
-                  onChange={(v) => { onCityChange(v); clear("city"); }}
+                  onChange={(v) => {
+                    onCityChange(v);
+                    clear("city");
+                  }}
                   error={!!errors.city}
                 >
-                  <option value="" disabled>Select City</option>
+                  <option value="" disabled>
+                    Select City
+                  </option>
                   {locationData
                     .find((c: any) => c.name === locality)
                     ?.states?.find((st: any) => st.name === state)
                     ?.cities?.map((ct: any, idx: number) => (
-                      <option key={idx} value={ct.name}>{ct.name}</option>
+                      <option key={idx} value={ct.name}>
+                        {ct.name}
+                      </option>
                     ))}
                 </StyledSelect>
               </Field>
             </div>
-
           </div>
         </SectionCard>
 
@@ -537,7 +594,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
             style={{
               borderRadius: 20,
               overflow: "hidden",
-              border: "1.5px solid #EBEBEB",
+              border: "1.5px solid #D3D1C7",
               boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
             }}
           >
@@ -546,7 +603,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               style={{
                 padding: "12px 18px",
                 backgroundColor: WHITE,
-                borderBottom: "1.5px solid #EBEBEB",
+                borderBottom: "1.5px solid #D3D1C7",
               }}
             >
               <Navigation size={13} color={TEAL} />
@@ -565,7 +622,6 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
             />
           </div>
         )}
-
       </div>
     </div>
   );
