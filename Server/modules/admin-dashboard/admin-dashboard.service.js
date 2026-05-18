@@ -134,19 +134,31 @@ async function getStats() {
 
   return {
     data: {
-      usersTotal,
-      usersActive,
-      vendorsTotal,
-      vendorsActive,
-      vendorsPendingKyc,
-      listingsTotal,
-      listingsPending,
-      bookingsTotal,
-      bookingsUpcoming,
-      bookingsPast,
-      bookingsCancelled,
-      revenueTotal,
-      latestTickets,
+      stats: {
+        users: {
+          total: usersTotal,
+          active: usersActive,
+        },
+        vendors: {
+          total: vendorsTotal,
+          active: vendorsActive,
+          pendingKyc: vendorsPendingKyc,
+        },
+        listings: {
+          total: listingsTotal,
+          pending: listingsPending,
+        },
+        bookings: {
+          total: bookingsTotal,
+          upcoming: bookingsUpcoming,
+          past: bookingsPast,
+          cancelled: bookingsCancelled,
+        },
+        revenue: {
+          total: revenueTotal,
+        },
+      },
+      tickets: latestTickets,
       graphs,
     },
   };
