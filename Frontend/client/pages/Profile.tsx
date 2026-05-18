@@ -4,13 +4,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Bell, Menu, Edit } from "lucide-react";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Sidebar } from "@/components/Navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
+import { Edit } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { DashboardHeader } from "@/components/Header";
 import { userProfileApi, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -18,8 +14,6 @@ const Profile = () => {
   const navigate = useNavigate();
   const { updateUser } = useAuth();
   const [searchParams] = useSearchParams();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
@@ -29,14 +23,6 @@ const Profile = () => {
     else if (tab === "social") setActiveTab("social");
     else setActiveTab("personal");
   }, [searchParams]);
-
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  const handleNotificationClick = () => {
-    window.location.href = "/notifications";
-  };
 
   const handleSwitchToUser = () => {
     navigate("/user-profile"); // Navigate to user dashboard
@@ -86,9 +72,7 @@ const Profile = () => {
         }
         setProfile((prev) => ({ ...prev, ...data }));
         updateUser(data);
-      } catch (e) {
-        console.error(e);
-        // Initialize minimal profile with just email if fetch fails (e.g. 404)
+      } catch {
         setProfile((prev) => ({ ...prev, email }));
       }
     })();
@@ -327,19 +311,8 @@ const Profile = () => {
   const [linkUrl, setLinkUrl] = useState("");
 
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <DashboardHeader Headtitle={"Profile"} />
-
-        {/* Profile Content */}
-        <main className="flex-1 p-4 lg:p-5 dark:bg-gray-900 dark:text-white bg-white m-2 lg:m-4 rounded-2xl lg:rounded-3xl overflow-auto scrollbar-hide">
+    <DashboardLayout title="Profile" contentClassName="flex-1 overflow-y-auto p-4 lg:p-5">
+      <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl lg:rounded-3xl min-h-full">
           {/* Profile Tabs Header */}
           <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3 mb-5">
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl">
@@ -363,8 +336,8 @@ const Profile = () => {
             </div>
             <Button
               onClick={() => setIsChangePasswordOpen(true)}
-              className="rounded-xl px-5 h-9 font-semibold text-sm text-[#131313] flex-shrink-0"
-              style={{ background: "#3BD9DA" }}
+              className="rounded-xl px-5 h-9 font-semibold text-sm text-white flex-shrink-0"
+              style={{ background: "#185FA5" }}
             >
               Change Password
             </Button>
@@ -676,8 +649,8 @@ const Profile = () => {
                         <Button
                           onClick={handleSaveProfile}
                           disabled={saving}
-                          className="text-[#131313] font-semibold"
-                          style={{ background: "#3BD9DA" }}
+                          className="text-white font-semibold"
+                          style={{ background: "#185FA5" }}
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -694,7 +667,7 @@ const Profile = () => {
                     onClick={() => setIsEditing(true)}
                     variant="outline"
                     className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                    style={{ borderColor: "#3BD9DA", color: "#3BD9DA" }}
+                    style={{ borderColor: "#185FA5", color: "#185FA5" }}
                   >
                     <Edit size={18} />
                     Edit
@@ -807,8 +780,8 @@ const Profile = () => {
                     </div>
                     <Button
                       onClick={handleAddSocialLink}
-                      className="rounded-xl px-5 font-semibold text-[#131313]"
-                      style={{ background: "#3BD9DA" }}
+                      className="rounded-xl px-5 font-semibold text-white"
+                      style={{ background: "#185FA5" }}
                     >
                       ADD
                     </Button>
@@ -820,8 +793,8 @@ const Profile = () => {
                 <Button
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="text-[#131313] font-semibold"
-                  style={{ background: "#3BD9DA" }}
+                  className="text-white font-semibold"
+                  style={{ background: "#185FA5" }}
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
@@ -1110,8 +1083,8 @@ const Profile = () => {
                         <Button
                           onClick={handleSaveProfile}
                           disabled={saving}
-                          className="text-[#131313] font-semibold"
-                          style={{ background: "#3BD9DA" }}
+                          className="text-white font-semibold"
+                          style={{ background: "#185FA5" }}
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -1127,7 +1100,7 @@ const Profile = () => {
                     onClick={() => setIsEditing(true)}
                     variant="outline"
                     className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                    style={{ borderColor: "#3BD9DA", color: "#3BD9DA" }}
+                    style={{ borderColor: "#185FA5", color: "#185FA5" }}
                   >
                     <Edit size={18} />
                     Edit
@@ -1136,12 +1109,11 @@ const Profile = () => {
               )}
             </div>
           )}
-        </main>
       </div>
 
       {/* Change Password Modal */}
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
-    </div>
+    </DashboardLayout>
   );
 };
 

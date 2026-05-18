@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
 import { settingsService } from "@/services/api";
 import { getImageUrl } from "@/lib/utils";
+import { toast } from "sonner";
 
 
 const AdminGlobalSettings: React.FC = () => {
@@ -10,7 +10,6 @@ const AdminGlobalSettings: React.FC = () => {
   const [activePage, setActivePage] = useState("About");
   const [activeUserType, setActiveUserType] = useState<"Vendor" | "User">("Vendor");
 
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,8 +102,9 @@ const AdminGlobalSettings: React.FC = () => {
         ogImageUrl,
       });
       setSeoEditable(false);
+      toast.success("SEO settings saved.");
     } catch (e) {
-      console.error('Failed to save SEO settings', e);
+      toast.error("Failed to save SEO settings.");
     } finally {
       setLoading(false);
     }
@@ -120,8 +120,9 @@ const AdminGlobalSettings: React.FC = () => {
         emailApproval,
         phoneApproval,
       });
+      toast.success("Settings saved.");
     } catch (e) {
-      console.error('Failed to save system settings', e);
+      toast.error("Failed to save settings.");
     } finally {
       setLoading(false);
     }
@@ -134,30 +135,15 @@ const AdminGlobalSettings: React.FC = () => {
       setLoading(true);
       const res = await settingsService.uploadSeoAsset(activePage, type, file);
       if (type === 'og') setOgImageUrl(res?.ogImageUrl || "");
-    } catch (e) {
-      console.error('Upload failed', e);
+    } catch {
+      toast.error("Upload failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Global Settings"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
-        {/* Main Content */}
+    <AdminLayout title="Global Settings">
         <div className="flex-1 px-5 pb-5 lg:pr-5">
           <div className="bg-white rounded-t-[24px] border-b border-dashboard-stroke h-[75px] px-5 flex items-center">
             <h2 className="text-xl font-bold text-dashboard-heading font-geist tracking-tight">
@@ -292,8 +278,18 @@ const AdminGlobalSettings: React.FC = () => {
                         Edit
                       </button>
                     ) : (
-                      <button onClick={saveSeo} className="px-4 py-2 bg-dashboard-primary text-white rounded-md">
-                        Save Details
+                      <button
+                        onClick={saveSeo}
+                        disabled={loading}
+                        className="px-4 py-2 bg-dashboard-primary text-white rounded-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 transition-opacity"
+                      >
+                        {loading && (
+                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                          </svg>
+                        )}
+                        {loading ? "Saving…" : "Save Details"}
                       </button>
                     )}
                   </div>
@@ -426,8 +422,7 @@ const AdminGlobalSettings: React.FC = () => {
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </AdminLayout>
   );
 };
 

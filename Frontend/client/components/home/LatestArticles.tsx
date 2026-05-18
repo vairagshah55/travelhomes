@@ -14,10 +14,10 @@ type BlogDTO = {
 };
 
 const FALLBACK_ARTICLES = [
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/a933039ae4e0adbd39f8a1351e83163112e5f000?width=610", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/a933039ae4e0adbd39f8a1351e83163112e5f000?width=610", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/6f516751df2e054cd8cb29b5de7bd06d58094484?width=610", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/dd0f73b9c2f07283655340bce9ea8febcd86a500?width=610", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
+  { image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=610&q=80", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
+  { image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=610&q=80", title: "Top 10 Campervan Trips Through the Himalayas" },
+  { image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=610&q=80", title: "Kerala Backwaters: A Complete Guide for First-Timers" },
+  { image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=610&q=80", title: "Hidden Gems of Delhi You've Never Seen Before" },
 ];
 
 interface LatestArticlesProps {

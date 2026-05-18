@@ -5,15 +5,14 @@ const RoomSchema = new Schema({
   id: String,
   name: String,
   description: String,
-  capacity: Number,
-  bedCount: Number,
-  price: Number,
-  photos: [{
-    type: String
-  }],
-  amenities: [{
-    type: String
-  }]
+  // Field names match the frontend Room interface exactly so Mongoose strict
+  // mode doesn't silently drop them. Legacy docs may have capacity/bedCount —
+  // the frontend normalises those on load.
+  guestCapacity: { type: Number, default: 1 },
+  beds: { type: Number, default: 1 },
+  bathrooms: { type: Number, default: 1 },
+  price: { type: Number, default: 0 },
+  photos: [{ type: String }],
 });
 
 const StayOnboardingSchema = new Schema(
@@ -59,9 +58,12 @@ const StayOnboardingSchema = new Schema(
       default: 1
     },
     
+    // Cover image (single hero photo separate from the gallery)
+    coverImage: String,
+
     // Rooms
     rooms: [RoomSchema],
-    
+
     // Pricing
     regularPrice: {
       type: Number,
@@ -104,6 +106,7 @@ const StayOnboardingSchema = new Schema(
     gstNumber: String,
     businessEmail: String,
     businessPhone: String,
+    businessAddress: String,
     locality: String,
     state: String,
     city: String,

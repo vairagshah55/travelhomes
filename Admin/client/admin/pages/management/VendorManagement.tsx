@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,9 +23,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FiltersPopup from "@/components/FiltersPopup";
 import VendorDetailsPopup from "@/components/VendorDetailsPopup";
 import Pagination from "@/components/Pagination";
-import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, Plus, X } from "lucide-react";
-import AdminSidebar from "@/admin/components/AdminSidebar";
-import AdminHeader from "@/admin/components/AdminHeader";
+import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, AlertTriangle } from "lucide-react";
+import AdminLayout from "@/admin/components/AdminLayout";
 import { vendorService } from "@/services/api";
 
 interface Vendor {
@@ -72,6 +72,7 @@ const VendorManagement = () => {
     }
   };
   const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [formData, setFormData] = useState<Partial<Vendor>>({
     vendorId: "",
     photo: "",
@@ -101,13 +102,8 @@ const VendorManagement = () => {
   } = useQuery<Vendor[]>({
     queryKey: vendorsKey,
     queryFn: async () => {
-      try {
-        const list = await vendorService.getVendors(activeTab);
-        return Array.isArray(list) ? list : [];
-      } catch (err: any) {
-        console.error("Error fetching vendors:", err);
-        throw err;
-      }
+      const list = await vendorService.getVendors(activeTab);
+      return Array.isArray(list) ? list : [];
     },
   });
   // `loading` covers both the initial list fetch AND any in-flight
@@ -231,17 +227,11 @@ const VendorManagement = () => {
         status: "pending",
       };
 
-      // Call API to create vendor
-      console.log("Sending vendor data:", vendorData);
       const response = await vendorService.createVendor(vendorData);
-      console.log("Create vendor response:", response);
 
-      // If successful, refresh the vendors list
       const refreshedList = await vendorService.getVendors(activeTab);
-      console.log("Refreshed list response:", refreshedList);
       refreshVendors(Array.isArray(refreshedList) ? refreshedList : []);
 
-      // Close modal and reset form
       setShowAddVendorModal(false);
       setFormData({
         vendorId: "",
@@ -252,10 +242,8 @@ const VendorManagement = () => {
         location: "",
         action: "",
       });
-
-      console.log("Vendor created successfully:", response);
+      toast.success("Vendor created successfully.");
     } catch (err: any) {
-      console.error("Full error object:", err);
       let errorMessage = "Failed to create vendor.";
 
       if (typeof err === "string") {
@@ -269,7 +257,6 @@ const VendorManagement = () => {
       }
 
       setError(errorMessage);
-      console.error("Error creating vendor:", err);
     } finally {
       setLoading(false);
     }
@@ -282,9 +269,7 @@ const VendorManagement = () => {
       const res = await vendorService.getVendor(vendor._id || vendor.vendorId);
       setSelectedVendor(res?.data || res || vendor);
       setShowVendorDetails(true);
-    } catch (err) {
-      console.error("Failed to fetch vendor details:", err);
-      // Fallback to basic vendor data from list
+    } catch {
       setSelectedVendor(vendor);
       setShowVendorDetails(true);
     } finally {
@@ -293,46 +278,53 @@ const VendorManagement = () => {
     }
   };
 
-  const handleBan = async (vendor: Vendor) => {
-    try {
-      setLoading(true);
-      await vendorService.updateVendorStatus(vendor._id, "banned");
-      // refresh list
-      const refreshed = await vendorService.getVendors(activeTab);
-      refreshVendors(Array.isArray(refreshed) ? refreshed : []);
-    } catch (err) {
-      console.error("Failed to update vendor status", err);
-      setError("Failed to update vendor status");
-    } finally {
-      setLoading(false);
-      setShowActionMenu(null);
-    }
+  const handleBan = (vendor: Vendor) => {
+    setShowActionMenu(null);
+    setConfirmDialog({
+      title: `Ban "${vendor.brandName}"?`,
+      message: "They will immediately lose access to the platform and all their listings will be suspended.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          setLoading(true);
+          await vendorService.updateVendorStatus(vendor._id, "banned");
+          toast.success("Vendor banned successfully.");
+          const refreshed = await vendorService.getVendors(activeTab);
+          refreshVendors(Array.isArray(refreshed) ? refreshed : []);
+        } catch {
+          toast.error("Failed to ban vendor.");
+          setError("Failed to update vendor status");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
-  const handleDelete = async (vendor: Vendor) => {
-    if (
-      !window.confirm("Are you sure you want to delete this vendor? This action cannot be undone.")
-    ) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await vendorService.deleteVendor(vendor._id);
-      // refresh list
-      const refreshed = await vendorService.getVendors(activeTab);
-      refreshVendors(Array.isArray(refreshed) ? refreshed : []);
-    } catch (err) {
-      console.error("Failed to delete vendor", err);
-      setError("Failed to delete vendor");
-    } finally {
-      setLoading(false);
-      setShowActionMenu(null);
-    }
+  const handleDelete = (vendor: Vendor) => {
+    setShowActionMenu(null);
+    setConfirmDialog({
+      title: "Delete vendor?",
+      message: `"${vendor.brandName}" and all associated data will be permanently removed. This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          setLoading(true);
+          await vendorService.deleteVendor(vendor._id);
+          toast.success("Vendor deleted successfully.");
+          const refreshed = await vendorService.getVendors(activeTab);
+          refreshVendors(Array.isArray(refreshed) ? refreshed : []);
+        } catch {
+          toast.error("Failed to delete vendor.");
+          setError("Failed to delete vendor");
+        } finally {
+          setLoading(false);
+        }
+      },
+    });
   };
 
   const handleApplyFilters = (filters: any) => {
-    console.log("Applied filters:", filters);
     setActiveFilters(filters);
     setCurrentPage(1);
   };
@@ -344,18 +336,8 @@ const VendorManagement = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      {/* Sidebar */}
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"Management"} setMobileSidebarOpen={setMobileOpen} />
-
-        {/* Page Content */}
-        <main className="flex-1 pr-5 pb-5 ">
+    <AdminLayout title="Vendor Management">
+        <main className="flex-1">
           {/* Content Header */}
           <div className="flex justify-between bg-white rounded-t-3xl border-b border-[#EAECF0] p-5 mb-0">
             <h2 className="text-xl font-bold text-[#101828] font-geist tracking-tight">
@@ -381,7 +363,7 @@ const VendorManagement = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors whitespace-nowrap ${
                       activeTab === tab.id
-                        ? "text-[#0B0907] border-b-2 border-[#131313]"
+                        ? "text-dashboard-primary border-b-2 border-dashboard-primary"
                         : "text-[#6B6B6B] hover:text-[#0B0907]"
                     }`}
                   >
@@ -483,11 +465,27 @@ const VendorManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Loading State */}
+                  {loading && (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <TableRow key={i} className="animate-pulse">
+                        <TableCell className="py-4"><div className="h-3.5 w-20 bg-gray-200 rounded" /></TableCell>
+                        <TableCell><div className="w-10 h-10 rounded-full bg-gray-200" /></TableCell>
+                        <TableCell><div className="h-3.5 w-28 bg-gray-200 rounded" /></TableCell>
+                        <TableCell><div className="h-3.5 w-24 bg-gray-200 rounded" /></TableCell>
+                        <TableCell><div className="h-3.5 w-8 bg-gray-200 rounded" /></TableCell>
+                        <TableCell><div className="h-3.5 w-20 bg-gray-200 rounded" /></TableCell>
+                        <TableCell><div className="h-5 w-5 bg-gray-200 rounded" /></TableCell>
+                      </TableRow>
+                    ))
+                  )}
                   {!loading && paginatedVendors.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-4">
-                        No vendors found.
+                      <TableCell colSpan={7} className="py-16 text-center">
+                        <div className="flex flex-col items-center gap-3 text-gray-400">
+                          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="32" rx="4" stroke="#D1D5DB" strokeWidth="2"/><path d="M18 20h12M18 26h8" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
+                          <p className="text-sm font-medium">No vendors found</p>
+                          <p className="text-xs">Try adjusting your filters or search term</p>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}
@@ -540,17 +538,15 @@ const VendorManagement = () => {
                                 <Eye size={18} className="text-black" />
                                 <span className="text-sm font-poppins text-[#2A2A2A]">View</span>
                               </button>
-                              {/* <button
-                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                              <button
+                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-orange-50 rounded-lg transition-colors"
                                 onClick={() => handleBan(vendor)}
                               >
-                                <Trash2 size={18} className="text-[#D30000]" />
-                                <span className="text-sm font-poppins text-[#D30000]">
-                                  Ban
-                                </span>
-                              </button> */}
+                                <Ban size={18} className="text-[#D97706]" />
+                                <span className="text-sm font-poppins text-[#D97706]">Ban</span>
+                              </button>
                               <button
-                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
+                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-red-50 rounded-lg transition-colors"
                                 onClick={() => handleDelete(vendor)}
                               >
                                 <Trash2 size={18} className="text-[#D30000]" />
@@ -564,14 +560,6 @@ const VendorManagement = () => {
                   ))}
                 </TableBody>
               </Table>
-              {loading && (
-                <div className="flex justify-center items-center py-10">
-                  <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
-                  <span className="ml-2 text-dashboard-primary">Loading...</span>
-                </div>
-              )}
-
-              {/* Error State */}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
                   <p>{error}</p>
@@ -588,7 +576,6 @@ const VendorManagement = () => {
             </div>
           </div>
         </main>
-      </div>
 
       {/* Add Vendor Modal */}
       {showAddVendorModal && (
@@ -634,7 +621,7 @@ const VendorManagement = () => {
               <Input
                 placeholder="Listed Services"
                 value={formData.listedServices}
-                onChange={(e) => setFormData({ ...formData, listedServices: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, listedServices: Number(e.target.value) })}
                 disabled={loading}
                 type="number"
               />
@@ -691,7 +678,38 @@ const VendorManagement = () => {
         onApplyFilters={handleApplyFilters}
         currentFilters={activeFilters}
       />
-    </div>
+
+      {/* Confirm Dialog */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 font-geist">{confirmDialog.title}</h3>
+                <p className="text-sm text-gray-500 mt-1 leading-relaxed">{confirmDialog.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end pt-1">
+              <button
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </AdminLayout>
   );
 };
 

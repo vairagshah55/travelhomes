@@ -4,3 +4,4 @@ export { default as StayDetailsStep } from "./StayDetailsStep";
 export { default as EntireStayForm } from "./EntireStayForm";
 export { default as IndividualRoomForm } from "./IndividualRoomForm";
 export { default as FeaturesStep } from "./FeaturesStep";
+export { default as UniqueStayCardPreview } from "./UniqueStayCardPreview";

@@ -68,12 +68,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       return;
     }
     
-    // Here you would typically make an API call to change the password
-    console.log('Password change submitted:', {
-      currentPassword,
-      newPassword,
-    });
-    
     // Reset form and close modal
     setCurrentPassword('');
     setNewPassword('');

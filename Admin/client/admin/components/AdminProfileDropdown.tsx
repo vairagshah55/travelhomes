@@ -36,15 +36,11 @@ const AdminProfileDropdown: React.FC<AdminProfileDropdownProps> = ({
   };
 
   const handleProfile = () => {
-    // Navigate to admin profile page when implemented
-    console.log("Navigate to profile");
     navigate("/profile");
     setIsOpen(false);
   };
 
   const handleHelp = () => {
-    // Navigate to help page when implemented
-    console.log("Navigate to help");
     navigate("/help");
     setIsOpen(false);
   };

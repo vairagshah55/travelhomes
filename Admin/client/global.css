@@ -28,9 +28,30 @@
     --Heading: #131313;
     --Text: #212121;
 
-    /* Travel Dashboard specific colors from Figma */
+    /* ── designe.md brand tokens (shared with frontend) ── */
+    --ds-sky:     #E6F1FB;
+    --ds-mist:    #B5D4F4;
+    --ds-ocean:   #378ADD;
+    --ds-deep:    #185FA5;  /* main brand */
+    --ds-navy:    #042C53;
+    --ds-sand:    #FAEEDA;
+    --ds-dune:    #EF9F27;
+    --ds-rust:    #BA7517;
+    --ds-lagoon:  #E1F5EE;
+    --ds-palm:    #1D9E75;
+    --ds-forest:  #085041;
+    --ds-linen:   #F1EFE8;
+    --ds-pebble:  #D3D1C7;
+    --ds-slate:   #888780;
+    --ds-charcoal:#2C2C2A;
+    --ds-error:   #E24B4A;
+    --ds-success: #1D9E75;
+    --ds-warning: #EF9F27;
+
+    /* Travel Dashboard specific colors — brand blue primary */
     --dashboard-bg: 210 20% 98%; /* #F9FAFB */
-    --dashboard-primary: 0 0% 7%; /* #131313 */
+    --dashboard-primary: 210 74% 37%; /* #185FA5 brand blue */
+    --dashboard-primary-hover: 215 85% 29%; /* #145189 darker hover */
     --dashboard-heading: 216 27% 16%; /* #101828 */
     --dashboard-body: 214 14% 35%; /* #485467 */
     --dashboard-title: 214 19% 25%; /* #334054 */
@@ -49,7 +70,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 7%;
 
-    --primary: 0 0% 7%; /* #131313 */
+    --primary: 210 74% 37%; /* #185FA5 brand blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
@@ -241,39 +262,23 @@
   }
 
   .font-geist {
-    font-family:
-      "Inter",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Helvetica,
-      Arial,
-      sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  .font-display {
+    font-family: "DM Serif Display", Georgia, serif;
+  }
+
+  .font-mono {
+    font-family: "JetBrains Mono", "Fira Code", Consolas, monospace;
   }
 
   .font-poppins {
-    font-family:
-      "Poppins",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Helvetica,
-      Arial,
-      sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 
   .font-plus-jakarta {
-    font-family:
-      "Plus Jakarta Sans",
-      -apple-system,
-      BlinkMacSystemFont,
-      "Segoe UI",
-      Roboto,
-      Helvetica,
-      Arial,
-      sans-serif;
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   }
 }
 
@@ -397,11 +402,22 @@
 
   /* Button variants */
   .btn-primary {
-    @apply bg-dashboard-primary text-white hover:bg-gray-800 hover:shadow-lg transition-all duration-200;
+    @apply bg-dashboard-primary text-white hover:opacity-90 hover:shadow-lg transition-all duration-200;
   }
 
   .btn-secondary {
-    @apply border border-dashboard-stroke dark:border-gray-600 text-dashboard-body dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200;
+    @apply border border-dashboard-stroke dark:border-gray-600 text-dashboard-body dark:text-gray-300 hover:bg-[#E6F1FB] dark:hover:bg-gray-700 transition-all duration-200;
+  }
+
+  .btn-brand {
+    background: var(--ds-deep);
+    color: #fff;
+    border-radius: 8px;
+    transition: background 200ms ease, box-shadow 200ms ease;
+  }
+  .btn-brand:hover {
+    background: #145189;
+    box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);
   }
 
   /* Upload area */
@@ -1136,4 +1152,45 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* ── Admin UI Polish ─────────────────────────────────────────────────────── */
+
+/* Thin, branded scrollbar for admin sidebar and main content */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+main::-webkit-scrollbar { width: 5px; }
+main::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* Smooth focus outline on buttons and inputs */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid hsl(var(--dashboard-primary));
+  outline-offset: 2px;
+}
+
+/* Consistent link-style interactions */
+a { transition: color 150ms ease, opacity 150ms ease; }
+
+/* Table hover enhancement */
+tbody tr { transition: background-color 120ms ease; }
+
+/* Card lift on hover (shared utility) */
+.card-lift {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }

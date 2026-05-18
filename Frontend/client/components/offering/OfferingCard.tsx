@@ -3,8 +3,8 @@ import { MoreHorizontal, Edit2, Eye, Trash2, MapPin, Users, Moon, Image as Image
 import { type OfferDTO, offersApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
-const TEAL      = "#07e4e4";
-const TEAL_BG   = "rgba(7, 228, 228, 0.07)";
+const TEAL      = "#185FA5";
+const TEAL_BG   = "rgba(24, 95, 165, 0.07)";
 const BLACK     = "#131313";
 const GRAY_500  = "#6b6b6b";
 const GRAY_400  = "#9a9a9a";

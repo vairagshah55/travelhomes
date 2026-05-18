@@ -14,10 +14,10 @@ const STATUS_ALIAS = {
 };
 
 async function list({ status } = {}) {
-  let query = { role: { $ne: "vendor" } };
+  const query = { role: { $ne: "vendor" } };
   if (status && status !== "all-users") {
     const mapped = STATUS_ALIAS[status];
-    if (mapped) query = { status: mapped };
+    if (mapped) query.status = mapped;
   }
   const data = await User.find(query).sort({ createdAt: -1 });
   return { data };

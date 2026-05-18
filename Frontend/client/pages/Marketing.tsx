@@ -1,43 +1,32 @@
 import React, { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import toast from "react-hot-toast";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
-  Bell,
-  Menu,
   X,
   Bold,
   Underline,
   Italic,
   AlignJustify,
-  AlignLeft,
-  AlignRight,
   Link2,
   Upload,
   Trash2,
+  AlertTriangle,
+  ImageIcon,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Sidebar } from "@/components/Navigation";
-import { useNavigate } from "react-router-dom";
-import ProfileDropdown from "@/components/ProfileDropdown";
-import MobileVendorNav from "@/components/MobileVendorNav";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { marketingApi, adminCmsMediaApi, MarketingContentDTO, API_BASE_URL } from "@/lib/api";
 
 const Marketing = () => {
-  const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [contentText, setContentText] = useState("");
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
-
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const marketingKey = ["marketing", "list"] as const;
   const { data: items = [] } = useQuery<MarketingContentDTO[]>({
@@ -45,76 +34,53 @@ const Marketing = () => {
     queryFn: () => marketingApi.list(),
   });
 
-  const loadItems = () => {
-    queryClient.invalidateQueries({ queryKey: marketingKey });
-  };
-
-  const insertFormat = (prefix: string, suffix: string = "") => {
+  const insertFormat = (prefix: string, suffix = "") => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
-    const selectedText = text.substring(start, end);
-    const beforeText = text.substring(0, start);
-    const afterText = text.substring(end);
-
-    const newText = `${beforeText}${prefix}${selectedText}${suffix}${afterText}`;
+    const newText = `${text.substring(0, start)}${prefix}${text.substring(start, end)}${suffix}${text.substring(end)}`;
     setContentText(newText);
-
-    // Defer focus and selection update to next tick
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + prefix.length, end + prefix.length);
     }, 0);
   };
 
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    setDragActive(e.type === "dragenter" || e.type === "dragover");
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const files = Array.from(e.dataTransfer.files);
-      setUploadedImages((prev) => [...prev, ...files]);
+    if (e.dataTransfer.files?.length) {
+      setUploadedImages((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const files = Array.from(e.target.files);
-      setUploadedImages((prev) => [...prev, ...files]);
+    if (e.target.files?.length) {
+      setUploadedImages((prev) => [...prev, ...Array.from(e.target.files!)]);
     }
   };
 
-  const removeUploadedImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  const handleDeleteItem = (id: string) => {
+    setConfirmDelete(id);
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this content?")) return;
+  const doDeleteItem = async (id: string) => {
     try {
       await marketingApi.delete(id);
       queryClient.setQueryData<MarketingContentDTO[]>(marketingKey, (prev) =>
         (prev ?? []).filter((item) => item._id !== id),
       );
-    } catch (error) {
-      console.error("Failed to delete item:", error);
+    } catch {
+      toast.error("Failed to delete content.");
     }
   };
 
@@ -123,316 +89,284 @@ const Marketing = () => {
       toast.error("Please add some content or images.");
       return;
     }
-
     setIsSubmitting(true);
     try {
-      // 1. Upload images
       const imageUrls: string[] = [];
       for (const file of uploadedImages) {
         const res = await adminCmsMediaApi.upload(file, "marketing", "content");
-        if (res.success && res.data?.url) {
-          imageUrls.push(res.data.url);
-        }
+        if (res.success && res.data?.url) imageUrls.push(res.data.url);
       }
-
-      // 2. Create content
-      // Calculate additionalCount (images.length - 1 because one is usually displayed as main, and the rest as +N)
-      // Or if the display logic shows 1 image and +N for the REST, then N = total - 1.
-      const additionalCount = Math.max(0, imageUrls.length - 1);
-
       await marketingApi.create({
         content: contentText,
         images: imageUrls,
-        additionalCount: additionalCount,
+        additionalCount: Math.max(0, imageUrls.length - 1),
       });
-
-      // 3. Reset form & reload
       setContentText("");
       setUploadedImages([]);
-      loadItems();
+      queryClient.invalidateQueries({ queryKey: marketingKey });
       toast.success("Marketing content posted successfully!");
     } catch (error: any) {
-      console.error("Failed to submit marketing content:", error);
-      toast.error(`Failed to submit content: ${error.message || "Unknown error"}`);
+      toast.error(`Failed to submit: ${error.message || "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    setContentText("");
-    setUploadedImages([]);
-  };
-
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col ">
-        {/* Header */}
-        <DashboardHeader Headtitle={"Marketing"} />
-
-        {/* Content Area */}
-        <div className="mb-10 flex-1 flex flex-col pr-5 pb-5 overflow-y-auto scrollbar-hide">
-          {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dashboard-stroke dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-3xl">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-dashboard-title dark:text-white font-plus-jakarta">
-                Upload Content
-              </h2>
-            </div>
+    <DashboardLayout title="Marketing">
+      <div className="p-5 space-y-5">
+        {/* Upload Card */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-[15px] font-bold text-gray-900 dark:text-white">Upload Content</h2>
           </div>
 
-          {/* Content */}
-          <div className="flex-1 p-5 bg-white dark:bg-gray-800 rounded-b-3xl ">
-            <div className="max-w-7xl mx-auto space-y-8">
-              {/* Reel/Images Section */}
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-base font-medium text-dashboard-title dark:text-gray-300 pl-1 font-plus-jakarta">
-                    Reel/Images
-                  </h3>
-                </div>
-
-                {/* File Upload Area */}
-                <div
-                  className={`relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer transition-colors ${
-                    dragActive
-                      ? "border-dashboard-primary bg-blue-50 dark:bg-blue-900/10"
-                      : "border-gray-300 dark:border-gray-600 hover:border-dashboard-primary"
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                  onClick={() => document.getElementById("file-upload")?.click()}
-                >
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <img
-                        src="https://api.builder.io/api/v1/image/assets/TEMP/991b35456b4010a2bef0b568b3cda63d07935d1b?width=148"
-                        alt="Upload icon"
-                        className="w-16 h-16 object-contain"
-                      />
-                    </div>
-                    <p className="text-sm text-dashboard-body dark:text-gray-400 max-w-sm">
-                      Drag and drop choose file to upload your files. <br />
-                      All pdf, doc, csv, xlsx types are supported
+          <div className="p-6 space-y-6">
+            {/* Drag & drop zone */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                Images / Reels
+              </p>
+              <div
+                className={`relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
+                  dragActive
+                    ? "border-[#185FA5] bg-blue-50 dark:bg-blue-500/10"
+                    : "border-gray-200 dark:border-gray-700 hover:border-[#185FA5] hover:bg-blue-50/30 dark:hover:bg-blue-500/5"
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => document.getElementById("file-upload")?.click()}
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <Upload size={20} className="text-gray-400 dark:text-gray-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Drag & drop or{" "}
+                      <span className="text-[#185FA5] font-semibold">browse files</span>
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      Images, PDF, DOC, CSV, XLSX supported
                     </p>
                   </div>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    multiple
-                    accept="image/*,.pdf,.doc,.docx,.csv,.xlsx"
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
                 </div>
-
-                {/* Newly uploaded images */}
-                {uploadedImages.length > 0 && (
-                  <div className="flex flex-wrap gap-3">
-                    {uploadedImages.map((file, index) => (
-                      <div key={index} className="relative group">
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={`New upload ${index + 1}`}
-                          className="w-20 h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600"
-                        />
-                        <button
-                          onClick={() => removeUploadedImage(index)}
-                          className="absolute -top-2 -right-2 w-6 h-6 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-200 dark:hover:bg-gray-600"
-                        >
-                          <X size={12} className="text-gray-600 dark:text-gray-300" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.csv,.xlsx"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
               </div>
 
-              {/* Write Content Section */}
-              <div className="space-y-4">
-                <h3 className="text-base font-medium text-dashboard-title dark:text-gray-300 pl-1 font-plus-jakarta">
-                  Write an content
-                </h3>
+              {/* Preview uploaded images */}
+              {uploadedImages.length > 0 && (
+                <div className="flex flex-wrap gap-3 mt-4">
+                  {uploadedImages.map((file, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative group"
+                    >
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={`Upload ${index + 1}`}
+                        className="w-20 h-20 object-cover rounded-xl border border-gray-200 dark:border-gray-700"
+                      />
+                      <button
+                        onClick={() => setUploadedImages((p) => p.filter((_, i) => i !== index))}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 shadow-sm"
+                      >
+                        <X size={11} className="text-gray-600 dark:text-gray-300" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                <div className="border border-dashboard-stroke dark:border-gray-600 rounded-lg overflow-hidden">
-                  {/* Text Editor */}
-                  <Textarea
-                    ref={textareaRef}
-                    value={contentText}
-                    onChange={(e) => setContentText(e.target.value)}
-                    placeholder="Enter your marketing content here..."
-                    className="min-h-[140px] border-0 bg-dashboard-bg dark:bg-gray-700 resize-none focus:ring-0 text-sm text-dashboard-body dark:text-gray-400 placeholder:text-dashboard-icons"
-                  />
-
-                  {/* Toolbar */}
-                  <div className="border-t border-dashboard-stroke dark:border-gray-600 p-3 bg-white dark:bg-gray-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Text Formatting */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => insertFormat("**", "**")}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            title="Bold"
-                          >
-                            <Bold size={12} className="text-dashboard-body dark:text-gray-400" />
-                          </button>
-                          <button
-                            onClick={() => insertFormat("__", "__")}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            title="Underline"
-                          >
-                            <Underline
-                              size={12}
-                              className="text-dashboard-body dark:text-gray-400"
-                            />
-                          </button>
-                          <button
-                            onClick={() => insertFormat("*", "*")}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            title="Italic"
-                          >
-                            <Italic size={12} className="text-dashboard-body dark:text-gray-400" />
-                          </button>
-                        </div>
-
-                        {/* Alignment - these insert standard markers or just newlines if needed, but for plain text we might skip or use chars */}
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => insertFormat("\n")}
-                            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            title="New Line"
-                          >
-                            <AlignJustify
-                              size={16}
-                              className="text-dashboard-body dark:text-gray-400"
-                            />
-                          </button>
-                          {/* 
-                          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
-                            <AlignLeft size={16} className="text-dashboard-body dark:text-gray-400" />
-                          </button>
-                          <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
-                            <AlignRight size={16} className="text-dashboard-body dark:text-gray-400" />
-                          </button>
-                          */}
-                        </div>
-
-                        {/* Link */}
-                        <button
-                          onClick={() => {
-                            const url = prompt("Enter URL:");
-                            if (url) insertFormat("[", `](${url})`);
-                          }}
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title="Link"
-                        >
-                          <Link2 size={16} className="text-dashboard-body dark:text-gray-400" />
-                        </button>
-                      </div>
-
-                      {/* Separator lines (from Figma design) */}
-                      <div className="flex items-center gap-1">
-                        <div className="w-px h-3 bg-dashboard-stroke dark:bg-gray-600 rotate-12"></div>
-                        <div className="w-px h-1.5 bg-dashboard-stroke dark:bg-gray-600 rotate-12"></div>
-                        <div className="w-px h-0.5 bg-dashboard-stroke dark:bg-gray-600 rotate-12"></div>
-                      </div>
-                    </div>
-                  </div>
+            {/* Text editor */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                Content
+              </p>
+              <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+                <Textarea
+                  ref={textareaRef}
+                  value={contentText}
+                  onChange={(e) => setContentText(e.target.value)}
+                  placeholder="Write your marketing content here..."
+                  className="min-h-[120px] border-0 rounded-none bg-gray-50 dark:bg-gray-800/50 resize-none focus:ring-0 text-sm"
+                />
+                {/* Toolbar */}
+                <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-2.5 bg-white dark:bg-gray-900 flex items-center gap-3">
+                  {[
+                    { icon: Bold, action: () => insertFormat("**", "**"), title: "Bold" },
+                    { icon: Underline, action: () => insertFormat("__", "__"), title: "Underline" },
+                    { icon: Italic, action: () => insertFormat("*", "*"), title: "Italic" },
+                    { icon: AlignJustify, action: () => insertFormat("\n"), title: "New Line" },
+                    {
+                      icon: Link2,
+                      action: () => {
+                        const url = prompt("Enter URL:");
+                        if (url) insertFormat("[", `](${url})`);
+                      },
+                      title: "Link",
+                    },
+                  ].map(({ icon: Icon, action, title }) => (
+                    <button
+                      key={title}
+                      onClick={action}
+                      title={title}
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                    >
+                      <Icon size={14} />
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Footer Actions */}
-          <div className="flex justify-end items-center gap-4 px-5 py-4 bg-white dark:bg-gray-800 dark:border-gray-600 ">
-            <Button
-              variant="ghost"
-              onClick={handleCancel}
-              className="text-red-600 hover:text-red-700 font-geist"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-dashboard-primary text-white hover:bg-gray-800 rounded-full px-8 font-geist"
-            >
-              {isSubmitting ? "Submitting..." : "Submit"}
-            </Button>
-          </div>
-
-          {/* Previous Marketing Posts */}
-          <div className="mt-8 px-5">
-            <h3 className="text-lg font-bold text-dashboard-title dark:text-white mb-4">
-              Previous Marketing Posts
-            </h3>
-            <div className="space-y-4">
-              {items.map((item) => (
-                <div
-                  key={item._id}
-                  className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700"
-                >
-                  <div className="flex gap-4">
-                    {/* Images */}
-                    {item.images && item.images.length > 0 && (
-                      <div className="flex-shrink-0">
-                        <div className="flex gap-2 flex-wrap max-w-[300px]">
-                          {item.images.map((img, idx) => (
-                            <img
-                              key={idx}
-                              src={img.startsWith("http") ? img : `${API_BASE_URL}${img}`}
-                              alt={`Marketing ${idx}`}
-                              className="w-24 h-24 object-cover rounded-lg"
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Content */}
-                    <div className="flex-1">
-                      <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
-                        {item.content}
-                      </p>
-                      <div className="mt-2 text-xs text-gray-500">
-                        Posted on: {new Date(item.createdAt).toLocaleDateString()}
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteItem(item._id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {items.length === 0 && (
-                <p className="text-gray-500 text-center py-8">No marketing content found.</p>
-              )}
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => { setContentText(""); setUploadedImages([]); }}
+                className="px-4 py-2 text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="bg-[#185FA5] hover:bg-[#042C53] text-white rounded-xl px-6"
+              >
+                {isSubmitting ? "Submitting…" : "Post Content"}
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Previous posts */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <h3 className="text-[15px] font-bold text-gray-900 dark:text-white">Previous Posts</h3>
+          </div>
+
+          {items.length === 0 ? (
+            <div className="py-16 flex flex-col items-center gap-4 text-gray-400">
+              <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                <ImageIcon size={22} className="text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                  No posts yet
+                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-600">
+                  Marketing content you post will appear here
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              {items.map((item, i) => (
+                <motion.div
+                  key={item._id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04, duration: 0.18 }}
+                  className="p-5 flex gap-4 hover:bg-gray-50/60 dark:hover:bg-white/[0.02] transition-colors"
+                >
+                  {item.images && item.images.length > 0 && (
+                    <div className="flex gap-2 flex-wrap max-w-[180px] shrink-0">
+                      {item.images.slice(0, 3).map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={img.startsWith("http") ? img : `${API_BASE_URL}${img}`}
+                          alt={`Post ${idx}`}
+                          className="w-20 h-20 object-cover rounded-xl"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                      {item.content}
+                    </p>
+                    <p className="mt-2 text-[11px] text-gray-400 dark:text-gray-600">
+                      {new Date(item.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteItem(item._id)}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors self-start shrink-0"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <div className="fixed">
-        <MobileVendorNav />
-      </div>
-    </div>
+
+      {/* Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Delete post?</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    This marketing post will be permanently removed.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-1">
+                <button
+                  onClick={() => setConfirmDelete(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    doDeleteItem(confirmDelete);
+                    setConfirmDelete(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </DashboardLayout>
   );
 };
 

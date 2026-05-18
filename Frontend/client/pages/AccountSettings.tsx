@@ -90,7 +90,6 @@ const AccountSettings = () => {
           }
           const res = await vendorAuthApi.sendChangeOtp({ currentEmail: user.email, userType: user.userType, newMobile: phone });
           if (res.success) {
-            if (res.otp) console.log('OTP:', res.otp);
             setStep('otp');
             toast({ title: "Success", description: "OTP sent to " + phone });
           }
@@ -122,7 +121,6 @@ const AccountSettings = () => {
           }
           const res = await vendorAuthApi.sendChangeOtp({ currentEmail: user.email, userType: user.userType, newEmail: email });
           if (res.success) {
-             if (res.otp) console.log('OTP:', res.otp);
              setStep('otp');
              toast({ title: "Success", description: "OTP sent to " + email });
           }
@@ -186,7 +184,6 @@ const AccountSettings = () => {
       if (res.success) {
         if ((res as any).otp) {
           setServerOtp(String((res as any).otp));
-          console.log('Received OTP:', (res as any).otp);
         }
         setIsOtpSent(true);
         toast({

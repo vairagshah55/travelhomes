@@ -36,8 +36,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { offersService, vendorService } from "@/services/api";
-import AdminSidebar from "@/admin/components/AdminSidebar";
-import AdminHeader from "@/admin/components/AdminHeader";
+import AdminLayout from "@/admin/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { getImageUrl } from "@/lib/utils";
 
@@ -48,7 +47,7 @@ const ManagementListing = () => {
 
   // State for offers
   const [offersTab, setOffersTab] = useState<
-    "pending" | "approved" | "cancelled" | "modified" | "rejected"
+    "pending" | "approved" | "cancelled" | "rejected"
   >("pending");
   const queryClient = useQueryClient();
 
@@ -355,16 +354,8 @@ const ManagementListing = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        <AdminHeader Headtitle={"Management"} setMobileSidebarOpen={setMobileOpen} />
-
-        <main className="flex-1 pr-5 pb-5">
+    <AdminLayout title="Listing Management">
+        <main className="flex-1">
           {/* Content Header */}
           <div className="bg-white rounded-t-3xl border-b border-[#EAECF0] p-5 mb-0 flex justify-between items-center">
             <h2 className="text-xl font-bold text-[#101828] font-geist tracking-tight">
@@ -385,7 +376,7 @@ const ManagementListing = () => {
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex gap-2">
-                  {(["pending", "approved", "cancelled", "modified"] as const).map((t) => (
+                  {(["pending", "approved", "rejected", "cancelled"] as const).map((t) => (
                     <button
                       key={t}
                       onClick={() => setOffersTab(t)}
@@ -395,8 +386,7 @@ const ManagementListing = () => {
                           : "text-dashboard-primary hover:bg-gray-50 border border-gray-200"
                       }`}
                     >
-                      {/* {t.charAt(0).toUpperCase() + t.slice(1)} */}
-                      {t === "cancelled" ? "Deactivated" : t}
+                      {t === "cancelled" ? "Deactivated" : t.charAt(0).toUpperCase() + t.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -566,7 +556,6 @@ const ManagementListing = () => {
             </div>
           </div>
         </main>
-      </div>
 
       <ManagementForm
         isOpen={showManagementForm}
@@ -639,7 +628,7 @@ const ManagementListing = () => {
         isLoading={isVendorLoading}
         error={vendorError}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

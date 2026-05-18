@@ -12,20 +12,8 @@ import { RiContactsFill } from "react-icons/ri";
 import { BsPinAngleFill } from "react-icons/bs";
 // import { ShareIcon } from "lucide-react";
 import { IoIosSend } from "react-icons/io";
-import Footer from "@/components/Footer";
-import Header, { DashboardHeader } from "@/components/Header";
-import {
-  Bell,
-  LinkIcon,
-  MessageCircle,
-  MessageCircleIcon,
-  SendIcon,
-} from "lucide-react";
-import MobileUserNav from "@/components/MobileUserNav";
-import { Sidebar } from "@/components/Navigation";
-import ProfileDropdown from "@/components/ProfileDropdown";
-
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { LinkIcon, SendIcon } from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
 
 // Initial chat data
 const initialChatUsers = [
@@ -353,9 +341,7 @@ const DashboardChat = () => {
     toast.success("Message copied!");
   };
 
-  const handleForward = (msg) => {
-    console.log("Forwarding message:", msg);
-  };
+  const handleForward = (_msg: any) => {};
 
   const handleDeleteMessage = (index) => {
     const updatedMessages = selectedUser.messages.filter((_, i) => i !== index);
@@ -595,7 +581,7 @@ const DashboardChat = () => {
                     onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        console.log("Selected document:", file);
+                        toast.success(`Document selected: ${file.name}`);
                       }
                     }}
                   />
@@ -619,7 +605,7 @@ const DashboardChat = () => {
                     onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        console.log("Captured photo:", file);
+                        toast.success(`Photo captured: ${file.name}`);
                       }
                     }}
                   />
@@ -644,7 +630,7 @@ const DashboardChat = () => {
                     className="hidden"
                     onChange={(e) => {
                       const files = e.target.files;
-                      console.log("Selected gallery images:", files);
+                      if (files?.length) toast.success(`${files.length} image(s) selected`);
                     }}
                   />
                   <button
@@ -710,44 +696,22 @@ const DashboardChat = () => {
   );
 
   return (
-    <>
-      <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col ">
-          {/* Header */}
-          <DashboardHeader Headtitle={"Vendor Chat"} />
-
-          {/* Main Content Area */}
-          <main className="mb-10 flex-1 flex flex-col pr-5 pb-5 overflow-y-auto scrollbar-hide">
-            {/* Padding top = header height */}
-            <div className="h-[calc(100vh-64px)] md:h-[calc(100vh-64px)] flex">
-              {isMobile ? (
-                started ? (
-                  <ChatPanel />
-                ) : (
-                  <ChatList />
-                )
-              ) : (
-                <>
-                  <ChatList />
-                  <ChatPanel />
-                </>
-              )}
-            </div>
-          </main>
-        </div>
+    <DashboardLayout title="Vendor Chat" contentClassName="flex-1 overflow-hidden flex flex-col pr-5 pb-5">
+      <div className="flex-1 flex">
+        {isMobile ? (
+          started ? (
+            <ChatPanel />
+          ) : (
+            <ChatList />
+          )
+        ) : (
+          <>
+            <ChatList />
+            <ChatPanel />
+          </>
+        )}
       </div>
-
-      {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 w-full z-50">
-        <MobileUserNav />
-      </div>
-    </>
+    </DashboardLayout>
   );
 };
 

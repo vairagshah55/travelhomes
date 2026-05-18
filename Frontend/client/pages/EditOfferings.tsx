@@ -14,9 +14,8 @@ import {
   ImagePlus,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { Sidebar } from "@/components/Navigation";
 import { useNavigate, useParams } from "react-router-dom";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
@@ -654,13 +653,7 @@ const EditOfferings = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden font-plus-jakarta">
-      <Sidebar />
-
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <DashboardHeader Headtitle="Edit Offering" />
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
+    <DashboardLayout title="Edit Offering" contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
             {/* ── Page header ── */}
             <div className="text-center space-y-2 pt-2">
@@ -1016,9 +1009,7 @@ const EditOfferings = () => {
               </button>
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

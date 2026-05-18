@@ -1,4 +1,5 @@
 import React from "react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { analyticsService } from "@/services/api";
 
@@ -280,7 +281,7 @@ const AdminAnalyticsOverview = () => {
           icon: <ClipboardIcon />,
           bgColor: "bg-cyan-50",
           iconBgColor: "bg-cyan-100",
-          navigate: "/admin/management/listing",
+          navigate: "/management/listing",
         },
         {
           title: "Active Properties",
@@ -288,7 +289,7 @@ const AdminAnalyticsOverview = () => {
           icon: <WalletIcon />,
           bgColor: "bg-purple-50",
           iconBgColor: "bg-purple-100",
-          navigate: "/admin/management/listing",
+          navigate: "/management/listing",
         },
       ],
       secondRow: [
@@ -298,7 +299,7 @@ const AdminAnalyticsOverview = () => {
           icon: <WalletIcon />,
           bgColor: "bg-purple-50",
           iconBgColor: "bg-purple-100",
-          navigate: "/admin/management/listing",
+          navigate: "/management/listing",
         },
         {
           title: "Total days of Booking",
@@ -306,7 +307,7 @@ const AdminAnalyticsOverview = () => {
           icon: <ClickIcon />,
           bgColor: "bg-purple-50",
           iconBgColor: "bg-purple-100",
-          navigate: "/admin/management/booking",
+          navigate: "/management/booking",
         },
         {
           title: "Total Revenue",
@@ -326,10 +327,13 @@ const AdminAnalyticsOverview = () => {
     mapStats('activity', 'Activity')
   ];
 
-  const MetricCardComponent = ({ metric }: { metric: MetricCard }) => (
-    <div
+  const MetricCardComponent = ({ metric, index = 0 }: { metric: MetricCard; index?: number }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05, duration: 0.25, ease: "easeOut" }}
       onClick={() => metric.navigate && navigate(metric.navigate)}
-      className={`p-4 rounded-xl ${metric.bgColor} hover:shadow-md transition-all cursor-pointer group flex-1 min-w-[250px]`}
+      className={`p-4 rounded-xl ${metric.bgColor} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex-1 min-w-[250px]`}
     >
       <div className="flex items-start gap-5">
         <div
@@ -346,7 +350,7 @@ const AdminAnalyticsOverview = () => {
           </p>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 
   const ServiceSection = ({
@@ -362,14 +366,14 @@ const AdminAnalyticsOverview = () => {
       {/* First Row */}
       <div className="grid grid-cols-4 gap-3">
         {service.firstRow.map((metric, index) => (
-          <MetricCardComponent key={index} metric={metric} />
+          <MetricCardComponent key={index} metric={metric} index={index} />
         ))}
       </div>
 
       {/* Second Row */}
- <div className="grid grid-cols-4 gap-3">
+      <div className="flex flex-wrap gap-3">
         {service.secondRow.map((metric, index) => (
-          <MetricCardComponent key={index} metric={metric} />
+          <MetricCardComponent key={index} metric={metric} index={index + 4} />
         ))}
       </div>
     </div>

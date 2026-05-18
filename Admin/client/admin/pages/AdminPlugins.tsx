@@ -9,8 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
 import { pluginsApi, type PluginDto } from "@/services/plugins";
 
 interface LicenseDetailsModalProps {
@@ -105,7 +104,6 @@ const DEFAULT_PLUGINS = [
 
 const AdminPlugins: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [plugins, setPlugins] = useState<PluginDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -209,16 +207,7 @@ const AdminPlugins: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"PlugIns"} setMobileSidebarOpen={setMobileOpen} />
-
-        {/* Content Body */}
+    <AdminLayout title="Plugins">
         <div className="flex-1 p-5 space-y-8">
           {/* Search Section */}
           <div className="flex items-center gap-5">
@@ -307,7 +296,6 @@ const AdminPlugins: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* License Details Modal */}
       <LicenseDetailsModal
@@ -316,7 +304,7 @@ const AdminPlugins: React.FC = () => {
         plugin={selectedPlugin}
         onSubmit={handleSubmitLicense}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

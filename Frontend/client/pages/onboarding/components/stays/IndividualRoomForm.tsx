@@ -116,7 +116,7 @@ const RoomCounter = ({
           textAlign: "center" as const,
         }}
       >
-        {value}
+        {isFinite(value) ? value : 0}
       </span>
       <button
         type="button"
@@ -650,10 +650,10 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       label="Guest Capacity"
                       value={room.guestCapacity}
                       onDecrement={() =>
-                        updateRoom(room.id, "guestCapacity", Math.max(1, room.guestCapacity - 1))
+                        updateRoom(room.id, "guestCapacity", Math.max(1, (isFinite(room.guestCapacity) ? room.guestCapacity : 1) - 1))
                       }
                       onIncrement={() =>
-                        updateRoom(room.id, "guestCapacity", room.guestCapacity + 1)
+                        updateRoom(room.id, "guestCapacity", (isFinite(room.guestCapacity) ? room.guestCapacity : 0) + 1)
                       }
                     />
                     <div style={{ height: 1, backgroundColor: GRAY_200 }} />
@@ -661,8 +661,8 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       icon={<BedDouble size={14} />}
                       label="Beds"
                       value={room.beds}
-                      onDecrement={() => updateRoom(room.id, "beds", Math.max(1, room.beds - 1))}
-                      onIncrement={() => updateRoom(room.id, "beds", room.beds + 1)}
+                      onDecrement={() => updateRoom(room.id, "beds", Math.max(1, (isFinite(room.beds) ? room.beds : 1) - 1))}
+                      onIncrement={() => updateRoom(room.id, "beds", (isFinite(room.beds) ? room.beds : 0) + 1)}
                     />
                     <div style={{ height: 1, backgroundColor: GRAY_200 }} />
                     <RoomCounter
@@ -670,9 +670,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       label="Bathrooms"
                       value={room.bathrooms}
                       onDecrement={() =>
-                        updateRoom(room.id, "bathrooms", Math.max(1, room.bathrooms - 1))
+                        updateRoom(room.id, "bathrooms", Math.max(1, (isFinite(room.bathrooms) ? room.bathrooms : 1) - 1))
                       }
-                      onIncrement={() => updateRoom(room.id, "bathrooms", room.bathrooms + 1)}
+                      onIncrement={() => updateRoom(room.id, "bathrooms", (isFinite(room.bathrooms) ? room.bathrooms : 0) + 1)}
                     />
                   </div>
 

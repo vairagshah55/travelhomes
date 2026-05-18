@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast, { Toaster } from "react-hot-toast";
-import { Plus } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, activitiesApi } from "@/lib/api";
 import { TEAL, BLACK, GRAY_400 } from "@/components/offering";
@@ -39,6 +40,7 @@ const Bookings = () => {
   const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [selectedDate, setSelectedDate] = useState<{ date: number; resource: string } | null>(null);
   const [newBookingForm, setNewBookingForm] = useState<NewBookingForm>(EMPTY_BOOKING_FORM);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // ─── Toast helper ──────────────────────────────────────────────────────────
   const notify = (type: "success" | "error", message: string) => {
@@ -239,8 +241,11 @@ const Bookings = () => {
     }
   };
 
-  const handleDeleteBooking = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this booking?")) return;
+  const handleDeleteBooking = (id: string) => {
+    setConfirmDeleteId(id);
+  };
+
+  const doDeleteBooking = async (id: string) => {
     try {
       if (await deleteBooking(id, token)) {
         queryClient.setQueryData<BookingData[]>(bookingsKey, (p) =>
@@ -390,6 +395,51 @@ const Bookings = () => {
           },
         }}
       />
+
+      <AnimatePresence>
+        {confirmDeleteId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                  <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 dark:text-white">Delete booking?</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    This booking will be permanently removed and cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-1">
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { doDeleteBooking(confirmDeleteId); setConfirmDeleteId(null); }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 };

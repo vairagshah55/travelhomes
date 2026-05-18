@@ -11,10 +11,10 @@ interface TrendingDestinationsProps {
 }
 
 const DESTINATIONS = [
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/4766a16ac97656234c2dd7e78a19fabc9e9361f1?width=641", title: "Delhi"   },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/3d98c6169a4accab38df839bcb2d9390e2e0f6ad?width=641", title: "Kolkata" },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/e768669efb8c29a3468b96ce5cb10cf4e7c7d719?width=641", title: "Bombay"  },
-  { image: "https://api.builder.io/api/v1/image/assets/TEMP/344595448bfa2603988d6406e077bc1b7911c209?width=488", title: "Kerala"  },
+  { image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=641&q=80", title: "Delhi"   },
+  { image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=641&q=80",    title: "Kolkata" },
+  { image: "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?w=641&q=80", title: "Bombay"  },
+  { image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=641&q=80", title: "Kerala"  },
 ];
 
 export function TrendingDestinations({ homepageSections, loadingOffers, offerError }: TrendingDestinationsProps) {

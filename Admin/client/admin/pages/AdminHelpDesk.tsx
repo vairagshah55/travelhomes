@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Filter, ChevronDown, Eye, MoreHorizontal, X, Bell } from "lucide-react";
-import AdminSidebar from "../components/AdminSidebar";
+import { toast } from "sonner";
+import { Search, Filter, MoreHorizontal, X } from "lucide-react";
+import AdminLayout from "../components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,8 +25,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import AdminProfileDropdown from "../components/AdminProfileDropdown";
-import AdminHeader from "../components/AdminHeader";
 import { helpDeskService } from "@/services/api";
 
 interface HelpDeskItem {
@@ -48,8 +47,6 @@ const AdminHelpDesk: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("camper_van");
   const [statusFilter, setStatusFilter] = useState<"all" | "Pending" | "Resolved">("all");
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   const queryClient = useQueryClient();
   const apiSortBy = sortBy === "date" ? "date" : sortBy === "status" ? "status" : "createdAt";
 
@@ -99,7 +96,7 @@ const AdminHelpDesk: React.FC = () => {
     try {
       setLoading(true);
       await helpDeskService.updateStatus(id, "Resolved");
-      // Refresh list after update
+      toast.success("Ticket marked as Resolved.");
       const apiSortBy = sortBy === "date" ? "date" : sortBy === "status" ? "status" : "createdAt";
       const refreshed = await helpDeskService.getItems({
         search: searchTerm || undefined,
@@ -112,22 +109,14 @@ const AdminHelpDesk: React.FC = () => {
       setItems(data as HelpDeskItem[]);
     } catch (err) {
       console.error("Failed to update status", err);
+      toast.error("Failed to resolve ticket.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"Help Desk"} setMobileSidebarOpen={setMobileOpen} />
-
-        {/* Main Content */}
+    <AdminLayout title="Help Desk">
         <div className="flex-1 p-5">
           <div className="bg-white rounded-t-3xl rounded-b-6 border border-dashboard-stroke h-full flex flex-col">
             {/* Content Header */}
@@ -158,10 +147,10 @@ const AdminHelpDesk: React.FC = () => {
                     <span className="text-sm text-dashboard-body font-poppins">Sort By</span>
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="w-[159px] h-10 border-dashboard-stroke text-sm font-poppins text-dashboard-body">
-                        <SelectValue placeholder="Camper Van" />
+                        <SelectValue placeholder="Date Created" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="camper_van">Camper Van</SelectItem>
+                        <SelectItem value="camper_van">Date Created</SelectItem>
                         <SelectItem value="date">Date</SelectItem>
                         <SelectItem value="status">Status</SelectItem>
                       </SelectContent>
@@ -360,7 +349,6 @@ const AdminHelpDesk: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Help Desk Details Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
@@ -440,7 +428,7 @@ const AdminHelpDesk: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminLayout>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -255,43 +256,56 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
           </div>
         )}
 
-        {/* ── children (expanded only) ── */}
-        {isOpen && hasChildren && expanded && (
-          <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800/80 pl-3 pr-0">
-            {item.children!.map((child) => {
-              const ca = isActive(child.path);
-              return (
-                <div
-                  key={child.id}
-                  onClick={() => navigate(child.path)}
-                  className={`
-                    group flex items-center gap-2 py-2 px-2.5 rounded-lg cursor-pointer
-                    transition-colors duration-150 select-none
-                    ${
-                      ca
-                        ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
-                        : "text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
-                    }
-                  `}
-                >
-                  <span
-                    className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
-                    ${ca ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400"}
-                  `}
-                  />
-                  <span className="flex-1 text-[12px] font-medium whitespace-nowrap">
-                    {child.label}
-                  </span>
-                  {child.badge !== undefined && child.badge > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500 text-white leading-none">
-                      {child.badge}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+        {/* ── children (animated) ── */}
+        <AnimatePresence initial={false}>
+          {isOpen && hasChildren && expanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800/80 pl-3 pr-0">
+                {item.children!.map((child, subIndex) => {
+                  const ca = isActive(child.path);
+                  return (
+                    <motion.div
+                      key={child.id}
+                      initial={{ x: -6, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: subIndex * 0.04, duration: 0.15 }}
+                      onClick={() => navigate(child.path)}
+                      className={`
+                        group flex items-center gap-2 py-2 px-2.5 rounded-lg cursor-pointer
+                        transition-colors duration-150 select-none
+                        ${
+                          ca
+                            ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                            : "text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                        }
+                      `}
+                    >
+                      <span
+                        className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
+                        ${ca ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400"}
+                      `}
+                      />
+                      <span className="flex-1 text-[12px] font-medium whitespace-nowrap">
+                        {child.label}
+                      </span>
+                      {child.badge !== undefined && child.badge > 0 && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500 text-white leading-none">
+                          {child.badge}
+                        </span>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   };

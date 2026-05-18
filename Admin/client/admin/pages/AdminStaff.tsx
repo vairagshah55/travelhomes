@@ -1,26 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminProfileDropdown from "../components/AdminProfileDropdown";
+import AdminLayout from "../components/AdminLayout";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import {
-  Bell,
-  ChevronDown,
-  ChevronUp,
   Edit2,
   Trash2,
-  Search,
-  Filter,
   X,
   MoreHorizontal,
-  Upload,
-  User,
   Eye,
-  Plus,
-  Phone,
-  Mail,
 } from "lucide-react";
-import AdminHeader from "../components/AdminHeader";
 
 interface StaffMember {
   id: string;
@@ -673,11 +662,10 @@ const AdminStaff = () => {
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(
     null,
   );
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   // Fetch available roles for the dropdown
   useEffect(() => {
     const fetchAvailableRoles = async () => {
@@ -736,6 +724,7 @@ const AdminStaff = () => {
             joinDate: new Date(created.joinDate).toISOString().split('T')[0],
           },
         ]);
+        toast.success('Staff account created successfully.');
       }
     } catch (e) {
       console.error('Failed to create staff', e);
@@ -780,6 +769,7 @@ const AdminStaff = () => {
       const created = res?.role || res?.data;
       if (created) {
         setStaffRoles(prev => [...prev, { id: created._id, name: created.name, features: created.features || [] }]);
+        toast.success('Role created successfully.');
       }
     } catch (e) {
       console.error('Failed to create role', e);
@@ -787,45 +777,43 @@ const AdminStaff = () => {
     }
   };
 
-  const deleteStaff = async (id: string) => {
-    try {
-      await (await import('../../services/api')).adminStaffService.remove(id);
-      setStaffMembers((prev) => prev.filter((staff) => staff.id !== id));
-    } catch (e) {
-      console.error('Failed to delete staff', e);
-      toast.error('Failed to delete staff');
-    }
+  const deleteStaff = (id: string) => {
+    setConfirmDialog({
+      title: "Delete staff account?",
+      message: "This staff member will lose access immediately. This cannot be undone.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await (await import('../../services/api')).adminStaffService.remove(id);
+          setStaffMembers((prev) => prev.filter((staff) => staff.id !== id));
+          toast.success('Staff account deleted.');
+        } catch {
+          toast.error('Failed to delete staff');
+        }
+      },
+    });
   };
 
-  const deleteRole = async (id: string) => {
-    try {
-      const api = (await import('../../services/api')).adminRolesService;
-      await api.remove(id);
-      setStaffRoles((prev) => prev.filter((role) => role.id !== id));
-    } catch (e) {
-      console.error('Failed to delete role', e);
-      toast.error('Failed to delete role');
-    }
+  const deleteRole = (id: string) => {
+    setConfirmDialog({
+      title: "Delete role?",
+      message: "This role will be removed. Staff assigned to it may lose permissions.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const api = (await import('../../services/api')).adminRolesService;
+          await api.remove(id);
+          setStaffRoles((prev) => prev.filter((role) => role.id !== id));
+          toast.success('Role deleted.');
+        } catch {
+          toast.error('Failed to delete role');
+        }
+      },
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-     
-           <AdminSidebar
-             showMobileSidebar={mobileOpen}
-             setShowMobileSidebar={setMobileOpen}
-             />
-             </div>
-           {/* Main Content */}
-           <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Staff "}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
-        {/* Main Content */}
+    <AdminLayout title="Staff">
         <div className="flex-1 px-5 py-6">
             {activeTab === "staff" && (
                 <StaffList 
@@ -848,7 +836,6 @@ const AdminStaff = () => {
                 />
             )}
         </div>
-      </div>
 
       <AddStaffModal
         isOpen={showStaffModal}
@@ -862,7 +849,15 @@ const AdminStaff = () => {
         onClose={() => setShowRoleModal(false)}
         onSubmit={handleAddRole}
       />
-    </div>
+      <ConfirmationDialog
+        isOpen={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
+        title={confirmDialog?.title ?? ""}
+        message={confirmDialog?.message ?? ""}
+        confirmText="Delete"
+      />
+    </AdminLayout>
   );
 };
 

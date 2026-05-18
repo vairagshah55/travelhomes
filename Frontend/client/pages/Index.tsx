@@ -16,6 +16,7 @@ import { HeroSection } from "@/components/home/HeroSection";
 import { OfferSections } from "@/components/home/OfferSections";
 import { TrendingDestinations } from "@/components/home/TrendingDestinations";
 import { ServiceListingBanner } from "@/components/home/ServiceListingBanner";
+import { HowItWorks } from "@/components/home/HowItWorks";
 import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { LatestArticles } from "@/components/home/LatestArticles";
 import { FAQSection } from "@/components/home/FAQSection";
@@ -383,6 +384,8 @@ export default function Index() {
         />
 
         <ServiceListingBanner />
+
+        <HowItWorks />
 
         <TestimonialsSection
           homepageSections={homepageSections}

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country } from "country-state-city";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Clock, CheckCircle2, Home } from "lucide-react";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
@@ -272,7 +272,6 @@ const CaravanOnboarding = () => {
     } catch {}
   }, [formData]);
 
-  console.log("Form Data:", formData);
   const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
   const [open, setOpen] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -288,6 +287,7 @@ const CaravanOnboarding = () => {
   const [dynamicFeatures, setDynamicFeatures] = useState<any[]>([]);
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
 
   const { userDetails, updateUserDetails } = useUserDetails();
 
@@ -305,14 +305,9 @@ const CaravanOnboarding = () => {
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
-        console.log("Fetched Onboarding Data:", data);
 
         if (data) {
-          console.log("Data Type:", data.type);
-          console.log("Has Doc:", !!data.doc);
           if (data.doc) {
-            console.log("Doc Status:", data.doc.status);
-            console.log("Full Doc Object:", data.doc);
           }
         }
 
@@ -320,44 +315,13 @@ const CaravanOnboarding = () => {
           data &&
           data.type === "caravan" &&
           data.doc &&
-          ["pending", "draft", "rejected"].includes(data.doc.status)
+          ["pending", "draft", "rejected", "approved"].includes(data.doc.status)
         ) {
           const doc = data.doc;
-          console.log("Loading existing caravan data into form:", doc);
 
           // Debug specific fields if they are missing
-          console.log(
-            "Mapping fields - Name:",
-            doc.name,
-            "Category:",
-            doc.category,
-            "Photos:",
-            doc.photos,
-          );
 
-          console.log("Business Details (Draft):", {
-            brandName: doc.brandName,
-            legalCompanyName: doc.legalCompanyName,
-            businessEmailId: doc.businessEmailId,
-            businessPhoneNumber: doc.businessPhoneNumber,
-            businessAddress: {
-              locality: doc.businessLocality,
-              state: doc.businessState,
-              city: doc.businessCity,
-              pincode: doc.businessPincode,
-            },
-          });
 
-          console.log("Personal Details (Draft):", {
-            firstName: doc.firstName,
-            lastName: doc.lastName,
-            personalState: doc.personalState,
-            personalCity: doc.personalCity,
-            personalPincode: doc.personalPincode,
-            dateOfBirth: doc.dateOfBirth,
-            maritalStatus: doc.maritalStatus,
-            idProof: doc.idProof,
-          });
 
           setFormData((prev) => ({
             ...prev,
@@ -453,32 +417,12 @@ const CaravanOnboarding = () => {
           if (draftIdPhoto) {
             setIdProofImage(draftIdPhoto);
           }
+          setStatus(doc.status || "draft");
+          setRejectionReason(doc.rejectionReason || "");
+          setIsStatusLoading(false);
         } else if (userDetails && user?.userType !== "vendor") {
-          console.log("No valid draft found. Auto-filling from userDetails:", userDetails);
 
-          console.log("Business Details (Auto-fill):", {
-            brandName: userDetails.business?.brandName,
-            legalCompanyName: userDetails.business?.legalCompanyName,
-            businessEmailId: userDetails.business?.email,
-            businessPhoneNumber: userDetails.business?.phoneNumber,
-            businessAddress: {
-              locality: userDetails.business?.locality,
-              state: userDetails.business?.state,
-              city: userDetails.business?.city,
-              pincode: userDetails.business?.pincode,
-            },
-          });
 
-          console.log("Personal Details (Auto-fill):", {
-            firstName: userDetails.firstName,
-            lastName: userDetails.lastName,
-            personalState: userDetails.state,
-            personalCity: userDetails.city,
-            personalPincode: userDetails.personalPincode,
-            dateOfBirth: userDetails.dateOfBirth,
-            maritalStatus: userDetails.maritalStatus,
-            idProof: userDetails.idProof,
-          });
 
           // Auto-fill from user details if no draft exists
           setFormData((prev) => ({
@@ -510,9 +454,12 @@ const CaravanOnboarding = () => {
           if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
             setIdProofImage(userDetails.idPhotos[0]);
           }
+          setIsStatusLoading(false);
+        } else {
+          setIsStatusLoading(false);
         }
       } catch (err) {
-        console.error("Failed to load existing onboarding data", err);
+        setIsStatusLoading(false);
       }
     };
     loadExistingData();
@@ -943,7 +890,6 @@ const CaravanOnboarding = () => {
         coverImage: photosCoverImage,
       };
 
-      console.log("Submitting caravan onboarding data...");
 
       const result = await submitOnboardingData("caravan", payload);
 
@@ -991,7 +937,6 @@ const CaravanOnboarding = () => {
         toast.error("Could not save onboarding. Please try again.");
       }
     } catch (e: any) {
-      console.error("Error in handleComplete:", e);
       toast.error(e?.message || "Failed to save caravan onboarding");
     } finally {
       setIsLoading(false);
@@ -1075,12 +1020,10 @@ const CaravanOnboarding = () => {
       const remainingSlots = 15 - currentFiles.length;
       if (files.length > remainingSlots) {
         toast.error("Upload limit exceeded!");
-        console.log("Upload limit exceeded!");
         return prev;
       }
       const newFiles = Array.from(files).slice(0, remainingSlots);
       const updatedFiles = [...currentFiles, ...newFiles];
-      console.log("Upload limit remains");
       return {
         ...prev,
         [field]: updatedFiles,
@@ -1095,12 +1038,10 @@ const CaravanOnboarding = () => {
       const remainingSlots = 2 - currentFiles.length;
       if (files.length > remainingSlots) {
         toast.error("Upload limit exceeded!");
-        console.log("Upload limit exceeded!");
         return prev;
       }
       const newFiles = Array.from(files).slice(0, remainingSlots);
       const updatedFiles = [...currentFiles, ...newFiles];
-      console.log("Upload limit remains");
       return {
         ...prev,
         [field]: updatedFiles,
@@ -1558,6 +1499,59 @@ const CaravanOnboarding = () => {
         return null;
     }
   };
+
+  if (isStatusLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-[#185FA5] border-t-transparent animate-spin" />
+          <p className="text-sm text-[#888780]">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "pending" || status === "approved") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] px-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E8E4DC] p-8 max-w-md w-full text-center">
+          {status === "pending" ? (
+            <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
+          ) : (
+            <CheckCircle2 className="w-12 h-12 text-[#22C55E] mx-auto mb-4" />
+          )}
+          <h2 className="text-xl font-semibold text-[#1a1a1a] mb-2">
+            {status === "pending" ? "Application Under Review" : "Application Approved!"}
+          </h2>
+          <p className="text-sm text-[#888780] mb-4">
+            {status === "pending"
+              ? "Your camper van listing has been submitted and is being reviewed by our team. We'll notify you once it's approved."
+              : "Congratulations! Your camper van listing has been approved and is now live."}
+          </p>
+          {formData.name && (
+            <div className="inline-flex items-center gap-2 bg-[#F7F8FA] rounded-full px-4 py-2 mb-6">
+              <Home className="w-4 h-4 text-[#185FA5]" />
+              <span className="text-sm font-medium text-[#1a1a1a]">{formData.name}</span>
+            </div>
+          )}
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full bg-[#185FA5] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#145189] transition-colors"
+            >
+              Go to Dashboard
+            </button>
+            <button
+              onClick={() => navigate("/onboarding")}
+              className="w-full border border-[#E8E4DC] text-[#1a1a1a] rounded-xl py-3 text-sm font-medium hover:bg-[#F7F8FA] transition-colors"
+            >
+              Submit Another Service
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <OnboardingLayout

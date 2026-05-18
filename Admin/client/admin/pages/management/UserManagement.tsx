@@ -45,9 +45,8 @@ import {
   Plus,
   Loader2,
 } from "lucide-react";
-import AdminSidebar from "@/admin/components/AdminSidebar";
+import AdminLayout from "@/admin/components/AdminLayout";
 import AdminProfileDropdown from "@/admin/components/AdminProfileDropdown";
-import AdminHeader from "@/admin/components/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
 import Pagination from "@/components/Pagination";
 import { formatDate } from "@/lib/formateTime";
@@ -95,33 +94,25 @@ const UserManagement = () => {
   const usersQuery = useQuery<User[]>({
     queryKey: usersKey,
     queryFn: async () => {
-      let query = "";
       let endpoint = `${API_BASE_URL}/api/users`;
 
       if (activeTab === "subscribers") {
         endpoint = `${API_BASE_URL}/api/subscribers`;
       } else if (activeTab !== "all-users") {
-        const statusMap: Record<string, string> = {
-          "active-users": "active",
-          "inactive-users": "inactive",
-          "banned-users": "banned",
-          "unverified-email": "unverified-email",
-          "unverified-mobile": "unverified-mobile",
-        };
-        const status = statusMap[activeTab];
-        if (status) {
-          query = `?status=${status}`;
-          endpoint += query;
-        }
+        // Send the tab ID directly — the backend DTO accepts these alias values
+        endpoint += `?status=${activeTab}`;
       }
 
       const response = await fetch(endpoint, {
         method: "GET",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
+        },
       });
       const responseData = await response.json();
       if (!response.ok) {
-        throw new Error(responseData.message || "Failed to fetch users");
+        throw new Error(responseData.error?.message || responseData.message || "Failed to fetch users");
       }
 
       let usersList: User[] = responseData.data || [];
@@ -258,7 +249,7 @@ const UserManagement = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/admin/login");
+    navigate("/login");
   };
 
   const tabs = [
@@ -299,13 +290,14 @@ const UserManagement = () => {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
         },
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to delete user");
+        throw new Error(data.error?.message || data.message || "Failed to delete user");
       }
 
       toast({
@@ -320,7 +312,6 @@ const UserManagement = () => {
         description: err.message || "Failed to delete user.",
         variant: "destructive",
       });
-      console.error("Error deleting user:", err);
     } finally {
       setLoading(false);
       setShowDeleteConfirm(false);
@@ -357,6 +348,7 @@ const UserManagement = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
         },
         body: JSON.stringify(formData),
       });
@@ -364,7 +356,7 @@ const UserManagement = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to add user");
+        throw new Error(data.error?.message || data.message || "Failed to add user");
       }
 
       toast({
@@ -380,7 +372,6 @@ const UserManagement = () => {
         description: err.message || "Failed to add user.",
         variant: "destructive",
       });
-      console.error("Error adding user:", err);
     } finally {
       setLoading(false);
     }
@@ -396,6 +387,7 @@ const UserManagement = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
         },
         body: JSON.stringify(formData),
       });
@@ -403,7 +395,7 @@ const UserManagement = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to update user");
+        throw new Error(data.error?.message || data.message || "Failed to update user");
       }
 
       toast({
@@ -419,7 +411,6 @@ const UserManagement = () => {
         description: err.message || "Failed to update user.",
         variant: "destructive",
       });
-      console.error("Error updating user:", err);
     } finally {
       setLoading(false);
     }
@@ -441,16 +432,8 @@ const UserManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"Management"} setMobileSidebarOpen={setMobileOpen} />
-        {/* Page Content */}
-        <main className="flex-1 pr-5 pb-5 ">
+    <AdminLayout title="User Management">
+        <main className="flex-1">
           {/* Content Header */}
           <div className="bg-white rounded-t-3xl border-b border-[#EAECF0] p-5 mb-0 flex justify-between items-center">
             <h2 className="text-sm font-bold text-[#101828] font-geist tracking-tight">
@@ -475,8 +458,8 @@ const UserManagement = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors whitespace-nowrap ${
                       activeTab === tab.id
-                        ? "text-[#0B0907] border-b-2 border-[#131313]"
-                        : "text-[#6B6B6B] hover:text-[#0B0907]"
+                        ? "text-dashboard-primary border-b-2 border-dashboard-primary"
+                        : "text-[#6B6B6B] hover:text-dashboard-primary"
                     }`}
                   >
                     {tab.label}
@@ -608,14 +591,18 @@ const UserManagement = () => {
                   <TableBody>
                     {!loading && !error && filteredSortedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-gray-500">
-                          No users found
+                        <TableCell colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center gap-3 text-gray-400">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="9" stroke="#D1D5DB" strokeWidth="2"/><path d="M6 42c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
+                            <p className="text-sm font-medium">No users found</p>
+                            <p className="text-xs">Try adjusting your search or filters</p>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ) : (
                       paginatedUsers.map((user) => (
                         <TableRow key={user._id} className="border-b border-[#F2F4F7]">
-                          <TableCell className="text-sm font-bold text-[#131313] font-plus-jakarta py-4">
+                          <TableCell className="text-sm font-bold text-dashboard-heading font-plus-jakarta py-4">
                             {user.userId}
                           </TableCell>
                           <TableCell>
@@ -677,7 +664,7 @@ const UserManagement = () => {
                                   >
                                     <Trash2 size={18} className="text-[#D30000]" />
                                     <span className="text-sm font-poppins text-[#D30000]">
-                                      Banned USers
+                                      Delete
                                     </span>
                                   </button>
                                 </div>
@@ -721,7 +708,6 @@ const UserManagement = () => {
             </div>
           </div>
         </main>
-      </div>
 
       {/* User Details Popup */}
       {showUserDetails && selectedUser && (
@@ -737,7 +723,7 @@ const UserManagement = () => {
 
             {/* Header */}
             <div className="mb-7">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">User Details</h2>
+              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">User Details</h2>
             </div>
 
             {/* User Details Content */}
@@ -834,7 +820,7 @@ const UserManagement = () => {
             </button>
 
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">Add New User</h2>
+              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">Add New User</h2>
             </div>
 
             <form onSubmit={handleSubmitAdd} className="space-y-6">
@@ -955,7 +941,7 @@ const UserManagement = () => {
             </button>
 
             <div className="mb-6">
-              <h2 className="text-2xl font-bold text-[#131313] font-geist">Edit User</h2>
+              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">Edit User</h2>
             </div>
 
             <form onSubmit={handleSubmitEdit} className="space-y-6">
@@ -1113,7 +1099,7 @@ const UserManagement = () => {
         onApplyFilters={handleApplyFilters}
         currentFilters={activeFilters}
       />
-    </div>
+    </AdminLayout>
   );
 };
 

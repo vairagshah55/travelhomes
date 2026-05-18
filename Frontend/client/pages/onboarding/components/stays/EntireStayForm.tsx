@@ -189,7 +189,7 @@ const Counter = ({
           textAlign: "center" as const,
         }}
       >
-        {value}
+        {isFinite(value) ? value : 0}
       </span>
       <button
         type="button"

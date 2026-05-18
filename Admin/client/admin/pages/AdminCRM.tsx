@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
 import { crmService } from "../../services/crm";
 import { toast } from "sonner";
 
@@ -11,7 +10,6 @@ const AdminCRM: React.FC = () => {
   // Generic service type for Vendor, User, and Staff
   const [serviceType, setServiceType] = useState("");
   const [message, setMessage] = useState("");
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const tabs = ["Vendor", "User", "Staff"];
@@ -56,22 +54,7 @@ const AdminCRM: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"CRM"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
-        {/* Main Content */}
+    <AdminLayout title="CRM">
         <div className="flex-1 px-5 pb-5 lg:pr-5">
           <div className="bg-white rounded-t-[24px] border-b border-dashboard-stroke h-[75px] px-5 flex items-center">
             <h2 className="text-xl font-bold text-dashboard-heading font-geist tracking-tight">
@@ -187,8 +170,7 @@ const AdminCRM: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </AdminLayout>
   );
 };
 

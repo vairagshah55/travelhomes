@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -108,7 +109,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
               {/* Dashboard home icon always first */}
               <Link
                 to="/dashboard"
-                className="flex items-center text-gray-400 hover:text-[#3BD9DA] transition-colors duration-150"
+                className="flex items-center text-gray-400 hover:text-[#185FA5] transition-colors duration-150"
               >
                 <LayoutDashboard size={11} />
               </Link>
@@ -125,7 +126,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
                   ) : (
                     <Link
                       to={crumb.href}
-                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#3BD9DA] transition-colors duration-150 truncate"
+                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#185FA5] transition-colors duration-150 truncate"
                     >
                       {crumb.label}
                     </Link>
@@ -136,9 +137,15 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
           )}
 
           {/* Page title */}
-          <h1 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight font-geist leading-tight truncate">
+          <motion.h1
+            key={Headtitle}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.18 }}
+            className="text-base sm:text-lg font-bold text-gray-900 dark:text-white tracking-tight font-geist leading-tight truncate"
+          >
             {Headtitle}
-          </h1>
+          </motion.h1>
         </div>
       </div>
 
@@ -156,22 +163,27 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         <ThemeToggle />
 
         {/* Notifications */}
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={() => navigate("/notifications")}
-          className={`relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all motion-theme-toggle ${unreadCount > 0 ? "notification-pulse" : ""}`}
+          className="relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 flex items-center justify-center hover:shadow-md hover:border-blue-300 transition-all duration-200 group"
         >
           <Bell
             size={18}
-            className={`text-gray-600 dark:text-gray-300 ${unreadCount > 0 ? "animate-bounce" : ""}`}
+            className="text-gray-500 dark:text-gray-300 group-hover:text-blue-500 transition-colors"
           />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full border-2 border-white dark:border-gray-800 motion-unread-dot">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
+          <AnimatePresence>
+            {unreadCount > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0 }}
+                className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-[8px] font-bold flex items-center justify-center rounded-full border-2 border-white dark:border-gray-800"
+              >
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </button>
 
         {/* Profile */}
         <ProfileDropdown

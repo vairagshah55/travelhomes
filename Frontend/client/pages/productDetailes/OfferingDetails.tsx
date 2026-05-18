@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Bell, Menu, Edit2, ChevronDown, ChevronUp } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
+import { Edit2, ChevronDown, ChevronUp } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
-import ProfileDropdown from "@/components/ProfileDropdown";
-import MobileVendorNav from "@/components/MobileVendorNav";
+import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, OfferDTO } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 
@@ -122,8 +119,6 @@ const STATUS_STYLES: Record<string, string> = {
 const OfferingDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const [expanded, setExpanded] = useState({
     descriptions: true,
@@ -173,51 +168,7 @@ const OfferingDetails = () => {
     addressParts.length > 0;
 
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top nav */}
-        <header className="flex items-center justify-between px-3 lg:px-9 py-4 bg-dashboard-bg dark:bg-gray-900 flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden">
-                  <Menu size={20} />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <Sidebar />
-              </SheetContent>
-            </Sheet>
-            <h1 className="text-xl lg:text-2xl font-bold text-dashboard-heading dark:text-white tracking-tight font-geist">
-              Offering
-            </h1>
-          </div>
-          <div className="flex items-center gap-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-white dark:bg-gray-800 rounded-full border shadow-sm h-9 w-9"
-            >
-              <Bell size={20} className="text-gray-600 dark:text-gray-300" />
-            </Button>
-            <ProfileDropdown
-              onProfileClick={() => {}}
-              onViewAsUserClick={() => {}}
-              onBusinessDetailsClick={() => {}}
-              onPersonalDetailsClick={() => {}}
-              onChangePasswordClick={() => {}}
-              onLogoutClick={() => {}}
-            />
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="flex-1 flex flex-col pr-5 pb-5 overflow-hidden">
+    <DashboardLayout title="Offering" contentClassName="flex-1 overflow-hidden flex flex-col pr-5 pb-5">
           {/* Title bar */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-dashboard-stroke dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-3xl flex-shrink-0">
             <div className="flex items-center gap-3 min-w-0">
@@ -519,13 +470,7 @@ const OfferingDetails = () => {
               )}
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="fixed">
-        <MobileVendorNav />
-      </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

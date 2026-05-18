@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
@@ -24,9 +25,9 @@ import {
   IndianRupee,
   Clock,
   ArrowUpRight,
+  AlertTriangle,
 } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
 import {
@@ -35,7 +36,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import MobileVendorNav from "@/components/MobileVendorNav";
 import { SlidePanel } from "@/components/bookings";
 import {
   TEAL,
@@ -327,6 +327,11 @@ const BookingDetails = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [saving, setSaving] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // Create form
   const [createForm, setCreateForm] = useState({
@@ -563,38 +568,50 @@ const BookingDetails = () => {
     }
   };
 
-  const handleDelete = async (b: any, e?: React.MouseEvent) => {
+  const handleDelete = (b: any, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!confirm(`Delete booking ${b.id}?`)) return;
-    try {
-      const id = b._id || b.id;
-      const res = await bookingDetailsApi.remove(id, token);
-      if ((res as any)?.success) {
-        queryClient.setQueryData<BookingDetailDTO[]>(bookingsKey, (p) =>
-          (p ?? []).filter((x) => x._id !== id && x.id !== b.id),
-        );
-        toast.success("Deleted!");
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed");
-    }
+    setConfirmDialog({
+      title: "Delete booking?",
+      message: `Booking ${b.id} will be permanently removed and cannot be undone.`,
+      onConfirm: async () => {
+        try {
+          const id = b._id || b.id;
+          const res = await bookingDetailsApi.remove(id, token);
+          if ((res as any)?.success) {
+            queryClient.setQueryData<BookingDetailDTO[]>(bookingsKey, (p) =>
+              (p ?? []).filter((x) => x._id !== id && x.id !== b.id),
+            );
+            toast.success("Deleted!");
+          }
+        } catch (err: any) {
+          toast.error(err?.message || "Failed");
+        }
+      },
+    });
   };
 
-  const handleCancel = async (b: any, e?: React.MouseEvent) => {
+  const handleCancel = (b: any, e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (!confirm(`Cancel booking ${b.id}?`)) return;
-    try {
-      const id = b._id || b.id;
-      const res = await bookingDetailsApi.update(id, { status: "cancelled" }, token);
-      if ((res as any)?.success) {
-        queryClient.setQueryData<BookingDetailDTO[]>(bookingsKey, (p) =>
-          (p ?? []).map((x) => (x._id === id || x.id === b.id ? { ...x, status: "cancelled" } : x)),
-        );
-        toast.success("Cancelled!");
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed");
-    }
+    setConfirmDialog({
+      title: "Cancel booking?",
+      message: `Booking ${b.id} will be marked as cancelled.`,
+      onConfirm: async () => {
+        try {
+          const id = b._id || b.id;
+          const res = await bookingDetailsApi.update(id, { status: "cancelled" }, token);
+          if ((res as any)?.success) {
+            queryClient.setQueryData<BookingDetailDTO[]>(bookingsKey, (p) =>
+              (p ?? []).map((x) =>
+                x._id === id || x.id === b.id ? { ...x, status: "cancelled" } : x,
+              ),
+            );
+            toast.success("Cancelled!");
+          }
+        } catch (err: any) {
+          toast.error(err?.message || "Failed");
+        }
+      },
+    });
   };
 
   const handlePrint = async (id: string) => {
@@ -605,7 +622,7 @@ const BookingDetails = () => {
         const w = window.open("", "_blank");
         if (w) {
           w.document.write(
-            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#07e4e4}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${d.servicePrice || ""}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
+            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#185FA5}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${d.servicePrice || ""}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
           );
           w.document.close();
         }
@@ -683,15 +700,7 @@ const BookingDetails = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 font-plus-jakarta overflow-hidden">
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle="Booking Details" />
-
-        <main className="flex-1 overflow-y-auto p-3 lg:p-5">
+    <DashboardLayout title="Booking Details" outerClassName="overflow-hidden" contentClassName="flex-1 overflow-auto p-3 lg:p-5">
           <div
             style={{
               backgroundColor: WHITE,
@@ -1286,12 +1295,50 @@ const BookingDetails = () => {
               </div>
             </div>
           </SlidePanel>
-        </main>
-      </div>
-      <div className="fixed top-0 right-0">
-        <MobileVendorNav />
-      </div>
-    </div>
+
+          <AnimatePresence>
+            {confirmDialog && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
+              >
+                <motion.div
+                  initial={{ scale: 0.96, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.96, opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
+                      <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900 dark:text-white">{confirmDialog.title}</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{confirmDialog.message}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 justify-end pt-1">
+                    <button
+                      onClick={() => setConfirmDialog(null)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+    </DashboardLayout>
   );
 };
 

@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminProfileDropdown from "../components/AdminProfileDropdown";
-import { Bell, ChevronDown, Download, Copy, X } from "lucide-react";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
+import { ChevronDown, Download, Copy, X } from "lucide-react";
 import { getImageUrl } from "@/lib/utils";
 
 
@@ -195,7 +193,7 @@ const AdminMarketing = () => {
            if (res.status === 401) {
              localStorage.removeItem('adminToken');
              sessionStorage.removeItem('adminToken');
-             navigate('/admin/login');
+             navigate('/login');
              return;
            }
            throw new Error(`API Error: ${res.status}`);
@@ -232,7 +230,6 @@ const AdminMarketing = () => {
   );
   const [showContentModal, setShowContentModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
 
   const handlePost = async (item: ContentItem, platform: 'instagram' | 'facebook') => {
@@ -272,23 +269,7 @@ const AdminMarketing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-       <div className="fixed">
-
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-        />
-        </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Marketing"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
-        {/* Main Content */}
+    <AdminLayout title="Marketing">
         <div className="flex-1 pr-5 lg:pr-5">
           {/* Content Header */}
           <div className="bg-white rounded-t-3xl border-b border-[#EAECF0] min-h-[75px] flex items-center justify-between px-5">
@@ -430,7 +411,6 @@ const AdminMarketing = () => {
             )}
           </div>
         </div>
-      </div>
 
       {/* Content Modal */}
       <ContentModal
@@ -441,7 +421,7 @@ const AdminMarketing = () => {
       />
 
 
-    </div>
+    </AdminLayout>
   );
 };
 

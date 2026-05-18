@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Sidebar } from "@/components/Navigation";
 import { DashboardHeader } from "@/components/Header";
 import MobileVendorNav from "@/components/MobileVendorNav";
@@ -24,7 +25,15 @@ const DashboardLayout = ({
 
     <div className="flex-1 flex flex-col overflow-hidden">
       <DashboardHeader Headtitle={title} />
-      <div className={contentClassName}>{children}</div>
+      <motion.div
+        key={title}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+        className={contentClassName}
+      >
+        {children}
+      </motion.div>
     </div>
 
     <div className="lg:hidden fixed bottom-0 w-full z-50">

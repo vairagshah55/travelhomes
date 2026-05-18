@@ -13,6 +13,7 @@ const Pagination: React.FC<PaginationProps> = ({
   totalPages,
   onPageChange,
 }) => {
+  if (totalPages <= 1) return null;
   return (
     <div className="flex items-center justify-center gap-4 py-6 border-t border-gray-100 bg-white rounded-b-3xl">
       <div className="flex items-center gap-1">

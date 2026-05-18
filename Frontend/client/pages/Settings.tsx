@@ -7,9 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { NotebookPen, Check } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
+import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { DashboardHeader } from "@/components/Header";
 import { vendorSettingApi, VendorSettingDTO, helpDeskApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -20,7 +19,6 @@ const Settings = () => {
   const vendorId = useMemo(() => user?.id || "1", [user]); // demo fallback
   const location = useLocation();
 
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -113,8 +111,6 @@ const Settings = () => {
 
   // (Settings useEffect collapsed into the useQuery above.)
 
-  const handleToggleCollapse = () => setIsCollapsed(!isCollapsed);
-
   const handleSubmitTicket = async () => {
     if (!ticket.name || !ticket.phone || !ticket.email || !ticket.subject || !ticket.message) {
       toast.error("Please fill in all required fields");
@@ -166,17 +162,8 @@ const Settings = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-dashboard-bg dark:bg-gray-950 font-plus-jakarta">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block flex-shrink-0">
-        <Sidebar isCollapsed={isCollapsed} onToggleCollapse={handleToggleCollapse} />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle="Settings" />
-
-        <div className="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+    <DashboardLayout title="Settings" contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+      <div>
           <div className="max-w-3xl mx-auto space-y-6">
             {/* ── Settings nav tabs ── */}
             <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl w-fit">
@@ -222,7 +209,7 @@ const Settings = () => {
                     />
                     <div
                       className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer transition-all"
-                      style={{ "--tw-peer-checked": "#3BD9DA" } as React.CSSProperties}
+                      style={{ "--tw-peer-checked": "#185FA5" } as React.CSSProperties}
                     >
                       <div
                         className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${general.confirmBeforeBooking ? "translate-x-5" : ""}`}
@@ -230,7 +217,7 @@ const Settings = () => {
                     </div>
                     <div
                       className="absolute inset-0 rounded-full transition-all pointer-events-none"
-                      style={general.confirmBeforeBooking ? { background: "#3BD9DA" } : {}}
+                      style={general.confirmBeforeBooking ? { background: "#185FA5" } : {}}
                     />
                   </label>
                 </div>
@@ -313,8 +300,8 @@ const Settings = () => {
                 <div className="flex justify-end">
                   <Button
                     onClick={handleSubmitTicket}
-                    className="px-6 font-semibold text-[#131313] rounded-xl"
-                    style={{ background: "#3BD9DA" }}
+                    className="px-6 font-semibold text-white rounded-xl"
+                    style={{ background: "#185FA5" }}
                   >
                     Submit Ticket
                   </Button>
@@ -323,7 +310,6 @@ const Settings = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Success Modal */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
@@ -355,8 +341,8 @@ const Settings = () => {
             {/* BUTTON */}
             <Button
               onClick={() => setShowSuccessModal(false)}
-              className="w-full max-w-sm h-12 rounded-full font-semibold text-[#131313]"
-              style={{ background: "#3BD9DA" }}
+              className="w-full max-w-sm h-12 rounded-full font-semibold text-white"
+              style={{ background: "#185FA5" }}
             >
               Back to Home
             </Button>
@@ -366,7 +352,7 @@ const Settings = () => {
 
       {/* Change Password Modal */}
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
-    </div>
+    </DashboardLayout>
   );
 };
 

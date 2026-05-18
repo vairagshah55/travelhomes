@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
 import { Bell, UserPlus, CreditCard, CalendarCheck, HelpCircle, Info, CheckCircle, XCircle, Briefcase, Trash2, Check, X } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 interface Notification {
   _id: string;
@@ -19,12 +19,12 @@ interface Notification {
 const Notifications = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -32,8 +32,6 @@ const Notifications = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      console.log("[DEBUG] Fetching notifications from:", `${API_BASE_URL}/api/admin/notifications?unreadOnly=${activeFilter === "unread"}`);
-      
       const res = await fetch(`${API_BASE_URL}/api/admin/notifications?unreadOnly=${activeFilter === "unread"}`, {
         headers: {
           "Authorization": `Bearer ${token}`
@@ -41,12 +39,10 @@ const Notifications = () => {
       });
       
       const data = await res.json();
-      console.log("[DEBUG] Received notifications data:", data);
       if (data.success) {
         setNotifications(data.data);
       }
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
+    } catch {
     } finally {
       setLoading(false);
     }
@@ -76,8 +72,7 @@ const Notifications = () => {
         // Refresh notifications or optimistically update
         setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       }
-    } catch (error) {
-      console.error("Error marking all as read:", error);
+    } catch {
     }
   };
 
@@ -96,45 +91,42 @@ const Notifications = () => {
           prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
         );
       }
-    } catch (error) {
-      console.error("Error marking as read:", error);
+    } catch {
     }
   };
 
-  const handleDelete = async (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    if (!window.confirm("Are you sure you want to delete this notification?")) return;
-
+  const doDelete = async (id: string) => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const res = await fetch(`${API_BASE_URL}/api/admin/notifications/${id}`, {
         method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
+        headers: { "Authorization": `Bearer ${token}` }
       });
       const data = await res.json();
       if (data.success) {
         setNotifications((prev) => prev.filter((n) => n._id !== id));
         setSelectedIds((prev) => prev.filter((item) => item !== id));
       }
-    } catch (error) {
-      console.error("Error deleting notification:", error);
+    } catch {
+      // silently ignore
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedIds.length === 0) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} notifications?`)) return;
+  const handleDelete = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setConfirmDialog({
+      title: "Delete notification?",
+      message: "This notification will be permanently removed.",
+      onConfirm: () => { setConfirmDialog(null); doDelete(id); },
+    });
+  };
 
+  const doBulkDelete = async () => {
     try {
       const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
       const res = await fetch(`${API_BASE_URL}/api/admin/notifications/bulk-delete`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ ids: selectedIds })
       });
       const data = await res.json();
@@ -142,9 +134,18 @@ const Notifications = () => {
         setNotifications((prev) => prev.filter((n) => !selectedIds.includes(n._id)));
         setSelectedIds([]);
       }
-    } catch (error) {
-      console.error("Error in bulk delete:", error);
+    } catch {
+      // silently ignore
     }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    setConfirmDialog({
+      title: `Delete ${selectedIds.length} notification${selectedIds.length > 1 ? "s" : ""}?`,
+      message: "These notifications will be permanently removed.",
+      onConfirm: () => { setConfirmDialog(null); doBulkDelete(); },
+    });
   };
 
   const handleToggleSelect = (id: string, e: React.MouseEvent) => {
@@ -186,24 +187,7 @@ const Notifications = () => {
 
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      {/* Sidebar */}
-      <div className="fixed">
-
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-        />
-        </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"Notifications"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
-        {/* Notifications Content */}
+    <AdminLayout title="Notifications">
         <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-black dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
           {/* Filter Tabs and Mark as Read */}
           <div className="flex items-center justify-between overflow-y-scroll gap-6 border-b border-dashboard-stroke pb-4 mb-5">
@@ -334,7 +318,6 @@ const Notifications = () => {
             </div>
           )}
         </main>
-      </div>
 
       {/* Detail Modal */}
       {showDetailModal && selectedNotification && (
@@ -402,7 +385,15 @@ const Notifications = () => {
           </div>
         </div>
       )}
-    </div>
+      <ConfirmationDialog
+        isOpen={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
+        title={confirmDialog?.title ?? ""}
+        message={confirmDialog?.message ?? ""}
+        confirmText="Delete"
+      />
+    </AdminLayout>
   );
 };
 

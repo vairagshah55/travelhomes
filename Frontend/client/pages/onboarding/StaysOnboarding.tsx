@@ -28,6 +28,10 @@ import {
   Microwave,
   CookingPot,
   MoreHorizontal,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Home,
 } from "lucide-react";
 import { useUserDetails } from "@/hooks/useUserDetails";
 
@@ -47,6 +51,7 @@ import {
   CategorySelectionStep,
   StayDetailsStep,
   FeaturesStep,
+  UniqueStayCardPreview,
 } from "./components/stays";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
@@ -55,6 +60,30 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   countryCode: c.isoCode,
   dialCode: c.phonecode,
 }));
+
+// All 4 stay discount offers share the same discountPercentage + finalPrice.
+// Pick the first enabled one that actually reduces the price.
+const STAY_DISCOUNT_SLOTS: { key: string; label: string }[] = [
+  { key: "firstUserDiscount", label: "Welcome offer" },
+  { key: "festivalOffers", label: "Festival offer" },
+  { key: "weeklyOffers", label: "Long stay offer" },
+  { key: "specialOffers", label: "Special offer" },
+];
+
+function pickStayDiscount(
+  regularPrice: string,
+  finalPrice: string,
+  offers: Record<string, boolean>,
+): { originalPrice: number; finalPrice: number; label: string } | null {
+  const original = Number(regularPrice);
+  const discounted = Number(finalPrice);
+  if (!Number.isFinite(original) || original <= 0) return null;
+  if (!Number.isFinite(discounted) || discounted <= 0 || discounted >= original) return null;
+  for (const slot of STAY_DISCOUNT_SLOTS) {
+    if (offers[slot.key]) return { originalPrice: original, finalPrice: discounted, label: slot.label };
+  }
+  return null;
+}
 
 // Property categories based on property types
 const propertyCategories: Record<string, { id: string; name: string; icon: string }[]> = {
@@ -228,7 +257,7 @@ interface Room {
 
 const StaysOnboarding = () => {
   const navigate = useNavigate();
-  const { updateUserType, isAuthenticated, user } = useAuth();
+  const { updateUserType, isAuthenticated } = useAuth();
 
   const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
@@ -252,7 +281,18 @@ const StaysOnboarding = () => {
   const _cached = (() => {
     try {
       const raw = sessionStorage.getItem(FORM_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      // Discard snapshots that contain NaN-sentinel values (corrupted by a
+      // previous bug where Number() conversions weren't guarded).
+      const numeric = ["guestCapacity", "numberOfRooms", "numberOfBeds", "numberOfBathrooms"];
+      const isCorrupted = numeric.some((k) => parsed[k] !== undefined && !isFinite(Number(parsed[k])));
+      if (isCorrupted) {
+        sessionStorage.removeItem(FORM_STORAGE_KEY);
+        sessionStorage.removeItem(STEP_STORAGE_KEY);
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -284,10 +324,12 @@ const StaysOnboarding = () => {
   );
   const [roomRules, setRoomRules] = useState<Record<string, string[]>>(_cached?.roomRules ?? {});
   const [optionalRules, setOptionalRules] = useState<string[]>(_cached?.optionalRules ?? [""]);
-  const [guestCapacity, setGuestCapacity] = useState(_cached?.guestCapacity ?? 0);
-  const [numberOfRooms, setNumberOfRooms] = useState(_cached?.numberOfRooms ?? 1);
-  const [numberOfBeds, setNumberOfBeds] = useState(_cached?.numberOfBeds ?? 0);
-  const [numberOfBathrooms, setNumberOfBathrooms] = useState(_cached?.numberOfBathrooms ?? 0);
+  // Use Number() + || fallback so NaN from stale sessionStorage is treated as 0,
+  // not propagated into counter arithmetic (NaN + 1 = NaN, NaN > 1 = false → stuck).
+  const [guestCapacity, setGuestCapacity] = useState(Number(_cached?.guestCapacity) || 0);
+  const [numberOfRooms, setNumberOfRooms] = useState(Number(_cached?.numberOfRooms) || 1);
+  const [numberOfBeds, setNumberOfBeds] = useState(Number(_cached?.numberOfBeds) || 0);
+  const [numberOfBathrooms, setNumberOfBathrooms] = useState(Number(_cached?.numberOfBathrooms) || 0);
   const [regularPrice, setRegularPrice] = useState(_cached?.regularPrice ?? "");
   const [rooms, setRooms] = useState<Room[]>(
     _cached?.rooms ?? [
@@ -333,6 +375,7 @@ const StaysOnboarding = () => {
   const [gstNumber, setGstNumber] = useState(_cached?.gstNumber ?? "");
   const [businessEmail, setBusinessEmail] = useState(_cached?.businessEmail ?? "");
   const [businessPhone, setBusinessPhone] = useState(_cached?.businessPhone ?? "");
+  const [businessAddress, setBusinessAddress] = useState(_cached?.businessAddress ?? "");
   const [locality, setLocality] = useState(_cached?.locality ?? "India");
   const [state, setState] = useState(_cached?.state ?? "");
   const [city, setCity] = useState(_cached?.city ?? "");
@@ -389,6 +432,7 @@ const StaysOnboarding = () => {
         gstNumber,
         businessEmail,
         businessPhone,
+        businessAddress,
         locality,
         state,
         city,
@@ -438,6 +482,7 @@ const StaysOnboarding = () => {
     gstNumber,
     businessEmail,
     businessPhone,
+    businessAddress,
     locality,
     state,
     city,
@@ -458,6 +503,10 @@ const StaysOnboarding = () => {
   ]);
 
   const { userDetails, updateUserDetails } = useUserDetails();
+  // Prevent loadExistingData from running more than once.
+  // React Query refetches userDetails in the background (window focus, etc.),
+  // which re-triggers the effect and overwrites photos/form data the user just filled.
+  const hasLoadedRef = useRef(false);
 
   const totalSteps = 8;
   const completedSteps = currentStep;
@@ -466,6 +515,9 @@ const StaysOnboarding = () => {
 
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
+  // True while the initial data check is in-flight so we don't flash the
+  // full form before knowing the submission is already pending/approved.
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
 
   const clearError = (field: string) => {
     setErrors((prev) => {
@@ -553,13 +605,17 @@ const StaysOnboarding = () => {
               }));
             }
           })
-          .catch(console.error);
+          .catch(() => {});
       }
     });
   }, [stayCategories]);
 
   // Check for existing data (resubmission flow)
   useEffect(() => {
+    // Guard: only run once. Without this, every background React Query refetch of
+    // userDetails re-invokes this effect and resets photos + form data the user filled.
+    if (hasLoadedRef.current) return;
+
     const loadExistingData = async () => {
       try {
         const data = await getOnboardingData();
@@ -568,121 +624,104 @@ const StaysOnboarding = () => {
           data &&
           data.type === "stay" &&
           data.doc &&
-          ["pending", "draft", "rejected"].includes(data.doc.status)
+          ["pending", "draft", "rejected", "approved"].includes(data.doc.status)
         ) {
           const doc = data.doc;
-          console.log("Loading existing stay data:", doc);
+          hasLoadedRef.current = true;
+          setIsStatusLoading(false);
 
-          console.log("status:", doc.status);
           setStatus(doc.status);
-          console.log("rejectionReason:", doc.rejectionReason);
           setRejectionReason(doc.rejectionReason || "");
 
-          console.log("selectedProperties:", doc.selectedProperties);
           setSelectedProperties(doc.selectedProperties || []);
-          console.log("selectedCategories:", doc.selectedCategories);
           setSelectedCategories(doc.selectedCategories || []);
-          console.log("stayType:", doc.stayType);
           setStayType(doc.stayType || "entire");
-          console.log("guestCapacity:", doc.guestCapacity);
-          setGuestCapacity(doc.guestCapacity || 0);
-          console.log("numberOfRooms:", doc.numberOfRooms);
-          setNumberOfRooms(doc.numberOfRooms || 0);
-          console.log("numberOfBeds:", doc.numberOfBeds);
-          setNumberOfBeds(doc.numberOfBeds || 0);
-          console.log("numberOfBathrooms:", doc.numberOfBathrooms);
-          setNumberOfBathrooms(doc.numberOfBathrooms || 0);
-          console.log("regularPrice:", doc.regularPrice);
+          setGuestCapacity(Number(doc.guestCapacity) || 0);
+          setNumberOfRooms(Number(doc.numberOfRooms) || 1);
+          setNumberOfBeds(Number(doc.numberOfBeds) || 0);
+          setNumberOfBathrooms(Number(doc.numberOfBathrooms) || 0);
           setRegularPrice(String(doc.regularPrice || ""));
 
-          console.log("rooms:", doc.rooms);
           if (doc.rooms && doc.rooms.length > 0) {
-            setRooms(doc.rooms);
+            // Normalise room field names: the DB schema previously used
+            // `capacity` and `bedCount` instead of the frontend's `guestCapacity`
+            // and `beds`. Map both to the canonical frontend names so counters
+            // and the effectiveGuestCapacity calculation always see real numbers.
+            const normalizedRooms = doc.rooms.map((r: any) => ({
+              id: r.id || String(Date.now() + Math.random()),
+              name: r.name || "",
+              description: r.description || "",
+              guestCapacity: Number(r.guestCapacity || r.capacity || 1),
+              beds: Number(r.beds || r.bedCount || 1),
+              bathrooms: Number(r.bathrooms || 1),
+              price: Number(r.price || 0),
+              photos: r.photos || [],
+            }));
+            setRooms(normalizedRooms);
             setCoverImage(doc.coverImage || null);
             // Handle images
             if (doc.stayType === "entire") {
-              console.log("entireStayImages:", doc.images);
               const imgs = doc.images || [];
               setEntireStayImages(imgs);
             } else {
-              console.log("images (room):", doc.rooms[0]?.photos);
               const imgs = doc.rooms[0]?.photos || [];
               setImages([...imgs, ...Array(Math.max(0, 5 - imgs.length)).fill(null)]);
             }
           }
 
-          console.log("selectedFeatures:", doc.selectedFeatures);
           setSelectedFeatures(doc.selectedFeatures || []);
-          console.log("rules:", doc.rules);
           setEntireStayRules(doc.rules && doc.rules.length > 0 ? doc.rules : [""]);
-          console.log("roomRules:", doc.roomRules);
           setRoomRules(doc.roomRules || {});
-          console.log("optionalRules:", doc.optionalRules);
           setOptionalRules(
             doc.optionalRules && doc.optionalRules.length > 0 ? doc.optionalRules : [""],
           );
 
-          console.log("firstUserDiscount:", doc.firstUserDiscount);
           setFirstUserDiscount(doc.firstUserDiscount ?? true);
-          console.log("discountType:", doc.discountType);
           setDiscountType(doc.discountType || "percentage");
-          console.log("discountPercentage:", doc.discountPercentage);
           setDiscountPercentage(String(doc.discountPercentage || ""));
-          console.log("finalPrice:", doc.finalPrice);
           setFinalPrice(String(doc.finalPrice || ""));
 
-          console.log("festivalOffers:", doc.festivalOffers);
           setFestivalOffers(doc.festivalOffers ?? false);
-          console.log("weeklyOffers:", doc.weeklyOffers);
           setWeeklyOffers(doc.weeklyOffers ?? false);
-          console.log("specialOffers:", doc.specialOffers);
           setSpecialOffers(doc.specialOffers ?? false);
 
-          console.log("brandName:", doc.brandName);
-          setBrandName(doc.brandName || "");
-          console.log("companyName:", doc.companyName);
-          setCompanyName(doc.companyName || "");
-          console.log("gstNumber:", doc.gstNumber);
-          setGstNumber(doc.gstNumber || "");
-          console.log("businessEmail:", doc.businessEmail);
-          setBusinessEmail(doc.businessEmail || "");
-          console.log("businessPhone:", doc.businessPhone);
-          setBusinessPhone(doc.businessPhone || "");
-          console.log("locality:", doc.locality);
-          setLocality(doc.locality || "India");
-          console.log("state:", doc.state);
-          setState(doc.state || "");
-          setStateOption2(doc.state || "");
-          console.log("city:", doc.city);
-          setCity(doc.city || "");
-          setCityOptions2(doc.city || "");
-          console.log("businessPincode/pincode:", doc.businessPincode || doc.pincode);
-          setBusinessPincode(doc.businessPincode || doc.pincode || "");
-          console.log("personalPincode:", doc.personalPincode);
-          setPersonalPincode(doc.personalPincode || "");
+          // Business + personal fields are NOT stored on the StayOnboarding
+          // doc (Mongoose strict mode drops unknown keys). They live on Profile
+          // via syncUserProfile. Fall back to userDetails so resumed drafts
+          // aren't empty.
+          setBrandName(doc.brandName || userDetails?.business?.brandName || "");
+          setCompanyName(doc.companyName || userDetails?.business?.legalCompanyName || "");
+          setGstNumber(doc.gstNumber || userDetails?.business?.gstNumber || "");
+          setBusinessEmail(doc.businessEmail || userDetails?.business?.email || "");
+          setBusinessPhone(doc.businessPhone || userDetails?.business?.phoneNumber || "");
+          setBusinessAddress(doc.businessAddress || userDetails?.business?.address || "");
+          setLocality(doc.locality || userDetails?.business?.locality || "India");
+          setState(doc.state || userDetails?.business?.state || "");
+          setStateOption2(doc.state || userDetails?.business?.state || "");
+          setCity(doc.city || userDetails?.business?.city || "");
+          setCityOptions2(doc.city || userDetails?.business?.city || "");
+          setBusinessPincode(doc.businessPincode || doc.pincode || userDetails?.business?.pincode || "");
+          setPersonalPincode(doc.personalPincode || userDetails?.personalPincode || "");
 
-          console.log("firstName:", doc.firstName);
-          setFirstName(doc.firstName || "");
-          console.log("lastName:", doc.lastName);
-          setLastName(doc.lastName || "");
-          console.log("personalCountry:", doc.personalCountry);
-          setPersonalCountry(doc.personalCountry || "India");
-          console.log("personalState:", doc.personalState);
-          setPersonalState(doc.personalState || "");
-          setStateOption(doc.personalState || "");
-          console.log("personalCity:", doc.personalCity);
-          setPersonalCity(doc.personalCity || "");
-          setCityOptions(doc.personalCity || "");
-          console.log("dateOfBirth:", doc.dateOfBirth);
-          setDateOfBirth(doc.dateOfBirth || "");
-          console.log("maritalStatus:", doc.maritalStatus);
-          setMaritalStatus(doc.maritalStatus || "");
-          console.log("idProof:", doc.idProof);
-          setIdProof(doc.idProof || "");
+          setFirstName(doc.firstName || userDetails?.firstName || "");
+          setLastName(doc.lastName || userDetails?.lastName || "");
+          setPersonalCountry(doc.personalCountry || userDetails?.country || "India");
+          setPersonalState(doc.personalState || userDetails?.state || "");
+          setStateOption(doc.personalState || userDetails?.state || "");
+          setPersonalCity(doc.personalCity || userDetails?.city || "");
+          setCityOptions(doc.personalCity || userDetails?.city || "");
+          setDateOfBirth(
+            doc.dateOfBirth ||
+            (userDetails?.dateOfBirth
+              ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
+              : ""),
+          );
+          setMaritalStatus(doc.maritalStatus || userDetails?.maritalStatus || "");
+          setIdProof(doc.idProof || userDetails?.idProof || "");
 
-          console.log("idPhotos:", doc.idPhotos);
-          if (doc.idPhotos && doc.idPhotos.length > 0) {
-            setIdProofImage(doc.idPhotos[0]);
+          const draftIdPhoto = doc.idPhotos?.[0] || userDetails?.idPhotos?.[0];
+          if (draftIdPhoto) {
+            setIdProofImage(draftIdPhoto);
           }
 
           setTermsAccepted(false);
@@ -708,8 +747,12 @@ const StaysOnboarding = () => {
             if (doc.firstName) restoredStep = Math.max(restoredStep, 6);
             setCurrentStep(restoredStep);
           }
-        } else if (userDetails && user?.userType !== "vendor") {
-          // Auto-fill from user details if no draft exists and user is not a vendor (first time)
+        } else if (userDetails) {
+          // No draft found — auto-fill from saved profile.
+          // Applies to both first-time users AND existing vendors submitting a
+          // second service type (the !== "vendor" gate previously blocked them).
+          hasLoadedRef.current = true;
+          setIsStatusLoading(false);
           setFirstName(userDetails.firstName || "");
           setLastName(userDetails.lastName || "");
           setPersonalState(userDetails.state || "");
@@ -733,6 +776,7 @@ const StaysOnboarding = () => {
           setGstNumber(userDetails.business?.gstNumber || "");
           setBusinessEmail(userDetails.business?.email || "");
           setBusinessPhone(userDetails.business?.phoneNumber || "");
+          setBusinessAddress(userDetails.business?.address || "");
           setLocality(userDetails.business?.locality || "India");
           setState(userDetails.business?.state || "");
           setStateOption2(userDetails.business?.state || "");
@@ -741,7 +785,8 @@ const StaysOnboarding = () => {
           setBusinessPincode(userDetails.business?.pincode || "");
         }
       } catch (err) {
-        console.error("Failed to load existing onboarding data", err);
+        hasLoadedRef.current = true;
+        setIsStatusLoading(false);
       }
     };
     loadExistingData();
@@ -766,6 +811,7 @@ const StaysOnboarding = () => {
   }, [regularPrice, discountPercentage, discountType, currentStep]);
 
   const handleBack = () => {
+    setErrors({});
     if (currentStep > 0) {
       setCurrentStep((prev) => prev - 1);
     } else {
@@ -899,6 +945,9 @@ const StaysOnboarding = () => {
       } else if (!/^\d{10}$/.test(businessPhone)) {
         newErrors.businessPhone = "Please enter a valid 10-digit phone number";
       }
+      if (!businessAddress || !businessAddress.trim()) {
+        newErrors.businessAddress = "Business address is required";
+      }
       if (!locality || !locality.trim()) {
         newErrors.locality = "Business locality is required";
       }
@@ -910,6 +959,8 @@ const StaysOnboarding = () => {
       }
       if (!businessPincode || !businessPincode.trim()) {
         newErrors.businessPincode = "Business pincode is required";
+      } else if (!/^\d{6}$/.test(businessPincode.trim())) {
+        newErrors.businessPincode = "Enter a valid 6-digit pincode";
       }
     } else if (currentStep === 6) {
       if (!firstName || !firstName.trim()) {
@@ -942,6 +993,9 @@ const StaysOnboarding = () => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      // Surface the first error as a toast — inline errors are easy to miss if
+      // the failing field is scrolled out of view.
+      toast.error(Object.values(newErrors)[0]);
       return;
     }
 
@@ -984,16 +1038,34 @@ const StaysOnboarding = () => {
         roomsWithPhotos[0] = { ...roomsWithPhotos[0], photos: entireStayGallery };
       }
 
+      // For individual stays, price and capacity live on each room — derive
+      // top-level values so downstream (API, preview) always gets numbers > 0.
+      const effectiveRegularPrice =
+        stayType === "individual"
+          ? roomsWithPhotos[0]?.price || 0
+          : Number(regularPrice);
+      // For individual stays sum per-room capacity; also accept the legacy
+      // `capacity` field name that existed in an older RoomSchema. Fall back to
+      // the top-level `guestCapacity` state (which IS persisted correctly in the
+      // DB) so reloaded docs don't produce 0 if rooms were saved with old field names.
+      const roomCapacitySum = stayType === "individual"
+        ? roomsWithPhotos.reduce((sum, r) => sum + (Number(r.guestCapacity) || Number((r as any).capacity) || 0), 0)
+        : 0;
+      const effectiveGuestCapacity =
+        stayType === "individual"
+          ? (roomCapacitySum > 0 ? roomCapacitySum : Number(guestCapacity) || 0)
+          : Number(guestCapacity);
+
       const payload = {
         selectedProperties,
         selectedCategories,
         stayType,
         coverImage,
-        guestCapacity: Number(guestCapacity),
+        guestCapacity: effectiveGuestCapacity,
         numberOfRooms: Number(numberOfRooms),
         numberOfBeds: Number(numberOfBeds),
         numberOfBathrooms: Number(numberOfBathrooms),
-        regularPrice: Number(regularPrice),
+        regularPrice: effectiveRegularPrice,
         rooms: roomsWithPhotos,
         selectedFeatures,
         entireStayRules: entireStayRules.filter((rule) => rule.trim() !== ""),
@@ -1011,6 +1083,7 @@ const StaysOnboarding = () => {
         gstNumber,
         businessEmail,
         businessPhone,
+        businessAddress,
         locality,
         state,
         city,
@@ -1033,12 +1106,11 @@ const StaysOnboarding = () => {
         throw new Error("Please select at least one property type");
       }
 
-      const regPrice = Number(regularPrice);
-      if (!regularPrice || isNaN(regPrice) || regPrice <= 0) {
+      if (!effectiveRegularPrice || isNaN(effectiveRegularPrice) || effectiveRegularPrice <= 0) {
         throw new Error("Please enter a valid regular price");
       }
 
-      if (!guestCapacity || Number(guestCapacity) <= 0) {
+      if (!effectiveGuestCapacity || effectiveGuestCapacity <= 0) {
         throw new Error("Please enter a valid guest capacity");
       }
 
@@ -1065,6 +1137,7 @@ const StaysOnboarding = () => {
             gstNumber: gstNumber,
             email: businessEmail,
             phoneNumber: businessPhone,
+            address: businessAddress,
             locality: locality,
             state: state,
             city: city,
@@ -1136,11 +1209,13 @@ const StaysOnboarding = () => {
   };
 
   const incrementValue = (value: number, setter: (val: number) => void, max: number = 20) => {
-    if (value < max) setter(value + 1);
+    const safe = isFinite(value) ? value : 0;
+    if (safe < max) setter(safe + 1);
   };
 
   const decrementValue = (value: number, setter: (val: number) => void, min: number = 1) => {
-    if (value > min) setter(value - 1);
+    const safe = isFinite(value) ? value : 0;
+    if (safe > min) setter(safe - 1);
   };
 
   const addRoom = () => {
@@ -1479,6 +1554,10 @@ const StaysOnboarding = () => {
         setBusinessPhone(value);
         clearError("businessPhone");
         break;
+      case "businessAddress":
+        setBusinessAddress(value);
+        clearError("businessAddress");
+        break;
       case "pincode":
         setBusinessPincode(value);
         clearError("businessPincode");
@@ -1573,7 +1652,7 @@ const StaysOnboarding = () => {
         return (
           <StayDetailsStep
             stayType={stayType}
-            setStayType={setStayType}
+            setStayType={(t) => { setStayType(t); setErrors({}); }}
             guestCapacity={guestCapacity}
             numberOfRooms={numberOfRooms}
             numberOfBeds={numberOfBeds}
@@ -1653,10 +1732,7 @@ const StaysOnboarding = () => {
               gstNumber,
               businessEmail,
               businessPhone,
-              // StaysOnboarding doesn't carry a discrete businessAddress
-              // field — the locality/city/state are kept separately. Pass an
-              // empty string so the shared step renders without crashing.
-              businessAddress: "",
+              businessAddress,
               pincode: businessPincode,
             }}
             errors={errors}
@@ -1711,6 +1787,107 @@ const StaysOnboarding = () => {
     }
   };
 
+  const primaryPropertyName =
+    propertyTypes.find((p) => p.id === selectedProperties[0])?.name ?? selectedProperties[0];
+
+  const activeDiscount = pickStayDiscount(
+    regularPrice,
+    finalPrice,
+    { firstUserDiscount, festivalOffers, weeklyOffers, specialOffers },
+  );
+
+  // ─── Loading spinner while we check existing submission status ───────────
+  if (isStatusLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-[#185FA5] border-t-transparent animate-spin" />
+          <p className="text-sm text-[#888780]">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Read-only status screens — shown when submission already exists ──────
+  // "pending" and "approved" should NOT show the editable form again; that
+  // would send the user through verification a second time unnecessarily.
+  // "rejected" falls through to the normal form so the vendor can re-edit.
+  if (status === "pending" || status === "approved") {
+    const isPending = status === "pending";
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] p-6">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(4,44,83,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
+          {/* Icon */}
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: isPending
+                ? "rgba(234,179,8,0.1)"
+                : "rgba(29,158,117,0.1)",
+            }}
+          >
+            {isPending ? (
+              <Clock className="w-8 h-8 text-yellow-500" />
+            ) : (
+              <CheckCircle2 className="w-8 h-8" style={{ color: "#1D9E75" }} />
+            )}
+          </div>
+
+          {/* Headline */}
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold" style={{ color: "#042C53" }}>
+              {isPending ? "Submission Under Review" : "Listing Approved!"}
+            </h2>
+            <p className="text-sm leading-relaxed" style={{ color: "#888780" }}>
+              {isPending
+                ? "Your stay listing has been submitted and is currently being reviewed by our team. You'll be notified once a decision is made."
+                : "Your stay listing has been approved and is now live for guests to discover and book."}
+            </p>
+          </div>
+
+          {/* Property pill */}
+          {primaryPropertyName && (
+            <div
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
+              style={{
+                backgroundColor: "rgba(24,95,165,0.07)",
+                color: "#185FA5",
+                border: "1px solid rgba(24,95,165,0.2)",
+              }}
+            >
+              <Home className="w-4 h-4" />
+              {stayType === "entire" ? `Entire ${primaryPropertyName}` : primaryPropertyName}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="w-full flex flex-col gap-3 pt-2">
+            <button
+              onClick={() => navigate("/")}
+              className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: "#185FA5" }}
+            >
+              Go to Dashboard
+            </button>
+            {isPending && (
+              <button
+                onClick={() => navigate("/onboarding/service-selection")}
+                className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#888780",
+                  border: "1px solid #D3D1C7",
+                }}
+              >
+                Submit Another Service
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <OnboardingLayout
       currentStep={currentStep}
@@ -1720,6 +1897,21 @@ const StaysOnboarding = () => {
       termsAccepted={termsAccepted}
       onBack={handleBack}
       onNext={handleNext}
+      preview={
+        currentStep <= 4 ? (
+          <UniqueStayCardPreview
+            propertyType={primaryPropertyName}
+            coverImage={coverImage}
+            galleryCount={stayType === "entire" ? entireStayImages.length : (rooms[0]?.photos?.length ?? 0)}
+            city={cityOption2 || city}
+            state={stateOption2 || state}
+            regularPrice={regularPrice}
+            guestCapacity={guestCapacity}
+            stayType={stayType}
+            activeDiscount={activeDiscount}
+          />
+        ) : undefined
+      }
     >
       {status === "rejected" && (
         <div className="w-full max-w-4xl p-4 border border-red-200 bg-red-50 rounded-md">

@@ -246,53 +246,29 @@ const ActivityOnboarding = () => {
           ["pending", "draft", "rejected"].includes(data.doc.status)
         ) {
           const doc = data.doc;
-          console.log("Loading existing activity data:", doc);
 
-          console.log("--- DEBUG: Activity Data Fields ---");
-          console.log("selectedActivities:", doc.selectedActivities);
-          console.log("features:", doc.features);
-          console.log("activityName:", doc.activityName);
-          console.log("description:", doc.description);
-          console.log("coverImage:", doc.coverImage);
-          console.log("photos:", doc.photos);
-          console.log("rulesAndRegulations:", doc.rulesAndRegulations);
-          console.log("regularPrice:", doc.regularPrice);
-          console.log("personCapacity:", doc.personCapacity);
-          console.log("timeDuration:", doc.timeDuration);
-          console.log("locality:", doc.locality);
-          console.log("state:", doc.state);
-          console.log("city:", doc.city);
-          console.log("pincode:", doc.pincode);
-          console.log("priceIncludes:", doc.priceIncludes);
-          console.log("priceExcludes:", doc.priceExcludes);
-          console.log("expectations:", doc.expectations);
 
-          console.log("Discounts - First User:", {
             active: doc.firstUserDiscount,
             type: doc.discountType,
             amount: doc.discountAmount,
             final: doc.finalPrice,
           });
-          console.log("Discounts - Festival:", {
             active: doc.festivalOffers,
             type: doc.festivalDiscountType,
             amount: doc.festivalDiscountAmount,
             final: doc.festivalFinalPrice,
           });
-          console.log("Discounts - Weekly:", {
             active: doc.weeklyOffers,
             type: doc.weeklyDiscountType,
             amount: doc.weeklyDiscountAmount,
             final: doc.weeklyFinalPrice,
           });
-          console.log("Discounts - Special:", {
             active: doc.specialOffers,
             type: doc.specialDiscountType,
             amount: doc.specialDiscountAmount,
             final: doc.specialFinalPrice,
           });
 
-          console.log("Business Details:", {
             brandName: doc.brandName,
             legalCompanyName: doc.legalCompanyName,
             gstNumber: doc.gstNumber,
@@ -304,7 +280,6 @@ const ActivityOnboarding = () => {
             businessState: doc.businessState,
           });
 
-          console.log("Personal Details:", {
             firstName: doc.firstName,
             lastName: doc.lastName,
             personalLocality: doc.personalLocality,
@@ -316,7 +291,6 @@ const ActivityOnboarding = () => {
             idProof: doc.idProof,
             idPhotos: doc.idPhotos,
           });
-          console.log("-----------------------------------");
 
           setStatus(doc.status);
           setRejectionReason(doc.rejectionReason || "");
@@ -388,10 +362,7 @@ const ActivityOnboarding = () => {
             termsAccepted: false,
           }));
         } else if (userDetails && user?.userType !== "vendor") {
-          console.log("Auto-filling from userDetails:", userDetails);
 
-          console.log("--- DEBUG: User Details Auto-fill ---");
-          console.log("Personal Details:", {
             firstName: userDetails.firstName,
             lastName: userDetails.lastName,
             personalLocality: userDetails.personalLocality,
@@ -404,7 +375,6 @@ const ActivityOnboarding = () => {
             idPhotos: userDetails.idPhotos,
           });
 
-          console.log("Business Details:", {
             brandName: userDetails.business?.brandName,
             legalCompanyName: userDetails.business?.legalCompanyName,
             gstNumber: userDetails.business?.gstNumber,
@@ -415,7 +385,6 @@ const ActivityOnboarding = () => {
             businessCity: userDetails.business?.city,
             businessState: userDetails.business?.state,
           });
-          console.log("-------------------------------------");
 
           // Auto-fill from user details if no draft exists
           setFormData((prev) => ({
@@ -445,7 +414,6 @@ const ActivityOnboarding = () => {
           }));
         }
       } catch (err) {
-        console.error("Failed to load existing onboarding data", err);
       }
     };
 
@@ -1030,7 +998,6 @@ const ActivityOnboarding = () => {
     try {
       return URL.createObjectURL(fileOrUrl);
     } catch (e) {
-      console.error("Error creating object URL", e);
       return "";
     }
   };

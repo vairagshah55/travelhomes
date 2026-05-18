@@ -1,61 +1,39 @@
 import React, { useState } from "react";
-import AdminSidebar from "../components/AdminSidebar";
-import { Button } from "@/components/ui/button";
-import { Bell } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import AdminLayout from "../components/AdminLayout";
 import AdminAnalyticsOverview from "../components/AdminAnalyticsOverview";
 import AdminAnalyticsReport from "../components/AdminAnalyticsReport";
-import AdminProfileDropdown from "../components/AdminProfileDropdown";
-import AdminHeader from "../components/AdminHeader";
 
 const AdminAnalytics = () => {
-  const [activeTab, setActiveTab] = useState<"analytics" | "report">(
-    "analytics",
-  );
-    const [mobileOpen, setMobileOpen] = useState(false);
-
+  const [activeTab, setActiveTab] = useState<"analytics" | "report">("analytics");
 
   return (
-     <div className="min-h-screen bg-[#F9FAFB] flex">
-       {/* Sidebar */}
-       <div className="fixed">
-
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-        />
+    <AdminLayout title="Analytics">
+      <div className="flex-1 flex flex-col overflow-x-hidden">
+        <div className="flex items-center justify-between bg-white border border-dashboard-stroke rounded-t-2xl px-5 py-3">
+          <h2 className="text-base font-bold text-dashboard-heading font-geist">
+            {activeTab === "analytics" ? "Analytics Overview" : "Analytics Report"}
+          </h2>
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+            {(["analytics", "report"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize ${
+                  activeTab === tab
+                    ? "bg-white text-dashboard-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"Analytics"} setMobileSidebarOpen={setMobileOpen}/>
-
-        {/* Content Area */}
-        <div className="flex-1 flex flex-col pr-5 pb-5 overflow-x-hidden">
-          {/* Tab Navigation */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-dashboard-stroke bg-white rounded-t-3xl">
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold text-dashboard-title font-geist">
-                {activeTab === "analytics" ? "Analytics" : "Report"}
-              </h2>
-            </div>
-          </div>
-
-         
-
-         
-
-          {/* Content */}
-          <div className="flex-1 bg-white rounded-b-3xl  max-md:flex-wrap overflow-x-hidden">
-            {activeTab === "analytics" ? (
-              <AdminAnalyticsOverview />
-            ) : (
-              <AdminAnalyticsReport />
-            )}
-          </div>
+        <div className="flex-1 bg-white border border-t-0 border-dashboard-stroke rounded-b-2xl overflow-x-hidden">
+          {activeTab === "analytics" ? <AdminAnalyticsOverview /> : <AdminAnalyticsReport />}
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 

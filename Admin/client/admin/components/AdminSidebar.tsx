@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Grid3X3,
@@ -278,7 +279,7 @@ const sidebarItems: SidebarItem[] = [
 
       {/* Desktop Sidebar */}
       <div
-        className={`hidden lg:flex flex-col gap-1 h-screen bg-dashboard-bg transition-all overflow-hidden duration-300 ${sidebarCollapsed ? "w-20" : "w-64"} ${className}`}
+        className={`relative hidden lg:flex flex-col gap-1 h-screen bg-dashboard-bg transition-all overflow-hidden duration-300 ${sidebarCollapsed ? "w-20" : "w-64"} ${className}`}
       >
         {/* Logo */}
         <div className="px-4 py-[26px]">
@@ -308,11 +309,11 @@ const sidebarItems: SidebarItem[] = [
                       }
                     }}
                     className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors font-plus-jakarta text-base font-medium
+                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-150 font-plus-jakarta text-base font-medium
                     ${
                       item.active || hasActiveSubItem
-                        ? "bg-dashboard-primary text-white"
-                        : "text-dashboard-neutral-07 hover:bg-gray-100"
+                        ? "bg-dashboard-primary text-white shadow-sm shadow-dashboard-primary/20"
+                        : "text-dashboard-neutral-07 hover:bg-gray-100 hover:text-dashboard-primary hover:translate-x-0.5"
                     }
                     ${sidebarCollapsed ? "justify-center" : ""}
                   `}
@@ -336,49 +337,57 @@ const sidebarItems: SidebarItem[] = [
                   </button>
 
                   {/* Submenu */}
+                  <AnimatePresence initial={false}>
                   {item.subItems && isExpanded && !sidebarCollapsed && (
-                    <div className="ml-9 space-y-1 relative">
-                      {/* Tree Lines - Exact match to Figma design */}
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                    <div className="ml-9 space-y-1 relative pt-1">
+                      {/* Tree Lines */}
                       <div
                         className="absolute -left-[13px] top-0 w-[13px]"
                         style={{ height: `${item.subItems.length * 40 + 4}px` }}
                       >
-                        {/* Vertical line */}
                         <div
                           className="absolute left-0 top-0 w-[2px] border-l border-[#E7E7E7]"
-                          style={{
-                            height: `${item.subItems.length * 40 - 10}px`,
-                          }}
-                        ></div>
-
-                        {/* Horizontal connecting lines for each sub-item */}
+                          style={{ height: `${item.subItems.length * 40 - 10}px` }}
+                        />
                         {item.subItems.map((_, subIndex) => (
                           <div
                             key={subIndex}
                             className="absolute left-0 w-[13px] h-[9px] border-l border-b border-[#E7E7E7] rounded-bl-lg"
                             style={{ top: `${14 + subIndex * 40}px` }}
-                          ></div>
+                          />
                         ))}
                       </div>
 
                       {item.subItems.map((subItem, subIndex) => (
-                        <button
+                        <motion.button
                           key={subIndex}
+                          initial={{ x: -6, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: subIndex * 0.04, duration: 0.15 }}
                           onClick={() => navigate(subItem.path)}
                           className={`
-                          w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-colors font-geist text-sm tracking-tight
+                          w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-all font-geist text-sm tracking-tight
                           ${
                             subItem.active
-                              ? "bg-dashboard-primary text-white"
-                              : "text-gray-600 hover:bg-gray-100"
+                              ? "bg-dashboard-primary text-white shadow-sm"
+                              : "text-gray-600 hover:bg-gray-100 hover:text-dashboard-primary"
                           }
                         `}
                         >
                           {subItem.label}
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
+                    </motion.div>
                   )}
+                  </AnimatePresence>
                 </div>
               </>
             );
@@ -409,11 +418,11 @@ const sidebarItems: SidebarItem[] = [
         {/* Toggle Button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className={`absolute  ${sidebarCollapsed ? "left-5" : "left-52"} top-20 bg-white border border-gray-200 rounded-full p-1.5 shadow-sm hover:shadow-md transition-shadow`}
+          className="absolute right-[-12px] top-20 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:shadow-lg hover:scale-110 transition-all"
         >
           <ChevronDown
-            size={16}
-            className={`transform transition-transform ${sidebarCollapsed ? "rotate-90" : "-rotate-90"}`}
+            size={14}
+            className={`transform transition-transform duration-300 ${sidebarCollapsed ? "rotate-90" : "-rotate-90"}`}
           />
         </button>
       </div>

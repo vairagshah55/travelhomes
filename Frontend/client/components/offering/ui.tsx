@@ -3,9 +3,9 @@ import { Plus, X, ChevronDown, Check, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-export const TEAL       = "#07e4e4";
-export const TEAL_BG    = "rgba(7, 228, 228, 0.07)";
-export const TEAL_FOCUS = "rgba(7, 228, 228, 0.15)";
+export const TEAL       = "#185FA5";
+export const TEAL_BG    = "rgba(24, 95, 165, 0.07)";
+export const TEAL_FOCUS = "rgba(24, 95, 165, 0.12)";
 export const BLACK      = "#131313";
 export const GRAY_500   = "#6b6b6b";
 export const GRAY_400   = "#9a9a9a";

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL    = "#07e4e4";
+const TEAL    = "#185FA5";
 const BLACK   = "#131313";
 const GRAY_400 = "#9a9a9a";
 const GRAY_200 = "#e4e4e4";

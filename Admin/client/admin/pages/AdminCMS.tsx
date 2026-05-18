@@ -23,6 +23,7 @@ import { settingsService } from "@/services/api";
 
 import { getImageUrl } from "@/lib/utils";
 import UniqueStaysSkeleton from "@/lib/UniqueStaysSkeleton";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 
 interface CollapsibleSectionProps {
@@ -834,6 +835,7 @@ const AdminCMS = () => {
   const [openJobMenuId, setOpenJobMenuId] = useState<string | null>(null);
   const [openContactMenuId, setOpenContactMenuId] = useState<string | null>(null);
   const [openFAQMenuId, setOpenFAQMenuId] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [faqMenuPos, setFaqMenuPos] = useState<{ top: number; left: number } | null>(null);
   const [openFeatureMenuId, setOpenFeatureMenuId] = useState<string | null>(null);
 
@@ -1416,16 +1418,21 @@ const AdminCMS = () => {
     }
   };
 
-  const handleDeleteJob = async (jobId: string) => {
-    if (!window.confirm("Are you sure you want to delete this position?"))
-      return;
-    try {
-      await cmsService.deleteJob(jobId);
-      setJobPositions((prev) => prev.filter((j) => j.id !== jobId));
-      setOpenJobMenuId(null);
-    } catch (e) {
-      console.error(e);
-    }
+  const handleDeleteJob = (jobId: string) => {
+    setConfirmDialog({
+      title: "Delete position?",
+      message: "This job position will be permanently removed from the careers page.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await cmsService.deleteJob(jobId);
+          setJobPositions((prev) => prev.filter((j) => j.id !== jobId));
+          setOpenJobMenuId(null);
+        } catch {
+          toast.error("Failed to delete position.");
+        }
+      },
+    });
   };
 
   const handleSaveJob = async (jobData: any) => {
@@ -1478,22 +1485,25 @@ const AdminCMS = () => {
   const deleteFAQ = async (id: string) => {
     console.log("[AdminCMS] deleteFAQ triggered with id:", id);
     if (!id) {
-       console.error("[AdminCMS] deleteFAQ called with empty id");
        toast.error("Invalid FAQ ID");
        return;
     }
-    if (!window.confirm("Are you sure you want to delete this FAQ?")) return;
-    try {
-      await cmsService.deleteFAQ(id);
-      // Ensure we remove the item from local state even if ID format differs slightly
-      setFaqs((prev) => prev.filter((faq) => String(faq.id) !== String(id)));
-      setOpenFAQMenuId(null);
-      setFaqMenuPos(null);
-      toast.success("FAQ deleted successfully");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to delete FAQ");
-    }
+    setConfirmDialog({
+      title: "Delete FAQ?",
+      message: "This FAQ entry will be permanently removed.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await cmsService.deleteFAQ(id);
+          setFaqs((prev) => prev.filter((faq) => String(faq.id) !== String(id)));
+          setOpenFAQMenuId(null);
+          setFaqMenuPos(null);
+          toast.success("FAQ deleted successfully");
+        } catch {
+          toast.error("Failed to delete FAQ");
+        }
+      },
+    });
   };
 
   const deleteTestimonial = async (id: string) => {
@@ -1577,17 +1587,22 @@ const AdminCMS = () => {
     }
   };
 
-  const handleDeleteJobApplication = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this application?")) return;
-    try {
-      await cmsService.deleteJobApplication(id);
-      setJobApplications((prev) => prev.filter((app) => (app._id || app.id) !== id));
-      setOpenJobApplicationMenuId(null);
-      toast.success("Application deleted successfully");
-    } catch (e) {
-      console.error(e);
-      toast.error("Failed to delete application");
-    }
+  const handleDeleteJobApplication = (id: string) => {
+    setConfirmDialog({
+      title: "Delete application?",
+      message: "This job application will be permanently removed.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await cmsService.deleteJobApplication(id);
+          setJobApplications((prev) => prev.filter((app) => (app._id || app.id) !== id));
+          setOpenJobApplicationMenuId(null);
+          toast.success("Application deleted successfully");
+        } catch {
+          toast.error("Failed to delete application");
+        }
+      },
+    });
   };
 
   const renderRegisterLoginContent = () => (
@@ -3810,6 +3825,14 @@ const AdminCMS = () => {
         isOpen={showRoleModal}
         onClose={() => setShowRoleModal(false)}
         onSubmit={handleAddRole}
+      />
+      <ConfirmationDialog
+        isOpen={!!confirmDialog}
+        onClose={() => setConfirmDialog(null)}
+        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
+        title={confirmDialog?.title ?? ""}
+        message={confirmDialog?.message ?? ""}
+        confirmText="Delete"
       />
     </div>
   );

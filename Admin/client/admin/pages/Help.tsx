@@ -3,10 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Minus, Search } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import AdminSidebar from "../components/AdminSidebar";
-import AdminHeader from "../components/AdminHeader";
+import AdminLayout from "../components/AdminLayout";
 import LogoWebsite from "@/components/ui/LogoWebsite";
 
 interface FAQItem {
@@ -26,8 +23,6 @@ const Help = () => {
     email: "Jpbadalsigh",
     city: "Badal Singh",
   });
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   const [faqItems, setFaqItems] = useState<FAQItem[]>([
     {
       id: "1",
@@ -80,7 +75,7 @@ const Help = () => {
   };
 
   const handleSubmit = () => {
-    console.log("Form submitted:", formData);
+    // TODO: wire up to API
   };
 
   const tabs = [
@@ -91,22 +86,7 @@ const Help = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      <div className="fixed">
-     
-           <AdminSidebar
-             showMobileSidebar={mobileOpen}
-             setShowMobileSidebar={setMobileOpen}
-             />
-             </div>
-           {/* Main Content */}
-           <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader
-          Headtitle={"PlugIns"}
-          setMobileSidebarOpen={setMobileOpen}
-        />
-
+    <AdminLayout title="Help">
         <main className="px-4 sm:px-6 lg:px-10 bg-white rounded-lg">
           <div className="flex w-full justify-center items-center my-5">
 
@@ -210,10 +190,7 @@ const Help = () => {
             </div>
           </div>
         </main>
-
-       
-      </div>
-    </div>
+    </AdminLayout>
   );
 };
 

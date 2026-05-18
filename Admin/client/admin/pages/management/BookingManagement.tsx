@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search, Filter, MoreHorizontal, Bell, Loader2, Eye, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Search, Filter, MoreHorizontal, Eye, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,10 +11,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import AdminSidebar from "../../components/AdminSidebar";
+import AdminLayout from "../../components/AdminLayout";
 import BookingDetailsPopup from "@/components/BookingDetailsPopup";
-import AdminProfileDropdown from "@/admin/components/AdminProfileDropdown";
-import AdminHeader from "@/admin/components/AdminHeader";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { bookingService } from "@/services/api";
 import Pagination from "@/components/Pagination";
 
@@ -44,6 +44,7 @@ const BookingManagement: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // New state for API-backed data
   const queryClient = useQueryClient();
@@ -145,16 +146,21 @@ const BookingManagement: React.FC = () => {
     setShowActionMenu(null);
   };
 
-  const handleDeleteBooking = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this booking?")) {
-      try {
-        await bookingService.deleteBooking(id);
-        fetchBookings();
-        setShowActionMenu(null);
-      } catch (err: any) {
-        console.error("Error deleting booking:", err);
-        alert("Failed to delete booking");
-      }
+  const handleDeleteBooking = (id: string) => {
+    setShowActionMenu(null);
+    setConfirmDelete(id);
+  };
+
+  const doDeleteBooking = async () => {
+    if (!confirmDelete) return;
+    const id = confirmDelete;
+    setConfirmDelete(null);
+    try {
+      await bookingService.deleteBooking(id);
+      toast.success("Booking deleted successfully.");
+      fetchBookings();
+    } catch {
+      toast.error("Failed to delete booking.");
     }
   };
 
@@ -184,25 +190,16 @@ const BookingManagement: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("en-IN", {
       style: "currency",
-      currency: "USD",
+      currency: "INR",
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      {/* Sidebar */}
-      <div className="fixed">
-        <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader Headtitle={"Bookings"} setMobileSidebarOpen={setMobileOpen} />
-
-        {/* Main Content */}
-        <div className="flex-1 p-5 pr-0 ">
+    <AdminLayout title="Bookings">
+        <div className="flex-1">
           <div className="bg-white rounded-3xl border border-gray-200 h-full">
             {/* Content Header */}
             <div className="p-5 border-b border-gray-200 rounded-t-3xl">
@@ -272,10 +269,10 @@ const BookingManagement: React.FC = () => {
                     </Select>
                   </div>
 
-                  <Button variant="outline" size="sm" className="gap-2">
+                  <button className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
                     <Filter className="w-4 h-4" />
                     Filters
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -308,85 +305,84 @@ const BookingManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {bookings
-                      .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                      .map((booking) => (
-                        <tr key={booking._id} className="text-sm border-t border-gray-100">
-                          <td className="px-4 py-4">
-                            <span className="text-sm font-bold text-black">
-                              {booking.bookingId}
-                            </span>
-                          </td>
-                          <td className="text-sm px-3 py-4 text-gray-600">{booking.clientName}</td>
-                          <td className="text-sm px-3 py-4 text-gray-600">{booking.serviceName}</td>
-                          <td className="text-sm px-3 py-4 text-black">
-                            {formatDate(booking.checkIn)}
-                          </td>
-                          <td className="text-sm px-3 py-4">
-                            <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg text-sm">
-                              {formatDate(booking.checkOut)}
-                            </span>
-                          </td>
-                          <td className="text-sm px-3 py-4">
-                            <span
-                              className={` px-3 py-1 rounded-lg text-sm ${getStatusColor(booking.status)}`}
-                            >
-                              {booking.status}
-                            </span>
-                          </td>
-                          <td className="px-3 py-4">
-                            <div className="relative">
-                              <button
-                                onClick={() =>
-                                  setShowActionMenu(
-                                    showActionMenu === booking._id ? null : booking._id,
-                                  )
-                                }
-                                className="text-gray-400 hover:text-gray-600"
-                              >
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
-
-                              {/* Action Menu Dropdown */}
-                              {showActionMenu === booking._id && (
-                                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg p-1 z-50 w-32">
-                                  <button
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    onClick={() => handleViewBooking(booking)}
-                                  >
-                                    <Eye size={16} className="text-gray-600" />
-                                    <span className="text-sm text-gray-700">View</span>
-                                  </button>
-                                  <button
-                                    className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    onClick={() => handleDeleteBooking(booking._id)}
-                                  >
-                                    <Trash2 size={16} className="text-red-500" />
-                                    <span className="text-sm text-red-600">Delete</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </td>
+                    {loading ? (
+                      Array.from({ length: 6 }).map((_, i) => (
+                        <tr key={i} className="border-t border-gray-100 animate-pulse">
+                          <td className="px-4 py-4"><div className="h-3.5 w-20 bg-gray-200 rounded" /></td>
+                          <td className="px-3 py-4"><div className="h-3.5 w-28 bg-gray-200 rounded" /></td>
+                          <td className="px-3 py-4"><div className="h-3.5 w-32 bg-gray-200 rounded" /></td>
+                          <td className="px-3 py-4"><div className="h-3.5 w-24 bg-gray-200 rounded" /></td>
+                          <td className="px-3 py-4"><div className="h-6 w-24 bg-gray-200 rounded-lg" /></td>
+                          <td className="px-3 py-4"><div className="h-6 w-16 bg-gray-200 rounded-lg" /></td>
+                          <td className="px-3 py-4"><div className="h-5 w-5 bg-gray-200 rounded" /></td>
                         </tr>
-                      ))}
-                    {!loading && bookings.length === 0 && (
+                      ))
+                    ) : bookings.length === 0 ? (
                       <tr>
-                        <td className="px-4 py-6 text-gray-500" colSpan={7}>
-                          No records
+                        <td colSpan={7} className="py-16 text-center">
+                          <div className="flex flex-col items-center gap-3 text-gray-400">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="32" rx="4" stroke="#D1D5DB" strokeWidth="2"/><path d="M14 18h20M14 24h14M14 30h8" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
+                            <p className="text-sm font-medium">No bookings found</p>
+                            <p className="text-xs">Try adjusting your filters</p>
+                          </div>
                         </td>
                       </tr>
+                    ) : (
+                      bookings
+                        .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                        .map((booking, i) => (
+                          <motion.tr
+                            key={booking._id}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.03, duration: 0.18 }}
+                            className="text-sm border-t border-gray-100 hover:bg-gray-50/60 transition-colors"
+                          >
+                            <td className="px-4 py-4">
+                              <span className="font-bold text-black">{booking.bookingId}</span>
+                            </td>
+                            <td className="px-3 py-4 text-gray-600">{booking.clientName}</td>
+                            <td className="px-3 py-4 text-gray-600">{booking.serviceName}</td>
+                            <td className="px-3 py-4 text-black">{formatDate(booking.checkIn)}</td>
+                            <td className="px-3 py-4">
+                              <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg">
+                                {formatDate(booking.checkOut)}
+                              </span>
+                            </td>
+                            <td className="px-3 py-4">
+                              <span className={`px-3 py-1 rounded-lg font-medium ${getStatusColor(booking.status)}`}>
+                                {booking.status}
+                              </span>
+                            </td>
+                            <td className="px-3 py-4">
+                              <div className="relative">
+                                <button
+                                  onClick={() => setShowActionMenu(showActionMenu === booking._id ? null : booking._id)}
+                                  className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg p-1.5 transition-all"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                                {showActionMenu === booking._id && (
+                                  <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg p-1 z-50 w-32">
+                                    <button className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors" onClick={() => handleViewBooking(booking)}>
+                                      <Eye size={15} className="text-gray-600" />
+                                      <span className="text-sm text-gray-700">View</span>
+                                    </button>
+                                    <button className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteBooking(booking._id)}>
+                                      <Trash2 size={15} className="text-red-500" />
+                                      <span className="text-sm text-red-600">Delete</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </motion.tr>
+                        ))
                     )}
                   </tbody>
                 </table>
               </div>
-              {loading && (
-                <div className="flex justify-center items-center py-10">
-                  <Loader2 className="animate-spin h-8 w-8 text-gray-600" />
-                  <div className="text-sm text-gray-500 px-3">Loading...</div>
-                </div>
-              )}
-              {error && <div className="text-sm text-red-600 px-3">{error}</div>}
+              {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg">{error}</div>}
 
               <Pagination
                 currentPage={currentPage}
@@ -396,7 +392,6 @@ const BookingManagement: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* Booking Details Popup */}
       {showBookingDetails && selectedBooking && (
@@ -406,7 +401,15 @@ const BookingManagement: React.FC = () => {
           booking={selectedBooking}
         />
       )}
-    </div>
+      <ConfirmationDialog
+        isOpen={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={doDeleteBooking}
+        title="Delete booking?"
+        message="This booking record will be permanently removed. This cannot be undone."
+        confirmText="Delete"
+      />
+    </AdminLayout>
   );
 };
 

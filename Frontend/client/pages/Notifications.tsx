@@ -2,9 +2,8 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Bell, Trash2 } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
+import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { DashboardHeader } from "@/components/Header";
 import { notificationsApi } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import {
@@ -54,8 +53,7 @@ const Notifications = () => {
     try {
       await notificationsApi.markAllAsRead();
       toast.success("All marked as read");
-    } catch (error) {
-      console.error("Error marking all as read:", error);
+    } catch {
       // Refetch to re-sync if the optimistic update was wrong.
       queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
     }
@@ -67,8 +65,7 @@ const Notifications = () => {
     );
     try {
       await notificationsApi.markAsRead(id);
-    } catch (error) {
-      console.error("Error marking as read:", error);
+    } catch {
       // Optimistic state is kept on error to match the legacy UX.
     }
   };
@@ -85,8 +82,7 @@ const Notifications = () => {
       await notificationsApi.deleteMany(selectedIds);
       toast.dismiss(loadingToast);
       toast.success("Deleted successfully");
-    } catch (error) {
-      console.error("Error deleting:", error);
+    } catch {
       toast.dismiss(loadingToast);
       toast.success("Deleted (Demo Mode)");
     }
@@ -121,19 +117,8 @@ const Notifications = () => {
   };
 
   return (
-    <div className="flex h-screen bg-dashboard-bg font-plus-jakarta motion-page-shell">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <DashboardHeader Headtitle={"Notifications"} />
-
-        {/* Notifications Content */}
-        <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-gray-900 dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto motion-surface-card">
+    <DashboardLayout title="Notifications" contentClassName="flex-1 overflow-y-auto p-4 lg:p-5">
+      <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl lg:rounded-3xl min-h-full">
           {/* Filter Tabs and Actions */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-dashboard-stroke pb-4 mb-5">
             <div className="flex items-center gap-4">
@@ -303,7 +288,6 @@ const Notifications = () => {
               </p>
             </div>
           )}
-        </main>
       </div>
 
       {/* Notification View Modal */}
@@ -347,7 +331,7 @@ const Notifications = () => {
 
       {/* Change Password Modal */}
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -35,9 +36,8 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
+import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { DashboardHeader } from "../components/Header";
 import {
   bookingDetailsApi,
   vendorAnalyticsApi,
@@ -54,8 +54,29 @@ import {
 } from "@/components/ui/chart";
 import { formatDate, format, isPast, isFuture } from "date-fns";
 
-const TEAL = "#3BD9DA";
-const TEAL2 = "#2bc5c6";
+const BRAND = "#185FA5";
+const BRAND2 = "#042C53";
+
+// ─── count-up hook ─────────────────────────────────────────────────────────────
+function useCountUp(target: number, duration = 800) {
+  const [count, setCount] = useState(0);
+  const prev = useRef(0);
+  useEffect(() => {
+    const start = prev.current;
+    const diff = target - start;
+    if (diff === 0) return;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min((now - t0) / duration, 1);
+      const ease = 1 - Math.pow(1 - p, 3);
+      setCount(Math.round(start + diff * ease));
+      if (p < 1) requestAnimationFrame(tick);
+      else prev.current = target;
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return count;
+}
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const Sk = ({ className = "" }: { className?: string }) => (
@@ -101,8 +122,8 @@ const avatarCls = (n: string) =>
   )[n.charCodeAt(0) % 5];
 
 // ─── chart configs ─────────────────────────────────────────────────────────────
-const earningsConfig = { earnings: { label: "Earnings", color: TEAL } } satisfies ChartConfig;
-const visitorsConfig = { visitors: { label: "Visitors", color: "#8B5CF6" } } satisfies ChartConfig;
+const earningsConfig = { earnings: { label: "Earnings", color: "#1D9E75" } } satisfies ChartConfig;
+const visitorsConfig = { visitors: { label: "Visitors", color: BRAND } } satisfies ChartConfig;
 
 // ─── ChartCard ────────────────────────────────────────────────────────────────
 const ChartCard = ({
@@ -120,7 +141,7 @@ const ChartCard = ({
   data: VendorAnalyticsGraphData[];
   loading: boolean;
 }) => {
-  const color = (config[dataKey] as any)?.color ?? TEAL;
+  const color = (config[dataKey] as any)?.color ?? BRAND;
   const total = data.reduce((s, d) => s + ((d as any)[dataKey] ?? 0), 0);
 
   return (
@@ -320,7 +341,7 @@ const BookingTable = ({ data, loading }: { data: BookingDetailDTO[]; loading: bo
                       size="sm"
                       onClick={() => navigate("/offering/add")}
                       className="rounded-xl text-xs gap-1.5 h-8"
-                      style={{ background: TEAL, color: "#000" }}
+                      style={{ background: BRAND, color: "#fff" }}
                     >
                       <Plus size={13} /> Add your first listing
                     </Button>
@@ -338,7 +359,7 @@ const BookingTable = ({ data, loading }: { data: BookingDetailDTO[]; loading: bo
                   className="border-gray-50 dark:border-gray-800/40 hover:bg-gray-50/80 dark:hover:bg-white/[0.025] transition-colors cursor-pointer group"
                 >
                   <TableCell className="pl-6">
-                    <span className="text-[12.5px] font-bold tabular-nums" style={{ color: TEAL }}>
+                    <span className="text-[12.5px] font-bold tabular-nums" style={{ color: BRAND }}>
                       #{b.id?.slice(-6).toUpperCase()}
                     </span>
                   </TableCell>
@@ -441,6 +462,45 @@ const BookingTable = ({ data, loading }: { data: BookingDetailDTO[]; loading: bo
   );
 };
 
+// ─── AnimatedStatCard ────────────────────────────────────────────────────────
+const AnimatedStatCard = ({
+  icon: Icon,
+  label,
+  value,
+  border,
+  iconCls,
+  index,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  border: string;
+  iconCls: string;
+  index: number;
+}) => {
+  const rawNum = parseInt(String(value).replace(/[^0-9]/g, ""), 10);
+  const isNum = !isNaN(rawNum) && !String(value).startsWith("₹");
+  const animated = useCountUp(isNum ? rawNum : 0);
+  const displayValue = isNum ? animated.toLocaleString() : value;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.06, duration: 0.28, ease: "easeOut" }}
+      className={`group bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border} hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-950/50 hover:-translate-y-0.5 transition-all duration-200 cursor-default`}
+    >
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110 ${iconCls}`}>
+        <Icon size={16} />
+      </div>
+      <p className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1.5">
+        {displayValue}
+      </p>
+      <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">{label}</p>
+    </motion.div>
+  );
+};
+
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -500,17 +560,17 @@ const Dashboard = () => {
     {
       label: "Total Earnings",
       value: loading ? null : `₹${stats?.payments?.received?.toLocaleString() ?? "0"}`,
-      color: TEAL,
+      color: "#1D9E75",
     },
     {
       label: "Total Bookings",
       value: loading ? null : (stats?.total?.toLocaleString() ?? "0"),
-      color: "#8B5CF6",
+      color: BRAND,
     },
     {
       label: "Active Listings",
       value: loading ? null : (stats?.properties?.approved?.toLocaleString() ?? "0"),
-      color: "#F59E0B",
+      color: "#EF9F27",
     },
   ];
 
@@ -589,22 +649,12 @@ const Dashboard = () => {
   ];
 
   return (
-    <div className="flex h-screen bg-[#f7f8fa] dark:bg-[#0a0b0f] font-plus-jakarta">
-      {/* Sidebar */}
-      <div className="hidden lg:block flex-shrink-0 h-full">
-        <Sidebar />
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <DashboardHeader Headtitle="Dashboard" />
-
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
-          <div className="p-5 lg:p-7 space-y-5">
+    <DashboardLayout title="Dashboard" contentClassName="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+      <div className="p-5 lg:p-7 space-y-5">
             {/* ── HERO CARD ─────────────────────────────────────────────────── */}
             <div
               className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800"
-              style={{ background: "linear-gradient(135deg,#edfffe 0%,#ffffff 55%,#f3f0ff 100%)" }}
+              style={{ background: "linear-gradient(135deg,#E6F1FB 0%,#ffffff 55%,#F1EFE8 100%)" }}
             >
               {/* dark-mode override */}
               <div className="absolute inset-0 bg-gray-900 opacity-0 dark:opacity-100 pointer-events-none" />
@@ -612,11 +662,11 @@ const Dashboard = () => {
               {/* decorative blobs */}
               <div
                 className="absolute -top-16 -right-16 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${TEAL}22 0%, transparent 70%)` }}
+                style={{ background: `radial-gradient(circle, ${BRAND}22 0%, transparent 70%)` }}
               />
               <div
                 className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, #8B5CF622 0%, transparent 70%)" }}
+                style={{ background: "radial-gradient(circle, #EF9F2722 0%, transparent 70%)" }}
               />
 
               <div className="relative p-6 lg:p-8">
@@ -627,8 +677,8 @@ const Dashboard = () => {
                     <div
                       className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-lg"
                       style={{
-                        background: `linear-gradient(135deg, ${TEAL}, #6366f1)`,
-                        boxShadow: `0 8px 24px ${TEAL}44`,
+                        background: `linear-gradient(135deg, ${BRAND}, ${BRAND2})`,
+                        boxShadow: `0 8px 24px ${BRAND}44`,
                       }}
                     >
                       {firstName[0]?.toUpperCase() ?? "H"}
@@ -656,9 +706,9 @@ const Dashboard = () => {
                     onClick={() => navigate("/offering/add")}
                     className="h-10 px-5 rounded-xl text-[13px] font-semibold gap-2 shadow-md self-start sm:self-auto shrink-0"
                     style={{
-                      background: `linear-gradient(135deg, ${TEAL}, ${TEAL2})`,
-                      color: "#0a2525",
-                      boxShadow: `0 4px 16px ${TEAL}55`,
+                      background: `linear-gradient(135deg, ${BRAND}, ${BRAND2})`,
+                      color: "#ffffff",
+                      boxShadow: `0 4px 16px ${BRAND}55`,
                     }}
                   >
                     <Plus size={16} />
@@ -691,8 +741,10 @@ const Dashboard = () => {
 
             {/* ── STAT CARDS ──────────────────────────────────────────────── */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {statCards.map(({ icon: Icon, label, value, border, iconCls }) =>
-                loading ? (
+              {statCards.map(({ icon: Icon, label, value, border, iconCls }, i) => {
+                const rawNum = parseInt(String(value).replace(/[^0-9]/g, ""), 10);
+                const isNum = !isNaN(rawNum) && !String(value).startsWith("₹");
+                return loading ? (
                   <div
                     key={label}
                     className={`bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border}`}
@@ -702,24 +754,17 @@ const Dashboard = () => {
                     <Sk className="w-24 h-3.5" />
                   </div>
                 ) : (
-                  <div
+                  <AnimatedStatCard
                     key={label}
-                    className={`group bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border} hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-950/50 hover:-translate-y-0.5 transition-all duration-200 cursor-default`}
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110 ${iconCls}`}
-                    >
-                      <Icon size={16} />
-                    </div>
-                    <p className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1.5">
-                      {value}
-                    </p>
-                    <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
-                      {label}
-                    </p>
-                  </div>
-                ),
-              )}
+                    icon={Icon}
+                    label={label}
+                    value={value}
+                    border={border}
+                    iconCls={iconCls}
+                    index={i}
+                  />
+                );
+              })}
             </div>
 
             {/* ── BOOKING STATUS STRIP ────────────────────────────────────── */}
@@ -765,11 +810,9 @@ const Dashboard = () => {
             {/* ── BOOKINGS TABLE ──────────────────────────────────────────── */}
             <BookingTable data={bookings} loading={loading} />
           </div>
-        </main>
-      </div>
 
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
-    </div>
+    </DashboardLayout>
   );
 };
 

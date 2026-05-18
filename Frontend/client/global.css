@@ -49,9 +49,9 @@
 @layer base {
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand — #01487e primary, #001f4b navy, #55a9cb sky, #00080a deep */
-    --th-brand: #01487e;
-    --th-brand-hover: #001f4b;
+    /* Brand — #185fa5 primary (designe.md deep), #042c53 navy, #378add ocean, #00080a deep */
+    --th-brand: #185fa5;
+    --th-brand-hover: #042c53;
     --th-brand-fg: #ffffff;
 
     /* Surfaces */
@@ -64,16 +64,16 @@
     /* Text */
     --th-text-primary: #00080a;
     --th-text-secondary: #001f4b;
-    --th-text-tertiary: #01487e;
+    --th-text-tertiary: #185fa5;
     --th-text-muted: #55a9cb;
     --th-text-placeholder: rgba(85, 169, 203, 0.55);
     --th-text-inverse: #ffffff;
-    --th-text-link: #01487e;
+    --th-text-link: #185fa5;
 
     /* Borders */
     --th-border: #c5e6f5;
     --th-border-hover: #55a9cb;
-    --th-border-focus: #01487e;
+    --th-border-focus: #185fa5;
     --th-border-error: #ef4444;
 
     /* Status */
@@ -86,7 +86,7 @@
     --th-error: #ef4444;
     --th-error-bg: rgba(239, 68, 68, 0.06);
     --th-error-text: #ef4444;
-    --th-info: #01487e;
+    --th-info: #185fa5;
     --th-info-bg: #e0f2fa;
     --th-info-text: #001f4b;
     --th-purple-bg: #f6e0fd;
@@ -108,11 +108,11 @@
     --th-ring: rgba(1, 72, 126, 0.15);
     --th-ring-error: rgba(239, 68, 68, 0.12);
     --th-overlay: rgba(0, 8, 10, 0.35);
-    --th-booking-link: #01487e;
+    --th-booking-link: #185fa5;
 
     /* Accent (sky blue for highlights & active states) */
     --th-accent: #55a9cb;
-    --th-accent-hover: #01487e;
+    --th-accent-hover: #185fa5;
     --th-accent-fg: #ffffff;
     --th-accent-subtle: #f0f8fd;
     --th-accent-muted: #c5e6f5;
@@ -230,19 +230,19 @@
     --card-foreground: 192 100% 2%;
     --popover: 0 0% 100%;
     --popover-foreground: 192 100% 2%;
-    --primary: 206 98% 25%;
+    --primary: 210 74% 37%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 197 60% 95%;
+    --secondary: 210 40% 95%;
     --secondary-foreground: 215 100% 15%;
-    --muted: 197 60% 95%;
-    --muted-foreground: 206 98% 25%;
+    --muted: 210 40% 95%;
+    --muted-foreground: 215 20% 50%;
     --accent: 197 53% 57%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 197 40% 88%;
     --input: 197 40% 88%;
-    --ring: 206 98% 25%;
+    --ring: 210 74% 37%;
 
     /* Sidebar (shadcn) — navy dark sidebar */
     --sidebar-background: 215 100% 15%;
@@ -286,20 +286,20 @@
     --status-green-text: 120 100% 36%;
 
     /* Legacy misc */
-    --booking-link: 206 98% 25%;
+    --booking-link: 210 74% 37%;
     --nav-tree-line: 197 40% 88%;
 
     /* Legacy auth */
     --auth-blackish-green: #001f4b;
     --auth-neutral-06: #55a9cb;
-    --auth-neutral-07: #01487e;
-    --auth-primary: #01487e;
+    --auth-neutral-07: #185fa5;
+    --auth-primary: #185fa5;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(0, 31, 75, 0.75);
 
     /* Legacy naming aliases (DO NOT use in new code) */
     --Background: #f0f8fd;
-    --pRIMARY: #01487e;
+    --pRIMARY: #185fa5;
     --Black-Heading: #00080a;
     --Black-Stroke: #c5e6f5;
     --White: #fff;
@@ -307,7 +307,7 @@
     --Stroke: #c5e6f5;
     --Primary-0: #fff;
     --Neutral-06: #55a9cb;
-    --Neutral-07: #01487e;
+    --Neutral-07: #185fa5;
     --Body: #001f4b;
     --Secondary-30: #e0f2fa;
     --Heading: #00080a;

@@ -704,13 +704,13 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
                       className={`absolute -bottom-8 ${group.me ? "right-10" : "left-10"} hidden group-hover:flex gap-1 bg-white shadow-sm border p-1 rounded-[10px] z-10`}
                     >
                       <button
-                        onClick={() => console.log("copy")}
+                        onClick={() => {}}
                         className="p-1 hover:bg-gray-50 rounded text-gray-500"
                       >
                         <FiCopy size={12} />
                       </button>
                       <button
-                        onClick={() => console.log("delete")}
+                        onClick={() => {}}
                         className="p-1 hover:bg-gray-50 rounded text-red-400"
                       >
                         <FiTrash2 size={12} />

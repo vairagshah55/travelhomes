@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { IndianRupee, MapPin, FileText, Camera, Tag, Tent, Percent, Check } from "lucide-react";
-import { Sidebar } from "@/components/Navigation";
 import { useNavigate } from "react-router-dom";
-import { DashboardHeader } from "@/components/Header";
+import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, cmsPublicApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { PiVanBold } from "react-icons/pi";
@@ -119,8 +118,6 @@ const FEATURES: Record<string, string[]> = {
 const AddOfferings = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState("camper-van");
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -398,8 +395,7 @@ const AddOfferings = () => {
         setShowSuccessAlert(false);
         navigate("/offerings");
       }, 2000);
-    } catch (err) {
-      console.error("Submission error:", err);
+    } catch {
       setErrors({ submit: "Failed to submit. Please try again." });
     } finally {
       setIsSubmitting(false);
@@ -412,12 +408,7 @@ const AddOfferings = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden font-plus-jakarta">
-      <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} isMobile={false} />
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        <DashboardHeader Headtitle="Add Offering" />
-
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
+    <DashboardLayout title="Add Offering" contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
           <div className="max-w-3xl mx-auto flex flex-col gap-6">
             {/* ── Page header ── */}
             <div className="text-center space-y-2 pt-2">
@@ -771,9 +762,6 @@ const AddOfferings = () => {
               </button>
             </div>
           </div>
-        </main>
-      </div>
-
       {showSuccessAlert && (
         <div
           style={{
@@ -796,7 +784,7 @@ const AddOfferings = () => {
           <Check size={16} strokeWidth={3} /> Offering submitted successfully!
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 };
 
