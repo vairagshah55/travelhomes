@@ -29,7 +29,7 @@ const MAX_SECONDARY = 5;
 const ViewAllLink = ({ href }: { href: string }) => (
   <Link
     to={href}
-    className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
+    className="inline-flex items-center gap-1 text-sm font-semibold text-[#222222] underline underline-offset-2 hover:text-[#717171] transition-colors"
   >
     View all <ChevronRight className="w-4 h-4" />
   </Link>

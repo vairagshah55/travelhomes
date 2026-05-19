@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Heart, MapPin } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Star as StarIcon } from "lucide-react";
 import CardImageCarousel from "./CardImageCarousel";
 import {
@@ -75,7 +75,7 @@ function DefaultCard({
             key={item.id}
             to={item.id}
             onClick={() => offersApi.trackClick(item.id)}
-            className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+            className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
           >
             {/* Image */}
             <div className="relative">
@@ -84,65 +84,52 @@ function DefaultCard({
                 alt={item.title}
               />
 
-              {/* Heart */}
+              {/* Heart — always visible, Airbnb pattern */}
               <button
                 onClick={(e) => handleFavorite(e, item)}
-                className={`absolute top-2.5 right-2.5 z-30 w-8 h-8 rounded-full
-                  flex items-center justify-center backdrop-blur-md
-                  transition-all duration-300 ease-out
-                  hover:scale-110 active:scale-90
-                  ${isLiked
-                    ? "opacity-100 bg-red-500/20"
-                    : "opacity-0 group-hover:opacity-100 bg-black/25"
-                  }`}
+                className="absolute top-3 right-3 z-30 transition-all duration-200 ease-out hover:scale-110 active:scale-95"
+                aria-label={isLiked ? "Remove from wishlist" : "Add to wishlist"}
               >
-                <Heart className={`w-[18px] h-[18px] transition-all duration-300 ${
-                  isLiked ? "fill-red-500 text-red-500" : "text-white drop-shadow-sm"
-                }`} />
+                <Heart
+                  className={`w-[26px] h-[26px] transition-all duration-200 ${
+                    isLiked
+                      ? "fill-[#FF385C] text-[#FF385C] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+                      : "fill-black/40 text-white stroke-[2px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
+                  }`}
+                />
               </button>
-
-              {isLiked && (
-                <div className="absolute top-2.5 left-2.5 z-20 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full px-2.5 py-0.5 shadow-sm">
-                  <span className="text-[10px] font-semibold text-gray-900 dark:text-white tracking-wide uppercase">Saved</span>
-                </div>
-              )}
             </div>
 
             {/* Details */}
-            <div className="pt-3 px-1 space-y-1.5">
+            <div className="pt-3 space-y-0.5">
               {/* Title + Rating */}
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-[15px] leading-snug text-gray-900 dark:text-white line-clamp-1">
+                <h3 className="font-semibold text-[15px] leading-tight text-[#222222] line-clamp-1">
                   {item.title}
                 </h3>
-                <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                  <StarIcon className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
-                  <span className="text-[13px] font-medium text-gray-900 dark:text-white">4.91</span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <StarIcon className="w-[14px] h-[14px] fill-current text-[#222222]" />
+                  <span className="text-[14px] text-[#222222]">4.91</span>
                 </div>
               </div>
 
               {/* Location */}
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
-                  {item.details}
-                </span>
-              </div>
+              <p className="text-[14px] text-[#717171] truncate">
+                {item.details}
+              </p>
 
               {/* Price */}
-              <div className="flex items-baseline gap-1.5 pt-1">
+              <p className="text-[14px] text-[#222222] pt-1.5">
                 {item.Maxprice && (
-                  <span className="text-[13px] text-gray-400 line-through">
+                  <span className="text-[#717171] line-through mr-1.5">
                     ₹{item.Maxprice}
                   </span>
                 )}
-                <span className="text-[15px] font-bold text-gray-900 dark:text-white">
+                <span className="font-semibold underline underline-offset-2 decoration-[1.5px]">
                   {item.price}
                 </span>
-                <span className="text-[13px] text-gray-500 dark:text-gray-400">
-                  {item.unit}
-                </span>
-              </div>
+                <span className="text-[#717171]"> {item.unit}</span>
+              </p>
             </div>
           </Link>
         );

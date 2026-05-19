@@ -25,11 +25,11 @@ function FilterButton({
       className={`relative flex items-center gap-2 md:gap-2.5 px-5 py-2.5 rounded-full transition-all duration-300 border overflow-hidden ${
         active
           ? isHero
-            ? "bg-white text-gray-900 border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
-            : "bg-blue-600 text-white border-blue-600 shadow-md"
+            ? "bg-white text-[#222222] border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
+            : "bg-[#222222] text-white border-[#222222] shadow-sm"
           : isHero
           ? "bg-white/10 backdrop-blur-md text-white border-white/20 hover:bg-white/20 hover:border-white/40"
-          : "bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50 shadow-sm"
+          : "bg-white text-[#222222] border-[#DDDDDD] hover:border-[#222222] hover:bg-[#F7F7F7] shadow-sm"
       }`}
     >
       {active && (
@@ -37,9 +37,7 @@ function FilterButton({
           layoutId={isHero ? "hero-filter-pill" : "filter-pill"}
           className="absolute inset-0 rounded-full"
           style={{
-            background: isHero
-              ? "white"
-              : "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+            background: isHero ? "white" : "#222222",
           }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
         />
@@ -48,17 +46,17 @@ function FilterButton({
         <Icon
           className={`w-4 h-4 transition-colors duration-200 ${
             active && isHero
-              ? "text-gray-900"
+              ? "text-[#222222]"
               : isHero
               ? "text-white/90"
               : active
               ? "text-white"
-              : "text-gray-500 group-hover:text-blue-500"
+              : "text-[#717171]"
           }`}
         />
       </div>
-      <span className={`relative z-10 text-sm font-semibold capitalize tracking-wide transition-colors duration-200 ${
-        active && isHero ? "text-gray-900" : ""
+      <span className={`relative z-10 text-sm font-semibold capitalize tracking-tight transition-colors duration-200 ${
+        active && isHero ? "text-[#222222]" : ""
       }`}>
         {label}
       </span>

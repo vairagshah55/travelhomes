@@ -1037,7 +1037,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -1260,7 +1260,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -1431,7 +1431,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-black hover:bg-gray-800 text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />

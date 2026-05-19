@@ -183,22 +183,26 @@ export default function SiteHeader({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      // Calendar popup is rendered inside calendarRef in every filter variant.
+      // calendarToRef only wraps the checkout trigger and must NOT be used to
+      // close the calendar — the popup is its sibling, not its descendant.
+      const insideCalendar =
+        (calendarRef.current && calendarRef.current.contains(target)) ||
+        (calendarToRef.current && calendarToRef.current.contains(target));
+      if (!insideCalendar) {
         setShowCalendar(false);
       }
-      if (calendarToRef.current && !calendarToRef.current.contains(event.target as Node)) {
-        setShowCalendar(false);
-      }
-      if (locationRef.current && !locationRef.current.contains(event.target as Node)) {
+      if (locationRef.current && !locationRef.current.contains(target)) {
         setShowLocationDropdown(false);
       }
-      if (locationToRef.current && !locationToRef.current.contains(event.target as Node)) {
+      if (locationToRef.current && !locationToRef.current.contains(target)) {
         setShowLocationToDropdown(false);
       }
-      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
+      if (guestRef.current && !guestRef.current.contains(target)) {
         setShowGuestDropdown(false);
       }
-      if (activityRef.current && !activityRef.current.contains(event.target as Node)) {
+      if (activityRef.current && !activityRef.current.contains(target)) {
         setShowActivityDropdown(false);
       }
     };
@@ -208,18 +212,6 @@ export default function SiteHeader({
       document.removeEventListener("click", handleClickOutside, {
         capture: true,
       });
-  }, []);
-
-  useEffect(() => {
-    const closeDropdowns = () => {
-      setShowLocationDropdown(false);
-      setShowLocationToDropdown(false);
-      setShowGuestDropdown(false);
-      setShowCalendar(false);
-      setShowActivityDropdown(false);
-    };
-    window.addEventListener("scroll", closeDropdowns, { passive: true });
-    return () => window.removeEventListener("scroll", closeDropdowns);
   }, []);
 
   const handleDateRangeSelect = (range: { start: Date; end: Date }) => {
@@ -368,8 +360,8 @@ export default function SiteHeader({
                         onClick={() => handleTabClick(tab.id)}
                         className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium ${
                           isActive
-                            ? "bg-gray-900 text-white shadow-sm"
-                            : "bg-transparent text-gray-700 hover:bg-gray-100"
+                            ? "bg-[#222222] text-white shadow-sm"
+                            : "bg-transparent text-[#222222] hover:bg-[#F7F7F7]"
                         }`}
                       >
                         <IconComponent
@@ -397,7 +389,7 @@ export default function SiteHeader({
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={locationRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -436,7 +428,7 @@ export default function SiteHeader({
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
                           ref={calendarRef}
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
                             <Calendar className="w-3.5 h-3.5" />
@@ -469,7 +461,7 @@ export default function SiteHeader({
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={activityRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -501,7 +493,7 @@ export default function SiteHeader({
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={guestRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -536,7 +528,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -550,7 +542,7 @@ export default function SiteHeader({
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={locationRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -588,7 +580,7 @@ export default function SiteHeader({
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={locationToRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -629,7 +621,7 @@ export default function SiteHeader({
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
                           <div
-                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           >
                             <div className="flex items-center gap-1.5 text-gray-400">
                               <Calendar className="w-3.5 h-3.5" />
@@ -659,7 +651,7 @@ export default function SiteHeader({
                           <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                           <div
                             ref={calendarToRef}
-                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           >
                             <div className="flex items-center gap-1.5 text-gray-400">
                               <Calendar className="w-3.5 h-3.5" />
@@ -696,7 +688,7 @@ export default function SiteHeader({
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={guestRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -730,7 +722,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -744,7 +736,7 @@ export default function SiteHeader({
                     <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                       <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={locationRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -783,7 +775,7 @@ export default function SiteHeader({
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div className="relative flex flex-[2] items-start gap-0" ref={calendarRef}>
                           <div
-                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           >
                             <div className="flex items-center gap-1.5 text-gray-400">
                               <Calendar className="w-3.5 h-3.5" />
@@ -813,7 +805,7 @@ export default function SiteHeader({
                           <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                           <div
                             ref={calendarToRef}
-                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                            className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           >
                             <div className="flex items-center gap-1.5 text-gray-400">
                               <Calendar className="w-3.5 h-3.5" />
@@ -850,7 +842,7 @@ export default function SiteHeader({
                         </div>
                         <div className="hidden lg:block w-px h-8 bg-gray-200/60 flex-shrink-0 self-center mt-1" />
                         <div
-                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-gray-100/80" : "hover:bg-gray-100/60"}`}
+                          className={`flex flex-col gap-1 flex-1 min-w-0 relative px-3 py-2 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-[#F7F7F7]"}`}
                           ref={guestRef}
                         >
                           <div className="flex items-center gap-1.5 text-gray-400">
@@ -884,7 +876,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-gray-900 hover:bg-black active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -904,9 +896,9 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
                       isScrolled
-                        ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
+                        ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 shadow-sm"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
@@ -939,9 +931,9 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-500 ease-in-out ${
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
                       isScrolled
-                        ? "bg-gray-900 text-white hover:bg-gray-800 shadow-sm hover:shadow-md"
+                        ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 shadow-sm"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
@@ -951,11 +943,7 @@ export default function SiteHeader({
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className={`rounded-full px-5 h-9 text-sm font-semibold transition-all duration-500 ease-in-out ${
-                      isScrolled
-                        ? "bg-gray-900 hover:bg-gray-700 text-white"
-                        : "bg-white/95 text-gray-900 hover:bg-white shadow-md"
-                    }`}
+                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#FF385C] hover:bg-[#E31C5F] text-white shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign up
                   </button>
@@ -994,8 +982,8 @@ export default function SiteHeader({
                       onClick={() => handleTabClick(tab.id)}
                       className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
                         activeFilter === tab.id
-                          ? "bg-gray-900 text-white"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-[#222222] text-white"
+                          : "text-[#222222] hover:bg-[#F7F7F7]"
                       }`}
                     >
                       <IconComponent className="w-5 h-5" />

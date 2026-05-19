@@ -50,6 +50,10 @@ import AdminProfileDropdown from "@/admin/components/AdminProfileDropdown";
 import { useToast } from "@/hooks/use-toast";
 import Pagination from "@/components/Pagination";
 import { formatDate } from "@/lib/formateTime";
+import { TabStrip } from "@/admin/ui/TabStrip";
+import { EmptyState } from "@/admin/ui/EmptyState";
+import { Breadcrumb } from "@/admin/ui/Breadcrumb";
+import { SearchX } from "lucide-react";
 
 interface User {
   _id: string;
@@ -434,39 +438,23 @@ const UserManagement = () => {
   return (
     <AdminLayout title="User Management">
         <main className="flex-1">
-          {/* Content Header */}
-          <div className="bg-white rounded-t-3xl border-b border-[#EAECF0] p-5 mb-0 flex justify-between items-center">
-            <h2 className="text-sm font-bold text-[#101828] font-geist tracking-tight">
-              User Management
-            </h2>
-            {/* <Button
-              className="bg-dashboard-primary text-white rounded-full px-4 py-2 flex items-center gap-2"
-              onClick={handleAddUser}
-            >
-              <Plus size={16} />
-              <span>Add User</span>
-            </Button> */}
-          </div>
+          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Users" }]} />
 
-          <div className="bg-white rounded-b-3xl p-5 space-y-8">
-            {/* Tabs */}
-            <div className="border-b border-[#EAEAEA]">
-              <div className="flex items-center overflow-x-auto  max-md:flex-wrap">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? "text-dashboard-primary border-b-2 border-dashboard-primary"
-                        : "text-[#6B6B6B] hover:text-dashboard-primary"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
+            {/* Content Header */}
+            <div className="border-b border-surface-border px-5 py-3 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">
+                User Management
+              </h2>
             </div>
+
+          <div className="p-5 space-y-5">
+            {/* Tabs */}
+            <TabStrip
+              tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
+              activeKey={activeTab}
+              onChange={setActiveTab}
+            />
 
             {/* Search and Filters */}
             <div className="flex items-center justify-between  max-md:flex-wrap">
@@ -532,8 +520,7 @@ const UserManagement = () => {
             </div>
 
             {/* Table */}
-
-            <div className="border border-[#EAECF0] rounded-xl overflow-scroll">
+            <div className="border border-[#EAECF0] rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
               {activeTab === "subscribers" ? (
                 <div className="w-full bg-white">
                   {!loading && !error && filteredSortedUsers.length === 0 ? (
@@ -562,27 +549,27 @@ const UserManagement = () => {
                 </div>
               ) : (
                 <Table>
-                  <TableHeader className="bg-[#F2F4F7]">
+                  <TableHeader className="sticky top-0 z-10">
                     <TableRow>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                         User ID
                       </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                         Photo
                       </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                         Name
                       </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                         User Since
                       </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                         Booked Services
                       </TableHead>
                       <TableHead className="font-bold text-[#334054] font-plus-jakarta">
                         Location
                       </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta w-40">
+                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0] w-40">
                         Action
                       </TableHead>
                     </TableRow>
@@ -591,12 +578,14 @@ const UserManagement = () => {
                   <TableBody>
                     {!loading && !error && filteredSortedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="py-16 text-center">
-                          <div className="flex flex-col items-center gap-3 text-gray-400">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="16" r="9" stroke="#D1D5DB" strokeWidth="2"/><path d="M6 42c0-9.941 8.059-18 18-18s18 8.059 18 18" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
-                            <p className="text-sm font-medium">No users found</p>
-                            <p className="text-xs">Try adjusting your search or filters</p>
-                          </div>
+                        <TableCell colSpan={7}>
+                          <EmptyState
+                            icon={searchTerm ? SearchX : Users2}
+                            title={searchTerm ? `No results for "${searchTerm}"` : "No users found"}
+                            description={searchTerm ? "Try different keywords or remove filters." : "Users will appear here once they register. Try adjusting your search or filters."}
+                            actionLabel="Clear filters"
+                            onAction={() => { setSearchTerm(""); setActiveFilters([]); }}
+                          />
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -706,6 +695,7 @@ const UserManagement = () => {
                 </div>
               )}
             </div>
+          </div>
           </div>
         </main>
 

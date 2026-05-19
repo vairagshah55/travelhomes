@@ -41,8 +41,25 @@ function HeroSlideshow() {
           transition={{ opacity: { duration: 1.2, ease: "easeInOut" }, scale: { duration: 6, ease: "linear" } }}
         />
       ))}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/20 to-black/75" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(to bottom, rgba(10,20,50,0.25) 0%, rgba(10,20,50,0.60) 100%)" }}
+      />
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+        {HERO_IMAGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className="transition-all duration-300"
+            style={{
+              width: i === current ? "24px" : "6px",
+              height: "6px",
+              borderRadius: "100px",
+              backgroundColor: i === current ? "#ffffff" : "rgba(255,255,255,0.45)",
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -52,7 +69,7 @@ function SearchField({
   active, children, error,
 }: { active: boolean; children: React.ReactNode; error?: string }) {
   return (
-    <div className={`relative flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${active ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+    <div className={`relative flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${active ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
       {children}
       {error && (
         <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium whitespace-nowrap">
@@ -174,7 +191,7 @@ export function HeroSection({
     <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-2">
       <Button
         onClick={handleSearch}
-        className="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg"
+        className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg"
         size="icon"
       >
         <Search className="w-5 h-5" />
@@ -198,31 +215,23 @@ export function HeroSection({
 
         {/* Hero text + filters */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-24 pb-12 md:pt-28 md:pb-14 text-center overflow-visible">
-          <motion.p
-            className="text-white/70 text-xs sm:text-sm font-medium tracking-[0.2em] uppercase mb-3"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
-          >
-            Your journey starts here
-          </motion.p>
-
           <motion.h1
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] tracking-tight mb-3 md:mb-4"
+            className="text-[34px] sm:text-5xl md:text-[56px] lg:text-[64px] font-semibold text-white leading-[1.05] tracking-[-0.025em] mb-4 md:mb-5"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
           >
-            Explore The Unexplored
+            Not sure where to go?<br className="hidden sm:block" />
+            <span className="font-normal italic"> Perfect.</span>
           </motion.h1>
 
           <motion.p
-            className="text-white/60 text-sm sm:text-base max-w-md mb-7 md:mb-9"
+            className="text-white/85 text-base sm:text-[17px] max-w-md mb-8 md:mb-10 leading-snug"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.35, ease: "easeOut" }}
+            transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
           >
-            Campervans, unique stays &amp; adventures across India
+            Caravans, unique stays, and curated activities across India.
           </motion.p>
 
           {/* Category filter pills */}
@@ -260,7 +269,7 @@ export function HeroSection({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.75, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.28)] ring-1 ring-white/20 p-3 md:p-4 relative overflow-visible z-50">
+            <div className="bg-white rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.18)] ring-1 ring-black/5 p-2.5 relative overflow-visible z-50">
 
               {/* ── Activity ─── */}
               {activeFilter === "activity" && (
@@ -275,7 +284,7 @@ export function HeroSection({
                     </SearchField>
                     <Divider />
 
-                    <div ref={calendarRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={calendarRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-4 h-4" /><span className="text-xs font-medium">Date</span></div>
                       <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
                         {checkInDate ? `${dateLabel(checkInDate, "")} - ${dateLabel(checkOutDate, "")}` : "Add date"}
@@ -285,7 +294,7 @@ export function HeroSection({
                     </div>
                     <Divider />
 
-                    <div ref={activityRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={activityRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showActivityDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><StarIcon className="w-4 h-4" /><span className="text-xs font-medium">Activity</span></div>
                       <input type="text" placeholder="Search activity" value={activityName === "Tracking" ? "" : activityName} onChange={(e) => { setActivityName(e.target.value); setShowActivityDropdown(true); }} onFocus={() => setShowActivityDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
                       {showActivityDropdown && <ActivityDropdown onSelect={setActivityName} onClose={() => setShowActivityDropdown(false)} />}
@@ -293,7 +302,7 @@ export function HeroSection({
                     </div>
                     <Divider />
 
-                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-4 h-4" /><span className="text-xs font-medium">Guests</span></div>
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowActivityDropdown(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
@@ -309,7 +318,7 @@ export function HeroSection({
               {activeFilter === "camper-van" && (
                 <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
                   <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
-                    <div ref={locationRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={locationRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-4 h-4" /><span className="text-xs font-medium">From</span></div>
                       <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
                       {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(l) => { setSelectedLocation(l); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
@@ -317,7 +326,7 @@ export function HeroSection({
                     </div>
                     <Divider />
 
-                    <div ref={locationToRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={locationToRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationToDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-4 h-4" /><span className="text-xs font-medium">To</span></div>
                       <input type="text" placeholder="Search location" value={selectedLocationTo === "Where are you going?" ? "" : selectedLocationTo} onChange={(e) => { setSelectedLocationTo(e.target.value); setShowLocationToDropdown(true); }} onFocus={() => setShowLocationToDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
                       {showLocationToDropdown && <LocationDropdown searchQuery={selectedLocationTo} onSelect={(l) => { setSelectedLocationTo(l); setShowLocationToDropdown(false); }} onClose={() => setShowLocationToDropdown(false)} />}
@@ -326,7 +335,7 @@ export function HeroSection({
                     <Divider />
 
                     <div ref={calendarRef} className="relative flex flex-[2] items-start gap-0">
-                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                         <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-4 h-4" /><span className="text-xs font-medium">Check in</span></div>
                         <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
                           {dateLabel(checkInDate, "Add date")}
@@ -334,7 +343,7 @@ export function HeroSection({
                         {searchErrors.checkin && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium whitespace-nowrap">{searchErrors.checkin}</span>}
                       </div>
                       <Divider />
-                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                         <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-4 h-4" /><span className="text-xs font-medium">Check out</span></div>
                         <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
                           {dateLabel(checkOutDate, "Add date")}
@@ -345,7 +354,7 @@ export function HeroSection({
                     </div>
                     <Divider />
 
-                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-4 h-4" /><span className="text-xs font-medium">Guests</span></div>
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
@@ -361,7 +370,7 @@ export function HeroSection({
               {activeFilter === "unique-stays" && (
                 <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0">
                   <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
-                    <div ref={locationRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={locationRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><MapPin className="w-4 h-4" /><span className="text-xs font-medium">Location</span></div>
                       <input type="text" placeholder="Search location" value={selectedLocation === "Where are you going?" ? "" : selectedLocation} onChange={(e) => { setSelectedLocation(e.target.value); setShowLocationDropdown(true); }} onFocus={() => setShowLocationDropdown(true)} className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal" />
                       {showLocationDropdown && <LocationDropdown searchQuery={selectedLocation} onSelect={(l) => { setSelectedLocation(l); setShowLocationDropdown(false); }} onClose={() => setShowLocationDropdown(false)} />}
@@ -370,7 +379,7 @@ export function HeroSection({
                     <Divider />
 
                     <div ref={calendarRef} className="relative flex flex-[2] items-start gap-0">
-                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                         <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-4 h-4" /><span className="text-xs font-medium">Check in</span></div>
                         <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkInDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
                           {dateLabel(checkInDate, "Add date")}
@@ -378,7 +387,7 @@ export function HeroSection({
                         {searchErrors.checkin && <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium whitespace-nowrap">{searchErrors.checkin}</span>}
                       </div>
                       <Divider />
-                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                      <div className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                         <div className="flex items-center gap-1.5 text-gray-400"><Calendar className="w-4 h-4" /><span className="text-xs font-medium">Check out</span></div>
                         <button onClick={() => { setShowCalendar(!showCalendar); setShowLocationDropdown(false); setShowGuestDropdown(false); }} className={`font-semibold text-sm ${checkOutDate ? "text-gray-900" : "text-gray-300"} hover:text-gray-700 transition-colors text-left`}>
                           {dateLabel(checkOutDate, "Add date")}
@@ -389,7 +398,7 @@ export function HeroSection({
                     </div>
                     <Divider />
 
-                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-blue-50/80" : "hover:bg-gray-50/80"}`}>
+                    <div ref={guestRef} className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showGuestDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}>
                       <div className="flex items-center gap-1.5 text-gray-400"><Users className="w-4 h-4" /><span className="text-xs font-medium">Guests</span></div>
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}

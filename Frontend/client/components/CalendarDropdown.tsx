@@ -16,9 +16,18 @@ export function CalendarDropdown({
     end: Date | null;
   }>(externalRange || { start: null, end: null });
 
+  // Sync from parent ONLY when the actual date values change — not on every
+  // render. The parent passes a new {start, end} object literal on each render,
+  // so depending on `externalRange` directly causes this effect to fire every
+  // time the parent re-renders, wiping out the in-progress selection.
+  const externalStartTime = externalRange?.start?.getTime() ?? null;
+  const externalEndTime = externalRange?.end?.getTime() ?? null;
   useEffect(() => {
-    if (externalRange) setSelectedRange(externalRange);
-  }, [externalRange]);
+    setSelectedRange({
+      start: externalStartTime != null ? new Date(externalStartTime) : null,
+      end: externalEndTime != null ? new Date(externalEndTime) : null,
+    });
+  }, [externalStartTime, externalEndTime]);
 
   const monthNames = [
     "January",
@@ -200,7 +209,10 @@ export function CalendarDropdown({
   };
 
   return (
-    <div className="absolute top-[calc(100%+24px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800">
+    <div
+      onMouseDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+      className="absolute top-[calc(100%+24px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800">
       <div className="flex flex-col md:flex-row gap-6 items-start justify-center">
         <div className="w-full md:w-auto">{renderCalendar(0)}</div>
         <div className="hidden md:block w-[1px] self-stretch bg-gray-100 dark:bg-gray-800" />
@@ -215,7 +227,7 @@ export function CalendarDropdown({
         </button>
         <button
           onClick={handleDone}
-          className="bg-black text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-gray-800 active:scale-[0.98] transition-all text-xs shadow-sm"
+          className="bg-[#FF385C] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-[#E31C5F] active:scale-[0.98] transition-all text-xs shadow-sm"
         >
           Done
         </button>

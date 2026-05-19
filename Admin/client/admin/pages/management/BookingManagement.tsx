@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Filter, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Eye, Trash2, CalendarX2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -16,6 +16,11 @@ import BookingDetailsPopup from "@/components/BookingDetailsPopup";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { bookingService } from "@/services/api";
 import Pagination from "@/components/Pagination";
+import { TabStrip } from "@/admin/ui/TabStrip";
+import { StatusBadge } from "@/admin/ui/StatusBadge";
+import { ConfirmModal } from "@/admin/ui/ConfirmModal";
+import { EmptyState } from "@/admin/ui/EmptyState";
+import { Breadcrumb } from "@/admin/ui/Breadcrumb";
 
 interface BookingData {
   _id: string;
@@ -200,30 +205,21 @@ const BookingManagement: React.FC = () => {
   return (
     <AdminLayout title="Bookings">
         <div className="flex-1">
-          <div className="bg-white rounded-3xl border border-gray-200 h-full">
+          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Bookings" }]} />
+
+          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
             {/* Content Header */}
-            <div className="p-5 border-b border-gray-200 rounded-t-3xl">
-              <h2 className="text-xl font-bold text-gray-900">Booking Details</h2>
+            <div className="px-5 py-3 border-b border-surface-border">
+              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">Booking Details</h2>
             </div>
 
-            <div className="p-5 flex flex-col gap-7">
+            <div className="p-5 flex flex-col gap-5">
               {/* Tabs */}
-              <div className="flex  max-md:flex-wrap">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id as any)}
-                    className={`px-4 py-3 text-base font-bold transition-colors relative ${
-                      activeTab === tab.id ? "text-black" : "text-gray-400"
-                    }`}
-                  >
-                    {tab.label}
-                    {activeTab === tab.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black"></div>
-                    )}
-                  </button>
-                ))}
-              </div>
+              <TabStrip
+                tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
+                activeKey={activeTab}
+                onChange={(k) => handleTabChange(k as any)}
+              />
 
               {/* Service Type Filter */}
               <div className="inline-flex  max-md:flex-wrap items-center p-0.5 border border-gray-200 rounded-full bg-white shadow-sm w-fit">
@@ -277,26 +273,26 @@ const BookingManagement: React.FC = () => {
               </div>
 
               {/* Table */}
-              <div className="border border-gray-200 rounded-xl overflow-scroll">
+              <div className="border border-gray-200 rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="sticky top-0 z-10">
                     <tr>
-                      <th className="text-left px-4 py-3 text-sm font-bold text-gray-700">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-4 py-3 text-sm font-bold text-gray-700">
                         Booking ID
                       </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700">
                         Client Name
                       </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700">
                         Service Name
                       </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
                         Check-in Date
                       </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
                         Check-out Date
                       </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700 w-32">
+                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-32">
                         Status
                       </th>
                       <th className="text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
@@ -319,12 +315,12 @@ const BookingManagement: React.FC = () => {
                       ))
                     ) : bookings.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center">
-                          <div className="flex flex-col items-center gap-3 text-gray-400">
-                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="32" rx="4" stroke="#D1D5DB" strokeWidth="2"/><path d="M14 18h20M14 24h14M14 30h8" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
-                            <p className="text-sm font-medium">No bookings found</p>
-                            <p className="text-xs">Try adjusting your filters</p>
-                          </div>
+                        <td colSpan={7}>
+                          <EmptyState
+                            icon={CalendarX2}
+                            title="No bookings found"
+                            description="No bookings match your current filters. Try a different date range or status."
+                          />
                         </td>
                       </tr>
                     ) : (
@@ -350,9 +346,7 @@ const BookingManagement: React.FC = () => {
                               </span>
                             </td>
                             <td className="px-3 py-4">
-                              <span className={`px-3 py-1 rounded-lg font-medium ${getStatusColor(booking.status)}`}>
-                                {booking.status}
-                              </span>
+                              <StatusBadge status={booking.status} />
                             </td>
                             <td className="px-3 py-4">
                               <div className="relative">
@@ -401,13 +395,12 @@ const BookingManagement: React.FC = () => {
           booking={selectedBooking}
         />
       )}
-      <ConfirmationDialog
-        isOpen={!!confirmDelete}
+      <ConfirmModal
+        open={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
         onConfirm={doDeleteBooking}
         title="Delete booking?"
-        message="This booking record will be permanently removed. This cannot be undone."
-        confirmText="Delete"
+        description="This booking record will be permanently removed. This cannot be undone."
       />
     </AdminLayout>
   );

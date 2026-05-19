@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Search, Filter, MoreHorizontal, X } from "lucide-react";
 import AdminLayout from "../components/AdminLayout";
+import { StatusBadge } from "@/admin/ui/StatusBadge";
+import { Breadcrumb } from "@/admin/ui/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -117,7 +119,9 @@ const AdminHelpDesk: React.FC = () => {
 
   return (
     <AdminLayout title="Help Desk">
-        <div className="flex-1 p-5">
+        <div className="flex-1">
+          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help Desk" }]} />
+        <div className="p-5">
           <div className="bg-white rounded-t-3xl rounded-b-6 border border-dashboard-stroke h-full flex flex-col">
             {/* Content Header */}
             <div className="px-5 py-4 border-b border-dashboard-stroke">
@@ -245,15 +249,7 @@ const AdminHelpDesk: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex-1 px-3 py-3">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-lg text-sm font-medium font-plus-jakarta ${
-                          item.status === "Pending"
-                            ? "bg-status-orange-bg text-status-orange-text"
-                            : "bg-status-green-bg text-status-green-text"
-                        }`}
-                      >
-                        {item.status}
-                      </span>
+                      <StatusBadge status={item.status} />
                     </div>
                     <div className="w-[160px] px-3 py-1.5">
                       <div className="flex items-center gap-6">
@@ -348,6 +344,7 @@ const AdminHelpDesk: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
 
       {/* Help Desk Details Dialog */}

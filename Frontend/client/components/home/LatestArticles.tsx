@@ -43,7 +43,7 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
           <Button
             variant="outline"
             onClick={() => navigate("/blogs")}
-            className="rounded-full border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition-all duration-200 px-5 h-10 font-medium text-sm hover:shadow-md active:scale-[0.98]"
+            className="rounded-full border-[#222222] text-[#222222] hover:bg-[#222222] hover:text-white transition-all duration-200 px-5 h-10 font-medium text-sm hover:shadow-md active:scale-[0.98]"
           >
             <span className="mr-2">Read all articles</span>
             <SlArrowRight className="w-3.5 h-3.5" />

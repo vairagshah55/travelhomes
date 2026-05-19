@@ -10,8 +10,8 @@ const STEPS = [
     title: "Search & Discover",
     description:
       "Browse campervans, unique stays, and activities across India. Filter by location, date, and budget to find your perfect match.",
-    accent: "#185FA5",
-    bg: "#EBF2FA",
+    accent: "#222222",
+    bg: "#F7F7F7",
   },
   {
     icon: CalendarCheck,
@@ -19,8 +19,8 @@ const STEPS = [
     title: "Book Instantly",
     description:
       "Secure your booking in seconds with a seamless checkout. Pay safely, get instant confirmation, and receive your itinerary details.",
-    accent: "#07E4E4",
-    bg: "#E4FAFA",
+    accent: "#FF385C",
+    bg: "#FFE8EE",
   },
   {
     icon: Compass,
@@ -28,8 +28,8 @@ const STEPS = [
     title: "Explore & Enjoy",
     description:
       "Pack your bags and go! From Himalayan trails to coastal stays, every Travel Homes experience is curated for unforgettable moments.",
-    accent: "#185FA5",
-    bg: "#EBF2FA",
+    accent: "#222222",
+    bg: "#F7F7F7",
   },
 ];
 
@@ -45,13 +45,10 @@ export function HowItWorks() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <p className="text-xs font-bold tracking-[0.18em] uppercase text-blue-600 mb-3">
-            Simple Process
-          </p>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-[32px] font-semibold text-[#222222] tracking-tight">
             How Travel Homes Works
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+          <p className="text-sm text-[#717171] mt-2 max-w-md mx-auto leading-relaxed">
             From search to stay — three easy steps to your next adventure.
           </p>
         </motion.div>
@@ -69,30 +66,33 @@ export function HowItWorks() {
               key={step}
               variants={staggerItem}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative flex flex-col gap-4 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
+              className="relative flex flex-col gap-5 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
             >
-              {/* Connector line (desktop) */}
+              {/* Connector line — neutral (desktop) */}
               {i < STEPS.length - 1 && (
-                <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-8 h-px border-t-2 border-dashed border-gray-200 dark:border-gray-700 z-10" />
+                <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-full w-8 h-px bg-[#DDDDDD] z-10" />
               )}
 
-              {/* Step number */}
-              <span className="text-[11px] font-bold tracking-[0.15em] text-gray-300 dark:text-gray-600">
-                STEP {step}
-              </span>
-
-              {/* Icon */}
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: bg }}
-              >
-                <Icon size={22} style={{ color: accent }} strokeWidth={2} />
+              {/* Icon circle + step badge */}
+              <div className="relative inline-flex w-fit">
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: bg }}
+                >
+                  <Icon size={24} style={{ color: accent }} strokeWidth={2} />
+                </div>
+                <span
+                  className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                  style={{ backgroundColor: "#FF385C" }}
+                >
+                  {step}
+                </span>
               </div>
 
               {/* Text */}
               <div className="space-y-1.5">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white">{title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                <h3 className="text-[17px] font-semibold text-[#222222]">{title}</h3>
+                <p className="text-sm text-[#717171] leading-relaxed">
                   {description}
                 </p>
               </div>

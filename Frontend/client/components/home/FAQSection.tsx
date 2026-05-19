@@ -45,7 +45,7 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h2 className="text-center lg:text-left text-2xl md:text-[28px] font-semibold text-gray-900 dark:text-white mb-3 tracking-tight">
+                <h2 className="text-center lg:text-left text-2xl md:text-[28px] font-semibold text-[#222222] mb-3 tracking-tight">
                   Frequently Asked Questions
                 </h2>
                 <p className="text-gray-500 text-center lg:text-left dark:text-gray-400 max-w-sm mx-auto lg:mx-0 mb-8 text-sm leading-relaxed">
@@ -63,7 +63,7 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
-                      className="rounded-full py-2 text-sm font-semibold capitalize transition-all duration-200 text-gray-600 dark:text-gray-400 data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-sm"
+                      className="rounded-full py-2 text-sm font-semibold capitalize transition-all duration-200 text-[#717171] data-[state=active]:bg-[#222222] data-[state=active]:text-white data-[state=active]:shadow-sm"
                     >
                       {tab.label}
                     </TabsTrigger>

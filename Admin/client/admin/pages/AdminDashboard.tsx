@@ -33,12 +33,11 @@ import {
   ClipboardList,
   Search,
   MoreHorizontal,
-  Trash2,
   CheckCircle,
   Clock,
   Eye,
   TrendingUp,
-  AlertTriangle,
+  IndianRupee,
 } from "lucide-react";
 import {
   AreaChart,
@@ -54,6 +53,11 @@ import {
 import AdminLayout from "../components/AdminLayout";
 import HelpDeskPopup from "@/components/HelpDeskPopup";
 import { useNavigate } from "react-router-dom";
+import { StatusBadge } from "@/admin/ui/StatusBadge";
+import { ChartTooltip } from "@/admin/ui/ChartTooltip";
+import { ConfirmModal } from "@/admin/ui/ConfirmModal";
+import { Breadcrumb } from "@/admin/ui/Breadcrumb";
+import { formatINR } from "@/utils/formatCurrency";
 
 // ─── Chart component defined outside to prevent recreation on every render ────
 const DashboardChart = ({
@@ -71,14 +75,14 @@ const DashboardChart = ({
 }) => {
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-lg border border-surface-border p-4">
+      <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-semibold text-dashboard-body">{title}</h3>
-        <span className="text-xs px-2.5 py-1 bg-gray-100 rounded-full text-gray-500">
+        <span className="text-[11px] px-2 py-0.5 bg-surface-muted rounded-full text-gray-400">
           Last 6 Months
         </span>
       </div>
-      <div className="h-52 w-full">
+      <div className="h-44 w-full">
         <ResponsiveContainer width="100%" height="100%">
           {type === "area" ? (
             <AreaChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
@@ -91,7 +95,7 @@ const DashboardChart = ({
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
               <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip />
+              <Tooltip content={<ChartTooltip valuePrefix={dataKey === "total" ? "₹" : ""} valueFormatter={dataKey === "total" ? formatINR : undefined} />} />
               <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#${gradId})`} dot={false} />
             </AreaChart>
           ) : (
@@ -155,19 +159,19 @@ const StatCard = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3, ease: "easeOut" }}
+      transition={{ delay: index * 0.05, duration: 0.25, ease: "easeOut" }}
       onClick={onClick}
-      className={`${bgColor} rounded-xl cursor-pointer p-4 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 group`}
+      className={`${bgColor} rounded-lg cursor-pointer px-4 py-3.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group`}
     >
-      <div className="flex items-start gap-4">
-        <div className={`${iconBg} rounded-full p-2.5 mt-0.5 shrink-0 group-hover:scale-110 transition-transform duration-200`}>
-          <Icon size={18} className="text-gray-700" />
+      <div className="flex items-center gap-3">
+        <div className={`${iconBg} rounded-lg p-2 shrink-0 group-hover:scale-105 transition-transform duration-200`}>
+          <Icon size={15} className="text-gray-600" />
         </div>
-        <div>
-          <p className="text-xs font-medium text-gray-500 mb-1.5 font-plus-jakarta">{title}</p>
-          <p className="text-2xl font-bold text-dashboard-heading font-geist tracking-tight">
+        <div className="min-w-0">
+          <p className="text-[11px] font-medium text-gray-500 truncate">{title}</p>
+          <p className="text-lg font-bold text-dashboard-heading font-geist tracking-tight leading-tight mt-0.5">
             {isNumeric ? animated : value}
           </p>
         </div>
@@ -191,13 +195,14 @@ const AdminDashboard = () => {
   const [ticketSort, setTicketSort] = useState("date-desc");
 
   const [statsCards, setStatsCards] = React.useState([
-    { title: "Total Users",             value: "—", icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
-    { title: "Active Users",            value: "—", icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
-    { title: "Total Vendors",           value: "—", icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
-    { title: "Active Vendors",          value: "—", icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
-    { title: "Pending Vendor KYC",      value: "—", icon: TrendingUp,     bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
-    { title: "Total Listings",          value: "—", icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
-    { title: "Pending Listings",        value: "—", icon: ClipboardList,  bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
+    { title: "Total Users",      value: "—", icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
+    { title: "Active Users",     value: "—", icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
+    { title: "Total Vendors",    value: "—", icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
+    { title: "Active Vendors",   value: "—", icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
+    { title: "Pending KYC",      value: "—", icon: TrendingUp,     bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
+    { title: "Total Listings",   value: "—", icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
+    { title: "Pending Listings", value: "—", icon: ClipboardList,  bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
+    { title: "Total Revenue",    value: "—", icon: IndianRupee,    bgColor: "bg-amber-50",   iconBg: "bg-amber-100",   navigate: "/payments"           },
   ]);
 
   const [ticketData, setTicketData] = React.useState<any[]>([]);
@@ -211,13 +216,14 @@ const AdminDashboard = () => {
         const d = json?.data || {};
 
         setStatsCards([
-          { title: "Total Users",        value: String(d.stats?.users?.total     ?? 0), icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
-          { title: "Active Users",       value: String(d.stats?.users?.active    ?? 0), icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
-          { title: "Total Vendors",      value: String(d.stats?.vendors?.total   ?? 0), icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
-          { title: "Active Vendors",     value: String(d.stats?.vendors?.active  ?? 0), icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
-          { title: "Pending Vendor KYC", value: String(d.stats?.vendors?.pendingKyc ?? 0), icon: TrendingUp,  bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
-          { title: "Total Listings",     value: String(d.stats?.listings?.total  ?? 0), icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
-          { title: "Pending Listings",   value: String(d.stats?.listings?.pending ?? 0), icon: ClipboardList, bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
+          { title: "Total Users",        value: String(d.stats?.users?.total        ?? 0), icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
+          { title: "Active Users",       value: String(d.stats?.users?.active       ?? 0), icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
+          { title: "Total Vendors",      value: String(d.stats?.vendors?.total      ?? 0), icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
+          { title: "Active Vendors",     value: String(d.stats?.vendors?.active     ?? 0), icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
+          { title: "Pending KYC",        value: String(d.stats?.vendors?.pendingKyc ?? 0), icon: TrendingUp,     bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
+          { title: "Total Listings",     value: String(d.stats?.listings?.total     ?? 0), icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
+          { title: "Pending Listings",   value: String(d.stats?.listings?.pending   ?? 0), icon: ClipboardList,  bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
+          { title: "Total Revenue",      value: formatINR(d.stats?.revenue?.total   ?? 0), icon: IndianRupee,    bgColor: "bg-amber-50",   iconBg: "bg-amber-100",   navigate: "/payments"           },
         ]);
 
         if (d.graphs) setGraphs(d.graphs);
@@ -306,18 +312,13 @@ const AdminDashboard = () => {
     return rows;
   }, [ticketData, ticketSearch, ticketSort]);
 
-  const statusBadge = (status: string) => {
-    if (status === "Resolved") return "bg-green-100 text-green-700";
-    if (status === "Read")     return "bg-blue-100 text-blue-700";
-    if (status === "Pending")  return "bg-orange-100 text-orange-700";
-    return "bg-gray-100 text-gray-600";
-  };
 
   return (
     <AdminLayout title="Dashboard">
-      <div className="space-y-6 py-2">
+      <Breadcrumb items={[{ label: "Dashboard" }]} />
+      <div className="space-y-[14px]">
         {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-[14px]">
           {statsCards.map((stat, i) => (
             <StatCard
               key={stat.title}
@@ -333,31 +334,31 @@ const AdminDashboard = () => {
         </div>
 
         {/* ── Charts ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
           <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#185FA5" dataKey="total" />
           <DashboardChart title="Bookings"           data={graphs.bookings} type="area" color="#1D9E75" dataKey="count" />
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
           <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#378ADD" dataKey="count" />
           <DashboardChart title="Active Vendors" data={graphs.vendors} type="bar" color="#EF9F27" dataKey="count" />
         </div>
 
         {/* ── Tickets Table ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
-            <h3 className="text-base font-bold text-dashboard-heading font-geist">Tickets Raised</h3>
+        <div className="bg-white rounded-lg border border-surface-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between flex-wrap gap-3">
+            <h3 className="text-sm font-semibold text-dashboard-heading font-geist">Tickets Raised</h3>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <Input
                   placeholder="Search tickets…"
                   value={ticketSearch}
                   onChange={(e) => setTicketSearch(e.target.value)}
-                  className="pl-9 w-52 h-9 text-sm border-gray-200 rounded-lg"
+                  className="pl-8 w-48 h-8 text-xs border-surface-border rounded-lg"
                 />
               </div>
               <Select value={ticketSort} onValueChange={setTicketSort}>
-                <SelectTrigger className="w-40 h-9 text-sm border-gray-200">
+                <SelectTrigger className="w-36 h-8 text-xs border-surface-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,40 +372,38 @@ const AdminDashboard = () => {
           </div>
 
           <Table>
-            <TableHeader className="bg-gray-50">
+            <TableHeader className="bg-surface-muted">
               <TableRow>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500">Name</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500">Email</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500">Subject</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500">Date</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500">Status</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-gray-500 text-right">Actions</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Name</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Email</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Subject</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Date</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Status</TableHead>
+                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTickets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-sm text-gray-400">
+                  <TableCell colSpan={6} className="text-center py-8 text-xs text-gray-400">
                     {ticketSearch ? "No tickets match your search." : "No tickets found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredTickets.map((ticket) => (
-                  <TableRow key={ticket._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                    <TableCell className="font-medium text-sm py-3">{ticket.vendorName}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{ticket.email}</TableCell>
-                    <TableCell className="text-sm text-gray-600 max-w-[200px] truncate">{ticket.subject}</TableCell>
-                    <TableCell className="text-sm text-gray-500">{ticket.dateDisplay}</TableCell>
+                  <TableRow key={ticket._id} className="border-b border-surface-border hover:bg-surface-muted/60 transition-colors">
+                    <TableCell className="font-medium text-xs py-2.5">{ticket.vendorName}</TableCell>
+                    <TableCell className="text-xs text-gray-500">{ticket.email}</TableCell>
+                    <TableCell className="text-xs text-gray-600 max-w-[200px] truncate">{ticket.subject}</TableCell>
+                    <TableCell className="text-xs text-gray-500">{ticket.dateDisplay}</TableCell>
                     <TableCell>
-                      <Badge className={`${statusBadge(ticket.status)} border-0 px-2.5 py-0.5 text-xs font-medium`}>
-                        {ticket.status}
-                      </Badge>
+                      <StatusBadge status={ticket.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none">
-                            <MoreHorizontal size={18} />
+                          <button className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none">
+                            <MoreHorizontal size={15} />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
@@ -440,29 +439,13 @@ const AdminDashboard = () => {
         ticket={selectedTicket}
       />
 
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle size={20} className="text-red-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 font-geist">Delete ticket?</h3>
-                <p className="text-sm text-gray-500 mt-1">This action cannot be undone.</p>
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end pt-1">
-              <button onClick={() => setConfirmDelete(null)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                Cancel
-              </button>
-              <button onClick={confirmDeleteTicket} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={confirmDeleteTicket}
+        title="Delete ticket?"
+        description="This action cannot be undone."
+      />
     </AdminLayout>
   );
 };

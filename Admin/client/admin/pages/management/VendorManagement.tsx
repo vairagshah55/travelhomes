@@ -23,9 +23,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FiltersPopup from "@/components/FiltersPopup";
 import VendorDetailsPopup from "@/components/VendorDetailsPopup";
 import Pagination from "@/components/Pagination";
-import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, AlertTriangle } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, Store, SearchX } from "lucide-react";
 import AdminLayout from "@/admin/components/AdminLayout";
 import { vendorService } from "@/services/api";
+import { TabStrip } from "@/admin/ui/TabStrip";
+import { EmptyState } from "@/admin/ui/EmptyState";
+import { Breadcrumb } from "@/admin/ui/Breadcrumb";
 
 interface Vendor {
   _id: string;
@@ -338,40 +341,23 @@ const VendorManagement = () => {
   return (
     <AdminLayout title="Vendor Management">
         <main className="flex-1">
-          {/* Content Header */}
-          <div className="flex justify-between bg-white rounded-t-3xl border-b border-[#EAECF0] p-5 mb-0">
-            <h2 className="text-xl font-bold text-[#101828] font-geist tracking-tight">
-              Vendor Management
-            </h2>
+          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Vendors" }]} />
 
-            {/* <Button
-                              className="bg-dashboard-primary text-white rounded-full px-4 py-2 flex items-center gap-2"
-                               onClick={handleAddVendor}
-                            >
-                              <Plus size={16} />
-                              <span>Add Vender</span>
-                            </Button> */}
-          </div>
-
-          <div className="bg-white rounded-b-3xl p-5 space-y-8">
-            {/* Tabs */}
-            <div className="border-b border-[#EAEAEA]">
-              <div className="flex items-center overflow-x-auto  max-md:flex-wrap">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors whitespace-nowrap ${
-                      activeTab === tab.id
-                        ? "text-dashboard-primary border-b-2 border-dashboard-primary"
-                        : "text-[#6B6B6B] hover:text-[#0B0907]"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
+            {/* Content Header */}
+            <div className="border-b border-surface-border px-5 py-3 flex justify-between items-center">
+              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">
+                Vendor Management
+              </h2>
             </div>
+
+          <div className="p-5 space-y-5">
+            {/* Tabs */}
+            <TabStrip
+              tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
+              activeKey={activeTab}
+              onChange={setActiveTab}
+            />
 
             {/* Search and Filters */}
             <div className="flex items-center justify-between  max-md:flex-wrap">
@@ -437,29 +423,29 @@ const VendorManagement = () => {
             </div>
 
             {/* Table */}
-            <div className="border border-[#EAECF0] rounded-xl overflow-scroll">
+            <div className="border border-[#EAECF0] rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
               <Table>
-                <TableHeader className="bg-[#F2F4F7]">
+                <TableHeader className="sticky top-0 z-10">
                   <TableRow>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Vendor ID
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Photo
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Brand Name
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Person Name
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Listed Services
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
                       Location
                     </TableHead>
-                    <TableHead className="font-bold text-[#334054] font-plus-jakarta w-40">
+                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0] w-40">
                       Action
                     </TableHead>
                   </TableRow>
@@ -480,12 +466,14 @@ const VendorManagement = () => {
                   )}
                   {!loading && paginatedVendors.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-3 text-gray-400">
-                          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="4" y="8" width="40" height="32" rx="4" stroke="#D1D5DB" strokeWidth="2"/><path d="M18 20h12M18 26h8" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/></svg>
-                          <p className="text-sm font-medium">No vendors found</p>
-                          <p className="text-xs">Try adjusting your filters or search term</p>
-                        </div>
+                      <TableCell colSpan={7}>
+                        <EmptyState
+                          icon={searchTerm ? SearchX : Store}
+                          title={searchTerm ? `No results for "${searchTerm}"` : "No vendors yet"}
+                          description={searchTerm ? "Try different keywords or remove filters." : "Vendors appear here once they register and submit for verification."}
+                          actionLabel="Clear filters"
+                          onAction={() => { setSearchTerm(""); setActiveFilters([]); }}
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -574,6 +562,7 @@ const VendorManagement = () => {
                 onPageChange={setCurrentPage}
               />
             </div>
+          </div>
           </div>
         </main>
 

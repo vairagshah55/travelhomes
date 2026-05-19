@@ -14,11 +14,9 @@ import {
   Users2,
   LogOut,
   ChevronDown,
-  Menu,
   X,
 } from "lucide-react";
 import LogoWebsite from "../../components/ui/LogoWebsite";
-import AdminProfileDropdown from "./AdminProfileDropdown";
 
 interface AdminSidebarProps {
   className?: string;
@@ -41,7 +39,16 @@ interface SidebarItem {
   subItems?: SubItem[];
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ className = "",showMobileSidebar, setShowMobileSidebar }) => {
+interface SidebarSection {
+  group?: string;
+  items: SidebarItem[];
+}
+
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  className = "",
+  showMobileSidebar,
+  setShowMobileSidebar,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -55,379 +62,302 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ className = "",showMobileSi
     navigate("/login");
   };
 
-  // Sidebar menu items
-const sidebarItems: SidebarItem[] = [
-  {
-    icon: Grid3X3,
-    label: "Dashboard",
-    active: location.pathname === "/dashboard",
-    path: "/dashboard",
-  },
-  {
-    icon: FileTextIcon,
-    label: "Management",
-    hasSubmenu: true,
-    active: location.pathname.includes("/management"),
-    path: "/management/listing",
-    subItems: [
-      {
-        label: "Listing",
-        path: "/management/listing",
-        active: location.pathname === "/management/listing",
-      },
-      {
-        label: "User",
-        path: "/management/user",
-        active: location.pathname === "/management/user",
-      },
-      {
-        label: "Vendor",
-        path: "/management/vendor",
-        active: location.pathname === "/management/vendor",
-      },
-      {
-        label: "Booking",
-        path: "/management/booking",
-        active: location.pathname === "/management/booking",
-      },
-    ],
-  },
-  {
-    icon: CreditCard,
-    label: "Payments",
-    active: location.pathname === "/payments",
-    path: "/payments",
-  },
-  {
-    icon: BarChart3,
-    label: "Analytics",
-    hasSubmenu: true,
-    active: location.pathname.includes("/analytics"),
-    path: "/analytics",
-    subItems: [
-      {
-        label: "Analytics",
-        path: "/analytics",
-        active: location.pathname === "/analytics",
-      },
-      {
-        label: "Report",
-        path: "/analytics/report",
-        active: location.pathname === "/analytics/report",
-      },
-    ],
-  },
-  {
-    icon: ThumbsUp,
-    label: "Help Desk",
-    active: location.pathname === "/help-desk",
-    path: "/help-desk",
-  },
-  {
-    icon: Box,
-    label: "CMS",
-    active: location.pathname === "/cms",
-    path: "/cms",
-  },
-  {
-    icon: Settings,
-    label: "Global Settings",
-    active: location.pathname === "/global-settings",
-    path: "/global-settings",
-  },
-  {
-    icon: Bell,
-    label: "CRM",
-    active: location.pathname === "/crm",
-    path: "/crm",
-  },
-  {
-    icon: TrendingUp,
-    label: "Marketing",
-    active: location.pathname === "/marketing",
-    path: "/marketing",
-  },
-  {
-    icon: Box,
-    label: "Plugins",
-    active: location.pathname === "/plugins",
-    path: "/plugins",
-  },
-  {
-    icon: Users2,
-    label: "Staff",
-    hasSubmenu: true,
-    active: location.pathname.includes("/staff"),
-    path: "/staff",
-    subItems: [
-      {
-        label: "Roles",
-        path: "/staff/roles",
-        active: location.pathname === "/staff/roles",
-      },
-      {
-        label: "List of Staff",
-        path: "/staff",
-        active:
-          location.pathname === "/staff" &&
-          !location.pathname.includes("roles"),
-      },
-    ],
-  },
-];
+  const isActive = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+
+  const sections: SidebarSection[] = [
+    {
+      items: [
+        {
+          icon: Grid3X3,
+          label: "Dashboard",
+          active: location.pathname === "/dashboard",
+          path: "/dashboard",
+        },
+      ],
+    },
+    {
+      group: "Manage",
+      items: [
+        {
+          icon: FileTextIcon,
+          label: "Management",
+          hasSubmenu: true,
+          active: location.pathname.startsWith("/management"),
+          path: "/management/listing",
+          subItems: [
+            { label: "Listing", path: "/management/listing", active: isActive("/management/listing") },
+            { label: "User", path: "/management/user", active: isActive("/management/user") },
+            { label: "Vendor", path: "/management/vendor", active: isActive("/management/vendor") },
+            { label: "Booking", path: "/management/booking", active: isActive("/management/booking") },
+          ],
+        },
+        {
+          icon: CreditCard,
+          label: "Payments",
+          active: isActive("/payments"),
+          path: "/payments",
+        },
+        {
+          icon: ThumbsUp,
+          label: "Help Desk",
+          active: isActive("/help-desk"),
+          path: "/help-desk",
+        },
+      ],
+    },
+    {
+      group: "Growth",
+      items: [
+        {
+          icon: BarChart3,
+          label: "Analytics",
+          hasSubmenu: true,
+          active: location.pathname.startsWith("/analytics"),
+          path: "/analytics",
+          subItems: [
+            { label: "Analytics", path: "/analytics", active: location.pathname === "/analytics" },
+            { label: "Report", path: "/analytics/report", active: isActive("/analytics/report") },
+          ],
+        },
+        {
+          icon: TrendingUp,
+          label: "Marketing",
+          active: isActive("/marketing"),
+          path: "/marketing",
+        },
+      ],
+    },
+    {
+      group: "System",
+      items: [
+        {
+          icon: Box,
+          label: "CMS",
+          active: isActive("/cms"),
+          path: "/cms",
+        },
+        {
+          icon: Bell,
+          label: "CRM",
+          active: isActive("/crm"),
+          path: "/crm",
+        },
+        {
+          icon: Box,
+          label: "Plugins",
+          active: isActive("/plugins"),
+          path: "/plugins",
+        },
+        {
+          icon: Users2,
+          label: "Staff",
+          hasSubmenu: true,
+          active: location.pathname.startsWith("/staff"),
+          path: "/staff",
+          subItems: [
+            { label: "Roles", path: "/staff/roles", active: isActive("/staff/roles") },
+            { label: "List of Staff", path: "/staff", active: location.pathname === "/staff" },
+          ],
+        },
+        {
+          icon: Settings,
+          label: "Global Settings",
+          active: isActive("/global-settings"),
+          path: "/global-settings",
+        },
+      ],
+    },
+  ];
+
+  const allItems = sections.flatMap((s) => s.items);
 
   const toggleSubmenu = (label: string) => {
     setExpandedItems((prev) =>
-      prev.includes(label)
-        ? prev.filter((item) => item !== label)
-        : [...prev, label],
+      prev.includes(label) ? prev.filter((i) => i !== label) : [...prev, label],
+    );
+  };
+
+  const NavItem = ({
+    item,
+    onNavigate,
+  }: {
+    item: SidebarItem;
+    onNavigate?: () => void;
+  }) => {
+    const isExpanded = expandedItems.includes(item.label);
+    const hasActiveSubItem = item.subItems?.some((s) => s.active);
+    const isActive = item.active || hasActiveSubItem;
+
+    return (
+      <div>
+        <button
+          onClick={() => {
+            if (item.hasSubmenu) toggleSubmenu(item.label);
+            if (item.path) {
+              navigate(item.path);
+              onNavigate?.();
+            }
+          }}
+          title={sidebarCollapsed ? item.label : undefined}
+          className={`
+            w-full flex items-center gap-2.5 px-3 rounded-lg text-left transition-all duration-150
+            h-9 text-[12.5px] font-medium
+            ${isActive
+              ? "bg-brand-500 text-white shadow-sm"
+              : "text-dashboard-neutral-07 hover:bg-surface-muted hover:text-brand-500"
+            }
+            ${sidebarCollapsed ? "justify-center px-0" : ""}
+          `}
+        >
+          <item.icon size={15} strokeWidth={1.6} className="shrink-0" />
+          {!sidebarCollapsed && (
+            <>
+              <span className="flex-1 truncate">{item.label}</span>
+              {item.hasSubmenu && (
+                <ChevronDown
+                  size={13}
+                  className={`shrink-0 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
+                />
+              )}
+            </>
+          )}
+        </button>
+
+        <AnimatePresence initial={false}>
+          {item.subItems && isExpanded && !sidebarCollapsed && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="ml-[22px] mt-0.5 space-y-0.5 relative">
+                <div
+                  className="absolute left-0 top-0 w-px bg-surface-border"
+                  style={{ height: `${item.subItems.length * 34 - 8}px` }}
+                />
+                {item.subItems.map((sub, si) => (
+                  <motion.button
+                    key={si}
+                    initial={{ x: -4, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: si * 0.03, duration: 0.12 }}
+                    onClick={() => { navigate(sub.path); onNavigate?.(); }}
+                    className={`
+                      w-full flex items-center pl-4 pr-3 h-[34px] rounded-md text-left text-[12px] transition-all
+                      ${sub.active
+                        ? "bg-brand-50 text-brand-600 font-semibold"
+                        : "text-gray-500 hover:bg-surface-muted hover:text-brand-500"
+                      }
+                    `}
+                  >
+                    {sub.label}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     );
   };
 
   return (
     <>
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile overlay */}
       {showMobileSidebar && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 lg:hidden">
-          <div className="fixed z-50 left-0 top-0 h-full w-64 bg-dashboard-bg transform transition-transform">
-            <div className="flex items-center justify-between p-4 border-b">
-              <div className="flex items-center justify-center">
-                <LogoWebsite />
-              </div>
-              <button
-                onClick={() => setShowMobileSidebar(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <X size={20} />
+        <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setShowMobileSidebar(false)}>
+          <div
+            className="fixed left-0 top-0 h-full w-[220px] bg-white border-r border-surface-border flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-4 h-[52px] border-b border-surface-border shrink-0">
+              <LogoWebsite />
+              <button onClick={() => setShowMobileSidebar(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={16} />
               </button>
             </div>
-            <nav className="p-4 space-y-2 overflow-y-scroll scrollbar-hide h-[55%] overflow-x-hidden">
-              {sidebarItems.map((item, index) => (
-                <div key={index}>
-                  <button
-                    onClick={() => {
-                      if (item.hasSubmenu) {
-                        toggleSubmenu(item.label);
-                      }
-                      if (item.path) {
-                        navigate(item.path);
-                        setShowMobileSidebar(false);
-                      }
-                    }}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors font-plus-jakarta text-base font-medium
-                      ${
-                        item.active
-                          ? "bg-dashboard-primary text-white"
-                          : "text-dashboard-neutral-07 hover:bg-gray-100"
-                      }
-                    `}
-                  >
-                    <item.icon size={20} strokeWidth={1.5} />
-                    <span className="flex-1">{item.label}</span>
-                    {item.hasSubmenu && (
-                      <ChevronDown
-                        size={16}
-                        className={`transition-transform ${
-                          expandedItems.includes(item.label)
-                            ? "rotate-0"
-                            : "rotate-90"
-                        }`}
-                      />
-                    )}
-                  </button>
-
-                  {/* Mobile Submenu */}
-                  {item.subItems && expandedItems.includes(item.label) && (
-                    <div className="ml-9 space-y-1 mt-2">
-                      {item.subItems.map((subItem, subIndex) => (
-                        <button
-                          key={subIndex}
-                          onClick={() => {
-                            navigate(subItem.path);
-                            setShowMobileSidebar(false);
-                          }}
-                          className={`
-                            w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-colors font-geist text-sm tracking-tight
-                            ${
-                              subItem.active
-                                ? "bg-dashboard-primary text-white"
-                                : "text-gray-600 hover:bg-gray-100"
-                            }
-                          `}
-                        >
-                          {subItem.label}
-                        </button>
-                      ))}
-                    </div>
+            <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-hide">
+              {sections.map((section, si) => (
+                <div key={si}>
+                  {section.group && (
+                    <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-widest text-gray-400">
+                      {section.group}
+                    </p>
                   )}
+                  <div className="space-y-0.5">
+                    {section.items.map((item, ii) => (
+                      <NavItem key={ii} item={item} onNavigate={() => setShowMobileSidebar(false)} />
+                    ))}
+                  </div>
                 </div>
               ))}
             </nav>
-            <div className="p-4 mt-auto">
+            <div className="px-2 py-3 border-t border-surface-border shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-plus-jakarta text-base font-medium"
+                className="w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-red-500 hover:bg-red-50 transition-colors text-[12.5px] font-medium"
               >
-                <LogOut size={20} strokeWidth={1.5} />
-                <span className="">Logout</span>
+                <LogOut size={15} strokeWidth={1.6} />
+                <span>Logout</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Desktop Sidebar */}
+      {/* Desktop sidebar */}
       <div
-        className={`relative hidden lg:flex flex-col gap-1 h-screen bg-dashboard-bg transition-all overflow-hidden duration-300 ${sidebarCollapsed ? "w-20" : "w-64"} ${className}`}
+        className={`relative hidden lg:flex flex-col h-screen bg-white border-r border-surface-border transition-all duration-300 shrink-0 ${sidebarCollapsed ? "w-[60px]" : "w-[220px]"} ${className}`}
       >
         {/* Logo */}
-        <div className="px-4 py-[26px]">
-          <div className="flex items-center justify-center">
-            <LogoWebsite />
-          </div>
+        <div className={`flex items-center h-[52px] border-b border-surface-border shrink-0 ${sidebarCollapsed ? "justify-center px-2" : "px-4"}`}>
+          {!sidebarCollapsed ? <LogoWebsite /> : <Grid3X3 size={18} className="text-brand-500" />}
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-4 space-y-2 pt-5 z-20 overflow-y-scroll scrollbar-hide overflow-x-hidden">
-          {sidebarItems.map((item, index) => {
-            const isExpanded = expandedItems.includes(item.label);
-            const hasActiveSubItem = item.subItems?.some(
-              (subItem) => subItem.active,
-            );
-
-            return (
-              <>
-                <div key={index} className="space-y-2">
-                  <button
-                    onClick={() => {
-                      if (item.hasSubmenu) {
-                        toggleSubmenu(item.label);
-                      }
-                      if (item.path) {
-                        navigate(item.path);
-                      }
-                    }}
-                    className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-150 font-plus-jakarta text-base font-medium
-                    ${
-                      item.active || hasActiveSubItem
-                        ? "bg-dashboard-primary text-white shadow-sm shadow-dashboard-primary/20"
-                        : "text-dashboard-neutral-07 hover:bg-gray-100 hover:text-dashboard-primary hover:translate-x-0.5"
-                    }
-                    ${sidebarCollapsed ? "justify-center" : ""}
-                  `}
-                  >
-                    <span>
-                      <item.icon size={20} strokeWidth={1.5} />
-                    </span>
-                    {!sidebarCollapsed && (
-                      <>
-                        <span className="flex-1">{item.label}</span>
-                        {item.hasSubmenu && (
-                          <ChevronDown
-                            size={16}
-                            className={`transition-transform ${
-                              isExpanded ? "rotate-0" : "rotate-90"
-                            }`}
-                          />
-                        )}
-                      </>
-                    )}
-                  </button>
-
-                  {/* Submenu */}
-                  <AnimatePresence initial={false}>
-                  {item.subItems && isExpanded && !sidebarCollapsed && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="overflow-hidden"
-                    >
-                    <div className="ml-9 space-y-1 relative pt-1">
-                      {/* Tree Lines */}
-                      <div
-                        className="absolute -left-[13px] top-0 w-[13px]"
-                        style={{ height: `${item.subItems.length * 40 + 4}px` }}
-                      >
-                        <div
-                          className="absolute left-0 top-0 w-[2px] border-l border-[#E7E7E7]"
-                          style={{ height: `${item.subItems.length * 40 - 10}px` }}
-                        />
-                        {item.subItems.map((_, subIndex) => (
-                          <div
-                            key={subIndex}
-                            className="absolute left-0 w-[13px] h-[9px] border-l border-b border-[#E7E7E7] rounded-bl-lg"
-                            style={{ top: `${14 + subIndex * 40}px` }}
-                          />
-                        ))}
-                      </div>
-
-                      {item.subItems.map((subItem, subIndex) => (
-                        <motion.button
-                          key={subIndex}
-                          initial={{ x: -6, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: subIndex * 0.04, duration: 0.15 }}
-                          onClick={() => navigate(subItem.path)}
-                          className={`
-                          w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-all font-geist text-sm tracking-tight
-                          ${
-                            subItem.active
-                              ? "bg-dashboard-primary text-white shadow-sm"
-                              : "text-gray-600 hover:bg-gray-100 hover:text-dashboard-primary"
-                          }
-                        `}
-                        >
-                          {subItem.label}
-                        </motion.button>
-                      ))}
-                    </div>
-                    </motion.div>
-                  )}
-                  </AnimatePresence>
-                </div>
-              </>
-            );
-          })}
+        {/* Nav */}
+        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-hide overflow-x-hidden">
+          {sections.map((section, si) => (
+            <div key={si}>
+              {section.group && !sidebarCollapsed && (
+                <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-widest text-gray-400">
+                  {section.group}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {section.items.map((item, ii) => (
+                  <NavItem key={ii} item={item} />
+                ))}
+              </div>
+            </div>
+          ))}
         </nav>
 
-        {/* Divider */}
-        {!sidebarCollapsed && (
-          <div className="px-4 py-2">
-            <div className="h-px bg-dashboard-stroke w-full" />
-          </div>
-        )}
-
         {/* Logout */}
-        <div className="p-4 z-50 bg-dashboard-bg">
+        <div className={`px-2 py-3 border-t border-surface-border shrink-0`}>
           <button
             onClick={handleLogout}
-            className={`
-              w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors font-plus-jakarta text-base font-medium
-              ${sidebarCollapsed ? "justify-center" : ""}
-            `}
+            title={sidebarCollapsed ? "Logout" : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-red-500 hover:bg-red-50 transition-colors text-[12.5px] font-medium ${sidebarCollapsed ? "justify-center px-0" : ""}`}
           >
-            <LogOut size={20} strokeWidth={1.5} />
-            {!sidebarCollapsed && <span className="">Logout</span>}
+            <LogOut size={15} strokeWidth={1.6} className="shrink-0" />
+            {!sidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
 
-        {/* Toggle Button */}
+        {/* Collapse toggle */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute right-[-12px] top-20 z-10 bg-white border border-gray-200 rounded-full p-1 shadow-md hover:shadow-lg hover:scale-110 transition-all"
+          className="absolute -right-3 top-[60px] z-10 bg-white border border-surface-border rounded-full p-0.5 shadow-sm hover:shadow-md transition-all"
         >
           <ChevronDown
-            size={14}
-            className={`transform transition-transform duration-300 ${sidebarCollapsed ? "rotate-90" : "-rotate-90"}`}
+            size={12}
+            className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-[-90deg]" : "rotate-90"}`}
           />
         </button>
       </div>
-
-     
     </>
   );
 };
