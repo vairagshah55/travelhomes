@@ -12,12 +12,12 @@ export default defineConfig({
       // Forward all API requests to the admin backend server in dev
       "/api": {
         // target:"https://travel-b.erpbuz.com/",
-        target: "http://localhost:3002",
+        target: "http://localhost:3001",
         changeOrigin: true,
       },
       "/uploads": {
         // target:"https://travel-b.erpbuz.com/",
-        target: "http://localhost:3002",
+        target: "http://localhost:3001",
         changeOrigin: true,
       },
     },

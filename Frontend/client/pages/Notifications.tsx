@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import toast from "react-hot-toast";
+import { TabStrip, EmptyState } from "@/components/vendor/ui";
 
 const NOTIFICATIONS_KEY = ["notifications", "list", "vendor"] as const;
 
@@ -141,30 +142,15 @@ const Notifications = () => {
               </div>
 
               {/* Filter Tabs */}
-              <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  data-active={activeFilter === "all" ? "true" : "false"}
-                  className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
-                    activeFilter === "all"
-                      ? "bg-dashboard-primary text-white"
-                      : "text-dashboard-heading hover:text-dashboard-primary"
-                  } motion-tab-trigger`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setActiveFilter("unread")}
-                  data-active={activeFilter === "unread" ? "true" : "false"}
-                  className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
-                    activeFilter === "unread"
-                      ? "bg-dashboard-primary text-white"
-                      : "text-dashboard-heading hover:text-dashboard-primary"
-                  } motion-tab-trigger`}
-                >
-                  Unread
-                </button>
-              </div>
+              <TabStrip
+                tabs={[
+                  { key: "all", label: "All" },
+                  { key: "unread", label: "Unread" },
+                ]}
+                activeKey={activeFilter}
+                onChange={setActiveFilter}
+                className="border-b-0"
+              />
             </div>
 
             <div className="flex items-center gap-2">
@@ -273,20 +259,15 @@ const Notifications = () => {
 
           {/* Empty State */}
           {!loading && filteredNotifications.length === 0 && (
-            <div
-              data-animate="section"
-              className="flex flex-col items-center justify-center py-16 text-center motion-section-reveal"
-            >
-              <Bell size={48} className="text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-dashboard-heading font-geist mb-2">
-                No notifications
-              </h3>
-              <p className="text-dashboard-body font-plus-jakarta">
-                {activeFilter === "unread"
-                  ? "You don't have any unread notifications"
-                  : "You don't have any notifications yet"}
-              </p>
-            </div>
+            <EmptyState
+              icon={Bell}
+              title="No notifications"
+              description={
+                activeFilter === "unread"
+                  ? "You don't have any unread notifications."
+                  : "You don't have any notifications yet."
+              }
+            />
           )}
       </div>
 

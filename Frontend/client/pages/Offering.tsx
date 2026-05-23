@@ -18,6 +18,7 @@ import {
   WHITE,
   SURFACE,
 } from "@/components/offering";
+import { TabStrip, EmptyState } from "@/components/vendor/ui";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -120,59 +121,11 @@ const Offering = () => {
                 </span>
               </div>
               {/* Tabs */}
-              <div
-                style={{
-                  display: "flex",
-                  gap: 4,
-                  backgroundColor: SURFACE,
-                  borderRadius: 12,
-                  padding: 3,
-                }}
-              >
-                {tabs.map((tab) => {
-                  const active = activeTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setActiveTab(tab.key)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "8px 16px",
-                        borderRadius: 9,
-                        border: `1.5px solid ${active ? `${TEAL}30` : "transparent"}`,
-                        backgroundColor: active ? WHITE : "transparent",
-                        color: active ? TEAL : GRAY_400,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                        boxShadow: active ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
-                      }}
-                    >
-                      {tab.label}
-                      {tab.count > 0 && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            fontWeight: 700,
-                            padding: "2px 8px",
-                            borderRadius: 99,
-                            minWidth: 20,
-                            textAlign: "center",
-                            backgroundColor: active ? TEAL : GRAY_200,
-                            color: active ? BLACK : GRAY_400,
-                          }}
-                        >
-                          {tab.count}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              <TabStrip
+                tabs={tabs.map((t) => ({ key: t.key, label: t.label, count: t.count }))}
+                activeKey={activeTab}
+                onChange={(k) => setActiveTab(k as "approved" | "pending")}
+              />
             </div>
 
             <button
@@ -207,78 +160,20 @@ const Offering = () => {
             {loading ? (
               <UniqueStaysSkeleton />
             ) : offers.length === 0 ? (
-              /* Empty state */
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center px-4">
-                <div
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: 20,
-                    backgroundColor: TEAL_BG,
-                    border: "1.5px solid rgba(7,228,228,0.25)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginBottom: 20,
-                  }}
-                >
-                  <Award size={32} color={TEAL} />
-                </div>
-                <h3 style={{ fontSize: 18, fontWeight: 800, color: BLACK, marginBottom: 8 }}>
-                  {activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
-                </h3>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: GRAY_400,
-                    maxWidth: 320,
-                    marginBottom: 20,
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {activeTab === "approved"
+              <EmptyState
+                icon={Award}
+                title={activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
+                description={
+                  activeTab === "approved"
                     ? "Once the admin approves your submitted offerings, they'll appear here."
-                    : "Offerings you create go into pending review first. Create one to get started."}
-                </p>
-                {activeTab === "approved" ? (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("pending")}
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: TEAL,
-                      backgroundColor: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                    }}
-                  >
-                    View pending offerings →
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/offering/add")}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      height: 42,
-                      padding: "0 22px",
-                      borderRadius: 13,
-                      border: "none",
-                      backgroundColor: TEAL,
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: BLACK,
-                      cursor: "pointer",
-                      boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
-                    }}
-                  >
-                    <Plus size={15} /> Create your first offering
-                  </button>
-                )}
-              </div>
+                    : "Offerings you create go into pending review first. Create one to get started."
+                }
+                actionLabel={activeTab === "approved" ? "View pending offerings" : "Create your first offering"}
+                onAction={() =>
+                  activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
+                }
+                className="min-h-[400px]"
+              />
             ) : (
               <>
                 <div

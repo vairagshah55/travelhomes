@@ -15,6 +15,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import OnboardingRedirect from "./components/OnboardingRedirect";
+import { DashboardLayoutShell } from "./components/DashboardLayout";
 import SEOMeta from "./components/SEOMeta";
 import ScrollToTop from "./components/ScrollToTop";
 import RouteFallback from "./components/RouteFallback";
@@ -319,97 +320,143 @@ const App = () => {
                     }
                   />
 
-                  {/* Protected routes */}
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <OnboardingRedirect>
-                          <Dashboard />
-                        </OnboardingRedirect>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/bookings"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Bookings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/bookings/details"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <BookingDetails />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/offering"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Offering />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/offering/add"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <AddOfferings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/offering/:id"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <OfferingDetails />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/offering/:id/edit"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <EditOfferings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/revenue"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Revenue />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/marketing"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Marketing />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/marketing/offers"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Offers />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/analytics"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <Analytics />
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* Dashboard routes — share a persistent layout shell so the
+                      sidebar/header stay mounted while only the page content swaps.
+                      Inner ProtectedRoute on each child enforces role-specific access. */}
+                  <Route element={<ProtectedRoute><DashboardLayoutShell /></ProtectedRoute>}>
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <OnboardingRedirect>
+                            <Dashboard />
+                          </OnboardingRedirect>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Bookings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings/details"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <BookingDetails />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/offering"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Offering />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/offering/add"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <AddOfferings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/offering/:id"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <OfferingDetails />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/offering/:id/edit"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <EditOfferings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/revenue"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Revenue />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/marketing"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Marketing />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/marketing/offers"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Offers />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/analytics"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <Analytics />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings"
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings/account"
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/settings/preferences"
+                      element={
+                        <ProtectedRoute>
+                          <Settings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/profile"
+                      element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/notifications"
+                      element={
+                        <ProtectedRoute>
+                          <Notifications />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Route>
+
+                  {/* Standalone protected routes — full-screen pages without the dashboard shell */}
                   <Route
                     path="/chat"
                     element={
@@ -431,38 +478,6 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["vendor"]}>
                         <VendorChat />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings/account"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/settings/preferences"
-                    element={
-                      <ProtectedRoute>
-                        <Settings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
                       </ProtectedRoute>
                     }
                   />
@@ -511,14 +526,6 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <Help />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/notifications"
-                    element={
-                      <ProtectedRoute>
-                        <Notifications />
                       </ProtectedRoute>
                     }
                   />

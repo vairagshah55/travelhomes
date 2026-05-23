@@ -12,6 +12,7 @@ import { Eye, MousePointer, ClipboardCheck, ListChecks, Wallet, TrendingUp } fro
 import DashboardLayout from "@/components/DashboardLayout";
 import { vendorAnalyticsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
+import { ChartTooltip } from "@/components/vendor/ui";
 import {
   AreaChart,
   Area,
@@ -273,11 +274,7 @@ const Analytics = () => {
               width={30}
             />
             <Tooltip
-              contentStyle={{
-                borderRadius: "8px",
-                border: "none",
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-              }}
+              content={<ChartTooltip valuePrefix={dataKey === "earnings" ? "₹" : ""} />}
             />
             <Area
               type="monotone"

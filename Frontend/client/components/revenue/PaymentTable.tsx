@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { CustomPagination } from "@/components/CustomPagination";
 import { formatDate } from "@/utils/formateTime";
 import { TEAL, BLACK, GRAY_500, GRAY_400, WHITE, SURFACE, GREEN, AMBER } from "./tokens";
+import { StatusBadge } from "@/components/vendor/ui";
 
 /* ─── Skeleton ────────────────────────────────────────────────────────────── */
 const Sk = ({ className = "" }: { className?: string }) => (
@@ -138,17 +139,7 @@ export const PaymentTable: React.FC<{ loading: boolean; data: PaymentRecord[] }>
                   <td style={{ padding: "12px 16px", fontWeight: 500, color: GRAY_500, whiteSpace: "nowrap" }}>{p.fullName}</td>
                   <td style={{ padding: "12px 16px", fontWeight: 500, color: GRAY_500, whiteSpace: "nowrap" }}>{formatDate(p.receiptDate)}</td>
                   <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
-                    <span
-                      style={{
-                        display: "inline-block", fontSize: 11, fontWeight: 700,
-                        padding: "3px 10px", borderRadius: 99,
-                        backgroundColor: p.status === "Paid" ? "#f0fdf4" : "#fffbeb",
-                        color: p.status === "Paid" ? GREEN : AMBER,
-                        border: `1px solid ${p.status === "Paid" ? `${GREEN}25` : `${AMBER}25`}`,
-                      }}
-                    >
-                      {p.status}
-                    </span>
+                    <StatusBadge status={p.status} />
                   </td>
                 </tr>
               ))

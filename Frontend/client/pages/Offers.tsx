@@ -20,6 +20,7 @@ import { offersApi, type OfferDTO, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
+import { TabStrip, EmptyState, ConfirmModal } from "@/components/vendor/ui";
 
 const Offers = () => {
   const navigate = useNavigate();
@@ -152,22 +153,16 @@ const Offers = () => {
             <h2 className="text-[15px] font-bold text-gray-900 dark:text-white tracking-tight">
               Offers
             </h2>
-            <div className="flex items-center gap-2">
-              {(["pending", "approved", "cancelled"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t)}
-                  className={cn(
-                    "px-4 py-1.5 text-sm font-semibold rounded-full transition-all duration-150",
-                    tab === t
-                      ? "bg-[#185FA5] text-white shadow-sm shadow-blue-500/25"
-                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-                  )}
-                >
-                  {t[0].toUpperCase() + t.slice(1)}
-                </button>
-              ))}
-            </div>
+            <TabStrip
+              tabs={[
+                { key: "pending", label: "Pending" },
+                { key: "approved", label: "Approved" },
+                { key: "cancelled", label: "Cancelled" },
+              ]}
+              activeKey={tab}
+              onChange={(k) => setTab(k as "pending" | "approved" | "cancelled")}
+              className="border-b-0"
+            />
           </div>
 
           {/* Table */}
@@ -186,23 +181,17 @@ const Offers = () => {
               {loading ? (
                 <UniqueStaysSkeleton />
               ) : items.length === 0 ? (
-                <div className="py-20 flex flex-col items-center gap-4 text-gray-400">
-                  <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center">
-                    <Tag size={22} className="text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
-                  </div>
-                  <div className="text-center space-y-1">
-                    <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                      No {tab} offers
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-gray-600">
-                      {tab === "pending"
-                        ? "Offers awaiting approval will appear here"
-                        : tab === "approved"
-                          ? "Approved offers will appear here"
-                          : "Cancelled offers will appear here"}
-                    </p>
-                  </div>
-                </div>
+                <EmptyState
+                  icon={Tag}
+                  title={`No ${tab} offers`}
+                  description={
+                    tab === "pending"
+                      ? "Offers awaiting approval will appear here."
+                      : tab === "approved"
+                        ? "Approved offers will appear here."
+                        : "Cancelled offers will appear here."
+                  }
+                />
               ) : (
                 items.map((o, idx) => (
                   <motion.div
@@ -370,54 +359,20 @@ const Offers = () => {
         )}
       </AnimatePresence>
 
-      {/* Confirm Delete */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white">Delete offer?</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    This offer will be permanently removed. This cannot be undone.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3 justify-end pt-1">
-                <button
-                  onClick={() => setConfirmDelete(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    doDeleteOffer(confirmDelete);
-                    setConfirmDelete(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmModal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={() => {
+          if (confirmDelete) {
+            doDeleteOffer(confirmDelete);
+            setConfirmDelete(null);
+          }
+        }}
+        title="Delete offer?"
+        description="This offer will be permanently removed. This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </DashboardLayout>
   );
 };
