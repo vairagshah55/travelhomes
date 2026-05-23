@@ -1,0 +1,217 @@
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus, Award } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import DashboardLayout from "@/components/DashboardLayout";
+import { offersApi, type OfferDTO } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
+import { CustomPagination } from "@/components/CustomPagination";
+import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
+import {
+  OfferingCard,
+  OfferPanel,
+  TEAL,
+  TEAL_BG,
+  BLACK,
+  GRAY_400,
+  GRAY_200,
+  WHITE,
+  SURFACE,
+} from "@/components/offering";
+import { TabStrip, EmptyState } from "@/components/shared";
+
+const ITEMS_PER_PAGE = 12;
+
+const Offering = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = (searchParams.get("tab") as "approved" | "pending") || "approved";
+  const [activeTab, setActiveTab] = useState<"approved" | "pending">(initialTab);
+  const [page, setPage] = useState(1);
+  const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const { user, token: authToken } = useAuth();
+  const queryClient = useQueryClient();
+  const token = authToken ?? undefined;
+
+  // Panel
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [editing, setEditing] = useState<OfferDTO | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab]);
+  const enabled = !!user?.id;
+
+  // Two parallel queries — one per status. The legacy code refetched
+  // BOTH every 100s; useQuery's refetchInterval gives us the same
+  // polling cadence and dedupes on tab switches.
+  const approvedQuery = useQuery<OfferDTO[]>({
+    queryKey: ["offerings", "approved", user?.id],
+    enabled,
+    refetchInterval: 100_000,
+    queryFn: async () => {
+      const res = await offersApi.list("approved", token, { mine: true });
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+  const pendingQuery = useQuery<OfferDTO[]>({
+    queryKey: ["offerings", "pending", user?.id],
+    enabled,
+    refetchInterval: 100_000,
+    queryFn: async () => {
+      const res = await offersApi.list("pending", token, { mine: true });
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+
+  const approvedOffers = approvedQuery.data ?? [];
+  const pendingOffers = pendingQuery.data ?? [];
+  const loading = approvedQuery.isLoading || pendingQuery.isLoading;
+
+  const reload = () => {
+    queryClient.invalidateQueries({ queryKey: ["offerings"] });
+  };
+
+  const offers = activeTab === "approved" ? approvedOffers : pendingOffers;
+  const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
+  const paginated = offers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  const onDelete = async (id: string) => {
+    await offersApi.remove(id, token);
+    reload();
+    setShowDropdown(null);
+  };
+  const onEdit = (offer: OfferDTO) => {
+    setEditing(offer);
+    setPanelOpen(true);
+  };
+  const onSaved = () => {
+    reload();
+    setPanelOpen(false);
+  };
+
+  const tabs: { key: "approved" | "pending"; label: string; count: number }[] = [
+    { key: "approved", label: "Approved", count: approvedOffers.length },
+    { key: "pending", label: "Pending", count: pendingOffers.length },
+  ];
+
+  return (
+    <>
+      <DashboardLayout
+        title="Offerings"
+        outerClassName="overflow-hidden"
+        contentClassName="flex-1 flex flex-col overflow-hidden p-4 lg:p-5"
+      >
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* ── Toolbar ── */}
+          <div className="flex items-center justify-between pb-4">
+            <div>
+              <div className="flex items-center gap-2.5 mb-2">
+                <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    letterSpacing: "0.12em",
+                    textTransform: "uppercase",
+                    color: GRAY_400,
+                  }}
+                >
+                  Manage
+                </span>
+              </div>
+              {/* Tabs */}
+              <TabStrip
+                tabs={tabs.map((t) => ({ key: t.key, label: t.label, count: t.count }))}
+                activeKey={activeTab}
+                onChange={(k) => setActiveTab(k as "approved" | "pending")}
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={() => navigate("/offering/add")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                height: 42,
+                padding: "0 20px",
+                borderRadius: 13,
+                border: "none",
+                backgroundColor: TEAL,
+                fontSize: 13,
+                fontWeight: 700,
+                color: BLACK,
+                cursor: "pointer",
+                boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
+                transition: "all 0.15s",
+              }}
+            >
+              <Plus size={16} strokeWidth={2.5} /> Add Offering
+            </button>
+          </div>
+
+          {/* ── Grid ── */}
+          <div
+            className="flex-1 overflow-y-auto scrollbar-hide"
+            onClick={() => setShowDropdown(null)}
+          >
+            {loading ? (
+              <UniqueStaysSkeleton />
+            ) : offers.length === 0 ? (
+              <EmptyState
+                icon={Award}
+                title={activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
+                description={
+                  activeTab === "approved"
+                    ? "Once the admin approves your submitted offerings, they'll appear here."
+                    : "Offerings you create go into pending review first. Create one to get started."
+                }
+                actionLabel={activeTab === "approved" ? "View pending offerings" : "Create your first offering"}
+                onAction={() =>
+                  activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
+                }
+                className="min-h-[400px]"
+              />
+            ) : (
+              <>
+                <div
+                  key={activeTab}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-6"
+                >
+                  {paginated.map((listing) => (
+                    <OfferingCard
+                      key={listing._id}
+                      listing={listing}
+                      showDropdown={showDropdown}
+                      onToggleDropdown={(id) => setShowDropdown(showDropdown === id ? null : id)}
+                      onDelete={onDelete}
+                      onEdit={onEdit}
+                      onCardClick={(id) => navigate(`/offering/${id}`)}
+                    />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <CustomPagination
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={setPage}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </DashboardLayout>
+      <OfferPanel
+        open={panelOpen}
+        initial={editing}
+        onOpenChange={setPanelOpen}
+        onSaved={onSaved}
+      />
+    </>
+  );
+};
+
+export default Offering;

@@ -2,22 +2,26 @@
   "name": "travelhomes",
   "private": true,
   "version": "0.0.0",
-  "description": "TravelHomes monorepo: Frontend (user app), Admin (admin panel), Server (API).",
+  "description": "TravelHomes monorepo (npm workspaces): apps/web (unified user + admin app), Server (API).",
   "engines": {
     "node": ">=20.0.0"
   },
+  "workspaces": [
+    "apps/*",
+    "Server"
+  ],
   "scripts": {
-    "dev:frontend": "npm --prefix Frontend run dev",
-    "dev:admin": "npm --prefix Admin run dev",
+    "dev": "npm --prefix apps/web run dev",
+    "dev:web": "npm --prefix apps/web run dev",
     "dev:server": "npm --prefix Server run dev",
-    "build:frontend": "npm --prefix Frontend run build",
-    "build:admin": "npm --prefix Admin run build",
-    "test": "npm --prefix Frontend test && npm --prefix Admin test",
+    "build": "npm --prefix apps/web run build",
+    "build:web": "npm --prefix apps/web run build",
+    "typecheck": "npm --prefix apps/web run typecheck",
+    "typecheck:web": "npm --prefix apps/web run typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "typecheck": "npm --prefix Frontend run typecheck && npm --prefix Admin run typecheck",
     "prepare": "husky"
   },
   "devDependencies": {
