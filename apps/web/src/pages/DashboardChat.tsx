@@ -502,7 +502,7 @@ const DashboardChat = () => {
                 className={`relative flex group ${msg.me ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-sm p-3 rounded-xl ${msg.me ? "bg-[#1E3A8A] text-white" : "bg-gray-100 text-gray-800 shadow"}`}
+                  className={`max-w-sm p-3 rounded-xl ${msg.me ? "bg-[#0F5C8A] text-white" : "bg-gray-100 text-gray-800 shadow"}`}
                 >
                   {!msg.me && (
                     <p className="text-xs text-gray-500 mb-1">{msg.sender}</p>
@@ -670,7 +670,7 @@ const DashboardChat = () => {
 
             <button
               onClick={handleSend}
-              className="bg-[#1E3A8A] text-white w-10 h-10 rounded-full flex items-center justify-center"
+              className="bg-[#0F5C8A] text-white w-10 h-10 rounded-full flex items-center justify-center"
             >
               <SendIcon />
             </button>

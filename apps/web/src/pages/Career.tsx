@@ -151,7 +151,7 @@ const Career = () => {
               placeholder="Search jobs..."
               className="flex-grow bg-transparent outline-none text-sm"
             />
-            <div className="flex items-center justify-center bg-[#1E3A8A] rounded-full h-8 w-8 cursor-pointer">
+            <div className="flex items-center justify-center bg-[#0F5C8A] rounded-full h-8 w-8 cursor-pointer">
               <SearchIcon className="text-white h-3 w-3" />
             </div>
           </div>
@@ -207,7 +207,7 @@ const Career = () => {
           ))}
           {/* <button
             onClick={() => handleOpenApply()}
-            className="ml-auto bg-[#1E3A8A] dark:bg-white dark:text-black text-white px-4 py-2 rounded-full text-sm"
+            className="ml-auto bg-[#0F5C8A] dark:bg-white dark:text-black text-white px-4 py-2 rounded-full text-sm"
           >
             Apply
           </button> */}
@@ -236,13 +236,13 @@ const Career = () => {
                   <div className="flex gap-2 mt-3 md:mt-0">
                     <button
                       onClick={() => handleOpenDetails(job)}
-                      className="px-5 py-2 bg-white dark:bg-black dark:text-white text-black text-sm rounded-full border border-gray-400 hover:bg-[#2D4DA8] hover:text-white transition flex items-center"
+                      className="px-5 py-2 bg-white dark:bg-black dark:text-white text-black text-sm rounded-full border border-gray-400 hover:bg-[#14709F] hover:text-white transition flex items-center"
                     >
                       View More <SlArrowDown className="ml-2 h-3 w-3" />
                     </button>
                     <button
                       onClick={() => handleOpenApply(job)}
-                      className="px-5 py-2 bg-[#1E3A8A] dark:bg-white dark:text-black text-white text-sm rounded-full border border-gray-400 hover:bg-[#2D4DA8] hover:text-white transition flex items-center"
+                      className="px-5 py-2 bg-[#0F5C8A] dark:bg-white dark:text-black text-white text-sm rounded-full border border-gray-400 hover:bg-[#14709F] hover:text-white transition flex items-center"
                     >
                       Apply
                     </button>
@@ -274,7 +274,7 @@ const Career = () => {
             </p>
             <button
               onClick={() => navigate("/about")}
-              className="bg-[#1E3A8A] dark:bg-white dark:text-black text-white rounded-full py-2 px-4 text-sm w-fit"
+              className="bg-[#0F5C8A] dark:bg-white dark:text-black text-white rounded-full py-2 px-4 text-sm w-fit"
             >
               Know More
             </button>
@@ -285,7 +285,7 @@ const Career = () => {
               <div
                 key={index}
                 className={`p-6 rounded-xl shadow-md text-center border dark:border-slate-300 transition ${
-                  index === 0 || index === 3 ? "bg-[#1E3A8A] text-white" : "bg-white text-gray-700"
+                  index === 0 || index === 3 ? "bg-[#0F5C8A] text-white" : "bg-white text-gray-700"
                 }`}
               >
                 <h3 className="font-semibold mb-2 text-lg">{value.title}</h3>
@@ -347,7 +347,7 @@ const Career = () => {
               <div className="mt-8 flex justify-end gap-4">
                 <button
                   onClick={() => setShowDetailsModal(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#2D4DA8] transition"
+                  className="px-6 py-2 border border-gray-300 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#14709F] transition"
                 >
                   Close
                 </button>
@@ -356,7 +356,7 @@ const Career = () => {
                     setShowDetailsModal(false);
                     handleOpenApply(selectedJobForDetails);
                   }}
-                  className="px-6 py-2 bg-[#1E3A8A] dark:bg-white dark:text-black text-white rounded-full text-sm font-medium hover:bg-[#2D4DA8] transition"
+                  className="px-6 py-2 bg-[#0F5C8A] dark:bg-white dark:text-black text-white rounded-full text-sm font-medium hover:bg-[#14709F] transition"
                 >
                   Apply Now
                 </button>

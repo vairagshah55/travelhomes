@@ -82,7 +82,7 @@ const MobileUserNav = () => {
 
       {/* Home Indicator for iPhones */}
       <div className="flex justify-center pb-2">
-        <div className="w-36 h-1 bg-[#1E3A8A] rounded-full"></div>
+        <div className="w-36 h-1 bg-[#0F5C8A] rounded-full"></div>
       </div>
     </div>
   );

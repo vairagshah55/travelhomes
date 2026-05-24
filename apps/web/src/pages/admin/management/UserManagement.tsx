@@ -253,7 +253,8 @@ const UserManagement = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/login");
+    sessionStorage.removeItem("adminToken");
+    navigate("/admin/login");
   };
 
   const tabs = [

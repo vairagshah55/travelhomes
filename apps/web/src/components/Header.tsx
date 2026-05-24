@@ -40,7 +40,7 @@ function FilterButton({
       onClick={onClick}
       className={`flex items-center gap-3 max-md:gap-1 px-4 py-2 rounded-full transition-colors ${
         active
-          ? "bg-[#1E3A8A] dark:bg-white dark:text-black text-white border border-black"
+          ? "bg-[#0F5C8A] dark:bg-white dark:text-black text-white border border-black"
           : "bg-white/10 text-gray-900 dark:bg-black dark:text-white hover:bg-gray-200 border border-gray-200"
       }`}
     >
@@ -152,12 +152,11 @@ function Header({
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <Button
-            variant="outline"
             className={`hidden md:flex ${
               isTransparent
-                ? "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50"
-                : "bg-white text-[#1E3A8A] border-[1.5px] border-[#1E3A8A] hover:bg-[#EEF2FB]"
-            } rounded-full px-4 md:px-4 h-10 shadow-sm transition-all duration-200`}
+                ? "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A]"
+                : "bg-[#0A4670] text-white border-0 hover:bg-[#0F5C8A]"
+            } rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
@@ -174,7 +173,7 @@ function Header({
                 className={`${
                   isTransparent
                     ? "bg-white/90 backdrop-blur-sm text-black hover:bg-white/100"
-                    : "bg-[#1E3A8A] text-white hover:bg-[#2D4DA8]"
+                    : "bg-[#0F5C8A] text-white hover:bg-[#14709F]"
                 } rounded-full px-4 md:px-6 h-10`}
               >
                 Register

@@ -505,7 +505,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
                   fontWeight: 700,
                   color: TEAL,
                   backgroundColor: TEAL_BG,
-                  border: "1px solid rgba(30, 58, 138, 0.30)",
+                  border: "1px solid rgba(15, 92, 138, 0.30)",
                   borderRadius: 99,
                   padding: "4px 14px",
                 }}

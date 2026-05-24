@@ -109,7 +109,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
               {/* Dashboard home icon always first */}
               <Link
                 to="/dashboard"
-                className="flex items-center text-gray-400 hover:text-[#1E3A8A] transition-colors duration-150"
+                className="flex items-center text-gray-400 hover:text-[#0F5C8A] transition-colors duration-150"
               >
                 <LayoutDashboard size={11} />
               </Link>
@@ -126,7 +126,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
                   ) : (
                     <Link
                       to={crumb.href}
-                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#1E3A8A] transition-colors duration-150 truncate"
+                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#0F5C8A] transition-colors duration-150 truncate"
                     >
                       {crumb.label}
                     </Link>
@@ -154,7 +154,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         {/* Switch to User */}
         <button
           onClick={handleSwitchToUser}
-          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-[#1E3A8A] text-white hover:bg-[#2D4DA8] transition-all duration-200 shadow-sm hover:shadow-md"
+          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-[#0F5C8A] text-white hover:bg-[#14709F] transition-all duration-200 shadow-sm hover:shadow-md"
         >
           Switch to User
         </button>

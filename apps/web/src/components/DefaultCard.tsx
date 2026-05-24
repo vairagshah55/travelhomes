@@ -93,7 +93,7 @@ function DefaultCard({
                 <Heart
                   className={`w-[26px] h-[26px] transition-all duration-200 ${
                     isLiked
-                      ? "fill-[#3E63D3] text-[#3E63D3] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
+                      ? "fill-[#1E88BA] text-[#1E88BA] drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]"
                       : "fill-black/40 text-white stroke-[2px] drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]"
                   }`}
                 />
@@ -104,12 +104,12 @@ function DefaultCard({
             <div className="pt-3 space-y-0.5">
               {/* Title + Rating */}
               <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-[15px] leading-tight text-[#0A1E3D] line-clamp-1">
+                <h3 className="font-semibold text-[15px] leading-tight text-[#0A2B40] line-clamp-1">
                   {item.title}
                 </h3>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <StarIcon className="w-[14px] h-[14px] fill-current text-[#0A1E3D]" />
-                  <span className="text-[14px] text-[#0A1E3D]">4.91</span>
+                  <StarIcon className="w-[14px] h-[14px] fill-current text-[#0A2B40]" />
+                  <span className="text-[14px] text-[#0A2B40]">4.91</span>
                 </div>
               </div>
 
@@ -119,7 +119,7 @@ function DefaultCard({
               </p>
 
               {/* Price */}
-              <p className="text-[14px] text-[#0A1E3D] pt-1.5">
+              <p className="text-[14px] text-[#0A2B40] pt-1.5">
                 {item.Maxprice && (
                   <span className="text-[#717171] line-through mr-1.5">
                     ₹{item.Maxprice}

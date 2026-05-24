@@ -197,7 +197,7 @@ export default function VacationRentalPlatform() {
                 placeholder="Search jobs..."
                 className="flex-grow bg-transparent outline-none text-sm"
               />
-              <div className="flex items-center justify-center bg-[#1E3A8A] rounded-full h-8 w-8 cursor-pointer">
+              <div className="flex items-center justify-center bg-[#0F5C8A] rounded-full h-8 w-8 cursor-pointer">
                 <SearchIcon className="text-white h-3 w-3" />
               </div>
             </div>
@@ -310,7 +310,7 @@ export default function VacationRentalPlatform() {
                 </ul>
 
                 <div className="flex justify-end gap-2 flex-wrap">
-                  <button className="px-4 py-2 bg-[#1E3A8A] text-white rounded-full">Apply</button>
+                  <button className="px-4 py-2 bg-[#0F5C8A] text-white rounded-full">Apply</button>
 
                   <button className="px-4 py-2 border border-gray-600 rounded-full">
                     Learn More
@@ -378,7 +378,7 @@ export default function VacationRentalPlatform() {
 
                 <Button
                   size="icon"
-                  className="h-12 w-12 rounded-full dark:bg-white dark:text-black bg-[#1E3A8A] text-white"
+                  className="h-12 w-12 rounded-full dark:bg-white dark:text-black bg-[#0F5C8A] text-white"
                   onClick={scrollRight}
                 >
                   <ArrowRight className="w-5 h-5" />
@@ -428,7 +428,7 @@ export default function VacationRentalPlatform() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-5 py-2 rounded-full text-sm font-bold capitalize transition-colors ${
                         activeTab === tab.id
-                          ? "bg-[#1E3A8A] text-white"
+                          ? "bg-[#0F5C8A] text-white"
                           : "text-black hover:bg-gray-100"
                       }`}
                     >

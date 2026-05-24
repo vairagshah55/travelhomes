@@ -171,18 +171,18 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
 
-        /* Midnight Indigo — primary brand palette */
+        /* Pacific Teal-Blue — coastal travel-magazine brand palette */
         ocean: {
-          50:  "#eef2fb",
-          100: "#dbe3f5",
-          200: "#b6c5ec",
-          300: "#7a99ee",
-          400: "#3e63d3",   /* mid accent, focus rings */
-          500: "#1e3a8a",   /* PRIMARY brand — CTAs */
-          600: "#2d4da8",   /* CTA hover (kept lighter than 500 to feel responsive) */
-          700: "#11295a",   /* footer, sidebar */
-          800: "#0a1e3d",   /* ink — hero bg, headings */
-          900: "#050f1f",   /* deepest */
+          50:  "#e8f2f8",
+          100: "#d0e4ef",
+          200: "#a8cce0",
+          300: "#67b2d8",
+          400: "#1e88ba",   /* mid accent, focus rings */
+          500: "#0f5c8a",   /* PRIMARY brand — CTAs */
+          600: "#14709f",   /* CTA hover (lighter than 500 = "lift on hover") */
+          700: "#0a4670",   /* footer, sidebar */
+          800: "#0a2b40",   /* ink — hero bg, headings */
+          900: "#061e2e",   /* deepest */
         },
 
         /* Champagne — premium luxury accent (use sparingly: badges, featured, ratings) */
@@ -198,7 +198,7 @@ export default {
         },
 
         /* Convenience aliases */
-        ink: "#0a1e3d",
+        ink: "#0a2b40",
 
         /* Legacy dashboard (keep working) */
         dashboard: {
@@ -303,10 +303,10 @@ export default {
         "th-ring":  "var(--th-shadow-ring)",
         "th-ring-error": "var(--th-shadow-ring-error)",
         /* Indigo theme shadows */
-        "blue-sm":   "0 2px 8px rgba(30,58,138,0.10)",
-        "blue-md":   "0 4px 16px rgba(30,58,138,0.15)",
-        "blue-lg":   "0 12px 40px rgba(30,58,138,0.20)",
-        "blue-glow": "0 0 24px rgba(62,99,211,0.35)",
+        "blue-sm":   "0 2px 8px rgba(15,92,138,0.10)",
+        "blue-md":   "0 4px 16px rgba(15,92,138,0.15)",
+        "blue-lg":   "0 12px 40px rgba(15,92,138,0.20)",
+        "blue-glow": "0 0 24px rgba(30,136,186,0.35)",
       },
 
       /* ─── TRANSITIONS ──────────────────────────────────── */

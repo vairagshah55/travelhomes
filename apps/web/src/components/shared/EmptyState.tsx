@@ -49,7 +49,7 @@ export function EmptyState({
           {secondaryLabel && onSecondary && (
             <button
               onClick={onSecondary}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#2D4DA8] rounded-full px-5 h-9 text-[13px] font-semibold transition-colors duration-150"
+              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#14709F] rounded-full px-5 h-9 text-[13px] font-semibold transition-colors duration-150"
             >
               {secondaryLabel}
             </button>

@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { type BookingData, type NewBookingForm } from "./api";
 import { SlidePanel } from "./SlidePanel";
 
-const TEAL       = "#1E3A8A";
-const TEAL_FOCUS = "rgba(30, 58, 138, 0.12)";
+const TEAL       = "#0F5C8A";
+const TEAL_FOCUS = "rgba(15, 92, 138, 0.12)";
 const BLACK      = "#131313";
 const GRAY_500   = "#6b6b6b";
 const GRAY_400   = "#9a9a9a";

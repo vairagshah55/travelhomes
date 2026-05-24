@@ -59,7 +59,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/login");
+    sessionStorage.removeItem("adminToken");
+    navigate("/admin/login");
   };
 
   const isActive = (path: string) =>
@@ -71,8 +72,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {
           icon: Grid3X3,
           label: "Dashboard",
-          active: location.pathname === "/dashboard",
-          path: "/dashboard",
+          active: location.pathname === "/admin/dashboard",
+          path: "/admin/dashboard",
         },
       ],
     },
@@ -83,26 +84,26 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           icon: FileTextIcon,
           label: "Management",
           hasSubmenu: true,
-          active: location.pathname.startsWith("/management"),
-          path: "/management/listing",
+          active: location.pathname.startsWith("/admin/management"),
+          path: "/admin/management/listing",
           subItems: [
-            { label: "Listing", path: "/management/listing", active: isActive("/management/listing") },
-            { label: "User", path: "/management/user", active: isActive("/management/user") },
-            { label: "Vendor", path: "/management/vendor", active: isActive("/management/vendor") },
-            { label: "Booking", path: "/management/booking", active: isActive("/management/booking") },
+            { label: "Listing", path: "/admin/management/listing", active: isActive("/admin/management/listing") },
+            { label: "User", path: "/admin/management/user", active: isActive("/admin/management/user") },
+            { label: "Vendor", path: "/admin/management/vendor", active: isActive("/admin/management/vendor") },
+            { label: "Booking", path: "/admin/management/booking", active: isActive("/admin/management/booking") },
           ],
         },
         {
           icon: CreditCard,
           label: "Payments",
-          active: isActive("/payments"),
-          path: "/payments",
+          active: isActive("/admin/payments"),
+          path: "/admin/payments",
         },
         {
           icon: ThumbsUp,
           label: "Help Desk",
-          active: isActive("/help-desk"),
-          path: "/help-desk",
+          active: isActive("/admin/help-desk"),
+          path: "/admin/help-desk",
         },
       ],
     },
@@ -113,18 +114,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           icon: BarChart3,
           label: "Analytics",
           hasSubmenu: true,
-          active: location.pathname.startsWith("/analytics"),
-          path: "/analytics",
+          active: location.pathname.startsWith("/admin/analytics"),
+          path: "/admin/analytics",
           subItems: [
-            { label: "Analytics", path: "/analytics", active: location.pathname === "/analytics" },
-            { label: "Report", path: "/analytics/report", active: isActive("/analytics/report") },
+            { label: "Analytics", path: "/admin/analytics", active: location.pathname === "/admin/analytics" },
+            { label: "Report", path: "/admin/analytics/report", active: isActive("/admin/analytics/report") },
           ],
         },
         {
           icon: TrendingUp,
           label: "Marketing",
-          active: isActive("/marketing"),
-          path: "/marketing",
+          active: isActive("/admin/marketing"),
+          path: "/admin/marketing",
         },
       ],
     },
@@ -134,37 +135,37 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         {
           icon: Box,
           label: "CMS",
-          active: isActive("/cms"),
-          path: "/cms",
+          active: isActive("/admin/cms"),
+          path: "/admin/cms",
         },
         {
           icon: Bell,
           label: "CRM",
-          active: isActive("/crm"),
-          path: "/crm",
+          active: isActive("/admin/crm"),
+          path: "/admin/crm",
         },
         {
           icon: Box,
           label: "Plugins",
-          active: isActive("/plugins"),
-          path: "/plugins",
+          active: isActive("/admin/plugins"),
+          path: "/admin/plugins",
         },
         {
           icon: Users2,
           label: "Staff",
           hasSubmenu: true,
-          active: location.pathname.startsWith("/staff"),
-          path: "/staff",
+          active: location.pathname.startsWith("/admin/staff"),
+          path: "/admin/staff",
           subItems: [
-            { label: "Roles", path: "/staff/roles", active: isActive("/staff/roles") },
-            { label: "List of Staff", path: "/staff", active: location.pathname === "/staff" },
+            { label: "Roles", path: "/admin/staff/roles", active: isActive("/admin/staff/roles") },
+            { label: "List of Staff", path: "/admin/staff", active: location.pathname === "/admin/staff" },
           ],
         },
         {
           icon: Settings,
           label: "Global Settings",
-          active: isActive("/global-settings"),
-          path: "/global-settings",
+          active: isActive("/admin/global-settings"),
+          path: "/admin/global-settings",
         },
       ],
     },
@@ -201,24 +202,41 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           }}
           title={sidebarCollapsed ? item.label : undefined}
           className={`
-            w-full flex items-center gap-2.5 px-3 rounded-lg text-left transition-all duration-150
-            h-9 text-[12.5px] font-medium
+            group relative w-full flex items-center gap-2.5 px-2.5 rounded-md text-left
+            transition-[background-color,color] duration-150 ease-out
+            h-9 text-[13px]
             ${isActive
-              ? "bg-brand-500 text-white shadow-sm"
-              : "text-dashboard-neutral-07 hover:bg-surface-muted hover:text-brand-500"
+              ? "bg-ocean-50 text-ocean-700 font-semibold"
+              : "text-gray-600 font-medium hover:bg-gray-100 hover:text-gray-900"
             }
             ${sidebarCollapsed ? "justify-center px-0" : ""}
           `}
         >
-          <item.icon size={15} strokeWidth={1.6} className="shrink-0" />
+          {/* Left accent bar — slides in/out on active with shared layoutId for cross-item motion */}
+          {isActive && !sidebarCollapsed && (
+            <motion.span
+              layoutId="sidebar-active-accent"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-ocean-500"
+              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+            />
+          )}
+
+          <item.icon
+            size={16}
+            strokeWidth={isActive ? 2 : 1.75}
+            className={`shrink-0 transition-colors ${isActive ? "text-ocean-600" : "text-gray-400 group-hover:text-gray-600"}`}
+          />
           {!sidebarCollapsed && (
             <>
               <span className="flex-1 truncate">{item.label}</span>
               {item.hasSubmenu && (
-                <ChevronDown
-                  size={13}
-                  className={`shrink-0 transition-transform ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-                />
+                <motion.span
+                  animate={{ rotate: isExpanded ? 0 : -90 }}
+                  transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                  className="shrink-0 text-gray-400 group-hover:text-gray-600"
+                >
+                  <ChevronDown size={13} />
+                </motion.span>
               )}
             </>
           )}
@@ -233,26 +251,24 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               transition={{ duration: 0.18, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="ml-[22px] mt-0.5 space-y-0.5 relative">
-                <div
-                  className="absolute left-0 top-0 w-px bg-surface-border"
-                  style={{ height: `${item.subItems.length * 34 - 8}px` }}
-                />
+              <div className="ml-[18px] pl-3 mt-0.5 mb-1 space-y-px border-l border-gray-200">
                 {item.subItems.map((sub, si) => (
                   <motion.button
                     key={si}
                     initial={{ x: -4, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: si * 0.03, duration: 0.12 }}
+                    transition={{ delay: si * 0.025, duration: 0.14, ease: "easeOut" }}
                     onClick={() => { navigate(sub.path); onNavigate?.(); }}
                     className={`
-                      w-full flex items-center pl-4 pr-3 h-[34px] rounded-md text-left text-[12px] transition-all
+                      relative w-full flex items-center gap-2 px-2.5 h-7 rounded-md text-left text-[12.5px]
+                      transition-[background-color,color] duration-150
                       ${sub.active
-                        ? "bg-brand-50 text-brand-600 font-semibold"
-                        : "text-gray-500 hover:bg-surface-muted hover:text-brand-500"
+                        ? "bg-ocean-50 text-ocean-700 font-semibold"
+                        : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
                       }
                     `}
                   >
+                    <span className={`w-1 h-1 rounded-full shrink-0 transition-colors ${sub.active ? "bg-ocean-500" : "bg-gray-300"}`} />
                     {sub.label}
                   </motion.button>
                 ))}
@@ -270,20 +286,20 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       {showMobileSidebar && (
         <div className="fixed inset-0 z-50 bg-black/50 lg:hidden" onClick={() => setShowMobileSidebar(false)}>
           <div
-            className="fixed left-0 top-0 h-full w-[220px] bg-white border-r border-surface-border flex flex-col"
+            className="fixed left-0 top-0 h-full w-60 bg-white border-r border-gray-200 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 h-[52px] border-b border-surface-border shrink-0">
+            <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200 shrink-0">
               <LogoWebsite />
               <button onClick={() => setShowMobileSidebar(false)} className="text-gray-400 hover:text-gray-600">
                 <X size={16} />
               </button>
             </div>
-            <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-hide">
+            <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto scrollbar-hide">
               {sections.map((section, si) => (
                 <div key={si}>
                   {section.group && (
-                    <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-widest text-gray-400">
+                    <p className="px-3 mb-1 text-[11px] font-medium text-gray-400">
                       {section.group}
                     </p>
                   )}
@@ -295,12 +311,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 </div>
               ))}
             </nav>
-            <div className="px-2 py-3 border-t border-surface-border shrink-0">
+            <div className="px-2 py-2 border-t border-gray-200 shrink-0">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-red-500 hover:bg-red-50 transition-colors text-[12.5px] font-medium"
+                className="w-full flex items-center gap-2.5 px-2.5 h-8 rounded-md text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors text-[13px] font-medium"
               >
-                <LogOut size={15} strokeWidth={1.6} />
+                <LogOut size={16} strokeWidth={1.75} />
                 <span>Logout</span>
               </button>
             </div>
@@ -310,19 +326,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
       {/* Desktop sidebar */}
       <div
-        className={`relative hidden lg:flex flex-col h-screen bg-white border-r border-surface-border transition-all duration-300 shrink-0 ${sidebarCollapsed ? "w-[60px]" : "w-[220px]"} ${className}`}
+        className={`relative hidden lg:flex flex-col h-screen bg-white border-r border-gray-200 transition-all duration-300 shrink-0 ${sidebarCollapsed ? "w-16" : "w-56"} ${className}`}
       >
         {/* Logo */}
-        <div className={`flex items-center h-[52px] border-b border-surface-border shrink-0 ${sidebarCollapsed ? "justify-center px-2" : "px-4"}`}>
+        <div className={`flex items-center h-14 border-b border-gray-200 shrink-0 ${sidebarCollapsed ? "justify-center px-2" : "px-4"}`}>
           {!sidebarCollapsed ? <LogoWebsite /> : <Grid3X3 size={18} className="text-brand-500" />}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 py-3 space-y-3 overflow-y-auto scrollbar-hide overflow-x-hidden">
+        <nav className="flex-1 px-2 py-3 space-y-4 overflow-y-auto scrollbar-hide overflow-x-hidden">
           {sections.map((section, si) => (
             <div key={si}>
               {section.group && !sidebarCollapsed && (
-                <p className="px-3 mb-1 text-[10.5px] font-semibold uppercase tracking-widest text-gray-400">
+                <p className="px-3 mb-1 text-[11px] font-medium text-gray-400">
                   {section.group}
                 </p>
               )}
@@ -336,27 +352,33 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
 
         {/* Logout */}
-        <div className={`px-2 py-3 border-t border-surface-border shrink-0`}>
+        <div className="px-2 py-2 border-t border-gray-200 shrink-0">
           <button
             onClick={handleLogout}
             title={sidebarCollapsed ? "Logout" : undefined}
-            className={`w-full flex items-center gap-2.5 px-3 h-9 rounded-lg text-red-500 hover:bg-red-50 transition-colors text-[12.5px] font-medium ${sidebarCollapsed ? "justify-center px-0" : ""}`}
+            className={`w-full flex items-center gap-2.5 px-2.5 h-8 rounded-md text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors text-[13px] font-medium ${sidebarCollapsed ? "justify-center px-0" : ""}`}
           >
-            <LogOut size={15} strokeWidth={1.6} className="shrink-0" />
+            <LogOut size={16} strokeWidth={1.75} className="shrink-0" />
             {!sidebarCollapsed && <span>Logout</span>}
           </button>
         </div>
 
-        {/* Collapse toggle */}
-        <button
+        {/* Collapse toggle — sits on the right edge, centered on logo divider */}
+        <motion.button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="absolute -right-3 top-[60px] z-10 bg-white border border-surface-border rounded-full p-0.5 shadow-sm hover:shadow-md transition-all"
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.92 }}
+          className="absolute -right-3 top-[44px] z-10 h-6 w-6 flex items-center justify-center bg-white border border-gray-200 rounded-full shadow-sm hover:shadow-md text-gray-500 hover:text-ocean-600 hover:border-ocean-300 transition-colors"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          <ChevronDown
-            size={12}
-            className={`transition-transform duration-300 ${sidebarCollapsed ? "rotate-[-90deg]" : "rotate-90"}`}
-          />
-        </button>
+          <motion.span
+            animate={{ rotate: sidebarCollapsed ? -90 : 90 }}
+            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            className="flex"
+          >
+            <ChevronDown size={12} />
+          </motion.span>
+        </motion.button>
       </div>
     </>
   );

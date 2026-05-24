@@ -8,7 +8,7 @@ import MobileVendorNav from "@/components/MobileVendorNav";
 /** Tiny content-area placeholder for lazy chunk loads — keeps the shell visible. */
 const ContentLoader = () => (
   <div className="flex-1 flex items-center justify-center">
-    <div className="h-6 w-6 rounded-full border-2 border-gray-200 border-t-[#1E3A8A] animate-spin" />
+    <div className="h-6 w-6 rounded-full border-2 border-gray-200 border-t-[#0F5C8A] animate-spin" />
   </div>
 );
 

@@ -189,7 +189,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
             </Button>
             <Button
               onClick={handleApplyFilters}
-              className="px-8 py-3 h-12 rounded-full bg-[#1E3A8A] text-white hover:bg-[#2D4DA8]"
+              className="px-8 py-3 h-12 rounded-full bg-[#0F5C8A] text-white hover:bg-[#14709F]"
             >
               Apply Filter
             </Button>

@@ -69,7 +69,7 @@ export function HouseRulesSection({ rules, headerGap = "tight" }: HouseRulesSect
             key={i}
             className={`flex items-center gap-4 px-5 py-4 ${
               i !== rules.length - 1 ? "border-b border-gray-50 dark:border-gray-700/50" : ""
-            } hover:bg-gray-50 dark:hover:bg-[#2D4DA8]/30 transition-colors`}
+            } hover:bg-gray-50 dark:hover:bg-[#14709F]/30 transition-colors`}
           >
             <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">
               {i + 1}

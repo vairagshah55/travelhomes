@@ -140,7 +140,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 fontWeight: 700,
                 color: TEAL,
                 background: TEAL_BG,
-                border: `1.5px solid rgba(30, 58, 138, 0.35)`,
+                border: `1.5px solid rgba(15, 92, 138, 0.35)`,
                 borderRadius: 9,
                 padding: "6px 14px",
                 cursor: "pointer",
@@ -148,7 +148,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                  "rgba(30, 58, 138, 0.14)";
+                  "rgba(15, 92, 138, 0.14)";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
@@ -342,7 +342,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                       background:
                         galleryFilled >= GALLERY_TARGET
                           ? "linear-gradient(90deg, #22c55e, #16a34a)"
-                          : `linear-gradient(90deg, ${TEAL}, rgba(30, 58, 138, 0.60))`,
+                          : `linear-gradient(90deg, ${TEAL}, rgba(15, 92, 138, 0.60))`,
                       transition: "width 0.5s cubic-bezier(0.16,1,0.3,1)",
                     }}
                   />
@@ -454,7 +454,7 @@ const RuleRow = ({
           height: 24,
           borderRadius: "50%",
           backgroundColor: focused ? TEAL_BG : GRAY_200,
-          border: `1.5px solid ${focused ? "rgba(30, 58, 138, 0.40)" : "transparent"}`,
+          border: `1.5px solid ${focused ? "rgba(15, 92, 138, 0.40)" : "transparent"}`,
           color: focused ? TEAL : GRAY_400,
           fontSize: 10.5,
           fontWeight: 800,
@@ -799,7 +799,7 @@ const GalleryEmptyState = ({
           fontSize: 12,
           fontWeight: 700,
           color: error ? ERROR : TEAL,
-          border: `1.5px solid ${error ? "rgba(239,68,68,0.40)" : "rgba(30, 58, 138, 0.40)"}`,
+          border: `1.5px solid ${error ? "rgba(239,68,68,0.40)" : "rgba(15, 92, 138, 0.40)"}`,
           borderRadius: 9,
           padding: "7px 18px",
           backgroundColor: error ? "rgba(239,68,68,0.07)" : TEAL_BG,

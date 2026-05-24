@@ -185,7 +185,7 @@ const OfferingDetails = () => {
             </div>
             <Button
               onClick={() => navigate(`/offering/${id}/edit`)}
-              className="bg-dashboard-primary text-white hover:bg-[#2D4DA8] rounded-full px-5 h-10 font-geist font-medium flex items-center gap-2 flex-shrink-0 ml-4"
+              className="bg-dashboard-primary text-white hover:bg-[#14709F] rounded-full px-5 h-10 font-geist font-medium flex items-center gap-2 flex-shrink-0 ml-4"
             >
               <Edit2 size={16} /> Edit
             </Button>

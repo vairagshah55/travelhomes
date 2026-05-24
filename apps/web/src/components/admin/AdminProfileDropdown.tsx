@@ -31,17 +31,18 @@ const AdminProfileDropdown: React.FC<AdminProfileDropdownProps> = ({
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
-    navigate("/login");
+    sessionStorage.removeItem("adminToken");
+    navigate("/admin/login");
     setIsOpen(false);
   };
 
   const handleProfile = () => {
-    navigate("/profile");
+    navigate("/admin/profile");
     setIsOpen(false);
   };
 
   const handleHelp = () => {
-    navigate("/help");
+    navigate("/admin/help");
     setIsOpen(false);
   };
 
@@ -50,7 +51,7 @@ const AdminProfileDropdown: React.FC<AdminProfileDropdownProps> = ({
       {/* Avatar Button */}
       <img
         onClick={() => setIsOpen(!isOpen)}
-        className="w-9 h-9 cursor-pointer rounded-full bg-cover bg-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black"
+        className="w-8 h-8 cursor-pointer rounded-full bg-cover bg-center ring-1 ring-gray-200 hover:ring-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 transition-all"
        src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHJhbmRvbSUyMHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D"
         aria-label="User menu"
         aria-expanded={isOpen}

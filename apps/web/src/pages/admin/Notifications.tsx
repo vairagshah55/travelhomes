@@ -338,7 +338,7 @@ const Notifications = () => {
               </div>
               <button 
                 onClick={() => setShowDetailModal(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[#2D4DA8] rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-full transition-colors"
               >
                 <X size={20} className="text-gray-500" />
               </button>

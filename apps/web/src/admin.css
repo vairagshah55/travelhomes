@@ -14,8 +14,8 @@
     --4: 4px;
     --12: 12px;
     --8: 8px;
-    --pRIMARY: #1E3A8A;
-    --Black-Heading: #0A1E3D;
+    --pRIMARY: #0F5C8A;
+    --Black-Heading: #0A2B40;
     --Black-Stroke: #E4E8F0;
     --White: #fff;
     --Title: #1F2A44;
@@ -24,16 +24,16 @@
     --Neutral-06: #9AA3B5;
     --Neutral-07: #5F6A82;
     --Body: #1F2A44;
-    --Secondary-30: #EEF2FB;
-    --Heading: #0A1E3D;
-    --Text: #0A1E3D;
+    --Secondary-30: #E8F2F8;
+    --Heading: #0A2B40;
+    --Text: #0A2B40;
 
     /* ── Midnight Indigo brand tokens (shared with frontend) ── */
-    --ds-sky:     #EEF2FB;
-    --ds-mist:    #DBE3F5;
-    --ds-ocean:   #3E63D3;
-    --ds-deep:    #1E3A8A;  /* main brand */
-    --ds-navy:    #0A1E3D;
+    --ds-sky:     #E8F2F8;
+    --ds-mist:    #D0E4EF;
+    --ds-ocean:   #1E88BA;
+    --ds-deep:    #0F5C8A;  /* main brand */
+    --ds-navy:    #0A2B40;
     --ds-sand:    #E7D3A6;
     --ds-dune:    #C8A96A;
     --ds-rust:    #B42318;
@@ -50,15 +50,15 @@
 
     /* Travel Dashboard specific colors — Midnight Indigo */
     --dashboard-bg: 220 33% 97%; /* #F6F8FB */
-    --dashboard-primary: 226 64% 33%; /* #1E3A8A brand indigo */
-    --dashboard-primary-hover: 222 58% 42%; /* #2D4DA8 hover */
-    --dashboard-heading: 218 72% 14%; /* #0A1E3D */
+    --dashboard-primary: 226 64% 33%; /* #0F5C8A brand indigo */
+    --dashboard-primary-hover: 222 58% 42%; /* #14709F hover */
+    --dashboard-heading: 218 72% 14%; /* #0A2B40 */
     --dashboard-body: 222 38% 20%; /* #1F2A44 */
     --dashboard-title: 222 38% 20%; /* #1F2A44 */
     --dashboard-stroke: 220 21% 92%; /* #E4E8F0 */
     --dashboard-neutral-06: 222 14% 66%; /* #9AA3B5 */
     --dashboard-neutral-07: 222 16% 44%; /* #5F6A82 */
-    --dashboard-text: 218 72% 14%; /* #0A1E3D */
+    --dashboard-text: 218 72% 14%; /* #0A2B40 */
 
     /* Override default shadcn colors to match design */
     --background: 220 33% 97%; /* Match dashboard bg */
@@ -70,7 +70,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 218 72% 14%;
 
-    --primary: 226 64% 33%; /* #1E3A8A brand indigo */
+    --primary: 226 64% 33%; /* #0F5C8A brand indigo */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 33% 95%;
@@ -94,10 +94,10 @@
     /* Sidebar colors — light, content-first (Stripe/Notion) */
     --sidebar-background: 0 0% 100%;          /* #FFFFFF */
     --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
-    --sidebar-primary: 226 64% 33%;           /* #1E3A8A active nav */
+    --sidebar-primary: 226 64% 33%;           /* #0F5C8A active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 96%;            /* #EEF2FB hover bg */
-    --sidebar-accent-foreground: 218 68% 21%; /* #11295A hover text */
+    --sidebar-accent: 224 64% 96%;            /* #E8F2F8 hover bg */
+    --sidebar-accent-foreground: 218 68% 21%; /* #0A4670 hover text */
     --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
     --sidebar-ring: 226 64% 33%;
 
@@ -125,19 +125,19 @@
     --status-green-text: 120 100% 36%; /* #37B800 */
 
     /* Booking ID link color */
-    --booking-link: 226 64% 33%; /* #1E3A8A */
+    --booking-link: 226 64% 33%; /* #0F5C8A */
 
     /* Navigation tree lines */
     --nav-tree-line: 0 0% 90%; /* #E7E7E7 */
 
     /* Blue toggle switch */
-    --dashboard-blue-600: 226 64% 33%; /* #1E3A8A */
+    --dashboard-blue-600: 226 64% 33%; /* #0F5C8A */
 
     /* Authentication colors */
-    --auth-blackish-green: #0A1E3D;
+    --auth-blackish-green: #0A2B40;
     --auth-neutral-06: #9AA3B5;
     --auth-neutral-07: #5F6A82;
-    --auth-primary: #1E3A8A;
+    --auth-primary: #0F5C8A;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(31, 42, 68, 0.75);
 
@@ -244,10 +244,6 @@
 }
 
 @layer base {
-  html {
-    font-size: 13px;
-  }
-
   * {
     @apply border-border;
   }
@@ -420,8 +416,8 @@
     transition: background 200ms ease, box-shadow 200ms ease;
   }
   .btn-brand:hover {
-    background: #2D4DA8;
-    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+    background: #14709F;
+    box-shadow: 0 4px 12px rgba(15, 92, 138, 0.3);
   }
 
   /* Upload area */
@@ -1198,3 +1194,9 @@ tbody tr { transition: background-color 120ms ease; }
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
+
+/* No html font-size override. Standard 16px browser default + Tailwind's
+   type scale (text-xs/sm/base) gives us the same density Stripe/Linear/
+   Vercel use. Custom rem bases force every shared component to fight the
+   cascade — better to design at the system default. */
+

@@ -10,7 +10,7 @@ const STEPS = [
     title: "Search & Discover",
     description:
       "Browse campervans, unique stays, and activities across India. Filter by location, date, and budget to find your perfect match.",
-    accent: "#0A1E3D",
+    accent: "#0A2B40",
     bg: "#F7F7F7",
   },
   {
@@ -19,7 +19,7 @@ const STEPS = [
     title: "Book Instantly",
     description:
       "Secure your booking in seconds with a seamless checkout. Pay safely, get instant confirmation, and receive your itinerary details.",
-    accent: "#1E3A8A",
+    accent: "#0F5C8A",
     bg: "#FFE8EE",
   },
   {
@@ -28,7 +28,7 @@ const STEPS = [
     title: "Explore & Enjoy",
     description:
       "Pack your bags and go! From Himalayan trails to coastal stays, every Travel Homes experience is curated for unforgettable moments.",
-    accent: "#0A1E3D",
+    accent: "#0A2B40",
     bg: "#F7F7F7",
   },
 ];
@@ -45,7 +45,7 @@ export function HowItWorks() {
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <h2 className="text-2xl md:text-[32px] font-semibold text-[#0A1E3D] tracking-tight">
+          <h2 className="text-2xl md:text-[32px] font-semibold text-[#0A2B40] tracking-tight">
             How Travel Homes Works
           </h2>
           <p className="text-sm text-[#717171] mt-2 max-w-md mx-auto leading-relaxed">
@@ -83,7 +83,7 @@ export function HowItWorks() {
                 </div>
                 <span
                   className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{ backgroundColor: "#1E3A8A" }}
+                  style={{ backgroundColor: "#0F5C8A" }}
                 >
                   {step}
                 </span>
@@ -91,7 +91,7 @@ export function HowItWorks() {
 
               {/* Text */}
               <div className="space-y-1.5">
-                <h3 className="text-[17px] font-semibold text-[#0A1E3D]">{title}</h3>
+                <h3 className="text-[17px] font-semibold text-[#0A2B40]">{title}</h3>
                 <p className="text-sm text-[#717171] leading-relaxed">
                   {description}
                 </p>

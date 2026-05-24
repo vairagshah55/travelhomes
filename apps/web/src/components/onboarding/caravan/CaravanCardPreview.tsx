@@ -52,7 +52,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
       <div className="flex items-center gap-2 mb-3 px-1">
         <span
           className="inline-block w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: "#1E3A8A" }}
+          style={{ backgroundColor: "#0F5C8A" }}
         />
         <span
           style={{
@@ -68,7 +68,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
       </div>
 
       {/* Card mirroring ResultCard */}
-      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(17,41,90,0.08)] border border-[#EBEBEB]">
+      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(10,70,112,0.08)] border border-[#EBEBEB]">
         {/* Image */}
         <div className="relative">
           <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-[#F7F8FA]">
@@ -82,7 +82,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div
                   className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                  style={{ backgroundColor: "rgba(30, 58, 138, 0.07)" }}
+                  style={{ backgroundColor: "rgba(15, 92, 138, 0.07)" }}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <rect
@@ -91,13 +91,13 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
                       width="18"
                       height="14"
                       rx="2"
-                      stroke="#1E3A8A"
+                      stroke="#0F5C8A"
                       strokeWidth="1.8"
                     />
-                    <circle cx="9" cy="11" r="1.5" fill="#1E3A8A" />
+                    <circle cx="9" cy="11" r="1.5" fill="#0F5C8A" />
                     <path
                       d="M21 16l-5-5-9 8"
-                      stroke="#1E3A8A"
+                      stroke="#0F5C8A"
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -187,9 +187,9 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
               <span
                 className="inline-block text-[10.5px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
                 style={{
-                  color: "#1E3A8A",
-                  backgroundColor: "rgba(30, 58, 138, 0.08)",
-                  border: "1px solid rgba(30, 58, 138, 0.25)",
+                  color: "#0F5C8A",
+                  backgroundColor: "rgba(15, 92, 138, 0.08)",
+                  border: "1px solid rgba(15, 92, 138, 0.25)",
                   letterSpacing: "0.06em",
                 }}
               >

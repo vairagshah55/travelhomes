@@ -194,7 +194,7 @@ const PaymentManagement: React.FC = () => {
                     onClick={() => setActiveServiceType(type.id)}
                     className={`px-4 py-3 text-sm font-semibold rounded-full transition-colors ${
                       activeServiceType === type.id
-                        ? "bg-[#1E3A8A] text-white"
+                        ? "bg-[#0F5C8A] text-white"
                         : "text-black hover:bg-gray-50"
                     }`}
                   >

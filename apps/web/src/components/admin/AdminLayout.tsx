@@ -32,7 +32,7 @@ export default function AdminLayout({ title, children }: AdminLayoutProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="flex-1 overflow-y-auto overflow-x-hidden p-5 pb-16 md:pb-5"
+          className="flex-1 overflow-y-auto overflow-x-hidden p-6 pb-16 md:pb-6"
         >
           {children}
         </motion.main>

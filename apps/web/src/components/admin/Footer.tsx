@@ -4,7 +4,7 @@ import { Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-[#0A1E3D] text-white py-12 md:py-16">
+    <footer className="bg-[#0A2B40] text-white py-12 md:py-16">
       <div className="max-w-7xl mx-auto px-4 md:px-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
           {/* Logo and Description */}
@@ -54,7 +54,7 @@ export default function Footer() {
                   className="flex-1 bg-transparent text-gray-800 placeholder:text-gray-600 text-sm outline-none"
                 />
               </div>
-              <Button className="bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white rounded-full px-6 h-10 text-xs font-bold">
+              <Button className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full px-6 h-10 text-xs font-bold">
                 Subscribe
               </Button>
             </div>

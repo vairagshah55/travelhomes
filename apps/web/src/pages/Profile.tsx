@@ -286,7 +286,7 @@ const Profile = () => {
             <Button
               onClick={() => setIsChangePasswordOpen(true)}
               className="rounded-xl px-5 h-9 font-semibold text-sm text-white flex-shrink-0"
-              style={{ background: "#1E3A8A" }}
+              style={{ background: "#0F5C8A" }}
             >
               Change Password
             </Button>
@@ -599,7 +599,7 @@ const Profile = () => {
                           onClick={handleSaveProfile}
                           disabled={saving}
                           className="text-white font-semibold"
-                          style={{ background: "#1E3A8A" }}
+                          style={{ background: "#0F5C8A" }}
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -616,7 +616,7 @@ const Profile = () => {
                     onClick={() => setIsEditing(true)}
                     variant="outline"
                     className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                    style={{ borderColor: "#1E3A8A", color: "#1E3A8A" }}
+                    style={{ borderColor: "#0F5C8A", color: "#0F5C8A" }}
                   >
                     <Edit size={18} />
                     Edit
@@ -730,7 +730,7 @@ const Profile = () => {
                     <Button
                       onClick={handleAddSocialLink}
                       className="rounded-xl px-5 font-semibold text-white"
-                      style={{ background: "#1E3A8A" }}
+                      style={{ background: "#0F5C8A" }}
                     >
                       ADD
                     </Button>
@@ -743,7 +743,7 @@ const Profile = () => {
                   onClick={handleSaveProfile}
                   disabled={saving}
                   className="text-white font-semibold"
-                  style={{ background: "#1E3A8A" }}
+                  style={{ background: "#0F5C8A" }}
                 >
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
@@ -1033,7 +1033,7 @@ const Profile = () => {
                           onClick={handleSaveProfile}
                           disabled={saving}
                           className="text-white font-semibold"
-                          style={{ background: "#1E3A8A" }}
+                          style={{ background: "#0F5C8A" }}
                         >
                           {saving ? "Saving..." : "Save Changes"}
                         </Button>
@@ -1049,7 +1049,7 @@ const Profile = () => {
                     onClick={() => setIsEditing(true)}
                     variant="outline"
                     className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                    style={{ borderColor: "#1E3A8A", color: "#1E3A8A" }}
+                    style={{ borderColor: "#0F5C8A", color: "#0F5C8A" }}
                   >
                     <Edit size={18} />
                     Edit

@@ -2,11 +2,11 @@ import React from "react";
 import { getImageUrl } from "@/lib/utils";
 
 // ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #1E3A8A with sky/mist tints for focus & accent.
-const TEAL = "#1E3A8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(30, 58, 138, 0.07)";
-const TEAL_RING = "rgba(30, 58, 138, 0.20)";
-const NAVY = "#11295A";
+// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
+const TEAL = "#0F5C8A"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(15, 92, 138, 0.07)";
+const TEAL_RING = "rgba(15, 92, 138, 0.20)";
+const NAVY = "#0A4670";
 const GRAY_500 = "#2C2C2A"; // body → charcoal
 const GRAY_600 = "#2C2C2A";
 const GRAY_400 = "#888780"; // muted → slate

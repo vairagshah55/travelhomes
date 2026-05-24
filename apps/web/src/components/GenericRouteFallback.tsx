@@ -6,7 +6,7 @@
 
 const GenericRouteFallback = () => (
   <div className="min-h-screen bg-th-surface-1 flex items-center justify-center">
-    <div className="h-7 w-7 rounded-full border-2 border-ocean-100 border-t-[#1E3A8A] animate-spin" />
+    <div className="h-7 w-7 rounded-full border-2 border-ocean-100 border-t-[#0F5C8A] animate-spin" />
   </div>
 );
 

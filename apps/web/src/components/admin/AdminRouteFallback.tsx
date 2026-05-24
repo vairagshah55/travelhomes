@@ -6,9 +6,9 @@ import { Shield } from "lucide-react";
  * of flashing the public-site property-detail skeleton (RouteFallback).
  */
 const AdminRouteFallback = () => (
-  <div className="min-h-screen bg-gradient-to-br from-[#0A1E3D] via-[#11295A] to-[#0A1E3D] flex items-center justify-center">
+  <div className="min-h-screen bg-gradient-to-br from-[#0A2B40] via-[#0A4670] to-[#0A2B40] flex items-center justify-center">
     <div className="flex flex-col items-center gap-4">
-      <div className="p-4 bg-[#1E3A8A] rounded-full shadow-lg">
+      <div className="p-4 bg-[#0F5C8A] rounded-full shadow-lg">
         <Shield size={28} className="text-white" />
       </div>
       <div className="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />

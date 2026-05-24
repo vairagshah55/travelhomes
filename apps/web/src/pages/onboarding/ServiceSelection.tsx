@@ -7,12 +7,12 @@ import { getOnboardingData, cmsPublicApi } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 
 // ─── Brand tokens (designe.md) ──────────────────────────────────────────────
-// Primary CTA color is ds-deep #1E3A8A with ds-navy hover.
-const DEEP = "#1E3A8A"; // brand / CTA
-const NAVY = "#11295A"; // headings / dark hover
-const DEEP_BG = "rgba(30, 58, 138, 0.07)"; // selected card tint
-const DEEP_GLOW = "rgba(30, 58, 138, 0.22)"; // CTA shadow
-const DEEP_BORDER = "rgba(30, 58, 138, 0.35)"; // hover border accent
+// Primary CTA color is ds-deep #0F5C8A with ds-navy hover.
+const DEEP = "#0F5C8A"; // brand / CTA
+const NAVY = "#0A4670"; // headings / dark hover
+const DEEP_BG = "rgba(15, 92, 138, 0.07)"; // selected card tint
+const DEEP_GLOW = "rgba(15, 92, 138, 0.22)"; // CTA shadow
+const DEEP_BORDER = "rgba(15, 92, 138, 0.35)"; // hover border accent
 const SKY = "#E6F1FB"; // hover card tint
 const CHARCOAL = "#2C2C2A"; // body text
 const SLATE = "#888780"; // muted text
@@ -662,7 +662,7 @@ const ServiceCard = ({
           : hovered
             ? `1.5px solid ${DEEP_BORDER}`
             : `1.5px solid ${GRAY_200}`,
-        backgroundColor: active ? DEEP_BG : hovered ? "rgba(30, 58, 138, 0.04)" : WHITE,
+        backgroundColor: active ? DEEP_BG : hovered ? "rgba(15, 92, 138, 0.04)" : WHITE,
         boxShadow: active
           ? `0 4px 24px ${DEEP_GLOW}`
           : hovered
@@ -702,7 +702,7 @@ const ServiceCard = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: active ? DEEP : hovered ? "rgba(30, 58, 138, 0.10)" : GRAY_100,
+          backgroundColor: active ? DEEP : hovered ? "rgba(15, 92, 138, 0.10)" : GRAY_100,
           color: active ? WHITE : hovered ? DEEP : GRAY_400,
           transition: "all 0.2s",
         }}

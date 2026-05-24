@@ -10,8 +10,10 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
   const adminToken = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
   
   if (!adminToken) {
-    // Redirect to admin login if not authenticated
-    return <Navigate to="/login" replace />;
+    // Redirect to admin login if not authenticated.
+    // Absolute "/login" would land on the vendor login page; AdminApp is
+    // mounted at /admin/*, so the admin login lives at /admin/login.
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;

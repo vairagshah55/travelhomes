@@ -218,7 +218,7 @@ const VerifyOTP = () => {
             <Button
               type="submit"
               disabled={isLoading || otp.join('').length !== 5}
-              className="w-full h-12 bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
+              className="w-full h-12 bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
             >
               {isLoading ? 'Verifying...' : 'Verify'}
             </Button>

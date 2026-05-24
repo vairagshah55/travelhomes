@@ -165,7 +165,7 @@ export function BookingWidget({
         </div>
 
         <Button
-          className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-[#2D4DA8] transition-colors mb-6"
+          className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-[#14709F] transition-colors mb-6"
           onClick={onReserve}
         >
           Reserve

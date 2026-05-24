@@ -78,7 +78,7 @@ export default function Footer() {
     }
   };
 return(
-<footer className="bg-[#0A1E3D] text-white pb-4">
+<footer className="bg-[#0A2B40] text-white pb-4">
   <div className="max-w-7xl mx-auto py-10 px-4 sm:px-4 md:px-4 lg:px-10 mt-6">
     {/* Top Section */}
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
@@ -131,7 +131,7 @@ return(
             />
           </div>
           <Button 
-            className="bg-[#1E3A8A] text-white rounded-full px-5 h-8 text-xs font-bold"
+            className="bg-[#0F5C8A] text-white rounded-full px-5 h-8 text-xs font-bold"
             onClick={handleSubscribe}
             disabled={loading}
           >

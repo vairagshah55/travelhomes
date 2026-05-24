@@ -63,7 +63,7 @@ const MobileProfileEditHeader = ({ onBack }: { onBack: () => void }) => (
   <div className="md:hidden flex items-center gap-4 mb-6">
     <button
       onClick={onBack}
-      className="p-2 hover:bg-gray-200 dark:hover:bg-[#2D4DA8] rounded-full transition-colors"
+      className="p-2 hover:bg-gray-200 dark:hover:bg-[#14709F] rounded-full transition-colors"
     >
       <SlArrowLeft size={20} />
     </button>
@@ -183,7 +183,7 @@ const EditProfileHeader = ({ onSave, saving }: EditProfileHeaderProps) => (
     <Button
       onClick={onSave}
       disabled={saving}
-      className="bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white px-6 rounded-full font-geist disabled:opacity-60"
+      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white px-6 rounded-full font-geist disabled:opacity-60"
     >
       {saving ? "Saving…" : "Save"}
     </Button>
@@ -280,7 +280,7 @@ const EditProfileForm = ({ formData, onChange, onSave, saving }: EditProfileForm
       <Button
         onClick={onSave}
         disabled={saving}
-        className="bg-[#1E3A8A] hover:bg-[#2D4DA8] dark:bg-black dark:text-white text-white px-8 py-6 rounded-full w-full font-geist disabled:opacity-60"
+        className="bg-[#0F5C8A] hover:bg-[#14709F] dark:bg-black dark:text-white text-white px-8 py-6 rounded-full w-full font-geist disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save"}
       </Button>

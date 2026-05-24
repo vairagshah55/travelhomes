@@ -30,7 +30,7 @@ export function TrendingDestinations({ homepageSections, loadingOffers, offerErr
           <>
             {/* Mobile heading */}
             <div className="mb-4 lg:hidden">
-              <h2 className="text-2xl font-semibold text-[#0A1E3D] leading-tight tracking-tight">
+              <h2 className="text-2xl font-semibold text-[#0A2B40] leading-tight tracking-tight">
                 Trending Destinations
               </h2>
               <p className="text-sm text-[#717171] mt-1">India's most-booked destinations</p>
@@ -63,7 +63,7 @@ export function TrendingDestinations({ homepageSections, loadingOffers, offerErr
             >
               <motion.div className="lg:col-span-1 flex flex-col" variants={staggerItem}>
                 <div className="mb-6">
-                  <h2 className="text-2xl md:text-[28px] font-semibold text-[#0A1E3D] leading-tight tracking-tight">
+                  <h2 className="text-2xl md:text-[28px] font-semibold text-[#0A2B40] leading-tight tracking-tight">
                     Trending Destinations
                   </h2>
                 </div>

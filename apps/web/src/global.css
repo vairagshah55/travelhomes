@@ -11,17 +11,17 @@
    renders correctly in either scope without forking.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --brand: 226 64% 33%;             /* #1E3A8A — Midnight Indigo brand-700 */
-  --brand-hover: 222 58% 42%;       /* #2D4DA8 — brand-600 */
+  --brand: 202 80% 30%;             /* #0F5C8A — Pacific Teal-Blue primary */
+  --brand-hover: 199 78% 35%;       /* #14709F — lighter on hover */
   --brand-fg: 0 0% 100%;            /* white text on brand */
-  --brand-subtle: 224 64% 96%;      /* #EEF2FB — brand-50 */
+  --brand-subtle: 202 50% 95%;      /* #E8F2F8 — brand-50 mist */
 }
 
 [data-brand="admin"] {
-  --brand: 226 64% 33%;             /* #1E3A8A — same Midnight Indigo */
-  --brand-hover: 222 58% 42%;       /* #2D4DA8 */
+  --brand: 202 80% 30%;             /* #0F5C8A — same Pacific Teal-Blue */
+  --brand-hover: 199 78% 35%;       /* #14709F */
   --brand-fg: 0 0% 100%;
-  --brand-subtle: 224 64% 96%;
+  --brand-subtle: 202 50% 95%;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -29,12 +29,12 @@
    Blue primary · Warm sand · Teal accents · Airy neutrals
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* Primary — Midnight Indigo */
-  --ds-sky: #eef2fb;   /* brand-50 surface */
-  --ds-mist: #dbe3f5;  /* brand-100 tint */
-  --ds-ocean: #3e63d3; /* brand-500 accent */
-  --ds-deep: #1e3a8a;  /* brand-700 — primary brand, CTAs */
-  --ds-navy: #0a1e3d;  /* ink — deepest, headings, hero */
+  /* Primary — Pacific Teal-Blue */
+  --ds-sky: #e8f2f8;   /* brand-50 surface */
+  --ds-mist: #d0e4ef;  /* brand-100 tint */
+  --ds-ocean: #1e88ba; /* brand-400 accent */
+  --ds-deep: #0f5c8a;  /* brand-500 — primary brand, CTAs */
+  --ds-navy: #0a2b40;  /* ink — deepest, headings, hero */
 
   /* Accent — Champagne (luxury markers, used sparingly) */
   --ds-sand: #e7d3a6;  /* champagne-300 soft tint */
@@ -59,7 +59,7 @@
   --ds-warning: #ef9f27;
 
   /* Card shadow */
-  --ds-shadow-card: 0 4px 20px rgba(30, 58, 138, 0.10);
+  --ds-shadow-card: 0 4px 20px rgba(15, 92, 138, 0.10);
   --ds-shadow-drop: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -71,15 +71,15 @@
 @layer base {
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand — Midnight Indigo: #1E3A8A brand-700, #2D4DA8 hover */
-    --th-brand: #1e3a8a;
-    --th-brand-hover: #2d4da8;
+    /* Brand — Pacific Teal-Blue: #0F5C8A primary, #14709F hover */
+    --th-brand: #0f5c8a;
+    --th-brand-hover: #14709f;
     --th-brand-fg: #ffffff;
 
     /* CTA accent — Champagne (use ONLY as fill/bg, never as text on white) */
     --th-cta: #c8a96a;
     --th-cta-hover: #8c6f33;
-    --th-cta-fg: #0a1e3d;
+    --th-cta-fg: #0a2b40;
 
     /* Surfaces */
     --th-surface-0: #ffffff;
@@ -89,18 +89,18 @@
     --th-surface-raised: #ffffff;
 
     /* Text */
-    --th-text-primary: #0a1e3d;
+    --th-text-primary: #0a2b40;
     --th-text-secondary: #1f2a44;
-    --th-text-tertiary: #1e3a8a;
+    --th-text-tertiary: #0f5c8a;
     --th-text-muted: #5f6a82;
     --th-text-placeholder: #9aa3b5;
     --th-text-inverse: #ffffff;
-    --th-text-link: #1e3a8a;
+    --th-text-link: #0f5c8a;
 
     /* Borders */
     --th-border: #e4e8f0;
     --th-border-hover: #c9d1e0;
-    --th-border-focus: #1e3a8a;
+    --th-border-focus: #0f5c8a;
     --th-border-error: #b42318;
 
     /* Status */
@@ -113,36 +113,36 @@
     --th-error: #b42318;
     --th-error-bg: rgba(180, 35, 24, 0.06);
     --th-error-text: #b42318;
-    --th-info: #1e3a8a;
-    --th-info-bg: #eef2fb;
-    --th-info-text: #0a1e3d;
+    --th-info: #0f5c8a;
+    --th-info-bg: #e8f2f8;
+    --th-info-text: #0a2b40;
     --th-purple-bg: #f6e0fd;
     --th-purple-text: #b127dc;
 
     /* Stats card fills — indigo palette tints */
-    --th-stat-impression: #eef2fb;
-    --th-stat-impression-icon: #dbe3f5;
+    --th-stat-impression: #e8f2f8;
+    --th-stat-impression-icon: #d0e4ef;
     --th-stat-bookings: #e7ecf8;
     --th-stat-bookings-icon: #c9d4ee;
     --th-stat-properties: #f1f4f9;
-    --th-stat-properties-icon: #dbe3f5;
+    --th-stat-properties-icon: #d0e4ef;
     --th-stat-earnings: #f4eee0;
     --th-stat-earnings-icon: #e7d3a6;
     --th-stat-clicks: #ecf0f9;
-    --th-stat-clicks-icon: #dbe3f5;
+    --th-stat-clicks-icon: #d0e4ef;
 
     /* Interactive */
-    --th-ring: rgba(30, 58, 138, 0.15);
+    --th-ring: rgba(15, 92, 138, 0.15);
     --th-ring-error: rgba(180, 35, 24, 0.12);
-    --th-overlay: rgba(10, 30, 61, 0.45);
-    --th-booking-link: #1e3a8a;
+    --th-overlay: rgba(10, 43, 64, 0.45);
+    --th-booking-link: #0f5c8a;
 
     /* Accent (mid-indigo for highlights & active states) */
-    --th-accent: #3e63d3;
-    --th-accent-hover: #1e3a8a;
+    --th-accent: #1e88ba;
+    --th-accent-hover: #0f5c8a;
     --th-accent-fg: #ffffff;
-    --th-accent-subtle: #eef2fb;
-    --th-accent-muted: #dbe3f5;
+    --th-accent-subtle: #e8f2f8;
+    --th-accent-muted: #d0e4ef;
 
     /* Congratulations page */
     --th-congrats-star-yellow: #ffdc64;
@@ -274,10 +274,10 @@
     /* Sidebar (shadcn) — light, content-first */
     --sidebar-background: 0 0% 100%;          /* #FFFFFF */
     --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
-    --sidebar-primary: 226 64% 33%;           /* #1E3A8A active nav */
+    --sidebar-primary: 226 64% 33%;           /* #0F5C8A active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 96%;            /* #EEF2FB hover bg */
-    --sidebar-accent-foreground: 218 68% 21%; /* #11295A hover text */
+    --sidebar-accent: 224 64% 96%;            /* #E8F2F8 hover bg */
+    --sidebar-accent-foreground: 218 68% 21%; /* #0A4670 hover text */
     --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
     --sidebar-ring: 226 64% 33%;
 
@@ -317,28 +317,28 @@
     --nav-tree-line: 220 21% 92%;
 
     /* Legacy auth */
-    --auth-blackish-green: #0a1e3d;
+    --auth-blackish-green: #0a2b40;
     --auth-neutral-06: #9aa3b5;
-    --auth-neutral-07: #1e3a8a;
-    --auth-primary: #1e3a8a;
+    --auth-neutral-07: #0f5c8a;
+    --auth-primary: #0f5c8a;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(31, 42, 68, 0.75);
 
     /* Legacy naming aliases (DO NOT use in new code) */
     --Background: #f6f8fb;
-    --pRIMARY: #1e3a8a;
-    --Black-Heading: #0a1e3d;
+    --pRIMARY: #0f5c8a;
+    --Black-Heading: #0a2b40;
     --Black-Stroke: #e4e8f0;
     --White: #fff;
     --Title: #1f2a44;
     --Stroke: #e4e8f0;
     --Primary-0: #fff;
     --Neutral-06: #9aa3b5;
-    --Neutral-07: #1e3a8a;
+    --Neutral-07: #0f5c8a;
     --Body: #1f2a44;
-    --Secondary-30: #eef2fb;
-    --Heading: #0a1e3d;
-    --Text: #0a1e3d;
+    --Secondary-30: #e8f2f8;
+    --Heading: #0a2b40;
+    --Text: #0a2b40;
     --16: 16px;
     --4: 4px;
     --12: 12px;
@@ -1149,9 +1149,9 @@
     background: var(--th-accent-subtle) !important;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
   }
-  /* Midnight Indigo: primary CTA = #1E3A8A ds-deep, navy hover. */
+  /* Midnight Indigo: primary CTA = #0F5C8A ds-deep, navy hover. */
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.20);
+    box-shadow: 0 4px 20px rgba(15, 92, 138, 0.20);
   }
   .onb-btn-primary {
     background: var(--ds-deep);
@@ -1161,7 +1161,7 @@
   .onb-btn-primary:hover:not(:disabled) {
     background: var(--ds-navy);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(30, 58, 138, 0.28);
+    box-shadow: 0 6px 24px rgba(15, 92, 138, 0.28);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1187,7 +1187,7 @@
     background: var(--ds-sky) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(30, 58, 138, 0.15);
+    box-shadow: 0 2px 12px rgba(15, 92, 138, 0.15);
   }
 
   /* Congratulations */

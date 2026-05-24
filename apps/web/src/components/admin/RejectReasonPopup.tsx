@@ -58,7 +58,7 @@ const RejectReasonPopup: React.FC<RejectReasonPopupProps> = ({
           <Button
             onClick={handleSubmit}
             disabled={!reason.trim() || isLoading}
-            className="bg-[#1E3A8A] text-white hover:bg-[#2D4DA8] rounded-full px-8"
+            className="bg-[#0F5C8A] text-white hover:bg-[#14709F] rounded-full px-8"
           >
             {isLoading ? "Submitting..." : "Submit"}
           </Button>

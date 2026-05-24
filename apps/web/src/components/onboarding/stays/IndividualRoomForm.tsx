@@ -13,11 +13,11 @@ import {
 } from "lucide-react";
 
 // ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #1E3A8A with sky/mist tints for focus & accent.
-const TEAL = "#1E3A8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(30, 58, 138, 0.07)";
-const TEAL_FOCUS = "rgba(30, 58, 138, 0.15)";
-const BLACK = "#11295A"; // headings → navy per spec
+// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
+const TEAL = "#0F5C8A"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(15, 92, 138, 0.07)";
+const TEAL_FOCUS = "rgba(15, 92, 138, 0.15)";
+const BLACK = "#0A4670"; // headings → navy per spec
 const GRAY_500 = "#2C2C2A"; // body → charcoal
 const GRAY_400 = "#888780"; // muted → slate
 const GRAY_200 = "#D3D1C7"; // borders → pebble
@@ -208,7 +208,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
               height: 36,
               borderRadius: 11,
               backgroundColor: TEAL_BG,
-              border: "1.5px solid rgba(30,58,138,0.25)",
+              border: "1.5px solid rgba(15,92,138,0.25)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

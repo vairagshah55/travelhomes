@@ -1,12 +1,15 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutDashboard, Users2, Calendar, MessageSquare, Settings } from "lucide-react";
 
+// AdminApp is mounted at /admin/* in the parent router, so every path here
+// must include the /admin prefix — otherwise navigation lands on the public
+// (vendor) routes and bounces admins to the vendor login.
 const NAV_ITEMS = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { label: "Users",     icon: Users2,          path: "/management/user" },
-  { label: "Bookings",  icon: Calendar,        path: "/management/booking" },
-  { label: "Tickets",   icon: MessageSquare,   path: "/help-desk" },
-  { label: "Settings",  icon: Settings,        path: "/global-settings" },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
+  { label: "Users",     icon: Users2,          path: "/admin/management/user" },
+  { label: "Bookings",  icon: Calendar,        path: "/admin/management/booking" },
+  { label: "Tickets",   icon: MessageSquare,   path: "/admin/help-desk" },
+  { label: "Settings",  icon: Settings,        path: "/admin/global-settings" },
 ];
 
 export function MobileBottomNav() {

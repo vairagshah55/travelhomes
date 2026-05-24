@@ -18,11 +18,14 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Check if admin is already logged in
+  // Check if admin is already logged in.
+  // NOTE: AdminApp is mounted at /admin/* in the parent router, so paths inside
+  // AdminApp are relative to /admin. Navigating to absolute "/dashboard" would
+  // hit the vendor-protected root route and bounce admins to the vendor login.
   React.useEffect(() => {
     const adminToken = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
     if (adminToken) {
-      navigate('/dashboard');
+      navigate('/admin/dashboard');
     }
   }, [navigate]);
 
@@ -55,7 +58,7 @@ const handleLogin = async (e: React.FormEvent) => {
     }
 
     toast.success("Admin login successful!");
-    navigate("/dashboard");
+    navigate("/admin/dashboard");
 
   } catch (error: any) {
     toast.error(error?.message || "Admin login failed. Please try again.");
@@ -65,17 +68,17 @@ const handleLogin = async (e: React.FormEvent) => {
 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A1E3D] via-[#11295A] to-[#0A1E3D] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A2B40] via-[#0A4670] to-[#0A2B40] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Admin Panel Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="p-4 bg-[#1E3A8A] rounded-full shadow-lg">
+            <div className="p-4 bg-[#0F5C8A] rounded-full shadow-lg">
               <Shield size={32} className="text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Admin Panel</h1>
-          <p className="text-[#DBE3F5]">Secure administrative access</p>
+          <p className="text-[#D0E4EF]">Secure administrative access</p>
         </div>
 
         {/* Login Card */}
@@ -84,7 +87,7 @@ const handleLogin = async (e: React.FormEvent) => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-sm font-medium text-[#DBE3F5]">
+                <Label htmlFor="email" className="text-sm font-medium text-[#D0E4EF]">
                   Admin Email
                 </Label>
                 <Input
@@ -92,14 +95,14 @@ const handleLogin = async (e: React.FormEvent) => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white/10 border-white/20 text-white placeholder:text-[#7A99EE] focus:border-[#3E63D3] focus:ring-[#3E63D3]"
+                  className="mt-1 h-12 bg-white/10 border-white/20 text-white placeholder:text-[#67B2D8] focus:border-[#1E88BA] focus:ring-[#1E88BA]"
                   placeholder="Enter admin email"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-sm font-medium text-[#DBE3F5]">
+                <Label htmlFor="password" className="text-sm font-medium text-[#D0E4EF]">
                   Admin Password
                 </Label>
                 <div className="relative mt-1">
@@ -108,14 +111,14 @@ const handleLogin = async (e: React.FormEvent) => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white/10 border-white/20 text-white placeholder:text-[#7A99EE] focus:border-[#3E63D3] focus:ring-[#3E63D3] pr-12"
+                    className="h-12 bg-white/10 border-white/20 text-white placeholder:text-[#67B2D8] focus:border-[#1E88BA] focus:ring-[#1E88BA] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A99EE] hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#67B2D8] hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -130,9 +133,9 @@ const handleLogin = async (e: React.FormEvent) => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#1E3A8A] bg-white/10 border-white/20 rounded focus:ring-[#3E63D3]"
+                  className="w-4 h-4 text-[#0F5C8A] bg-white/10 border-white/20 rounded focus:ring-[#1E88BA]"
                 />
-                <Label htmlFor="remember" className="text-sm text-[#DBE3F5]">
+                <Label htmlFor="remember" className="text-sm text-[#D0E4EF]">
                   Keep me signed in
                 </Label>
               </div>
@@ -141,7 +144,7 @@ const handleLogin = async (e: React.FormEvent) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-[#1E3A8A] to-[#2D4DA8] hover:from-[#2D4DA8] hover:to-[#3E63D3] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-[#0F5C8A] to-[#14709F] hover:from-[#14709F] hover:to-[#1E88BA] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -154,9 +157,9 @@ const handleLogin = async (e: React.FormEvent) => {
             </Button>
 
             <div className="text-center pt-4">
-              <p className="text-xs text-[#7A99EE]">
+              <p className="text-xs text-[#67B2D8]">
                 For vendor access, use the{' '}
-                <Link to="/login" className="text-[#DBE3F5] hover:text-white underline">
+                <Link to="/login" className="text-[#D0E4EF] hover:text-white underline">
                   vendor login page
                 </Link>
               </p>
@@ -165,7 +168,7 @@ const handleLogin = async (e: React.FormEvent) => {
         </div>
 
         {/* Security notice */}
-        <div className="text-center mt-6 text-xs text-[#7A99EE]">
+        <div className="text-center mt-6 text-xs text-[#67B2D8]">
           <p>This is a secure admin area. All activities are logged and monitored.</p>
         </div>
       </div>

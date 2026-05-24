@@ -74,7 +74,7 @@ export function GuestDropdown({
       <GuestRow label="Pets" subtitle="Service animals" type="pet" isLast />
       <Button
         onClick={handleDone}
-        className="w-full mt-2.5 bg-[#1E3A8A] text-white rounded-xl h-9 text-xs font-semibold hover:bg-[#1E3A8A] active:scale-[0.98] transition-all duration-200"
+        className="w-full mt-2.5 bg-[#0F5C8A] text-white rounded-xl h-9 text-xs font-semibold hover:bg-[#0F5C8A] active:scale-[0.98] transition-all duration-200"
       >
         Done
       </Button>

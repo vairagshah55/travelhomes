@@ -199,7 +199,7 @@ const AdminPlugins: React.FC = () => {
     <button
       onClick={onChange}
       className={`flex items-center w-9 h-5 p-0.5 rounded-full transition-colors ${
-        checked ? "bg-[#1E3A8A] justify-end" : "bg-[#D2D5DA] justify-start"
+        checked ? "bg-[#0F5C8A] justify-end" : "bg-[#D2D5DA] justify-start"
       }`}
     >
       <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>

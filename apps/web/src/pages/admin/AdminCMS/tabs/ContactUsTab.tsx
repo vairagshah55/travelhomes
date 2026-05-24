@@ -96,7 +96,7 @@ export function ContactUsTab({
               accept="image/*"
               onChange={handleContactImageChange}
             />
-            <div className="w-full bg-[#1E3A8A] text-white py-2 rounded-full text-sm text-center cursor-pointer hover:bg-[#2D4DA8]">
+            <div className="w-full bg-[#0F5C8A] text-white py-2 rounded-full text-sm text-center cursor-pointer hover:bg-[#14709F]">
               Change Photo
             </div>
           </label>
