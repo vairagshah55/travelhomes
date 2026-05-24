@@ -17,27 +17,34 @@ interface ProfileSidebarProps {
 
 const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
   const navigate = useNavigate();
+  const displayName = user?.firstName || "Profile";
+
   return (
     <div className="lg:w-80 flex-shrink-0">
-      <div className="bg-black rounded-md p-8 text-white">
+      <div className="bg-black rounded-md p-8 text-white relative">
+        <button
+          onClick={() => navigate("/")}
+          className="max-md:hidden absolute top-4 left-4 flex items-center gap-1 text-white text-sm hover:opacity-80"
+        >
+          <SlArrowLeft size={12} />
+          <span>Back</span>
+        </button>
+
         {/* Avatar */}
-        <div className="text-center rounded-full mb-9">
-          <div className="relative rounded-full inline-block mb-3">
+        <div className="text-center mb-9 mt-4">
+          <div className="inline-block mb-3">
             <img
               src={user?.photo ? getImageUrl(user.photo) : "/user-avatar.svg"}
-              onError={(e) => { e.currentTarget.src = "/user-avatar.svg"; }}
-              alt={`${user?.firstName}'s avatar`}
-              className="w-full h-full object-cover bg-white rounded-full"
+              onError={(e) => {
+                e.currentTarget.src = "/user-avatar.svg";
+              }}
+              alt={`${displayName} avatar`}
+              className="w-32 h-32 object-cover bg-white rounded-full"
             />
           </div>
-          <button
-            onClick={() => navigate("/")}
-            className="max-md:hidden text-white flex absolute top-8 left-0 items-center gap-1 ml-24 max-md:ml-4 mt-14"
-          >
-            <SlArrowLeft size={12} />
-            <span className="text-sm">Back</span>
-          </button>
-          <h2 className="text-xl font-bold font-geist">Upload a Photo</h2>
+          <h2 className="text-xl font-bold font-geist">
+            {user?.firstName} {user?.lastName}
+          </h2>
         </div>
 
         {/* Identity verification blurb */}
@@ -50,18 +57,15 @@ const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
         </div>
 
         {/* Verification status */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-geist">{user?.firstName} {user?.lastName}</h3>
-          <div className="space-y-2">
-            <VerificationItem
-              confirmed={!!user?.email}
-              label={user?.email ? "Email Confirmed" : "Email Not Confirmed"}
-            />
-            <VerificationItem
-              confirmed={!!user?.mobileVerified}
-              label={user?.mobileVerified ? "Mobile Confirmed" : "Mobile Not Confirmed"}
-            />
-          </div>
+        <div className="space-y-2">
+          <VerificationItem
+            confirmed={!!user?.email}
+            label={user?.email ? "Email Confirmed" : "Email Not Confirmed"}
+          />
+          <VerificationItem
+            confirmed={!!user?.mobileVerified}
+            label={user?.mobileVerified ? "Mobile Confirmed" : "Mobile Not Confirmed"}
+          />
         </div>
       </div>
     </div>

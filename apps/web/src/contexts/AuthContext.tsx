@@ -518,21 +518,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           effectiveUserType = "vendor";
         }
 
+        // Use `??` (not `||`) and fall back to the existing value for every
+        // field. The API sometimes omits fields like `photo` from refetches —
+        // without these fallbacks each background refresh would overwrite
+        // them with `undefined`, then the next refresh might restore them,
+        // causing the avatar / verification badges / phone number to flicker
+        // (a visible "blink" across the whole user-profile sidebar).
         const updatedUser: User = {
           ...user,
-          firstName: p.firstName || user.firstName,
-          lastName: p.lastName || user.lastName,
+          firstName: p.firstName ?? user.firstName,
+          lastName: p.lastName ?? user.lastName,
           userType: effectiveUserType,
-          vendorStatus: (p as any).vendorStatus,
-          photo: p.photo,
-          phoneNumber: p.phoneNumber,
-          mobileVerified: p.mobileVerified,
-          emailVerified: p.emailVerified,
-          state: p.state,
-          city: p.city,
-          idProof: p.idProof,
-          dateOfBirth: p.dateOfBirth,
+          vendorStatus: (p as any).vendorStatus ?? user.vendorStatus,
+          photo: p.photo ?? user.photo,
+          phoneNumber: p.phoneNumber ?? user.phoneNumber,
+          mobileVerified: p.mobileVerified ?? user.mobileVerified,
+          emailVerified: p.emailVerified ?? user.emailVerified,
+          state: p.state ?? user.state,
+          city: p.city ?? user.city,
+          idProof: p.idProof ?? user.idProof,
+          dateOfBirth: p.dateOfBirth ?? user.dateOfBirth,
         };
+
+        // Skip the setUser when the refetch returned identical values. Without
+        // this guard, the 500ms-after-mount and visibility-change refreshes
+        // build a new object reference every time and force every context
+        // consumer to repaint — causing a visible "jerk" on pages like
+        // UserProfile that key visuals (avatar, name) off `user`.
+        const hasChanged = (Object.keys(updatedUser) as (keyof User)[]).some(
+          (k) => updatedUser[k] !== user[k],
+        );
+        if (!hasChanged) return;
+
         setUser(updatedUser);
         if (localStorage.getItem("travel_auth_user")) {
           localStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));

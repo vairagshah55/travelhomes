@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -8,23 +7,15 @@ import ProfileSidebar from "../components/userProfile/ProfileSidebar";
 import ProfileHeader from "../components/userProfile/ProfileHeader";
 import ProfileInfoSection from "../components/userProfile/ProfileInfoSection";
 
+// NOTE: don't call refreshUser() here. AuthContext already auto-refreshes
+// 500ms after app mount and on every tab-visibility change. A page-level
+// refresh on top of that caused a visible jerk: the page first painted with
+// the cached user, then ~300ms later the refetch landed and React repainted
+// with a new user object (refreshUser always builds a fresh reference even
+// when nothing changed), flashing the avatar/name layout.
 const UserProfile = () => {
-  const { user, refreshUser } = useAuth();
-  const [loading, setLoading] = useState<boolean>(true);
+  const { user } = useAuth();
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    const load = async () => {
-      try {
-        await refreshUser();
-      } catch (e) {
-        // ignore
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
 
   const handleEdit = () => navigate("/user-profile-edit");
 

@@ -360,7 +360,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
         relative flex flex-col h-full overflow-hidden
         bg-white dark:bg-[#0f1117]
         shadow-[inset_-1px_0_0_#f0f0f0] dark:shadow-[inset_-1px_0_0_#1c1f26]
-        transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+        transition-[width] duration-300 ease-in-out
       "
     >
       {/* ─── Header ─── */}
