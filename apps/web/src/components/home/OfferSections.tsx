@@ -2,7 +2,6 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import Section from "../Section";
-import DefaultCard from "../DefaultCard";
 import ResultCard from "../ResultCard";
 import { CardGridSkeleton } from "./skeletons";
 import { ScrollReveal } from "./ScrollReveal";
@@ -93,17 +92,23 @@ export function OfferSections({
         </OfferSection>
       )}
 
-      {/* ── Secondary sections (max 5, with View all link) ── */}
+      {/* ── Secondary sections (max 5, with View all link) ──
+          Use ResultCard (same component as the primary section above) so the
+          card UI — shimmer wrap, hover-reveal heart, "Saved" badge, price
+          styling — is identical across primary + secondary. Pass each
+          section's *own* type as `activeFilter` (it controls which of the 3
+          lists ResultCard renders + the wishlist item type on heart-click);
+          the unrelated lists go in as empty arrays. */}
       {activeFilter === "camper-van" && (
         <>
           {homepageSections["unique-stays"] && (
             <OfferSection title="Unique Stays" subtitle="Handpicked for every kind of traveler" sectionId="unique-stays" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=unique-stays">
-              <DefaultCard activeFilter={activeFilter} CardData={stayPreview} />
+              <ResultCard activeFilter="unique-stays" ResultstayShown={stayPreview} ResultcaravanShown={[]} ResultactivityShown={[]} />
             </OfferSection>
           )}
           {homepageSections["best-activity"] && (
             <OfferSection title="Best Activity" subtitle="Handpicked for every kind of traveler" sectionId="activity" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=activity">
-              <DefaultCard CardData={activityPreview} activeFilter={activeFilter} />
+              <ResultCard activeFilter="activity" ResultactivityShown={activityPreview} ResultcaravanShown={[]} ResultstayShown={[]} />
             </OfferSection>
           )}
         </>
@@ -113,12 +118,12 @@ export function OfferSections({
         <>
           {homepageSections["camper-van"] && (
             <OfferSection title="Stay at our top Camper Van" subtitle="Handpicked for every kind of traveler" sectionId="camper-van" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=camper-van">
-              <DefaultCard CardData={caravanPreview} activeFilter={activeFilter} />
+              <ResultCard activeFilter="camper-van" ResultcaravanShown={caravanPreview} ResultstayShown={[]} ResultactivityShown={[]} />
             </OfferSection>
           )}
           {homepageSections["best-activity"] && (
             <OfferSection title="Best Activity" subtitle="Handpicked for every kind of traveler" sectionId="activity" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=activity">
-              <DefaultCard CardData={activityPreview} activeFilter={activeFilter} />
+              <ResultCard activeFilter="activity" ResultactivityShown={activityPreview} ResultcaravanShown={[]} ResultstayShown={[]} />
             </OfferSection>
           )}
         </>
@@ -128,12 +133,12 @@ export function OfferSections({
         <>
           {homepageSections["camper-van"] && (
             <OfferSection title="Stay at our top Camper Van" subtitle="Handpicked for every kind of traveler" sectionId="camper-van" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=camper-van">
-              <DefaultCard CardData={caravanPreview} activeFilter={activeFilter} />
+              <ResultCard activeFilter="camper-van" ResultcaravanShown={caravanPreview} ResultstayShown={[]} ResultactivityShown={[]} />
             </OfferSection>
           )}
           {homepageSections["unique-stays"] && (
             <OfferSection title="Unique Stays" subtitle="Handpicked for every kind of traveler" sectionId="unique-stays" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=unique-stays">
-              <DefaultCard CardData={stayPreview} activeFilter={activeFilter} />
+              <ResultCard activeFilter="unique-stays" ResultstayShown={stayPreview} ResultcaravanShown={[]} ResultactivityShown={[]} />
             </OfferSection>
           )}
         </>
