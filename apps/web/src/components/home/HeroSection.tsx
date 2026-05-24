@@ -37,7 +37,7 @@ function HeroSlideshow() {
           alt=""
           className="absolute inset-0 w-full h-full object-cover object-center"
           initial={false}
-          animate={{ opacity: i === current ? 1 : 0, scale: i === current ? 1 : 1.08 }}
+          animate={{ opacity: i === current ? 1 : 0, scale: i === current ? 1 : 1.04 }}
           transition={{ opacity: { duration: 1.2, ease: "easeInOut" }, scale: { duration: 6, ease: "linear" } }}
         />
       ))}
@@ -245,17 +245,17 @@ export function HeroSection({
             }}
           >
             {homepageSections["camper-van"] && (
-              <motion.div variants={{ hidden: { opacity: 0, y: 16, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } } }}>
+              <motion.div variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } }}>
                 <FilterButton icon={CamperVanIcon} label="Camper Van" active={activeFilter === "camper-van"} onClick={() => setActiveFilter("camper-van")} variant="hero" />
               </motion.div>
             )}
             {homepageSections["unique-stays"] && (
-              <motion.div variants={{ hidden: { opacity: 0, y: 16, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } } }}>
+              <motion.div variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } }}>
                 <FilterButton icon={HomeIcon} label="Unique Stays" active={activeFilter === "unique-stays"} onClick={() => setActiveFilter("unique-stays")} variant="hero" />
               </motion.div>
             )}
             {homepageSections["best-activity"] && (
-              <motion.div variants={{ hidden: { opacity: 0, y: 16, scale: 0.95 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: "easeOut" } } }}>
+              <motion.div variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } } }}>
                 <FilterButton icon={RocketIcon} label="Activity" active={activeFilter === "activity"} onClick={() => setActiveFilter("activity")} variant="hero" />
               </motion.div>
             )}
@@ -265,8 +265,8 @@ export function HeroSection({
           <motion.div
             className="hidden lg:block w-full max-w-5xl relative z-50"
             style={{ overflow: "visible" }}
-            initial={{ opacity: 0, y: 28, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.75, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="bg-white rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.18)] ring-1 ring-black/5 p-2.5 relative overflow-visible z-50">

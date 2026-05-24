@@ -93,7 +93,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import ReadMore from "@/components/ReadMore";
-import { StayDetailsSkeleton } from "@/utils/UniqueStaysSkeleton";
+import ProductDetailsSkeleton from "@/components/product-details/ProductDetailsSkeleton";
 
 export default function UniqueStayDetails() {
   const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
@@ -431,7 +431,7 @@ export default function UniqueStayDetails() {
   return (
     <>
       {/* <Header variant="transparent" className="fixed w-full z-50" /> */}
-      {(loadingStay || loadingVendor) && <StayDetailsSkeleton />}
+      {(loadingStay || loadingVendor) && <ProductDetailsSkeleton />}
       {!(loadingStay || loadingVendor) && (
         <>
           <motion.div

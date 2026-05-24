@@ -65,35 +65,26 @@ const handleLogin = async (e: React.FormEvent) => {
 };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A1E3D] via-[#11295A] to-[#0A1E3D] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Admin Panel Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="p-4 bg-purple-600 rounded-full">
+            <div className="p-4 bg-[#1E3A8A] rounded-full shadow-lg">
               <Shield size={32} className="text-white" />
             </div>
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">Admin Panel</h1>
-          <p className="text-purple-200">Secure administrative access</p>
+          <p className="text-[#DBE3F5]">Secure administrative access</p>
         </div>
 
         {/* Login Card */}
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl p-8 shadow-2xl">
-          {/* Back button */}
-          {/* <Link
-            to="/"
-            className="flex items-center gap-2 text-purple-200 hover:text-white transition-colors mb-6"
-          >
-            <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Back to homepage</span>
-          </Link> */}
-
           {/* Login form */}
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="email" className="text-sm font-medium text-purple-100">
+                <Label htmlFor="email" className="text-sm font-medium text-[#DBE3F5]">
                   Admin Email
                 </Label>
                 <Input
@@ -101,14 +92,14 @@ const handleLogin = async (e: React.FormEvent) => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white/10 border-white/20 text-white placeholder:text-purple-300 focus:border-purple-400 focus:ring-purple-400"
+                  className="mt-1 h-12 bg-white/10 border-white/20 text-white placeholder:text-[#7A99EE] focus:border-[#3E63D3] focus:ring-[#3E63D3]"
                   placeholder="Enter admin email"
                   required
                 />
               </div>
 
               <div>
-                <Label htmlFor="password" className="text-sm font-medium text-purple-100">
+                <Label htmlFor="password" className="text-sm font-medium text-[#DBE3F5]">
                   Admin Password
                 </Label>
                 <div className="relative mt-1">
@@ -117,14 +108,14 @@ const handleLogin = async (e: React.FormEvent) => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white/10 border-white/20 text-white placeholder:text-purple-300 focus:border-purple-400 focus:ring-purple-400 pr-12"
+                    className="h-12 bg-white/10 border-white/20 text-white placeholder:text-[#7A99EE] focus:border-[#3E63D3] focus:ring-[#3E63D3] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-purple-300 hover:text-white transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A99EE] hover:text-white transition-colors"
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
@@ -139,9 +130,9 @@ const handleLogin = async (e: React.FormEvent) => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-purple-600 bg-white/10 border-white/20 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-[#1E3A8A] bg-white/10 border-white/20 rounded focus:ring-[#3E63D3]"
                 />
-                <Label htmlFor="remember" className="text-sm text-purple-200">
+                <Label htmlFor="remember" className="text-sm text-[#DBE3F5]">
                   Keep me signed in
                 </Label>
               </div>
@@ -150,7 +141,7 @@ const handleLogin = async (e: React.FormEvent) => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-[#1E3A8A] to-[#2D4DA8] hover:from-[#2D4DA8] hover:to-[#3E63D3] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">
@@ -163,9 +154,9 @@ const handleLogin = async (e: React.FormEvent) => {
             </Button>
 
             <div className="text-center pt-4">
-              <p className="text-xs text-purple-300">
+              <p className="text-xs text-[#7A99EE]">
                 For vendor access, use the{' '}
-                <Link to="/login" className="text-purple-100 hover:text-white underline">
+                <Link to="/login" className="text-[#DBE3F5] hover:text-white underline">
                   vendor login page
                 </Link>
               </p>
@@ -174,7 +165,7 @@ const handleLogin = async (e: React.FormEvent) => {
         </div>
 
         {/* Security notice */}
-        <div className="text-center mt-6 text-xs text-purple-300">
+        <div className="text-center mt-6 text-xs text-[#7A99EE]">
           <p>This is a secure admin area. All activities are logged and monitored.</p>
         </div>
       </div>

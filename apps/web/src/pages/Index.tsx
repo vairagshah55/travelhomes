@@ -8,7 +8,7 @@ import { useFaqs } from "@/hooks/useFaqs";
 import { testimonialsApi, PublicTestimonial } from "@/lib/testimonials";
 import { useAuth } from "../contexts/AuthContext";
 import Section from "@/components/Section";
-import DefaultCard from "@/components/DefaultCard";
+import ResultCard from "@/components/ResultCard";
 import { Button } from "@/components/ui/button";
 import { CardGridSkeleton } from "@/components/home/skeletons";
 
@@ -409,7 +409,12 @@ export default function Index() {
               </p>
             ) : (
               <>
-                <DefaultCard CardData={stayShown} activeFilter={activeFilter} />
+                <ResultCard
+                  activeFilter="unique-stays"
+                  ResultstayShown={stayShown}
+                  ResultcaravanShown={[]}
+                  ResultactivityShown={[]}
+                />
                 {stayCards.length > stayShown.length && (
                   <div className="mt-6 flex justify-center">
                     <Button

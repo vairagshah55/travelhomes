@@ -101,7 +101,7 @@ import {
 import ReadMore from "@/components/ReadMore";
 import { getImageUrl } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { StayDetailsSkeleton } from "@/utils/UniqueStaysSkeleton";
+import ProductDetailsSkeleton from "@/components/product-details/ProductDetailsSkeleton";
 
 export default function UniqueStayDetails() {
   const { id } = useParams();
@@ -440,7 +440,7 @@ export default function UniqueStayDetails() {
 
   return (
     <>
-      {(loadingStay || loadingVendor) && <StayDetailsSkeleton />}
+      {(loadingStay || loadingVendor) && <ProductDetailsSkeleton />}
       {!(loadingStay || loadingVendor) && (
         <>
           <motion.div

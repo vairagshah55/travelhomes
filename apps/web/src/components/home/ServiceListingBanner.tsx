@@ -62,8 +62,8 @@ export function ServiceListingBanner() {
             {/* Right — image */}
             <motion.div
               className="relative h-64 lg:h-full min-h-[280px] lg:min-h-[420px]"
-              initial={{ opacity: 0, scale: 1.02 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
             >

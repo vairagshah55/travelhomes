@@ -17,7 +17,9 @@ import OnboardingRedirect from "./components/OnboardingRedirect";
 import { DashboardLayoutShell } from "./components/DashboardLayout";
 import SEOMeta from "./components/SEOMeta";
 import ScrollToTop from "./components/ScrollToTop";
-import RouteFallback from "./components/RouteFallback";
+import GenericRouteFallback from "./components/GenericRouteFallback";
+import AdminRouteFallback from "./components/admin/AdminRouteFallback";
+import ProductDetailsSkeleton from "./components/product-details/ProductDetailsSkeleton";
 import { initDashboardAnimations } from "./animations";
 
 // Eager: the homepage drives first paint, NotFound is the 404 fallback.
@@ -148,15 +150,42 @@ const App = () => {
             <BrowserRouter>
               <ScrollToTop />
               <SEOMeta />
-              <Suspense fallback={<RouteFallback />}>
+              <Suspense fallback={<GenericRouteFallback />}>
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route path="/search-results" element={<SearchResults />} />
-                  <Route path="/campervan/:id" element={<CamperVanDetails />} />
-                  <Route path="/unique-stay/:id" element={<UniqueStayDetails />} />
-                  <Route path="/activity/:id" element={<ActivityDetails />} />
+                  {/* Product-detail routes get a skeleton that matches their
+                      actual layout (real Header/Footer + content skeleton). The
+                      same component is also rendered in-page while react-query
+                      fetches stay/vendor data, so cold-visit shows ONE
+                      uninterrupted skeleton (not chunk-fallback then in-page
+                      skeleton with different visuals). */}
+                  <Route
+                    path="/campervan/:id"
+                    element={
+                      <Suspense fallback={<ProductDetailsSkeleton />}>
+                        <CamperVanDetails />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/unique-stay/:id"
+                    element={
+                      <Suspense fallback={<ProductDetailsSkeleton />}>
+                        <UniqueStayDetails />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/activity/:id"
+                    element={
+                      <Suspense fallback={<ProductDetailsSkeleton />}>
+                        <ActivityDetails />
+                      </Suspense>
+                    }
+                  />
 
                   <Route
                     path="/login"
@@ -539,8 +568,17 @@ const App = () => {
                   <Route path="/privacy" element={<PrivacyPolicy />} />
 
                   {/* Admin sub-app — paths inside AdminApp are interpreted
-                      relative to /admin (e.g. /admin/dashboard, /admin/login). */}
-                  <Route path="/admin/*" element={<AdminApp />} />
+                      relative to /admin (e.g. /admin/dashboard, /admin/login).
+                      Inner Suspense uses a minimal admin-tinted fallback so the
+                      lazy chunk load doesn't flash the property-detail skeleton. */}
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <Suspense fallback={<AdminRouteFallback />}>
+                        <AdminApp />
+                      </Suspense>
+                    }
+                  />
 
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
