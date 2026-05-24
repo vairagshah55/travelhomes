@@ -32,6 +32,10 @@ import {
   PricingStep,
   InclusionExclusionStep,
 } from "@/components/onboarding/activity";
+import { submitActivityOnboarding } from "@/components/onboarding/activity/submitActivityOnboarding";
+import { validateActivityStep } from "@/components/onboarding/activity/validateActivityStep";
+import { loadActivityDraft } from "@/components/onboarding/activity/loadActivityDraft";
+import { ActivityStepRenderer } from "@/components/onboarding/activity/ActivityStepRenderer";
 
 interface ActivityType {
   id: string;
@@ -234,122 +238,13 @@ const ActivityOnboarding = () => {
   }, [activityCategories]);
 
   useEffect(() => {
-    // Check for existing data (resubmission)
-    const loadExistingData = async () => {
-      try {
-        const data = await getOnboardingData();
-
-        if (
-          data &&
-          data.type === "activity" &&
-          data.doc &&
-          ["pending", "draft", "rejected"].includes(data.doc.status)
-        ) {
-          const doc = data.doc;
-
-          setStatus(doc.status);
-          setRejectionReason(doc.rejectionReason || "");
-
-          // Map backend data to frontend formData
-          setFormData((prev) => ({
-            ...prev,
-            selectedActivities: doc.selectedActivities || [],
-            features: doc.features || [],
-            activityName: doc.activityName || "",
-            description: doc.description || "",
-            coverImage: doc.coverImage || null,
-            photos: doc.photos || [],
-            rulesAndRegulations: doc.rulesAndRegulations || [],
-
-            regularPrice: String(doc.regularPrice || ""),
-            personCapacity: doc.personCapacity || 1,
-            timeDuration: doc.timeDuration || "",
-            locality: doc.locality || "India",
-            state: doc.state || "",
-            city: doc.city || "",
-            pincode: doc.pincode || "",
-
-            priceIncludes: doc.priceIncludes || [],
-            priceExcludes: doc.priceExcludes || [],
-            expectations: doc.expectations || [],
-
-            firstUserDiscount: doc.firstUserDiscount ?? true,
-            discountType: doc.discountType || "percentage",
-            discountAmount: String(doc.discountAmount || ""),
-            finalPrice: String(doc.finalPrice || ""),
-
-            festivalOffers: doc.festivalOffers ?? false,
-            festivalDiscountType: doc.festivalDiscountType || "percentage",
-            festivalDiscountAmount: String(doc.festivalDiscountAmount || ""),
-            festivalFinalPrice: String(doc.festivalFinalPrice || ""),
-
-            weeklyOffers: doc.weeklyOffers ?? false,
-            weeklyDiscountType: doc.weeklyDiscountType || "percentage",
-            weeklyDiscountAmount: String(doc.weeklyDiscountAmount || ""),
-            weeklyFinalPrice: String(doc.weeklyFinalPrice || ""),
-
-            specialOffers: doc.specialOffers ?? false,
-            specialDiscountType: doc.specialDiscountType || "percentage",
-            specialDiscountAmount: String(doc.specialDiscountAmount || ""),
-            specialFinalPrice: String(doc.specialFinalPrice || ""),
-
-            brandName: doc.brandName || "",
-            legalCompanyName: doc.legalCompanyName || "",
-            gstNumber: doc.gstNumber || "",
-            businessEmail: doc.businessEmail || "",
-            businessPhone: doc.businessPhone || "",
-            businessLocality: doc.businessLocality || "India",
-            businessPincode: doc.businessPincode || "",
-            businessCity: doc.businessCity || "",
-            businessState: doc.businessState || "",
-
-            firstName: doc.firstName || "",
-            lastName: doc.lastName || "",
-            personalLocality: doc.personalLocality || "India",
-            personalPincode: doc.personalPincode || "",
-            personalCity: doc.personalCity || "",
-            personalState: doc.personalState || "",
-            dateOfBirth: doc.dateOfBirth || "",
-            maritalStatus: doc.maritalStatus || "",
-            idProof: doc.idProof || "",
-            idPhotos: doc.idPhotos || [],
-
-            termsAccepted: false,
-          }));
-        } else if (userDetails && user?.userType !== "vendor") {
-
-          // Auto-fill from user details if no draft exists
-          setFormData((prev) => ({
-            ...prev,
-            firstName: userDetails.firstName || "",
-            lastName: userDetails.lastName || "",
-            personalLocality: userDetails.personalLocality || "India",
-            personalPincode: userDetails.personalPincode || "",
-            personalCity: userDetails.city || "",
-            personalState: userDetails.state || "",
-            dateOfBirth: userDetails.dateOfBirth
-              ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
-              : "",
-            maritalStatus: userDetails.maritalStatus || "",
-            idProof: userDetails.idProof || "",
-            idPhotos: userDetails.idPhotos || [],
-
-            brandName: userDetails.business?.brandName || "",
-            legalCompanyName: userDetails.business?.legalCompanyName || "",
-            gstNumber: userDetails.business?.gstNumber || "",
-            businessEmail: userDetails.business?.email || "",
-            businessPhone: userDetails.business?.phoneNumber || "",
-            businessLocality: userDetails.business?.locality || "India",
-            businessPincode: userDetails.business?.pincode || "",
-            businessCity: userDetails.business?.city || "",
-            businessState: userDetails.business?.state || "",
-          }));
-        }
-      } catch (err) {
-      }
-    };
-
-    loadExistingData();
+    loadActivityDraft({
+      setFormData,
+      setStatus,
+      setRejectionReason,
+      userDetails,
+      isExistingVendor: user?.userType === "vendor",
+    });
   }, [userDetails]);
 
   // Auto-calculate final prices for discounts
@@ -431,268 +326,22 @@ const ActivityOnboarding = () => {
     }
   };
 
-  const fileToDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-  const submitActivity = async () => {
-    try {
-      setIsLoading(true);
-
-      // Basic validation
-      if (!formData.activityName || !formData.activityName.trim()) {
-        throw new Error("Activity name is required");
-      }
-
-      if (!formData.selectedActivities || formData.selectedActivities.length === 0) {
-        throw new Error("Please select at least one activity type");
-      }
-
-      const regPrice = Number(formData.regularPrice);
-      if (!formData.regularPrice || isNaN(regPrice) || regPrice <= 0) {
-        throw new Error("Please enter a valid price");
-      }
-
-      // Convert selected photos to data URLs so server can map to Offer.photos
-      const coverImageData = formData.coverImage
-        ? formData.coverImage instanceof File
-          ? await fileToDataUrl(formData.coverImage)
-          : formData.coverImage
-        : null;
-      const photosData = await Promise.all(
-        (formData.photos || []).map((f: any) => (f instanceof File ? fileToDataUrl(f) : f)),
-      );
-      const idPhotosData = await Promise.all(
-        (formData.idPhotos || []).map((f: any) => (f instanceof File ? fileToDataUrl(f) : f)),
-      );
-
-      const clean = {
-        ...formData,
-        regularPrice: regPrice,
-        personCapacity: Number(formData.personCapacity),
-        finalPrice: Number(formData.finalPrice) || 0,
-        coverImage: coverImageData,
-        photos: photosData,
-        idPhotos: idPhotosData,
-      };
-
-      const result = await submitOnboardingData("activity", clean);
-
-      // Update user details for auto-fill in future
-      await updateUserDetails({
-        firstName: clean.firstName,
-        lastName: clean.lastName,
-        phoneNumber: clean.businessPhone,
-        country: (clean as any).personalCountry,
-        personalLocality: clean.personalLocality,
-        personalPincode: clean.personalPincode,
-        city: clean.personalCity,
-        state: clean.personalState,
-        dateOfBirth: clean.dateOfBirth,
-        maritalStatus: clean.maritalStatus,
-        idProof: clean.idProof,
-        idPhotos: clean.idPhotos as string[],
-        business: {
-          brandName: clean.brandName,
-          legalCompanyName: clean.legalCompanyName,
-          gstNumber: clean.gstNumber,
-          email: clean.businessEmail,
-          phoneNumber: clean.businessPhone,
-          locality: clean.businessLocality,
-          pincode: clean.businessPincode,
-          city: clean.businessCity,
-          state: clean.businessState,
-        },
-      });
-
-      updateUserType("vendor");
-      toast.success("Activity onboarding saved successfully!");
-      return result;
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to save activity onboarding");
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const submitActivity = () =>
+    submitActivityOnboarding(formData, { setIsLoading, updateUserDetails, updateUserType });
 
   const handleNext = async () => {
     setErrors({});
-    const newErrors: { [key: string]: string } = {};
-    let isValid = true;
+    const { errors: newErrors, toastError } = validateActivityStep(currentStep, formData);
+    if (toastError) {
+      toast.error(toastError);
+      return;
+    }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
 
-    // Per-step validation
-    if (currentStep === 0) {
-      if (!formData.selectedActivities || formData.selectedActivities.length === 0) {
-        toast.error("Please select at least one activity type");
-        return;
-      }
-    } else if (currentStep === 1) {
-      if (!formData.features || formData.features.length === 0) {
-        toast.error("Please select at least one feature");
-        return;
-      }
-    } else if (currentStep === 2) {
-      if (!formData.activityName || !formData.activityName.trim()) {
-        newErrors.activityName = "Activity name is required";
-        isValid = false;
-      }
-      if (!formData.description || !formData.description.trim()) {
-        newErrors.description = "Activity description is required";
-        isValid = false;
-      }
-      if (!formData.coverImage) {
-        newErrors.coverImage = "Cover image is required";
-        isValid = false;
-      }
-      if (!formData.photos || formData.photos.length < 5) {
-        newErrors.photos = "At least 5 photos are required";
-        isValid = false;
-      }
-    } else if (currentStep === 3) {
-      const regPrice = Number(formData.regularPrice);
-      if (!formData.regularPrice || isNaN(regPrice) || regPrice <= 0) {
-        newErrors.regularPrice = "Please enter a valid regular price";
-        isValid = false;
-      }
-      if (!formData.locality || !formData.locality.trim()) {
-        newErrors.locality = "Locality is required";
-        isValid = false;
-      }
-      if (!formData.state) {
-        newErrors.state = "State is required";
-        isValid = false;
-      }
-      if (!formData.city) {
-        newErrors.city = "City is required";
-        isValid = false;
-      }
-      if (!formData.pincode) {
-        newErrors.pincode = "Pincode is required";
-        isValid = false;
-      }
-    } else if (currentStep === 4) {
-      // Inclusion/Exclusion - optional
-    } else if (currentStep === 5) {
-      if (formData.firstUserDiscount) {
-        if (!formData.discountAmount) {
-          newErrors.firstUserValue = "Discount amount is required";
-          isValid = false;
-        }
-        if (!formData.finalPrice) {
-          newErrors.firstUserFinalPrice = "Final price is required";
-          isValid = false;
-        }
-      }
-      if (formData.festivalOffers) {
-        if (!formData.festivalDiscountAmount) {
-          newErrors.festivalValue = "Discount amount is required";
-          isValid = false;
-        }
-        if (!formData.festivalFinalPrice) {
-          newErrors.festivalFinalPrice = "Final price is required";
-          isValid = false;
-        }
-      }
-      if (formData.weeklyOffers) {
-        if (!formData.weeklyDiscountAmount) {
-          newErrors.weeklyValue = "Discount amount is required";
-          isValid = false;
-        }
-        if (!formData.weeklyFinalPrice) {
-          newErrors.weeklyFinalPrice = "Final price is required";
-          isValid = false;
-        }
-      }
-      if (formData.specialOffers) {
-        if (!formData.specialDiscountAmount) {
-          newErrors.specialValue = "Discount amount is required";
-          isValid = false;
-        }
-        if (!formData.specialFinalPrice) {
-          newErrors.specialFinalPrice = "Final price is required";
-          isValid = false;
-        }
-      }
-    } else if (currentStep === 6) {
-      if (!formData.brandName || !formData.brandName.trim()) {
-        newErrors.brandName = "Brand name is required";
-        isValid = false;
-      }
-      if (!formData.businessLocality || !formData.businessLocality.trim()) {
-        newErrors.businessLocality = "Business locality is required";
-        isValid = false;
-      }
-      if (!formData.legalCompanyName || !formData.legalCompanyName.trim()) {
-        newErrors.companyName = "Legal Company name is required";
-        isValid = false;
-      }
-      if (!formData.businessPhone || !formData.businessPhone.trim()) {
-        newErrors.businessPhone = "Business Phone is required";
-        isValid = false;
-      }
-      if (!formData.businessCity) {
-        newErrors.city = "Business City is required";
-        isValid = false;
-      }
-      if (!formData.businessState) {
-        newErrors.state = "Business State is required";
-        isValid = false;
-      }
-      if (!formData.businessPincode) {
-        newErrors.businessPincode = "Business Pincode is required";
-        isValid = false;
-      }
-    } else if (currentStep === 7) {
-      if (!formData.firstName || !formData.firstName.trim()) {
-        newErrors.firstName = "First name is required";
-        isValid = false;
-      }
-      if (!formData.lastName || !formData.lastName.trim()) {
-        newErrors.lastName = "Last name is required";
-        isValid = false;
-      }
-      if (!formData.personalLocality || !formData.personalLocality.trim()) {
-        newErrors.personalLocality = "Personal locality is required";
-        isValid = false;
-      }
-      if (!formData.personalCity) {
-        newErrors.personalCity = "Personal City is required";
-        isValid = false;
-      }
-      if (!formData.personalState) {
-        newErrors.personalState = "Personal State is required";
-        isValid = false;
-      }
-      if (!formData.personalPincode) {
-        newErrors.personalPincode = "Personal Pincode is required";
-        isValid = false;
-      } else if (!/^\d{6}$/.test(formData.personalPincode.trim())) {
-        newErrors.personalPincode = "Enter a valid 6-digit pincode";
-        isValid = false;
-      }
-      if (!formData.dateOfBirth) {
-        newErrors.dateOfBirth = "Date of birth is required";
-        isValid = false;
-      }
-      if (!formData.idProof) {
-        newErrors.idProof = "ID proof type is required";
-        isValid = false;
-      }
-      if (!formData.idPhotos || formData.idPhotos.length === 0) {
-        newErrors.idPhotos = "ID proof photo is required";
-        isValid = false;
-      }
-    } else if (currentStep === 8) {
-      if (!formData.termsAccepted) {
-        toast.error("You must accept the Terms & Conditions to proceed.");
-        return;
-      }
-      // Save then navigate only if we received an ID
+    if (currentStep === 8) {
       try {
         const saved = await submitActivity();
         if (saved?.id) {
@@ -704,19 +353,13 @@ const ActivityOnboarding = () => {
           sessionStorage.removeItem(FORM_STORAGE_KEY);
           navigate("/onboarding/selfie-verification");
           return;
-        } else {
-          toast.error("Could not save onboarding. Please try again.");
-          return;
         }
-      } catch (e) {
+        toast.error("Could not save onboarding. Please try again.");
+        return;
+      } catch {
         toast.error("Could not save onboarding. Please try again.");
         return;
       }
-    }
-
-    if (!isValid) {
-      setErrors(newErrors);
-      return;
     }
 
     setCurrentStep((prev) => prev + 1);
@@ -1121,162 +764,59 @@ const ActivityOnboarding = () => {
         </div>
       )}
 
-      {/* Step 0: Activity Types */}
-      {currentStep === 0 && (
-        <TypeStep
-          selectedActivities={formData.selectedActivities}
-          activityTypes={activityTypes}
-          onToggle={toggleActivityType}
-        />
-      )}
-
-      {/* Step 1: Features */}
-      {currentStep === 1 && (
-        <FeaturesStep
-          selectedActivities={formData.selectedActivities}
-          selectedFeatures={formData.features}
-          activityFeatures={activityFeatures}
-          activityFeatureMap={activityFeatureMap}
-          adminFeatures={adminFeatures}
-          customFeatures={customFeatures}
-          showCustomFeaturesInput={showCustomFeaturesInput}
-          customFeatureInput={customFeatureInput}
-          onToggleFeature={toggleFeature}
-          onRemoveCustomFeature={handleRemoveCustomFeature}
-          onSetShowCustomFeaturesInput={setShowCustomFeaturesInput}
-          onSetCustomFeatureInput={setCustomFeatureInput}
-          onAddCustomFeature={handleAddCustomFeature}
-        />
-      )}
-
-      {/* Step 2: Activity Details */}
-      {currentStep === 2 && (
-        <DetailsStep
-          activityName={formData.activityName}
-          description={formData.description}
-          coverImage={formData.coverImage}
-          photos={formData.photos}
-          rulesAndRegulations={formData.rulesAndRegulations}
-          ruleInput={ruleInput}
-          errors={errors}
-          photoCarouselRef={photoCarouselRef as React.RefObject<HTMLDivElement>}
-          onUpdateFormData={updateFormData}
-          onCoverImageUpload={handleCoverImageUpload}
-          onPhotoUpload={(files) => handleFileUpload("photos", files)}
-          onRemoveFile={removeFile}
-          onSetRuleInput={setRuleInput}
-          onAddRule={handleAddRule}
-          onRemoveRule={handleRemoveRule}
-          renderImageSrc={renderImageSrc}
-          setErrors={setErrors}
-        />
-      )}
-
-      {/* Step 3: Pricing Details */}
-      {currentStep === 3 && (
-        <PricingStep
-          regularPrice={formData.regularPrice}
-          personCapacity={formData.personCapacity}
-          timeDuration={formData.timeDuration}
-          address={(formData as any).address || ""}
-          locality={formData.locality}
-          state={formData.state}
-          city={formData.city}
-          pincode={formData.pincode}
-          errors={errors}
-          locationData={data}
-          onUpdateFormData={updateFormData}
-          setFormData={setFormData as any}
-          clearError={clearError}
-        />
-      )}
-
-      {/* Step 4: Inclusion & Exclusion */}
-      {currentStep === 4 && (
-        <InclusionExclusionStep
-          priceIncludes={formData.priceIncludes}
-          priceExcludes={formData.priceExcludes}
-          expectations={formData.expectations}
-          onAddListItem={addListItem}
-          onRemoveListItem={removeListItem}
-        />
-      )}
-
-      {/* Step 5: Types of Discount */}
-      {currentStep === 5 && (
-        <DiscountOffersStep
-          offers={discountOffers}
-          onToggle={handleDiscountToggle}
-          onOfferChange={handleDiscountOfferChange}
-          errors={errors}
-          weeklyLabel="Weekly or Monthly Offers"
-        />
-      )}
-
-      {/* Step 6: Business Details */}
-      {currentStep === 6 && (
-        <BusinessDetailsStep
-          values={{
-            brandName: formData.brandName,
-            companyName: formData.legalCompanyName,
-            gstNumber: formData.gstNumber,
-            businessEmail: formData.businessEmail,
-            businessPhone: formData.businessPhone,
-            // ActivityOnboarding doesn't carry a discrete businessAddress
-            // field — the locality/city/state are kept separately. Pass an
-            // empty string so the shared step renders without crashing.
-            businessAddress: "",
-            pincode: formData.businessPincode,
-          }}
-          errors={errors}
-          onChange={handleBusinessChange}
-          selectedCountry={selectedCountry}
-          onCountrySelect={setSelectedCountry}
-          countryDialogOpen={countryDialogOpen}
-          setCountryDialogOpen={setCountryDialogOpen}
-          countries={countries}
-          locationData={data}
-          selectedState={formData.businessState}
-          selectedCity={formData.businessCity}
-          countryName={formData.businessLocality}
-          onStateChange={handleBusinessStateChange}
-          onCityChange={handleBusinessCityChange}
-          mapSrc={mapSrcbusiness}
-        />
-      )}
-
-      {/* Step 7: Personal Details */}
-      {currentStep === 7 && (
-        <PersonalDetailsStep
-          values={{
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            pincode: formData.personalPincode,
-            dateOfBirth: formData.dateOfBirth,
-            maritalStatus: formData.maritalStatus,
-            idProof: formData.idProof,
-          }}
-          errors={errors}
-          onChange={handlePersonalChange}
-          locationData={data}
-          selectedState={formData.personalState}
-          selectedCity={formData.personalCity}
-          countryName={formData.personalLocality}
-          onStateChange={handlePersonalStateChange}
-          onCityChange={handlePersonalCityChange}
-          idProofImage={idProofImage}
-          onIdProofUpload={handleIdProofUpload}
-          uploadError={errors.idPhotos}
-        />
-      )}
-
-      {/* Step 8: Terms & Conditions */}
-      {currentStep === 8 && (
-        <TermsConditionsStep
-          termsAccepted={formData.termsAccepted}
-          onTermsChange={(checked) => updateFormData("termsAccepted", checked)}
-        />
-      )}
+      <ActivityStepRenderer
+        step={currentStep}
+        api={{
+          formData,
+          setFormData,
+          errors,
+          setErrors,
+          updateFormData,
+          clearError,
+          activityTypes,
+          toggleActivityType,
+          activityFeatures,
+          activityFeatureMap,
+          adminFeatures,
+          customFeatures,
+          showCustomFeaturesInput,
+          setShowCustomFeaturesInput,
+          customFeatureInput,
+          setCustomFeatureInput,
+          toggleFeature,
+          handleRemoveCustomFeature,
+          handleAddCustomFeature,
+          ruleInput,
+          setRuleInput,
+          photoCarouselRef: photoCarouselRef as React.RefObject<HTMLDivElement>,
+          handleCoverImageUpload,
+          handleFileUpload,
+          removeFile,
+          handleAddRule,
+          handleRemoveRule,
+          renderImageSrc,
+          locationData: data,
+          addListItem,
+          removeListItem,
+          discountOffers,
+          handleDiscountToggle,
+          handleDiscountOfferChange,
+          handleBusinessChange,
+          selectedCountry,
+          setSelectedCountry,
+          countryDialogOpen,
+          setCountryDialogOpen,
+          countries,
+          handleBusinessStateChange,
+          handleBusinessCityChange,
+          mapSrcbusiness,
+          handlePersonalChange,
+          handlePersonalStateChange,
+          handlePersonalCityChange,
+          idProofImage,
+          handleIdProofUpload,
+        }}
+      />
     </OnboardingLayout>
   );
 };

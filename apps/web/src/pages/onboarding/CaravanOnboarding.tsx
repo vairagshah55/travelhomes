@@ -32,6 +32,15 @@ import {
   PricingStep,
   CaravanCardPreview,
 } from "@/components/onboarding/caravan";
+import {
+  FormData,
+  defaultCaravanFormData,
+  pickActiveDiscount,
+} from "@/components/onboarding/caravan/caravanConfig";
+import { submitCaravanOnboarding } from "@/components/onboarding/caravan/submitCaravanOnboarding";
+import { validateCaravanStep } from "@/components/onboarding/caravan/validateCaravanStep";
+import { loadCaravanDraft } from "@/components/onboarding/caravan/loadCaravanDraft";
+import { CaravanStepRenderer } from "@/components/onboarding/caravan/CaravanStepRenderer";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,
@@ -40,118 +49,6 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   dialCode: c.phonecode,
 }));
 
-interface FormData {
-  // Step 0 - Caravan Descriptions
-  name: string;
-  description: string;
-  rules: string[];
-  photos: (string | File)[];
-  coverImage: (string | File)[];
-
-  // Step 1 - Camper Van Category
-  category: string | null;
-
-  // Step 2 - Features
-  features: string[];
-
-  // Step 3 - Capacity and Address
-  seatingCapacity: number;
-  sleepingCapacity: number;
-  address: string;
-  locality: string;
-  state: string;
-  city: string;
-  pincode: string;
-
-  // Step 4 - Pricing
-  perKmCharge: string;
-  perDayCharge: string;
-  perKmIncludes: string[];
-  perKmExcludes: string[];
-  perDayIncludes: string[];
-  perDayExcludes: string[];
-  priceIncludes: string[];
-  priceExcludes: string[];
-
-  // Step 5 - Types of Discount
-  firstUserDiscount: boolean;
-  firstUserDiscountType: "percentage" | "fixed";
-  firstUserDiscountValue: string;
-  firstUserDiscountFinalPrice: string;
-
-  festivalOffers: boolean;
-  festivalOffersType: "percentage" | "fixed";
-  festivalOffersValue: string;
-  festivalOffersFinalPrice: string;
-
-  weeklyMonthlyOffers: boolean;
-  weeklyMonthlyOffersType: "percentage" | "fixed";
-  weeklyMonthlyOffersValue: string;
-  weeklyMonthlyOffersFinalPrice: string;
-
-  specialOffers: boolean;
-  specialOffersType: "percentage" | "fixed";
-  specialOffersValue: string;
-  specialOffersFinalPrice: string;
-
-  // Step 6 - Business Details
-  brandName: string;
-  legalCompanyName: string;
-  gstNumber: string;
-  businessEmailId: string;
-  businessPhoneNumber: string;
-  businessAddress: string;
-  businessLocality: string;
-  personalLocality: string;
-  businessState: string;
-  businessCity: string;
-  businessPincode: string;
-
-  // Step 7 - Personal Details
-  firstName: string;
-  lastName: string;
-  personalState: string;
-  personalCity: string;
-  personalPincode: string;
-  dateOfBirth: string;
-  maritalStatus: string;
-  idProof: string;
-  idPhotos: (string | File)[];
-  termsAccepted: boolean;
-}
-
-// Pick the first enabled discount slot with a valid final price so the preview
-// card can mirror what guests see (strikethrough original + discounted price).
-// Falls back to per-km rate when per-day isn't set, since the preview uses
-// whichever rate is filled in.
-const DISCOUNT_SLOTS: {
-  enabledKey: keyof FormData;
-  finalKey: keyof FormData;
-  label: string;
-}[] = [
-  { enabledKey: "firstUserDiscount", finalKey: "firstUserDiscountFinalPrice", label: "Welcome offer" },
-  { enabledKey: "festivalOffers", finalKey: "festivalOffersFinalPrice", label: "Festival offer" },
-  { enabledKey: "weeklyMonthlyOffers", finalKey: "weeklyMonthlyOffersFinalPrice", label: "Long stay offer" },
-  { enabledKey: "specialOffers", finalKey: "specialOffersFinalPrice", label: "Special offer" },
-];
-
-function pickActiveDiscount(formData: FormData) {
-  const originalPrice =
-    Number(formData.perDayCharge) > 0
-      ? Number(formData.perDayCharge)
-      : Number(formData.perKmCharge) > 0
-        ? Number(formData.perKmCharge)
-        : 0;
-  if (originalPrice <= 0) return null;
-
-  for (const slot of DISCOUNT_SLOTS) {
-    if (!formData[slot.enabledKey]) continue;
-    const finalPrice = Number(formData[slot.finalKey]);
-    if (!Number.isFinite(finalPrice) || finalPrice <= 0 || finalPrice >= originalPrice) continue;
-    return { originalPrice, finalPrice, label: slot.label };
-  }
-  return null;
-}
 
 const CaravanOnboarding = () => {
   const navigate = useNavigate();
@@ -184,79 +81,12 @@ const CaravanOnboarding = () => {
 
   const FORM_STORAGE_KEY = "caravan_onboarding_form";
 
-  const defaultFormData: FormData = {
-    name: "",
-    description: "",
-    rules: [],
-    photos: [],
-    coverImage: [],
-    category: null,
-    features: [],
-    seatingCapacity: 1,
-    sleepingCapacity: 0,
-    address: "",
-    locality: "India",
-    state: "",
-    city: "",
-    pincode: "",
-    perKmCharge: "",
-    perDayCharge: "",
-    perKmIncludes: [],
-    perKmExcludes: [],
-    perDayIncludes: [],
-    perDayExcludes: [],
-    priceIncludes: [],
-    priceExcludes: [],
-    // Step 5
-    firstUserDiscount: false,
-    firstUserDiscountType: "percentage",
-    firstUserDiscountValue: "",
-    firstUserDiscountFinalPrice: "",
-
-    festivalOffers: false,
-    festivalOffersType: "percentage",
-    festivalOffersValue: "",
-    festivalOffersFinalPrice: "",
-
-    weeklyMonthlyOffers: false,
-    weeklyMonthlyOffersType: "percentage",
-    weeklyMonthlyOffersValue: "",
-    weeklyMonthlyOffersFinalPrice: "",
-
-    specialOffers: false,
-    specialOffersType: "percentage",
-    specialOffersValue: "",
-    specialOffersFinalPrice: "",
-
-    brandName: "",
-    legalCompanyName: "",
-    gstNumber: "",
-    businessEmailId: "",
-    businessPhoneNumber: "",
-    businessAddress: "",
-    businessLocality: "India",
-    personalLocality: "India",
-    businessState: "",
-    businessCity: "",
-    businessPincode: "",
-    firstName: "",
-    lastName: "",
-    personalState: "",
-    personalCity: "",
-    personalPincode: "",
-    dateOfBirth: "",
-    maritalStatus: "",
-    idProof: "",
-    idPhotos: [],
-    termsAccepted: false,
-  };
-
   const [formData, setFormData] = useState<FormData>(() => {
     try {
       const saved = sessionStorage.getItem(FORM_STORAGE_KEY);
-      if (saved) return { ...defaultFormData, ...JSON.parse(saved) };
+      if (saved) return { ...defaultCaravanFormData, ...JSON.parse(saved) };
     } catch {}
-    return defaultFormData;
+    return defaultCaravanFormData;
   });
 
   // Persist form data on every change (File objects are excluded — they can't be serialised)
@@ -302,167 +132,15 @@ const CaravanOnboarding = () => {
 
   // Check for existing data
   useEffect(() => {
-    const loadExistingData = async () => {
-      try {
-        const data = await getOnboardingData();
-
-        if (data) {
-          if (data.doc) {
-          }
-        }
-
-        if (
-          data &&
-          data.type === "caravan" &&
-          data.doc &&
-          ["pending", "draft", "rejected", "approved"].includes(data.doc.status)
-        ) {
-          const doc = data.doc;
-
-          // Debug specific fields if they are missing
-
-
-
-          setFormData((prev) => ({
-            ...prev,
-            name: doc.name || "",
-            description: doc.description || "",
-            rules: doc.rules || [],
-            photos: Array.isArray(doc.photos) ? doc.photos : [],
-            coverImage: Array.isArray(doc.coverImage)
-              ? doc.coverImage
-              : typeof doc.coverImage === "string"
-                ? [doc.coverImage]
-                : [],
-            category: doc.category || null,
-            features: doc.features || [],
-            seatingCapacity: doc.seatingCapacity || 1,
-            sleepingCapacity: doc.sleepingCapacity || 0,
-            address: doc.address || "",
-            locality: doc.locality || "India",
-            state: doc.state || "",
-            city: doc.city || "",
-            pincode: doc.pincode || "",
-            perKmCharge: String(doc.perKmCharge || ""),
-            perDayCharge: String(doc.perDayCharge || ""),
-            perKmIncludes: doc.perKmIncludes || [],
-            perKmExcludes: doc.perKmExcludes || [],
-            perDayIncludes: doc.perDayIncludes || [],
-            perDayExcludes: doc.perDayExcludes || [],
-            priceIncludes: doc.priceIncludes || [],
-            priceExcludes: doc.priceExcludes || [],
-
-            firstUserDiscount: doc.firstUserDiscount ?? false,
-            firstUserDiscountType: doc.firstUserDiscountType || "percentage",
-            firstUserDiscountValue: String(doc.firstUserDiscountValue || ""),
-            firstUserDiscountFinalPrice: String(doc.firstUserDiscountFinalPrice || ""),
-
-            festivalOffers: doc.festivalOffers ?? false,
-            festivalOffersType: doc.festivalOffersType || "percentage",
-            festivalOffersValue: String(doc.festivalOffersValue || ""),
-            festivalOffersFinalPrice: String(doc.festivalOffersFinalPrice || ""),
-
-            weeklyMonthlyOffers: doc.weeklyMonthlyOffers ?? false,
-            weeklyMonthlyOffersType: doc.weeklyMonthlyOffersType || "percentage",
-            weeklyMonthlyOffersValue: String(doc.weeklyMonthlyOffersValue || ""),
-            weeklyMonthlyOffersFinalPrice: String(doc.weeklyMonthlyOffersFinalPrice || ""),
-
-            specialOffers: doc.specialOffers ?? false,
-            specialOffersType: doc.specialOffersType || "percentage",
-            specialOffersValue: String(doc.specialOffersValue || ""),
-            specialOffersFinalPrice: String(doc.specialOffersFinalPrice || ""),
-
-            // Personal + business fields are NOT persisted on the caravan
-            // onboarding doc (Mongoose strict mode drops the unknown field
-            // names the form sends). They live on Profile via syncUserProfile.
-            // Fall back to userDetails so resumed drafts aren't empty.
-            brandName: doc.brandName || userDetails?.business?.brandName || "",
-            legalCompanyName:
-              doc.legalCompanyName || userDetails?.business?.legalCompanyName || "",
-            gstNumber: doc.gstNumber || userDetails?.business?.gstNumber || "",
-            businessEmailId: doc.businessEmailId || userDetails?.business?.email || "",
-            businessPhoneNumber:
-              doc.businessPhoneNumber || userDetails?.business?.phoneNumber || "",
-            businessAddress:
-              doc.businessAddress || userDetails?.business?.address || "",
-            businessLocality:
-              doc.businessLocality || userDetails?.business?.locality || "India",
-            personalLocality:
-              doc.personalLocality || userDetails?.personalLocality || "India",
-            businessState: doc.businessState || userDetails?.business?.state || "",
-            businessCity: doc.businessCity || userDetails?.business?.city || "",
-            businessPincode: doc.businessPincode || userDetails?.business?.pincode || "",
-
-            firstName: doc.firstName || userDetails?.firstName || "",
-            lastName: doc.lastName || userDetails?.lastName || "",
-            personalState: doc.personalState || userDetails?.state || "",
-            personalCity: doc.personalCity || userDetails?.city || "",
-            personalPincode: doc.personalPincode || userDetails?.personalPincode || "",
-            dateOfBirth:
-              doc.dateOfBirth ||
-              (userDetails?.dateOfBirth
-                ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
-                : ""),
-            maritalStatus: doc.maritalStatus || userDetails?.maritalStatus || "",
-            idProof: doc.idProof || userDetails?.idProof || "",
-            idPhotos:
-              Array.isArray(doc.idPhotos) && doc.idPhotos.length > 0
-                ? doc.idPhotos
-                : userDetails?.idPhotos || [],
-
-            termsAccepted: false,
-          }));
-
-          const draftIdPhoto = doc.idPhotos?.[0] || userDetails?.idPhotos?.[0];
-          if (draftIdPhoto) {
-            setIdProofImage(draftIdPhoto);
-          }
-          setStatus(doc.status || "draft");
-          setRejectionReason(doc.rejectionReason || "");
-          setIsStatusLoading(false);
-        } else if (userDetails && user?.userType !== "vendor") {
-
-
-
-          // Auto-fill from user details if no draft exists
-          setFormData((prev) => ({
-            ...prev,
-            firstName: userDetails.firstName || "",
-            lastName: userDetails.lastName || "",
-            personalState: userDetails.state || "",
-            personalCity: userDetails.city || "",
-            personalPincode: userDetails.personalPincode || "",
-            personalLocality: userDetails.personalLocality || "India",
-            dateOfBirth: userDetails.dateOfBirth
-              ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
-              : "",
-            maritalStatus: userDetails.maritalStatus || "",
-            idProof: userDetails.idProof || "",
-            idPhotos: userDetails.idPhotos || [],
-
-            brandName: userDetails.business?.brandName || "",
-            legalCompanyName: userDetails.business?.legalCompanyName || "",
-            gstNumber: userDetails.business?.gstNumber || "",
-            businessEmailId: userDetails.business?.email || "",
-            businessPhoneNumber: userDetails.business?.phoneNumber || "",
-            businessAddress: userDetails.business?.address || "",
-            businessLocality: userDetails.business?.locality || "India",
-            businessState: userDetails.business?.state || "",
-            businessCity: userDetails.business?.city || "",
-            businessPincode: userDetails.business?.pincode || "",
-          }));
-          if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
-            setIdProofImage(userDetails.idPhotos[0]);
-          }
-          setIsStatusLoading(false);
-        } else {
-          setIsStatusLoading(false);
-        }
-      } catch (err) {
-        setIsStatusLoading(false);
-      }
-    };
-    loadExistingData();
+    loadCaravanDraft({
+      setFormData,
+      setIdProofImage,
+      setStatus,
+      setRejectionReason,
+      setIsStatusLoading,
+      userDetails,
+      isExistingVendor: user?.userType === "vendor",
+    });
   }, [userDetails]);
 
   // Auto-calculate final prices for discounts
@@ -540,279 +218,17 @@ const CaravanOnboarding = () => {
   };
 
   const handleNext = () => {
-    // Per-step validation
-    if (currentStep === 0) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      if (!formData.name || !formData.name.trim()) {
-        newErrors.name = "Caravan name is required";
-        hasError = true;
-      }
-      if (!formData.description || !formData.description.trim()) {
-        newErrors.description = "Caravan description is required";
-        hasError = true;
-      }
-      if (!formData.coverImage || formData.coverImage.length === 0) {
-        newErrors.coverImage = "A cover photo is required";
-        hasError = true;
-      }
-      if (formData.photos.length < 5) {
-        newErrors.photos = "Please upload at least 5 photos";
-        hasError = true;
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 1) {
-      if (!formData.category) {
-        toast.error("Please select a caravan category");
-        return;
-      }
-    } else if (currentStep === 2) {
-      if (!formData.features || formData.features.length === 0) {
-        toast.error("Please select at least one feature");
-        return;
-      }
-    } else if (currentStep === 3) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      if (formData.sleepingCapacity < 1) {
-        newErrors.sleepingCapacity = "At least 1 sleeping spot is required";
-        hasError = true;
-      }
-      if (!formData.address || !formData.address.trim()) {
-        newErrors.address = "Street address is required";
-        hasError = true;
-      }
-      if (!formData.state || !formData.state.trim()) {
-        newErrors.state = "State is required";
-        hasError = true;
-      }
-      if (!formData.city || !formData.city.trim()) {
-        newErrors.city = "City is required";
-        hasError = true;
-      }
-      if (!formData.pincode || !formData.pincode.trim()) {
-        newErrors.pincode = "Pincode is required";
-        hasError = true;
-      } else if (formData.pincode.length !== 6) {
-        newErrors.pincode = "Pincode must be 6 digits";
-        hasError = true;
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 4) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      const hasPerKm =
-        formData.perKmCharge &&
-        !isNaN(Number(formData.perKmCharge)) &&
-        Number(formData.perKmCharge) > 0;
-      const hasPerDay =
-        formData.perDayCharge &&
-        !isNaN(Number(formData.perDayCharge)) &&
-        Number(formData.perDayCharge) > 0;
-
-      if (!hasPerKm && !hasPerDay) {
-        newErrors.pricing = "At least one price (Per KM or Per Day) is required";
-        setErrors(newErrors);
-        return;
-      }
-
-      if (hasPerKm) {
-        if (!formData.perKmIncludes || !formData.perKmIncludes.some((i) => i.trim())) {
-          newErrors.perKmIncludes = "Please add at least one inclusion";
-          hasError = true;
-        }
-        if (!formData.perKmExcludes || !formData.perKmExcludes.some((i) => i.trim())) {
-          newErrors.perKmExcludes = "Please add at least one exclusion";
-          hasError = true;
-        }
-      }
-
-      if (hasPerDay) {
-        if (!formData.perDayIncludes || !formData.perDayIncludes.some((i) => i.trim())) {
-          newErrors.perDayIncludes = "Please add at least one inclusion";
-          hasError = true;
-        }
-        if (!formData.perDayExcludes || !formData.perDayExcludes.some((i) => i.trim())) {
-          newErrors.perDayExcludes = "Please add at least one exclusion";
-          hasError = true;
-        }
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 5) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      // Validate First User Discount
-      if (formData.firstUserDiscount) {
-        if (!formData.firstUserDiscountValue) {
-          newErrors.firstUserDiscountValue = "Discount value is required";
-          hasError = true;
-        }
-        if (!formData.firstUserDiscountFinalPrice) {
-          newErrors.firstUserDiscountFinalPrice = "Final price is required";
-          hasError = true;
-        }
-      }
-
-      // Validate Festival Offers
-      if (formData.festivalOffers) {
-        if (!formData.festivalOffersValue) {
-          newErrors.festivalOffersValue = "Discount value is required";
-          hasError = true;
-        }
-        if (!formData.festivalOffersFinalPrice) {
-          newErrors.festivalOffersFinalPrice = "Final price is required";
-          hasError = true;
-        }
-      }
-
-      // Validate Weekly/Monthly Offers
-      if (formData.weeklyMonthlyOffers) {
-        if (!formData.weeklyMonthlyOffersValue) {
-          newErrors.weeklyMonthlyOffersValue = "Discount value is required";
-          hasError = true;
-        }
-        if (!formData.weeklyMonthlyOffersFinalPrice) {
-          newErrors.weeklyMonthlyOffersFinalPrice = "Final price is required";
-          hasError = true;
-        }
-      }
-
-      // Validate Special Offers
-      if (formData.specialOffers) {
-        if (!formData.specialOffersValue) {
-          newErrors.specialOffersValue = "Discount value is required";
-          hasError = true;
-        }
-        if (!formData.specialOffersFinalPrice) {
-          newErrors.specialOffersFinalPrice = "Final price is required";
-          hasError = true;
-        }
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 6) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      if (!formData.brandName || !formData.brandName.trim()) {
-        newErrors.brandName = "Brand name is required";
-        hasError = true;
-      }
-      if (!formData.legalCompanyName || !formData.legalCompanyName.trim()) {
-        newErrors.legalCompanyName = "Legal company name is required";
-        hasError = true;
-      }
-      if (!formData.businessAddress || !formData.businessAddress.trim()) {
-        newErrors.businessAddress = "Business address is required";
-        hasError = true;
-      }
-      if (!formData.businessState || !formData.businessState.trim()) {
-        newErrors.businessState = "State is required";
-        hasError = true;
-      }
-      if (!formData.businessCity || !formData.businessCity.trim()) {
-        newErrors.businessCity = "City is required";
-        hasError = true;
-      }
-      if (!formData.businessPincode || !formData.businessPincode.trim()) {
-        newErrors.businessPincode = "Pincode is required";
-        hasError = true;
-      } else if (formData.businessPincode.length !== 6) {
-        newErrors.businessPincode = "Pincode must be 6 digits";
-        hasError = true;
-      }
-      if (
-        !formData.businessPhoneNumber ||
-        !formData.businessPhoneNumber.trim() ||
-        formData.businessPhoneNumber.length !== 10
-      ) {
-        newErrors.businessPhoneNumber = "Valid business phone number is required";
-        hasError = true;
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 7) {
-      const newErrors: Record<string, string> = {};
-      let hasError = false;
-
-      if (!formData.firstName || !formData.firstName.trim()) {
-        newErrors.firstName = "First name is required";
-        hasError = true;
-      }
-      if (!formData.lastName || !formData.lastName.trim()) {
-        newErrors.lastName = "Last name is required";
-        hasError = true;
-      }
-      if (!formData.personalLocality || !formData.personalLocality.trim()) {
-        newErrors.personalLocality = "Country is required";
-        hasError = true;
-      }
-      if (!formData.personalState || !formData.personalState.trim()) {
-        newErrors.personalState = "State is required";
-        hasError = true;
-      }
-      if (!formData.personalCity || !formData.personalCity.trim()) {
-        newErrors.personalCity = "City is required";
-        hasError = true;
-      }
-      if (!formData.personalPincode || !formData.personalPincode.trim()) {
-        newErrors.personalPincode = "Pincode is required";
-        hasError = true;
-      } else if (!/^\d{6}$/.test(formData.personalPincode.trim())) {
-        newErrors.personalPincode = "Enter a valid 6-digit pincode";
-        hasError = true;
-      }
-      if (!formData.dateOfBirth) {
-        newErrors.dateOfBirth = "Date of Birth is required";
-        hasError = true;
-      }
-      if (!formData.idProof) {
-        newErrors.idProof = "ID Proof type is required";
-        hasError = true;
-      }
-      if (!formData.idPhotos || formData.idPhotos.length === 0) {
-        newErrors.idPhotos = "ID Proof photo is required";
-        hasError = true;
-      }
-
-      if (hasError) {
-        setErrors(newErrors);
-        return;
-      }
-      setErrors({});
-    } else if (currentStep === 8) {
-      if (!formData.termsAccepted) {
-        toast.error("You must accept the Terms & Conditions to proceed.");
-        return;
-      }
+    const { errors: newErrors, toastError } = validateCaravanStep(currentStep, formData);
+    if (toastError) {
+      toast.error(toastError);
+      if (Object.keys(newErrors).length > 0) setErrors(newErrors);
+      return;
     }
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+    setErrors({});
 
     if (currentStep < totalSteps - 1) {
       setCurrentStep((prev) => prev + 1);
@@ -821,127 +237,14 @@ const CaravanOnboarding = () => {
     }
   };
 
-  const fileToDataUrl = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+  const handleComplete = () =>
+    submitCaravanOnboarding(formData, {
+      setIsLoading,
+      updateUserDetails,
+      updateUserType,
+      navigate,
+      formStorageKey: FORM_STORAGE_KEY,
     });
-
-  const handleComplete = async () => {
-    try {
-      setIsLoading(true);
-
-      // Basic validation
-      if (!formData.name || !formData.name.trim()) {
-        throw new Error("Caravan name is required");
-      }
-
-      if (!formData.category) {
-        throw new Error("Please select a caravan category");
-      }
-
-      const pdCharge = Number(formData.perDayCharge) || 0;
-      const pkCharge = Number(formData.perKmCharge) || 0;
-      if (pdCharge <= 0 && pkCharge <= 0) {
-        throw new Error("At least one price (Per KM or Per Day) is required");
-      }
-
-      // Merge includes and excludes
-      const mergedIncludes = [
-        ...(formData.perKmIncludes || []),
-        ...(formData.perDayIncludes || []),
-      ].filter((i) => i && i.trim());
-
-      const mergedExcludes = [
-        ...(formData.perKmExcludes || []),
-        ...(formData.perDayExcludes || []),
-      ].filter((i) => i && i.trim());
-
-      // Convert File objects to data URLs so server can persist Offer.photos
-      const photosData: string[] = await Promise.all(
-        ((formData.photos as any[]) || []).map((f: any) =>
-          typeof f === "string" ? Promise.resolve(f) : fileToDataUrl(f),
-        ),
-      );
-      const photosCoverImage: string[] = await Promise.all(
-        ((formData.coverImage as any[]) || []).map((f: any) =>
-          typeof f === "string" ? Promise.resolve(f) : fileToDataUrl(f),
-        ),
-      );
-      const idPhotosData: string[] = await Promise.all(
-        ((formData.idPhotos as any[]) || []).map((f: any) =>
-          typeof f === "string" ? Promise.resolve(f) : fileToDataUrl(f),
-        ),
-      );
-
-      const payload = {
-        ...formData,
-        perDayCharge: pdCharge,
-        perKmCharge: pkCharge.toString(), // Ensure string if interface expects it, or keep number if updated. Interface says string.
-        priceIncludes: mergedIncludes,
-        priceExcludes: mergedExcludes,
-        finalPrice: 0,
-        seatingCapacity: Number(formData.seatingCapacity),
-        sleepingCapacity: Number(formData.sleepingCapacity),
-        photos: photosData,
-        idPhotos: idPhotosData,
-        coverImage: photosCoverImage,
-      };
-
-
-      const result = await submitOnboardingData("caravan", payload);
-
-      if (result?.id) {
-        // Update user profile with personal & business details
-        await updateUserDetails({
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phoneNumber: formData.businessPhoneNumber,
-          country: (formData as any).personalCountry,
-          state: formData.personalState,
-          city: formData.personalCity,
-          personalPincode: formData.personalPincode,
-          personalLocality: formData.personalLocality,
-          dateOfBirth: formData.dateOfBirth,
-          maritalStatus: formData.maritalStatus,
-          idProof: formData.idProof,
-          idPhotos: idPhotosData,
-
-          business: {
-            brandName: formData.brandName,
-            legalCompanyName: formData.legalCompanyName,
-            gstNumber: formData.gstNumber,
-            email: formData.businessEmailId,
-            phoneNumber: formData.businessPhoneNumber,
-            address: formData.businessAddress,
-            locality: formData.businessLocality,
-            state: formData.businessState,
-            city: formData.businessCity,
-            pincode: formData.businessPincode,
-          },
-        });
-
-        onboardingService.setCaravanId(result.id);
-        sessionStorage.setItem("onboardingId", result.id);
-        sessionStorage.setItem("onboardingType", "caravan");
-        sessionStorage.setItem("id", result.id);
-        sessionStorage.removeItem("caravan_onboarding_step");
-        sessionStorage.removeItem(FORM_STORAGE_KEY);
-        updateUserType("vendor");
-        toast.success("Caravan onboarding saved successfully!");
-        navigate("/onboarding/selfie-verification");
-        return;
-      } else {
-        toast.error("Could not save onboarding. Please try again.");
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed to save caravan onboarding");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // --- Handler functions ---
 
@@ -1311,194 +614,6 @@ const CaravanOnboarding = () => {
   })();
 
   // --- Render step content ---
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <DescriptionStep
-            name={formData.name}
-            description={formData.description}
-            rules={formData.rules}
-            photos={formData.photos}
-            coverImage={formData.coverImage}
-            errors={errors}
-            sliderRef={sliderRef}
-            onNameChange={(value) => setFormData((prev) => ({ ...prev, name: value }))}
-            onDescriptionChange={(value) =>
-              setFormData((prev) => ({ ...prev, description: value }))
-            }
-            onAddRule={addRule}
-            onRemoveRule={removeRule}
-            onUpdateRule={updateRule}
-            onPhotoUpload={(files) => handleFileUpload("photos", files)}
-            onCoverUpload={(files) => handleCoverFileUpload("coverImage", files)}
-            onRemovePhoto={(index) => removeFile("photos", index)}
-            onRemoveCover={(index) => removeCoverFile("coverImage", index)}
-            clearError={clearError}
-          />
-        );
-      case 1:
-        return (
-          <CategoryStep
-            category={formData.category}
-            dynamicCategories={dynamicCategories}
-            onSelect={(categoryName) =>
-              setFormData((prev) => ({ ...prev, category: categoryName }))
-            }
-          />
-        );
-      case 2:
-        return (
-          <FeaturesStep
-            features={formData.features}
-            dynamicFeatures={dynamicFeatures}
-            customFeatures={customFeatures}
-            showCustomFeaturesInput={showCustomFeaturesInput}
-            customFeatureInput={customFeatureInput}
-            onToggleFeature={toggleFeature}
-            onRemoveCustomFeature={handleRemoveCustomFeature}
-            onToggleCustomInput={() => setShowCustomFeaturesInput(!showCustomFeaturesInput)}
-            onCustomFeatureInputChange={setCustomFeatureInput}
-            onAddCustomFeature={handleAddCustomFeature}
-          />
-        );
-      case 3:
-        return (
-          <CapacityAddressStep
-            seatingCapacity={formData.seatingCapacity}
-            sleepingCapacity={formData.sleepingCapacity}
-            address={formData.address}
-            locality={formData.locality}
-            state={formData.state}
-            city={formData.city}
-            pincode={formData.pincode}
-            locationData={data}
-            mapSrc={mapSrc}
-            errors={errors}
-            onAdjustCapacity={adjustCapacity}
-            onAddressChange={(value) => setFormData((prev) => ({ ...prev, address: value }))}
-            onLocalityChange={(value) =>
-              setFormData((prev) => ({ ...prev, locality: value, state: "", city: "" }))
-            }
-            onStateChange={(value) => setFormData((prev) => ({ ...prev, state: value, city: "" }))}
-            onCityChange={(value) => setFormData((prev) => ({ ...prev, city: value }))}
-            onPincodeChange={(value) => setFormData((prev) => ({ ...prev, pincode: value }))}
-            clearError={clearError}
-          />
-        );
-      case 4:
-        return (
-          <PricingStep
-            perKmCharge={formData.perKmCharge}
-            perDayCharge={formData.perDayCharge}
-            perKmIncludes={formData.perKmIncludes}
-            perKmExcludes={formData.perKmExcludes}
-            perDayIncludes={formData.perDayIncludes}
-            perDayExcludes={formData.perDayExcludes}
-            errors={errors}
-            onPerKmChargeChange={(value) =>
-              setFormData((prev) => ({ ...prev, perKmCharge: value }))
-            }
-            onPerDayChargeChange={(value) =>
-              setFormData((prev) => ({ ...prev, perDayCharge: value }))
-            }
-            onAddPriceItem={addPriceItem}
-            onUpdatePriceItem={updatePriceItem}
-            onRemovePriceItem={removePriceItem}
-            clearError={clearError}
-          />
-        );
-      case 5:
-        return (
-          <DiscountOffersStep
-            offers={discountOffers}
-            onToggle={handleDiscountToggle}
-            onOfferChange={handleDiscountOfferChange}
-            errors={discountErrors}
-            weeklyLabel="Weekly-Monthly Offers"
-          />
-        );
-      case 6:
-        return (
-          <BusinessDetailsStep
-            values={{
-              brandName: formData.brandName,
-              companyName: formData.legalCompanyName,
-              gstNumber: formData.gstNumber,
-              businessEmail: formData.businessEmailId,
-              businessPhone: formData.businessPhoneNumber,
-              businessAddress: formData.businessAddress,
-              pincode: formData.businessPincode,
-            }}
-            errors={businessErrors}
-            onChange={handleBusinessFieldChange}
-            selectedCountry={selected}
-            onCountrySelect={setSelected}
-            countryDialogOpen={open}
-            setCountryDialogOpen={setOpen}
-            countries={countries}
-            locationData={data}
-            selectedState={formData.businessState}
-            selectedCity={formData.businessCity}
-            countryName={formData.businessLocality}
-            onStateChange={(val) => {
-              setFormData((prev) => ({ ...prev, businessState: val, businessCity: "" }));
-              setErrors((prev) => ({ ...prev, businessState: "", businessCity: "" }));
-            }}
-            onCityChange={(val) => {
-              setFormData((prev) => ({ ...prev, businessCity: val }));
-              setErrors((prev) => ({ ...prev, businessCity: "" }));
-            }}
-            mapSrc={mapSrcbusiness}
-          />
-        );
-      case 7:
-        return (
-          <PersonalDetailsStep
-            values={{
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              pincode: formData.personalPincode,
-              dateOfBirth: formData.dateOfBirth,
-              maritalStatus: formData.maritalStatus,
-              idProof: formData.idProof,
-            }}
-            errors={errors}
-            onChange={handlePersonalFieldChange}
-            locationData={data}
-            selectedState={formData.personalState}
-            selectedCity={formData.personalCity}
-            countryName={formData.personalLocality}
-            onStateChange={(val) => {
-              setFormData((prev) => ({ ...prev, personalState: val, personalCity: "" }));
-              if (errors.personalState) {
-                setErrors((prev) => ({ ...prev, personalState: "" }));
-              }
-            }}
-            onCityChange={(val) => {
-              setFormData((prev) => ({ ...prev, personalCity: val }));
-              if (errors.personalCity) {
-                setErrors((prev) => ({ ...prev, personalCity: "" }));
-              }
-            }}
-            idProofImage={idProofImage}
-            onIdProofUpload={handleUploadIDProof}
-            uploadError={uploadError}
-          />
-        );
-      case 8:
-        return (
-          <TermsConditionsStep
-            termsAccepted={formData.termsAccepted}
-            onTermsChange={(checked) =>
-              setFormData((prev) => ({ ...prev, termsAccepted: checked }))
-            }
-          />
-        );
-      default:
-        return null;
-    }
-  };
 
   if (isStatusLoading) {
     return (
@@ -1578,7 +693,56 @@ const CaravanOnboarding = () => {
       onBack={handleBack}
       onNext={handleNext}
     >
-      {renderStepContent()}
+      <CaravanStepRenderer
+        step={currentStep}
+        api={{
+          formData,
+          setFormData,
+          errors,
+          setErrors,
+          sliderRef,
+          addRule,
+          removeRule,
+          updateRule,
+          handleFileUpload,
+          handleCoverFileUpload,
+          removeFile,
+          removeCoverFile,
+          clearError,
+          dynamicCategories,
+          dynamicFeatures,
+          customFeatures,
+          showCustomFeaturesInput,
+          setShowCustomFeaturesInput,
+          customFeatureInput,
+          setCustomFeatureInput,
+          toggleFeature,
+          handleRemoveCustomFeature,
+          handleAddCustomFeature,
+          locationData: data,
+          mapSrc,
+          adjustCapacity,
+          addPriceItem,
+          updatePriceItem,
+          removePriceItem,
+          discountOffers,
+          handleDiscountToggle,
+          handleDiscountOfferChange,
+          discountErrors,
+          businessErrors,
+          handleBusinessFieldChange,
+          selected,
+          setSelected,
+          open,
+          setOpen,
+          countries,
+          mapSrcbusiness,
+          handlePersonalFieldChange,
+          idProofImage,
+          handleUploadIDProof,
+          uploadError,
+        }}
+      />
     </OnboardingLayout>
   );
 };

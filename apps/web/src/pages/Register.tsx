@@ -16,112 +16,17 @@ import { toast } from "sonner";
 import { ChevronDown, Eye, EyeOff, Search } from "lucide-react";
 import { FcGoogle } from "react-icons/fc";
 import { IoIosArrowBack } from "react-icons/io";
-import { Country } from "country-state-city";
 import * as Flags from "country-flag-icons/react/3x2";
 import Gallery from "./gallery";
-
-/* ─── Types ──────────────────────────────────────────────── */
-
-type PhoneCountry = { isoCode: string; name: string; dialCode?: string };
-
-interface FormData {
-  email: string;
-  mobile: string;
-  password: string;
-  confirmPassword: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  country: string;
-  state: string;
-  city: string;
-}
-
-/* ─── Module-level constants ─────────────────────────────── */
-
-const PHONE_COUNTRIES: PhoneCountry[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
-  name: c.name,
-  dialCode: c.phonecode,
-}));
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PWD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
-
-/* ─── Validation (pure function) ────────────────────────── */
-
-const validate = (field: string, value: string, password = ""): string => {
-  switch (field) {
-    case "email":
-      if (!value.trim()) return "Email is required.";
-      if (!EMAIL_RE.test(value)) return "Enter a valid email address.";
-      return "";
-    case "mobile":
-      if (!value.trim()) return "Mobile number is required.";
-      if (!/^\d{10}$/.test(value)) return "Enter a valid 10-digit phone number.";
-      return "";
-    case "password":
-      if (!value.trim()) return "Password is required.";
-      if (!PWD_RE.test(value))
-        return "Min 8 chars, with uppercase, lowercase, number & special symbol.";
-      return "";
-    case "confirmPassword":
-      if (!value.trim()) return "Please confirm your password.";
-      if (value !== password) return "Passwords do not match.";
-      return "";
-    case "firstName":
-      if (!value.trim()) return "First name is required.";
-      return "";
-    case "lastName":
-      if (!value.trim()) return "Last name is required.";
-      return "";
-    case "dateOfBirth": {
-      if (!value.trim()) return "Date of birth is required.";
-      // Expecting YYYY-MM-DD; verify it's a real calendar date (rejects Feb 31, Apr 31, etc.)
-      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-      if (!m) return "Enter a valid date.";
-      const [, ys, ms, ds] = m;
-      const y = Number(ys);
-      const mo = Number(ms);
-      const d = Number(ds);
-      const dob = new Date(y, mo - 1, d);
-      if (
-        dob.getFullYear() !== y ||
-        dob.getMonth() !== mo - 1 ||
-        dob.getDate() !== d
-      )
-        return "Enter a valid date.";
-      // Must be at least 18 years old.
-      const today = new Date();
-      let age = today.getFullYear() - y;
-      const md = today.getMonth() - (mo - 1);
-      if (md < 0 || (md === 0 && today.getDate() < d)) age--;
-      if (age < 18) return "You must be at least 18 years old.";
-      return "";
-    }
-    default:
-      return "";
-  }
-};
-
-/* ─── DOB constants ──────────────────────────────────────── */
-
-const DOB_MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-const DOB_CURRENT_YEAR = new Date().getFullYear();
-const DOB_YEARS = Array.from({ length: 100 }, (_, i) => DOB_CURRENT_YEAR - i);
+import {
+  PhoneCountry,
+  FormData,
+  PHONE_COUNTRIES,
+  DOB_MONTHS,
+  DOB_YEARS,
+  validateRegisterField as validate,
+  PWD_RE,
+} from "./Register/registerHelpers";
 
 /* ─── Component ──────────────────────────────────────────── */
 
