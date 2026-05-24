@@ -237,7 +237,7 @@ const Offers = () => {
                     <div className="col-span-2 flex items-center gap-2">
                       <button
                         onClick={() => onEdit(o)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-700 dark:text-gray-300"
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#2D4DA8] transition-colors text-gray-700 dark:text-gray-300"
                       >
                         <Pencil size={12} /> Edit
                       </button>
@@ -349,7 +349,7 @@ const Offers = () => {
                 </Button>
                 <Button
                   onClick={onSaveEdit}
-                  className="bg-[#185FA5] hover:bg-[#042C53] text-white"
+                  className="bg-[#1E3A8A] hover:bg-[#11295A] text-white"
                 >
                   Save Changes
                 </Button>

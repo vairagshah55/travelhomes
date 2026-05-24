@@ -43,7 +43,7 @@ function HeroSlideshow() {
       ))}
       <div
         className="absolute inset-0"
-        style={{ background: "linear-gradient(to bottom, rgba(10,20,50,0.25) 0%, rgba(10,20,50,0.60) 100%)" }}
+        style={{ background: "linear-gradient(135deg, rgba(10,30,61,0.55) 0%, rgba(17,41,90,0.45) 45%, rgba(30,58,138,0.30) 100%)" }}
       />
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
         {HERO_IMAGES.map((_, i) => (
@@ -191,7 +191,7 @@ export function HeroSection({
     <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-2">
       <Button
         onClick={handleSearch}
-        className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg"
+        className="bg-[#1E3A8A] hover:bg-[#2D4DA8] active:scale-95 text-white rounded-full h-12 w-12 transition-all duration-200 shadow-md hover:shadow-lg"
         size="icon"
       >
         <Search className="w-5 h-5" />

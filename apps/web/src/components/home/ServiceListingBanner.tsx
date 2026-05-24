@@ -32,8 +32,8 @@ export function ServiceListingBanner() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <h3 className="text-[28px] md:text-[40px] lg:text-[44px] font-semibold text-[#222222] leading-[1.1] tracking-tight">
-                It's easy to <span className="text-[#FF385C]">host</span> on Travel Homes.
+              <h3 className="text-[28px] md:text-[40px] lg:text-[44px] font-semibold text-[#0A1E3D] leading-[1.1] tracking-tight">
+                It's easy to <span className="text-[#1E3A8A]">host</span> on Travel Homes.
               </h3>
               <p className="text-[#717171] text-base md:text-[15px] leading-relaxed max-w-md">
                 Earn extra income with your caravan, unique stay, or activity.
@@ -44,7 +44,7 @@ export function ServiceListingBanner() {
               <div className="flex gap-8 md:gap-12 pt-2">
                 {STATS.map(({ value, label }) => (
                   <div key={label} className="flex flex-col gap-0.5">
-                    <span className="text-xl md:text-[26px] font-semibold text-[#222222] leading-none">{value}</span>
+                    <span className="text-xl md:text-[26px] font-semibold text-[#0A1E3D] leading-none">{value}</span>
                     <span className="text-xs text-[#717171] leading-tight">{label}</span>
                   </div>
                 ))}
@@ -52,7 +52,7 @@ export function ServiceListingBanner() {
 
               <Button
                 onClick={() => navigate("/hostwithus")}
-                className="group bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center gap-2 w-fit mt-2"
+                className="group bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center gap-2 w-fit mt-2"
               >
                 Become a Host
                 <ArrowRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />

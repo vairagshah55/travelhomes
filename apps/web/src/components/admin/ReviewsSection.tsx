@@ -89,7 +89,7 @@ export default function ReviewsSection({
                 <div className="flex-1 flex items-center gap-3">
                   <div className="flex-1 h-1 bg-gray-200 rounded-full">
                     <div 
-                      className="h-full bg-black rounded-full transition-all duration-500" 
+                      className="h-full bg-[#1E3A8A] rounded-full transition-all duration-500" 
                       style={{ width: `${(category.rating / 5) * 100}%` }}
                     ></div>
                   </div>

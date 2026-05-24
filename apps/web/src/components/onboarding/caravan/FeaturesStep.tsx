@@ -20,12 +20,12 @@ import {
 } from "lucide-react";
 
 // ─── Brand tokens ─────────────────────────────────────────────────────────────
-// designe.md tokens — primary ds-deep #185FA5, navy headings.
-const TEAL = "#185FA5";
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_RING = "rgba(24, 95, 165, 0.20)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
+// designe.md tokens — primary ds-deep #1E3A8A, navy headings.
+const TEAL = "#1E3A8A";
+const TEAL_BG = "rgba(30, 58, 138, 0.07)";
+const TEAL_RING = "rgba(30, 58, 138, 0.20)";
+const NAVY = "#11295A";
+const BLACK = "#11295A"; // headings → navy per spec
 const GRAY_600 = "#2C2C2A"; // charcoal
 const GRAY_500 = "#2C2C2A"; // body → charcoal
 const GRAY_400 = "#888780"; // muted → slate

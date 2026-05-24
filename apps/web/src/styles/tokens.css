@@ -1,15 +1,15 @@
 :root {
-  /* Coastal Ocean refined — #F0F8FD mist → #01487E deep → #001F4B navy */
-  --blue-50:  #F0F8FD;
-  --blue-100: #E0F2FA;
-  --blue-200: #C5E6F5;
-  --blue-300: #A0D8EC;
-  --blue-400: #55A9CB;
-  --blue-500: #01487E;
-  --blue-600: #013A65;
-  --blue-700: #001F4B;
-  --blue-800: #000F28;
-  --blue-900: #00080A;
+  /* Midnight Indigo — #EEF2FB tint → #1E3A8A brand → #0A1E3D ink */
+  --blue-50:  #EEF2FB;
+  --blue-100: #DBE3F5;
+  --blue-200: #B6C5EC;
+  --blue-300: #7A99EE;
+  --blue-400: #3E63D3;
+  --blue-500: #1E3A8A;
+  --blue-600: #2D4DA8;
+  --blue-700: #11295A;
+  --blue-800: #0A1E3D;
+  --blue-900: #050F1F;
 
   --white: #ffffff;
   --gray-50:  #f8fafc;
@@ -20,12 +20,12 @@
   --gray-900: #0f172a;
   --black: #000000;
 
-  --dark-bg:      #00080a;
-  --dark-surface: #001530;
-  --dark-border:  rgba(85,169,203,0.15);
+  --dark-bg:      #050F1F;
+  --dark-surface: #0A1E3D;
+  --dark-border:  rgba(122,153,238,0.15);
 
-  --glow-blue: 0 0 20px rgba(55,138,221,0.45);
-  --glow-soft: 0 0 40px rgba(24,95,165,0.20);
+  --glow-blue: 0 0 20px rgba(62,99,211,0.45);
+  --glow-soft: 0 0 40px rgba(30,58,138,0.20);
 
   --ease-spring:  cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease-out:     cubic-bezier(0, 0, 0.2, 1);
@@ -38,13 +38,13 @@
   --dur-slow:     450ms;
   --dur-dramatic: 700ms;
 
-  --motion-surface-light:       rgba(240,248,253,0.92);
-  --motion-surface-dark:        rgba(0,21,48,0.92);
-  --motion-card-shadow:         0 18px 45px rgba(0,8,10,0.08);
-  --motion-card-shadow-strong:  0 24px 48px rgba(0,8,10,0.15);
-  --motion-scroll-shadow:       0 18px 36px rgba(0,8,10,0.08);
-  --motion-divider:             rgba(85,169,203,0.15);
-  --motion-theme-fade:          #f0f8fd;
+  --motion-surface-light:       rgba(246,248,251,0.92);
+  --motion-surface-dark:        rgba(10,30,61,0.92);
+  --motion-card-shadow:         0 18px 45px rgba(10,30,61,0.08);
+  --motion-card-shadow-strong:  0 24px 48px rgba(10,30,61,0.15);
+  --motion-scroll-shadow:       0 18px 36px rgba(10,30,61,0.08);
+  --motion-divider:             rgba(30,58,138,0.10);
+  --motion-theme-fade:          #f6f8fb;
 }
 
 .dark {

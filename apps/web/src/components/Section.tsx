@@ -19,7 +19,7 @@ function Section({
     <section className={`scroll-mt-24 ${className}`} data-section-id={sectionId}>
       <div className="max-md:px-3 flex flex-col md:flex-row justify-between items-start md:items-end mb-5 md:mb-6 gap-2 md:gap-3">
         <div className="space-y-0.5">
-          <h2 className="text-[22px] md:text-[26px] font-semibold text-[#222222] tracking-tight leading-tight">
+          <h2 className="text-[22px] md:text-[26px] font-semibold text-[#0A1E3D] tracking-tight leading-tight">
             {title}
           </h2>
           {subtitle && (

@@ -65,7 +65,7 @@ const DashboardChart = ({
   title,
   data,
   type = "area",
-  color = "#185FA5",
+  color = "#1E3A8A",
   dataKey = "value",
 }: {
   title: string;
@@ -336,11 +336,11 @@ const AdminDashboard = () => {
 
         {/* ── Charts ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
-          <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#185FA5" dataKey="total" />
+          <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#1E3A8A" dataKey="total" />
           <DashboardChart title="Bookings"           data={graphs.bookings} type="area" color="#1D9E75" dataKey="count" />
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
-          <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#378ADD" dataKey="count" />
+          <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#3E63D3" dataKey="count" />
           <DashboardChart title="Active Vendors" data={graphs.vendors} type="bar" color="#EF9F27" dataKey="count" />
         </div>
 

@@ -4,12 +4,12 @@ import { getImageUrl } from "@/lib/utils";
 import { IconType } from "react-icons";
 
 // ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #185FA5 with sky/mist tints for focus & accent.
-const TEAL = "#185FA5"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-const TEAL_RING = "rgba(24, 95, 165, 0.20)";
-const NAVY = "#042C53";
-const BLACK = "#042C53"; // headings → navy per spec
+// Primary brand color: ds-deep #1E3A8A with sky/mist tints for focus & accent.
+const TEAL = "#1E3A8A"; // primary (legacy name preserved)
+const TEAL_BG = "rgba(30, 58, 138, 0.07)";
+const TEAL_RING = "rgba(30, 58, 138, 0.20)";
+const NAVY = "#11295A";
+const BLACK = "#11295A"; // headings → navy per spec
 const GRAY_500 = "#2C2C2A"; // body → charcoal
 const GRAY_600 = "#2C2C2A";
 const GRAY_400 = "#888780"; // muted → slate
@@ -196,11 +196,11 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   gap: 8,
                   padding: "8px 14px",
                   borderRadius: 99,
-                  border: `1.5px solid ${selected ? TEAL : isRecommended ? "rgba(24,95,165,0.3)" : GRAY_200}`,
+                  border: `1.5px solid ${selected ? TEAL : isRecommended ? "rgba(30,58,138,0.3)" : GRAY_200}`,
                   backgroundColor: selected
                     ? TEAL_BG
                     : isRecommended
-                      ? "rgba(24,95,165,0.04)"
+                      ? "rgba(30,58,138,0.04)"
                       : SURFACE,
                   boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
                   cursor: "pointer",
@@ -216,10 +216,10 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 onMouseLeave={(e) => {
                   if (!selected) {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = isRecommended
-                      ? "rgba(24,95,165,0.3)"
+                      ? "rgba(30,58,138,0.3)"
                       : GRAY_200;
                     (e.currentTarget as HTMLButtonElement).style.backgroundColor = isRecommended
-                      ? "rgba(24,95,165,0.04)"
+                      ? "rgba(30,58,138,0.04)"
                       : SURFACE;
                   }
                 }}

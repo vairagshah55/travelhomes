@@ -84,7 +84,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
           >
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-[#2D4DA8] transition-colors"
             >
               <XIcon className="w-5 h-5 text-gray-500" />
             </button>
@@ -183,7 +183,7 @@ export function LoginModal({ isOpen, onClose, onSuccess }: LoginModalProps) {
                   !!fieldErrors.email ||
                   !!fieldErrors.password
                 }
-                className="w-full bg-gray-900 dark:bg-white dark:text-black text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full bg-gray-900 dark:bg-white dark:text-black text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-[#2D4DA8] dark:hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 {loading ? "Logging in..." : "Log in"}
               </Button>

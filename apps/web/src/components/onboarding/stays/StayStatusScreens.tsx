@@ -17,7 +17,7 @@ export function StayStatusLoading() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-2 border-[#185FA5] border-t-transparent animate-spin" />
+        <div className="w-10 h-10 rounded-full border-2 border-[#1E3A8A] border-t-transparent animate-spin" />
         <p className="text-sm text-[#888780]">Loading…</p>
       </div>
     </div>
@@ -40,7 +40,7 @@ export function StayStatusScreen({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(4,44,83,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(17,41,90,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center"
           style={{
@@ -55,7 +55,7 @@ export function StayStatusScreen({
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold" style={{ color: "#042C53" }}>
+          <h2 className="text-xl font-semibold" style={{ color: "#11295A" }}>
             {isPending ? "Submission Under Review" : "Listing Approved!"}
           </h2>
           <p className="text-sm leading-relaxed" style={{ color: "#888780" }}>
@@ -69,9 +69,9 @@ export function StayStatusScreen({
           <div
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
             style={{
-              backgroundColor: "rgba(24,95,165,0.07)",
-              color: "#185FA5",
-              border: "1px solid rgba(24,95,165,0.2)",
+              backgroundColor: "rgba(30,58,138,0.07)",
+              color: "#1E3A8A",
+              border: "1px solid rgba(30,58,138,0.2)",
             }}
           >
             <Home className="w-4 h-4" />
@@ -83,7 +83,7 @@ export function StayStatusScreen({
           <button
             onClick={onGoDashboard}
             className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "#185FA5" }}
+            style={{ backgroundColor: "#1E3A8A" }}
           >
             Go to Dashboard
           </button>

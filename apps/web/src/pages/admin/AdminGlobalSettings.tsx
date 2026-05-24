@@ -337,7 +337,7 @@ const AdminGlobalSettings: React.FC = () => {
                           await saveSystem();
                         }}
                         className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          vendorApproval ? "bg-[#2563EB]" : "bg-gray-300"
+                          vendorApproval ? "bg-[#1E3A8A]" : "bg-gray-300"
                         }`}
                       >
                         <div
@@ -360,7 +360,7 @@ const AdminGlobalSettings: React.FC = () => {
                           await saveSystem();
                         }}
                         className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          mobileApproval ? "bg-[#2563EB]" : "bg-gray-300"
+                          mobileApproval ? "bg-[#1E3A8A]" : "bg-gray-300"
                         }`}
                       >
                         <div
@@ -383,7 +383,7 @@ const AdminGlobalSettings: React.FC = () => {
                           await saveSystem();
                         }}
                         className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          emailApproval ? "bg-[#2563EB]" : "bg-gray-300"
+                          emailApproval ? "bg-[#1E3A8A]" : "bg-gray-300"
                         }`}
                       >
                         <div
@@ -406,7 +406,7 @@ const AdminGlobalSettings: React.FC = () => {
                           await saveSystem();
                         }}
                         className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          phoneApproval ? "bg-[#2563EB]" : "bg-gray-300"
+                          phoneApproval ? "bg-[#1E3A8A]" : "bg-gray-300"
                         }`}
                       >
                         <div

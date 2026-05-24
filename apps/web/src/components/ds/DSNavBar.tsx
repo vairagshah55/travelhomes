@@ -92,7 +92,7 @@ export default function DSNavBar({
             "
             style={{ borderColor: "var(--ds-pebble)" }}
           >
-            List your property
+            List your offering
           </button>
 
           {user == null ? (
@@ -199,7 +199,7 @@ export default function DSNavBar({
                   "
                   style={{ borderColor: "var(--ds-pebble)" }}
                 >
-                  List your property
+                  List your offering
                 </button>
                 {user == null ? (
                   <>

@@ -1,13 +1,14 @@
 // Brand tokens shared across all onboarding step components.
-// Mirrors designe.md: primary ds-deep #185FA5, navy headings, charcoal body.
+// Sourced from the canonical brand palette in @/lib/brandColors.
 
-export const TEAL = "#185FA5"; // primary (legacy name preserved)
-export const TEAL_BG = "rgba(24, 95, 165, 0.07)";
-export const TEAL_FOCUS = "rgba(24, 95, 165, 0.15)";
-export const TEAL_BORDER = "rgba(24, 95, 165, 0.25)";
+import { BRAND, BRAND_BG, BRAND_FOCUS, BRAND_BORDER, NAVY as NAVY_BRAND, INK } from "@/lib/brandColors";
 
-export const NAVY = "#042C53";
-export const BLACK = "#042C53";
+export const TEAL = BRAND;
+export const TEAL_BG = BRAND_BG;
+export const TEAL_FOCUS = BRAND_FOCUS;
+export const TEAL_BORDER = BRAND_BORDER;
+export const NAVY = NAVY_BRAND;
+export const BLACK = INK;
 
 export const GRAY_700 = "#2C2C2A";
 export const GRAY_500 = "#2C2C2A";

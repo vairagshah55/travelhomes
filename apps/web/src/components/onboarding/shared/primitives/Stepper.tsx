@@ -104,7 +104,7 @@ const Stepper: React.FC<StepperProps> = ({
             (e.currentTarget as HTMLButtonElement).style.color = TEAL;
           } else {
             (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-              "rgba(24, 95, 165, 0.18)";
+              "rgba(30, 58, 138, 0.18)";
           }
         }}
         onMouseLeave={(e) => {

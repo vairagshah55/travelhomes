@@ -149,7 +149,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <div className="pt-4">
               <Button
                 type="submit"
-                className="w-full bg-dashboard-primary hover:bg-gray-800 text-white py-3 px-8 rounded-full text-base font-geist transition-colors"
+                className="w-full bg-dashboard-primary hover:bg-[#2D4DA8] text-white py-3 px-8 rounded-full text-base font-geist transition-colors"
               >
                 Re-set Password
               </Button>

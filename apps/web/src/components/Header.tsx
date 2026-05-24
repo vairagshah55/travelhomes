@@ -40,7 +40,7 @@ function FilterButton({
       onClick={onClick}
       className={`flex items-center gap-3 max-md:gap-1 px-4 py-2 rounded-full transition-colors ${
         active
-          ? "bg-black dark:bg-white dark:text-black text-white border border-black"
+          ? "bg-[#1E3A8A] dark:bg-white dark:text-black text-white border border-black"
           : "bg-white/10 text-gray-900 dark:bg-black dark:text-white hover:bg-gray-200 border border-gray-200"
       }`}
     >
@@ -155,9 +155,9 @@ function Header({
             variant="outline"
             className={`hidden md:flex ${
               isTransparent
-                ? "bg-white/90 dark:hover:bg-gray-500 backdrop-blur-sm border-gray-300 text-black hover:bg-white/100"
-                : "bg-white/90 backdrop-blur-sm dark:hover:bg-gray-500 border-gray-300 text-black hover:bg-gray-50"
-            } rounded-full px-4 md:px-4 h-10`}
+                ? "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50"
+                : "bg-white text-[#1E3A8A] border-[1.5px] border-[#1E3A8A] hover:bg-[#EEF2FB]"
+            } rounded-full px-4 md:px-4 h-10 shadow-sm transition-all duration-200`}
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
@@ -174,7 +174,7 @@ function Header({
                 className={`${
                   isTransparent
                     ? "bg-white/90 backdrop-blur-sm text-black hover:bg-white/100"
-                    : "bg-black text-white hover:bg-gray-800"
+                    : "bg-[#1E3A8A] text-white hover:bg-[#2D4DA8]"
                 } rounded-full px-4 md:px-6 h-10`}
               >
                 Register

@@ -171,31 +171,34 @@ export default {
           ring: "hsl(var(--sidebar-ring))",
         },
 
-        /* Ocean design palette — use these in components */
+        /* Midnight Indigo — primary brand palette */
         ocean: {
-          50:  "#f0f8fd",
-          100: "#e0f2fa",
-          200: "#c5e6f5",
-          300: "#a0d8ec",
-          400: "#55a9cb",   /* sky accent */
-          500: "#01487e",   /* primary brand */
-          600: "#013a65",
-          700: "#001f4b",   /* navy */
-          800: "#000f28",
-          900: "#00080a",   /* deep */
+          50:  "#eef2fb",
+          100: "#dbe3f5",
+          200: "#b6c5ec",
+          300: "#7a99ee",
+          400: "#3e63d3",   /* mid accent, focus rings */
+          500: "#1e3a8a",   /* PRIMARY brand — CTAs */
+          600: "#2d4da8",   /* CTA hover (kept lighter than 500 to feel responsive) */
+          700: "#11295a",   /* footer, sidebar */
+          800: "#0a1e3d",   /* ink — hero bg, headings */
+          900: "#050f1f",   /* deepest */
         },
 
-        /* Sand — warm CTA accent (use sparingly: primary buttons over photos, badges) */
-        sand: {
-          50:  "#fdf7ec",
-          100: "#faeeda",   /* soft sand surface */
-          200: "#f5dcb1",
-          300: "#efc98a",
-          400: "#e8b96b",   /* CTA fill (default) */
-          500: "#c99b47",   /* CTA hover */
-          600: "#a37b34",
-          700: "#7a5a24",
+        /* Champagne — premium luxury accent (use sparingly: badges, featured, ratings) */
+        champagne: {
+          50:  "#fbf7ec",
+          100: "#f4eee0",
+          200: "#ebe0c2",
+          300: "#e7d3a6",   /* soft luxury tint */
+          400: "#d6ba85",
+          500: "#c8a96a",   /* primary champagne fill */
+          600: "#a88a4d",
+          700: "#8c6f33",   /* contrast-safe text color */
         },
+
+        /* Convenience aliases */
+        ink: "#0a1e3d",
 
         /* Legacy dashboard (keep working) */
         dashboard: {
@@ -299,11 +302,11 @@ export default {
         "th-inner": "var(--th-shadow-inner)",
         "th-ring":  "var(--th-shadow-ring)",
         "th-ring-error": "var(--th-shadow-ring-error)",
-        /* Ocean theme shadows */
-        "blue-sm":   "0 2px 8px rgba(1,72,126,0.10)",
-        "blue-md":   "0 4px 16px rgba(1,72,126,0.15)",
-        "blue-lg":   "0 12px 40px rgba(1,72,126,0.20)",
-        "blue-glow": "0 0 24px rgba(85,169,203,0.35)",
+        /* Indigo theme shadows */
+        "blue-sm":   "0 2px 8px rgba(30,58,138,0.10)",
+        "blue-md":   "0 4px 16px rgba(30,58,138,0.15)",
+        "blue-lg":   "0 12px 40px rgba(30,58,138,0.20)",
+        "blue-glow": "0 0 24px rgba(62,99,211,0.35)",
       },
 
       /* ─── TRANSITIONS ──────────────────────────────────── */

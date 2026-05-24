@@ -102,7 +102,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
           <div className="flex justify-center mt-10">
             <Button
               onClick={() => setShowReviewModal(true)}
-              className="bg-[#FF385C] hover:bg-[#E31C5F] text-white rounded-full px-8 h-11 transition-all duration-200 font-medium flex items-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+              className="bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white rounded-full px-8 h-11 transition-all duration-200 font-medium flex items-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <span>Write a Review</span>
               <SlArrowRight className="w-3.5 h-3.5" />
@@ -142,8 +142,8 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
                     whileTap={{ scale: 0.92 }}
                     className={`w-8 h-8 rounded-full border text-sm font-semibold transition-colors duration-150 flex items-center justify-center ${
                       reviewRating >= n
-                        ? "bg-[#FF385C] text-white border-[#FF385C] shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#FF385C]"
+                        ? "bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#1E3A8A]"
                     }`}
                   >
                     {n}
@@ -158,7 +158,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="Share your experience..."
               required
-              className="min-h-[120px] resize-none border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#222222] focus:border-[#222222] rounded-xl text-sm"
+              className="min-h-[120px] resize-none border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#0A1E3D] focus:border-[#0A1E3D] rounded-xl text-sm"
             />
 
             {/* Actions */}
@@ -173,7 +173,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
               </Button>
               <Button
                 type="submit"
-                className="rounded-full bg-[#FF385C] hover:bg-[#E31C5F] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                className="rounded-full bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
                 Submit
               </Button>

@@ -175,7 +175,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              className="px-8 py-3 bg-black text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-gray-800 transition-colors w-full md:w-auto"
+              className="px-8 py-3 bg-[#1E3A8A] text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-[#2D4DA8] transition-colors w-full md:w-auto"
             >
               Add
             </button>
@@ -348,7 +348,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              className="px-8 py-3 bg-black text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-gray-800 transition-colors"
+              className="px-8 py-3 bg-[#1E3A8A] text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-[#2D4DA8] transition-colors"
             >
               Submit
             </button>
@@ -472,7 +472,7 @@ const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteSta
           </h3>
           <button
             onClick={() => setShowStaffModal(true)}
-            className="px-5 py-2.5 bg-black text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-gray-800 transition-colors"
+            className="px-5 py-2.5 bg-[#1E3A8A] text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-[#2D4DA8] transition-colors"
           >
             + Add New Account
           </button>
@@ -575,7 +575,7 @@ const RolesList = ({ staffRoles, setStaffRoles, setShowRoleModal, deleteRole, ro
             </h3>
             <button
               onClick={() => setShowRoleModal(true)}
-              className="px-5 py-2.5 bg-black text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-gray-800 transition-colors"
+              className="px-5 py-2.5 bg-[#1E3A8A] text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-[#2D4DA8] transition-colors"
             >
               + Add New Role
             </button>

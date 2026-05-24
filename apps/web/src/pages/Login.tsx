@@ -178,7 +178,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-gray-800 dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-[#2D4DA8] dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {loading ? "Signing in..." : "Login"}
             </button>
@@ -200,7 +200,7 @@ const Login = () => {
           <button
             onClick={loginWithGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 py-3 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 py-3 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#2D4DA8] transition-all duration-200"
           >
             <FcGoogle size={22} />
             {googleLoading ? "Signing in..." : "Continue with Google"}

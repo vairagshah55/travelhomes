@@ -320,8 +320,8 @@ export default function SiteHeader({
                         onClick={() => handleTabClick(tab.id)}
                         className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium ${
                           isActive
-                            ? "bg-[#222222] text-white shadow-sm"
-                            : "bg-transparent text-[#222222] hover:bg-[#F7F7F7]"
+                            ? "bg-[#1E3A8A] text-white shadow-sm"
+                            : "bg-transparent text-[#0A1E3D] hover:bg-[#EEF2FB]"
                         }`}
                       >
                         <IconComponent
@@ -488,7 +488,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#1E3A8A] hover:bg-[#2D4DA8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -682,7 +682,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#1E3A8A] hover:bg-[#2D4DA8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -836,7 +836,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#FF385C] hover:bg-[#E31C5F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#1E3A8A] hover:bg-[#2D4DA8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -858,13 +858,13 @@ export default function SiteHeader({
                   <button
                     className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
                       isScrolled
-                        ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 shadow-sm"
+                        ? "bg-white text-[#1E3A8A] border-[1.5px] border-[#1E3A8A] hover:bg-[#EEF2FB] shadow-sm"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
-                    List your space
+                    List your offering
                   </button>
                   {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
                     <button
@@ -893,17 +893,17 @@ export default function SiteHeader({
                   <button
                     className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
                       isScrolled
-                        ? "bg-white text-gray-900 border border-gray-200 hover:bg-gray-50 shadow-sm"
+                        ? "bg-white text-[#1E3A8A] border-[1.5px] border-[#1E3A8A] hover:bg-[#EEF2FB] shadow-sm"
                         : "bg-white/15 text-white backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 shadow-sm"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
-                    List your space
+                    List your offering
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#FF385C] hover:bg-[#E31C5F] text-white shadow-sm hover:shadow-md transition-all duration-200"
+                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#1E3A8A] hover:bg-[#2D4DA8] text-white shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign up
                   </button>
@@ -942,8 +942,8 @@ export default function SiteHeader({
                       onClick={() => handleTabClick(tab.id)}
                       className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
                         activeFilter === tab.id
-                          ? "bg-[#222222] text-white"
-                          : "text-[#222222] hover:bg-[#F7F7F7]"
+                          ? "bg-[#0A1E3D] text-white"
+                          : "text-[#0A1E3D] hover:bg-[#F7F7F7]"
                       }`}
                     >
                       <IconComponent className="w-5 h-5" />

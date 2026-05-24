@@ -410,7 +410,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             <Button
               type="submit"
               disabled={isLoading}
-              className="px-6 bg-black text-white hover:bg-gray-800"
+              className="px-6 bg-[#1E3A8A] text-white hover:bg-[#2D4DA8]"
             >
               {isLoading ? "Saving..." : "Save"}
             </Button>

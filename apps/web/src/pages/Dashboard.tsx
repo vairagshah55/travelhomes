@@ -54,8 +54,8 @@ import {
 } from "@/components/ui/chart";
 import { formatDate, format, isPast, isFuture } from "date-fns";
 
-const BRAND = "#185FA5";
-const BRAND2 = "#042C53";
+const BRAND = "#1E3A8A";
+const BRAND2 = "#11295A";
 
 // ─── count-up hook ─────────────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 800) {

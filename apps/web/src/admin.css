@@ -14,92 +14,92 @@
     --4: 4px;
     --12: 12px;
     --8: 8px;
-    --pRIMARY: #131313;
-    --Black-Heading: #101828;
-    --Black-Stroke: #eaecf0;
+    --pRIMARY: #1E3A8A;
+    --Black-Heading: #0A1E3D;
+    --Black-Stroke: #E4E8F0;
     --White: #fff;
-    --Title: #334054;
-    --Stroke: #eaecf0;
+    --Title: #1F2A44;
+    --Stroke: #E4E8F0;
     --Primary-0: #fff;
-    --Neutral-06: #b0b0b0;
-    --Neutral-07: #717171;
-    --Body: #485467;
-    --Secondary-30: #fff2e2;
-    --Heading: #131313;
-    --Text: #212121;
+    --Neutral-06: #9AA3B5;
+    --Neutral-07: #5F6A82;
+    --Body: #1F2A44;
+    --Secondary-30: #EEF2FB;
+    --Heading: #0A1E3D;
+    --Text: #0A1E3D;
 
-    /* ── designe.md brand tokens (shared with frontend) ── */
-    --ds-sky:     #E6F1FB;
-    --ds-mist:    #B5D4F4;
-    --ds-ocean:   #378ADD;
-    --ds-deep:    #185FA5;  /* main brand */
-    --ds-navy:    #042C53;
-    --ds-sand:    #FAEEDA;
-    --ds-dune:    #EF9F27;
-    --ds-rust:    #BA7517;
+    /* ── Midnight Indigo brand tokens (shared with frontend) ── */
+    --ds-sky:     #EEF2FB;
+    --ds-mist:    #DBE3F5;
+    --ds-ocean:   #3E63D3;
+    --ds-deep:    #1E3A8A;  /* main brand */
+    --ds-navy:    #0A1E3D;
+    --ds-sand:    #E7D3A6;
+    --ds-dune:    #C8A96A;
+    --ds-rust:    #B42318;
     --ds-lagoon:  #E1F5EE;
-    --ds-palm:    #1D9E75;
+    --ds-palm:    #0E7C66;
     --ds-forest:  #085041;
-    --ds-linen:   #F1EFE8;
-    --ds-pebble:  #D3D1C7;
-    --ds-slate:   #888780;
-    --ds-charcoal:#2C2C2A;
-    --ds-error:   #E24B4A;
-    --ds-success: #1D9E75;
-    --ds-warning: #EF9F27;
+    --ds-linen:   #F6F8FB;
+    --ds-pebble:  #C9D1E0;
+    --ds-slate:   #5F6A82;
+    --ds-charcoal:#1F2A44;
+    --ds-error:   #B42318;
+    --ds-success: #0E7C66;
+    --ds-warning: #A47200;
 
-    /* Travel Dashboard specific colors — brand blue primary */
-    --dashboard-bg: 210 20% 98%; /* #F9FAFB */
-    --dashboard-primary: 210 74% 37%; /* #185FA5 brand blue */
-    --dashboard-primary-hover: 215 85% 29%; /* #145189 darker hover */
-    --dashboard-heading: 216 27% 16%; /* #101828 */
-    --dashboard-body: 214 14% 35%; /* #485467 */
-    --dashboard-title: 214 19% 25%; /* #334054 */
-    --dashboard-stroke: 220 13% 91%; /* #EAECF0 */
-    --dashboard-neutral-06: 0 0% 69%; /* #B0B0B0 */
-    --dashboard-neutral-07: 0 0% 44%; /* #717171 */
-    --dashboard-text: 0 0% 13%; /* #212121 */
+    /* Travel Dashboard specific colors — Midnight Indigo */
+    --dashboard-bg: 220 33% 97%; /* #F6F8FB */
+    --dashboard-primary: 226 64% 33%; /* #1E3A8A brand indigo */
+    --dashboard-primary-hover: 222 58% 42%; /* #2D4DA8 hover */
+    --dashboard-heading: 218 72% 14%; /* #0A1E3D */
+    --dashboard-body: 222 38% 20%; /* #1F2A44 */
+    --dashboard-title: 222 38% 20%; /* #1F2A44 */
+    --dashboard-stroke: 220 21% 92%; /* #E4E8F0 */
+    --dashboard-neutral-06: 222 14% 66%; /* #9AA3B5 */
+    --dashboard-neutral-07: 222 16% 44%; /* #5F6A82 */
+    --dashboard-text: 218 72% 14%; /* #0A1E3D */
 
     /* Override default shadcn colors to match design */
-    --background: 210 20% 98%; /* Match dashboard bg */
-    --foreground: 0 0% 7%; /* Match primary */
+    --background: 220 33% 97%; /* Match dashboard bg */
+    --foreground: 218 72% 14%; /* Match primary */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 7%;
+    --card-foreground: 218 72% 14%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 7%;
+    --popover-foreground: 218 72% 14%;
 
-    --primary: 210 74% 37%; /* #185FA5 brand blue */
+    --primary: 226 64% 33%; /* #1E3A8A brand indigo */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 0 0% 7%;
+    --secondary: 220 33% 95%;
+    --secondary-foreground: 218 68% 21%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 33% 95%;
+    --muted-foreground: 222 16% 44%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 0 0% 7%;
+    --accent: 224 64% 96%;
+    --accent-foreground: 218 68% 21%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 5 76% 40%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%; /* #EAECF0 */
-    --input: 220 13% 91%;
-    --ring: 0 0% 7%;
+    --border: 220 21% 92%; /* #E4E8F0 */
+    --input: 220 21% 92%;
+    --ring: 226 64% 33%;
 
     --radius: 0.75rem; /* 12px like in design */
 
-    /* Sidebar colors */
-    --sidebar-background: 210 20% 98%; /* Match dashboard bg */
-    --sidebar-foreground: 0 0% 47%; /* #7A757D */
-    --sidebar-primary: 0 0% 7%; /* #131313 */
+    /* Sidebar colors — light, content-first (Stripe/Notion) */
+    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
+    --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
+    --sidebar-primary: 226 64% 33%;           /* #1E3A8A active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 0 0% 7%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 224 64% 96%;            /* #EEF2FB hover bg */
+    --sidebar-accent-foreground: 218 68% 21%; /* #11295A hover text */
+    --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
+    --sidebar-ring: 226 64% 33%;
 
     /* Additional dashboard neutral colors */
     --dashboard-neutral-07: 0 0% 44%; /* #717171 */
@@ -125,21 +125,21 @@
     --status-green-text: 120 100% 36%; /* #37B800 */
 
     /* Booking ID link color */
-    --booking-link: 238 82% 60%; /* #4F59E5 */
+    --booking-link: 226 64% 33%; /* #1E3A8A */
 
     /* Navigation tree lines */
     --nav-tree-line: 0 0% 90%; /* #E7E7E7 */
 
     /* Blue toggle switch */
-    --dashboard-blue-600: 217 91% 60%; /* #2563EB */
+    --dashboard-blue-600: 226 64% 33%; /* #1E3A8A */
 
-    /* Authentication colors from Figma designs */
-    --auth-blackish-green: #121;
-    --auth-neutral-06: #b0b0b0;
-    --auth-neutral-07: #717171;
-    --auth-primary: #131313;
+    /* Authentication colors */
+    --auth-blackish-green: #0A1E3D;
+    --auth-neutral-06: #9AA3B5;
+    --auth-neutral-07: #5F6A82;
+    --auth-primary: #1E3A8A;
     --auth-primary-0: #fff;
-    --auth-text-muted: rgba(17, 34, 17, 0.75);
+    --auth-text-muted: rgba(31, 42, 68, 0.75);
 
     /* Congratulations page specific colors from Figma */
     --congratulations-star-yellow: #ffdc64;
@@ -420,8 +420,8 @@
     transition: background 200ms ease, box-shadow 200ms ease;
   }
   .btn-brand:hover {
-    background: #145189;
-    box-shadow: 0 4px 12px rgba(24, 95, 165, 0.3);
+    background: #2D4DA8;
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
   }
 
   /* Upload area */

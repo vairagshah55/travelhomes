@@ -11,17 +11,17 @@
    renders correctly in either scope without forking.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --brand: 206 99% 25%;             /* #01487E — Coastal Ocean deep */
-  --brand-hover: 207 98% 20%;       /* #013A65 */
+  --brand: 226 64% 33%;             /* #1E3A8A — Midnight Indigo brand-700 */
+  --brand-hover: 222 58% 42%;       /* #2D4DA8 — brand-600 */
   --brand-fg: 0 0% 100%;            /* white text on brand */
-  --brand-subtle: 206 81% 97%;      /* #F0F8FD mist tint */
+  --brand-subtle: 224 64% 96%;      /* #EEF2FB — brand-50 */
 }
 
 [data-brand="admin"] {
-  --brand: 206 99% 25%;             /* #01487E — same Coastal Ocean */
-  --brand-hover: 207 98% 20%;       /* #013A65 */
+  --brand: 226 64% 33%;             /* #1E3A8A — same Midnight Indigo */
+  --brand-hover: 222 58% 42%;       /* #2D4DA8 */
   --brand-fg: 0 0% 100%;
-  --brand-subtle: 206 81% 97%;
+  --brand-subtle: 224 64% 96%;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -29,17 +29,17 @@
    Blue primary · Warm sand · Teal accents · Airy neutrals
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* Primary — Coastal Ocean */
-  --ds-sky: #f0f8fd;   /* mist surface */
-  --ds-mist: #c5e6f5;  /* soft border / icon bg */
-  --ds-ocean: #55a9cb; /* sky accent */
-  --ds-deep: #01487e;  /* primary brand — CTAs, primary buttons */
-  --ds-navy: #001f4b;  /* deepest — headings, footer */
+  /* Primary — Midnight Indigo */
+  --ds-sky: #eef2fb;   /* brand-50 surface */
+  --ds-mist: #dbe3f5;  /* brand-100 tint */
+  --ds-ocean: #3e63d3; /* brand-500 accent */
+  --ds-deep: #1e3a8a;  /* brand-700 — primary brand, CTAs */
+  --ds-navy: #0a1e3d;  /* ink — deepest, headings, hero */
 
-  /* Accent — Warm Sand (CTA accent) */
-  --ds-sand: #faeeda;  /* soft sand surface */
-  --ds-dune: #e8b96b;  /* CTA sand fill */
-  --ds-rust: #c44536; /* rust — used for error/warm-stop */
+  /* Accent — Champagne (luxury markers, used sparingly) */
+  --ds-sand: #e7d3a6;  /* champagne-300 soft tint */
+  --ds-dune: #c8a96a;  /* champagne-500 fill */
+  --ds-rust: #b42318; /* refined red — error/warm-stop */
 
   /* Accent — Teal (nature, calm) */
   --ds-lagoon: #e1f5ee;
@@ -59,7 +59,7 @@
   --ds-warning: #ef9f27;
 
   /* Card shadow */
-  --ds-shadow-card: 0 4px 20px rgba(24, 95, 165, 0.1);
+  --ds-shadow-card: 0 4px 20px rgba(30, 58, 138, 0.10);
   --ds-shadow-drop: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -71,78 +71,78 @@
 @layer base {
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand — Coastal Ocean refined: #01487E deep, #013A65 hover */
-    --th-brand: #01487e;
-    --th-brand-hover: #013a65;
+    /* Brand — Midnight Indigo: #1E3A8A brand-700, #2D4DA8 hover */
+    --th-brand: #1e3a8a;
+    --th-brand-hover: #2d4da8;
     --th-brand-fg: #ffffff;
 
-    /* CTA — Warm sand accent (use sparingly: primary CTA, highlights) */
-    --th-cta: #e8b96b;
-    --th-cta-hover: #c99b47;
-    --th-cta-fg: #0f172a;
+    /* CTA accent — Champagne (use ONLY as fill/bg, never as text on white) */
+    --th-cta: #c8a96a;
+    --th-cta-hover: #8c6f33;
+    --th-cta-fg: #0a1e3d;
 
     /* Surfaces */
     --th-surface-0: #ffffff;
-    --th-surface-1: #f0f8fd;
-    --th-surface-2: #e0f2fa;
-    --th-surface-3: #c5e6f5;
+    --th-surface-1: #f6f8fb;
+    --th-surface-2: #f1f4f9;
+    --th-surface-3: #e4e8f0;
     --th-surface-raised: #ffffff;
 
     /* Text */
-    --th-text-primary: #0f172a;
-    --th-text-secondary: #001f4b;
-    --th-text-tertiary: #01487e;
-    --th-text-muted: #55a9cb;
-    --th-text-placeholder: rgba(85, 169, 203, 0.55);
+    --th-text-primary: #0a1e3d;
+    --th-text-secondary: #1f2a44;
+    --th-text-tertiary: #1e3a8a;
+    --th-text-muted: #5f6a82;
+    --th-text-placeholder: #9aa3b5;
     --th-text-inverse: #ffffff;
-    --th-text-link: #01487e;
+    --th-text-link: #1e3a8a;
 
     /* Borders */
-    --th-border: #c5e6f5;
-    --th-border-hover: #55a9cb;
-    --th-border-focus: #01487e;
-    --th-border-error: #c44536;
+    --th-border: #e4e8f0;
+    --th-border-hover: #c9d1e0;
+    --th-border-focus: #1e3a8a;
+    --th-border-error: #b42318;
 
     /* Status */
-    --th-success: #2e8b57;
-    --th-success-bg: #e3fbe4;
-    --th-success-text: #2e8b57;
-    --th-warning: #f59e0b;
-    --th-warning-bg: #fff2e2;
-    --th-warning-text: #b86b00;
-    --th-error: #c44536;
-    --th-error-bg: rgba(196, 69, 54, 0.06);
-    --th-error-text: #c44536;
-    --th-info: #01487e;
-    --th-info-bg: #e0f2fa;
-    --th-info-text: #001f4b;
+    --th-success: #0e7c66;
+    --th-success-bg: #e0f5ef;
+    --th-success-text: #0e7c66;
+    --th-warning: #a47200;
+    --th-warning-bg: #fff5dc;
+    --th-warning-text: #a47200;
+    --th-error: #b42318;
+    --th-error-bg: rgba(180, 35, 24, 0.06);
+    --th-error-text: #b42318;
+    --th-info: #1e3a8a;
+    --th-info-bg: #eef2fb;
+    --th-info-text: #0a1e3d;
     --th-purple-bg: #f6e0fd;
     --th-purple-text: #b127dc;
 
-    /* Stats card fills — ocean palette tints */
-    --th-stat-impression: #e0f2fa;
-    --th-stat-impression-icon: #c5e6f5;
-    --th-stat-bookings: #d4ecf7;
-    --th-stat-bookings-icon: #bfe3f3;
-    --th-stat-properties: #e8f5fb;
-    --th-stat-properties-icon: #d4ecf7;
-    --th-stat-earnings: #c5e6f5;
-    --th-stat-earnings-icon: #aad9ef;
-    --th-stat-clicks: #ddf1f8;
-    --th-stat-clicks-icon: #c5e6f5;
+    /* Stats card fills — indigo palette tints */
+    --th-stat-impression: #eef2fb;
+    --th-stat-impression-icon: #dbe3f5;
+    --th-stat-bookings: #e7ecf8;
+    --th-stat-bookings-icon: #c9d4ee;
+    --th-stat-properties: #f1f4f9;
+    --th-stat-properties-icon: #dbe3f5;
+    --th-stat-earnings: #f4eee0;
+    --th-stat-earnings-icon: #e7d3a6;
+    --th-stat-clicks: #ecf0f9;
+    --th-stat-clicks-icon: #dbe3f5;
 
     /* Interactive */
-    --th-ring: rgba(1, 72, 126, 0.15);
-    --th-ring-error: rgba(196, 69, 54, 0.12);
-    --th-overlay: rgba(15, 23, 42, 0.35);
-    --th-booking-link: #01487e;
+    --th-ring: rgba(30, 58, 138, 0.15);
+    --th-ring-error: rgba(180, 35, 24, 0.12);
+    --th-overlay: rgba(10, 30, 61, 0.45);
+    --th-booking-link: #1e3a8a;
 
-    /* Accent (sky blue for highlights & active states) */
-    --th-accent: #55a9cb;
-    --th-accent-hover: #01487e;
+    /* Accent (mid-indigo for highlights & active states) */
+    --th-accent: #3e63d3;
+    --th-accent-hover: #1e3a8a;
     --th-accent-fg: #ffffff;
-    --th-accent-subtle: #f0f8fd;
-    --th-accent-muted: #c5e6f5;
+    --th-accent-subtle: #eef2fb;
+    --th-accent-muted: #dbe3f5;
 
     /* Congratulations page */
     --th-congrats-star-yellow: #ffdc64;
@@ -251,58 +251,58 @@
     --th-z-tooltip: 500;
 
     /* ─── SHADCN COMPATIBILITY (mapped from th-tokens) ───────── */
-    --background: 206 60% 99%;
-    --foreground: 192 100% 2%;
+    --background: 220 33% 97%;
+    --foreground: 218 72% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 192 100% 2%;
+    --card-foreground: 218 72% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 192 100% 2%;
-    --primary: 206 99% 25%;
+    --popover-foreground: 218 72% 14%;
+    --primary: 226 64% 33%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 95%;
-    --secondary-foreground: 215 100% 15%;
-    --muted: 210 40% 95%;
-    --muted-foreground: 215 20% 50%;
-    --accent: 197 53% 57%;
+    --secondary: 220 33% 95%;
+    --secondary-foreground: 218 68% 21%;
+    --muted: 220 33% 95%;
+    --muted-foreground: 222 16% 44%;
+    --accent: 224 64% 54%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 197 40% 88%;
-    --input: 197 40% 88%;
-    --ring: 206 99% 25%;
+    --destructive: 5 76% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 21% 92%;
+    --input: 220 21% 92%;
+    --ring: 226 64% 33%;
 
-    /* Sidebar (shadcn) — navy dark sidebar */
-    --sidebar-background: 215 100% 15%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 197 53% 57%;
-    --sidebar-primary-foreground: 215 100% 15%;
-    --sidebar-accent: 215 100% 18%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 70% 22%;
-    --sidebar-ring: 197 53% 57%;
+    /* Sidebar (shadcn) — light, content-first */
+    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
+    --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
+    --sidebar-primary: 226 64% 33%;           /* #1E3A8A active nav */
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 224 64% 96%;            /* #EEF2FB hover bg */
+    --sidebar-accent-foreground: 218 68% 21%; /* #11295A hover text */
+    --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
+    --sidebar-ring: 226 64% 33%;
 
     /* Legacy dashboard compat (HSL without hsl() wrapper) */
-    --dashboard-bg: 206 60% 99%;
-    --dashboard-primary: 192 100% 2%;
-    --dashboard-heading: 215 100% 15%;
-    --dashboard-body: 206 60% 30%;
-    --dashboard-title: 215 100% 15%;
-    --dashboard-stroke: 197 40% 88%;
-    --dashboard-neutral-06: 197 25% 65%;
-    --dashboard-neutral-07: 206 30% 45%;
-    --dashboard-text: 192 100% 2%;
+    --dashboard-bg: 220 33% 97%;
+    --dashboard-primary: 218 72% 14%;
+    --dashboard-heading: 218 68% 21%;
+    --dashboard-body: 222 38% 20%;
+    --dashboard-title: 218 68% 21%;
+    --dashboard-stroke: 220 21% 92%;
+    --dashboard-neutral-06: 222 14% 66%;
+    --dashboard-neutral-07: 222 16% 44%;
+    --dashboard-text: 218 72% 14%;
 
-    /* Legacy stats (HSL) — ocean palette tints */
-    --stats-impression-bg: 197 60% 95%;
-    --stats-impression-icon-bg: 197 53% 88%;
-    --stats-bookings-bg: 206 70% 94%;
-    --stats-bookings-icon-bg: 206 60% 87%;
-    --stats-properties-bg: 197 65% 96%;
-    --stats-properties-icon-bg: 197 60% 90%;
-    --stats-earnings-bg: 215 80% 93%;
-    --stats-earnings-icon-bg: 215 75% 86%;
-    --stats-clicks-bg: 197 55% 95%;
-    --stats-clicks-icon-bg: 197 50% 88%;
+    /* Legacy stats (HSL) — indigo palette tints */
+    --stats-impression-bg: 224 64% 96%;
+    --stats-impression-icon-bg: 224 60% 91%;
+    --stats-bookings-bg: 224 50% 94%;
+    --stats-bookings-icon-bg: 224 45% 86%;
+    --stats-properties-bg: 220 33% 95%;
+    --stats-properties-icon-bg: 224 60% 91%;
+    --stats-earnings-bg: 39 53% 92%;
+    --stats-earnings-icon-bg: 39 53% 78%;
+    --stats-clicks-bg: 220 50% 95%;
+    --stats-clicks-icon-bg: 224 60% 91%;
 
     /* Legacy status (HSL) */
     --status-orange-bg: 38 100% 95%;
@@ -313,32 +313,32 @@
     --status-green-text: 120 100% 36%;
 
     /* Legacy misc */
-    --booking-link: 206 99% 25%;
-    --nav-tree-line: 197 40% 88%;
+    --booking-link: 226 64% 33%;
+    --nav-tree-line: 220 21% 92%;
 
     /* Legacy auth */
-    --auth-blackish-green: #001f4b;
-    --auth-neutral-06: #55a9cb;
-    --auth-neutral-07: #01487e;
-    --auth-primary: #01487e;
+    --auth-blackish-green: #0a1e3d;
+    --auth-neutral-06: #9aa3b5;
+    --auth-neutral-07: #1e3a8a;
+    --auth-primary: #1e3a8a;
     --auth-primary-0: #fff;
-    --auth-text-muted: rgba(0, 31, 75, 0.75);
+    --auth-text-muted: rgba(31, 42, 68, 0.75);
 
     /* Legacy naming aliases (DO NOT use in new code) */
-    --Background: #f0f8fd;
-    --pRIMARY: #01487e;
-    --Black-Heading: #0f172a;
-    --Black-Stroke: #c5e6f5;
+    --Background: #f6f8fb;
+    --pRIMARY: #1e3a8a;
+    --Black-Heading: #0a1e3d;
+    --Black-Stroke: #e4e8f0;
     --White: #fff;
-    --Title: #001f4b;
-    --Stroke: #c5e6f5;
+    --Title: #1f2a44;
+    --Stroke: #e4e8f0;
     --Primary-0: #fff;
-    --Neutral-06: #55a9cb;
-    --Neutral-07: #01487e;
-    --Body: #001f4b;
-    --Secondary-30: #e0f2fa;
-    --Heading: #0f172a;
-    --Text: #0f172a;
+    --Neutral-06: #9aa3b5;
+    --Neutral-07: #1e3a8a;
+    --Body: #1f2a44;
+    --Secondary-30: #eef2fb;
+    --Heading: #0a1e3d;
+    --Text: #0a1e3d;
     --16: 16px;
     --4: 4px;
     --12: 12px;
@@ -1149,9 +1149,9 @@
     background: var(--th-accent-subtle) !important;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
   }
-  /* designe.md: primary CTA = #185FA5 ds-deep, navy hover. */
+  /* Midnight Indigo: primary CTA = #1E3A8A ds-deep, navy hover. */
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(24, 95, 165, 0.2);
+    box-shadow: 0 4px 20px rgba(30, 58, 138, 0.20);
   }
   .onb-btn-primary {
     background: var(--ds-deep);
@@ -1161,7 +1161,7 @@
   .onb-btn-primary:hover:not(:disabled) {
     background: var(--ds-navy);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(24, 95, 165, 0.28);
+    box-shadow: 0 6px 24px rgba(30, 58, 138, 0.28);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1187,7 +1187,7 @@
     background: var(--ds-sky) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(24, 95, 165, 0.15);
+    box-shadow: 0 2px 12px rgba(30, 58, 138, 0.15);
   }
 
   /* Congratulations */

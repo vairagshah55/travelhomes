@@ -209,7 +209,7 @@ const Settings = () => {
                     />
                     <div
                       className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer transition-all"
-                      style={{ "--tw-peer-checked": "#185FA5" } as React.CSSProperties}
+                      style={{ "--tw-peer-checked": "#1E3A8A" } as React.CSSProperties}
                     >
                       <div
                         className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${general.confirmBeforeBooking ? "translate-x-5" : ""}`}
@@ -217,7 +217,7 @@ const Settings = () => {
                     </div>
                     <div
                       className="absolute inset-0 rounded-full transition-all pointer-events-none"
-                      style={general.confirmBeforeBooking ? { background: "#185FA5" } : {}}
+                      style={general.confirmBeforeBooking ? { background: "#1E3A8A" } : {}}
                     />
                   </label>
                 </div>
@@ -301,7 +301,7 @@ const Settings = () => {
                   <Button
                     onClick={handleSubmitTicket}
                     className="px-6 font-semibold text-white rounded-xl"
-                    style={{ background: "#185FA5" }}
+                    style={{ background: "#1E3A8A" }}
                   >
                     Submit Ticket
                   </Button>
@@ -342,7 +342,7 @@ const Settings = () => {
             <Button
               onClick={() => setShowSuccessModal(false)}
               className="w-full max-w-sm h-12 rounded-full font-semibold text-white"
-              style={{ background: "#185FA5" }}
+              style={{ background: "#1E3A8A" }}
             >
               Back to Home
             </Button>

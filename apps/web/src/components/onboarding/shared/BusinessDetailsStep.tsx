@@ -184,7 +184,7 @@ const CountryPickerModal = ({
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = TEAL;
-                  e.target.style.boxShadow = `0 0 0 3px rgba(24, 95, 165, 0.15)`;
+                  e.target.style.boxShadow = `0 0 0 3px rgba(30, 58, 138, 0.15)`;
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = GRAY_200;

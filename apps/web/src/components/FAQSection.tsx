@@ -47,7 +47,7 @@ export default function FAQSection({
             }}
             className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
               activeCategory === category.id
-                ? 'bg-black text-white dark:bg-white dark:text-black'
+                ? 'bg-[#1E3A8A] text-white dark:bg-white dark:text-black'
                 : 'bg-gray-100 text-gray-700 dark:bg-black dark:text-white hover:bg-gray-200'
             }`}
           >

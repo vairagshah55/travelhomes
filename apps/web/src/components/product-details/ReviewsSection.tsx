@@ -41,7 +41,7 @@ export function ReviewsSection({ visibleReviews, showStatsPanel = true }: Review
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Reviews</h3>
         <Button
-          className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
+          className="bg-[#1E3A8A] text-white rounded-full px-5 text-sm hover:bg-[#2D4DA8] dark:bg-white dark:text-black dark:hover:bg-gray-200"
           onClick={() => toast("Opening review form...")}
         >
           Add Review

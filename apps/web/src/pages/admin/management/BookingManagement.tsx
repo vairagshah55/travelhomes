@@ -229,7 +229,7 @@ const BookingManagement: React.FC = () => {
                     onClick={() => setActiveServiceType(type.id)}
                     className={`px-4 py-3 text-sm font-semibold rounded-full transition-colors ${
                       activeServiceType === type.id
-                        ? "bg-black text-white"
+                        ? "bg-[#1E3A8A] text-white"
                         : "text-black hover:bg-gray-50"
                     }`}
                   >

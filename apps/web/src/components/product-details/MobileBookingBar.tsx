@@ -46,7 +46,7 @@ export function MobileBookingBar({
           )}
         </div>
         <Button
-          className="bg-gray-900 dark:bg-white dark:text-black text-white rounded-full px-6 h-11 text-sm font-semibold hover:bg-gray-800 flex-shrink-0 shadow-md"
+          className="bg-gray-900 dark:bg-white dark:text-black text-white rounded-full px-6 h-11 text-sm font-semibold hover:bg-[#2D4DA8] flex-shrink-0 shadow-md"
           onClick={onCtaClick}
         >
           {ctaLabel}

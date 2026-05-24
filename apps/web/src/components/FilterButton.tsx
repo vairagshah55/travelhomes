@@ -25,11 +25,11 @@ function FilterButton({
       className={`relative flex items-center gap-2 md:gap-2.5 px-5 py-2.5 rounded-full transition-all duration-300 border overflow-hidden ${
         active
           ? isHero
-            ? "bg-white text-[#222222] border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
-            : "bg-[#222222] text-white border-[#222222] shadow-sm"
+            ? "bg-white text-[#0A1E3D] border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)]"
+            : "bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-sm"
           : isHero
           ? "bg-white/10 backdrop-blur-md text-white border-white/20 hover:bg-white/20 hover:border-white/40"
-          : "bg-white text-[#222222] border-[#DDDDDD] hover:border-[#222222] hover:bg-[#F7F7F7] shadow-sm"
+          : "bg-white text-[#0A1E3D] border-[#E4E8F0] hover:border-[#1E3A8A] hover:bg-[#EEF2FB] shadow-sm"
       }`}
     >
       {active && (
@@ -37,7 +37,7 @@ function FilterButton({
           layoutId={isHero ? "hero-filter-pill" : "filter-pill"}
           className="absolute inset-0 rounded-full"
           style={{
-            background: isHero ? "white" : "#222222",
+            background: isHero ? "white" : "#1E3A8A",
           }}
           transition={{ type: "spring", stiffness: 350, damping: 30 }}
         />
@@ -46,17 +46,17 @@ function FilterButton({
         <Icon
           className={`w-4 h-4 transition-colors duration-200 ${
             active && isHero
-              ? "text-[#222222]"
+              ? "text-[#0A1E3D]"
               : isHero
               ? "text-white/90"
               : active
               ? "text-white"
-              : "text-[#717171]"
+              : "text-[#5F6A82]"
           }`}
         />
       </div>
       <span className={`relative z-10 text-sm font-semibold capitalize tracking-tight transition-colors duration-200 ${
-        active && isHero ? "text-[#222222]" : ""
+        active && isHero ? "text-[#0A1E3D]" : ""
       }`}>
         {label}
       </span>

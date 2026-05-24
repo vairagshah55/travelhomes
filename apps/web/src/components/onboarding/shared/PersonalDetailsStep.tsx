@@ -284,7 +284,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 boxShadow: uploadHasError
                   ? `0 0 0 3px ${ERROR_RING}`
                   : idProofImage
-                    ? `0 0 0 3px rgba(24, 95, 165, 0.12)`
+                    ? `0 0 0 3px rgba(30, 58, 138, 0.12)`
                     : "none",
                 overflow: "hidden",
                 position: "relative",
