@@ -42,8 +42,8 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
-} from "./components/shared";
-import type { CountryOption, DiscountOffer } from "./components/shared";
+} from "@/components/onboarding/shared";
+import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
 
 // Stays-specific step components
 import {
@@ -52,7 +52,7 @@ import {
   StayDetailsStep,
   FeaturesStep,
   UniqueStayCardPreview,
-} from "./components/stays";
+} from "@/components/onboarding/stays";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,

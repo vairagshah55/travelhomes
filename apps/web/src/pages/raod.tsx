@@ -11,7 +11,7 @@ const VEHICLE_TYPES = [
 ];
 
 const Interchange = () => {
-  const [vehicles, setVehicles] = useState([]);
+  const [vehicles, setVehicles] = useState<{ id: number; icon: string; duration: number; path: any }[]>([]);
 
   // Road paths (Simplified versions of the interchange loops)
   const paths = {

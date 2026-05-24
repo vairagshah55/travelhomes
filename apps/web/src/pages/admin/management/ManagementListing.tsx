@@ -85,7 +85,7 @@ const ManagementListing = () => {
     queryKey: offersKey,
     queryFn: async () => {
       try {
-        const res = await offersService.list(offersTab);
+        const res = await offersService.list(offersTab as any);
         return res?.data || [];
       } catch (e) {
         console.error("Failed to load offers", e);
@@ -255,7 +255,7 @@ const ManagementListing = () => {
 
     try {
       setIsSubmitting(true);
-      await offersService.setStatus(rejectOffer._id, rejectAction, reason);
+      await offersService.setStatus(rejectOffer._id, rejectAction as any, reason);
 
       if (offersTab !== rejectAction) {
         setOffers((prev) => prev.filter((x) => x._id !== rejectOffer._id));

@@ -52,6 +52,24 @@ import {
 import MobileUserNav from "@/components/MobileUserNav";
 import { Card } from "@/components/ui/card";
 import ShareModal from "./ShareModal";
+import { LoginModal } from "@/components/product-details/LoginModal";
+import { BookingWidget } from "@/components/product-details/BookingWidget";
+import { MobileBookingBar } from "@/components/product-details/MobileBookingBar";
+import { ShareSaveButtons } from "@/components/product-details/ShareSaveButtons";
+import { RelatedItemsGrid } from "@/components/product-details/RelatedItemsGrid";
+import { HostedByCard } from "@/components/product-details/HostedByCard";
+import { StickyNavBar } from "@/components/product-details/StickyNavBar";
+import { ImageGalleryHero } from "@/components/product-details/ImageGalleryHero";
+import { HiddenPdfView } from "@/components/product-details/HiddenPdfView";
+import { RelatedItemsCarousel } from "@/components/product-details/RelatedItemsCarousel";
+import {
+  InclusionsSection,
+  ExclusionsSection,
+  HouseRulesSection,
+} from "@/components/product-details/ListSections";
+import { AmenitiesSection } from "@/components/product-details/AmenitiesSection";
+import { ReviewsSection as DetailsReviewsSection } from "@/components/product-details/ReviewsSection";
+import { TitleMetaHeader } from "@/components/product-details/TitleMetaHeader";
 // Use the shared CalendarDropdown — its `onSelect` prop matches the call
 // site below. The previously inline copy used `onApplyRange` and was
 // silently broken (the prop was never passed, so date selection threw).
@@ -91,15 +109,12 @@ export default function UniqueStayDetails() {
   const { isAuthenticated, user, login } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedPricing, setSelectedPricing] = useState("per-night");
-  const [showCalendarDropdown, setShowCalendarDropdown] = useState(false);
-  const [showGuestDropdown, setShowGuestDropdown] = useState(false);
   const [showPhotoGallery, setShowPhotoGallery] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [checkInDate, setCheckInDate] = useState<Date>(new Date());
   const [checkOutDate, setCheckOutDate] = useState<Date>(
     new Date(Date.now() + 24 * 60 * 60 * 1000),
   );
-  const [openAmenitiesModal, setOpenAmenitiesModal] = useState(false);
   const [guests, setGuests] = useState({
     adults: 1,
     children: 0,
@@ -114,13 +129,6 @@ export default function UniqueStayDetails() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [loginForm, setLoginForm] = useState({ email: "", password: "" });
-  const [loginFieldErrors, setLoginFieldErrors] = useState<{ email?: string; password?: string }>(
-    {},
-  );
-  const [loginLoading, setLoginLoading] = useState(false);
-  const [loginError, setLoginError] = useState("");
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<HTMLDivElement>(null);
@@ -375,26 +383,9 @@ export default function UniqueStayDetails() {
 
   const visibleAmenities = showAll ? amenities : amenities.slice(0, 12);
 
-  const allReviews = [];
+  const allReviews: { name: string; date: string; review: string; profile?: string }[] = [];
 
   const visibleReviews = showAllReviews ? allReviews : allReviews.slice(0, 4);
-
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const guestRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target as Node)) {
-        setShowCalendarDropdown(false);
-      }
-      if (guestRef.current && !guestRef.current.contains(event.target as Node)) {
-        setShowGuestDropdown(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     const checkDarkMode = () => {
@@ -469,83 +460,26 @@ export default function UniqueStayDetails() {
                 <IoIosArrowBack size={16} /> Back
               </button>
 
-              {/* Header Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
-                className="mb-5"
-              >
-                {/* Category badge */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold uppercase tracking-wide">
-                    Unique Stay
-                  </span>
-                </div>
+              <TitleMetaHeader
+                categoryBadge="Unique Stay"
+                name={stay?.name}
+                city={stay?.city}
+                state={stay?.state}
+                reviewCount="2,304"
+                regularPrice={Number(stay?.regularPrice || 0)}
+                priceLabel="night"
+                actions={
+                  <ShareSaveButtons
+                    isAuthenticated={isAuthenticated}
+                    isFavorite={isFavorite}
+                    setIsFavorite={setIsFavorite}
+                    onShareClick={() => setShowShareModal(true)}
+                    onLoginRequired={() => setShowLoginModal(true)}
+                  />
+                }
+              />
 
-                {/* Title + Actions */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <h1 className="text-xl sm:text-2xl md:text-[28px] font-bold text-gray-900 dark:text-white leading-snug tracking-tight">
-                    {stay?.name}
-                  </h1>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => setShowShareModal(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-sm text-gray-700 dark:text-gray-300"
-                    >
-                      <RiShareCircleFill className="w-4 h-4 -rotate-45" />
-                      <span className="hidden sm:inline">Share</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          setShowLoginModal(true);
-                          return;
-                        }
-                        setIsFavorite(!isFavorite);
-                        toast.success(
-                          isFavorite ? "Removed from favorites" : "Added to favorites!",
-                        );
-                      }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 text-sm ${isFavorite ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400" : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"}`}
-                    >
-                      <Heart
-                        className={`w-4 h-4 transition-all duration-300 ${isFavorite ? "fill-red-500 text-red-500 scale-110" : ""}`}
-                      />
-                      <span className="hidden sm:inline">{isFavorite ? "Saved" : "Save"}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Meta row: location, rating, price */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-4">
-                  <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
-                    <MapPin className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">
-                      {[stay?.city, stay?.state].filter(Boolean).join(", ")}
-                    </span>
-                  </div>
-                  <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                      4.91
-                    </span>
-                    <span className="text-sm text-gray-400">(2,304)</span>
-                  </div>
-                  {stay?.regularPrice && (
-                    <>
-                      <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        ₹{Number(stay.regularPrice).toLocaleString()}{" "}
-                        <span className="font-normal text-gray-500">/ night</span>
-                      </span>
-                    </>
-                  )}
-                </div>
-
-                {/* Quick info pills */}
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mb-5">
                   {stay?.guestCapacity && (
                     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-semibold">
                       <Users className="w-3.5 h-3.5" /> {stay.guestCapacity} guests
@@ -574,152 +508,25 @@ export default function UniqueStayDetails() {
                       {item}
                     </span>
                   ))}
-                </div>
-              </motion.div>
+              </div>
 
-              {/* Image Gallery */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
-                className="mb-4 w-full max-w-[1280px]"
-              >
-                {/* Mobile: Single hero image with tap to open gallery */}
-                <div
-                  className="md:hidden relative rounded-2xl overflow-hidden aspect-[16/10]"
-                  onClick={() => {
-                    setPhotoIndex(0);
-                    setShowPhotoGallery(true);
-                  }}
-                >
-                  <img
-                    src={
-                      getImageUrl(stay?.photos?.coverUrl) ||
-                      getImageUrl(stay?.photos?.galleryUrls?.[0])
-                    }
-                    alt={stay?.name || "Stay"}
-                    className="w-full h-full object-cover"
-                    draggable={false}
-                    onContextMenu={(e) => e.preventDefault()}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
-                    <div className="flex gap-1.5">
-                      {galleryImages.slice(0, 5).map((_, i) => (
-                        <div
-                          key={i}
-                          className={`w-1.5 h-1.5 rounded-full ${i === 0 ? "bg-white" : "bg-white/40"}`}
-                        />
-                      ))}
-                    </div>
-                    <button className="bg-white/90 backdrop-blur-sm text-black text-xs font-medium px-3 py-1.5 rounded-full shadow-sm">
-                      {galleryImages.length} photos
-                    </button>
-                  </div>
-                </div>
-
-                {/* Desktop: Grid gallery */}
-                <div className="hidden md:grid grid-cols-4 gap-2 lg:gap-3 h-[340px] lg:h-[420px]">
-                  {/* Main Left Image */}
-                  <div className="col-span-2 row-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
-                    <img
-                      src={
-                        getImageUrl(stay?.photos?.coverUrl) ||
-                        getImageUrl(stay?.photos?.galleryUrls?.[0])
-                      }
-                      onClick={() => {
-                        setPhotoIndex(0);
-                        setShowPhotoGallery(true);
-                      }}
-                      alt={stay?.name || "Stay Main"}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      draggable={false}
-                      onContextMenu={(e) => e.preventDefault()}
-                    />
-                  </div>
-
-                  {/* Right images */}
-                  {[1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="relative overflow-hidden rounded-xl cursor-pointer group"
-                    >
-                      <img
-                        src={getImageUrl(stay?.photos?.galleryUrls?.[i])}
-                        onClick={() => {
-                          setPhotoIndex(i + (stay?.photos?.coverUrl ? 1 : 0));
-                          setShowPhotoGallery(true);
-                        }}
-                        alt={`${stay?.name || "Stay"} ${i}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        draggable={false}
-                        onContextMenu={(e) => e.preventDefault()}
-                      />
-                    </div>
-                  ))}
-
-                  {/* Bottom right with "View all" */}
-                  <div className="col-span-2 relative overflow-hidden rounded-xl cursor-pointer group">
-                    <img
-                      src={getImageUrl(stay?.photos?.galleryUrls?.[3])}
-                      onClick={() => {
-                        setPhotoIndex(3 + (stay?.photos?.coverUrl ? 1 : 0));
-                        setShowPhotoGallery(true);
-                      }}
-                      alt={stay?.name || "Stay"}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      draggable={false}
-                      onContextMenu={(e) => e.preventDefault()}
-                    />
-                    <button
-                      onClick={() => {
-                        setPhotoIndex(0);
-                        setShowPhotoGallery(true);
-                      }}
-                      className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm text-black text-sm font-medium px-4 py-2 rounded-full shadow-sm hover:bg-white hover:shadow-md transition-all duration-200"
-                    >
-                      View all {galleryImages.length} photos
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
+              <ImageGalleryHero
+                coverUrl={stay?.photos?.coverUrl}
+                galleryUrls={stay?.photos?.galleryUrls}
+                name={stay?.name}
+                altFallback="Stay"
+                totalPhotoCount={galleryImages.length}
+                showMobileDots
+                onPhotoClick={(i) => {
+                  setPhotoIndex(i);
+                  setShowPhotoGallery(true);
+                }}
+              />
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-1">
                 {/* Main Content */}
                 <div className="lg:col-span-2 mt-3">
-                  {/* Sticky Nav Bar */}
-                  <div className="sticky top-[72px] z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm mb-8">
-                    <div className="flex overflow-x-auto scrollbar-hide gap-1 relative">
-                      {tabs.map((tab) => (
-                        <button
-                          key={tab.id}
-                          onClick={() => {
-                            setActiveTab(tab.id);
-                            const el = document.getElementById(tab.id);
-                            if (el) {
-                              const y = el.getBoundingClientRect().top + window.scrollY - 130;
-                              window.scrollTo({ top: y, behavior: "smooth" });
-                            }
-                          }}
-                          className={`relative px-4 sm:px-5 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 ${
-                            activeTab === tab.id
-                              ? "text-gray-900 dark:text-white"
-                              : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                          }`}
-                        >
-                          {tab.label}
-                          {activeTab === tab.id && (
-                            <motion.div
-                              layoutId="tab-indicator"
-                              className="absolute bottom-0 left-2 right-2 h-0.5 bg-gray-900 dark:bg-white rounded-full"
-                              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                            />
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="h-px bg-gray-200 dark:bg-gray-700" />
-                  </div>
+                  <StickyNavBar tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} layoutIdPrefix="uniquestay-tab" />
 
                   {/* All sections stacked — scroll into view */}
                   <div className="space-y-12">
@@ -737,370 +544,49 @@ export default function UniqueStayDetails() {
                       </div>
                     </div>
 
-                    {/* Amenities */}
-                    {amenities.length > 0 && (
-                      <div id="amenities" className="scroll-mt-36 space-y-5">
-                        <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          Amenities
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {visibleAmenities.map((amenity, i) => (
-                            <div
-                              key={i}
-                              className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                            >
-                              <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
-                                <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-                              </div>
-                              <span className="text-sm text-gray-700 dark:text-gray-200">
-                                {amenity.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                        {!showAll && amenities.length > 12 && (
-                          <button
-                            onClick={() => setShowAll(true)}
-                            className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600"
-                          >
-                            Show all {amenities.length} amenities
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <AmenitiesSection
+                      amenities={amenities}
+                      visibleAmenities={visibleAmenities}
+                      showAll={showAll}
+                      onShowAll={() => setShowAll(true)}
+                    />
 
-                    {/* Inclusions */}
-                    {inclusions.length > 0 && (
-                      <div id="inclusions" className="scroll-mt-36">
-                        <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                          Inclusions
-                        </h3>
-                        <div className="rounded-2xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/30 dark:bg-emerald-950/10 p-5">
-                          <div className="text-sm text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-line">
-                            {inclusions.join("\n")}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <InclusionsSection items={inclusions} />
+                    <ExclusionsSection items={exclusions} />
+                    <HouseRulesSection rules={policies} />
 
-                    {/* Exclusions */}
-                    {exclusions.length > 0 && (
-                      <div id="exclusions" className="scroll-mt-36">
-                        <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                          Exclusions
-                        </h3>
-                        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30 p-5">
-                          <div className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed whitespace-pre-line">
-                            {exclusions.join("\n")}
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <DetailsReviewsSection visibleReviews={visibleReviews} />
 
-                    {/* Policies & Rules */}
-                    {policies.length > 0 && (
-                      <div id="policies" className="scroll-mt-36">
-                        <div className="h-px bg-gray-100 dark:bg-gray-800 mb-8" />
-                        <div className="flex items-center gap-2 mb-5">
-                          <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                            <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                            House Rules
-                          </h3>
-                        </div>
-                        <div className="rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-                          {policies.map((rule, i) => (
-                            <div
-                              key={i}
-                              className={`flex items-center gap-4 px-5 py-4 ${i !== policies.length - 1 ? "border-b border-gray-50 dark:border-gray-700/50" : ""} hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors`}
-                            >
-                              <span className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-xs font-bold text-gray-500 dark:text-gray-400 flex-shrink-0">
-                                {i + 1}
-                              </span>
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
-                                {rule}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Reviews */}
-                    <div id="reviews" className="scroll-mt-36 space-y-6">
-                      <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          Reviews
-                        </h3>
-                        <Button
-                          className="bg-gray-900 text-white rounded-full px-5 text-sm hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200"
-                          onClick={() => toast("Opening review form...")}
-                        >
-                          Add Review
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center gap-6 p-5 bg-gray-50 dark:bg-gray-800 rounded-2xl">
-                        <div className="text-center">
-                          <div className="text-4xl font-bold text-gray-900 dark:text-white">
-                            4.5
-                          </div>
-                          <div className="flex items-center gap-0.5 mt-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-4 h-4 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "fill-yellow-400/40 text-yellow-400/40"}`}
-                              />
-                            ))}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            2,304 reviews
-                          </div>
-                        </div>
-                        <div className="flex-1 space-y-2.5">
-                          {["Cleanliness", "Accuracy", "Communication", "Location", "Value"].map(
-                            (cat) => (
-                              <div key={cat} className="flex items-center gap-3">
-                                <span className="w-24 text-xs text-gray-600 dark:text-gray-300">
-                                  {cat}
-                                </span>
-                                <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-gray-900 dark:bg-white rounded-full"
-                                    style={{ width: "96%" }}
-                                  />
-                                </div>
-                                <span className="text-xs font-medium text-gray-700 dark:text-gray-200 w-6">
-                                  4.8
-                                </span>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-
-                      {visibleReviews.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {visibleReviews.map((review, index) => (
-                            <div
-                              key={index}
-                              className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 space-y-3"
-                            >
-                              <div className="flex items-center gap-3">
-                                <img
-                                  src={review.profile}
-                                  className="w-9 h-9 rounded-full object-cover"
-                                />
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {review.name}
-                                  </div>
-                                  <div className="text-xs text-gray-500">{review.date}</div>
-                                </div>
-                              </div>
-                              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-                                {review.review}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                          No reviews yet. Be the first to leave a review.
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Owner */}
-                    <div id="owner" className="scroll-mt-36 space-y-5">
-                      <div className="h-px bg-gray-100 dark:bg-gray-800" />
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Hosted by
-                      </h3>
-                      <div className="flex items-center gap-4 p-5 rounded-2xl border border-gray-200 dark:border-gray-700">
-                        <img
-                          src={vendor?.photo || "/User.jpg"}
-                          alt={vendor?.brandName || vendor?.personName || "Owner"}
-                          className="w-14 h-14 rounded-full object-cover flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-gray-900 dark:text-white">
-                            {vendor?.firstName || vendor?.personal?.firstName}{" "}
-                            {vendor?.lastName || vendor?.personal?.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                            {[
-                              vendor?.businessCity || vendor?.business?.city,
-                              vendor?.businessState || vendor?.business?.state,
-                            ]
-                              .filter(Boolean)
-                              .join(", ")}
-                          </div>
-                          <div className="flex items-center gap-3 mt-1">
-                            {vendor?.rating && (
-                              <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                                <Star className="w-3 h-3 fill-current" /> {vendor.rating}
-                              </span>
-                            )}
-                            {vendor?.reviewCount && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {vendor.reviewCount} reviews
-                              </span>
-                            )}
-                            <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                              Verified
-                            </span>
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          className="bg-gray-900 text-white rounded-full px-4 text-xs hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
-                          onClick={handleContactOwner}
-                        >
-                          Contact
-                        </Button>
-                      </div>
-                    </div>
+                    <HostedByCard vendor={vendor} onContactClick={handleContactOwner} />
                   </div>
                 </div>
 
-                {/* Sidebar - Booking Card */}
-                <div className="lg:col-span-1 lg:mt-24 mt-8">
-                  <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 dark:border-gray-700 rounded-3xl p-6 sm:p-8 shadow-lg">
-                    {/* Price + Savings */}
-                    <div className="mb-5">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        {stay?.regularPrice && (
-                          <span className="text-sm text-gray-400 line-through">
-                            ₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}
-                          </span>
-                        )}
-                        <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                          ₹{Number(stay?.regularPrice || 0).toLocaleString()}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">/ night</span>
-                        {stay?.regularPrice && (
-                          <span className="ml-1 px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold">
-                            Save 17%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Rare find nudge */}
-                    <div className="flex items-start gap-3 p-3 mb-5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
-                      <span className="text-lg flex-shrink-0">💎</span>
-                      <div>
-                        <div className="text-sm font-semibold text-rose-800 dark:text-rose-300">
-                          Rare find
-                        </div>
-                        <div className="text-xs text-rose-600 dark:text-rose-400">
-                          This place is usually booked. Don't miss out.
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Booking Form */}
-                    <div className="space-y-4 mb-6">
-                      <div className="grid grid-cols-1 gap-4">
-                        <div className="relative z-50" ref={calendarRef}>
-                          <div
-                            className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                            onClick={() => {
-                              setShowCalendarDropdown(!showCalendarDropdown);
-                              setShowGuestDropdown(false);
-                            }}
-                          >
-                            <div className="flex justify-between items-center mb-4">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <Calendar className="w-4 h-4" />
-                                <span className="text-sm font-medium">Date</span>
-                              </div>
-                              <ChevronDown className="w-4 h-4 text-gray-600" />
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <span className="text-sm font-medium text-black">
-                                {checkInDate.toLocaleDateString("en-GB", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </span>
-                              <ArrowRight className="w-4 h-4 text-gray-500" />
-                              <span className="text-sm font-medium text-black">
-                                {checkOutDate.toLocaleDateString("en-GB", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                          {showCalendarDropdown && (
-                            <CalendarDropdown
-                              onClose={() => setShowCalendarDropdown(false)}
-                              onSelect={(range) => {
-                                setCheckInDate(range.start);
-                                setCheckOutDate(range.end);
-                                setShowCalendarDropdown(false);
-                              }}
-                            />
-                          )}
-                        </div>
-
-                        <div className="relative" ref={guestRef}>
-                          <div
-                            className="p-4 border border-gray-200 rounded-xl bg-white cursor-pointer hover:border-gray-300 transition-colors"
-                            onClick={() => {
-                              setShowGuestDropdown(!showGuestDropdown);
-                              setShowCalendarDropdown(false);
-                            }}
-                          >
-                            <div className="flex justify-between items-center mb-4">
-                              <div className="flex items-center gap-2 text-gray-500">
-                                <Users className="w-4 h-4" />
-                                <span className="text-sm font-medium">Guests</span>
-                              </div>
-                              <ChevronDown className="w-4 h-4 text-gray-600" />
-                            </div>
-                            <span className="text-sm font-medium text-black">
-                              {guests.adults + guests.children + guests.infants} Guests
-                            </span>
-                          </div>
-                          {showGuestDropdown && (
-                            <GuestDropdown
-                              guests={guests}
-                              onUpdate={setGuests}
-                              onClose={() => setShowGuestDropdown(false)}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Button
-                      className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-4 rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors mb-6"
-                      onClick={() => {
-                        navigate("/payment", {
-                          state: {
-                            offerId: id,
-                            checkInDate,
-                            checkOutDate,
-                            guests,
-                            serviceType: "unique-stay",
-                            service: stay,
-                            type: "unique-stays",
-                          },
-                        });
-                      }}
-                    >
-                      Reserve
-                    </Button>
-                  </div>
-                </div>
+                <BookingWidget
+                  priceLabel="night"
+                  rareItemNoun="place"
+                  regularPrice={Number(stay?.regularPrice || 0)}
+                  checkInDate={checkInDate}
+                  checkOutDate={checkOutDate}
+                  onDateChange={(range) => {
+                    setCheckInDate(range.start);
+                    setCheckOutDate(range.end);
+                  }}
+                  guests={guests}
+                  setGuests={setGuests}
+                  onReserve={() => {
+                    navigate("/payment", {
+                      state: {
+                        offerId: id,
+                        checkInDate,
+                        checkOutDate,
+                        guests,
+                        serviceType: "unique-stay",
+                        service: stay,
+                        type: "unique-stays",
+                      },
+                    });
+                  }}
+                />
               </div>
 
               {/* Related Stays */}
@@ -1111,158 +597,22 @@ export default function UniqueStayDetails() {
                 transition={{ duration: 0.5, ease: "easeOut" }}
                 className="mt-14 space-y-14"
               >
-                {/* Same city stays */}
                 {sameCityStays.length > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                          More stays in {stay?.city}
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                          Explore similar places nearby
-                        </p>
-                      </div>
-                      {sameCityStays.length > 4 && (
-                        <button
-                          onClick={() =>
-                            navigate(`/search?filter=unique-stays&location=${stay?.city}`)
-                          }
-                          className="text-sm font-medium text-gray-900 dark:text-white underline underline-offset-2 hover:text-gray-600"
-                        >
-                          View all
-                        </button>
-                      )}
-                    </div>
-                    <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4 md:mx-0 md:px-0">
-                      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 min-w-max md:min-w-0">
-                        {sameCityStays.slice(0, 4).map((item, idx) => (
-                          <motion.div
-                            key={item.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: idx * 0.08, duration: 0.4, ease: "easeOut" }}
-                          >
-                            <Link
-                              to={item.id}
-                              className="block w-64 md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
-                            >
-                              <div className="relative aspect-[4/3] overflow-hidden rounded-xl img-shimmer-wrap">
-                                <img
-                                  src={getImageUrl(item.image)}
-                                  alt={item.title}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                                <div className="img-shimmer-sweep" />
-                              </div>
-                              <div className="pt-3 px-1 space-y-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white line-clamp-1">
-                                    {item.title}
-                                  </h3>
-                                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                                    <Star className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
-                                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">
-                                      4.9
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                  <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
-                                    {item.details}
-                                  </span>
-                                </div>
-                                <div className="flex items-baseline gap-1.5 pt-0.5">
-                                  {item.Maxprice && (
-                                    <span className="text-[13px] text-gray-400 line-through">
-                                      ₹{item.Maxprice}
-                                    </span>
-                                  )}
-                                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">
-                                    {item.price}
-                                  </span>
-                                  <span className="text-[13px] text-gray-500">{item.unit}</span>
-                                </div>
-                              </div>
-                            </Link>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <RelatedItemsCarousel
+                    items={sameCityStays}
+                    title={`More stays in ${stay?.city}`}
+                    subtitle="Explore similar places nearby"
+                    viewAllUrl={`/search?filter=unique-stays&location=${stay?.city}`}
+                    maxVisible={4}
+                  />
                 )}
 
-                {/* You might also like */}
                 {alsoLikeStays.length > 0 && (
-                  <div>
-                    <div className="mb-6">
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                        You might also like
-                      </h2>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Similar stays at a similar price
-                      </p>
-                    </div>
-                    <div className="overflow-x-auto scrollbar-hidden -mx-4 px-4 md:mx-0 md:px-0">
-                      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5 min-w-max md:min-w-0">
-                        {alsoLikeStays.map((item, idx) => (
-                          <motion.div
-                            key={item.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: idx * 0.08, duration: 0.4, ease: "easeOut" }}
-                          >
-                            <Link
-                              to={item.id}
-                              className="block w-64 md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
-                            >
-                              <div className="relative aspect-[4/3] overflow-hidden rounded-xl img-shimmer-wrap">
-                                <img
-                                  src={getImageUrl(item.image)}
-                                  alt={item.title}
-                                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                />
-                                <div className="img-shimmer-sweep" />
-                              </div>
-                              <div className="pt-3 px-1 space-y-1">
-                                <div className="flex items-start justify-between gap-2">
-                                  <h3 className="font-semibold text-[15px] text-gray-900 dark:text-white line-clamp-1">
-                                    {item.title}
-                                  </h3>
-                                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                                    <Star className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
-                                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">
-                                      4.9
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                  <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
-                                    {item.details}
-                                  </span>
-                                </div>
-                                <div className="flex items-baseline gap-1.5 pt-0.5">
-                                  {item.Maxprice && (
-                                    <span className="text-[13px] text-gray-400 line-through">
-                                      ₹{item.Maxprice}
-                                    </span>
-                                  )}
-                                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">
-                                    {item.price}
-                                  </span>
-                                  <span className="text-[13px] text-gray-500">{item.unit}</span>
-                                </div>
-                              </div>
-                            </Link>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                  <RelatedItemsCarousel
+                    items={alsoLikeStays}
+                    title="You might also like"
+                    subtitle="Similar stays at a similar price"
+                  />
                 )}
 
                 {/* Fallback: if no city/price matches, show any other stays */}
@@ -1278,7 +628,7 @@ export default function UniqueStayDetails() {
                           Handpicked stays you'll love
                         </p>
                       </div>
-                      <DefaultCard CardData={stayShown} />
+                      <RelatedItemsGrid items={stayShown} />
                     </div>
                   )}
               </motion.div>
@@ -1299,404 +649,31 @@ export default function UniqueStayDetails() {
               onClose={() => setShowPhotoGallery(false)}
             />
 
-            {/* Hidden PDF View - Replicating Page Design but Expanded */}
-            <div style={{ display: "none" }}>
-              <div ref={pdfRef} className="w-[800px] bg-white text-black font-sans p-8 mx-auto">
-                {/* Header */}
-                <h1 className="text-3xl font-bold mb-2">{stay?.name}</h1>
-                <div className="flex items-center gap-4 mb-6 text-gray-600">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    {stay?.city}, {stay?.state}
-                  </div>
-                  {stay?.category && (
-                    <div className="px-3 py-1 bg-gray-100 rounded-full text-sm font-medium capitalize">
-                      {getNormCategory(stay.category).replace("-", " ")}
-                    </div>
-                  )}
-                </div>
+            <HiddenPdfView
+              pdfRef={pdfRef}
+              stay={stay}
+              vendor={vendor}
+              allReviews={allReviews}
+              getAmenityIcon={getAmenityIcon}
+              categoryLabel={stay?.category ? getNormCategory(stay.category).replace("-", " ") : ""}
+              priceLabel={
+                getNormCategory(stay?.category) === "activity"
+                  ? "person"
+                  : getNormCategory(stay?.category) === "caravan"
+                    ? "day"
+                    : "night"
+              }
+            />
 
-                {/* Images Grid - Fixed Aspect Ratio */}
-                <div className="grid grid-cols-4 grid-rows-2 gap-3 h-[500px] mb-8 rounded-xl overflow-hidden">
-                  {/* Main Image */}
-                  <div className="col-span-2 row-span-2">
-                    <img
-                      onContextMenu={(e) => e.preventDefault()}
-                      draggable={false}
-                      src={getImageUrl(
-                        stay?.photos?.coverUrl || stay?.photos?.galleryUrls?.[0] || "",
-                      )}
-                      className="w-full h-full object-cover"
-                      crossOrigin="anonymous"
-                    />
-                  </div>
-                  {/* Other Images */}
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="col-span-1 row-span-1">
-                      <img
-                        onContextMenu={(e) => e.preventDefault()}
-                        draggable={false}
-                        src={getImageUrl(
-                          stay?.photos?.galleryUrls?.[i] || stay?.photos?.coverUrl || "",
-                        )}
-                        className="w-full h-full object-cover"
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                  ))}
-                </div>
+            <LoginModal
+              isOpen={showLoginModal}
+              onClose={() => setShowLoginModal(false)}
+              onSuccess={() => {
+                setIsFavorite(true);
+                toast.success("Added to favorites!");
+              }}
+            />
 
-                {/* Main Content Layout */}
-                <div className="grid grid-cols-3 gap-8">
-                  <div className="col-span-2 space-y-10">
-                    {/* Overview */}
-                    <section>
-                      <h2 className="text-2xl font-bold mb-4 border-b pb-2">Overview</h2>
-                      <div
-                        className="text-gray-800 leading-relaxed text-lg"
-                        dangerouslySetInnerHTML={{ __html: stay?.description || "" }}
-                      />
-                    </section>
-
-                    {/* Amenities - Full Grid */}
-                    <section>
-                      <h2 className="text-2xl font-bold mb-4 border-b pb-2">Amenities</h2>
-                      <div className="grid grid-cols-2 gap-4">
-                        {stay?.features?.map((f, i) => {
-                          const Icon = getAmenityIcon(f);
-                          return (
-                            <div key={i} className="flex items-center gap-3">
-                              <Icon className="w-5 h-5 text-gray-900" />
-                              <span className="text-gray-800">{f}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-
-                    {/* Inclusions */}
-                    {stay?.priceIncludes && stay.priceIncludes.length > 0 && (
-                      <section>
-                        <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-green-800">
-                          Price Includes
-                        </h2>
-                        <div className="grid grid-cols-1 gap-2">
-                          {stay.priceIncludes.map((item, i) => (
-                            <div key={i} className="flex items-start gap-3">
-                              <span className="font-bold text-green-600">✓</span>
-                              <span>{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* Exclusions */}
-                    {stay?.priceExcludes && stay.priceExcludes.length > 0 && (
-                      <section>
-                        <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-red-800">
-                          Price Excludes
-                        </h2>
-                        <div className="grid grid-cols-1 gap-2">
-                          {stay.priceExcludes.map((item, i) => (
-                            <div key={i} className="flex items-start gap-3">
-                              <span className="font-bold text-red-600">✗</span>
-                              <span>{item}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-
-                    {/* Policies */}
-                    {stay?.rules && stay.rules.length > 0 && (
-                      <section>
-                        <h2 className="text-2xl font-bold mb-4 border-b pb-2">Policies</h2>
-                        <ul className="space-y-2 list-disc pl-5 text-gray-800">
-                          {stay.rules.map((rule, i) => (
-                            <li key={i}>{rule}</li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
-
-                    {/* Reviews Preview - Fixed number */}
-                    {allReviews.length > 0 && (
-                      <section>
-                        <h2 className="text-2xl font-bold mb-4 border-b pb-2">Reviews</h2>
-                        <div className="grid grid-cols-1 gap-6">
-                          {allReviews.slice(0, 3).map((r, i) => (
-                            <div key={i} className="bg-gray-50 p-4 rounded-lg">
-                              <p className="font-bold">{r.name}</p>
-                              <p className="text-sm text-gray-500 mb-2">{r.date}</p>
-                              <p className="text-gray-700">{r.review}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    )}
-                  </div>
-
-                  {/* Right Sidebar - Pricing & Vendor */}
-                  <div className="col-span-1">
-                    <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-6">
-                      <p className="text-gray-500 mb-1">Starting from</p>
-                      <p className="text-3xl font-bold mb-4">
-                        ₹{stay?.regularPrice}{" "}
-                        <span className="text-base font-normal text-gray-600">
-                          /{" "}
-                          {getNormCategory(stay?.category) === "activity"
-                            ? "person"
-                            : getNormCategory(stay?.category) === "caravan"
-                              ? "day"
-                              : "night"}
-                        </span>
-                      </p>
-                      <div className="w-full h-px bg-gray-200 my-4"></div>
-                      <p className="text-sm text-gray-500">
-                        Prices may vary based on dates and guests.
-                      </p>
-                    </div>
-
-                    {vendor && (
-                      <div className="bg-white p-6 rounded-xl border border-gray-200">
-                        <h3 className="font-bold text-lg mb-4">Hosted by</h3>
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 bg-black text-white rounded-full flex items-center justify-center text-xl font-bold">
-                            {(vendor.brandName || vendor.personName || "V")[0]}
-                          </div>
-                          <div>
-                            <p className="font-bold">{vendor.brandName || vendor.personName}</p>
-                            <p className="text-sm text-gray-500">Verified Host</p>
-                          </div>
-                        </div>
-                        <div className="space-y-2 text-sm text-gray-600">
-                          {vendor.email && (
-                            <p className="flex items-center gap-2">
-                              <Mail className="w-4 h-4" /> {vendor.email}
-                            </p>
-                          )}
-                          {vendor.phone && (
-                            <p className="flex items-center gap-2">
-                              <Phone className="w-4 h-4" /> {vendor.phone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-12 pt-8 border-t text-center text-gray-500">
-                  <p>Generated from Travelhomes</p>
-                  <p className="text-sm mt-1">{window.location.href}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Login Modal */}
-            <AnimatePresence>
-              {showLoginModal && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
-                  onClick={() => setShowLoginModal(false)}
-                >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                    className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm p-6 relative"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {/* Close */}
-                    <button
-                      onClick={() => setShowLoginModal(false)}
-                      className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-                    >
-                      <XIcon className="w-5 h-5 text-gray-500" />
-                    </button>
-
-                    {/* Header */}
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                        Log in to save
-                      </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        Save your favourite stays and access them anytime.
-                      </p>
-                    </div>
-
-                    {/* Form */}
-                    <form
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        setLoginError("");
-                        const errs: { email?: string; password?: string } = {};
-
-                        // Email validation
-                        if (!loginForm.email.trim()) {
-                          errs.email = "Email is required";
-                        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginForm.email.trim())) {
-                          errs.email = "Enter a valid email address";
-                        }
-
-                        // Password validation
-                        if (!loginForm.password) {
-                          errs.password = "Password is required";
-                        } else if (loginForm.password.length < 6) {
-                          errs.password = "Password must be at least 6 characters";
-                        }
-
-                        setLoginFieldErrors(errs);
-                        if (Object.keys(errs).length > 0) return;
-
-                        setLoginLoading(true);
-                        try {
-                          const success = await login(
-                            loginForm.email.trim(),
-                            loginForm.password,
-                            true,
-                          );
-                          if (success) {
-                            toast.success("Logged in!");
-                            setShowLoginModal(false);
-                            setIsFavorite(true);
-                            toast.success("Added to favorites!");
-                            setLoginForm({ email: "", password: "" });
-                            setLoginFieldErrors({});
-                          } else {
-                            setLoginError("Invalid email or password");
-                          }
-                        } catch {
-                          setLoginError("Login failed. Please try again.");
-                        } finally {
-                          setLoginLoading(false);
-                        }
-                      }}
-                      className="space-y-4"
-                    >
-                      {/* Email */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Email
-                        </label>
-                        <input
-                          type="email"
-                          value={loginForm.email}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setLoginForm((p) => ({ ...p, email: val }));
-                            if (!val.trim()) {
-                              setLoginFieldErrors((p) => ({ ...p, email: "Email is required" }));
-                            } else if (
-                              val.includes("@") &&
-                              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim())
-                            ) {
-                              setLoginFieldErrors((p) => ({
-                                ...p,
-                                email: "Enter a valid email address",
-                              }));
-                            } else {
-                              setLoginFieldErrors((p) => ({ ...p, email: undefined }));
-                            }
-                          }}
-                          placeholder="you@example.com"
-                          className={`w-full px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm outline-none transition-colors placeholder:text-gray-400 ${
-                            loginFieldErrors.email
-                              ? "border-red-400 focus:border-red-500"
-                              : "border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
-                          }`}
-                          autoFocus
-                        />
-                        {loginFieldErrors.email && (
-                          <p className="text-xs text-red-500 mt-1">{loginFieldErrors.email}</p>
-                        )}
-                      </div>
-
-                      {/* Password */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                          Password
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showLoginPassword ? "text" : "password"}
-                            value={loginForm.password}
-                            onChange={(e) => {
-                              setLoginForm((p) => ({ ...p, password: e.target.value }));
-                              if (loginFieldErrors.password)
-                                setLoginFieldErrors((p) => ({ ...p, password: undefined }));
-                            }}
-                            placeholder="Enter password"
-                            className={`w-full px-4 py-2.5 pr-11 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm outline-none transition-colors placeholder:text-gray-400 ${
-                              loginFieldErrors.password
-                                ? "border-red-400 focus:border-red-500"
-                                : "border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
-                            }`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowLoginPassword(!showLoginPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                          >
-                            {showLoginPassword ? (
-                              <EyeOff className="w-4 h-4" />
-                            ) : (
-                              <Eye className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                        {loginFieldErrors.password && (
-                          <p className="text-xs text-red-500 mt-1">{loginFieldErrors.password}</p>
-                        )}
-                      </div>
-
-                      {/* Server error */}
-                      {loginError && (
-                        <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/30">
-                          <span className="text-red-500 text-sm mt-0.5">&#9888;</span>
-                          <p className="text-sm text-red-600 dark:text-red-400">{loginError}</p>
-                        </div>
-                      )}
-
-                      {/* Submit */}
-                      <Button
-                        type="submit"
-                        disabled={
-                          loginLoading ||
-                          !loginForm.email.trim() ||
-                          !loginForm.password ||
-                          !!loginFieldErrors.email ||
-                          !!loginFieldErrors.password
-                        }
-                        className="w-full bg-gray-900 dark:bg-white dark:text-black text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {loginLoading ? "Logging in..." : "Log in"}
-                      </Button>
-
-                      {/* Register link */}
-                      <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                        Don't have an account?{" "}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowLoginModal(false);
-                            navigate("/register");
-                          }}
-                          className="text-gray-900 dark:text-white font-medium underline underline-offset-2"
-                        >
-                          Sign up
-                        </button>
-                      </p>
-                    </form>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
 
             {/* Share Modal */}
             <ShareModal
@@ -1709,50 +686,29 @@ export default function UniqueStayDetails() {
             />
           </motion.div>
 
-          {/* Sticky mobile booking bar */}
-          <div className="lg:hidden fixed bottom-14 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="flex items-baseline gap-1.5">
-                  {stay?.regularPrice && (
-                    <span className="text-xs text-gray-400 line-through">
-                      ₹{Math.round(Number(stay.regularPrice) * 1.2).toLocaleString()}
-                    </span>
-                  )}
-                  <span className="text-lg font-bold text-gray-900 dark:text-white">
-                    ₹{Number(stay?.regularPrice || 0).toLocaleString()}
-                  </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">/ night</span>
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} –{" "}
-                  {checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
-                </div>
-              </div>
-              <Button
-                className="bg-gray-900 dark:bg-white dark:text-black text-white rounded-full px-6 h-11 text-sm font-semibold hover:bg-gray-800 flex-shrink-0 shadow-md"
-                onClick={() => {
-                  if (isAuthenticated) {
-                    navigate("/payment", {
-                      state: {
-                        offerId: id,
-                        checkInDate,
-                        checkOutDate,
-                        guests,
-                        serviceType: "unique-stay",
-                        service: stay,
-                        type: "unique-stays",
-                      },
-                    });
-                  } else {
-                    navigate("/register");
-                  }
-                }}
-              >
-                Check availability
-              </Button>
-            </div>
-          </div>
+          <MobileBookingBar
+            priceLabel="night"
+            regularPrice={Number(stay?.regularPrice || 0)}
+            ctaLabel="Check availability"
+            dateRangeText={`${checkInDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} – ${checkOutDate.toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}`}
+            onCtaClick={() => {
+              if (isAuthenticated) {
+                navigate("/payment", {
+                  state: {
+                    offerId: id,
+                    checkInDate,
+                    checkOutDate,
+                    guests,
+                    serviceType: "unique-stay",
+                    service: stay,
+                    type: "unique-stays",
+                  },
+                });
+              } else {
+                navigate("/register");
+              }
+            }}
+          />
 
           <div className="fixed bottom-0 left-0 right-0 z-50 dark:bg-black dark:text-white bg-white border-t border-gray-200 dark:border-gray-800 shadow-md">
             <MobileUserNav />
@@ -1761,179 +717,4 @@ export default function UniqueStayDetails() {
       )}
     </>
   );
-}
-
-// // Unique Stay Card Component
-// function UniqueStayCard({
-//   id = Math.floor(Math.random() * 10) + 1,
-// }: { id?: number } = {}) {
-//   return (
-//     <Link to={`/unique-stay/${id}`} className="group">
-//       <div className="space-y-3">
-//         <div className="relative aspect-square rounded-xl overflow-hidden">
-//           <img onContextMenu={(e) => e.preventDefault()} draggable={false}
-//             src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
-//             alt="Unique Stay"
-//             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-//           />
-//           <button className="absolute top-3 right-3 p-2 dark:bg-black dark:text-white bg-white/80 rounded-full hover:bg-white transition-colors">
-//             <Heart className="w-4 h-4 text-gray-600 dark:text-white" />
-//           </button>
-//         </div>
-//         <div className="space-y-1">
-//           <h3 className="font-medium text-black group-hover:text-gray-700 dark:bg-black dark:text-white">
-//             Modern Loft in SOMA
-//           </h3>
-//           <p className="text-gray-500 text-sm dark:bg-black dark:text-white">
-//             San Francisco, CA
-//           </p>
-//           <div className="flex items-center gap-1">
-//             <Star className="w-3 h-3 fill-black dark:bg-black dark:text-white text-black" />
-//             <span className="text-sm font-medium dark:bg-black dark:text-white">
-//               4.85
-//             </span>
-//           </div>
-//         </div>
-//       </div>
-//     </Link>
-//   );
-// }
-
-// Result Card Component with dynamic content
-function DefaultCard({ CardData }: { CardData: any[] }) {
-  const [isFavorite, setisFavorite] = useState<{ [id: string]: boolean }>({});
-
-  // const getCardContent = () => {
-  //   switch (activeFilter) {
-  //     case "camper-van":
-  //       return CardData;
-  //     case "unique-stays":
-  //       return CardData;
-  //     case "activity":
-  //       return CardData;
-  //     default:
-  //       return CardData;
-  //   }
-  // };
-  function handleFavorite(id: string) {
-    setisFavorite((prev) => ({
-      ...prev,
-      [id]: !prev[id], // toggle
-    }));
-  }
-
-  const content = CardData;
-
-  const CardContent = (
-    <>
-      <div className="grid sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-        {content.map((content) => (
-          <div key={content.id} className="group">
-            <div className="relative rounded-xl overflow-hidden mb-4">
-              <img
-                onContextMenu={(e) => e.preventDefault()}
-                draggable={false}
-                src={content.image}
-                alt={content.title}
-                className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-              {/* Heart Icon */}
-              <button className="absolute top-3 right-3">
-                <Heart
-                  onClick={() => handleFavorite(content.id)}
-                  className={`w-6 h-6 cursor-pointer z-50 ${isFavorite[content.id] ? "fill-red-500 text-red-500" : "text-white"}`}
-                />
-              </button>
-              {/* Image Dots */}
-              <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
-                <div className="w-3 h-3 bg-white rounded-full" />
-                <div className="w-3 h-3 bg-white/40 rounded-full" />
-                <div className="w-3 h-3 bg-white/40 rounded-full" />
-                <div className="w-3 h-3 bg-white/40 rounded-full" />
-                <div className="w-2 h-2 bg-white/40 rounded-full" />
-              </div>
-
-              {/* Guest Favourite Badge */}
-              {isFavorite[content.id] && (
-                <div className="absolute top-3 left-3 dark:bg-black dark:text-white bg-white rounded px-2 py-1">
-                  <span className="text-xs font-bold dark:bg-black dark:text-white text-black">
-                    Guest Favourite
-                  </span>
-                </div>
-              )}
-
-              {/* Arrow Button */}
-              <Link to={`${content.id}`}>
-                <button className="absolute bottom-3 right-3 w-8 h-8 dark:bg-black dark:text-white bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
-            </div>
-
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="font-bold dark:bg-black dark:text-white text-gray-900 mb-1">
-                  {content.title}
-                </h3>
-                <div className="flex items-center gap-1 mb-2">
-                  <span className="text-sm dark:bg-black dark:text-white text-gray-600">
-                    {content.details}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500 dark:bg-black dark:text-white line-through">
-                    ₹{content.Maxprice}
-                  </span>
-                  <span className="font-bold text-gray-900 dark:bg-black dark:text-white">
-                    {content.price}
-                  </span>
-                  <span className="text-sm text-gray-600 dark:bg-black dark:text-white">
-                    {content.unit}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-black dark:bg-black dark:text-white text-black" />
-                  <span className="text-sm font-medium">4.91</span>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4 text-gray-500 dark:bg-black dark:text-white" />
-                  <span className="text-sm text-gray-600 dark:bg-black dark:text-white">2</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-
-  //Wrap with appropriate Link based on card type
-  // if (activeFilter === "camper-van") {
-  //   return (
-  //     <Link to="/campervan/1" className="block">
-  //       {CardContent}
-  //     </Link>
-  //   );
-  // }
-
-  // if (activeFilter === "unique-stays") {
-  //   return (
-  //     <Link to="/unique-stay/1" className="block">
-  //       {CardContent}
-  //     </Link>
-  //   );
-  // }
-
-  // if (activeFilter === "activity") {
-  //   return (
-  //     <Link to="/activity/1" className="block">
-  //       {CardContent}
-  //     </Link>
-  //   );
-  // }
-
-  return CardContent;
 }

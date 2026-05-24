@@ -140,7 +140,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
         : formData.priceExcludes,
     };
 
-    onSubmit(processedData);
+    onSubmit(processedData as any);
   };
 
   if (!isOpen) return null;

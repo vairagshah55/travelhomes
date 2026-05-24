@@ -38,6 +38,7 @@ import {
   Eye,
   TrendingUp,
   IndianRupee,
+  Trash2,
 } from "lucide-react";
 import {
   AreaChart,

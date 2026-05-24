@@ -127,7 +127,7 @@ export default function VacationRentalPlatform() {
   const [rental, setRental] = useState(45000);
   const [showwAddReview, setShowwAddReview] = useState(false);
   const [days, setDays] = useState(21);
-  const scrollRef = useRef(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
 
   const { data: testimonials = [] } = useQuery<PublicTestimonial[]>({
@@ -145,14 +145,14 @@ export default function VacationRentalPlatform() {
   const { data: faqs = [] } = useFaqs();
 
   const scrollLeft = () => {
-    scrollRef.current.scrollBy({
+    scrollRef.current?.scrollBy({
       left: -300,
       behavior: "smooth",
     });
   };
 
   const scrollRight = () => {
-    scrollRef.current.scrollBy({
+    scrollRef.current?.scrollBy({
       left: 300,
       behavior: "smooth",
     });

@@ -23,7 +23,7 @@ export const CustomPagination: React.FC<CustomPaginationProps> = ({
   if (totalPages <= 1) return null;
 
   const renderPaginationItems = () => {
-    const items = [];
+    const items: React.ReactElement[] = [];
     const maxVisiblePages = 5;
 
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));

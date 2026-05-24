@@ -402,7 +402,7 @@ export function HomeHeader({
   const [showActivityDropdown, setShowActivityDropdown] = useState(false);
 
   const locationRef = useRef<HTMLDivElement>(null);
-  const locationToRef = useRef(null);
+  const locationToRef = useRef<HTMLDivElement>(null);
   const guestRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);

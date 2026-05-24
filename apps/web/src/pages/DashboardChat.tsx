@@ -254,7 +254,7 @@ const initialChatUsers = [
 
 const DashboardChat = () => {
   const [chats, setChats] = useState(initialChatUsers);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [messageText, setMessageText] = useState("");
   const [showEmojis, setShowEmojis] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -265,7 +265,7 @@ const DashboardChat = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [chatWallpaper, setChatWallpaper] = useState(null);
-  const [pinnedUserIds, setPinnedUserIds] = useState([]);
+  const [pinnedUserIds, setPinnedUserIds] = useState<number[]>([]);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -285,7 +285,7 @@ const DashboardChat = () => {
     }
   };
 
-  const chatSectionRef = useRef(null);
+  const chatSectionRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -344,6 +344,7 @@ const DashboardChat = () => {
   const handleForward = (_msg: any) => {};
 
   const handleDeleteMessage = (index) => {
+    if (!selectedUser) return;
     const updatedMessages = selectedUser.messages.filter((_, i) => i !== index);
     setSelectedUser({ ...selectedUser, messages: updatedMessages });
     setSelectedMessageIdx(null);
@@ -579,7 +580,7 @@ const DashboardChat = () => {
                     accept=".pdf,.doc,.docx"
                     className="hidden"
                     onChange={(e) => {
-                      const file = e.target.files[0];
+                      const file = e.target.files?.[0];
                       if (file) {
                         toast.success(`Document selected: ${file.name}`);
                       }
@@ -587,7 +588,7 @@ const DashboardChat = () => {
                   />
                   <button
                     className="flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded"
-                    onClick={() => document.getElementById("docInput").click()}
+                    onClick={() => document.getElementById("docInput")?.click()}
                   >
                     <span className="w-6 h-6 bg-blue-500 text-white flex items-center justify-center rounded">
                       <IoDocumentText />
@@ -603,7 +604,7 @@ const DashboardChat = () => {
                     capture="environment"
                     className="hidden"
                     onChange={(e) => {
-                      const file = e.target.files[0];
+                      const file = e.target.files?.[0];
                       if (file) {
                         toast.success(`Photo captured: ${file.name}`);
                       }
@@ -612,7 +613,7 @@ const DashboardChat = () => {
                   <button
                     className="flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded"
                     onClick={() =>
-                      document.getElementById("cameraInput").click()
+                      document.getElementById("cameraInput")?.click()
                     }
                   >
                     <span className="w-6 h-6 bg-blue-500 text-white flex items-center justify-center rounded">
@@ -636,7 +637,7 @@ const DashboardChat = () => {
                   <button
                     className="flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded"
                     onClick={() =>
-                      document.getElementById("galleryInput").click()
+                      document.getElementById("galleryInput")?.click()
                     }
                   >
                     <span className="w-6 h-6 bg-blue-500 text-white flex items-center justify-center rounded">

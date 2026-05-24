@@ -20,8 +20,8 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
-} from "./components/shared";
-import type { CountryOption, DiscountOffer } from "./components/shared";
+} from "@/components/onboarding/shared";
+import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
 
 // Caravan-specific step components
 import {
@@ -31,7 +31,7 @@ import {
   CapacityAddressStep,
   PricingStep,
   CaravanCardPreview,
-} from "./components/caravan";
+} from "@/components/onboarding/caravan";
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,

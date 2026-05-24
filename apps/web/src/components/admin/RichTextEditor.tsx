@@ -190,7 +190,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         onClick={handleContentClick}
         onInput={(e) => onChange(e.currentTarget.innerHTML)}
         className="rich-text-content p-3 min-h-[150px] outline-none text-sm text-gray-800"
-        placeholder={placeholder}
+        // `placeholder` isn't a valid HTML attribute on contentEditable divs;
+        // use data-placeholder + CSS (`[data-placeholder]:empty::before`).
+        data-placeholder={placeholder}
         onBlur={() => {
           if (contentRef.current) {
             onChange(contentRef.current.innerHTML);

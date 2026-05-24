@@ -369,7 +369,7 @@ const UserTrips = () => {
               Keep Reservation
             </Button>
             <Button
-              onClick={() => handleCancelletion(selectedTrip)}
+              onClick={() => selectedTrip && handleCancelletion(selectedTrip)}
               className="flex-1 bg-black hover:bg-gray-900 text-white"
             >
               Cancel Reservation

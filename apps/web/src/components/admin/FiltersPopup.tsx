@@ -37,7 +37,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
   const [dateTo, setDateTo] = useState(currentFilters?.find(f => f.startsWith('dateTo:'))?.split(':')[1] || "");
 
   const handleApplyFilters = () => {
-    const filters = [];
+    const filters: string[] = [];
     
     if (location) filters.push(`location:${location}`);
     if (serviceType) filters.push(`service:${serviceType}`);

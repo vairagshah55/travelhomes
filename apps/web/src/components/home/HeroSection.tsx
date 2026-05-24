@@ -208,7 +208,7 @@ export function HeroSection({
           variant="transparent"
           className="fixed w-full z-50"
           activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
+          onFilterChange={(f) => setActiveFilter(f as FilterType)}
           heroHeight={heroHeight}
           scrollHighlightFilter={scrollHighlightFilter}
         />
@@ -307,7 +307,7 @@ export function HeroSection({
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); setShowActivityDropdown(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ pet: 0, ...g })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ ...g, pet: g.pet ?? 0 })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
                   <SearchBtn />
@@ -359,7 +359,7 @@ export function HeroSection({
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ pet: 0, ...g })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ ...g, pet: g.pet ?? 0 })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
                   <SearchBtn />
@@ -403,7 +403,7 @@ export function HeroSection({
                       <button onClick={() => { setShowGuestDropdown(!showGuestDropdown); setShowLocationDropdown(false); setShowCalendar(false); }} className={`${guestsConfirmed ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}>
                         {guestsConfirmed ? `${guests.adults + guests.children + guests.infants} guests` : "Add guests"}
                       </button>
-                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ pet: 0, ...g })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
+                      {showGuestDropdown && <GuestDropdown guests={guests} onUpdate={(g) => setGuests({ ...g, pet: g.pet ?? 0 })} onClose={() => { setShowGuestDropdown(false); setGuestsConfirmed(true); }} />}
                     </div>
                   </div>
                   <SearchBtn />

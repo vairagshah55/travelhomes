@@ -61,7 +61,7 @@ export function CalendarDropdown({
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    const days = [];
+    const days: Date[] = [];
     for (let i = 0; i < 42; i++) {
       const day = new Date(startDate);
       day.setDate(startDate.getDate() + i);

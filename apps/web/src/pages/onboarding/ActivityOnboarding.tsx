@@ -21,8 +21,8 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
-} from "./components/shared";
-import type { CountryOption, DiscountOffer } from "./components/shared";
+} from "@/components/onboarding/shared";
+import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
 
 // Activity-specific step components
 import {
@@ -31,7 +31,7 @@ import {
   DetailsStep,
   PricingStep,
   InclusionExclusionStep,
-} from "./components/activity";
+} from "@/components/onboarding/activity";
 
 interface ActivityType {
   id: string;
@@ -247,55 +247,6 @@ const ActivityOnboarding = () => {
         ) {
           const doc = data.doc;
 
-          /* MIGRATION NOTE — pre-existing dead code in Frontend source:
-             Six setter calls (setFirstUserDiscount / setFestivalOffer /
-             setWeeklyOffer / setSpecialOffer / setBusinessDetails /
-             setPersonalDetails or similar) had their function names AND
-             opening braces removed during an earlier refactor, leaving
-             stranded object literals that cause a parse error. The actual
-             data still flows through the setFormData(...) call below.
-             This block is preserved (commented out) so the original intent
-             stays visible for whoever cleans up Frontend's source.
-
-            active: doc.firstUserDiscount,
-            type: doc.discountType,
-            amount: doc.discountAmount,
-            final: doc.finalPrice,
-            active: doc.festivalOffers,
-            type: doc.festivalDiscountType,
-            amount: doc.festivalDiscountAmount,
-            final: doc.festivalFinalPrice,
-            active: doc.weeklyOffers,
-            type: doc.weeklyDiscountType,
-            amount: doc.weeklyDiscountAmount,
-            final: doc.weeklyFinalPrice,
-            active: doc.specialOffers,
-            type: doc.specialDiscountType,
-            amount: doc.specialDiscountAmount,
-            final: doc.specialFinalPrice,
-
-            brandName: doc.brandName,
-            legalCompanyName: doc.legalCompanyName,
-            gstNumber: doc.gstNumber,
-            businessEmail: doc.businessEmail,
-            businessPhone: doc.businessPhone,
-            businessLocality: doc.businessLocality,
-            businessPincode: doc.businessPincode,
-            businessCity: doc.businessCity,
-            businessState: doc.businessState,
-
-            firstName: doc.firstName,
-            lastName: doc.lastName,
-            personalLocality: doc.personalLocality,
-            personalPincode: doc.personalPincode,
-            personalCity: doc.personalCity,
-            personalState: doc.personalState,
-            dateOfBirth: doc.dateOfBirth,
-            maritalStatus: doc.maritalStatus,
-            idProof: doc.idProof,
-            idPhotos: doc.idPhotos,
-          */
-
           setStatus(doc.status);
           setRejectionReason(doc.rejectionReason || "");
 
@@ -366,33 +317,6 @@ const ActivityOnboarding = () => {
             termsAccepted: false,
           }));
         } else if (userDetails && user?.userType !== "vendor") {
-
-          /* MIGRATION NOTE — pre-existing dead code in Frontend source.
-             Same pattern as the earlier comment: setter function names
-             were stripped during a refactor, leaving stranded object
-             literals. The data is still propagated via setFormData below.
-
-            firstName: userDetails.firstName,
-            lastName: userDetails.lastName,
-            personalLocality: userDetails.personalLocality,
-            personalPincode: userDetails.personalPincode,
-            personalCity: userDetails.city,
-            personalState: userDetails.state,
-            dateOfBirth: userDetails.dateOfBirth,
-            maritalStatus: userDetails.maritalStatus,
-            idProof: userDetails.idProof,
-            idPhotos: userDetails.idPhotos,
-
-            brandName: userDetails.business?.brandName,
-            legalCompanyName: userDetails.business?.legalCompanyName,
-            gstNumber: userDetails.business?.gstNumber,
-            businessEmail: userDetails.business?.email,
-            businessPhone: userDetails.business?.phoneNumber,
-            businessLocality: userDetails.business?.locality,
-            businessPincode: userDetails.business?.pincode,
-            businessCity: userDetails.business?.city,
-            businessState: userDetails.business?.state,
-          */
 
           // Auto-fill from user details if no draft exists
           setFormData((prev) => ({

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 const PriceSlider = () => {
   const [percent, setPercent] = useState(50); // Initial value at 50%
   const [isDragging, setIsDragging] = useState(false);
-  const trackRef = useRef(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const maxPrice = 1000;
 
   const calculateScroll = (clientX) => {

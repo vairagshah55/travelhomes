@@ -1,15 +1,15 @@
 :root {
-  /* Brand palette (designe.md) — #E6F1FB sky → #185FA5 deep → #042C53 navy */
-  --blue-50:  #E6F1FB;
-  --blue-100: #B5D4F4;
-  --blue-200: #82B9ED;
-  --blue-300: #378ADD;
-  --blue-400: #2675C5;
-  --blue-500: #185FA5;
-  --blue-600: #114D8A;
-  --blue-700: #042C53;
-  --blue-800: #000f28;
-  --blue-900: #00080a;
+  /* Coastal Ocean refined — #F0F8FD mist → #01487E deep → #001F4B navy */
+  --blue-50:  #F0F8FD;
+  --blue-100: #E0F2FA;
+  --blue-200: #C5E6F5;
+  --blue-300: #A0D8EC;
+  --blue-400: #55A9CB;
+  --blue-500: #01487E;
+  --blue-600: #013A65;
+  --blue-700: #001F4B;
+  --blue-800: #000F28;
+  --blue-900: #00080A;
 
   --white: #ffffff;
   --gray-50:  #f8fafc;

@@ -75,7 +75,7 @@ const ChatPage = () => {
   const isVendor = currentUser?.userType === "vendor";
 
   const [chats, setChats] = useState<any[]>([]);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [messageText, setMessageText] = useState("");
   const [showPopup, setShowPopup] = useState(false);
   const [filter] = useState("Direct");
@@ -84,7 +84,7 @@ const ChatPage = () => {
   const [started, setStarted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [chatWallpaper] = useState(null);
-  const [pinnedUserIds] = useState([]);
+  const [pinnedUserIds] = useState<string[]>([]);
   const [selectedFiles, setSelectedFiles] = useState<
     { file: File; type: "image" | "document"; preview: string | null }[]
   >([]);
@@ -98,7 +98,7 @@ const ChatPage = () => {
     type: "Vendor" | "User";
   } | null>(null);
 
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -266,7 +266,7 @@ const ChatPage = () => {
         return updated.sort((a, b) => (a.id === data.chatId ? -1 : 1));
       });
       setSelectedUser((currentSelected) => {
-        if (currentSelected?.id !== data.chatId) return currentSelected;
+        if (!currentSelected || currentSelected.id !== data.chatId) return currentSelected;
         if (data.senderId === chatProfile?.id) return currentSelected;
         return {
           ...currentSelected,
@@ -420,9 +420,9 @@ const ChatPage = () => {
       }
 
       const senderKind = chatProfile?.type || (isVendor ? "Vendor" : "User");
-      const senderId = chatProfile?.id || currentUser.id;
+      const senderId = chatProfile?.id || currentUser?.id;
 
-      await fetch(`${API_BASE}/api/vendorchats/conversations/${selectedUser.id}/messages`, {
+      await fetch(`${API_BASE}/api/vendorchats/conversations/${selectedUser?.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -477,6 +477,7 @@ const ChatPage = () => {
   };
 
   const handleDeleteMessage = async (index) => {
+    if (!selectedUser) return;
     const msgToDelete = selectedUser.messages[index];
     if (!msgToDelete.id) {
       setSelectedUser({
@@ -808,7 +809,7 @@ const ChatPage = () => {
             <div className="absolute bottom-24 right-20 bg-white border rounded-xl shadow-xl p-2 w-48 flex flex-col gap-1 z-50">
               <button
                 className="flex items-center gap-3 text-sm hover:bg-gray-50 p-3 rounded-lg w-full text-left transition-colors"
-                onClick={() => document.getElementById("galleryInput").click()}
+                onClick={() => document.getElementById("galleryInput")?.click()}
               >
                 <GrGallery className="text-pink-500" /> Gallery
               </button>
@@ -822,7 +823,7 @@ const ChatPage = () => {
               />
               <button
                 className="flex items-center gap-3 text-sm hover:bg-gray-50 p-3 rounded-lg w-full text-left transition-colors"
-                onClick={() => document.getElementById("cameraInput").click()}
+                onClick={() => document.getElementById("cameraInput")?.click()}
               >
                 <FaCamera className="text-blue-500" /> Camera
               </button>
@@ -836,7 +837,7 @@ const ChatPage = () => {
               />
               <button
                 className="flex items-center gap-3 text-sm hover:bg-gray-50 p-3 rounded-lg w-full text-left transition-colors"
-                onClick={() => document.getElementById("docInput").click()}
+                onClick={() => document.getElementById("docInput")?.click()}
               >
                 <IoDocumentText className="text-purple-500" /> Document
               </button>

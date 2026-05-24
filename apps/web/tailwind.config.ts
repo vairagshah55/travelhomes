@@ -107,6 +107,10 @@ export default {
           "accent-fg":     "var(--th-accent-fg)",
           "accent-subtle": "var(--th-accent-subtle)",
 
+          cta:             "var(--th-cta)",
+          "cta-hover":     "var(--th-cta-hover)",
+          "cta-fg":        "var(--th-cta-fg)",
+
           "stat-impression":      "var(--th-stat-impression)",
           "stat-impression-icon": "var(--th-stat-impression-icon)",
           "stat-bookings":        "var(--th-stat-bookings)",
@@ -179,6 +183,18 @@ export default {
           700: "#001f4b",   /* navy */
           800: "#000f28",
           900: "#00080a",   /* deep */
+        },
+
+        /* Sand — warm CTA accent (use sparingly: primary buttons over photos, badges) */
+        sand: {
+          50:  "#fdf7ec",
+          100: "#faeeda",   /* soft sand surface */
+          200: "#f5dcb1",
+          300: "#efc98a",
+          400: "#e8b96b",   /* CTA fill (default) */
+          500: "#c99b47",   /* CTA hover */
+          600: "#a37b34",
+          700: "#7a5a24",
         },
 
         /* Legacy dashboard (keep working) */

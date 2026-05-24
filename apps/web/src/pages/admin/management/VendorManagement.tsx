@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import FiltersPopup from "@/components/admin/FiltersPopup";
 import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
 import Pagination from "@/components/admin/Pagination";
-import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, Store, SearchX } from "lucide-react";
+import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, Store, SearchX, AlertTriangle } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { vendorService } from "@/services/api";
 import { TabStrip } from "@/components/shared/TabStrip";
