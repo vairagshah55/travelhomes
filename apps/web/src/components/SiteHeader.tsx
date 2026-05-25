@@ -312,39 +312,47 @@ export default function SiteHeader({
                     const IconComponent = tab.icon;
                     // User's explicit selection ALWAYS wins for visual feedback.
                     // scrollHighlightFilter is a secondary "section-in-view" cue
-                    // shown as a subtle underline so clicks aren't swallowed.
+                    // shown as a subtle dot so clicks aren't swallowed.
                     const isActive = activeFilter === tab.id;
                     const isScrollHighlighted =
                       !isActive && scrollHighlightFilter === tab.id;
                     return (
-                      <motion.button
+                      <button
                         key={tab.id}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
                         onClick={() => handleTabClick(tab.id)}
-                        className={`relative flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium ${
+                        className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
                           isActive
-                            ? "bg-[#0F5C8A] text-white shadow-sm"
-                            : "bg-transparent text-[#0A2B40] hover:bg-[#E8F2F8]"
+                            ? "text-white"
+                            : "text-[#0A2B40] hover:text-[#0F5C8A]"
                         }`}
                       >
+                        {/* Active pill — shared layoutId slides between tabs */}
                         {isActive && (
                           <motion.span
                             layoutId="site-header-active-pill"
-                            className="absolute inset-0 rounded-full bg-[#0F5C8A]"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            className="absolute inset-0 rounded-full bg-[#0F5C8A] shadow-[0_2px_8px_rgba(15,92,138,0.25)]"
+                            transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.6 }}
                           />
                         )}
+
+                        {/* Idle background — subtle outlined chip, only when NOT active */}
+                        {!isActive && (
+                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#E8F2F8] group-hover:border-[#0F5C8A]/30 transition-colors duration-150" />
+                        )}
+
                         <IconComponent
-                          className={`relative z-10 w-4 h-4 transition-colors duration-200 ${
-                            isActive ? "text-white" : "text-gray-600"
+                          className={`relative z-10 w-4 h-4 transition-colors duration-150 ${
+                            isActive
+                              ? "text-white"
+                              : "text-[#5F6A82] group-hover:text-[#0F5C8A]"
                           }`}
                         />
                         <span className="relative z-10">{tab.label}</span>
+
                         {isScrollHighlighted && (
                           <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-1.5 h-1.5 rounded-full bg-[#0F5C8A]/40" />
                         )}
-                      </motion.button>
+                      </button>
                     );
                   })}
                 </motion.div>
