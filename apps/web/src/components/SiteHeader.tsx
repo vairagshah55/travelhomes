@@ -310,24 +310,40 @@ export default function SiteHeader({
                 >
                   {navTabs.map((tab) => {
                     const IconComponent = tab.icon;
-                    const highlightId = scrollHighlightFilter || activeFilter;
-                    const isActive = highlightId === tab.id;
+                    // User's explicit selection ALWAYS wins for visual feedback.
+                    // scrollHighlightFilter is a secondary "section-in-view" cue
+                    // shown as a subtle underline so clicks aren't swallowed.
+                    const isActive = activeFilter === tab.id;
+                    const isScrollHighlighted =
+                      !isActive && scrollHighlightFilter === tab.id;
                     return (
                       <motion.button
                         key={tab.id}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleTabClick(tab.id)}
-                        className={`flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium ${
+                        className={`relative flex items-center gap-2.5 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium ${
                           isActive
                             ? "bg-[#0F5C8A] text-white shadow-sm"
                             : "bg-transparent text-[#0A2B40] hover:bg-[#E8F2F8]"
                         }`}
                       >
+                        {isActive && (
+                          <motion.span
+                            layoutId="site-header-active-pill"
+                            className="absolute inset-0 rounded-full bg-[#0F5C8A]"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
                         <IconComponent
-                          className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-600"}`}
+                          className={`relative z-10 w-4 h-4 transition-colors duration-200 ${
+                            isActive ? "text-white" : "text-gray-600"
+                          }`}
                         />
-                        <span>{tab.label}</span>
+                        <span className="relative z-10">{tab.label}</span>
+                        {isScrollHighlighted && (
+                          <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-1.5 h-1.5 rounded-full bg-[#0F5C8A]/40" />
+                        )}
                       </motion.button>
                     );
                   })}

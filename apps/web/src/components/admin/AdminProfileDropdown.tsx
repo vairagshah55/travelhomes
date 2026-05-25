@@ -48,14 +48,21 @@ const AdminProfileDropdown: React.FC<AdminProfileDropdownProps> = ({
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
-      {/* Avatar Button */}
-      <img
+      {/* Avatar Button with online-status indicator */}
+      <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-8 h-8 cursor-pointer rounded-full bg-cover bg-center ring-1 ring-gray-200 hover:ring-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1 transition-all"
-       src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHJhbmRvbSUyMHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D"
+        className="relative block rounded-full focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:ring-offset-1"
         aria-label="User menu"
         aria-expanded={isOpen}
-      />
+      >
+        <img
+          className="w-8 h-8 cursor-pointer rounded-full bg-cover bg-center ring-1 ring-gray-200 hover:ring-gray-300 transition-all"
+          src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTl8fHJhbmRvbSUyMHBlb3BsZXxlbnwwfHwwfHx8MA%3D%3D"
+          alt=""
+        />
+        {/* Online status dot — bottom-right, ringed in white to pop against the avatar */}
+        <span className="absolute bottom-0 right-0 block w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white" />
+      </button>
 
       {/* Dropdown Menu */}
       {isOpen && (

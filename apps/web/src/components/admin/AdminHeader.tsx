@@ -1,18 +1,82 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Menu, Search } from "lucide-react";
-import ProfileDropdown from "./AdminProfileDropdown";
+import { Bell, ChevronRight, ExternalLink, HelpCircle, LayoutDashboard, Menu } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";
 
-export default function AdminHeader({ Headtitle, setMobileSidebarOpen }) {
+/**
+ * Admin top bar. Owns:
+ *   - Mobile sidebar trigger
+ *   - Breadcrumb trail (auto-derived from URL)
+ *   - Page title + optional subtitle
+ *   - Per-page action slot
+ *   - Notifications, theme toggle, help, view-site shortcut
+ *
+ * Deliberately no profile dropdown here — identity lives in the sidebar
+ * user card so the header stays focused on page context, not chrome.
+ */
+
+const ROUTE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  dashboard: "Dashboard",
+  management: "Management",
+  listing: "Listings",
+  user: "Users",
+  vendor: "Vendors",
+  booking: "Bookings",
+  payments: "Payments",
+  "help-desk": "Help Desk",
+  analytics: "Analytics",
+  report: "Reports",
+  marketing: "Marketing",
+  cms: "CMS",
+  crm: "CRM",
+  plugins: "Plugins",
+  staff: "Staff",
+  roles: "Roles",
+  permissions: "Permissions",
+  "global-settings": "Settings",
+  notifications: "Notifications",
+  profile: "Profile",
+  help: "Help",
+};
+
+const isId = (s: string) =>
+  /^[a-f0-9]{24}$/i.test(s) || /^[0-9a-fA-F-]{36}$/.test(s) || /^\d+$/.test(s);
+
+function useBreadcrumbs() {
+  const location = useLocation();
+  const segments = location.pathname.split("/").filter(Boolean);
+  const trail = segments[0] === "admin" ? segments.slice(1) : segments;
+  return trail.map((seg, i) => ({
+    label: isId(seg) ? "Details" : (ROUTE_LABELS[seg] ?? seg),
+    href: "/admin/" + trail.slice(0, i + 1).join("/"),
+    isLast: i === trail.length - 1,
+  }));
+}
+
+interface AdminHeaderProps {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+  onOpenMobileSidebar?: () => void;
+}
+
+export default function AdminHeader({
+  title,
+  subtitle,
+  actions,
+  onOpenMobileSidebar,
+}: AdminHeaderProps) {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUnread = async () => {
       try {
-        const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-        const res = await fetch(`/api/admin/notifications/unread-count`, {
+        const token =
+          localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+        const res = await fetch("/api/admin/notifications/unread-count", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -20,7 +84,7 @@ export default function AdminHeader({ Headtitle, setMobileSidebarOpen }) {
           setUnreadCount(data?.count ?? data?.data?.count ?? 0);
         }
       } catch {
-        // silently ignore
+        // silently ignore — header polling shouldn't surface errors
       }
     };
     fetchUnread();
@@ -28,59 +92,106 @@ export default function AdminHeader({ Headtitle, setMobileSidebarOpen }) {
     return () => clearInterval(id);
   }, []);
 
+  const crumbs = useBreadcrumbs();
+  const isNested = crumbs.length > 1;
+
   return (
-    <header className="flex items-center h-14 px-4 lg:px-6 bg-white border-b border-gray-200 shrink-0 gap-3 z-30">
-      {/* Mobile menu toggle */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={() => setMobileSidebarOpen((prev) => !prev)}
-        className="lg:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md p-1.5 -ml-1.5 transition-colors"
-        aria-label="Open menu"
-      >
-        <Menu size={20} />
-      </motion.button>
-
-      {/* Page title — animated entry on route change */}
-      <AnimatePresence mode="wait">
-        <motion.h1
-          key={Headtitle}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -4 }}
-          transition={{ duration: 0.18, ease: "easeOut" }}
-          className="text-[15px] font-semibold text-gray-900 tracking-tight truncate"
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 sm:px-5 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shrink-0">
+      {/* Left side */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Mobile menu */}
+        <button
+          onClick={onOpenMobileSidebar}
+          className="lg:hidden -ml-1 h-8 w-8 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors shrink-0"
+          aria-label="Open sidebar"
         >
-          {Headtitle}
-        </motion.h1>
-      </AnimatePresence>
+          <Menu size={20} />
+        </button>
 
-      <div className="flex-1" />
+        {/* Title block — breadcrumb stacked above title (vendor pattern) */}
+        <div className="min-w-0 flex flex-col justify-center">
+          {isNested && (
+            <nav
+              aria-label="Breadcrumb"
+              className="hidden md:flex items-center gap-1 mb-0.5 text-[11px] text-gray-400 dark:text-gray-500"
+            >
+              <Link
+                to="/admin/dashboard"
+                className="flex items-center hover:text-ocean-600 transition-colors"
+              >
+                <LayoutDashboard size={11} />
+              </Link>
+              {crumbs.slice(0, -1).map((crumb) => (
+                <React.Fragment key={crumb.href}>
+                  <ChevronRight size={10} className="text-gray-300 dark:text-gray-700 flex-shrink-0" />
+                  <Link
+                    to={crumb.href}
+                    className="hover:text-ocean-600 transition-colors truncate max-w-[140px]"
+                  >
+                    {crumb.label}
+                  </Link>
+                </React.Fragment>
+              ))}
+            </nav>
+          )}
 
-      {/* Right action group */}
-      <div className="flex items-center gap-1">
-        {/* Search */}
-        <div className="relative w-64 lg:w-72 hidden md:block group">
-          <Search
-            size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-ocean-500 pointer-events-none transition-colors"
-          />
-          <input
-            type="text"
-            placeholder="Search…"
-            className="w-full h-9 pl-8 pr-3 bg-gray-50 border border-gray-200 rounded-md text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:bg-white focus:border-ocean-400 focus:ring-2 focus:ring-ocean-400/15 hover:border-gray-300 transition-colors"
-          />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-0.5 px-1.5 h-5 text-[10px] font-medium text-gray-400 bg-white border border-gray-200 rounded shadow-[0_1px_0_rgba(0,0,0,0.04)] pointer-events-none">
-            ⌘K
-          </kbd>
+          <AnimatePresence mode="wait">
+            <motion.h1
+              key={title}
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -4 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="text-[17px] font-bold text-gray-900 dark:text-white tracking-tight leading-tight truncate font-geist"
+            >
+              {title}
+            </motion.h1>
+          </AnimatePresence>
+
+          {subtitle && (
+            <p className="mt-0.5 text-[12px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+              {subtitle}
+            </p>
+          )}
         </div>
+      </div>
 
+      {/* Right actions — anchored tight to the right edge */}
+      <div className="flex items-center gap-1 shrink-0">
+        {actions && <div className="hidden sm:flex items-center mr-2">{actions}</div>}
+
+        {/* View public site — small icon link */}
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Open public site"
+          title="Open public site"
+        >
+          <ExternalLink size={15} strokeWidth={1.75} />
+        </a>
+
+        {/* Help */}
+        <button
+          onClick={() => navigate("/admin/help")}
+          className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Help"
+          title="Help"
+        >
+          <HelpCircle size={16} strokeWidth={1.75} />
+        </button>
+
+        <ThemeToggle />
+
+        {/* Notifications */}
         <motion.button
-          whileTap={{ scale: 0.92 }}
+          whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/admin/notifications")}
-          className="relative h-9 w-9 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+          className="relative h-8 w-8 flex items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Notifications"
         >
-          <Bell size={17} strokeWidth={1.75} />
+          <Bell size={16} strokeWidth={1.75} />
           <AnimatePresence>
             {unreadCount > 0 && (
               <motion.span
@@ -88,7 +199,7 @@ export default function AdminHeader({ Headtitle, setMobileSidebarOpen }) {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 bg-red-500 rounded-full flex items-center justify-center ring-2 ring-white"
+                className="absolute top-0.5 right-0.5 min-w-[15px] h-[15px] px-1 bg-red-500 rounded-full flex items-center justify-center ring-2 ring-white dark:ring-gray-900"
               >
                 <span className="text-[9px] font-bold text-white leading-none">
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -97,10 +208,6 @@ export default function AdminHeader({ Headtitle, setMobileSidebarOpen }) {
             )}
           </AnimatePresence>
         </motion.button>
-
-        <span className="hidden md:block w-px h-5 bg-gray-200 mx-2" />
-
-        <ProfileDropdown />
       </div>
     </header>
   );

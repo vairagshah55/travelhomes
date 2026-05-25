@@ -35,8 +35,17 @@ const getMe = asyncHandler(async (req, res) => {
   res.json({ success: true, ...result });
 });
 
+const changePassword = asyncHandler(async (req, res) => {
+  if (!req.user?.sub) {
+    throw new UnauthorizedError("Admin authentication required");
+  }
+  await service.changePassword(req.user.sub, req.user.type, req.validated.body);
+  res.json({ success: true, message: "Password updated" });
+});
+
 module.exports = {
   loginStaff,
   loginSuperadmin,
   getMe,
+  changePassword,
 };

@@ -50,4 +50,12 @@ router.post(
 // GET /api/admin/auth/me — current admin info from JWT.
 router.get("/me", requireJwt({ adminOnly: true }), controller.getMe);
 
+// POST /api/admin/auth/change-password — authenticated admin updates own password.
+router.post(
+  "/change-password",
+  requireJwt({ adminOnly: true }),
+  validate({ body: dto.changePasswordBody }),
+  controller.changePassword,
+);
+
 module.exports = router;

@@ -120,7 +120,6 @@ const AdminPlugins: React.FC = () => {
       
       // If no plugins exist and we're not searching, seed the defaults
       if (!q && (!list || list.length === 0)) {
-        console.log("Seeding default plugins...");
         for (const name of DEFAULT_PLUGINS) {
           try {
             await pluginsApi.create({ vendorName: name, enabled: false });

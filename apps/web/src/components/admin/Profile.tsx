@@ -10,7 +10,7 @@ import AdminHeader from "./AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-// import ChangePasswordModal from '../components/ChangePasswordModal';
+import ChangePasswordModal from "@/components/admin/ChangePasswordModal";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -103,8 +103,8 @@ const Profile = () => {
       <div className="flex-1 flex flex-col overflow-x-hidden">
         {/* Top Header */}
         <AdminHeader
-          Headtitle={"PlugIns"}
-          setMobileSidebarOpen={setMobileOpen}
+          title="Profile"
+          onOpenMobileSidebar={() => setMobileOpen(true)}
         />
 
         {/* Profile Content */}
@@ -638,10 +638,10 @@ const Profile = () => {
       </div>
 
       {/* Change Password Modal */}
-      {/* <ChangePasswordModal
+      <ChangePasswordModal
         isOpen={isChangePasswordOpen}
         onOpenChange={setIsChangePasswordOpen}
-      /> */}
+      />
     </div>
   );
 };

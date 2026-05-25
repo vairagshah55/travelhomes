@@ -16,48 +16,70 @@ interface ChangePasswordModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ 
-  isOpen, 
-  onOpenChange 
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+  isOpen,
+  onOpenChange
 }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
+
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error('Please fill in all fields');
       return;
     }
-    
     if (newPassword !== confirmPassword) {
       toast.error('New password and confirm password do not match');
       return;
     }
-    
-    // Here you would typically make an API call to change the password
-    console.log('Password change submitted:', {
-      currentPassword,
-      newPassword,
-    });
-    
-    // Reset form and close modal
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    onOpenChange(false);
-    
-    // Show success message
-    toast.success('Password changed successfully!');
+    if (newPassword.length < 8) {
+      toast.error('New password must be at least 8 characters');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token =
+        localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+      const res = await fetch('/api/admin/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          data?.error?.message ||
+          data?.message ||
+          (res.status === 401 ? 'Incorrect current password' : 'Failed to change password');
+        toast.error(msg);
+        return;
+      }
+      toast.success('Password changed successfully');
+      resetForm();
+      onOpenChange(false);
+    } catch {
+      toast.error('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleClose = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    resetForm();
     onOpenChange(false);
   };
 
@@ -149,9 +171,10 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <div className="pt-4">
               <Button
                 type="submit"
-                className="w-full bg-dashboard-primary hover:bg-[#14709F] text-white py-3 px-8 rounded-full text-base font-geist transition-colors"
+                disabled={submitting}
+                className="w-full bg-dashboard-primary hover:bg-[#14709F] text-white py-3 px-8 rounded-full text-base font-geist transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Re-set Password
+                {submitting ? 'Saving…' : 'Re-set Password'}
               </Button>
             </div>
           </form>

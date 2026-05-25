@@ -257,19 +257,12 @@ const AdminCMS = () => {
     };
     reader.readAsDataURL(file);
     try {
-      console.log(`[AdminCMS] Uploading image for ${page} at position ${index}`, {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        uploadURL: "/admin/cms/media",
-      });
       const result = await cmsService.uploadMedia({
         page,
         section: page,
         position: index,
         file,
       });
-      console.log(`[AdminCMS] Upload successful:`, result);
       if (result?.data?.url) {
         setPreviews((prev) => ({
           ...prev,
@@ -668,7 +661,7 @@ const AdminCMS = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
         {/* Top Header */}
-        <AdminHeader Headtitle={"CMS"} setMobileSidebarOpen={setMobileOpen} />
+        <AdminHeader title="CMS" onOpenMobileSidebar={() => setMobileOpen(true)} />
 
         {/* Main Content */}
         <div className="flex-1 pr-5 lg:pr-5">

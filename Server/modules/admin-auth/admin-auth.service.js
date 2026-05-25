@@ -99,8 +99,31 @@ async function getMe(adminId) {
   };
 }
 
+// ─── changePassword ─────────────────────────────────────────────────────────
+// Handles both flows so the route works for AdminStaff and legacy superadmin
+// tokens. JWT `type` claim tells us which collection holds the credentials.
+async function changePassword(adminId, type, { currentPassword, newPassword }) {
+  if (type === "superadmin") {
+    const admin = await Admin.findById(adminId);
+    if (!admin) throw new NotFoundError("Admin");
+    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    if (!isMatch) throw new UnauthorizedError("Incorrect current password");
+    admin.password = await bcrypt.hash(newPassword, 10);
+    await admin.save();
+    return;
+  }
+
+  const staff = await AdminStaff.findById(adminId).select("+passwordHash");
+  if (!staff || !staff.passwordHash) throw new NotFoundError("Admin");
+  const isMatch = await bcrypt.compare(currentPassword, staff.passwordHash);
+  if (!isMatch) throw new UnauthorizedError("Incorrect current password");
+  staff.passwordHash = await bcrypt.hash(newPassword, 10);
+  await staff.save();
+}
+
 module.exports = {
   loginStaff,
   loginSuperadmin,
   getMe,
+  changePassword,
 };

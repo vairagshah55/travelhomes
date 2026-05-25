@@ -37,13 +37,15 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const { logout, user } = useAuth();
 
   const handleProfileClick = () => {
-    navigate('/profile');
+    navigate('/admin/profile');
     if (onProfileClick) onProfileClick();
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    localStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminToken');
+    navigate('/admin/login');
     if (onLogoutClick) onLogoutClick();
   };
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,12 +17,13 @@ interface FAQItem {
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("guest");
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: "Badal Singh",
-    phoneNumber: "+91  52024 42423",
+    name: "",
+    phoneNumber: "",
     subject: "",
-    email: "Jpbadalsigh",
-    city: "Badal Singh",
+    email: "",
+    city: "",
   });
   const [faqItems, setFaqItems] = useState<FAQItem[]>([
     {
@@ -74,8 +76,51 @@ const Help = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = () => {
-    // TODO: wire up to API
+  const handleSubmit = async () => {
+    if (!formData.subject.trim()) {
+      toast.error("Please enter a subject");
+      return;
+    }
+
+    // The "city" field is labelled "City" in the UI but uses a Textarea —
+    // it's the ticket description body. Phone is appended since the helpdesk
+    // ticketBody DTO doesn't have a dedicated phone field.
+    const messageParts = [formData.city.trim(), formData.phoneNumber.trim() && `Phone: ${formData.phoneNumber.trim()}`]
+      .filter(Boolean)
+      .join("\n\n");
+
+    setSubmitting(true);
+    try {
+      const token =
+        localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+      const res = await fetch("/api/admin/helpdesk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: formData.name.trim() || undefined,
+          email: formData.email.trim() || undefined,
+          subject: formData.subject.trim(),
+          message: messageParts || undefined,
+          category: "vendor-help",
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          data?.error?.message || data?.message || "Failed to submit ticket";
+        toast.error(msg);
+        return;
+      }
+      toast.success("Ticket submitted");
+      setFormData({ name: "", phoneNumber: "", subject: "", email: "", city: "" });
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const tabs = [
@@ -181,9 +226,10 @@ const Help = () => {
                 <div className="flex justify-end">
                   <Button
                     onClick={handleSubmit}
-                    className="bg-dashboard-primary text-white dark:text-black px-6 sm:px-10 py-3 rounded-full hover:bg-gray-500 font-geist"
+                    disabled={submitting}
+                    className="bg-dashboard-primary text-white dark:text-black px-6 sm:px-10 py-3 rounded-full hover:bg-gray-500 font-geist disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    Submit
+                    {submitting ? "Submitting…" : "Submit"}
                   </Button>
                 </div>
               </div>

@@ -193,7 +193,7 @@ const AdminMarketing = () => {
            if (res.status === 401) {
              localStorage.removeItem('adminToken');
              sessionStorage.removeItem('adminToken');
-             navigate('/login');
+             navigate('/admin/login');
              return;
            }
            throw new Error(`API Error: ${res.status}`);
