@@ -28,7 +28,6 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { vendorService } from "@/services/api";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
 interface Vendor {
   _id: string;
@@ -341,7 +340,6 @@ const VendorManagement = () => {
   return (
     <AdminLayout title="Vendor Management">
         <main className="flex-1">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Vendors" }]} />
 
           <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
             {/* Content Header */}

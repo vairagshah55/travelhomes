@@ -31,6 +31,7 @@ import ManagementForm, { Offer } from "@/components/admin/ManagementForm";
 import ListingFilterPopup from "@/components/admin/ListingFilterPopup";
 import RejectReasonPopup from "@/components/admin/RejectReasonPopup";
 import ConfirmationDialog from "@/components/admin/ConfirmationDialog";
+import ListingTableSkeleton from "@/components/admin/ListingTableSkeleton";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -453,10 +454,7 @@ const ManagementListing = () => {
                 </div>
 
                 {offersLoading ? (
-                  <div className="p-12 text-center text-dashboard-body flex gap-3 items-center justify-center">
-                    <Loader2 className="animate-spin h-8 w-8 text-gray-600" />
-                    <span>Loading...</span>
-                  </div>
+                  <ListingTableSkeleton rows={6} />
                 ) : filteredOffers.length === 0 ? (
                   <div className="p-12 text-center text-gray-500">
                     {offers.length === 0 ? "No listings found" : "No listings match your filters"}

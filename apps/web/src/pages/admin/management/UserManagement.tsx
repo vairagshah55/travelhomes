@@ -52,7 +52,6 @@ import Pagination from "@/components/admin/Pagination";
 import { formatDate } from "@/utils/formateTime";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { SearchX } from "lucide-react";
 
 interface User {
@@ -73,8 +72,6 @@ const UserManagement = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { toast } = useToast();
-
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   const [activeTab, setActiveTab] = useState("all-users");
   const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
@@ -98,12 +95,16 @@ const UserManagement = () => {
   const usersQuery = useQuery<User[]>({
     queryKey: usersKey,
     queryFn: async () => {
-      let endpoint = `${API_BASE_URL}/api/users`;
+      // Use relative paths so the Vite dev proxy and production same-origin
+      // setup both work. Admin pages hit the admin-gated /api/admin/users
+      // (same controller, behind requireJwt) rather than the public route.
+      let endpoint = "/api/admin/users";
 
       if (activeTab === "subscribers") {
-        endpoint = `${API_BASE_URL}/api/subscribers`;
+        // Subscribers list is only exposed at the public /api/subscribers
+        // route — admin token is still sent but the endpoint doesn't gate.
+        endpoint = "/api/subscribers";
       } else if (activeTab !== "all-users") {
-        // Send the tab ID directly — the backend DTO accepts these alias values
         endpoint += `?status=${activeTab}`;
       }
 
@@ -291,7 +292,7 @@ const UserManagement = () => {
   const handleDelete = async (userId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
+      const response = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -349,7 +350,7 @@ const UserManagement = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/users`, {
+      const response = await fetch(`/api/admin/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +389,7 @@ const UserManagement = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/users/${selectedUser._id}`, {
+      const response = await fetch(`/api/admin/users/${selectedUser._id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -439,7 +440,6 @@ const UserManagement = () => {
   return (
     <AdminLayout title="User Management">
         <main className="flex-1">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Users" }]} />
 
           <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
             {/* Content Header */}

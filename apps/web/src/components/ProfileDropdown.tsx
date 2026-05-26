@@ -49,7 +49,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
 
   const handleSwitchToUserLocal = async () => {
     await updateUserType('user');
-    navigate('/user-profile');
+    navigate('/');
     if (onSwitchToUserClick) onSwitchToUserClick();
   };
 

@@ -20,7 +20,6 @@ import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 
 interface BookingData {
   _id: string;
@@ -205,7 +204,6 @@ const BookingManagement: React.FC = () => {
   return (
     <AdminLayout title="Bookings">
         <div className="flex-1">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Management" }, { label: "Bookings" }]} />
 
           <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
             {/* Content Header */}

@@ -57,7 +57,6 @@ import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ChartTooltip } from "@/components/shared/ChartTooltip";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { formatINR } from "@/utils/formatCurrency";
 
 // ─── Chart component defined outside to prevent recreation on every render ────
@@ -316,7 +315,6 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout title="Dashboard">
-      <Breadcrumb items={[{ label: "Dashboard" }]} />
       <div className="space-y-[14px]">
         {/* ── Stat Cards ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-[14px]">

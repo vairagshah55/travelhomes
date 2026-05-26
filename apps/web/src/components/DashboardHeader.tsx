@@ -75,7 +75,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
 
   const handleSwitchToUser = async () => {
     await updateUserType("user");
-    navigate("/user-profile");
+    navigate("/");
   };
 
   return (

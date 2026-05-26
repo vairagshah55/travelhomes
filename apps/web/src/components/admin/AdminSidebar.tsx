@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   BarChart3,
@@ -10,17 +11,29 @@ import {
   CreditCard,
   FileText,
   Globe,
+  HelpCircle,
   Layers,
   LayoutDashboard,
   LifeBuoy,
   LogOut,
   Megaphone,
   Settings,
+  User,
   Users2,
-  X,
   type LucideIcon,
 } from "lucide-react";
+
 import LogoWebsite from "@/components/admin/LogoWebsite";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface AdminSidebarProps {
   className?: string;
@@ -46,8 +59,6 @@ interface NavSection {
 }
 
 // ─── Information architecture ────────────────────────────────────────────────
-// Grouped semantically: data-entities together, growth tools together, system
-// configuration together. Order matches admin's daily workflow priority.
 const SECTIONS: NavSection[] = [
   {
     items: [{ icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" }],
@@ -102,7 +113,6 @@ const SECTIONS: NavSection[] = [
   },
 ];
 
-/* ── Active-state matcher ────────────────────────────────────────────────── */
 function useActivePath() {
   const { pathname } = useLocation();
   return (path?: string) => {
@@ -111,7 +121,7 @@ function useActivePath() {
   };
 }
 
-/* ── User card / profile menu ────────────────────────────────────────────── */
+/* ── User card with shadcn DropdownMenu + Avatar ───────────────────────── */
 interface UserMenuProps {
   collapsed: boolean;
   onNavigate: (path: string) => void;
@@ -119,121 +129,76 @@ interface UserMenuProps {
 }
 
 function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center rounded-lg transition-colors ${
-          collapsed
-            ? "justify-center p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800"
-            : "gap-2.5 p-2 hover:bg-gray-100 dark:hover:bg-gray-800"
-        }`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-      >
-        <div className="relative shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-ocean-400 to-ocean-700 flex items-center justify-center text-white text-[12px] font-bold shadow-sm">
-            VS
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={`w-full flex items-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            collapsed ? "justify-center p-1.5" : "gap-2.5 p-2"
+          }`}
+        >
+          <div className="relative shrink-0">
+            <Avatar className="w-8 h-8">
+              <AvatarFallback className="bg-gradient-to-br from-ocean-400 to-ocean-700 text-white text-[12px] font-bold">
+                VS
+              </AvatarFallback>
+            </Avatar>
+            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
           </div>
-          <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
-        </div>
 
-        {!collapsed && (
-          <>
-            <div className="flex-1 min-w-0 text-left">
-              <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-                Vairag Shah
-              </p>
-              <p className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                Super Admin
-              </p>
-            </div>
-            <ChevronDown
-              size={14}
-              className={`shrink-0 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
-            />
-          </>
-        )}
-      </button>
+          {!collapsed && (
+            <>
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                  Vairag Shah
+                </p>
+                <p className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                  Super Admin
+                </p>
+              </div>
+              <ChevronDown size={14} className="shrink-0 text-gray-400" />
+            </>
+          )}
+        </button>
+      </DropdownMenuTrigger>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.96 }}
-            transition={{ duration: 0.14, ease: "easeOut" }}
-            className={`absolute z-40 ${collapsed ? "left-full ml-2 bottom-0" : "left-0 right-0 bottom-full mb-2"} bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden`}
-            role="menu"
-          >
-            <div className="px-3 py-2.5 border-b border-gray-100 dark:border-gray-800">
-              <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
-                Vairag Shah
-              </p>
-              <p className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate">
-                vairag.shah@univoxx.com
-              </p>
-            </div>
-            <div className="py-1">
-              <MenuItem onClick={() => { onNavigate("/admin/profile"); setOpen(false); }}>
-                Profile
-              </MenuItem>
-              <MenuItem onClick={() => { onNavigate("/admin/global-settings"); setOpen(false); }}>
-                Settings
-              </MenuItem>
-              <MenuItem onClick={() => { onNavigate("/admin/help"); setOpen(false); }}>
-                Help & Support
-              </MenuItem>
-            </div>
-            <div className="py-1 border-t border-gray-100 dark:border-gray-800">
-              <MenuItem
-                onClick={() => { onLogout(); setOpen(false); }}
-                variant="danger"
-                icon={<LogOut size={14} />}
-              >
-                Sign out
-              </MenuItem>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function MenuItem({
-  children,
-  onClick,
-  variant = "default",
-  icon,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  variant?: "default" | "danger";
-  icon?: React.ReactNode;
-}) {
-  const base = "w-full flex items-center gap-2 px-3 py-1.5 text-[12.5px] transition-colors";
-  const tone =
-    variant === "danger"
-      ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-      : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800";
-  return (
-    <button onClick={onClick} className={`${base} ${tone}`} role="menuitem">
-      {icon}
-      {children}
-    </button>
+      <DropdownMenuContent
+        align={collapsed ? "start" : "end"}
+        side={collapsed ? "right" : "top"}
+        sideOffset={8}
+        className="w-56"
+      >
+        <DropdownMenuLabel>
+          <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
+            Vairag Shah
+          </p>
+          <p className="text-[10.5px] font-normal text-gray-500 dark:text-gray-400 truncate">
+            vairag.shah@univoxx.com
+          </p>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => onNavigate("/admin/profile")}>
+          <User className="mr-2 h-4 w-4" />
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onNavigate("/admin/global-settings")}>
+          <Settings className="mr-2 h-4 w-4" />
+          Settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onNavigate("/admin/help")}>
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Help &amp; support
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={onLogout}
+          className="text-red-600 dark:text-red-400 focus:text-red-700 focus:bg-red-50 dark:focus:bg-red-500/10"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -285,7 +250,9 @@ function NavRow({ item, collapsed, active, hasActiveChild, expanded, onToggle, o
         size={16}
         strokeWidth={isActive ? 2.2 : 1.75}
         className={`shrink-0 transition-colors ${
-          isActive ? "text-ocean-600 dark:text-ocean-300" : "text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
+          isActive
+            ? "text-ocean-600 dark:text-ocean-300"
+            : "text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
         }`}
       />
 
@@ -307,6 +274,87 @@ function NavRow({ item, collapsed, active, hasActiveChild, expanded, onToggle, o
   );
 }
 
+/* ── Sidebar nav body — shared between desktop and mobile ──────────────── */
+interface SidebarBodyProps {
+  collapsed: boolean;
+  expanded: string[];
+  toggleExpanded: (label: string) => void;
+  onNavigate: (path: string) => void;
+}
+
+function SidebarBody({ collapsed, expanded, toggleExpanded, onNavigate }: SidebarBodyProps) {
+  const isActive = useActivePath();
+  // AutoAnimate handles the expand/collapse of sub-item lists without manual
+  // height animation. duration matches the sidebar's transition rhythm.
+  const [animateRef] = useAutoAnimate<HTMLDivElement>({ duration: 180, easing: "ease-out" });
+
+  return (
+    <div ref={animateRef}>
+      {SECTIONS.map((section, si) => (
+        <div key={si} className="mb-3 last:mb-0">
+          {section.group && !collapsed && (
+            <p className="px-3 mb-1 text-[10.5px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              {section.group}
+            </p>
+          )}
+          <div className="space-y-0.5">
+            {section.items.map((item) => {
+              const itemActive = isActive(item.path);
+              const childActive = item.children?.some((c) => isActive(c.path)) ?? false;
+              const isExpanded = expanded.includes(item.label);
+              return (
+                <div key={item.label}>
+                  <NavRow
+                    item={item}
+                    collapsed={collapsed}
+                    active={itemActive}
+                    hasActiveChild={childActive}
+                    expanded={isExpanded}
+                    onToggle={() => toggleExpanded(item.label)}
+                    onNavigate={onNavigate}
+                  />
+
+                  {item.children && isExpanded && !collapsed && (
+                    <div className="ml-[18px] pl-3 mt-1 mb-1 space-y-0.5 border-l border-gray-200 dark:border-gray-800">
+                      {item.children.map((sub) => {
+                        const subActive = isActive(sub.path);
+                        return (
+                          <button
+                            key={sub.path}
+                            onClick={() => onNavigate(sub.path)}
+                            className={`
+                              group/sub w-full flex items-center gap-2 px-2.5 h-7 rounded-md text-left text-[12.5px]
+                              transition-colors duration-150
+                              ${
+                                subActive
+                                  ? "bg-ocean-50 dark:bg-ocean-500/10 text-ocean-700 dark:text-ocean-300 font-semibold"
+                                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
+                              }
+                            `}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-150 ${
+                                subActive
+                                  ? "bg-ocean-500 ring-2 ring-ocean-500/15"
+                                  : "bg-gray-300 dark:bg-gray-600 group-hover/sub:bg-gray-400"
+                              }`}
+                            />
+                            {sub.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── Main component ─────────────────────────────────────────────────────── */
 const AdminSidebar: React.FC<AdminSidebarProps> = ({
   className = "",
@@ -316,7 +364,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const navigate = useNavigate();
   const isActive = useActivePath();
 
-  // Persist collapsed preference across sessions.
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("adminSidebarCollapsed") === "1";
@@ -325,7 +372,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     localStorage.setItem("adminSidebarCollapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
-  // Auto-expand any parent whose child is currently active.
   const initialExpanded = SECTIONS.flatMap((s) => s.items)
     .filter((i) => i.children?.some((c) => isActive(c.path)))
     .map((i) => i.label);
@@ -340,136 +386,42 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     navigate("/admin/login");
   };
 
-  const renderNav = (closeMobileOnNavigate = false) =>
-    SECTIONS.map((section, si) => (
-      <div key={si} className="mb-3 last:mb-0">
-        {section.group && !collapsed && (
-          <p className="px-3 mb-1 text-[10.5px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-            {section.group}
-          </p>
-        )}
-        <div className="space-y-0.5">
-          {section.items.map((item) => {
-            const itemActive = isActive(item.path);
-            const childActive = item.children?.some((c) => isActive(c.path)) ?? false;
-            const isExpanded = expanded.includes(item.label);
-            return (
-              <div key={item.label}>
-                <NavRow
-                  item={item}
-                  collapsed={collapsed}
-                  active={itemActive}
-                  hasActiveChild={childActive}
-                  expanded={isExpanded}
-                  onToggle={() => toggleExpanded(item.label)}
-                  onNavigate={(p) => {
-                    navigate(p);
-                    if (closeMobileOnNavigate) setShowMobileSidebar(false);
-                  }}
-                />
-
-                <AnimatePresence initial={false}>
-                  {item.children && isExpanded && !collapsed && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="ml-[18px] pl-3 mt-1 mb-1 space-y-0.5 border-l border-gray-200 dark:border-gray-800">
-                        {item.children.map((sub, ci) => {
-                          const subActive = isActive(sub.path);
-                          return (
-                            <motion.button
-                              key={sub.path}
-                              initial={{ x: -4, opacity: 0 }}
-                              animate={{ x: 0, opacity: 1 }}
-                              transition={{ delay: ci * 0.03, duration: 0.14 }}
-                              onClick={() => {
-                                navigate(sub.path);
-                                if (closeMobileOnNavigate) setShowMobileSidebar(false);
-                              }}
-                              className={`
-                                group/sub w-full flex items-center gap-2 px-2.5 h-7 rounded-md text-left text-[12.5px]
-                                transition-colors duration-150
-                                ${
-                                  subActive
-                                    ? "bg-ocean-50 dark:bg-ocean-500/10 text-ocean-700 dark:text-ocean-300 font-semibold"
-                                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
-                                }
-                              `}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-150 ${
-                                  subActive
-                                    ? "bg-ocean-500 ring-2 ring-ocean-500/15"
-                                    : "bg-gray-300 dark:bg-gray-600 group-hover/sub:bg-gray-400"
-                                }`}
-                              />
-                              {sub.label}
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    ));
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    setShowMobileSidebar(false);
+  };
 
   return (
     <>
-      {/* ── Mobile drawer ────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showMobileSidebar && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm lg:hidden"
-              onClick={() => setShowMobileSidebar(false)}
-            />
-            <motion.div
-              initial={{ x: -260 }}
-              animate={{ x: 0 }}
-              exit={{ x: -260 }}
-              transition={{ type: "spring", stiffness: 350, damping: 32 }}
-              className="fixed left-0 top-0 bottom-0 z-50 w-[260px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col lg:hidden"
-            >
-              <div className="flex items-center justify-between px-4 py-3 min-h-[64px] border-b border-gray-200 dark:border-gray-800 shrink-0">
-                <LogoWebsite />
-                <button
-                  onClick={() => setShowMobileSidebar(false)}
-                  className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                  aria-label="Close sidebar"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <nav className="flex-1 px-2 py-3 overflow-y-auto scrollbar-hide">
-                {renderNav(true)}
-              </nav>
-              <div className="p-2 border-t border-gray-200 dark:border-gray-800 shrink-0">
-                <SidebarUserCard
-                  collapsed={false}
-                  onNavigate={(p) => {
-                    navigate(p);
-                    setShowMobileSidebar(false);
-                  }}
-                  onLogout={handleLogout}
-                />
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* ── Mobile drawer via shadcn Sheet ──────────────────────────── */}
+      <Sheet open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
+        <SheetContent
+          side="left"
+          className="w-[260px] p-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 sm:max-w-[260px]"
+        >
+          <SheetTitle className="sr-only">Admin navigation</SheetTitle>
+          <div className="flex flex-col h-full">
+            <div className="flex items-center px-4 py-3 min-h-[64px] border-b border-gray-200 dark:border-gray-800 shrink-0">
+              <LogoWebsite />
+            </div>
+            <nav className="flex-1 px-2 py-3 overflow-y-auto scrollbar-hide">
+              <SidebarBody
+                collapsed={false}
+                expanded={expanded}
+                toggleExpanded={toggleExpanded}
+                onNavigate={handleNavigate}
+              />
+            </nav>
+            <div className="p-2 border-t border-gray-200 dark:border-gray-800 shrink-0">
+              <SidebarUserCard
+                collapsed={false}
+                onNavigate={handleNavigate}
+                onLogout={handleLogout}
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ── Desktop sidebar ──────────────────────────────────────────── */}
       <aside
@@ -477,7 +429,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           collapsed ? "w-[64px]" : "w-[240px]"
         } ${className}`}
       >
-        {/* Logo header — matches AdminHeader's natural height (py-3) */}
+        {/* Logo header */}
         <div
           className={`flex items-center py-3 min-h-[64px] border-b border-gray-200 dark:border-gray-800 shrink-0 ${
             collapsed ? "justify-center px-2" : "px-4"
@@ -494,10 +446,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden scrollbar-hide">
-          {renderNav(false)}
+          <SidebarBody
+            collapsed={collapsed}
+            expanded={expanded}
+            toggleExpanded={toggleExpanded}
+            onNavigate={(p) => navigate(p)}
+          />
         </nav>
 
-        {/* Footer: user card + collapse toggle */}
+        {/* Footer */}
         <div className="border-t border-gray-200 dark:border-gray-800 shrink-0">
           <div className="p-2">
             <SidebarUserCard

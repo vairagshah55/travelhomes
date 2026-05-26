@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, ChevronRight, ExternalLink, HelpCircle, LayoutDashboard, Menu } from "lucide-react";
+import { Bell, HelpCircle, LayoutDashboard, Menu, Search } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
+import AdminCommandPalette from "./AdminCommandPalette";
 
 /**
  * Admin top bar. Owns:
@@ -70,6 +71,7 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
     const fetchUnread = async () => {
@@ -108,25 +110,26 @@ export default function AdminHeader({
           <Menu size={20} />
         </button>
 
-        {/* Title block — breadcrumb stacked above title (vendor pattern) */}
+        {/* Title block — compact breadcrumb stacked above title */}
         <div className="min-w-0 flex flex-col justify-center">
           {isNested && (
             <nav
               aria-label="Breadcrumb"
-              className="hidden md:flex items-center gap-1 mb-0.5 text-[11px] text-gray-400 dark:text-gray-500"
+              className="hidden md:flex items-center mb-0.5 text-[11px] font-medium text-gray-500 dark:text-gray-400"
             >
               <Link
                 to="/admin/dashboard"
-                className="flex items-center hover:text-ocean-600 transition-colors"
+                className="flex items-center justify-center w-5 h-5 rounded text-gray-400 dark:text-gray-500 hover:text-ocean-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label="Admin dashboard"
               >
-                <LayoutDashboard size={11} />
+                <LayoutDashboard size={12} strokeWidth={1.75} />
               </Link>
               {crumbs.slice(0, -1).map((crumb) => (
                 <React.Fragment key={crumb.href}>
-                  <ChevronRight size={10} className="text-gray-300 dark:text-gray-700 flex-shrink-0" />
+                  <span className="mx-1 text-gray-300 dark:text-gray-700 select-none">/</span>
                   <Link
                     to={crumb.href}
-                    className="hover:text-ocean-600 transition-colors truncate max-w-[140px]"
+                    className="px-1 rounded hover:text-ocean-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors truncate max-w-[140px]"
                   >
                     {crumb.label}
                   </Link>
@@ -160,17 +163,15 @@ export default function AdminHeader({
       <div className="flex items-center gap-1 shrink-0">
         {actions && <div className="hidden sm:flex items-center mr-2">{actions}</div>}
 
-        {/* View public site — small icon link */}
-        <a
-          href="/"
-          target="_blank"
-          rel="noopener noreferrer"
+        {/* Command palette trigger — compact icon button. ⌘K still works globally. */}
+        <button
+          onClick={() => setPaletteOpen(true)}
           className="hidden md:flex h-8 w-8 items-center justify-center rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          aria-label="Open public site"
-          title="Open public site"
+          aria-label="Search (⌘K)"
+          title="Search (⌘K)"
         >
-          <ExternalLink size={15} strokeWidth={1.75} />
-        </a>
+          <Search size={15} strokeWidth={1.75} />
+        </button>
 
         {/* Help */}
         <button
@@ -209,6 +210,8 @@ export default function AdminHeader({
           </AnimatePresence>
         </motion.button>
       </div>
+
+      <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </header>
   );
 }

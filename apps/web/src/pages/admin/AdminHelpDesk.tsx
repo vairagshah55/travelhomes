@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { Search, Filter, MoreHorizontal, X } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { Breadcrumb } from "@/components/shared/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -120,7 +119,6 @@ const AdminHelpDesk: React.FC = () => {
   return (
     <AdminLayout title="Help Desk">
         <div className="flex-1">
-          <Breadcrumb items={[{ label: "Dashboard", href: "/dashboard" }, { label: "Help Desk" }]} />
         <div className="p-5">
           <div className="bg-white rounded-t-3xl rounded-b-6 border border-dashboard-stroke h-full flex flex-col">
             {/* Content Header */}
