@@ -1,391 +1,233 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Search, Filter, MoreHorizontal, Eye, Trash2, CalendarX2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Eye, Trash2, CalendarX, SearchX } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import BookingDetailsPopup from "@/components/admin/BookingDetailsPopup";
-import ConfirmationDialog from "@/components/admin/ConfirmationDialog";
-import { bookingService } from "@/services/api";
-import Pagination from "@/components/admin/Pagination";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { useBookings, type Booking } from "@/hooks/admin/useBookings";
+import { formatDate } from "@/utils/formateTime";
 
-interface BookingData {
-  _id: string;
-  bookingId: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  serviceName: string;
-  serviceType: string;
-  checkIn: string;
-  checkOut: string;
-  guests: number;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-  location: string;
-  specialRequests?: string;
+const TABS = [
+  { key: "all-bookings", label: "All Bookings" },
+  { key: "upcoming-bookings", label: "Upcoming Bookings" },
+  { key: "past-booking", label: "Past Bookings" },
+  { key: "cancelled-bookings", label: "Cancelled Bookings" },
+];
+
+const SORT_OPTIONS = [
+  { value: "bookingId", label: "Booking ID" },
+  { value: "clientName", label: "Client Name" },
+  { value: "serviceName", label: "Service Name" },
+];
+
+const SERVICE_TYPE_OPTIONS = [
+  { value: "caravan", label: "Caravan" },
+  { value: "stay", label: "Stay" },
+  { value: "activity", label: "Activity" },
+];
+
+const ITEMS_PER_PAGE = 15;
+
+/**
+ * Maps the AdminToolbar sort dropdown value to the backend sort field.
+ * The toolbar stores values that already match backend fields for bookings,
+ * so this is a pass-through — kept explicit for clarity and future changes.
+ */
+function mapSortValue(val: string): string {
+  if (val === "clientName") return "clientName";
+  if (val === "serviceName") return "serviceName";
+  return "bookingId";
 }
 
 const BookingManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<
-    "all-bookings" | "upcoming-bookings" | "past-booking" | "cancelled-bookings"
-  >("all-bookings");
-  const [activeServiceType, setActiveServiceType] = useState("caravan");
-  const [showBookingDetails, setShowBookingDetails] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-
-  // New state for API-backed data
-  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("all-bookings");
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<string>("bookingId");
+  const [sortBy, setSortBy] = useState("bookingId");
+  const [filters, setFilters] = useState<ActiveFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15;
 
-  const handleTabChange = (
-    tabId: "all-bookings" | "upcoming-bookings" | "past-booking" | "cancelled-bookings",
-  ) => {
-    setActiveTab(tabId);
-    // Reset service type based on new tab
-    if (tabId === "all-bookings" || tabId === "upcoming-bookings") {
-      setActiveServiceType("caravan");
-    } else if (tabId === "past-booking") {
-      setActiveServiceType("caravan");
-    } else {
-      setActiveServiceType("caravan");
-    }
-  };
+  const [showBookingDetails, setShowBookingDetails] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
-  // Map UI select values to backend sort fields (no UI change)
-  const mapSortValue = (val: string) => {
-    if (val === "client-name") return "clientName";
-    if (val === "service-name") return "serviceName";
-    return "bookingId"; // default for "booking-id" or others
-  };
+  // Single confirm state drives the one shared ConfirmModal.
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    variant: "danger" | "warning";
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
-  // Bookings list — keyed by every filter that influences the request
-  // so changing any of them refetches once and caches the result.
-  const bookingsKey = [
-    "bookings",
-    activeTab,
-    activeServiceType,
-    searchTerm || "",
-    mapSortValue(sortBy),
-  ] as const;
-  const bookingsQuery = useQuery<BookingData[]>({
-    queryKey: bookingsKey,
-    queryFn: async () => {
-      const params = {
-        tab: activeTab,
-        serviceType: activeServiceType,
-        search: searchTerm || undefined,
-        sortBy: mapSortValue(sortBy),
-        sortDir: "asc" as const,
-      };
-      const response = await bookingService.getBookings(params);
-      if (response && response.data) return response.data;
-      if (Array.isArray(response)) return response as any;
-      return [];
-    },
+  // serviceType comes from the AdminFilterBar filter (replaces the old pill strip).
+  const serviceType = typeof filters.serviceType === "string" ? filters.serviceType : undefined;
+
+  const { query, deleteBooking } = useBookings({
+    tab: activeTab,
+    serviceType,
+    search: searchTerm || undefined,
+    sortBy: mapSortValue(sortBy),
+    sortDir: "asc",
   });
-  const bookings = bookingsQuery.data ?? [];
-  const loading = bookingsQuery.isLoading;
-  const error = bookingsQuery.error
-    ? (bookingsQuery.error as Error).message || "Failed to fetch bookings."
-    : null;
-  const fetchBookings = () => queryClient.invalidateQueries({ queryKey: bookingsKey });
 
+  const bookings = query.data ?? [];
+
+  // Reset page whenever any query-influencing state changes.
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, activeServiceType, searchTerm, sortBy]);
+  }, [activeTab, searchTerm, sortBy, filters]);
 
-  const tabs = [
-    { id: "all-bookings", label: "All Bookings" },
-    { id: "upcoming-bookings", label: "Upcoming Bookings" },
-    { id: "past-booking", label: "Past Bookings" },
-    { id: "cancelled-bookings", label: "Cancelled Bookings" },
+  const filterDefs: FilterDefinition[] = [
+    {
+      key: "serviceType",
+      label: "Service Type",
+      type: "select",
+      options: SERVICE_TYPE_OPTIONS,
+    },
   ];
 
-  const getServiceTypes = () => {
-    if (activeTab === "all-bookings") {
-      return [
-        { id: "caravan", label: "Caravan" },
-        { id: "stay", label: "Stay" },
-        { id: "activity", label: "Activity" },
-      ];
-    } else if (
-      activeTab === "upcoming-bookings" ||
-      activeTab === "past-booking" ||
-      activeTab === "cancelled-bookings"
-    ) {
-      return [
-        { id: "caravan", label: "Caravan" },
-        { id: "stay", label: "Stay" },
-        { id: "activity", label: "Activity" },
-      ];
-    }
-    return [];
-  };
+  const totalPages = Math.max(1, Math.ceil(bookings.length / ITEMS_PER_PAGE));
+  const paginated = bookings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
-  const serviceTypes = useMemo(getServiceTypes, [activeTab]);
+  const hasActiveQuery =
+    !!searchTerm.trim() || Object.keys(filters).length > 0;
 
-  const handleViewBooking = (booking: BookingData) => {
+  const handleView = (booking: Booking) => {
     setSelectedBooking(booking);
     setShowBookingDetails(true);
-    setShowActionMenu(null);
   };
 
-  const handleDeleteBooking = (id: string) => {
-    setShowActionMenu(null);
-    setConfirmDelete(id);
-  };
-
-  const doDeleteBooking = async () => {
-    if (!confirmDelete) return;
-    const id = confirmDelete;
-    setConfirmDelete(null);
-    try {
-      await bookingService.deleteBooking(id);
-      toast.success("Booking deleted successfully.");
-      fetchBookings();
-    } catch {
-      toast.error("Failed to delete booking.");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "pending":
-        return "bg-orange-100 text-orange-600";
-      case "confirmed":
-        return "bg-green-100 text-green-600";
-      case "cancelled":
-        return "bg-red-100 text-red-600";
-      case "upcoming":
-        return "bg-blue-100 text-blue-600";
-      case "past":
-        return "bg-gray-100 text-gray-600";
-      default:
-        return "bg-orange-100 text-orange-600";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  const askDelete = (booking: Booking) =>
+    setConfirm({
+      title: "Delete booking?",
+      description: `Booking "${booking.bookingId}" will be permanently removed. This cannot be undone.`,
+      variant: "danger",
+      confirmLabel: "Delete",
+      onConfirm: () => {
+        deleteBooking.mutate(booking._id);
+        setConfirm(null);
+      },
     });
-  };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const columns: ColumnDef<Booking>[] = [
+    {
+      key: "bookingId",
+      header: "Booking ID",
+      cell: (b) => (
+        <button
+          onClick={() => handleView(b)}
+          className="font-semibold text-tpl-primary hover:underline"
+        >
+          {b.bookingId}
+        </button>
+      ),
+    },
+    {
+      key: "clientName",
+      header: "Client Name",
+      cell: (b) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.clientName}</span>
+      ),
+    },
+    {
+      key: "serviceName",
+      header: "Service Name",
+      hideBelow: "md",
+      cell: (b) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.serviceName}</span>
+      ),
+    },
+    {
+      key: "checkIn",
+      header: "Check-in",
+      hideBelow: "lg",
+      cell: (b) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(b.checkIn)}</span>
+      ),
+    },
+    {
+      key: "checkOut",
+      header: "Check-out",
+      hideBelow: "lg",
+      cell: (b) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(b.checkOut)}</span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (b) => <StatusBadge status={b.status} />,
+    },
+  ];
+
+  const rowActions: RowAction<Booking>[] = [
+    { label: "View", icon: Eye, onClick: handleView },
+    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+  ];
 
   return (
-    <AdminLayout title="Bookings">
-        <div className="flex-1">
+    <AdminLayout title="Booking Management">
+      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+        <div className="p-5 space-y-5">
+          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
-            {/* Content Header */}
-            <div className="px-5 py-3 border-b border-surface-border">
-              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">Booking Details</h2>
-            </div>
+          <AdminToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search bookings…"
+            sortOptions={SORT_OPTIONS}
+            sortValue={sortBy}
+            onSortChange={setSortBy}
+          />
 
-            <div className="p-5 flex flex-col gap-5">
-              {/* Tabs */}
-              <TabStrip
-                tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
-                activeKey={activeTab}
-                onChange={(k) => handleTabChange(k as any)}
-              />
+          <AdminFilterBar
+            filters={filterDefs}
+            activeFilters={filters}
+            onApply={setFilters}
+            onClear={() => setFilters({})}
+          />
 
-              {/* Service Type Filter */}
-              <div className="inline-flex  max-md:flex-wrap items-center p-0.5 border border-gray-200 rounded-full bg-white shadow-sm w-fit">
-                {serviceTypes.map((type) => (
-                  <button
-                    key={type.id}
-                    onClick={() => setActiveServiceType(type.id)}
-                    className={`px-4 py-3 text-sm font-semibold rounded-full transition-colors ${
-                      activeServiceType === type.id
-                        ? "bg-[#0F5C8A] text-white"
-                        : "text-black hover:bg-gray-50"
-                    }`}
-                  >
-                    {type.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search and Filters */}
-              <div className="flex items-center justify-between  max-md:flex-wrap">
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <Input
-                    placeholder="Search"
-                    className="pl-10 border-gray-300 rounded-lg"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-center gap-4  max-md:flex-wrap">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-gray-600">Sort By</span>
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-40 border-gray-300">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="booking-id">Booking ID</SelectItem>
-                        <SelectItem value="client-name">Client Name</SelectItem>
-                        <SelectItem value="service-name">Service Name</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <button className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-600">
-                    <Filter className="w-4 h-4" />
-                    Filters
-                  </button>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div className="border border-gray-200 rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
-                <table className="w-full">
-                  <thead className="sticky top-0 z-10">
-                    <tr>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-4 py-3 text-sm font-bold text-gray-700">
-                        Booking ID
-                      </th>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700">
-                        Client Name
-                      </th>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700">
-                        Service Name
-                      </th>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
-                        Check-in Date
-                      </th>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
-                        Check-out Date
-                      </th>
-                      <th className="bg-gray-50 border-b border-gray-200 text-left px-3 py-3 text-sm font-bold text-gray-700 w-32">
-                        Status
-                      </th>
-                      <th className="text-left px-3 py-3 text-sm font-bold text-gray-700 w-40">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      Array.from({ length: 6 }).map((_, i) => (
-                        <tr key={i} className="border-t border-gray-100 animate-pulse">
-                          <td className="px-4 py-4"><div className="h-3.5 w-20 bg-gray-200 rounded" /></td>
-                          <td className="px-3 py-4"><div className="h-3.5 w-28 bg-gray-200 rounded" /></td>
-                          <td className="px-3 py-4"><div className="h-3.5 w-32 bg-gray-200 rounded" /></td>
-                          <td className="px-3 py-4"><div className="h-3.5 w-24 bg-gray-200 rounded" /></td>
-                          <td className="px-3 py-4"><div className="h-6 w-24 bg-gray-200 rounded-lg" /></td>
-                          <td className="px-3 py-4"><div className="h-6 w-16 bg-gray-200 rounded-lg" /></td>
-                          <td className="px-3 py-4"><div className="h-5 w-5 bg-gray-200 rounded" /></td>
-                        </tr>
-                      ))
-                    ) : bookings.length === 0 ? (
-                      <tr>
-                        <td colSpan={7}>
-                          <EmptyState
-                            icon={CalendarX2}
-                            title="No bookings found"
-                            description="No bookings match your current filters. Try a different date range or status."
-                          />
-                        </td>
-                      </tr>
-                    ) : (
-                      bookings
-                        .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                        .map((booking, i) => (
-                          <motion.tr
-                            key={booking._id}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.03, duration: 0.18 }}
-                            className="text-sm border-t border-gray-100 hover:bg-gray-50/60 transition-colors"
-                          >
-                            <td className="px-4 py-4">
-                              <span className="font-bold text-black">{booking.bookingId}</span>
-                            </td>
-                            <td className="px-3 py-4 text-gray-600">{booking.clientName}</td>
-                            <td className="px-3 py-4 text-gray-600">{booking.serviceName}</td>
-                            <td className="px-3 py-4 text-black">{formatDate(booking.checkIn)}</td>
-                            <td className="px-3 py-4">
-                              <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-lg">
-                                {formatDate(booking.checkOut)}
-                              </span>
-                            </td>
-                            <td className="px-3 py-4">
-                              <StatusBadge status={booking.status} />
-                            </td>
-                            <td className="px-3 py-4">
-                              <div className="relative">
-                                <button
-                                  onClick={() => setShowActionMenu(showActionMenu === booking._id ? null : booking._id)}
-                                  className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg p-1.5 transition-all"
-                                >
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </button>
-                                {showActionMenu === booking._id && (
-                                  <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg p-1 z-50 w-32">
-                                    <button className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors" onClick={() => handleViewBooking(booking)}>
-                                      <Eye size={15} className="text-gray-600" />
-                                      <span className="text-sm text-gray-700">View</span>
-                                    </button>
-                                    <button className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-red-50 rounded-lg transition-colors" onClick={() => handleDeleteBooking(booking._id)}>
-                                      <Trash2 size={15} className="text-red-500" />
-                                      <span className="text-sm text-red-600">Delete</span>
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 px-4 py-3 rounded-lg">{error}</div>}
-
-              <Pagination
-                currentPage={currentPage}
-                totalPages={Math.max(1, Math.ceil(bookings.length / itemsPerPage))}
-                onPageChange={setCurrentPage}
-              />
-            </div>
+          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+            <AdminDataTable<Booking>
+              columns={columns}
+              data={paginated}
+              isLoading={query.isLoading}
+              isError={query.isError}
+              errorMessage="Failed to load bookings."
+              onRetry={() => query.refetch()}
+              hasActiveQuery={hasActiveQuery}
+              emptyIcon={hasActiveQuery ? SearchX : CalendarX}
+              emptyTitle="No bookings yet"
+              emptyDescription="Bookings will appear here once guests make reservations."
+              noResultsTitle={
+                searchTerm ? `No results for "${searchTerm}"` : "No matching bookings"
+              }
+              noResultsDescription="Try different keywords or remove filters."
+              noResultsAction={{
+                label: "Clear filters",
+                onClick: () => {
+                  setSearchTerm("");
+                  setFilters({});
+                },
+              }}
+              rowActions={rowActions}
+              pagination={{
+                currentPage,
+                totalPages,
+                totalItems: bookings.length,
+                onPageChange: setCurrentPage,
+              }}
+            />
           </div>
         </div>
+      </div>
 
-      {/* Booking Details Popup */}
       {showBookingDetails && selectedBooking && (
         <BookingDetailsPopup
           isOpen={showBookingDetails}
@@ -393,12 +235,16 @@ const BookingManagement: React.FC = () => {
           booking={selectedBooking}
         />
       )}
+
       <ConfirmModal
-        open={!!confirmDelete}
-        onClose={() => setConfirmDelete(null)}
-        onConfirm={doDeleteBooking}
-        title="Delete booking?"
-        description="This booking record will be permanently removed. This cannot be undone."
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm()}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        variant={confirm?.variant}
+        isLoading={deleteBooking.isPending}
       />
     </AdminLayout>
   );

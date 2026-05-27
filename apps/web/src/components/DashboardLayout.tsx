@@ -34,7 +34,10 @@ export const DashboardLayoutShell: React.FC = () => {
 
   return (
     <LayoutContext.Provider value={{ setTitle }}>
-      <div className="flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta overflow-hidden">
+      {/* data-brand="admin" → the vendor dashboard inherits the admin/console
+          design system (tpl tokens, table styling, surfaces) with no duplicate
+          theme. */}
+      <div data-brand="admin" className="flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg font-plus-jakarta overflow-hidden">
         <div className="hidden lg:block">
           <Sidebar />
         </div>
@@ -104,7 +107,8 @@ const DashboardLayout = ({
   // a route shell continues to work.
   return (
     <div
-      className={`flex h-screen bg-dashboard-bg dark:bg-gray-900 font-plus-jakarta ${outerClassName}`}
+      data-brand="admin"
+      className={`flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg font-plus-jakarta ${outerClassName}`}
     >
       <div className="hidden lg:block">
         <Sidebar />

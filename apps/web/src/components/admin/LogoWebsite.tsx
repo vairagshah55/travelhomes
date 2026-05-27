@@ -36,8 +36,9 @@ const LogoWebsite = () => {
         fetchLogo();
      }, []);
 
-    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160"; // Black text
-    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"; // White text
+    // width=400 gives a crisp 2x render at the ~190px display width (retina).
+    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=400"; // Black text
+    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=400"; // White text
     
     // Background White (light theme) -> Black Logo (logoUrl)
     // Background Black (dark theme) -> White Logo (logoDarkUrl)
@@ -49,15 +50,16 @@ const LogoWebsite = () => {
     }
     
   return (
-    <div>
-        <Link to={"/"}> 
-        <img
-            src={logoSrc}
-            alt="Travel Homes Logo"
-            className="h-14 w-20 object-contain"
-          />
-          </Link>
-    </div>
+    <Link to={"/"} className="inline-flex items-center">
+      {/* Size by height, let width scale to preserve the logo's aspect ratio.
+          object-left keeps it flush with the sidebar's left padding instead
+          of floating centered in a too-narrow box. */}
+      <img
+        src={logoSrc}
+        alt="Travel Homes Logo"
+        className="h-12 w-auto max-w-[190px] object-contain object-left"
+      />
+    </Link>
   );
 };
 

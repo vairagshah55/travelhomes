@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Eye, Edit, Trash2, Users2, SearchX } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,185 +13,98 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import FiltersPopup from "@/components/admin/FiltersPopup";
-import {
-  Bell,
-  Search,
-  Filter,
-  ChevronDown,
-  MoreHorizontal,
-  LogOut,
-  Grid3X3,
-  FileTextIcon,
-  CreditCard,
-  BarChart3,
-  ThumbsUp,
-  Box,
-  Settings,
-  Zap,
-  TrendingUp,
-  Users2,
-  Menu,
-  X,
-  Eye,
-  Trash2,
-  Edit,
-  Plus,
-  Loader2,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
-import AdminProfileDropdown from "@/components/admin/AdminProfileDropdown";
-import { useToast } from "@/hooks/use-toast";
-import Pagination from "@/components/admin/Pagination";
-import { formatDate } from "@/utils/formateTime";
 import { TabStrip } from "@/components/shared/TabStrip";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { SearchX } from "lucide-react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { formatDate } from "@/utils/formateTime";
+import { useUsers, type User } from "@/hooks/admin/useUsers";
+import { userSchema, type UserFormValues, USER_STATUS_OPTIONS } from "./userSchema";
 
-interface User {
-  _id: string;
-  userId: string;
-  photo: string;
-  name: string;
-  userSince: string;
-  bookedServices: string;
-  location: string;
-  email: string;
-  phone: string;
-  status: string;
-}
+const TABS = [
+  { key: "all-users", label: "All Users" },
+  { key: "active-users", label: "Active Users" },
+  { key: "inactive-users", label: "InActive Users" },
+  { key: "banned-users", label: "Banned Users" },
+  { key: "unverified-email", label: "Unverified Email" },
+  { key: "unverified-mobile", label: "Unverified Mobile" },
+  { key: "subscribers", label: "Subscribers" },
+];
+
+const SORT_OPTIONS = [
+  { value: "name", label: "Name" },
+  { value: "userSince", label: "Date" },
+  { value: "location", label: "Location" },
+];
+
+const ITEMS_PER_PAGE = 10;
 
 const UserManagement = () => {
-  const navigate = useNavigate();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const { toast } = useToast();
-
   const [activeTab, setActiveTab] = useState("all-users");
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
-  const [showUserDetails, setShowUserDetails] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showFiltersPopup, setShowFiltersPopup] = useState(false);
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [showEditUserModal, setShowEditUserModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("userSince");
-  const queryClient = useQueryClient();
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-
-  const ITEMS_PER_PAGE = 10;
-
+  const [filters, setFilters] = useState<ActiveFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Users list — keyed by tab so switching is instant after first fetch.
-  const usersKey = ["users", activeTab] as const;
-  const usersQuery = useQuery<User[]>({
-    queryKey: usersKey,
-    queryFn: async () => {
-      // Use relative paths so the Vite dev proxy and production same-origin
-      // setup both work. Admin pages hit the admin-gated /api/admin/users
-      // (same controller, behind requireJwt) rather than the public route.
-      let endpoint = "/api/admin/users";
+  const [detailsUser, setDetailsUser] = useState<User | null>(null);
+  const [formState, setFormState] = useState<{ mode: "add" | "edit"; user?: User } | null>(null);
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
-      if (activeTab === "subscribers") {
-        // Subscribers list is only exposed at the public /api/subscribers
-        // route — admin token is still sent but the endpoint doesn't gate.
-        endpoint = "/api/subscribers";
-      } else if (activeTab !== "all-users") {
-        endpoint += `?status=${activeTab}`;
-      }
+  const isSubscribers = activeTab === "subscribers";
+  const { query, createUser, updateUser, deleteUser } = useUsers(activeTab);
+  const users = query.data ?? [];
 
-      const response = await fetch(endpoint, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
-        },
-      });
-      const responseData = await response.json();
-      if (!response.ok) {
-        throw new Error(responseData.error?.message || responseData.message || "Failed to fetch users");
-      }
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedIds([]);
+  }, [activeTab, searchTerm, sortBy, filters]);
 
-      let usersList: User[] = responseData.data || [];
+  const locationOptions = useMemo(() => {
+    const set = new Set(users.map((u) => u.location).filter((l) => l && l !== "-"));
+    return Array.from(set).map((loc) => ({ value: loc, label: loc }));
+  }, [users]);
 
-      if (activeTab === "subscribers") {
-        usersList = usersList.map((sub: any) => ({
-          _id: sub._id,
-          userId: "SUB",
-          photo: `https://api.dicebear.com/7.x/avataaars/svg?seed=${sub.email}`,
-          name: "Subscriber",
-          email: sub.email,
-          phone: "-",
-          location: "-",
-          bookedServices: "0",
-          userSince: sub.createdAt || sub.subscribedAt || new Date().toISOString(),
-          status: sub.status,
-        }));
-      }
+  const filterDefs: FilterDefinition[] = [
+    { key: "status", label: "Status", type: "select", options: USER_STATUS_OPTIONS },
+    { key: "location", label: "Location", type: "select", options: locationOptions },
+    { key: "joined", label: "Joined", type: "date-range" },
+  ];
 
-      return usersList;
-    },
-  });
-  const users = usersQuery.data ?? [];
-
-  // Refetch helper used by the action handlers below — they used to call
-  // `fetchUsers()` to refresh the list after mutate.
-  const fetchUsers = () => queryClient.invalidateQueries({ queryKey: usersKey });
-
-  // Derived list with search + sort + filters
-  const filteredSortedUsers = React.useMemo(() => {
+  const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = users;
 
-    // Apply active filters
-    if (activeFilters.length > 0) {
-      const filterObj = activeFilters.reduce(
-        (acc, filter) => {
-          const [key, value] = filter.split(":");
-          if (key && value && value !== "all") {
-            acc[key] = value;
-          }
-          return acc;
-        },
-        {} as Record<string, string>,
-      );
-
+    if (filters.status) list = list.filter((u) => u.status === filters.status);
+    if (filters.location) list = list.filter((u) => u.location === filters.location);
+    if (Array.isArray(filters.joined)) {
+      const [from, to] = filters.joined;
       list = list.filter((u) => {
-        if (filterObj.location && filterObj.location !== "all" && u.location !== filterObj.location)
-          return false;
-        if (
-          filterObj.service &&
-          filterObj.service !== "all" &&
-          !u.bookedServices?.includes(filterObj.service)
-        )
-          return false;
-        if (filterObj.status && filterObj.status !== "all" && u.status !== filterObj.status)
-          return false;
-
-        if (filterObj.dateFrom || filterObj.dateTo) {
-          const userDate = new Date(u.userSince);
-          if (!isNaN(userDate.getTime())) {
-            if (filterObj.dateFrom) {
-              const fromDate = new Date(filterObj.dateFrom);
-              fromDate.setHours(0, 0, 0, 0);
-              if (userDate < fromDate) return false;
-            }
-            if (filterObj.dateTo) {
-              const toDate = new Date(filterObj.dateTo);
-              toDate.setHours(23, 59, 59, 999);
-              if (userDate > toDate) return false;
-            }
-          }
+        const d = new Date(u.userSince);
+        if (isNaN(d.getTime())) return false;
+        if (from) {
+          const f = new Date(from);
+          f.setHours(0, 0, 0, 0);
+          if (d < f) return false;
+        }
+        if (to) {
+          const t = new Date(to);
+          t.setHours(23, 59, 59, 999);
+          if (d > t) return false;
         }
         return true;
       });
@@ -202,896 +117,298 @@ const UserManagement = () => {
           .some((v) => String(v).toLowerCase().includes(term)),
       );
     }
-    const sortKey = sortBy as keyof User;
+
+    const key = sortBy as keyof User;
     return [...list].sort((a, b) => {
-      if (sortKey === "userSince") {
-        const dateA = new Date(a.userSince).getTime();
-        const dateB = new Date(b.userSince).getTime();
-        return dateB - dateA; // Descending: Newest first
+      if (key === "userSince") {
+        return new Date(b.userSince).getTime() - new Date(a.userSince).getTime();
       }
-
-      const av = String(a[sortKey] ?? "").toLowerCase();
-      const bv = String(b[sortKey] ?? "").toLowerCase();
-      if (av < bv) return -1;
-      if (av > bv) return 1;
-      return 0;
+      const av = String(a[key] ?? "").toLowerCase();
+      const bv = String(b[key] ?? "").toLowerCase();
+      return av < bv ? -1 : av > bv ? 1 : 0;
     });
-  }, [users, searchTerm, sortBy, activeFilters]);
+  }, [users, searchTerm, sortBy, filters]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, sortBy, activeFilters, activeTab]);
-  const totalPages = Math.ceil(filteredSortedUsers.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
-  const paginatedUsers = React.useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredSortedUsers.slice(start, end);
-  }, [filteredSortedUsers, currentPage]);
+  const askDelete = (user: User) =>
+    setConfirm({
+      title: "Delete user?",
+      description: `"${user.name}" will be permanently removed. This action cannot be undone.`,
+      confirmLabel: "Delete",
+      onConfirm: () => {
+        deleteUser.mutate(user._id);
+        setConfirm(null);
+      },
+    });
 
-  // API state — mutationLoading/mutationError are local to the action
-  // handlers below (create/ban/delete). The combined `loading` and
-  // `error` below also surface useQuery's list state.
-  const [mutationLoading, setMutationLoading] = useState(false);
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const setLoading = setMutationLoading;
-  const setError = setMutationError;
-  const loading = usersQuery.isLoading || mutationLoading;
-  const error =
-    mutationError ??
-    (usersQuery.error ? (usersQuery.error as Error).message || "Failed to fetch users." : null);
+  const askBulkDelete = () =>
+    setConfirm({
+      title: `Delete ${selectedIds.length} user${selectedIds.length > 1 ? "s" : ""}?`,
+      description: "The selected users will be permanently removed. This action cannot be undone.",
+      confirmLabel: "Delete all",
+      onConfirm: async () => {
+        setConfirm(null);
+        await Promise.allSettled(selectedIds.map((id) => deleteUser.mutateAsync(id)));
+        setSelectedIds([]);
+      },
+    });
 
-  // Form state
-  const [formData, setFormData] = useState<Partial<User>>({
-    name: "",
-    email: "",
-    phone: "",
-    location: "",
-    userSince: new Date().getFullYear().toString(),
-    bookedServices: "0",
-    status: "active",
-  });
-
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    sessionStorage.removeItem("adminToken");
-    navigate("/admin/login");
-  };
-
-  const tabs = [
-    { id: "all-users", label: "All Users" },
-    { id: "active-users", label: "Active Users" },
-    { id: "inactive-users", label: "InActive Users" },
-    { id: "banned-users", label: "Banned Users" },
-    { id: "unverified-email", label: "Unverified Email" },
-    { id: "unverified-mobile", label: "Unverified Mobile" },
-    { id: "subscribers", label: "Subscribers" },
+  const subscriberColumns: ColumnDef<User>[] = [
+    { key: "email", header: "Email", cell: (u) => <span className="font-medium text-tpl-dark-4 dark:text-tpl-dark-6">{u.email}</span> },
+    { key: "userSince", header: "Subscribed", align: "right", cell: (u) => <span className="text-tpl-dark-5">{formatDate(u.userSince)}</span> },
   ];
 
-  const handleView = (user: User) => {
-    setSelectedUser(user);
-    setShowUserDetails(true);
-    setShowActionMenu(null);
-  };
+  const userColumns: ColumnDef<User>[] = [
+    { key: "userId", header: "User ID", cell: (u) => <span className="font-semibold text-tpl-dark dark:text-white">{u.userId}</span> },
+    {
+      key: "photo",
+      header: "Photo",
+      hideBelow: "md",
+      cell: (u) => (
+        <Avatar className="w-10 h-10">
+          <AvatarImage src={u.photo} />
+          <AvatarFallback>{u.name?.charAt(0)}</AvatarFallback>
+        </Avatar>
+      ),
+    },
+    { key: "name", header: "Name", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.name}</span> },
+    { key: "userSince", header: "User Since", hideBelow: "lg", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(u.userSince)}</span> },
+    { key: "bookedServices", header: "Bookings", hideBelow: "lg", align: "center", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.bookedServices || "0"}</span> },
+    { key: "location", header: "Location", hideBelow: "md", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.location}</span> },
+    { key: "status", header: "Status", cell: (u) => <StatusBadge status={u.status} /> },
+  ];
 
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    setFormData({
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      location: user.location,
-      userSince: user.userSince,
-      bookedServices: user.bookedServices,
-      status: user.status,
-    });
-    setShowEditUserModal(true);
-    setShowActionMenu(null);
-  };
-
-  const handleDelete = async (userId: string) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || data.message || "Failed to delete user");
-      }
-
-      toast({
-        title: "Success",
-        description: "User deleted successfully.",
-        variant: "default",
-      });
-      fetchUsers();
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to delete user.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-      setShowDeleteConfirm(false);
-      setShowActionMenu(null);
-    }
-  };
-
-  const handleAddUser = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      location: "",
-      userSince: new Date().getFullYear().toString(),
-      bookedServices: "0",
-      status: "active",
-    });
-    setShowAddUserModal(true);
-  };
-
-  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmitAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || data.message || "Failed to add user");
-      }
-
-      toast({
-        title: "Success",
-        description: "User added successfully.",
-        variant: "default",
-      });
-      setShowAddUserModal(false);
-      fetchUsers();
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to add user.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/users/${selectedUser._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error?.message || data.message || "Failed to update user");
-      }
-
-      toast({
-        title: "Success",
-        description: "User updated successfully.",
-        variant: "default",
-      });
-      setShowEditUserModal(false);
-      fetchUsers();
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Failed to update user.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleApplyFilters = (filters: string[]) => {
-    setActiveFilters(filters);
-  };
-
-  const getServiceBadgeColor = (service: string) => {
-    switch (service) {
-      case "XYX":
-        return "bg-[#FFF2E2] text-[#B86B00]";
-      case "XYZ":
-        return "bg-[#F6E0FD] text-[#B127DC]";
-      default:
-        return "bg-gray-100 text-gray-600";
-    }
-  };
+  const rowActions: RowAction<User>[] = [
+    { label: "View", icon: Eye, onClick: (u) => setDetailsUser(u) },
+    { label: "Edit", icon: Edit, onClick: (u) => setFormState({ mode: "edit", user: u }) },
+    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+  ];
 
   return (
     <AdminLayout title="User Management">
-        <main className="flex-1">
+      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+        <div className="p-5 space-y-5">
+          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
-            {/* Content Header */}
-            <div className="border-b border-surface-border px-5 py-3 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">
-                User Management
-              </h2>
-            </div>
+          <AdminToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search users…"
+            sortOptions={isSubscribers ? undefined : SORT_OPTIONS}
+            sortValue={sortBy}
+            onSortChange={isSubscribers ? undefined : setSortBy}
+            selectedCount={selectedIds.length}
+            bulkActions={[{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]}
+            onClearSelection={() => setSelectedIds([])}
+            primaryAction={
+              isSubscribers ? undefined : (
+                <Button onClick={() => setFormState({ mode: "add" })} className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2">
+                  <Plus size={16} /> Add User
+                </Button>
+              )
+            }
+          />
 
-          <div className="p-5 space-y-5">
-            {/* Tabs */}
-            <TabStrip
-              tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
-              activeKey={activeTab}
-              onChange={setActiveTab}
+          {!isSubscribers && (
+            <AdminFilterBar filters={filterDefs} activeFilters={filters} onApply={setFilters} onClear={() => setFilters({})} />
+          )}
+
+          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+            <AdminDataTable<User>
+              columns={isSubscribers ? subscriberColumns : userColumns}
+              data={paginated}
+              isLoading={query.isLoading}
+              isError={query.isError}
+              errorMessage="Failed to load users."
+              onRetry={() => query.refetch()}
+              hasActiveQuery={hasActiveQuery}
+              emptyIcon={hasActiveQuery ? SearchX : Users2}
+              emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
+              emptyDescription={isSubscribers ? "Newsletter subscribers will appear here." : "Users appear here once they register."}
+              noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
+              noResultsDescription="Try different keywords or remove filters."
+              noResultsAction={{ label: "Clear filters", onClick: () => { setSearchTerm(""); setFilters({}); } }}
+              selectable={!isSubscribers}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              rowActions={isSubscribers ? undefined : rowActions}
+              pagination={{ currentPage, totalPages, totalItems: filtered.length, onPageChange: setCurrentPage }}
             />
-
-            {/* Search and Filters */}
-            <div className="flex items-center justify-between  max-md:flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search
-                    size={20}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#485467]"
-                  />
-                  <Input
-                    placeholder="Search"
-                    className="pl-10 w-64 h-10 border-[#B0B0B0] rounded-lg font-plus-jakarta text-[#2E2E2E]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3  max-md:flex-wrap">
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32 h-10 border-[#D0D5DD]">
-                    <SelectValue placeholder="Sort By" className="text-[#667085] font-poppins" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="userSince">Date</SelectItem>
-                    <SelectItem value="location">Location</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {activeFilters.map((filter) => {
-                  const [key, value] = filter.split(":");
-                  if (!value || value === "all") return null;
-                  return (
-                    <div
-                      key={filter}
-                      className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200"
-                    >
-                      <span className="capitalize text-gray-700">
-                        {key}: {value}
-                      </span>
-                      <button
-                        onClick={() => {
-                          setActiveFilters((prev) => prev.filter((f) => f !== filter));
-                        }}
-                        className="ml-1"
-                      >
-                        <X size={14} className="text-gray-500 hover:text-red-500" />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                <Button
-                  variant="outline"
-                  className="h-10 px-5 border-[#D0D5DD] rounded-[30px]"
-                  onClick={() => setShowFiltersPopup(true)}
-                >
-                  <Filter size={18} className="mr-2" />
-                  <span className="font-poppins text-[#485467]">Filters</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="border border-[#EAECF0] rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
-              {activeTab === "subscribers" ? (
-                <div className="w-full bg-white">
-                  {!loading && !error && filteredSortedUsers.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No subscribers found</div>
-                  ) : (
-                    <div className="divide-y divide-gray-100">
-                      <div className="px-6 py-3 bg-[#F2F4F7] flex justify-between">
-                        <span className="font-bold text-[#334054] font-plus-jakarta">Email</span>
-                        <span className="font-bold text-[#334054] font-plus-jakarta">Date</span>
-                      </div>
-                      {paginatedUsers.map((user) => (
-                        <div
-                          key={user._id}
-                          className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
-                        >
-                          <span className="text-[#485467] font-poppins font-medium">
-                            {user.email}
-                          </span>
-                          <span className="text-sm text-gray-400 font-poppins">
-                            {formatDate(user.userSince)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader className="sticky top-0 z-10">
-                    <TableRow>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                        User ID
-                      </TableHead>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                        Photo
-                      </TableHead>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                        Name
-                      </TableHead>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                        User Since
-                      </TableHead>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                        Booked Services
-                      </TableHead>
-                      <TableHead className="font-bold text-[#334054] font-plus-jakarta">
-                        Location
-                      </TableHead>
-                      <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0] w-40">
-                        Action
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-
-                  <TableBody>
-                    {!loading && !error && filteredSortedUsers.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7}>
-                          <EmptyState
-                            icon={searchTerm ? SearchX : Users2}
-                            title={searchTerm ? `No results for "${searchTerm}"` : "No users found"}
-                            description={searchTerm ? "Try different keywords or remove filters." : "Users will appear here once they register. Try adjusting your search or filters."}
-                            actionLabel="Clear filters"
-                            onAction={() => { setSearchTerm(""); setActiveFilters([]); }}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      paginatedUsers.map((user) => (
-                        <TableRow key={user._id} className="border-b border-[#F2F4F7]">
-                          <TableCell className="text-sm font-bold text-dashboard-heading font-plus-jakarta py-4">
-                            {user.userId}
-                          </TableCell>
-                          <TableCell>
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={user.photo} />
-                              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                          </TableCell>
-                          <TableCell className="text-sm text-[#485467] font-poppins">
-                            {user.name}
-                          </TableCell>
-                          <TableCell className="text-sm text-[#485467] font-poppins">
-                            {formatDate(user.userSince)}
-                          </TableCell>
-                          <TableCell className="text-sm text-[#485467] font-poppins">
-                            {user.bookedServices || "0"}
-                          </TableCell>
-                          <TableCell className="text-sm text-[#485467] font-poppins">
-                            {user.location}
-                          </TableCell>
-                          <TableCell>
-                            <div className="relative ">
-                              <button
-                                onClick={() =>
-                                  setShowActionMenu(showActionMenu === user._id ? null : user._id)
-                                }
-                                className="text-[#667085] hover:text-[#485467]"
-                              >
-                                <MoreHorizontal size={20} />
-                              </button>
-
-                              {/* Action Menu Dropdown */}
-                              {showActionMenu === user._id && (
-                                <div className="absolute right-0 top-8 bg-white border border-[#F8F8F8] rounded-xl shadow-lg p-1 z-10 w-48">
-                                  <button
-                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
-                                    onClick={() => handleView(user)}
-                                  >
-                                    <Eye size={18} className="text-black" />
-                                    <span className="text-sm font-poppins text-[#2A2A2A]">
-                                      View
-                                    </span>
-                                  </button>
-                                  <button
-                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
-                                    onClick={() => handleEdit(user)}
-                                  >
-                                    <Edit size={18} className="text-[#0066FF]" />
-                                    <span className="text-sm font-poppins text-[#0066FF]">
-                                      Edit
-                                    </span>
-                                  </button>
-                                  <button
-                                    className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    onClick={() => {
-                                      setSelectedUser(user);
-                                      setShowDeleteConfirm(true);
-                                    }}
-                                  >
-                                    <Trash2 size={18} className="text-[#D30000]" />
-                                    <span className="text-sm font-poppins text-[#D30000]">
-                                      Delete
-                                    </span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-              <div className="pt-4">
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                />
-              </div>
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                  {/* Error State */}
-                  <p>{error}</p>
-                  <Button
-                    variant="outline"
-                    className="mt-2 text-red-700 border-red-300"
-                    onClick={fetchUsers}
-                  >
-                    Try Again
-                  </Button>
-                </div>
-              )}
-
-              {loading && (
-                <div className="w-full flex justify-center items-center py-10">
-                  {/* Loading State */}
-                  <Loader2 className="w-8 h-8 animate-spin text-dashboard-primary" />
-                  <span className="ml-2 text-dashboard-primary">Loading...</span>
-                </div>
-              )}
-            </div>
-          </div>
-          </div>
-        </main>
-
-      {/* User Details Popup */}
-      {showUserDetails && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 w-full max-w-3xl mx-4 relative">
-            {/* Close Button */}
-            <button
-              onClick={() => setShowUserDetails(false)}
-              className="absolute top-4 right-4 w-6 h-6 bg-[#E5E5E5] rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-            >
-              <X size={16} className="text-black" />
-            </button>
-
-            {/* Header */}
-            <div className="mb-7">
-              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">User Details</h2>
-            </div>
-
-            {/* User Details Content */}
-            <div className="space-y-9">
-              {/* First Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    User ID
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.userId}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Name
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.name}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    User Since
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {formatDate(selectedUser.userSince)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Second Row */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Booked Services
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.bookedServices || "0"}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Location
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.location}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Status
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.status}
-                  </p>
-                </div>
-              </div>
-
-              {/* Third Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Email
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.email}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-base font-bold text-[#212121] font-geist leading-[18px] tracking-[0.16px]">
-                    Phone
-                  </h3>
-                  <p className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                    {selectedUser.phone}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Add User Modal */}
-      {showAddUserModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 w-full max-w-2xl mx-4 relative">
-            <button
-              onClick={() => setShowAddUserModal(false)}
-              className="absolute top-4 right-4 w-6 h-6 bg-[#E5E5E5] rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-            >
-              <X size={16} className="text-black" />
-            </button>
+      <UserDetailsDialog user={detailsUser} onClose={() => setDetailsUser(null)} />
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">Add New User</h2>
-            </div>
+      <UserFormDialog
+        state={formState}
+        isSaving={createUser.isPending || updateUser.isPending}
+        onClose={() => setFormState(null)}
+        onSubmit={(values) => {
+          if (formState?.mode === "edit" && formState.user) {
+            updateUser.mutate({ id: formState.user._id, payload: values }, { onSuccess: () => setFormState(null) });
+          } else {
+            createUser.mutate({ ...values, bookedServices: "0" }, { onSuccess: () => setFormState(null) });
+          }
+        }}
+      />
 
-            <form onSubmit={handleSubmitAdd} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Name</label>
-                  <Input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Enter name"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Email</label>
-                  <Input
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    placeholder="Enter email"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Phone</label>
-                  <Input
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                    placeholder="Enter phone number"
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Location</label>
-                  <Input
-                    name="location"
-                    value={formData.location}
-                    onChange={handleFormChange}
-                    placeholder="Enter location"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">User Since</label>
-                  <Input
-                    name="userSince"
-                    value={formData.userSince}
-                    onChange={handleFormChange}
-                    placeholder="Enter year"
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Status</label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger className="w-full border-[#D0D5DD] rounded-lg">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="banned">Banned</SelectItem>
-                      <SelectItem value="unverified-email">Unverified Email</SelectItem>
-                      <SelectItem value="unverified-mobile">Unverified Mobile</SelectItem>
-                      <SelectItem value="subscriber">Subscriber</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowAddUserModal(false)}
-                  className="rounded-full px-5"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-dashboard-primary text-white rounded-full px-5"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add User"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {showEditUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 w-full max-w-2xl mx-4 relative">
-            <button
-              onClick={() => setShowEditUserModal(false)}
-              className="absolute top-4 right-4 w-6 h-6 bg-[#E5E5E5] rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-            >
-              <X size={16} className="text-black" />
-            </button>
-
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-dashboard-heading font-geist">Edit User</h2>
-            </div>
-
-            <form onSubmit={handleSubmitEdit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Name</label>
-                  <Input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Enter name"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Email</label>
-                  <Input
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    placeholder="Enter email"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Phone</label>
-                  <Input
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                    placeholder="Enter phone number"
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Location</label>
-                  <Input
-                    name="location"
-                    value={formData.location}
-                    onChange={handleFormChange}
-                    placeholder="Enter location"
-                    required
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">User Since</label>
-                  <Input
-                    name="userSince"
-                    value={formData.userSince}
-                    onChange={handleFormChange}
-                    placeholder="Enter year"
-                    className="w-full border-[#D0D5DD] rounded-lg"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-[#344054]">Status</label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value })}
-                  >
-                    <SelectTrigger className="w-full border-[#D0D5DD] rounded-lg">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                      <SelectItem value="banned">Banned</SelectItem>
-                      <SelectItem value="unverified-email">Unverified Email</SelectItem>
-                      <SelectItem value="unverified-mobile">Unverified Mobile</SelectItem>
-                      <SelectItem value="subscriber">Subscriber</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowEditUserModal(false)}
-                  className="rounded-full px-5"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="bg-dashboard-primary text-white rounded-full px-5"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Updating...
-                    </>
-                  ) : (
-                    "Update User"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md mx-4">
-            <div className="text-center mb-6">
-              <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4">
-                <Trash2 className="w-6 h-6 text-red-600" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">Delete User</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Are you sure you want to delete this user? This action cannot be undone.
-              </p>
-            </div>
-            <div className="flex justify-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="rounded-full px-5"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                className="bg-red-600 text-white hover:bg-red-700 rounded-full px-5"
-                onClick={() => handleDelete(selectedUser._id)}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete"
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters Popup */}
-      <FiltersPopup
-        isOpen={showFiltersPopup}
-        onClose={() => setShowFiltersPopup(false)}
-        onApplyFilters={handleApplyFilters}
-        currentFilters={activeFilters}
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm()}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        variant="danger"
+        isLoading={deleteUser.isPending}
       />
     </AdminLayout>
   );
 };
+
+/* ── Read-only details dialog ───────────────────────────────────────────── */
+function UserDetailsDialog({ user, onClose }: { user: User | null; onClose: () => void }) {
+  const rows: Array<[string, React.ReactNode]> = user
+    ? [
+        ["User ID", user.userId],
+        ["Name", user.name],
+        ["User Since", formatDate(user.userSince)],
+        ["Booked Services", user.bookedServices || "0"],
+        ["Location", user.location],
+        ["Status", <StatusBadge key="s" status={user.status} />],
+        ["Email", user.email],
+        ["Phone", user.phone],
+      ]
+    : [];
+
+  return (
+    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>User Details</DialogTitle>
+        </DialogHeader>
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+          {rows.map(([label, value]) => (
+            <div key={label} className="space-y-1 min-w-0">
+              <dt className="text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6">{label}</dt>
+              <dd className="text-[14px] text-tpl-dark dark:text-white truncate">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ── Add/Edit form dialog — shadcn Dialog + react-hook-form + zod ────────── */
+function UserFormDialog({
+  state,
+  onClose,
+  onSubmit,
+  isSaving,
+}: {
+  state: { mode: "add" | "edit"; user?: User } | null;
+  onClose: () => void;
+  onSubmit: (values: UserFormValues) => void;
+  isSaving: boolean;
+}) {
+  const open = !!state;
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<UserFormValues>({
+    resolver: zodResolver(userSchema),
+    defaultValues: { name: "", email: "", phone: "", location: "", userSince: String(new Date().getFullYear()), status: "active" },
+  });
+
+  useEffect(() => {
+    if (!state) return;
+    if (state.mode === "edit" && state.user) {
+      reset({
+        name: state.user.name,
+        email: state.user.email,
+        phone: state.user.phone,
+        location: state.user.location,
+        userSince: state.user.userSince,
+        status: state.user.status,
+      });
+    } else {
+      reset({ name: "", email: "", phone: "", location: "", userSince: String(new Date().getFullYear()), status: "active" });
+    }
+  }, [state, reset]);
+
+  const field = "text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6";
+  const err = "text-[12px] text-tpl-red mt-1";
+  const status = watch("status");
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{state?.mode === "edit" ? "Edit User" : "Add New User"}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={field}>Name *</label>
+              <Input {...register("name")} placeholder="Full name" disabled={isSaving} />
+              {errors.name && <p className={err}>{errors.name.message}</p>}
+            </div>
+            <div>
+              <label className={field}>Email *</label>
+              <Input type="email" {...register("email")} placeholder="name@example.com" disabled={isSaving} />
+              {errors.email && <p className={err}>{errors.email.message}</p>}
+            </div>
+            <div>
+              <label className={field}>Phone</label>
+              <Input {...register("phone")} placeholder="Phone number" disabled={isSaving} />
+            </div>
+            <div>
+              <label className={field}>Location *</label>
+              <Input {...register("location")} placeholder="City" disabled={isSaving} />
+              {errors.location && <p className={err}>{errors.location.message}</p>}
+            </div>
+            <div>
+              <label className={field}>User Since</label>
+              <Input {...register("userSince")} placeholder="Year" disabled={isSaving} />
+            </div>
+            <div>
+              <label className={field}>Status</label>
+              <Select value={status} onValueChange={(v) => setValue("status", v)}>
+                <SelectTrigger disabled={isSaving}>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {USER_STATUS_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.status && <p className={err}>{errors.status.message}</p>}
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving} className="bg-tpl-primary hover:bg-tpl-primary/90 text-white">
+              {isSaving ? "Saving…" : state?.mode === "edit" ? "Update User" : "Add User"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default UserManagement;

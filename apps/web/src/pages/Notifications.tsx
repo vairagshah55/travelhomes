@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { TabStrip, EmptyState } from "@/components/shared";
 
 const NOTIFICATIONS_KEY = ["notifications", "list", "vendor"] as const;

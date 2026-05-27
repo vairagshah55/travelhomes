@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminLayout from "@/components/admin/AdminLayout";
 import {
   Bell,
   ChevronDown,
@@ -15,15 +15,13 @@ import {
   User,
   Eye,
 } from "lucide-react";
-import AdminProfileDropdown from "@/components/admin/AdminProfileDropdown";
-import AdminHeader from "@/components/admin/AdminHeader";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import { cmsService } from "@/services/cms";
 import { settingsService } from "@/services/api";
 
 import { getImageUrl } from "@/lib/adminUtils";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
-import ConfirmationDialog from "@/components/admin/ConfirmationDialog";
+import ConfirmModal from "@/components/shared/ConfirmModal";
 
 import { CollapsibleSection } from "./AdminCMS/CollapsibleSection";
 import { StarRating } from "./AdminCMS/StarRating";
@@ -58,8 +56,6 @@ const AdminCMS = () => {
     pincode: "",
     image: "",
   });
-
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Local preview and file inputs for Change Photo buttons
   const [loginPreview, setLoginPreview] = useState<string>("");
@@ -650,60 +646,47 @@ const AdminCMS = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] flex">
-      {/* Sidebar */}
-      <div className="fixed">
-        <AdminSidebar
-          showMobileSidebar={mobileOpen}
-          setShowMobileSidebar={setMobileOpen}
-        />
-      </div>
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-x-hidden ml-60 max-lg:ml-0">
-        {/* Top Header */}
-        <AdminHeader title="CMS" onOpenMobileSidebar={() => setMobileOpen(true)} />
+    <AdminLayout title="CMS">
+      <div className="flex-1">
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke min-h-[68px] flex items-center px-6 shadow-tpl-1">
+          <h2 className="text-tpl-dark dark:text-white text-[18px] font-bold tracking-tight leading-tight">
+            CMS
+          </h2>
+        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 pr-5 lg:pr-5">
-          <div className="bg-white rounded-t-3xl border-b border-dashboard-stroke min-h-[75px] flex items-center px-5">
-            <h2 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
-              CMS
-            </h2>
+        <div className="bg-white dark:bg-tpl-dark-2 px-6 py-6 rounded-b-[10px] shadow-tpl-1 min-h-[calc(100vh-8rem)]">
+          {/* Tabs */}
+          <div className="flex items-center mb-6 overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 whitespace-nowrap border-b-2 transition-colors font-plus-jakarta text-sm font-bold ${
+                  activeTab === tab
+                    ? "border-dashboard-primary text-dashboard-heading"
+                    : "border-transparent text-dashboard-neutral-06 hover:text-dashboard-heading"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          <div className="bg-white px-5 py-6 rounded-b-3xl min-h-[calc(100vh-8rem)]">
-            {/* Tabs */}
-            <div className="flex items-center mb-6 overflow-x-hidden  max-md:flex-wrap">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-3 whitespace-nowrap border-b-2 transition-colors font-plus-jakarta text-sm font-bold ${
-                    activeTab === tab
-                      ? "border-dashboard-primary text-dashboard-heading"
-                      : "border-transparent text-dashboard-neutral-06 hover:text-dashboard-heading"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Content */}
-            {renderTabContent()}
-          </div>
+          {/* Content */}
+          {renderTabContent()}
         </div>
       </div>
 
-      <ConfirmationDialog
-        isOpen={!!confirmDialog}
+      <ConfirmModal
+        open={!!confirmDialog}
         onClose={() => setConfirmDialog(null)}
         onConfirm={confirmDialog?.onConfirm ?? (() => {})}
         title={confirmDialog?.title ?? ""}
-        message={confirmDialog?.message ?? ""}
-        confirmText="Delete"
+        description={confirmDialog?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
       />
-    </div>
+    </AdminLayout>
   );
 };
 

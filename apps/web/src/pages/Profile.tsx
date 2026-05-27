@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -98,22 +98,7 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     try {
       if (!email) {
-        toast.error("Please enter an email first", {
-          duration: 4000,
-          position: "top-right",
-          style: {
-            background: "#EF4444",
-            color: "#fff",
-            fontWeight: "500",
-            borderRadius: "12px",
-            padding: "16px",
-            boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-          },
-          iconTheme: {
-            primary: "#fff",
-            secondary: "#EF4444",
-          },
-        });
+        toast.error("Please enter an email first", { duration: 4000 });
         return;
       }
       setSaving(true);
@@ -125,39 +110,9 @@ const Profile = () => {
       setProfile((prev) => ({ ...prev, ...data }));
       updateUser(data);
       setIsEditing(false);
-      toast.success("Profile saved successfully!", {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#10B981",
-          color: "#fff",
-          fontWeight: "500",
-          borderRadius: "12px",
-          padding: "16px",
-          boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#10B981",
-        },
-      });
+      toast.success("Profile saved successfully!", { duration: 4000 });
     } catch (e: any) {
-      toast.error("Error: " + e.message, {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#EF4444",
-          color: "#fff",
-          fontWeight: "500",
-          borderRadius: "12px",
-          padding: "16px",
-          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
-        },
-      });
+      toast.error("Error: " + e.message, { duration: 4000 });
     } finally {
       setSaving(false);
     }
@@ -169,22 +124,7 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!email) {
-      toast.error("Please enter an email first", {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#EF4444",
-          color: "#fff",
-          fontWeight: "500",
-          borderRadius: "12px",
-          padding: "16px",
-          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
-        },
-      });
+      toast.error("Please enter an email first", { duration: 4000 });
       return;
     }
     const fd = new FormData();
@@ -198,39 +138,9 @@ const Profile = () => {
         setProfile((p) => ({ ...p, photo: newUrl }));
         updateUser({ photo: newUrl });
       }
-      toast.success("Photo uploaded", {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#10B981",
-          color: "#fff",
-          fontWeight: "500",
-          borderRadius: "12px",
-          padding: "16px",
-          boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#10B981",
-        },
-      });
+      toast.success("Photo uploaded", { duration: 4000 });
     } catch (err: any) {
-      toast.error("Upload error: " + err.message, {
-        duration: 4000,
-        position: "top-right",
-        style: {
-          background: "#EF4444",
-          color: "#fff",
-          fontWeight: "500",
-          borderRadius: "12px",
-          padding: "16px",
-          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
-        },
-      });
+      toast.error("Upload error: " + err.message, { duration: 4000 });
     } finally {
       setUploading(false);
       e.target.value = "";

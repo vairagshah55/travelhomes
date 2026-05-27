@@ -109,7 +109,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
               {/* Dashboard home icon always first */}
               <Link
                 to="/dashboard"
-                className="flex items-center text-gray-400 hover:text-[#0F5C8A] transition-colors duration-150"
+                className="flex items-center text-gray-400 hover:text-app-accent transition-colors duration-150"
               >
                 <LayoutDashboard size={11} />
               </Link>
@@ -126,7 +126,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
                   ) : (
                     <Link
                       to={crumb.href}
-                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#0F5C8A] transition-colors duration-150 truncate"
+                      className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-app-accent transition-colors duration-150 truncate"
                     >
                       {crumb.label}
                     </Link>
@@ -154,7 +154,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         {/* Switch to User */}
         <button
           onClick={handleSwitchToUser}
-          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-[#0F5C8A] text-white hover:bg-[#14709F] transition-all duration-200 shadow-sm hover:shadow-md"
+          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-app-accent text-app-accent-fg hover:bg-app-accent-hover transition-all duration-200 shadow-sm hover:shadow-md"
         >
           Switch to User
         </button>
@@ -165,11 +165,11 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         {/* Notifications */}
         <button
           onClick={() => navigate("/notifications")}
-          className="relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 flex items-center justify-center hover:shadow-md hover:border-blue-300 transition-all duration-200 group"
+          className="relative bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm h-9 w-9 flex items-center justify-center hover:shadow-md hover:border-app-accent transition-all duration-200 group"
         >
           <Bell
             size={18}
-            className="text-gray-500 dark:text-gray-300 group-hover:text-blue-500 transition-colors"
+            className="text-gray-500 dark:text-gray-300 group-hover:text-app-accent transition-colors"
           />
           <AnimatePresence>
             {unreadCount > 0 && (

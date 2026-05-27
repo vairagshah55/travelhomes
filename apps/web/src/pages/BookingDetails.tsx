@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   Plus,
   Users,
-  Loader2,
   Car,
   Home,
   MapPin,
-  MoreHorizontal,
-  MapPinOff,
   Pencil,
   Trash2,
   Ban,
@@ -24,18 +20,11 @@ import {
   Phone,
   IndianRupee,
   Clock,
-  ArrowUpRight,
-  AlertTriangle,
+  CalendarX,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { SlidePanel } from "@/components/bookings";
 import {
   TEAL,
@@ -46,22 +35,21 @@ import {
   GRAY_200,
   WHITE,
   SURFACE,
-  ERROR,
 } from "@/components/offering";
 import {
-  GREEN,
-  AMBER,
-  BLUE,
   PanelInput,
   PanelSelect,
   InfoRow,
-  STATUS_STYLES,
-  StatusBadge,
   parseBookingDate,
   isDateInRange,
   categorizeBooking,
   LOCATIONS,
 } from "@/components/bookings/BookingDetailsHelpers";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+
+const ITEMS_PER_PAGE = 15;
 
 const BookingDetails = () => {
   const { user, token: authToken } = useAuth();
@@ -69,6 +57,7 @@ const BookingDetails = () => {
 
   const [activeTab, setActiveTab] = useState("upcoming");
   const [timeFilter, setTimeFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
   // Panel states
@@ -79,9 +68,12 @@ const BookingDetails = () => {
   const [saving, setSaving] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{
     title: string;
-    message: string;
+    description: string;
+    variant: "danger" | "warning";
+    confirmLabel: string;
     onConfirm: () => void;
   } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   // Create form
   const [createForm, setCreateForm] = useState({
@@ -119,9 +111,12 @@ const BookingDetails = () => {
     status: "pending",
   });
 
+  // Reset to page 1 when tab or filter changes
+  React.useEffect(() => { setCurrentPage(1); }, [activeTab, timeFilter]);
+
   // ─── Data loading ──────────────────────────────────────────────────────────
   const bookingsKey = ["bookingDetails", "list", user?.id, token] as const;
-  const { data: bookings = [], isLoading } = useQuery<BookingDetailDTO[]>({
+  const { data: bookings = [], isLoading, isError, refetch } = useQuery<BookingDetailDTO[]>({
     queryKey: bookingsKey,
     enabled: !!(user || token),
     queryFn: async () => {
@@ -193,6 +188,14 @@ const BookingDetails = () => {
     if (!isDateInRange(parseBookingDate(b.checkIn), timeFilter)) return false;
     return true;
   });
+
+  // ─── Pagination ────────────────────────────────────────────────────────────
+  const totalPages = Math.max(1, Math.ceil(filteredBookings.length / ITEMS_PER_PAGE));
+  const paginatedRows = filteredBookings.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+  const hasActiveQuery = timeFilter !== "all";
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleView = (b: any) => {
@@ -322,8 +325,11 @@ const BookingDetails = () => {
     e?.stopPropagation();
     setConfirmDialog({
       title: "Delete booking?",
-      message: `Booking ${b.id} will be permanently removed and cannot be undone.`,
+      description: `Booking ${b.id} will be permanently removed and cannot be undone.`,
+      variant: "danger",
+      confirmLabel: "Delete",
       onConfirm: async () => {
+        setConfirmLoading(true);
         try {
           const id = b._id || b.id;
           const res = await bookingDetailsApi.remove(id, token);
@@ -335,6 +341,9 @@ const BookingDetails = () => {
           }
         } catch (err: any) {
           toast.error(err?.message || "Failed");
+        } finally {
+          setConfirmLoading(false);
+          setConfirmDialog(null);
         }
       },
     });
@@ -344,8 +353,11 @@ const BookingDetails = () => {
     e?.stopPropagation();
     setConfirmDialog({
       title: "Cancel booking?",
-      message: `Booking ${b.id} will be marked as cancelled.`,
+      description: `Booking ${b.id} will be marked as cancelled.`,
+      variant: "warning",
+      confirmLabel: "Cancel booking",
       onConfirm: async () => {
+        setConfirmLoading(true);
         try {
           const id = b._id || b.id;
           const res = await bookingDetailsApi.update(id, { status: "cancelled" }, token);
@@ -359,6 +371,9 @@ const BookingDetails = () => {
           }
         } catch (err: any) {
           toast.error(err?.message || "Failed");
+        } finally {
+          setConfirmLoading(false);
+          setConfirmDialog(null);
         }
       },
     });
@@ -394,6 +409,88 @@ const BookingDetails = () => {
     { key: "today", label: "Today" },
     { key: "week", label: "This Week" },
     { key: "month", label: "This Month" },
+  ];
+
+  // ─── Table columns ─────────────────────────────────────────────────────────
+  const columns: ColumnDef<BookingDetailDTO>[] = [
+    {
+      key: "id",
+      header: "Booking ID",
+      cell: (b) => (
+        <span className="flex items-center gap-1 font-bold" style={{ color: TEAL, whiteSpace: "nowrap" }}>
+          {b.id}
+        </span>
+      ),
+    },
+    {
+      key: "clientName",
+      header: "Client",
+      cell: (b) => <span style={{ fontWeight: 500, color: BLACK }}>{b.clientName}</span>,
+    },
+    {
+      key: "serviceName",
+      header: "Service",
+      hideBelow: "md",
+      cell: (b) => <span style={{ fontWeight: 600, color: GRAY_500 }}>{b.serviceName}</span>,
+    },
+    {
+      key: "checkIn",
+      header: "Check In",
+      hideBelow: "lg",
+      cell: (b) => <span style={{ color: GRAY_500 }}>{formatDate(b.checkIn)}</span>,
+    },
+    {
+      key: "checkOut",
+      header: "Check Out",
+      hideBelow: "lg",
+      cell: (b) => <span style={{ color: GRAY_500 }}>{formatDate(b.checkOut)}</span>,
+    },
+    {
+      key: "guests",
+      header: "Guests",
+      hideBelow: "md",
+      align: "center",
+      cell: (b) => (
+        <span className="flex items-center gap-1 justify-center" style={{ color: GRAY_500 }}>
+          <Users size={14} /> {b.guests}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (b) => <StatusBadge status={b.status} />,
+    },
+  ];
+
+  const rowActions: RowAction<BookingDetailDTO>[] = [
+    {
+      label: "View",
+      icon: Eye,
+      onClick: (b) => handleView(b),
+    },
+    {
+      label: "Edit",
+      icon: Pencil,
+      onClick: (b) => handleEdit(b),
+    },
+    {
+      label: "Cancel",
+      icon: Ban,
+      onClick: (b) => handleCancel(b),
+      hidden: (b) => b.status === "cancelled",
+    },
+    {
+      label: "Print Invoice",
+      icon: Printer,
+      onClick: (b) => handlePrint(b.id),
+    },
+    {
+      label: "Delete",
+      icon: Trash2,
+      onClick: (b) => handleDelete(b),
+      variant: "danger",
+    },
   ];
 
   const tealBtn = (
@@ -544,165 +641,28 @@ const BookingDetails = () => {
 
             {/* Table */}
             <div style={{ border: "1.5px solid #EBEBEB", borderRadius: 14, overflow: "hidden" }}>
-              <div className="overflow-x-auto">
-                <table
-                  style={{ width: "100%", minWidth: 900, fontSize: 13, borderCollapse: "collapse" }}
-                >
-                  <thead>
-                    <tr style={{ backgroundColor: SURFACE }}>
-                      {[
-                        "Booking ID",
-                        "Client Name",
-                        "Service",
-                        "Check In",
-                        "Check Out",
-                        "Guests",
-                        "Status",
-                        "Action",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: "10px 14px",
-                            textAlign: "left",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: GRAY_500,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.03em",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={8} style={{ padding: 60, textAlign: "center" }}>
-                          <div
-                            className="flex items-center justify-center gap-2"
-                            style={{ color: GRAY_400 }}
-                          >
-                            <Loader2 size={18} className="animate-spin" /> Loading bookings…
-                          </div>
-                        </td>
-                      </tr>
-                    ) : filteredBookings.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} style={{ padding: 60, textAlign: "center" }}>
-                          <MapPinOff size={40} color={GRAY_200} style={{ margin: "0 auto 12px" }} />
-                          <p style={{ fontSize: 14, fontWeight: 600, color: GRAY_500 }}>
-                            No bookings found
-                          </p>
-                          <p style={{ fontSize: 12, color: GRAY_400, marginTop: 4 }}>
-                            Try adjusting your filters or create a new booking.
-                          </p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredBookings.map((b, i) => (
-                        <tr
-                          key={b.id ?? i}
-                          style={{
-                            borderBottom: "1px solid #EBEBEB",
-                            cursor: "pointer",
-                            transition: "background-color 0.1s",
-                          }}
-                          onClick={() => handleView(b)}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                              TEAL_BG;
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                              "transparent";
-                          }}
-                        >
-                          <td
-                            style={{
-                              padding: "12px 14px",
-                              fontWeight: 700,
-                              color: TEAL,
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            <span className="flex items-center gap-1">
-                              {b.id} <ArrowUpRight size={11} />
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 14px", fontWeight: 500, color: BLACK }}>
-                            {b.clientName}
-                          </td>
-                          <td style={{ padding: "12px 14px", fontWeight: 600, color: GRAY_500 }}>
-                            {b.serviceName}
-                          </td>
-                          <td style={{ padding: "12px 14px", color: GRAY_500 }}>
-                            {formatDate(b.checkIn)}
-                          </td>
-                          <td style={{ padding: "12px 14px", color: GRAY_500 }}>
-                            {formatDate(b.checkOut)}
-                          </td>
-                          <td style={{ padding: "12px 14px", color: GRAY_500 }}>
-                            <span className="flex items-center gap-1">
-                              <Users size={14} /> {b.guests}
-                            </span>
-                          </td>
-                          <td style={{ padding: "12px 14px" }}>
-                            <StatusBadge status={b.status} />
-                          </td>
-                          <td style={{ padding: "12px 14px" }} onClick={(e) => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  type="button"
-                                  style={{
-                                    width: 30,
-                                    height: 30,
-                                    borderRadius: 8,
-                                    border: `1.5px solid ${GRAY_200}`,
-                                    backgroundColor: WHITE,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    cursor: "pointer",
-                                  }}
-                                >
-                                  <MoreHorizontal size={14} color={GRAY_400} />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleView(b)}>
-                                  <Eye className="mr-2 h-4 w-4" /> View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={(e) => handleEdit(b, e)}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Edit
-                                </DropdownMenuItem>
-                                {b.status !== "cancelled" && (
-                                  <DropdownMenuItem onClick={(e) => handleCancel(b, e)}>
-                                    <Ban className="mr-2 h-4 w-4" /> Cancel
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem onClick={() => handlePrint(b.id)}>
-                                  <Printer className="mr-2 h-4 w-4" /> Print
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-red-600"
-                                  onClick={(e) => handleDelete(b, e)}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <AdminDataTable<BookingDetailDTO>
+                columns={columns}
+                data={paginatedRows}
+                isLoading={isLoading}
+                isError={isError}
+                errorMessage="Failed to load bookings. Check your connection and try again."
+                onRetry={() => refetch()}
+                hasActiveQuery={hasActiveQuery}
+                emptyIcon={CalendarX}
+                emptyTitle="No bookings yet"
+                emptyDescription="Create your first booking using the button above."
+                noResultsTitle="No bookings found"
+                noResultsDescription="Try adjusting your tab or time filter."
+                onRowClick={(b) => handleView(b)}
+                rowActions={rowActions}
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalItems: filteredBookings.length,
+                  onPageChange: setCurrentPage,
+                }}
+              />
             </div>
           </div>
 
@@ -1046,48 +1006,16 @@ const BookingDetails = () => {
             </div>
           </SlidePanel>
 
-          <AnimatePresence>
-            {confirmDialog && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
-              >
-                <motion.div
-                  initial={{ scale: 0.96, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.96, opacity: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
-                      <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-gray-900 dark:text-white">{confirmDialog.title}</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{confirmDialog.message}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 justify-end pt-1">
-                    <button
-                      onClick={() => setConfirmDialog(null)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(null); }}
-                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                    >
-                      Confirm
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <ConfirmModal
+            open={!!confirmDialog}
+            onClose={() => !confirmLoading && setConfirmDialog(null)}
+            onConfirm={() => confirmDialog?.onConfirm()}
+            title={confirmDialog?.title ?? ""}
+            description={confirmDialog?.description}
+            confirmLabel={confirmDialog?.confirmLabel}
+            variant={confirmDialog?.variant}
+            isLoading={confirmLoading}
+          />
     </DashboardLayout>
   );
 };

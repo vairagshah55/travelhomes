@@ -16,7 +16,23 @@ import { toast } from "sonner";
 const Settings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const vendorId = useMemo(() => user?.id || "1", [user]); // demo fallback
+  // Real vendor id only — empty string disables the settings query until the
+  // user is loaded (no more hardcoded "1" demo fallback hitting the API).
+  const vendorId = useMemo(() => user?.id ?? "", [user]);
+
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const savePreferences = async () => {
+    if (!vendorId) return;
+    try {
+      setSavingPrefs(true);
+      await vendorSettingApi.updateSection(vendorId, "preferences", preferences);
+      toast.success("Preferences saved.");
+    } catch {
+      toast.error("Failed to save preferences.");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
   const location = useLocation();
 
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -198,28 +214,13 @@ const Settings = () => {
                       When enabled, complete assessment is required
                     </p>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={general.confirmBeforeBooking}
-                      onChange={(e) =>
-                        setGeneral({ ...general, confirmBeforeBooking: e.target.checked })
-                      }
-                      className="sr-only peer"
-                    />
-                    <div
-                      className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full peer transition-all"
-                      style={{ "--tw-peer-checked": "#0F5C8A" } as React.CSSProperties}
-                    >
-                      <div
-                        className={`absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${general.confirmBeforeBooking ? "translate-x-5" : ""}`}
-                      />
-                    </div>
-                    <div
-                      className="absolute inset-0 rounded-full transition-all pointer-events-none"
-                      style={general.confirmBeforeBooking ? { background: "#0F5C8A" } : {}}
-                    />
-                  </label>
+                  <Switch
+                    checked={!!general.confirmBeforeBooking}
+                    onCheckedChange={(checked) =>
+                      setGeneral({ ...general, confirmBeforeBooking: checked })
+                    }
+                    aria-label="Confirmation before accepting booking"
+                  />
                 </div>
               </div>
             </div>
@@ -304,6 +305,76 @@ const Settings = () => {
                     style={{ background: "#0F5C8A" }}
                   >
                     Submit Ticket
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Preferences ── */}
+            <div className={"space-y-4 " + (activeSection === "preferences" ? "" : "hidden")}>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Preferences</h2>
+
+              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                      Language
+                    </label>
+                    <select
+                      value={preferences.language}
+                      onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                      className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-white"
+                    >
+                      <option value="en">English</option>
+                      <option value="hi">Hindi</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                      Timezone
+                    </label>
+                    <Input
+                      value={preferences.timezone}
+                      onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
+                      placeholder="Asia/Kolkata"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Notifications</p>
+                  {([
+                    { key: "email", label: "Email notifications" },
+                    { key: "sms", label: "SMS notifications" },
+                    { key: "push", label: "Push notifications" },
+                  ] as const).map((n) => (
+                    <div key={n.key} className="flex items-center justify-between">
+                      <label htmlFor={`notif-${n.key}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                        {n.label}
+                      </label>
+                      <Switch
+                        id={`notif-${n.key}`}
+                        checked={!!preferences.notifications?.[n.key]}
+                        onCheckedChange={(checked) =>
+                          setPreferences({
+                            ...preferences,
+                            notifications: { ...preferences.notifications, [n.key]: checked },
+                          })
+                        }
+                        aria-label={n.label}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={savePreferences}
+                    disabled={savingPrefs}
+                    className="px-6 font-semibold text-white rounded-xl"
+                    style={{ background: "#0F5C8A" }}
+                  >
+                    {savingPrefs ? "Saving…" : "Save Preferences"}
                   </Button>
                 </div>
               </div>

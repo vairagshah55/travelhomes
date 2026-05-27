@@ -120,10 +120,10 @@ const AdminHelpDesk: React.FC = () => {
     <AdminLayout title="Help Desk">
         <div className="flex-1">
         <div className="p-5">
-          <div className="bg-white rounded-t-3xl rounded-b-6 border border-dashboard-stroke h-full flex flex-col">
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 h-full flex flex-col">
             {/* Content Header */}
-            <div className="px-5 py-4 border-b border-dashboard-stroke">
-              <h2 className="text-sm font-bold text-dashboard-heading font-geist tracking-tight">
+            <div className="px-6 py-5 border-b border-tpl-stroke">
+              <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
                 List
               </h2>
             </div>
@@ -136,10 +136,11 @@ const AdminHelpDesk: React.FC = () => {
                   <div className="relative max-w-[255px]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dashboard-body" />
                     <Input
+                      type="search"
                       placeholder="Search"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 h-10 border-dashboard-neutral-06 text-sm font-plus-jakarta bg-white"
+                      className="h-10 text-sm font-plus-jakarta"
                     />
                   </div>
                 </div>
@@ -185,36 +186,36 @@ const AdminHelpDesk: React.FC = () => {
               </div>
 
               {/* Table */}
-              <div className="border border-dashboard-stroke rounded-xl bg-white overflow-scroll">
-                {/* Table Header */}
-                <div className="flex items-center bg-gray-50 border-b border-dashboard-stroke">
-                  <div className="w-[164px] px-4 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+              <div className="border border-tpl-stroke rounded-[10px] bg-white dark:bg-tpl-dark-2 overflow-x-auto">
+                {/* Table Header — template InvoiceTable style: light-blue tint #F7F9FC, text-base bold dark */}
+                <div className="flex items-center bg-[#F7F9FC] dark:bg-tpl-dark-2 border-b border-tpl-stroke">
+                  <div className="w-[164px] px-4 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Name
                     </span>
                   </div>
-                  <div className="w-[256px] px-3 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+                  <div className="w-[256px] px-3 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Email / Company
                     </span>
                   </div>
-                  <div className="w-[260px] px-3 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+                  <div className="w-[260px] px-3 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Subject
                     </span>
                   </div>
-                  <div className="w-[160px] px-3 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+                  <div className="w-[160px] px-3 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Date
                     </span>
                   </div>
-                  <div className="flex-1 px-3 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+                  <div className="flex-1 px-3 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Status
                     </span>
                   </div>
-                  <div className="w-[160px] px-3 py-3">
-                    <span className="text-sm font-bold text-dashboard-title font-plus-jakarta">
+                  <div className="w-[160px] px-3 py-4">
+                    <span className="text-base font-bold text-tpl-dark dark:text-white font-plus-jakarta">
                       Action
                     </span>
                   </div>

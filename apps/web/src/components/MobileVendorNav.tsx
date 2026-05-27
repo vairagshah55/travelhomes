@@ -57,8 +57,8 @@ const MobileVendorNav = () => {
       )
     },
     {
-      label: 'Booking',
-      path: '/bookings/new',
+      label: 'Add',
+      path: '/offering/add',
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 20 20" fill="none">
           <path d="M8.85714 11.1429H3.14286C2.81905 11.1429 2.54781 11.0331 2.32915 10.8137C2.11048 10.5943 2.00077 10.323 2 10C1.99924 9.67695 2.10896 9.40571 2.32915 9.18629C2.54934 8.96686 2.82057 8.85714 3.14286 8.85714H8.85714V3.14286C8.85714 2.81905 8.96686 2.54781 9.18629 2.32915C9.40571 2.11048 9.67695 2.00077 10 2C10.323 1.99924 10.5947 2.10896 10.8149 2.32915C11.035 2.54934 11.1444 2.82057 11.1429 3.14286V8.85714H16.8571C17.1809 8.85714 17.4526 8.96686 17.672 9.18629C17.8914 9.40571 18.0008 9.67695 18 10C17.9992 10.323 17.8895 10.5947 17.6709 10.8149C17.4522 11.035 17.1809 11.1444 16.8571 11.1429H11.1429V16.8571C11.1429 17.1809 11.0331 17.4526 10.8137 17.672C10.5943 17.8914 10.323 18.0008 10 18C9.67695 17.9992 9.40571 17.8895 9.18629 17.6709C8.96686 17.4522 8.85714 17.1809 8.85714 16.8571V11.1429Z" fill="currentColor"/>
@@ -96,7 +96,7 @@ const MobileVendorNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white lg:hidden z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 lg:hidden z-50">
       <nav className="flex justify-between items-center px-4 py-3">
         {navItems.map((item) => (
           <Link

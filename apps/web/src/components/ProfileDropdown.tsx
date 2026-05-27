@@ -25,7 +25,7 @@ interface ProfileDropdownProps {
 
 const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   userImage,
-  userInitials = "BS",
+  userInitials = "",
   onProfileClick,
   onViewAsUserClick,
   onSwitchToUserClick,
@@ -61,23 +61,30 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
     if (onLogoutClick) onLogoutClick();
   };
 
-  // Get user initials from auth context
+  // Derive initials from the authenticated user (firstName/lastName, then the
+  // legacy `name`, then email), falling back to any passed prop, then "U".
   const getUserInitials = () => {
     if (user?.firstName) {
-      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ''}`;
+      return `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ""}`.toUpperCase();
     }
-    return userInitials;
+    const legacyName = (user as { name?: string } | null)?.name;
+    if (legacyName?.trim()) {
+      const parts = legacyName.trim().split(/\s+/);
+      return ((parts[0][0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
+    }
+    if (user?.email) return user.email.charAt(0).toUpperCase();
+    return userInitials || "U";
   };
 
-  const photoUrl = user?.photo 
-    ? `${user.photo}`
-    : userImage || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face";
+  // Only use a real photo (user's own, then an explicit prop). No stranger
+  // stock-photo fallback — the initials AvatarFallback covers the empty case.
+  const photoUrl = user?.photo || userImage || "";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-dashboard-primary hover:ring-offset-2 transition-all">
-          <AvatarImage src={getImageUrl(photoUrl)} />
+          {photoUrl && <AvatarImage src={getImageUrl(photoUrl)} />}
           <AvatarFallback className="bg-dashboard-primary text-white">{getUserInitials()}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>

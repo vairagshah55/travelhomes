@@ -1156,6 +1156,200 @@
 
 /* ── Admin UI Polish ─────────────────────────────────────────────────────── */
 
+/* ── NextAdmin template tokens (scoped to admin shell only) ────────────────
+   These tokens replicate the visual language of the NextAdmin dashboard
+   template (free-nextadmin-nextjs). They are scoped under [data-brand="admin"]
+   so they do not affect the public-facing site. Pages inside <AdminLayout>
+   automatically pick these up.                                              */
+
+/* Redirect the legacy dashboard-* and booking-link CSS variables to template
+   colors inside the admin shell. This is the lightest-touch way to convert
+   ~190 existing usages (text-dashboard-heading, border-dashboard-stroke,
+   bg-dashboard-primary, text-booking-link, etc.) to the template's palette
+   without rewriting every page's JSX. The public site keeps its ocean palette. */
+[data-brand="admin"] {
+  /* Background + primary CTA → template purple */
+  --dashboard-primary:        243 87% 63%;  /* #5750F1 */
+  --dashboard-primary-hover:  244 65% 56%;  /* #4A44D4 */
+  /* Text — template's near-black blue-gray (#111928 → #1F2A37) */
+  --dashboard-heading:        220 24% 12%;  /* #111928 */
+  --dashboard-body:           221 22% 17%;  /* #1F2A37 */
+  --dashboard-title:          221 22% 17%;
+  --dashboard-text:           220 24% 12%;
+  /* Surfaces */
+  --dashboard-bg:             220 14% 98%;  /* #f9fafb */
+  --dashboard-stroke:         215 25% 92%;  /* #e6ebf1 */
+  --dashboard-neutral-06:     220 14% 71%;  /* #9ca3af */
+  --dashboard-neutral-07:     220 9% 46%;   /* #6b7280 */
+  /* Booking ID link color → template purple */
+  --booking-link:             243 87% 63%;
+  /* Sidebar variables — already overridden via JSX, but for consistency */
+  --sidebar-primary:          243 87% 63%;
+  --sidebar-ring:             243 87% 63%;
+}
+
+[data-brand="admin"] {
+  /* Brand */
+  --tpl-primary:        #5750f1;
+  --tpl-primary-hover:  #4a44d4;
+  --tpl-primary-soft:   rgba(87, 80, 241, 0.07);
+  --tpl-primary-soft-2: rgba(87, 80, 241, 0.14);
+
+  /* Neutrals — light surface */
+  --tpl-body-bg:        #f9fafb; /* page bg */
+  --tpl-card-bg:        #ffffff;
+  --tpl-stroke:         #e6ebf1;
+
+  --tpl-gray-1:         #f9fafb;
+  --tpl-gray-2:         #f3f4f6;
+  --tpl-gray-3:         #e5e7eb;
+  --tpl-gray-4:         #d1d5db;
+  --tpl-gray-5:         #9ca3af;
+  --tpl-gray-6:         #6b7280;
+  --tpl-gray-7:         #374151;
+  --tpl-dark:           #111928;
+  --tpl-dark-2:         #1f2a37;
+  --tpl-dark-3:         #374151;
+  --tpl-dark-4:         #4b5563;
+  --tpl-dark-5:         #6b7280;
+  --tpl-dark-6:         #9ca3af;
+  --tpl-dark-7:         #d1d5db;
+  --tpl-dark-8:         #e5e7eb;
+
+  /* Status */
+  --tpl-green:          #22ad5c;
+  --tpl-green-light:    #2cd673;
+  --tpl-green-soft:     #daf8e6;
+  --tpl-red:            #f23030;
+  --tpl-red-light:      #f56060;
+  --tpl-red-soft:       #feebeb;
+  --tpl-blue:           #3c50e0;
+  --tpl-blue-soft:      #e1e8ff;
+  --tpl-yellow:         #f59e0b;
+  --tpl-yellow-soft:    #fffbeb;
+  --tpl-orange:         #f59460;
+
+  /* Shadows */
+  --tpl-shadow-1:       0px 1px 2px 0px rgba(84, 87, 118, 0.12);
+  --tpl-shadow-2:       0px 2px 3px 0px rgba(84, 87, 118, 0.15);
+  --tpl-shadow-card:    0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+  --tpl-shadow-card-2:  0px 8px 13px -3px rgba(0, 0, 0, 0.07);
+
+  /* Radii */
+  --tpl-radius-card:    10px;
+}
+
+[data-brand="admin"].dark,
+.dark [data-brand="admin"] {
+  --tpl-body-bg:        #122031;
+  --tpl-card-bg:        #1f2a37;
+  --tpl-stroke:         #27303e;
+  --tpl-primary-soft:   rgba(255, 255, 255, 0.06);
+  --tpl-primary-soft-2: rgba(255, 255, 255, 0.10);
+}
+
+/* Utility shortcuts for the template look — keeps the JSX legible */
+.tpl-card {
+  background-color: var(--tpl-card-bg);
+  border-radius: var(--tpl-radius-card);
+  box-shadow: var(--tpl-shadow-1);
+}
+.tpl-card-flush { /* same as .tpl-card but for nested grids that need no extra padding */
+  background-color: var(--tpl-card-bg);
+  border-radius: var(--tpl-radius-card);
+  box-shadow: var(--tpl-shadow-1);
+}
+.tpl-heading-5 { font-size: 28px; line-height: 40px; font-weight: 700; }
+.tpl-heading-6 { font-size: 24px; line-height: 30px; font-weight: 700; }
+.tpl-body-2xlg { font-size: 22px; line-height: 28px; }
+.tpl-body-sm   { font-size: 14px; line-height: 22px; }
+.tpl-body-xs   { font-size: 12px; line-height: 20px; }
+
+/* ── Table styling — ported from the NextAdmin InvoiceTable pattern ──────
+   Template default: light-blue tinted header row (#F7F9FC), bigger non-
+   uppercase text in dark color, generous py-4 cells. Applies to any
+   <Table> primitive inside the admin shell.                              */
+[data-brand="admin"] thead tr {
+  background-color: #f7f9fc;
+  border-bottom: 1px solid var(--tpl-stroke);
+}
+[data-brand="admin"] thead th {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tpl-dark);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  text-align: left;
+  vertical-align: middle;
+}
+[data-brand="admin"] tbody td {
+  font-size: 14px;
+  color: var(--tpl-dark-3);
+  padding-top: 16px;
+  padding-bottom: 16px;
+  vertical-align: middle;
+}
+[data-brand="admin"] tbody tr {
+  border-bottom: 1px solid #eeeeee;
+}
+[data-brand="admin"] tbody tr:last-child {
+  border-bottom: 0;
+}
+[data-brand="admin"] tbody tr:hover {
+  background-color: rgba(87, 80, 241, 0.03);
+}
+.dark [data-brand="admin"] thead tr { background-color: var(--tpl-dark-2); }
+.dark [data-brand="admin"] thead th { color: #ffffff; }
+.dark [data-brand="admin"] tbody td { color: var(--tpl-dark-7); }
+.dark [data-brand="admin"] tbody tr { border-bottom-color: var(--tpl-stroke); }
+.dark [data-brand="admin"] tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+
+/* ── Search input pill — ported from template's Header search box ─────
+   Any <input type="search"> inside the admin shell renders as the
+   template's rounded pill: gray-2 fill, no border by default, purple
+   border + light shadow on focus. Page-level overrides still win.       */
+[data-brand="admin"] input[type="search"] {
+  background-color: var(--tpl-gray-2);
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+  padding-left: 2.75rem; /* leaves room for the search icon */
+  padding-right: 1rem;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  outline: none;
+}
+[data-brand="admin"] input[type="search"]:hover {
+  background-color: var(--tpl-gray-3);
+}
+[data-brand="admin"] input[type="search"]:focus,
+[data-brand="admin"] input[type="search"]:focus-visible {
+  border-color: var(--tpl-primary);
+  background-color: var(--tpl-card-bg);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(87, 80, 241, 0.10);
+}
+.dark [data-brand="admin"] input[type="search"] {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+.dark [data-brand="admin"] input[type="search"]:hover {
+  background-color: rgba(255, 255, 255, 0.10);
+}
+
+/* Focus ring for non-search inputs: subtle purple, no double-outline */
+[data-brand="admin"] input:not([type="search"]):focus-visible,
+[data-brand="admin"] select:focus-visible,
+[data-brand="admin"] textarea:focus-visible {
+  outline: 2px solid var(--tpl-primary);
+  outline-offset: 1px;
+}
+
+/* Selection color matches template purple */
+[data-brand="admin"] ::selection {
+  background-color: var(--tpl-primary-soft-2);
+  color: var(--tpl-dark);
+}
+
 /* Thin, branded scrollbar for admin sidebar and main content */
 .scrollbar-hide {
   scrollbar-width: none;
@@ -1171,11 +1365,14 @@ main::-webkit-scrollbar-thumb {
 }
 main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 
-/* Smooth focus outline on buttons and inputs */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+/* Smooth focus outline on buttons and inputs — scoped to the admin shell.
+   Portaled content (dialogs, popovers, command palette) lives outside this
+   scope so it can opt into its own focus styling. Previously this was a
+   global rule which leaked an ocean-blue outline onto the cmdk search input. */
+[data-brand="admin"] button:focus-visible,
+[data-brand="admin"] input:focus-visible,
+[data-brand="admin"] select:focus-visible,
+[data-brand="admin"] textarea:focus-visible {
   outline: 2px solid hsl(var(--dashboard-primary));
   outline-offset: 2px;
 }

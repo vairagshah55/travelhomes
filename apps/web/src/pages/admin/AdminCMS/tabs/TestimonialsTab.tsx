@@ -37,9 +37,9 @@ export function TestimonialsTab() {
                   size={20}
                 />
                 <input
-                  type="text"
+                  type="search"
                   placeholder="Search"
-                  className="w-full pl-10 pr-3 py-2.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-body placeholder:text-dashboard-body focus:outline-none focus:border-dashboard-primary"
+                  className="w-full text-sm text-tpl-dark placeholder:text-tpl-dark-5"
                 />
               </div>
             </div>

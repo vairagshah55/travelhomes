@@ -20,7 +20,15 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  // Header row uses the semantic surface token so the same primitive themes in
+  // both the vendor (neutral) and admin areas. In the admin shell the scoped
+  // [data-brand="admin"] thead rules in admin.css have higher specificity and
+  // still win, so the admin look is unchanged.
+  <thead
+    ref={ref}
+    className={cn("[&_tr]:border-b [&_tr]:bg-app-surface-2", className)}
+    {...props}
+  />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -70,10 +78,12 @@ const TableHead = React.forwardRef<
   HTMLTableCellElement,
   React.ThHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
+  // text-base, bold, semantic foreground (admin.css [data-brand="admin"] thead
+  // th rules override the color in the admin shell, keeping that look intact).
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      "h-12 px-4 py-4 text-left align-middle text-base font-bold text-app-fg [&:has([role=checkbox])]:pr-0",
       className,
     )}
     {...props}

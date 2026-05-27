@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { Switch } from "@/components/ui/switch";
 import { settingsService } from "@/services/api";
-import { getImageUrl } from "@/lib/adminUtils";
 import { toast } from "sonner";
 
 
@@ -110,21 +110,27 @@ const AdminGlobalSettings: React.FC = () => {
     }
   };
 
-  const saveSystem = async () => {
+  // Toggle a single approval flag. Persists the NEW value explicitly (the old
+  // implementation read stale state after setState) and reverts the switch if
+  // the save fails so the UI never lies about what the server has.
+  const toggleApproval = (
+    key: "vendorApproval" | "mobileApproval" | "emailApproval" | "phoneApproval",
+    setter: React.Dispatch<React.SetStateAction<boolean>>,
+  ) => async (checked: boolean) => {
+    setter(checked);
     try {
-      setLoading(true);
       await settingsService.updateSystem({
         userType: activeUserType,
         vendorApproval,
         mobileApproval,
         emailApproval,
         phoneApproval,
+        [key]: checked,
       });
       toast.success("Settings saved.");
-    } catch (e) {
+    } catch {
+      setter(!checked);
       toast.error("Failed to save settings.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -144,14 +150,14 @@ const AdminGlobalSettings: React.FC = () => {
 
   return (
     <AdminLayout title="Global Settings">
-        <div className="flex-1 px-5 pb-5 lg:pr-5">
-          <div className="bg-white rounded-t-[24px] border-b border-dashboard-stroke h-[75px] px-5 flex items-center">
-            <h2 className="text-xl font-bold text-dashboard-heading font-geist tracking-tight">
+        <div className="flex-1">
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke h-[68px] px-6 flex items-center shadow-tpl-1">
+            <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
               Settings
             </h2>
           </div>
 
-          <div className="bg-white rounded-b-[24px] p-5 space-y-6">
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 p-6 space-y-6">
             {/* Tab Navigation */}
             <div className="flex items-center max-md:flex-wrap">
               {tabs.map((tab) => (
@@ -159,7 +165,7 @@ const AdminGlobalSettings: React.FC = () => {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`px-4 py-3 text-base font-bold transition-colors relative ${
-                    activeTab === tab ? "text-[#0B0907]" : "text-[#6B6B6B]"
+                    activeTab === tab ? "text-tpl-dark dark:text-white" : "text-tpl-dark-5 dark:text-tpl-dark-6"
                   }`}
                 >
                   {tab}
@@ -325,97 +331,25 @@ const AdminGlobalSettings: React.FC = () => {
 
                   {/* Settings Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {/* Vendor Approval */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-base text-[#334054] font-medium font-plus-jakarta">
-                        Vendor Approval
-                      </span>
-                      <div
-                        onClick={async () => {
-                          const next = !vendorApproval;
-                          setVendorApproval(next);
-                          await saveSystem();
-                        }}
-                        className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          vendorApproval ? "bg-[#0F5C8A]" : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`absolute w-4 h-4 bg-white rounded-full shadow-sm transition-transform top-0.5 ${
-                            vendorApproval ? "translate-x-4" : "translate-x-0.5"
-                          }`}
+                    {([
+                      { label: "Vendor Approval", key: "vendorApproval", value: vendorApproval, setter: setVendorApproval },
+                      { label: "Mobile Approval", key: "mobileApproval", value: mobileApproval, setter: setMobileApproval },
+                      { label: "Email Approval", key: "emailApproval", value: emailApproval, setter: setEmailApproval },
+                      { label: "Phone Approval", key: "phoneApproval", value: phoneApproval, setter: setPhoneApproval },
+                    ] as const).map((item) => (
+                      <div key={item.key} className="flex items-center justify-between">
+                        <label htmlFor={item.key} className="text-base text-tpl-dark-4 dark:text-tpl-dark-6 font-medium font-plus-jakarta cursor-pointer">
+                          {item.label}
+                        </label>
+                        <Switch
+                          id={item.key}
+                          checked={item.value}
+                          onCheckedChange={toggleApproval(item.key, item.setter)}
+                          disabled={loading}
+                          aria-label={item.label}
                         />
                       </div>
-                    </div>
-
-                    {/* Mobile Approval */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-base text-[#334054] font-medium font-plus-jakarta">
-                        Mobile Approval
-                      </span>
-                      <div
-                        onClick={async () => {
-                          const next = !mobileApproval;
-                          setMobileApproval(next);
-                          await saveSystem();
-                        }}
-                        className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          mobileApproval ? "bg-[#0F5C8A]" : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`absolute w-4 h-4 bg-white rounded-full shadow-sm transition-transform top-0.5 ${
-                            mobileApproval ? "translate-x-4" : "translate-x-0.5"
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Email Approval */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-base text-[#334054] font-medium font-plus-jakarta">
-                        Email Approval
-                      </span>
-                      <div
-                        onClick={async () => {
-                          const next = !emailApproval;
-                          setEmailApproval(next);
-                          await saveSystem();
-                        }}
-                        className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          emailApproval ? "bg-[#0F5C8A]" : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`absolute w-4 h-4 bg-white rounded-full shadow-sm transition-transform top-0.5 ${
-                            emailApproval ? "translate-x-4" : "translate-x-0.5"
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Phone Approval */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-base text-[#334054] font-medium font-plus-jakarta">
-                        Phone Approval
-                      </span>
-                      <div
-                        onClick={async () => {
-                          const next = !phoneApproval;
-                          setPhoneApproval(next);
-                          await saveSystem();
-                        }}
-                        className={`relative w-9 h-5 rounded-full cursor-pointer transition-colors ${
-                          phoneApproval ? "bg-[#0F5C8A]" : "bg-gray-300"
-                        }`}
-                      >
-                        <div
-                          className={`absolute w-4 h-4 bg-white rounded-full shadow-sm transition-transform top-0.5 ${
-                            phoneApproval ? "translate-x-4" : "translate-x-0.5"
-                          }`}
-                        />
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>

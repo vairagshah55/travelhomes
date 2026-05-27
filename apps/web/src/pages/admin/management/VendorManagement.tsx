@@ -1,128 +1,99 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Plus, Eye, Ban, Trash2, Store, SearchX } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import FiltersPopup from "@/components/admin/FiltersPopup";
-import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
-import Pagination from "@/components/admin/Pagination";
-import { Search, Filter, MoreHorizontal, Eye, Trash2, Loader2, X, Ban, Store, SearchX, AlertTriangle } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { vendorService } from "@/services/api";
+import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
 import { TabStrip } from "@/components/shared/TabStrip";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { useVendors, type Vendor } from "@/hooks/admin/useVendors";
+import { vendorSchema, type VendorFormValues } from "./vendorSchema";
+import { vendorService } from "@/services/api";
 
-interface Vendor {
-  _id: string;
-  vendorId: string;
-  photo: string;
-  brandName: string;
-  personName: string;
-  listedServices: number;
-  location: string;
-  status: string;
-  action: string;
-}
+const TABS = [
+  { key: "all-vendors", label: "All Vendors" },
+  { key: "pending-vendors", label: "Pending Vendors" },
+  { key: "approved", label: "Approved" },
+  { key: "active", label: "Active" },
+  { key: "inactive", label: "Inactive" },
+  { key: "banned", label: "Banned" },
+  { key: "kyc-unverified", label: "KYC Unverified" },
+];
+
+const SORT_OPTIONS = [
+  { value: "brandName", label: "Name" },
+  { value: "createdAt", label: "Date" },
+  { value: "location", label: "Location" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "approved", label: "Approved" },
+  { value: "active", label: "Active" },
+  { value: "inactive", label: "Inactive" },
+  { value: "banned", label: "Banned" },
+];
+
+const ITEMS_PER_PAGE = 10;
 
 const VendorManagement = () => {
-  const navigate = useNavigate();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all-vendors");
-  const [showActionMenu, setShowActionMenu] = useState<string | null>(null);
-  const [showVendorDetails, setShowVendorDetails] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [showFiltersPopup, setShowFiltersPopup] = useState(false);
-  const [activeFilters, setActiveFilters] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("brandName");
-  const queryClient = useQueryClient();
-  // Local mutation/validation state — distinct from `loading` which
-  // useQuery owns for the list fetch. The handlers below route into
-  // these so the create/ban/delete/view flows still surface progress
-  // and validation errors. Mutations refresh the list via
-  // queryClient.invalidateQueries (or setQueryData for optimistic).
-  const [mutationLoading, setMutationLoading] = useState(false);
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const setLoading = setMutationLoading;
-  const setError = setMutationError;
-  const refreshVendors = (next?: Vendor[]) => {
-    if (next !== undefined) {
-      queryClient.setQueryData<Vendor[]>(vendorsKey, next);
-    } else {
-      queryClient.invalidateQueries({ queryKey: vendorsKey });
-    }
-  };
-  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
-  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-  const [formData, setFormData] = useState<Partial<Vendor>>({
-    vendorId: "",
-    photo: "",
-    brandName: "",
-    personName: "",
-    listedServices: 0,
-    location: "",
-    action: "",
-  });
+  const [filters, setFilters] = useState<ActiveFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    navigate("/admin/login");
-  };
+  const [showVendorDetails, setShowVendorDetails] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  // Confirm state: a single configurable dialog drives ban / delete / bulk delete.
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    variant: "danger" | "warning";
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
 
-  // Reset pagination when tab changes
+  const { query, createVendor, setStatus, deleteVendor } = useVendors(activeTab);
+  const vendors = query.data ?? [];
+
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab]);
+    setSelectedIds([]);
+  }, [activeTab, searchTerm, sortBy, filters]);
 
-  // Vendors list — keyed by tab so switching is instant after first fetch.
-  const vendorsKey = ["vendors", activeTab] as const;
-  const {
-    data: vendors = [],
-    isLoading: listLoading,
-    error: queryError,
-  } = useQuery<Vendor[]>({
-    queryKey: vendorsKey,
-    queryFn: async () => {
-      const list = await vendorService.getVendors(activeTab);
-      return Array.isArray(list) ? list : [];
-    },
-  });
-  // `loading` covers both the initial list fetch AND any in-flight
-  // mutation so the existing button-disabled logic keeps working.
-  const loading = listLoading || mutationLoading;
-  const error =
-    mutationError ??
-    (queryError
-      ? typeof queryError === "string"
-        ? queryError
-        : "Failed to fetch vendors."
-      : null);
+  // Location filter options derived from the loaded vendors.
+  const locationOptions = useMemo(() => {
+    const set = new Set(vendors.map((v) => v.location).filter(Boolean));
+    return Array.from(set).map((loc) => ({ value: loc, label: loc }));
+  }, [vendors]);
 
-  // Derived list with search + sort + filters
-  const filteredSortedVendors = useMemo(() => {
+  const filterDefs: FilterDefinition[] = [
+    { key: "status", label: "Status", type: "select", options: STATUS_OPTIONS },
+    { key: "location", label: "Location", type: "select", options: locationOptions },
+    { key: "registered", label: "Registered", type: "date-range" },
+  ];
+
+  const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = vendors;
+
     if (term) {
       list = list.filter((v) =>
         [v.brandName, v.personName, v.location, v.vendorId]
@@ -131,573 +102,289 @@ const VendorManagement = () => {
       );
     }
 
-    if (activeFilters.length > 0) {
-      const locationFilter = activeFilters.find((f) => f.startsWith("location:"))?.split(":")[1];
-      const statusFilter = activeFilters.find((f) => f.startsWith("status:"))?.split(":")[1];
-      const serviceFilter = activeFilters.find((f) => f.startsWith("service:"))?.split(":")[1];
-      const dateFromFilter = activeFilters.find((f) => f.startsWith("dateFrom:"))?.split(":")[1];
-      const dateToFilter = activeFilters.find((f) => f.startsWith("dateTo:"))?.split(":")[1];
-
-      if (locationFilter && locationFilter !== "all") {
-        list = list.filter((v) => v.location?.toLowerCase() === locationFilter.toLowerCase());
+    if (filters.status) list = list.filter((v) => v.status?.toLowerCase() === String(filters.status).toLowerCase());
+    if (filters.location) list = list.filter((v) => v.location?.toLowerCase() === String(filters.location).toLowerCase());
+    if (Array.isArray(filters.registered)) {
+      const [from, to] = filters.registered;
+      if (from) {
+        const f = new Date(from).getTime();
+        list = list.filter((v) => (v.createdAt ? new Date(v.createdAt).getTime() >= f : false));
       }
-
-      if (statusFilter && statusFilter !== "all") {
-        list = list.filter((v) => v.status?.toLowerCase() === statusFilter.toLowerCase());
-      }
-
-      if (dateFromFilter) {
-        const fromDate = new Date(dateFromFilter).getTime();
-        list = list.filter((v) => {
-          const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
-          return created >= fromDate;
-        });
-      }
-
-      if (dateToFilter) {
-        const toDate = new Date(dateToFilter).getTime();
-        // Add 1 day to include the end date fully
-        const toDateInclusive = toDate + 86400000;
-        list = list.filter((v) => {
-          const created = (v as any).createdAt ? new Date((v as any).createdAt).getTime() : 0;
-          return created < toDateInclusive;
-        });
+      if (to) {
+        const t = new Date(to).getTime() + 86_400_000;
+        list = list.filter((v) => (v.createdAt ? new Date(v.createdAt).getTime() < t : false));
       }
     }
 
-    const sortKey = sortBy as keyof Vendor;
+    const key = sortBy as keyof Vendor;
     return [...list].sort((a, b) => {
-      const av = String(a[sortKey] ?? "").toLowerCase();
-      const bv = String(b[sortKey] ?? "").toLowerCase();
-      if (av < bv) return -1;
-      if (av > bv) return 1;
-      return 0;
+      const av = String(a[key] ?? "").toLowerCase();
+      const bv = String(b[key] ?? "").toLowerCase();
+      return av < bv ? -1 : av > bv ? 1 : 0;
     });
-  }, [vendors, searchTerm, sortBy, activeFilters]);
+  }, [vendors, searchTerm, sortBy, filters]);
 
-  const tabs = [
-    { id: "all-vendors", label: "All Vendors" },
-    { id: "pending-vendors", label: "Pending Vendors" },
-    { id: "approved", label: "Approved" },
-    { id: "active", label: "Active" },
-    { id: "inactive", label: "Inactive" },
-    { id: "banned", label: "Banned" },
-    { id: "kyc-unverified", label: "KYC Unverified" },
-  ];
-
-  const handleAddVendor = () => {
-    setFormData({
-      vendorId: "",
-      photo: "",
-      brandName: "",
-      personName: "",
-      listedServices: 0,
-      location: "",
-      action: "",
-    });
-    setShowAddVendorModal(true);
-  };
-
-  // Save vendor to database and update local state
-  const handleSaveVendor = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validate required fields
-      if (!formData.brandName?.trim()) {
-        setError("Brand Name is required");
-        return;
-      }
-      if (!formData.personName?.trim()) {
-        setError("Person Name is required");
-        return;
-      }
-      if (!formData.location?.trim()) {
-        setError("Location is required");
-        return;
-      }
-
-      // Prepare vendor data for API
-      const vendorData = {
-        vendorId: String(formData.vendorId || `V-${Date.now()}`),
-        photo: String(formData.photo || ""),
-        brandName: String(formData.brandName || "").trim(),
-        personName: String(formData.personName || "").trim(),
-        listedServices: Number((formData as any).listedServices || 0),
-        location: String(formData.location || "").trim(),
-        status: "pending",
-      };
-
-      const response = await vendorService.createVendor(vendorData);
-
-      const refreshedList = await vendorService.getVendors(activeTab);
-      refreshVendors(Array.isArray(refreshedList) ? refreshedList : []);
-
-      setShowAddVendorModal(false);
-      setFormData({
-        vendorId: "",
-        photo: "",
-        brandName: "",
-        personName: "",
-        listedServices: 0,
-        location: "",
-        action: "",
-      });
-      toast.success("Vendor created successfully.");
-    } catch (err: any) {
-      let errorMessage = "Failed to create vendor.";
-
-      if (typeof err === "string") {
-        errorMessage = err;
-      } else if (err?.message) {
-        errorMessage = err.message;
-      } else if (err?.error) {
-        errorMessage = err.error;
-      } else if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      }
-
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
   const handleView = async (vendor: Vendor) => {
     try {
-      setLoading(true);
-      // Fetch full vendor details to ensure all fields like business/personal are enriched
       const res = await vendorService.getVendor(vendor._id || vendor.vendorId);
       setSelectedVendor(res?.data || res || vendor);
-      setShowVendorDetails(true);
     } catch {
       setSelectedVendor(vendor);
-      setShowVendorDetails(true);
-    } finally {
-      setLoading(false);
-      setShowActionMenu(null);
     }
+    setShowVendorDetails(true);
   };
 
-  const handleBan = (vendor: Vendor) => {
-    setShowActionMenu(null);
-    setConfirmDialog({
+  const askBan = (vendor: Vendor) =>
+    setConfirm({
       title: `Ban "${vendor.brandName}"?`,
-      message: "They will immediately lose access to the platform and all their listings will be suspended.",
-      onConfirm: async () => {
-        setConfirmDialog(null);
-        try {
-          setLoading(true);
-          await vendorService.updateVendorStatus(vendor._id, "banned");
-          toast.success("Vendor banned successfully.");
-          const refreshed = await vendorService.getVendors(activeTab);
-          refreshVendors(Array.isArray(refreshed) ? refreshed : []);
-        } catch {
-          toast.error("Failed to ban vendor.");
-          setError("Failed to update vendor status");
-        } finally {
-          setLoading(false);
-        }
+      description: "They will immediately lose platform access and all their listings will be suspended.",
+      variant: "warning",
+      confirmLabel: "Ban vendor",
+      onConfirm: () => {
+        setStatus.mutate({ id: vendor._id, status: "banned" });
+        setConfirm(null);
       },
     });
-  };
 
-  const handleDelete = (vendor: Vendor) => {
-    setShowActionMenu(null);
-    setConfirmDialog({
+  const askDelete = (vendor: Vendor) =>
+    setConfirm({
       title: "Delete vendor?",
-      message: `"${vendor.brandName}" and all associated data will be permanently removed. This cannot be undone.`,
-      onConfirm: async () => {
-        setConfirmDialog(null);
-        try {
-          setLoading(true);
-          await vendorService.deleteVendor(vendor._id);
-          toast.success("Vendor deleted successfully.");
-          const refreshed = await vendorService.getVendors(activeTab);
-          refreshVendors(Array.isArray(refreshed) ? refreshed : []);
-        } catch {
-          toast.error("Failed to delete vendor.");
-          setError("Failed to delete vendor");
-        } finally {
-          setLoading(false);
-        }
+      description: `"${vendor.brandName}" and all associated data will be permanently removed. This cannot be undone.`,
+      variant: "danger",
+      confirmLabel: "Delete",
+      onConfirm: () => {
+        deleteVendor.mutate(vendor._id);
+        setConfirm(null);
       },
     });
-  };
 
-  const handleApplyFilters = (filters: any) => {
-    setActiveFilters(filters);
-    setCurrentPage(1);
-  };
+  const askBulkDelete = () =>
+    setConfirm({
+      title: `Delete ${selectedIds.length} vendor${selectedIds.length > 1 ? "s" : ""}?`,
+      description: "The selected vendors and all associated data will be permanently removed. This cannot be undone.",
+      variant: "danger",
+      confirmLabel: "Delete all",
+      onConfirm: async () => {
+        setConfirm(null);
+        await Promise.allSettled(selectedIds.map((id) => deleteVendor.mutateAsync(id)));
+        setSelectedIds([]);
+      },
+    });
 
-  const totalPages = Math.ceil(filteredSortedVendors.length / itemsPerPage);
-  const paginatedVendors = filteredSortedVendors.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const columns: ColumnDef<Vendor>[] = [
+    {
+      key: "vendorId",
+      header: "Vendor ID",
+      cell: (v) => (
+        <button
+          onClick={() => handleView(v)}
+          className="font-semibold text-tpl-primary hover:underline"
+        >
+          {v.vendorId}
+        </button>
+      ),
+    },
+    {
+      key: "photo",
+      header: "Photo",
+      hideBelow: "md",
+      cell: (v) => (
+        <Avatar className="w-10 h-10">
+          <AvatarImage src={v.photo} />
+          <AvatarFallback>{v.personName?.charAt(0)}</AvatarFallback>
+        </Avatar>
+      ),
+    },
+    { key: "brandName", header: "Brand Name", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.brandName}</span> },
+    { key: "personName", header: "Person Name", hideBelow: "lg", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.personName}</span> },
+    { key: "listedServices", header: "Services", hideBelow: "lg", align: "center", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.listedServices ?? 0}</span> },
+    { key: "location", header: "Location", hideBelow: "md", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.location}</span> },
+    { key: "status", header: "Status", cell: (v) => <StatusBadge status={v.status} /> },
+  ];
+
+  const rowActions: RowAction<Vendor>[] = [
+    { label: "View", icon: Eye, onClick: handleView },
+    { label: "Ban", icon: Ban, onClick: askBan, hidden: (v) => v.status?.toLowerCase() === "banned" },
+    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+  ];
 
   return (
     <AdminLayout title="Vendor Management">
-        <main className="flex-1">
+      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+        <div className="p-5 space-y-5">
+          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <div className="bg-white rounded-xl border border-surface-border overflow-hidden">
-            {/* Content Header */}
-            <div className="border-b border-surface-border px-5 py-3 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-dashboard-heading font-geist tracking-tight">
-                Vendor Management
-              </h2>
-            </div>
+          <AdminToolbar
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            searchPlaceholder="Search vendors…"
+            sortOptions={SORT_OPTIONS}
+            sortValue={sortBy}
+            onSortChange={setSortBy}
+            selectedCount={selectedIds.length}
+            bulkActions={[{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]}
+            onClearSelection={() => setSelectedIds([])}
+            primaryAction={
+              <Button onClick={() => setShowAddModal(true)} className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2">
+                <Plus size={16} /> Add Vendor
+              </Button>
+            }
+          />
 
-          <div className="p-5 space-y-5">
-            {/* Tabs */}
-            <TabStrip
-              tabs={tabs.map((t) => ({ key: t.id, label: t.label }))}
-              activeKey={activeTab}
-              onChange={setActiveTab}
+          <AdminFilterBar
+            filters={filterDefs}
+            activeFilters={filters}
+            onApply={setFilters}
+            onClear={() => setFilters({})}
+          />
+
+          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+            <AdminDataTable<Vendor>
+              columns={columns}
+              data={paginated}
+              isLoading={query.isLoading}
+              isError={query.isError}
+              errorMessage="Failed to load vendors."
+              onRetry={() => query.refetch()}
+              hasActiveQuery={hasActiveQuery}
+              emptyIcon={hasActiveQuery ? SearchX : Store}
+              emptyTitle="No vendors yet"
+              emptyDescription="Vendors appear here once they register and submit for verification."
+              noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"}
+              noResultsDescription="Try different keywords or remove filters."
+              noResultsAction={{ label: "Clear filters", onClick: () => { setSearchTerm(""); setFilters({}); } }}
+              selectable
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              rowActions={rowActions}
+              pagination={{ currentPage, totalPages, totalItems: filtered.length, onPageChange: setCurrentPage }}
             />
-
-            {/* Search and Filters */}
-            <div className="flex items-center justify-between  max-md:flex-wrap">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search
-                    size={20}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#485467]"
-                  />
-                  <Input
-                    placeholder="Search"
-                    className="pl-10 w-64 h-10 border-[#B0B0B0] rounded-lg font-plus-jakarta text-[#2E2E2E]"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3  max-md:flex-wrap">
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32 h-10 border-[#D0D5DD]">
-                    <SelectValue placeholder="Sort By" className="text-[#667085] font-poppins" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="brandName">Name</SelectItem>
-                    <SelectItem value="createdAt">Date</SelectItem>
-                    <SelectItem value="location">Location</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {activeFilters.map((filter) => {
-                  const [key, value] = filter.split(":");
-                  if (!value || value === "all") return null;
-                  return (
-                    <div
-                      key={filter}
-                      className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm border border-gray-200"
-                    >
-                      <span className="capitalize text-gray-700">
-                        {key}: {value}
-                      </span>
-                      <button
-                        onClick={() => {
-                          setActiveFilters((prev) => prev.filter((f) => f !== filter));
-                        }}
-                        className="ml-1"
-                      >
-                        <X size={14} className="text-gray-500 hover:text-red-500" />
-                      </button>
-                    </div>
-                  );
-                })}
-
-                <Button
-                  variant="outline"
-                  className="h-10 px-5 border-[#D0D5DD] rounded-[30px]"
-                  onClick={() => setShowFiltersPopup(true)}
-                >
-                  <Filter size={18} className="mr-2" />
-                  <span className="font-poppins text-[#485467]">Filters</span>
-                </Button>
-              </div>
-            </div>
-
-            {/* Table */}
-            <div className="border border-[#EAECF0] rounded-xl overflow-auto max-h-[calc(100vh-320px)]">
-              <Table>
-                <TableHeader className="sticky top-0 z-10">
-                  <TableRow>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Vendor ID
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Photo
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Brand Name
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Person Name
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Listed Services
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0]">
-                      Location
-                    </TableHead>
-                    <TableHead className="bg-[#F2F4F7] font-bold text-[#334054] font-plus-jakarta border-b border-[#EAECF0] w-40">
-                      Action
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading && (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <TableRow key={i} className="animate-pulse">
-                        <TableCell className="py-4"><div className="h-3.5 w-20 bg-gray-200 rounded" /></TableCell>
-                        <TableCell><div className="w-10 h-10 rounded-full bg-gray-200" /></TableCell>
-                        <TableCell><div className="h-3.5 w-28 bg-gray-200 rounded" /></TableCell>
-                        <TableCell><div className="h-3.5 w-24 bg-gray-200 rounded" /></TableCell>
-                        <TableCell><div className="h-3.5 w-8 bg-gray-200 rounded" /></TableCell>
-                        <TableCell><div className="h-3.5 w-20 bg-gray-200 rounded" /></TableCell>
-                        <TableCell><div className="h-5 w-5 bg-gray-200 rounded" /></TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                  {!loading && paginatedVendors.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={7}>
-                        <EmptyState
-                          icon={searchTerm ? SearchX : Store}
-                          title={searchTerm ? `No results for "${searchTerm}"` : "No vendors yet"}
-                          description={searchTerm ? "Try different keywords or remove filters." : "Vendors appear here once they register and submit for verification."}
-                          actionLabel="Clear filters"
-                          onAction={() => { setSearchTerm(""); setActiveFilters([]); }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {paginatedVendors.map((vendor) => (
-                    <TableRow key={vendor._id} className="border-b border-[#F2F4F7]">
-                      <TableCell className="py-4">
-                        <button
-                          onClick={() => handleView(vendor)}
-                          className="font-bold text-[#0066FF] underline font-plus-jakarta hover:text-[#0052CC] transition-colors"
-                        >
-                          {vendor.vendorId}
-                        </button>
-                      </TableCell>
-                      <TableCell>
-                        <Avatar className="w-10 h-10">
-                          <AvatarImage src={vendor.photo} />
-                          <AvatarFallback>{vendor.personName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      </TableCell>
-                      <TableCell className="text-[#485467] font-poppins">
-                        {vendor.brandName}
-                      </TableCell>
-                      <TableCell className="text-[#485467] font-poppins">
-                        {vendor.personName}
-                      </TableCell>
-                      <TableCell className="text-[#485467] font-poppins">
-                        {vendor.listedServices}
-                      </TableCell>
-                      <TableCell className="text-[#485467] font-poppins">
-                        {vendor.location}
-                      </TableCell>
-                      <TableCell>
-                        <div className="relative">
-                          <button
-                            onClick={() =>
-                              setShowActionMenu(showActionMenu === vendor._id ? null : vendor._id)
-                            }
-                            className="text-[#667085] hover:text-[#485467]"
-                          >
-                            <MoreHorizontal size={20} />
-                          </button>
-
-                          {/* Action Menu Dropdown */}
-                          {showActionMenu === vendor._id && (
-                            <div className="absolute right-0 top-8 bg-white border border-[#F8F8F8] rounded-xl shadow-lg p-1 z-10 w-48">
-                              <button
-                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-[#F2F4F7] rounded-lg transition-colors"
-                                onClick={() => handleView(vendor)}
-                              >
-                                <Eye size={18} className="text-black" />
-                                <span className="text-sm font-poppins text-[#2A2A2A]">View</span>
-                              </button>
-                              <button
-                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-orange-50 rounded-lg transition-colors"
-                                onClick={() => handleBan(vendor)}
-                              >
-                                <Ban size={18} className="text-[#D97706]" />
-                                <span className="text-sm font-poppins text-[#D97706]">Ban</span>
-                              </button>
-                              <button
-                                className="flex items-center gap-2 w-full px-3 py-3 text-left hover:bg-red-50 rounded-lg transition-colors"
-                                onClick={() => handleDelete(vendor)}
-                              >
-                                <Trash2 size={18} className="text-[#D30000]" />
-                                <span className="text-sm font-poppins text-[#D30000]">Delete</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mt-4">
-                  <p>{error}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="pt-4">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          </div>
-          </div>
-        </main>
-
-      {/* Add Vendor Modal */}
-      {showAddVendorModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Add New Vendor</h2>
-
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                <p>{error}</p>
-              </div>
-            )}
-
-            {/* Form Inputs */}
-            <div className="space-y-4">
-              <Input
-                placeholder="Vendor ID"
-                value={formData.vendorId}
-                onChange={(e) => setFormData({ ...formData, vendorId: e.target.value })}
-                disabled={loading}
-              />
-              <Input
-                placeholder="Photo URL"
-                value={formData.photo}
-                onChange={(e) => setFormData({ ...formData, photo: e.target.value })}
-                disabled={loading}
-              />
-              <Input
-                placeholder="Brand Name *"
-                value={formData.brandName}
-                onChange={(e) => setFormData({ ...formData, brandName: e.target.value })}
-                disabled={loading}
-                required
-              />
-              <Input
-                placeholder="Person Name *"
-                value={formData.personName}
-                onChange={(e) => setFormData({ ...formData, personName: e.target.value })}
-                disabled={loading}
-                required
-              />
-              <Input
-                placeholder="Listed Services"
-                value={formData.listedServices}
-                onChange={(e) => setFormData({ ...formData, listedServices: Number(e.target.value) })}
-                disabled={loading}
-                type="number"
-              />
-              <Input
-                placeholder="Location *"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                disabled={loading}
-                required
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end mt-6 gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setShowAddVendorModal(false)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-dashboard-primary text-white flex items-center gap-2"
-                onClick={handleSaveVendor}
-                disabled={loading}
-              >
-                {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                {loading ? "Saving..." : "Save Vendor"}
-              </Button>
-            </div>
-
-            {/* Close Button (Top Right) */}
-            <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-              onClick={() => setShowAddVendorModal(false)}
-            >
-              ×
-            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Vendor Details Popup */}
       <VendorDetailsPopup
         isOpen={showVendorDetails}
         onClose={() => setShowVendorDetails(false)}
         vendor={selectedVendor}
       />
 
-      {/* Filters Popup */}
-      <FiltersPopup
-        isOpen={showFiltersPopup}
-        onClose={() => setShowFiltersPopup(false)}
-        onApplyFilters={handleApplyFilters}
-        currentFilters={activeFilters}
+      <AddVendorDialog
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        isSaving={createVendor.isPending}
+        onSubmit={(values) =>
+          createVendor.mutate(
+            {
+              vendorId: values.vendorId || `V-${Date.now()}`,
+              photo: values.photo || "",
+              brandName: values.brandName,
+              personName: values.personName,
+              listedServices: values.listedServices,
+              location: values.location,
+              status: "pending",
+            },
+            { onSuccess: () => setShowAddModal(false) },
+          )
+        }
       />
 
-      {/* Confirm Dialog */}
-      {confirmDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
-                <AlertTriangle size={20} className="text-red-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900 font-geist">{confirmDialog.title}</h3>
-                <p className="text-sm text-gray-500 mt-1 leading-relaxed">{confirmDialog.message}</p>
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end pt-1">
-              <button
-                onClick={() => setConfirmDialog(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDialog.onConfirm}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm()}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        variant={confirm?.variant}
+        isLoading={deleteVendor.isPending || setStatus.isPending}
+      />
     </AdminLayout>
   );
 };
+
+/* ── Add Vendor dialog — shadcn Dialog + react-hook-form + zod ───────────── */
+function AddVendorDialog({
+  open,
+  onClose,
+  onSubmit,
+  isSaving,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (values: VendorFormValues) => void;
+  isSaving: boolean;
+}) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<VendorFormValues>({
+    resolver: zodResolver(vendorSchema),
+    defaultValues: { brandName: "", personName: "", location: "", vendorId: "", photo: "", listedServices: 0 },
+  });
+
+  useEffect(() => {
+    if (open) reset();
+  }, [open, reset]);
+
+  const field = "text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6";
+  const err = "text-[12px] text-tpl-red mt-1";
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Vendor</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+          <div>
+            <label className={field}>Brand Name *</label>
+            <Input {...register("brandName")} placeholder="Brand name" disabled={isSaving} />
+            {errors.brandName && <p className={err}>{errors.brandName.message}</p>}
+          </div>
+          <div>
+            <label className={field}>Person Name *</label>
+            <Input {...register("personName")} placeholder="Person name" disabled={isSaving} />
+            {errors.personName && <p className={err}>{errors.personName.message}</p>}
+          </div>
+          <div>
+            <label className={field}>Location *</label>
+            <Input {...register("location")} placeholder="Location" disabled={isSaving} />
+            {errors.location && <p className={err}>{errors.location.message}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={field}>Vendor ID</label>
+              <Input {...register("vendorId")} placeholder="Auto" disabled={isSaving} />
+            </div>
+            <div>
+              <label className={field}>Listed Services</label>
+              <Input type="number" {...register("listedServices")} disabled={isSaving} />
+              {errors.listedServices && <p className={err}>{errors.listedServices.message}</p>}
+            </div>
+          </div>
+          <div>
+            <label className={field}>Photo URL</label>
+            <Input {...register("photo")} placeholder="https://…" disabled={isSaving} />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving} className="bg-tpl-primary hover:bg-tpl-primary/90 text-white">
+              {isSaving ? "Saving…" : "Save Vendor"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default VendorManagement;

@@ -55,14 +55,14 @@ const AdminCRM: React.FC = () => {
 
   return (
     <AdminLayout title="CRM">
-        <div className="flex-1 px-5 pb-5 lg:pr-5">
-          <div className="bg-white rounded-t-[24px] border-b border-dashboard-stroke h-[75px] px-5 flex items-center">
-            <h2 className="text-xl font-bold text-dashboard-heading font-geist tracking-tight">
+        <div className="flex-1">
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke h-[68px] px-6 flex items-center shadow-tpl-1">
+            <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
               CRM
             </h2>
           </div>
 
-          <div className="bg-white rounded-b-[24px] p-5 space-y-7">
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 p-6 space-y-7">
             {/* Tab Navigation */}
             <div className="flex items-center">
               {tabs.map((tab) => (
@@ -73,7 +73,7 @@ const AdminCRM: React.FC = () => {
                     setServiceType(""); // Reset service type when switching tabs
                   }}
                   className={`px-4 py-3 text-base font-bold transition-colors relative ${
-                    activeTab === tab ? "text-[#0B0907]" : "text-[#6B6B6B]"
+                    activeTab === tab ? "text-tpl-dark dark:text-white" : "text-tpl-dark-5 dark:text-tpl-dark-6"
                   }`}
                 >
                   {tab}
@@ -85,7 +85,7 @@ const AdminCRM: React.FC = () => {
             </div>
 
             {/* Communication Type Selector (Multi-select) */}
-            <div className="flex items-center gap-2 p-0.5 border border-[#EAEAEA] rounded-full bg-white shadow-sm w-fit">
+            <div className="flex items-center gap-2 p-0.5 border border-tpl-stroke rounded-full bg-tpl-gray-2 dark:bg-white/5 shadow-sm w-fit">
               {commTypes.map((type) => {
                 const isSelected = selectedChannels.includes(type);
                 return (
@@ -105,55 +105,49 @@ const AdminCRM: React.FC = () => {
             </div>
 
             {/* Form */}
-            <div className="border border-dashboard-stroke rounded-xl p-4 space-y-5">
-              {/* Type Dropdown (Dynamic Label) */}
-              <div className="space-y-3">
-                <label className="block text-base text-[#334054] font-plus-jakarta">
-                  {activeTab} Type
-                </label>
-                <div className="relative">
-                  <select
-                    value={serviceType}
-                    onChange={(e) => setServiceType(e.target.value)}
-                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent appearance-none"
-                  >
-                    <option value="">Select All</option>
-                    <option value="Caravan">Caravan</option>
-                    <option value="Stay">Stay</option>
-                    <option value="Activity">Activity</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 18 18"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
+            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl p-4 space-y-5">
+              {/* Service-type filter — only meaningful for Vendor/User segments,
+                  who are grouped by service category. Staff have no service type. */}
+              {activeTab !== "Staff" && (
+                <div className="space-y-3">
+                  <label className="block text-base text-tpl-dark-4 dark:text-tpl-dark-6 font-plus-jakarta">
+                    {activeTab} Service Type
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={serviceType}
+                      onChange={(e) => setServiceType(e.target.value)}
+                      className="w-full px-3 py-3.5 border border-tpl-stroke dark:border-white/10 bg-transparent text-tpl-dark dark:text-white rounded-lg text-sm font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-tpl-primary focus:border-transparent appearance-none"
                     >
-                      <path
-                        d="M14.9396 6.71289L10.0496 11.6029C9.47207 12.1804 8.52707 12.1804 7.94957 11.6029L3.05957 6.71289"
-                        stroke="#292D32"
-                        strokeWidth="1.5"
-                        strokeMiterlimit="10"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                      <option value="">Select All</option>
+                      <option value="Caravan">Caravan</option>
+                      <option value="Stay">Stay</option>
+                      <option value="Activity">Activity</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-tpl-dark-5">
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14.9396 6.71289L10.0496 11.6029C9.47207 12.1804 8.52707 12.1804 7.94957 11.6029L3.05957 6.71289" stroke="currentColor" strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Message Textarea */}
               <div className="space-y-3">
-                <label className="block text-base text-[#334054] font-plus-jakarta">
-                  Message
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-base text-tpl-dark-4 dark:text-tpl-dark-6 font-plus-jakarta">
+                    Message
+                  </label>
+                  <span className="text-[12px] text-tpl-dark-5 dark:text-tpl-dark-6">{message.length}/1000</span>
+                </div>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Write Message here..."
+                  onChange={(e) => setMessage(e.target.value.slice(0, 1000))}
+                  placeholder="Write message here..."
                   rows={5}
-                  className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
+                  maxLength={1000}
+                  className="w-full px-3 py-3.5 border border-tpl-stroke dark:border-white/10 bg-transparent text-tpl-dark dark:text-white rounded-lg text-sm font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-tpl-primary focus:border-transparent resize-none"
                 />
               </div>
 
@@ -161,10 +155,10 @@ const AdminCRM: React.FC = () => {
               <div className="flex justify-end">
                 <button
                   onClick={handleSendMessage}
-                  disabled={loading}
-                  className={`px-6 py-3 bg-dashboard-primary text-white text-sm font-medium rounded-full font-geist tracking-tight transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-opacity-90'}`}
+                  disabled={loading || !message.trim() || selectedChannels.length === 0}
+                  className="px-6 py-3 bg-tpl-primary text-white text-sm font-medium rounded-full font-geist tracking-tight transition-colors hover:bg-tpl-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Sending...' : 'Send Message'}
+                  {loading ? "Sending..." : "Send Message"}
                 </button>
               </div>
             </div>

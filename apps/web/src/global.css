@@ -25,6 +25,36 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   SEMANTIC SURFACE / ACCENT LAYER  (Tailwind `app-*` namespace)
+   ONE source of truth — the admin/console design system (NextAdmin tpl
+   palette + purple accent). Both the admin panel AND the vendor dashboard
+   (which sets data-brand="admin" on its shell) use these. No parallel
+   vendor theme — light values on :root, dark values on .dark.
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  --surface:          #ffffff;            /* tpl-card-bg */
+  --surface-2:        #f3f4f6;            /* tpl-gray-2 — subtle fills */
+  --surface-border:   #e6ebf1;            /* tpl-stroke */
+  --surface-fg:       #111928;            /* tpl-dark — primary text */
+  --surface-fg-muted: #6b7280;            /* tpl-dark-5 — secondary text */
+  --surface-fg-subtle:#9ca3af;            /* tpl-dark-6 — icons/tertiary */
+  --accent:           #5750f1;            /* tpl-primary (purple) */
+  --accent-hover:     #4a44d4;            /* tpl-primary-hover */
+  --accent-soft:      rgba(87, 80, 241, 0.07); /* tpl-primary-soft */
+  --accent-fg:        #ffffff;
+}
+
+.dark {
+  --surface:          #1f2a37;            /* tpl-dark-2 */
+  --surface-2:        rgba(255, 255, 255, 0.05);
+  --surface-border:   #27303e;            /* tpl-stroke dark */
+  --surface-fg:       #ffffff;
+  --surface-fg-muted: #9ca3af;
+  --surface-fg-subtle:#6b7280;
+  --accent-soft:      rgba(255, 255, 255, 0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DESIGN SYSTEM TOKENS  (designe.md)
    Blue primary · Warm sand · Teal accents · Airy neutrals
    ═══════════════════════════════════════════════════════════════ */

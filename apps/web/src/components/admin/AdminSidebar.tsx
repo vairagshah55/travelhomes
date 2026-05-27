@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 
 import LogoWebsite from "@/components/admin/LogoWebsite";
+import { useAuth } from "@/contexts/AdminAuthContext";
+import { getInitials } from "@/utils/getInitials";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   DropdownMenu,
@@ -129,34 +131,40 @@ interface UserMenuProps {
 }
 
 function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
+  const { user } = useAuth();
+  const name = user?.name || "Admin";
+  const email = user?.email || "";
+  const role = user?.role || "Admin";
+  const initials = getInitials(user?.name);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className={`w-full flex items-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
-            collapsed ? "justify-center p-1.5" : "gap-2.5 p-2"
+          className={`w-full flex items-center rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/5 ${
+            collapsed ? "justify-center p-2" : "gap-3 p-2.5"
           }`}
         >
           <div className="relative shrink-0">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-gradient-to-br from-ocean-400 to-ocean-700 text-white text-[12px] font-bold">
-                VS
+            <Avatar className="w-10 h-10">
+              <AvatarFallback className="bg-tpl-primary text-white text-[13px] font-bold">
+                {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-gray-900" />
+            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-tpl-green-light rounded-full ring-2 ring-white dark:ring-tpl-dark-2" />
           </div>
 
           {!collapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
-                <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-                  Vairag Shah
+                <p className="text-[14px] font-semibold text-tpl-dark dark:text-white truncate leading-tight">
+                  {name}
                 </p>
-                <p className="text-[10.5px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                  Super Admin
+                <p className="text-[12px] text-tpl-dark-5 dark:text-tpl-dark-6 truncate leading-tight mt-0.5 capitalize">
+                  {role}
                 </p>
               </div>
-              <ChevronDown size={14} className="shrink-0 text-gray-400" />
+              <ChevronDown size={14} className="shrink-0 text-tpl-dark-5" />
             </>
           )}
         </button>
@@ -170,11 +178,13 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
       >
         <DropdownMenuLabel>
           <p className="text-[12.5px] font-semibold text-gray-900 dark:text-white truncate">
-            Vairag Shah
+            {name}
           </p>
-          <p className="text-[10.5px] font-normal text-gray-500 dark:text-gray-400 truncate">
-            vairag.shah@univoxx.com
-          </p>
+          {email && (
+            <p className="text-[10.5px] font-normal text-gray-500 dark:text-gray-400 truncate">
+              {email}
+            </p>
+          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => onNavigate("/admin/profile")}>
@@ -218,41 +228,35 @@ function NavRow({ item, collapsed, active, hasActiveChild, expanded, onToggle, o
   const hasChildren = !!item.children?.length;
 
   const handleClick = () => {
+    // Expanded sidebar: toggle the in-place children panel. Parent with no
+    // children navigates to its own path. (Collapsed-mode parents are
+    // rendered through the DropdownMenu wrapper below — this handler is not
+    // invoked for them.)
     if (hasChildren) onToggle();
     if (item.path) onNavigate(item.path);
   };
 
-  return (
-    <button
-      onClick={handleClick}
-      title={collapsed ? item.label : undefined}
-      className={`
-        group relative w-full flex items-center rounded-md text-left
-        transition-[background-color,color] duration-150 ease-out
-        ${collapsed ? "justify-center h-9 px-0" : "gap-2.5 h-9 px-2.5"}
-        text-[13px] font-medium
-        ${
-          isActive
-            ? "bg-ocean-50 dark:bg-ocean-500/10 text-ocean-700 dark:text-ocean-300"
-            : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
-        }
-      `}
-    >
-      {isActive && !collapsed && (
-        <motion.span
-          layoutId="sidebar-active-accent"
-          className="absolute -left-2 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-ocean-500"
-          transition={{ type: "spring", stiffness: 380, damping: 30 }}
-        />
-      )}
+  const buttonClasses = `
+    group relative w-full flex items-center rounded-lg text-left
+    transition-all duration-200 ease-out
+    ${collapsed ? "justify-center h-11 px-0" : "gap-3 h-11 px-3.5"}
+    text-[14px] font-medium
+    ${
+      isActive
+        ? "bg-tpl-primary-soft text-tpl-primary dark:text-white"
+        : "text-tpl-dark-4 dark:text-tpl-dark-6 hover:bg-gray-100 hover:text-tpl-dark dark:hover:bg-white/10 dark:hover:text-white"
+    }
+  `;
 
+  const buttonContent = (
+    <>
       <item.icon
-        size={16}
-        strokeWidth={isActive ? 2.2 : 1.75}
+        size={22}
+        strokeWidth={isActive ? 2 : 1.6}
         className={`shrink-0 transition-colors ${
           isActive
-            ? "text-ocean-600 dark:text-ocean-300"
-            : "text-gray-400 dark:text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-200"
+            ? "text-tpl-primary dark:text-white"
+            : "text-tpl-dark-5 dark:text-tpl-dark-6 group-hover:text-tpl-dark dark:group-hover:text-white"
         }`}
       />
 
@@ -261,15 +265,54 @@ function NavRow({ item, collapsed, active, hasActiveChild, expanded, onToggle, o
           <span className="flex-1 truncate">{item.label}</span>
           {hasChildren && (
             <motion.span
-              animate={{ rotate: expanded ? 0 : -90 }}
-              transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-              className="shrink-0 text-gray-400 dark:text-gray-500"
+              animate={{ rotate: expanded ? 0 : -180 }}
+              transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+              className="shrink-0 text-current opacity-70"
             >
-              <ChevronDown size={13} />
+              <ChevronDown size={14} />
             </motion.span>
           )}
         </>
       )}
+    </>
+  );
+
+  // Collapsed + has children → wrap in a DropdownMenu so clicking the icon
+  // opens a popover with the submenu to the right. Sidebar stays collapsed.
+  if (collapsed && hasChildren) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button title={item.label} className={buttonClasses}>
+            {buttonContent}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="right"
+          align="start"
+          sideOffset={12}
+          className="min-w-[200px] py-2 border border-tpl-stroke bg-white dark:bg-tpl-dark-2 shadow-tpl-2"
+        >
+          <DropdownMenuLabel className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-tpl-dark-5">
+            {item.label}
+          </DropdownMenuLabel>
+          {item.children!.map((sub) => (
+            <DropdownMenuItem
+              key={sub.path}
+              onSelect={() => onNavigate(sub.path)}
+              className="gap-2.5 px-3 py-2 cursor-pointer text-[14px] font-medium focus:bg-tpl-primary-soft focus:text-tpl-primary"
+            >
+              {sub.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
+  return (
+    <button onClick={handleClick} title={collapsed ? item.label : undefined} className={buttonClasses}>
+      {buttonContent}
     </button>
   );
 }
@@ -291,13 +334,13 @@ function SidebarBody({ collapsed, expanded, toggleExpanded, onNavigate }: Sideba
   return (
     <div ref={animateRef}>
       {SECTIONS.map((section, si) => (
-        <div key={si} className="mb-3 last:mb-0">
+        <div key={si} className="mb-6 last:mb-0">
           {section.group && !collapsed && (
-            <p className="px-3 mb-1 text-[10.5px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            <p className="px-3.5 mb-3 text-[12px] font-medium text-tpl-dark-4 dark:text-tpl-dark-6 uppercase tracking-wider">
               {section.group}
             </p>
           )}
-          <div className="space-y-0.5">
+          <div className="space-y-2">
             {section.items.map((item) => {
               const itemActive = isActive(item.path);
               const childActive = item.children?.some((c) => isActive(c.path)) ?? false;
@@ -315,35 +358,29 @@ function SidebarBody({ collapsed, expanded, toggleExpanded, onNavigate }: Sideba
                   />
 
                   {item.children && isExpanded && !collapsed && (
-                    <div className="ml-[18px] pl-3 mt-1 mb-1 space-y-0.5 border-l border-gray-200 dark:border-gray-800">
+                    <ul className="ml-9 mr-0 space-y-1.5 pb-[8px] pr-0 pt-2.5">
                       {item.children.map((sub) => {
                         const subActive = isActive(sub.path);
                         return (
-                          <button
-                            key={sub.path}
-                            onClick={() => onNavigate(sub.path)}
-                            className={`
-                              group/sub w-full flex items-center gap-2 px-2.5 h-7 rounded-md text-left text-[12.5px]
-                              transition-colors duration-150
-                              ${
-                                subActive
-                                  ? "bg-ocean-50 dark:bg-ocean-500/10 text-ocean-700 dark:text-ocean-300 font-semibold"
-                                  : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
-                              }
-                            `}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full shrink-0 transition-all duration-150 ${
-                                subActive
-                                  ? "bg-ocean-500 ring-2 ring-ocean-500/15"
-                                  : "bg-gray-300 dark:bg-gray-600 group-hover/sub:bg-gray-400"
-                              }`}
-                            />
-                            {sub.label}
-                          </button>
+                          <li key={sub.path}>
+                            <button
+                              onClick={() => onNavigate(sub.path)}
+                              className={`
+                                relative block w-full text-left rounded-lg px-3.5 py-2 text-[14px] font-medium
+                                transition-all duration-200
+                                ${
+                                  subActive
+                                    ? "bg-tpl-primary-soft text-tpl-primary dark:text-white"
+                                    : "text-tpl-dark-4 dark:text-tpl-dark-6 hover:bg-gray-100 hover:text-tpl-dark dark:hover:bg-white/10 dark:hover:text-white"
+                                }
+                              `}
+                            >
+                              {sub.label}
+                            </button>
+                          </li>
                         );
                       })}
-                    </div>
+                    </ul>
                   )}
                 </div>
               );
@@ -363,6 +400,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const navigate = useNavigate();
   const isActive = useActivePath();
+  const { logout } = useAuth();
 
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -381,8 +419,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     setExpanded((prev) => (prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]));
 
   const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    sessionStorage.removeItem("adminToken");
+    logout();
     navigate("/admin/login");
   };
 
@@ -397,14 +434,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <Sheet open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
         <SheetContent
           side="left"
-          className="w-[260px] p-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 sm:max-w-[260px]"
+          className="w-[290px] p-0 bg-white dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke sm:max-w-[290px]"
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-          <div className="flex flex-col h-full">
-            <div className="flex items-center px-4 py-3 min-h-[64px] border-b border-gray-200 dark:border-gray-800 shrink-0">
+          <div className="flex flex-col h-full py-7 pl-[20px] pr-[6px]">
+            <div className="px-1 pb-2 shrink-0">
               <LogoWebsite />
             </div>
-            <nav className="flex-1 px-2 py-3 overflow-y-auto scrollbar-hide">
+            <nav className="flex-1 mt-6 overflow-y-auto pr-3 scrollbar-hide">
               <SidebarBody
                 collapsed={false}
                 expanded={expanded}
@@ -412,7 +449,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 onNavigate={handleNavigate}
               />
             </nav>
-            <div className="p-2 border-t border-gray-200 dark:border-gray-800 shrink-0">
+            <div className="mt-2 pr-3 shrink-0">
               <SidebarUserCard
                 collapsed={false}
                 onNavigate={handleNavigate}
@@ -423,21 +460,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </SheetContent>
       </Sheet>
 
-      {/* ── Desktop sidebar ──────────────────────────────────────────── */}
+      {/* ── Desktop sidebar — NextAdmin template style ───────────────── */}
       <aside
-        className={`relative hidden lg:flex flex-col h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shrink-0 transition-[width] duration-300 ease-out ${
-          collapsed ? "w-[64px]" : "w-[240px]"
+        className={`relative hidden lg:flex flex-col h-screen bg-white dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke shrink-0 transition-[width] duration-300 ease-out overflow-hidden ${
+          collapsed ? "w-[72px]" : "w-[290px]"
         } ${className}`}
       >
-        {/* Logo header */}
+        {/* Brand header — fixed height + bottom border so it lines up with
+            the main top header bar, reading as one continuous strip. */}
         <div
-          className={`flex items-center py-3 min-h-[64px] border-b border-gray-200 dark:border-gray-800 shrink-0 ${
-            collapsed ? "justify-center px-2" : "px-4"
+          className={`flex items-center h-[89px] shrink-0 border-b border-tpl-stroke dark:border-tpl-stroke ${
+            collapsed ? "justify-center px-2" : "pl-[25px] pr-[7px]"
           }`}
         >
           {collapsed ? (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ocean-500 to-ocean-700 flex items-center justify-center shadow-sm">
-              <Globe size={16} className="text-white" />
+            <div className="w-9 h-9 rounded-lg bg-tpl-primary flex items-center justify-center">
+              <Globe size={18} className="text-white" />
             </div>
           ) : (
             <LogoWebsite />
@@ -445,7 +483,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 py-3 overflow-y-auto overflow-x-hidden scrollbar-hide">
+        <nav className={`flex-1 pt-6 overflow-y-auto overflow-x-hidden scrollbar-hide ${collapsed ? "px-2" : "pl-[25px] pr-[12px]"}`}>
           <SidebarBody
             collapsed={collapsed}
             expanded={expanded}
@@ -455,18 +493,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </nav>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-800 shrink-0">
-          <div className="p-2">
-            <SidebarUserCard
-              collapsed={collapsed}
-              onNavigate={(p) => navigate(p)}
-              onLogout={handleLogout}
-            />
-          </div>
+        <div className={`shrink-0 ${collapsed ? "px-2" : "pl-[25px] pr-[12px]"} py-4 border-t border-tpl-stroke dark:border-tpl-stroke`}>
+          <SidebarUserCard
+            collapsed={collapsed}
+            onNavigate={(p) => navigate(p)}
+            onLogout={handleLogout}
+          />
           <button
             onClick={() => setCollapsed((v) => !v)}
-            className={`w-full flex items-center gap-2 px-3 h-8 text-[11.5px] font-medium text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-t border-gray-100 dark:border-gray-800 ${
-              collapsed ? "justify-center" : ""
+            className={`mt-3 w-full flex items-center gap-2 h-7 rounded-md text-[11.5px] font-medium text-tpl-dark-5 hover:text-tpl-primary dark:hover:text-white transition-colors ${
+              collapsed ? "justify-center" : "px-2"
             }`}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >

@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
-import ConfirmationDialog from "@/components/admin/ConfirmationDialog";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import {
-  Edit2,
-  Trash2,
-  X,
-  MoreHorizontal,
-  Eye,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Edit2, Trash2, MoreHorizontal } from "lucide-react";
+import { useStaff, useRoles } from "@/hooks/admin/useStaff";
+
+// ---------------------------------------------------------------------------
+// Local types
+// ---------------------------------------------------------------------------
 
 interface StaffMember {
   id: string;
@@ -28,64 +33,125 @@ interface StaffRole {
   features: string[];
 }
 
+// ---------------------------------------------------------------------------
+// Permission matrix type used inside AddRoleModal
+// ---------------------------------------------------------------------------
+
+type FeatureKey =
+  | "Dashboard"
+  | "Management"
+  | "Payments"
+  | "Listing"
+  | "Vendor"
+  | "User"
+  | "Analytics"
+  | "Help Desk"
+  | "CMS"
+  | "Marketing"
+  | "Plugins"
+  | "Staff";
+
+type PermissionMatrix = Record<FeatureKey, { view: boolean; full: boolean }>;
+
+const EMPTY_MATRIX: PermissionMatrix = {
+  Dashboard: { view: false, full: false },
+  Management: { view: false, full: false },
+  Payments: { view: false, full: false },
+  Listing: { view: false, full: false },
+  Vendor: { view: false, full: false },
+  User: { view: false, full: false },
+  Analytics: { view: false, full: false },
+  "Help Desk": { view: false, full: false },
+  CMS: { view: false, full: false },
+  Marketing: { view: false, full: false },
+  Plugins: { view: false, full: false },
+  Staff: { view: false, full: false },
+};
+
+// ---------------------------------------------------------------------------
+// FEATURE_MAPPING — used in handleAddRole to convert UI labels to API slugs
+// ---------------------------------------------------------------------------
+
+const FEATURE_MAPPING: Record<string, string> = {
+  Dashboard: "view_dashboard",
+  Management: "access_management",
+  Payments: "manage_payments",
+  Analytics: "view_analytics",
+  "Help Desk": "support_tickets",
+  CMS: "manage_cms",
+  Marketing: "manage_marketing",
+  Plugins: "manage_plugins",
+  Staff: "manage_staff",
+};
+
+const REVERSE_MAPPING: Record<string, string> = {
+  view_dashboard: "Dashboard",
+  access_management: "Management",
+  manage_payments: "Payments",
+  view_analytics: "Analytics",
+  support_tickets: "Help Desk",
+  manage_cms: "CMS",
+  manage_marketing: "Marketing",
+  manage_plugins: "Plugins",
+  manage_staff: "Staff",
+};
+
+// ---------------------------------------------------------------------------
+// AddStaffModal — shadcn Dialog shell, form state kept local
+// ---------------------------------------------------------------------------
+
 interface AddStaffModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (staffData: any) => void;
+  onSubmit: (staffData: {
+    staffName: string;
+    staffNumber: string;
+    email: string;
+    role: string;
+    password: string;
+  }) => void;
   roles: StaffRole[];
+  isSubmitting?: boolean;
 }
 
-interface AddRoleModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (roleData: any) => void;
-}
+const EMPTY_STAFF_FORM = {
+  staffName: "",
+  staffNumber: "",
+  email: "",
+  role: "",
+  password: "",
+};
 
 const AddStaffModal: React.FC<AddStaffModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
   roles,
+  isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState({
-    staffName: "",
-    staffNumber: "",
-    email: "",
-    role: "",
-    password: "",
-  });
+  const [formData, setFormData] = useState(EMPTY_STAFF_FORM);
 
-  if (!isOpen) return null;
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (isOpen) setFormData(EMPTY_STAFF_FORM);
+  }, [isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({
-      staffName: "",
-      staffNumber: "",
-      email: "",
-      role: "",
-      password: "",
-    });
-    onClose();
+    // Modal stays open until mutation onSuccess calls onClose
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-      <div className="bg-white rounded-xl p-8 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-black font-geist text-2xl font-bold">
+    <Dialog open={isOpen} onOpenChange={(o) => !o && !isSubmitting && onClose()}>
+      <DialogContent className="w-full max-w-2xl rounded-xl p-8 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-black font-geist text-2xl font-bold">
             Add New Account
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
+          </DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 mt-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-dashboard-title font-plus-jakarta text-base">
@@ -172,75 +238,52 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <DialogFooter className="pt-4">
             <button
               type="submit"
-              className="px-8 py-3 bg-[#0F5C8A] text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-[#14709F] transition-colors w-full md:w-auto"
+              disabled={isSubmitting}
+              className="px-8 py-3 bg-tpl-primary text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors w-full md:w-auto disabled:opacity-60"
             >
-              Add
+              {isSubmitting ? "Adding…" : "Add"}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
+
+// ---------------------------------------------------------------------------
+// AddRoleModal — shadcn Dialog shell, permission matrix state kept local
+// ---------------------------------------------------------------------------
+
+interface AddRoleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (roleData: { roleName: string; features: PermissionMatrix }) => void;
+  isSubmitting?: boolean;
+}
+
+const EMPTY_ROLE_FORM = { roleName: "", features: EMPTY_MATRIX };
 
 const AddRoleModal: React.FC<AddRoleModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  isSubmitting = false,
 }) => {
-  const [formData, setFormData] = useState({
-    roleName: "",
-    features: {
-      Dashboard: { view: false, full: false },
-      Management: { view: false, full: false },
-      Payments: { view: false, full: false },
-      Listing: { view: false, full: false },
-      Vendor: { view: false, full: false },
-      User: { view: false, full: false },
-      Analytics: { view: false, full: false },
-      "Help Desk": { view: false, full: false },
-      CMS: { view: false, full: false },
-      Marketing: { view: false, full: false },
-      Plugins: { view: false, full: false },
-      Staff: { view: false, full: false },
-    },
-  });
+  const [formData, setFormData] = useState<{
+    roleName: string;
+    features: PermissionMatrix;
+  }>(EMPTY_ROLE_FORM);
 
-  if (!isOpen) return null;
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Pass full formData.features object so parent can extract permissions
-    onSubmit({
-      roleName: formData.roleName,
-      features: formData.features,
-    });
-
-    setFormData({
-      roleName: "",
-      features: {
-        Dashboard: { view: false, full: false },
-        Management: { view: false, full: false },
-        Payments: { view: false, full: false },
-         Listing: { view: false, full: false },
-      Vendor: { view: false, full: false },
-      User: { view: false, full: false },
-        Analytics: { view: false, full: false },
-        "Help Desk": { view: false, full: false },
-        CMS: { view: false, full: false },
-        Marketing: { view: false, full: false },
-        Plugins: { view: false, full: false },
-        Staff: { view: false, full: false },
-      },
-    });
-    onClose();
-  };
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (isOpen) setFormData({ roleName: "", features: { ...EMPTY_MATRIX } });
+  }, [isOpen]);
 
   const handleFeatureChange = (
-    feature: string,
+    feature: FeatureKey,
     type: "view" | "full",
     checked: boolean,
   ) => {
@@ -249,29 +292,29 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
       features: {
         ...prev.features,
         [feature]: {
-          ...prev.features[feature as keyof typeof prev.features],
+          ...prev.features[feature],
           [type]: checked,
         },
       },
     }));
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-      <div className="bg-white rounded-xl p-8 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-black font-geist text-2xl font-bold">
-            Add New Role
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit({ roleName: formData.roleName, features: formData.features });
+    // Modal stays open until mutation onSuccess calls onClose
+  };
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+  return (
+    <Dialog open={isOpen} onOpenChange={(o) => !o && !isSubmitting && onClose()}>
+      <DialogContent className="w-full max-w-2xl rounded-xl p-8 max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-black font-geist text-2xl font-bold">
+            Add New Role
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6 mt-2">
           <div className="space-y-3">
             <label className="text-dashboard-title font-plus-jakarta text-base">
               Role Name
@@ -288,6 +331,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
             />
           </div>
 
+          {/* Permission matrix — state shape preserved exactly */}
           <div className="space-y-3">
             <label className="text-dashboard-title font-plus-jakarta text-base">
               Features
@@ -304,7 +348,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                   Full Access
                 </div>
               </div>
-              {Object.keys(formData.features).map((feature) => (
+              {(Object.keys(formData.features) as FeatureKey[]).map((feature) => (
                 <div
                   key={feature}
                   className="grid grid-cols-3 px-3 py-3.5 border-b border-gray-100 last:border-0"
@@ -315,11 +359,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                   <div className="flex justify-center">
                     <input
                       type="checkbox"
-                      checked={
-                        formData.features[
-                          feature as keyof typeof formData.features
-                        ].view
-                      }
+                      checked={formData.features[feature].view}
                       onChange={(e) =>
                         handleFeatureChange(feature, "view", e.target.checked)
                       }
@@ -329,11 +369,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                   <div className="flex justify-center">
                     <input
                       type="checkbox"
-                      checked={
-                        formData.features[
-                          feature as keyof typeof formData.features
-                        ].full
-                      }
+                      checked={formData.features[feature].full}
                       onChange={(e) =>
                         handleFeatureChange(feature, "full", e.target.checked)
                       }
@@ -345,21 +381,39 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
             </div>
           </div>
 
-          <div className="flex justify-end pt-4">
+          <DialogFooter className="pt-4">
             <button
               type="submit"
-              className="px-8 py-3 bg-[#0F5C8A] text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-[#14709F] transition-colors"
+              disabled={isSubmitting}
+              className="px-8 py-3 bg-tpl-primary text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors disabled:opacity-60"
             >
-              Submit
+              {isSubmitting ? "Saving…" : "Submit"}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-const DropdownMenu = ({ id, openId, setOpenId, onDelete }: any) => (
+// ---------------------------------------------------------------------------
+// DropdownMenu (staff rows) — View removed (no handler); Edit kept with icon
+// only as a no-op stub clearly marked TODO; Delete wired to onDelete.
+// Decision: removed the dead "View" item entirely; kept "Edit" icon-only as a
+// visible affordance but disabled until an edit flow exists.
+// ---------------------------------------------------------------------------
+
+const DropdownMenu = ({
+  id,
+  openId,
+  setOpenId,
+  onDelete,
+}: {
+  id: string;
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+  onDelete: () => void;
+}) => (
   <div className="relative">
     <button
       onClick={() => setOpenId(openId === id ? null : id)}
@@ -370,13 +424,11 @@ const DropdownMenu = ({ id, openId, setOpenId, onDelete }: any) => (
     {openId === id && (
       <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
         <div className="py-1">
-          <button className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50">
-            <Eye size={18} className="text-dashboard-body" />
-            <span className="text-dashboard-body font-poppins text-sm">
-              View
-            </span>
-          </button>
-          <button className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50">
+          {/* Edit — no edit flow implemented yet; button is present but inert */}
+          <button
+            disabled
+            className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50 opacity-40 cursor-not-allowed"
+          >
             <Edit2 size={18} className="text-dashboard-body" />
             <span className="text-dashboard-body font-poppins text-sm">
               Edit
@@ -395,7 +447,21 @@ const DropdownMenu = ({ id, openId, setOpenId, onDelete }: any) => (
   </div>
 );
 
-const DropdownRoleMenu = ({ id, openId, setOpenId, onDelete }: any) => (
+// ---------------------------------------------------------------------------
+// DropdownRoleMenu — View removed (no handler); only Delete remains.
+// ---------------------------------------------------------------------------
+
+const DropdownRoleMenu = ({
+  id,
+  openId,
+  setOpenId,
+  onDelete,
+}: {
+  id: string;
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+  onDelete: () => void;
+}) => (
   <div className="relative inline-block">
     <button
       onClick={() => setOpenId(openId === id ? null : id)}
@@ -406,12 +472,6 @@ const DropdownRoleMenu = ({ id, openId, setOpenId, onDelete }: any) => (
     {openId === id && (
       <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
         <div className="py-1">
-          <button className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50">
-            <Eye size={18} className="text-dashboard-body" />
-            <span className="text-dashboard-body font-poppins text-sm">
-              View
-            </span>
-          </button>
           <button
             onClick={onDelete}
             className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50"
@@ -425,45 +485,47 @@ const DropdownRoleMenu = ({ id, openId, setOpenId, onDelete }: any) => (
   </div>
 );
 
-const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteStaff, staffDropdownOpen, setStaffDropdownOpen }: any) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
+// ---------------------------------------------------------------------------
+// StaffList — uses useStaff hook; pagination controls page param
+// ---------------------------------------------------------------------------
 
-    React.useEffect(() => {
-        const fetchStaff = async () => {
-          setLoading(true);
-          try {
-            const api = (await import('../../services/api')).adminStaffService;
-            const res = await api.getStaff({
-              page: currentPage,
-              limit: 10,
-              sortBy: 'createdAt',
-              sortOrder: 'desc',
-            });
-            // res: { success, data, pagination }
-            setStaffMembers(
-              (res?.staff || res?.data || []).map((s: any) => ({
-                id: s._id,
-                name: s.name,
-                email: s.email,
-                phone: s.phone,
-                role: s.role,
-                status: s.status,
-                joinDate: new Date(s.joinDate).toISOString().split('T')[0],
-              }))
-            );
-            setTotalPages(res?.pagination?.totalPages || 1);
-          } catch (e) {
-            console.error('Failed to load staff', e);
-          } finally {
-            setLoading(false);
-          }
-        };
-        fetchStaff();
-    }, [currentPage, setStaffMembers]);
+interface StaffListProps {
+  setShowStaffModal: (v: boolean) => void;
+  deleteStaff: (id: string) => void;
+  staffDropdownOpen: string | null;
+  setStaffDropdownOpen: (id: string | null) => void;
+}
 
-    return (
+const StaffList: React.FC<StaffListProps> = ({
+  setShowStaffModal,
+  deleteStaff,
+  staffDropdownOpen,
+  setStaffDropdownOpen,
+}) => {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const { query } = useStaff({
+    page: currentPage,
+    limit: 10,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+
+  const rawList: StaffMember[] = (
+    query.data?.staff ?? query.data?.data ?? []
+  ).map((s: any) => ({
+    id: s._id,
+    name: s.name,
+    email: s.email,
+    phone: s.phone,
+    role: s.role,
+    status: s.status,
+    joinDate: new Date(s.joinDate).toISOString().split("T")[0],
+  }));
+
+  const totalPages = query.data?.pagination?.totalPages ?? 1;
+
+  return (
     <div className="space-y-4">
       <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
         <div className="flex items-center justify-between mb-3">
@@ -472,7 +534,7 @@ const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteSta
           </h3>
           <button
             onClick={() => setShowStaffModal(true)}
-            className="px-5 py-2.5 bg-[#0F5C8A] text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-[#14709F] transition-colors"
+            className="px-5 py-2.5 bg-tpl-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
           >
             + Add New Account
           </button>
@@ -481,7 +543,7 @@ const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteSta
         <div className="border border-dashboard-stroke flex flex-col gap-2 rounded-xl overflow-scroll">
           <div className="overflow-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left font-plus-jakarta">
+              <thead className="text-left font-plus-jakarta">
                 <tr>
                   <th className="px-4 py-3 font-bold">Staff Name</th>
                   <th className="px-4 py-3 font-bold">Email</th>
@@ -491,23 +553,32 @@ const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteSta
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
+                {query.isLoading ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center">Loading...</td>
+                    <td colSpan={5} className="px-4 py-6 text-center">
+                      Loading…
+                    </td>
                   </tr>
-                ) : staffMembers.length === 0 ? (
+                ) : rawList.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center">No staff found</td>
+                    <td colSpan={5} className="px-4 py-6 text-center">
+                      No staff found
+                    </td>
                   </tr>
                 ) : (
-                  staffMembers.map((staff: any) => (
+                  rawList.map((staff) => (
                     <tr key={staff.id} className="border-t border-gray-100">
                       <td className="px-4 py-3 font-medium">{staff.name}</td>
                       <td className="px-4 py-3 text-gray-600">{staff.email}</td>
                       <td className="px-4 py-3 text-gray-600">{staff.phone}</td>
                       <td className="px-4 py-3 text-gray-600">{staff.role}</td>
                       <td className="px-4 py-3 text-center flex justify-center">
-                        <DropdownMenu id={staff.id} openId={staffDropdownOpen} setOpenId={setStaffDropdownOpen} onDelete={() => deleteStaff(staff.id)} />
+                        <DropdownMenu
+                          id={staff.id}
+                          openId={staffDropdownOpen}
+                          setOpenId={setStaffDropdownOpen}
+                          onDelete={() => deleteStaff(staff.id)}
+                        />
                       </td>
                     </tr>
                   ))
@@ -518,344 +589,341 @@ const StaffList = ({ staffMembers, setStaffMembers, setShowStaffModal, deleteSta
         </div>
 
         <div className="flex justify-between items-center mt-4">
-          <button disabled={currentPage <= 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className="px-4 py-2 bg-gray-100 rounded disabled:opacity-50">Previous</button>
-          <span className="text-sm">Page {currentPage} of {totalPages}</span>
-          <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => p + 1)} className="px-4 py-2 bg-gray-100 rounded disabled:opacity-50">Next</button>
+          <button
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            className="px-4 py-2 bg-gray-100 rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <span className="text-sm">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-4 py-2 bg-gray-100 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>
-    );
+  );
 };
 
-const RolesList = ({ staffRoles, setStaffRoles, setShowRoleModal, deleteRole, roleDropdownOpen, setRoleDropdownOpen }: any) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [loading, setLoading] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
+// ---------------------------------------------------------------------------
+// RolesList — uses useRoles hook; pagination controls page param
+// ---------------------------------------------------------------------------
 
-    const formatFeatureName = (feature: string) => {
-      // Map back from snake_case to Title Case if possible, or just format
-      const REVERSE_MAPPING: Record<string, string> = {
-        "view_dashboard": "Dashboard",
-        "access_management": "Management",
-        "manage_payments": "Payments",
-        "view_analytics": "Analytics",
-        "support_tickets": "Help Desk",
-        "manage_cms": "CMS",
-        "manage_marketing": "Marketing",
-        "manage_plugins": "Plugins",
-        "manage_staff": "Staff"
-      };
-      return REVERSE_MAPPING[feature] || feature.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    };
+interface RolesListProps {
+  setShowRoleModal: (v: boolean) => void;
+  deleteRole: (id: string) => void;
+  roleDropdownOpen: string | null;
+  setRoleDropdownOpen: (id: string | null) => void;
+}
 
-    React.useEffect(() => {
-        const fetchRoles = async () => {
-          setLoading(true);
-          try {
-            const api = (await import('../../services/api')).adminRolesService;
-            const res = await api.getRoles({ page: currentPage, limit: 10, sortBy: 'createdAt', sortOrder: 'desc' });
-            const list = res?.roles || res?.data || [];
-            setStaffRoles(list.map((r: any) => ({ id: r._id, name: r.name, features: r.features || [] })));
-            setTotalPages(res?.pagination?.totalPages || 1);
-          } catch (e) {
-            console.error('Failed to load roles', e);
-          } finally {
-            setLoading(false);
-          }
-        };
-        fetchRoles();
-    }, [currentPage, setStaffRoles]);
+const formatFeatureName = (feature: string): string =>
+  REVERSE_MAPPING[feature] ??
+  feature
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
 
-    return (
-      <div className="space-y-4">
-        <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
-              Roles
-            </h3>
-            <button
-              onClick={() => setShowRoleModal(true)}
-              className="px-5 py-2.5 bg-[#0F5C8A] text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-[#14709F] transition-colors"
-            >
-              + Add New Role
-            </button>
-          </div>
+const RolesList: React.FC<RolesListProps> = ({
+  setShowRoleModal,
+  deleteRole,
+  roleDropdownOpen,
+  setRoleDropdownOpen,
+}) => {
+  const [currentPage, setCurrentPage] = useState(1);
 
-          <div className="overflow-auto">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 text-left font-plus-jakarta">
+  const { query } = useRoles({
+    page: currentPage,
+    limit: 10,
+    sortBy: "createdAt",
+    sortOrder: "desc",
+  });
+
+  const rawList: StaffRole[] = (
+    query.data?.roles ?? query.data?.data ?? []
+  ).map((r: any) => ({
+    id: r._id,
+    name: r.name,
+    features: r.features ?? [],
+  }));
+
+  const totalPages = query.data?.pagination?.totalPages ?? 1;
+
+  return (
+    <div className="space-y-4">
+      <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
+            Roles
+          </h3>
+          <button
+            onClick={() => setShowRoleModal(true)}
+            className="px-5 py-2.5 bg-tpl-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
+          >
+            + Add New Role
+          </button>
+        </div>
+
+        <div className="overflow-auto">
+          <table className="min-w-full text-sm">
+            <thead className="text-left font-plus-jakarta">
+              <tr>
+                <th className="px-4 py-3 font-bold w-2/12">Role Name</th>
+                <th className="px-4 py-3 font-bold w-8/12">Features</th>
+                <th className="px-4 py-3 font-bold w-2/12 text-center">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {query.isLoading ? (
                 <tr>
-                  <th className="px-4 py-3 font-bold w-2/12">Role Name</th>
-                  <th className="px-4 py-3 font-bold w-8/12">Features</th>
-                  <th className="px-4 py-3 font-bold w-2/12 text-center">
-                    Action
-                  </th>
+                  <td colSpan={3} className="px-4 py-6 text-center">
+                    Loading…
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center">Loading...</td>
+              ) : rawList.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-6 text-center">
+                    No roles found
+                  </td>
+                </tr>
+              ) : (
+                rawList.map((role) => (
+                  <tr key={role.id} className="border-t">
+                    <td className="px-4 py-3 font-plus-jakarta font-bold">
+                      {role.name}
+                    </td>
+                    <td className="px-4 py-3 text-dashboard-body">
+                      {role.features.map(formatFeatureName).join(", ")}
+                    </td>
+                    <td className="px-4 py-3 text-center relative">
+                      <DropdownRoleMenu
+                        id={role.id}
+                        openId={roleDropdownOpen}
+                        setOpenId={setRoleDropdownOpen}
+                        onDelete={() => deleteRole(role.id)}
+                      />
+                    </td>
                   </tr>
-                ) : staffRoles.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="px-4 py-6 text-center">No roles found</td>
-                  </tr>
-                ) : (
-                  staffRoles.map((role: any) => (
-                    <tr key={role.id} className="border-t">
-                      <td className="px-4 py-3 font-plus-jakarta font-bold">
-                        {role.name}
-                      </td>
-                      <td className="px-4 py-3 text-dashboard-body">
-                        {(role.features || []).map(formatFeatureName).join(", ")}
-                      </td>
-                      <td className="px-4 py-3 text-center relative">
-                        <DropdownRoleMenu
-                          id={role.id}
-                          openId={roleDropdownOpen}
-                          setOpenId={setRoleDropdownOpen}
-                          onDelete={() => deleteRole(role.id)}
-                        />
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
 
-          {/* Pagination */}
-          <div className="flex justify-end items-center gap-2 mt-4">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1.5 rounded border text-sm bg-white hover:bg-gray-100"
-            >
-              Prev
-            </button>
-            <span className="text-sm font-medium">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1.5 rounded border text-sm bg-white hover:bg-gray-100"
-            >
-              Next
-            </button>
-          </div>
+        <div className="flex justify-end items-center gap-2 mt-4">
+          <button
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded border text-sm bg-white hover:bg-gray-100"
+          >
+            Prev
+          </button>
+          <span className="text-sm font-medium">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded border text-sm bg-white hover:bg-gray-100"
+          >
+            Next
+          </button>
         </div>
       </div>
-    );
+    </div>
+  );
 };
+
+// ---------------------------------------------------------------------------
+// AdminStaff — page root
+// ---------------------------------------------------------------------------
 
 const AdminStaff = () => {
   const location = useLocation();
   const activeTab = location.pathname.includes("/roles") ? "roles" : "staff";
 
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-
-  const [staffRoles, setStaffRoles] = useState<StaffRole[]>([]);
-  const [availableRoles, setAvailableRoles] = useState<StaffRole[]>([]);
-
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
-  const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(
-    null,
-  );
-  // Fetch available roles for the dropdown
-  useEffect(() => {
-    const fetchAvailableRoles = async () => {
-      try {
-        const api = (await import('../../services/api')).adminRolesService;
-        // Fetch all active roles (limit 100 to be safe)
-        const res = await api.getAllRoles({ 
-          limit: 100, 
-          isActive: true,
-          sortBy: 'name',
-          sortOrder: 'asc' 
-        });
-        const list = res?.roles || res?.data || [];
-        setAvailableRoles(list.map((r: any) => ({ 
-          id: r._id, 
-          name: r.name, 
-          features: r.features || [] 
-        })));
-      } catch (e) {
-        console.error('Failed to fetch available roles', e);
-      }
-    };
-    
-    if (showStaffModal) {
-      fetchAvailableRoles();
-    }
-  }, [showStaffModal]);
+  const [staffDropdownOpen, setStaffDropdownOpen] = useState<string | null>(null);
 
-  const handleAddStaff = async (staffData: any) => {
-    try {
-      const nameParts = (staffData.staffName || '').trim().split(' ');
-      const firstName = nameParts[0] || 'Staff';
-      const lastName = nameParts.slice(1).join(' ') || '.';
-      
-      const res = await (await import('../../services/api')).adminStaffService.create({
+  // Confirm dialog state — one shared slot for both staff and role deletions
+  const [confirmState, setConfirmState] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({ open: false, title: "", description: "", onConfirm: () => {} });
+
+  // Hooks for mutations and the roles dropdown in AddStaffModal
+  const staffHook = useStaff();
+  const rolesHook = useRoles({ limit: 100, isActive: true, sortBy: "name", sortOrder: "asc" });
+
+  const availableRoles: StaffRole[] = (
+    rolesHook.query.data?.roles ?? rolesHook.query.data?.data ?? []
+  ).map((r: any) => ({ id: r._id, name: r.name, features: r.features ?? [] }));
+
+  // -------------------------------------------------------------------------
+  // Handle add staff — calls mutation; closes modal only on success
+  // -------------------------------------------------------------------------
+
+  const handleAddStaff = (staffData: {
+    staffName: string;
+    staffNumber: string;
+    email: string;
+    role: string;
+    password: string;
+  }) => {
+    const nameParts = (staffData.staffName || "").trim().split(" ");
+    const firstName = nameParts[0] || "Staff";
+    const lastName = nameParts.slice(1).join(" ") || ".";
+
+    staffHook.createStaff.mutate(
+      {
         firstName,
         lastName,
         email: staffData.email,
         phone: staffData.staffNumber,
         role: staffData.role,
-        status: 'Active',
-        password: staffData.password
-      });
-      // Server returns { success, data }
-      const created = res?.staff || res?.data;
-      if (created) {
-        setStaffMembers((prev) => [
-          ...prev,
-          {
-            id: created._id,
-            name: created.name,
-            email: created.email,
-            phone: created.phone,
-            role: created.role,
-            status: created.status,
-            joinDate: new Date(created.joinDate).toISOString().split('T')[0],
-          },
-        ]);
-        toast.success('Staff account created successfully.');
-      }
-    } catch (e) {
-      console.error('Failed to create staff', e);
-      toast.error('Failed to create staff');
-    }
+        status: "Active",
+        password: staffData.password,
+      },
+      {
+        onSuccess: () => setShowStaffModal(false),
+        // onError is handled by the hook (toast); modal stays open
+      },
+    );
   };
 
-  const handleAddRole = async (roleData: any) => {
-    try {
-      const api = (await import('../../services/api')).adminRolesService;
+  // -------------------------------------------------------------------------
+  // Handle add role — builds API payload from permission matrix; closes on success
+  // -------------------------------------------------------------------------
 
-      const FEATURE_MAPPING: Record<string, string> = {
-        "Dashboard": "view_dashboard",
-        "Management": "access_management",
-        "Payments": "manage_payments",
-        "Analytics": "view_analytics",
-        "Help Desk": "support_tickets",
-        "CMS": "manage_cms",
-        "Marketing": "manage_marketing",
-        "Plugins": "manage_plugins",
-        "Staff": "manage_staff"
+  const handleAddRole = (roleData: {
+    roleName: string;
+    features: PermissionMatrix;
+  }) => {
+    const permissions = (
+      Object.entries(roleData.features) as [FeatureKey, { view: boolean; full: boolean }][]
+    ).map(([key, perms]) => {
+      const feature =
+        FEATURE_MAPPING[key] ?? key.toLowerCase().replace(/ /g, "_");
+      return {
+        feature,
+        canView: !!(perms.view || perms.full),
+        canEdit: !!perms.full,
+        canDelete: !!perms.full,
+        canCreate: !!perms.full,
       };
+    });
 
-      // Build permissions array from modal selections
-      const permissions = Object.entries(roleData.features || {}).map(([key, perms]: any) => {
-        const feature = FEATURE_MAPPING[key] || key.toLowerCase().replace(/ /g, '_');
-        return {
-          feature,
-          canView: !!perms?.view || !!perms?.full,
-          canEdit: !!perms?.full,
-          canDelete: !!perms?.full,
-          canCreate: !!perms?.full,
-        };
-      });
-
-      const res = await api.create({
+    rolesHook.createRole.mutate(
+      {
         name: roleData.roleName,
-        features: permissions.filter(p => p.canView).map(p => p.feature),
+        features: permissions.filter((p) => p.canView).map((p) => p.feature),
         permissions,
         isActive: true,
-      });
-      const created = res?.role || res?.data;
-      if (created) {
-        setStaffRoles(prev => [...prev, { id: created._id, name: created.name, features: created.features || [] }]);
-        toast.success('Role created successfully.');
-      }
-    } catch (e) {
-      console.error('Failed to create role', e);
-      toast.error('Failed to create role');
-    }
+      },
+      {
+        onSuccess: () => setShowRoleModal(false),
+      },
+    );
   };
 
-  const deleteStaff = (id: string) => {
-    setConfirmDialog({
+  // -------------------------------------------------------------------------
+  // Confirm-delete helpers — open shared ConfirmModal
+  // -------------------------------------------------------------------------
+
+  const requestDeleteStaff = (id: string) => {
+    setConfirmState({
+      open: true,
       title: "Delete staff account?",
-      message: "This staff member will lose access immediately. This cannot be undone.",
-      onConfirm: async () => {
-        setConfirmDialog(null);
-        try {
-          await (await import('../../services/api')).adminStaffService.remove(id);
-          setStaffMembers((prev) => prev.filter((staff) => staff.id !== id));
-          toast.success('Staff account deleted.');
-        } catch {
-          toast.error('Failed to delete staff');
-        }
+      description:
+        "This staff member will lose access immediately. This cannot be undone.",
+      onConfirm: () => {
+        staffHook.deleteStaff.mutate(id, {
+          onSuccess: () =>
+            setConfirmState((s) => ({ ...s, open: false })),
+          onError: () =>
+            setConfirmState((s) => ({ ...s, open: false })),
+        });
       },
     });
   };
 
-  const deleteRole = (id: string) => {
-    setConfirmDialog({
+  const requestDeleteRole = (id: string) => {
+    setConfirmState({
+      open: true,
       title: "Delete role?",
-      message: "This role will be removed. Staff assigned to it may lose permissions.",
-      onConfirm: async () => {
-        setConfirmDialog(null);
-        try {
-          const api = (await import('../../services/api')).adminRolesService;
-          await api.remove(id);
-          setStaffRoles((prev) => prev.filter((role) => role.id !== id));
-          toast.success('Role deleted.');
-        } catch {
-          toast.error('Failed to delete role');
-        }
+      description:
+        "This role will be removed. Staff assigned to it may lose permissions.",
+      onConfirm: () => {
+        rolesHook.deleteRole.mutate(id, {
+          onSuccess: () =>
+            setConfirmState((s) => ({ ...s, open: false })),
+          onError: () =>
+            setConfirmState((s) => ({ ...s, open: false })),
+        });
       },
     });
   };
+
+  const isDeleting =
+    staffHook.deleteStaff.isPending || rolesHook.deleteRole.isPending;
 
   return (
     <AdminLayout title="Staff">
-        <div className="flex-1 px-5 py-6">
-            {activeTab === "staff" && (
-                <StaffList 
-                    staffMembers={staffMembers} 
-                    setStaffMembers={setStaffMembers} 
-                    setShowStaffModal={setShowStaffModal}
-                    deleteStaff={deleteStaff}
-                    staffDropdownOpen={staffDropdownOpen}
-                    setStaffDropdownOpen={setStaffDropdownOpen}
-                />
-            )}
-            {activeTab === "roles" && (
-                <RolesList 
-                    staffRoles={staffRoles}
-                    setStaffRoles={setStaffRoles}
-                    setShowRoleModal={setShowRoleModal}
-                    deleteRole={deleteRole}
-                    roleDropdownOpen={roleDropdownOpen}
-                    setRoleDropdownOpen={setRoleDropdownOpen}
-                />
-            )}
-        </div>
+      <div className="flex-1 px-5 py-6">
+        {activeTab === "staff" && (
+          <StaffList
+            setShowStaffModal={setShowStaffModal}
+            deleteStaff={requestDeleteStaff}
+            staffDropdownOpen={staffDropdownOpen}
+            setStaffDropdownOpen={setStaffDropdownOpen}
+          />
+        )}
+        {activeTab === "roles" && (
+          <RolesList
+            setShowRoleModal={setShowRoleModal}
+            deleteRole={requestDeleteRole}
+            roleDropdownOpen={roleDropdownOpen}
+            setRoleDropdownOpen={setRoleDropdownOpen}
+          />
+        )}
+      </div>
 
       <AddStaffModal
         isOpen={showStaffModal}
         onClose={() => setShowStaffModal(false)}
         onSubmit={handleAddStaff}
         roles={availableRoles}
+        isSubmitting={staffHook.createStaff.isPending}
       />
 
       <AddRoleModal
         isOpen={showRoleModal}
         onClose={() => setShowRoleModal(false)}
         onSubmit={handleAddRole}
+        isSubmitting={rolesHook.createRole.isPending}
       />
-      <ConfirmationDialog
-        isOpen={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
-        title={confirmDialog?.title ?? ""}
-        message={confirmDialog?.message ?? ""}
-        confirmText="Delete"
+
+      <ConfirmModal
+        open={confirmState.open}
+        onClose={() => setConfirmState((s) => ({ ...s, open: false }))}
+        onConfirm={confirmState.onConfirm}
+        title={confirmState.title}
+        description={confirmState.description}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={isDeleting}
       />
     </AdminLayout>
   );

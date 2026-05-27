@@ -1,7 +1,5 @@
 import "./admin.css";
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // BrowserRouter intentionally NOT imported — admin mounts inside the parent
@@ -61,8 +59,8 @@ export const AdminApp = () => (
     <ThemeProvider defaultTheme="light" storageKey="travel-dashboard-theme">
       <AuthProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
+          {/* Toasts render via the global <Sonner/> mounted in App.tsx — a
+              second instance here would double-render every admin toast. */}
           <AdminSEOMeta />
           <Routes>
               {/* Public Routes */}

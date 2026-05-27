@@ -4,53 +4,46 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Plus,
-  CheckCircle,
-  AlertCircle,
   Pencil,
   X as CloseIcon,
   Tag,
-  AlertTriangle,
+  Trash2,
+  XCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, type OfferDTO, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn } from "@/lib/utils";
-import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
-import { TabStrip, EmptyState, ConfirmModal } from "@/components/shared";
+import { TabStrip, ConfirmModal } from "@/components/shared";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  AdminDataTable,
+  type ColumnDef,
+  type RowAction,
+} from "@/components/admin/AdminDataTable";
 
 const Offers = () => {
   const navigate = useNavigate();
   const { token: authToken } = useAuth();
   const token = authToken ?? undefined;
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertType, setAlertType] = useState<"success" | "error">("success");
-  const [alertMessage, setAlertMessage] = useState("");
   const [tab, setTab] = useState<"pending" | "approved" | "cancelled">("pending");
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<OfferDTO | null>(null);
   const [editForm, setEditForm] = useState<Partial<OfferDTO>>({});
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const notify = (type: "success" | "error", msg: string) => {
-    setAlertType(type);
-    setAlertMessage(msg);
-    setShowAlert(true);
-    setTimeout(() => setShowAlert(false), 4000);
-  };
-
   const offersKey = ["offers", "tab", tab] as const;
-  const { data: items = [], isLoading: loading } = useQuery<OfferDTO[]>({
+  const { data: items = [], isLoading, isError, refetch } = useQuery<OfferDTO[]>({
     queryKey: offersKey,
     queryFn: async () => {
       try {
         const res = await offersApi.list(tab, token, { mine: true });
         return Array.isArray((res as any).data) ? (res as any).data : [];
       } catch (e: any) {
-        notify("error", e?.message || "Failed to load offers");
+        toast.error(e?.message || "Failed to load offers");
         throw e;
       }
     },
@@ -79,9 +72,9 @@ const Offers = () => {
         (prev ?? []).map((i) => (i._id === updated._id ? updated : i)),
       );
       setEditing(null);
-      notify("success", "Offer updated");
+      toast.success("Offer updated");
     } catch (e: any) {
-      notify("error", e?.message || "Update failed");
+      toast.error(e?.message || "Update failed");
     }
   };
 
@@ -92,7 +85,7 @@ const Offers = () => {
         (prev ?? []).filter((i) => i._id !== id),
       );
     } catch (e: any) {
-      notify("error", "Failed to cancel");
+      toast.error("Failed to cancel");
     }
   };
 
@@ -103,49 +96,101 @@ const Offers = () => {
         (prev ?? []).filter((i) => i._id !== id),
       );
     } catch (e: any) {
-      notify("error", "Failed to delete");
+      toast.error("Failed to delete");
     }
   };
+
+  /* ── Columns ── */
+  const columns: ColumnDef<OfferDTO>[] = [
+    {
+      key: "name",
+      header: "Name",
+      cell: (o) => (
+        <div className="flex items-center gap-3">
+          {o.photos?.coverUrl ? (
+            <img
+              src={
+                /^https?:\/\//i.test(o.photos.coverUrl) || o.photos.coverUrl.startsWith("data:")
+                  ? o.photos.coverUrl
+                  : `${API_BASE_URL}${o.photos.coverUrl.startsWith("/") ? "" : "/"}${o.photos.coverUrl}`
+              }
+              alt="cover"
+              className="w-10 h-10 rounded-xl object-cover shrink-0"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+              }}
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 shrink-0" />
+          )}
+          <span className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">
+            {o.name}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "category",
+      header: "Category",
+      hideBelow: "md",
+      cell: (o) => (
+        <span className="text-[12.5px] text-gray-500 dark:text-gray-400">
+          {o.category || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "regularPrice",
+      header: "Price",
+      hideBelow: "md",
+      cell: (o) => (
+        <span className="text-[12.5px] font-semibold text-gray-700 dark:text-gray-300">
+          ₹{o.regularPrice ?? "—"}
+        </span>
+      ),
+    },
+    {
+      key: "location",
+      header: "Location",
+      hideBelow: "lg",
+      cell: (o) => (
+        <span className="text-[12.5px] text-gray-500 dark:text-gray-400 truncate">
+          {[o.locality, o.city, o.state].filter(Boolean).join(", ") || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (o) => <StatusBadge status={o.status || "pending"} />,
+    },
+  ];
+
+  /* ── Row actions ── */
+  const rowActions: RowAction<OfferDTO>[] = [
+    {
+      label: "Edit",
+      icon: Pencil,
+      onClick: onEdit,
+    },
+    {
+      label: "Cancel",
+      icon: XCircle,
+      onClick: (o) => onCancelOffer(o._id!),
+      // Hidden when the offer is already cancelled
+      hidden: () => tab === "cancelled",
+    },
+    {
+      label: "Delete",
+      icon: Trash2,
+      onClick: (o) => setConfirmDelete(o._id!),
+      variant: "danger",
+    },
+  ];
 
   return (
     <DashboardLayout title="Offers">
       <div className="p-5 space-y-5">
-        {/* Alert */}
-        <AnimatePresence>
-          {showAlert && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Alert
-                className={cn(
-                  "border",
-                  alertType === "success"
-                    ? "border-green-200 bg-green-50 dark:bg-green-900/20"
-                    : "border-red-200 bg-red-50 dark:bg-red-900/20",
-                )}
-              >
-                {alertType === "success" ? (
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
-                ) : (
-                  <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                )}
-                <AlertDescription
-                  className={
-                    alertType === "success"
-                      ? "text-green-700 dark:text-green-400"
-                      : "text-red-700 dark:text-red-400"
-                  }
-                >
-                  {alertMessage}
-                </AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
           {/* Header */}
@@ -166,101 +211,25 @@ const Offers = () => {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <div className="min-w-[640px]">
-              {/* Table header */}
-              <div className="bg-gray-50 dark:bg-gray-800/50 grid grid-cols-12 gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                <div className="col-span-4">Name</div>
-                <div className="col-span-2">Category</div>
-                <div className="col-span-2">Price</div>
-                <div className="col-span-2">Location</div>
-                <div className="col-span-2">Actions</div>
-              </div>
-
-              {/* Rows */}
-              {loading ? (
-                <UniqueStaysSkeleton />
-              ) : items.length === 0 ? (
-                <EmptyState
-                  icon={Tag}
-                  title={`No ${tab} offers`}
-                  description={
-                    tab === "pending"
-                      ? "Offers awaiting approval will appear here."
-                      : tab === "approved"
-                        ? "Approved offers will appear here."
-                        : "Cancelled offers will appear here."
-                  }
-                />
-              ) : (
-                items.map((o, idx) => (
-                  <motion.div
-                    key={o._id || idx}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.04, duration: 0.18 }}
-                    className={cn(
-                      "grid grid-cols-12 gap-3 px-6 py-4 items-center hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors",
-                      idx !== items.length - 1 && "border-b border-gray-100 dark:border-gray-800/60",
-                    )}
-                  >
-                    <div className="col-span-4 flex items-center gap-3">
-                      {o.photos?.coverUrl ? (
-                        <img
-                          src={
-                            /^https?:\/\//i.test(o.photos.coverUrl) || o.photos.coverUrl.startsWith("data:")
-                              ? o.photos.coverUrl
-                              : `${API_BASE_URL}${o.photos.coverUrl.startsWith("/") ? "" : "/"}${o.photos.coverUrl}`
-                          }
-                          alt="cover"
-                          className="w-10 h-10 rounded-xl object-cover shrink-0"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 shrink-0" />
-                      )}
-                      <span className="text-[13px] font-medium text-gray-800 dark:text-gray-200 truncate">
-                        {o.name}
-                      </span>
-                    </div>
-                    <div className="col-span-2 text-[12.5px] text-gray-500 dark:text-gray-400">
-                      {o.category}
-                    </div>
-                    <div className="col-span-2 text-[12.5px] font-semibold text-gray-700 dark:text-gray-300">
-                      ₹{o.regularPrice ?? "—"}
-                    </div>
-                    <div className="col-span-2 text-[12.5px] text-gray-500 dark:text-gray-400 truncate">
-                      {[o.locality, o.city, o.state].filter(Boolean).join(", ")}
-                    </div>
-                    <div className="col-span-2 flex items-center gap-2">
-                      <button
-                        onClick={() => onEdit(o)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#14709F] transition-colors text-gray-700 dark:text-gray-300"
-                      >
-                        <Pencil size={12} /> Edit
-                      </button>
-                      {tab !== "cancelled" && (
-                        <button
-                          onClick={() => onCancelOffer(o._id!)}
-                          className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-100 transition-colors"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setConfirmDelete(o._id!)}
-                        className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
+          <AdminDataTable<OfferDTO>
+            columns={columns}
+            data={items}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage="Failed to load offers."
+            onRetry={() => refetch()}
+            emptyIcon={Tag}
+            emptyTitle={`No ${tab} offers`}
+            emptyDescription={
+              tab === "pending"
+                ? "Offers awaiting approval will appear here."
+                : tab === "approved"
+                  ? "Approved offers will appear here."
+                  : "Cancelled offers will appear here."
+            }
+            rowActions={rowActions}
+            getRowId={(row, index) => row._id ?? String(index)}
+          />
         </div>
 
         {/* Back */}

@@ -19,6 +19,7 @@ import {
   SURFACE,
 } from "@/components/offering";
 import { TabStrip, EmptyState } from "@/components/shared";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -36,6 +37,16 @@ const Offering = () => {
   // Panel
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<OfferDTO | null>(null);
+
+  // Confirm state — single object drives one ConfirmModal
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    variant: "danger" | "warning" | "info";
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setPage(1);
@@ -76,10 +87,28 @@ const Offering = () => {
   const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
   const paginated = offers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  const onDelete = async (id: string) => {
-    await offersApi.remove(id, token);
-    reload();
-    setShowDropdown(null);
+  const onDelete = (id: string) => {
+    const listing = offers.find((o) => o._id === id);
+    const name = listing?.name;
+    setConfirm({
+      title: "Delete listing?",
+      description: name
+        ? `"${name}" will be permanently removed and cannot be undone.`
+        : "This listing will be permanently removed and cannot be undone.",
+      variant: "danger",
+      confirmLabel: "Delete listing",
+      onConfirm: async () => {
+        setDeleting(true);
+        try {
+          await offersApi.remove(id, token);
+          reload();
+        } finally {
+          setDeleting(false);
+          setConfirm(null);
+          setShowDropdown(null);
+        }
+      },
+    });
   };
   const onEdit = (offer: OfferDTO) => {
     setEditing(offer);
@@ -209,6 +238,16 @@ const Offering = () => {
         initial={editing}
         onOpenChange={setPanelOpen}
         onSaved={onSaved}
+      />
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => !deleting && setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm()}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        variant={confirm?.variant}
+        isLoading={deleting}
       />
     </>
   );

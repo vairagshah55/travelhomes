@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { pluginsApi, type PluginDto } from "@/services/plugins";
 
@@ -79,9 +80,18 @@ const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
             <div className="h-px w-full bg-[#EBEBEB]"></div>
             <div className="flex items-center gap-3">
               <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving}
+                className="h-12 px-8 rounded-[60px] text-base font-medium"
+              >
+                Cancel
+              </Button>
+              <Button
                 onClick={handleSubmit}
                 disabled={saving}
-                className="h-12 px-8 bg-[#131313] text-white rounded-[60px] text-base font-medium leading-[19.2px] tracking-[-0.32px] hover:bg-[#2a2a2a]"
+                className="h-12 px-8 bg-tpl-primary hover:bg-tpl-primary/90 text-white rounded-[60px] text-base font-medium"
               >
                 {saving ? "Saving..." : "Submit"}
               </Button>
@@ -194,17 +204,6 @@ const AdminPlugins: React.FC = () => {
     return plugins.filter((p) => p.vendorName.toLowerCase().includes(q));
   }, [plugins, searchTerm]);
 
-  const Switch: React.FC<{ checked: boolean; onChange: () => void }> = ({ checked, onChange }) => (
-    <button
-      onClick={onChange}
-      className={`flex items-center w-9 h-5 p-0.5 rounded-full transition-colors ${
-        checked ? "bg-[#0F5C8A] justify-end" : "bg-[#D2D5DA] justify-start"
-      }`}
-    >
-      <div className="w-4 h-4 bg-white rounded-full shadow-sm"></div>
-    </button>
-  );
-
   return (
     <AdminLayout title="Plugins">
         <div className="flex-1 p-5 space-y-8">
@@ -214,27 +213,28 @@ const AdminPlugins: React.FC = () => {
               <div className="relative w-[255px] h-10">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#485467] h-5 w-5" />
                 <Input
+                  type="search"
                   placeholder="Search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-10 border-[#B0B0B0] rounded-lg text-[#2E2E2E] text-sm"
+                  className="h-10 text-sm text-tpl-dark"
                 />
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="flex flex-col items-center gap-3 rounded-3xl border border-[#EAECF0] bg-white overflow-hidden overflow-x-auto">
-            {/* Table Header */}
-            <div className="flex items-center w-full bg-[#F2F4F7]">
-              <div className="flex max-md:mx-5 items-center gap-2.5 px-4 py-3 flex-1">
-                <span className="text-sm font-bold text-[#334054] leading-[21px]">Vendor Name</span>
+          <div className="flex flex-col items-center gap-3 rounded-[10px] shadow-tpl-1 bg-white dark:bg-tpl-dark-2 overflow-hidden overflow-x-auto">
+            {/* Table Header — template InvoiceTable style: light-blue tint, text-base bold dark */}
+            <div className="flex items-center w-full bg-[#F7F9FC] dark:bg-tpl-dark-2 border-b border-tpl-stroke">
+              <div className="flex max-md:mx-5 items-center gap-2.5 px-4 py-4 flex-1">
+                <span className="text-base font-bold text-tpl-dark dark:text-white">Vendor Name</span>
               </div>
-              <div className="flex max-md:mx-5 items-center gap-2.5 px-3 py-3 flex-1">
-                <span className="text-sm font-bold text-[#334054] leading-[21px]">Status</span>
+              <div className="flex max-md:mx-5 items-center gap-2.5 px-3 py-4 flex-1">
+                <span className="text-base font-bold text-tpl-dark dark:text-white">Status</span>
               </div>
-              <div className="flex max-md:mx-5 items-center gap-2.5 px-3 py-3 w-40">
-                <span className="text-sm font-bold text-[#334054] leading-[21px]">Action</span>
+              <div className="flex max-md:mx-5 items-center gap-2.5 px-3 py-4 w-40">
+                <span className="text-base font-bold text-tpl-dark dark:text-white">Action</span>
               </div>
             </div>
 
@@ -287,7 +287,11 @@ const AdminPlugins: React.FC = () => {
                       >
                         <Edit className="w-5 h-5" strokeWidth={1.5} />
                       </button>
-                      <Switch checked={!!plugin.enabled} onChange={() => handleTogglePlugin(plugin)} />
+                      <Switch
+                        checked={!!plugin.enabled}
+                        onCheckedChange={() => handleTogglePlugin(plugin)}
+                        aria-label={`${plugin.enabled ? "Disable" : "Enable"} ${plugin.vendorName}`}
+                      />
                     </div>
                   </div>
                 </div>

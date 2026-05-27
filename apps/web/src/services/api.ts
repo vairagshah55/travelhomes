@@ -3,7 +3,6 @@ import axios from 'axios';
 // Create an axios instance with default config
 // Use env-configured base URL in dev/prod; default to relative '/api' for Vite proxy
 const baseURL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api';
-console.log('[API CONFIG] Base URL:', baseURL);
 export const api = axios.create({
   baseURL,
   headers: {
@@ -280,20 +279,17 @@ export const vendorService = {
   // Get vendors (with tab/status mapping)
   getVendors: async (status?: string) => {
     try {
-      console.log('API: Getting vendors with status:', status);
       const response = await api.get('/admin/vendors', { params: { status } });
-      console.log('API: Get vendors response:', response.data);
-      
+
       // Server returns { success: true, count: number, data: [...] }
       const responseData = response.data;
       if (responseData?.success && Array.isArray(responseData.data)) {
         return responseData.data;
       }
-      
+
       // Fallback for other response formats
       return Array.isArray(responseData) ? responseData : (responseData?.vendors ?? []);
     } catch (error: any) {
-      console.error('API: Get vendors error:', error);
       throw error.response?.data || error.message;
     }
   },
@@ -307,13 +303,9 @@ export const vendorService = {
   },
   createVendor: async (data: any) => {
     try {
-      console.log('API: Creating vendor with data:', data);
       const response = await api.post('/admin/vendors', data);
-      console.log('API: Create vendor response:', response.data);
       return response.data;
     } catch (error: any) {
-      console.error('API: Create vendor error:', error);
-      console.error('API: Error response:', error.response?.data);
       throw error.response?.data || error.message;
     }
   },
@@ -603,6 +595,67 @@ export const offersService = {
     try {
       const response = await api.patch(`/offers/${id}/status`, { status, reason });
       return response.data; // { success, data }
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+};
+
+// Dashboard API services
+export const dashboardService = {
+  getOverview: async () => {
+    try {
+      const response = await api.get('/admin/dashboard');
+      return response.data; // { success, data: { stats, graphs, tickets } }
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+};
+
+// Notifications API services (admin)
+export const notificationsService = {
+  getUnreadCount: async () => {
+    try {
+      // There is no dedicated /unread-count route — the list endpoint returns
+      // `totalUnread` alongside the data. Ask for the unread slice only.
+      const response = await api.get('/admin/notifications', { params: { unreadOnly: true } });
+      return (response.data?.totalUnread ?? 0) as number;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  list: async (params: { filter?: 'all' | 'unread' } = {}) => {
+    try {
+      // Backend expects ?unreadOnly=true|false (not a `filter` enum).
+      const response = await api.get('/admin/notifications', {
+        params: { unreadOnly: params.filter === 'unread' },
+      });
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  markRead: async (id: string) => {
+    try {
+      const response = await api.put(`/admin/notifications/${id}/read`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  markAllRead: async () => {
+    try {
+      const response = await api.put('/admin/notifications/read-all');
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  remove: async (id: string) => {
+    try {
+      const response = await api.delete(`/admin/notifications/${id}`);
+      return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }

@@ -30,7 +30,7 @@ export default function AdminLayout({ title, subtitle, headerActions, children }
   return (
     <div
       data-brand="admin"
-      className="flex h-screen bg-gray-50 dark:bg-gray-950 overflow-hidden font-plus-jakarta"
+      className="flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg overflow-hidden font-plus-jakarta"
     >
       <AdminSidebar
         showMobileSidebar={showMobileSidebar}
@@ -50,9 +50,9 @@ export default function AdminLayout({ title, subtitle, headerActions, children }
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-950"
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
         >
-          <div className="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 pb-20 md:pb-8">
+          <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 md:pb-8">
             {children}
           </div>
         </motion.main>

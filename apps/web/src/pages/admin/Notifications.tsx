@@ -1,9 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { Bell, UserPlus, CreditCard, CalendarCheck, HelpCircle, Info, CheckCircle, XCircle, Briefcase, Trash2, Check, X } from "lucide-react";
+import {
+  Bell,
+  UserPlus,
+  CreditCard,
+  CalendarCheck,
+  HelpCircle,
+  Info,
+  CheckCircle,
+  XCircle,
+  Briefcase,
+  Trash2,
+  Check,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import ConfirmationDialog from "@/components/admin/ConfirmationDialog";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { notificationsService, api } from "@/services/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 interface Notification {
   _id: string;
@@ -16,136 +39,114 @@ interface Notification {
   referenceModel?: string;
 }
 
+type ActiveFilter = "all" | "unread";
+
+const QUERY_KEY = (filter: ActiveFilter) => ["admin", "notifications", filter] as const;
+
 const Notifications = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("all");
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
+
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  // Confirm state: tracks which action is pending
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; bulk: false } | { bulk: true } | null>(null);
 
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE_URL}/api/admin/notifications?unreadOnly=${activeFilter === "unread"}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      
-      const data = await res.json();
-      if (data.success) {
-        setNotifications(data.data);
+  // ── Queries ──────────────────────────────────────────────────────────────
+
+  const { data, isLoading } = useQuery<Notification[]>({
+    queryKey: QUERY_KEY(activeFilter),
+    queryFn: async () => {
+      const res = await notificationsService.list({ filter: activeFilter });
+      return (res?.data ?? res) as Notification[];
+    },
+    refetchInterval: 30_000,
+  });
+
+  const notifications: Notification[] = data ?? [];
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ["admin", "notifications"] });
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
+  const markReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsService.markRead(id),
+    onSuccess: (_d, id) => {
+      queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
+        prev ? prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)) : prev
+      );
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => notificationsService.markAllRead(),
+    onSuccess: () => {
+      queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
+        prev ? prev.map((n) => ({ ...n, isRead: true })) : prev
+      );
+    },
+    onError: () => toast.error("Failed to mark all as read."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => notificationsService.remove(id),
+    onSuccess: (_d, id) => {
+      queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
+        prev ? prev.filter((n) => n._id !== id) : prev
+      );
+      setSelectedIds((prev) => prev.filter((item) => item !== id));
+      // Close detail modal only after a successful delete
+      if (showDetailModal && selectedNotification?._id === id) {
+        setShowDetailModal(false);
+        setSelectedNotification(null);
       }
-    } catch {
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    onError: () => toast.error("Failed to delete notification."),
+  });
 
-  useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [activeFilter]);
+  const bulkDeleteMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      api.post("/admin/notifications/bulk-delete", { ids }),
+    onSuccess: () => {
+      queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
+        prev ? prev.filter((n) => !selectedIds.includes(n._id)) : prev
+      );
+      setSelectedIds([]);
+    },
+    onError: () => toast.error("Failed to delete selected notifications."),
+  });
 
-  const handleToggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
-  };
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE_URL}/api/admin/notifications/read-all`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Refresh notifications or optimistically update
-        setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      }
-    } catch {
-    }
-  };
+  const handleMarkAllAsRead = () => markAllReadMutation.mutate();
 
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE_URL}/api/admin/notifications/${id}/read`, {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNotifications((prev) =>
-          prev.map((n) => (n._id === id ? { ...n, isRead: true } : n))
-        );
-      }
-    } catch {
-    }
-  };
-
-  const doDelete = async (id: string) => {
-    try {
-      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE_URL}/api/admin/notifications/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNotifications((prev) => prev.filter((n) => n._id !== id));
-        setSelectedIds((prev) => prev.filter((item) => item !== id));
-      }
-    } catch {
-      // silently ignore
+  const handleMarkAsRead = (id: string) => {
+    if (!notifications.find((n) => n._id === id)?.isRead) {
+      markReadMutation.mutate(id);
     }
   };
 
   const handleDelete = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setConfirmDialog({
-      title: "Delete notification?",
-      message: "This notification will be permanently removed.",
-      onConfirm: () => { setConfirmDialog(null); doDelete(id); },
-    });
-  };
-
-  const doBulkDelete = async () => {
-    try {
-      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
-      const res = await fetch(`${API_BASE_URL}/api/admin/notifications/bulk-delete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ ids: selectedIds })
-      });
-      const data = await res.json();
-      if (data.success) {
-        setNotifications((prev) => prev.filter((n) => !selectedIds.includes(n._id)));
-        setSelectedIds([]);
-      }
-    } catch {
-      // silently ignore
-    }
+    setConfirmDelete({ id, bulk: false });
   };
 
   const handleBulkDelete = () => {
     if (selectedIds.length === 0) return;
-    setConfirmDialog({
-      title: `Delete ${selectedIds.length} notification${selectedIds.length > 1 ? "s" : ""}?`,
-      message: "These notifications will be permanently removed.",
-      onConfirm: () => { setConfirmDialog(null); doBulkDelete(); },
-    });
+    setConfirmDelete({ bulk: true });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!confirmDelete) return;
+    if (confirmDelete.bulk) {
+      bulkDeleteMutation.mutate(selectedIds);
+    } else {
+      deleteMutation.mutate(confirmDelete.id);
+    }
+    setConfirmDelete(null);
   };
 
   const handleToggleSelect = (id: string, e: React.MouseEvent) => {
@@ -158,10 +159,10 @@ const Notifications = () => {
   const handleOpenDetail = (notification: Notification) => {
     setSelectedNotification(notification);
     setShowDetailModal(true);
-    if (!notification.isRead) {
-      handleMarkAsRead(notification._id);
-    }
+    handleMarkAsRead(notification._id);
   };
+
+  // ── Icon helper ───────────────────────────────────────────────────────────
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -185,166 +186,192 @@ const Notifications = () => {
     }
   };
 
+  // ── Confirm dialog labels ─────────────────────────────────────────────────
+
+  const confirmTitle = confirmDelete?.bulk
+    ? `Delete ${selectedIds.length} notification${selectedIds.length > 1 ? "s" : ""}?`
+    : "Delete notification?";
+
+  const confirmDescription = confirmDelete?.bulk
+    ? "These notifications will be permanently removed."
+    : "This notification will be permanently removed.";
+
+  const isConfirmLoading =
+    deleteMutation.isPending || bulkDeleteMutation.isPending;
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <AdminLayout title="Notifications">
-        <main className="flex-1 p-4 lg:p-5 bg-white  dark:bg-black dark:text-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
-          {/* Filter Tabs and Mark as Read */}
-          <div className="flex items-center justify-between overflow-y-scroll gap-6 border-b border-dashboard-stroke pb-4 mb-5">
-            <div className="flex items-center flex-1">
-              {/* Filter Tabs */}
-              <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
-                <button
-                  onClick={() => setActiveFilter("all")}
-                  className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
-                    activeFilter === "all"
-                      ? "bg-dashboard-primary dark:text-black text-white"
-                      : "text-dashboard-heading hover:text-dashboard-primary"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setActiveFilter("unread")}
-                  className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
-                    activeFilter === "unread"
-                      ? "bg-dashboard-primary dark:text-black text-white"
-                      : "text-dashboard-heading hover:text-dashboard-primary"
-                  }`}
-                >
-                  Unread
-                </button>
-              </div>
-            </div>
-
-            {/* Mark as Read Button */}
-            <div className="flex items-center gap-2">
-              {selectedIds.length > 0 && (
-                <button
-                  onClick={handleBulkDelete}
-                  className="px-4 py-1.5 text-sm font-bold text-red-500 font-geist hover:bg-red-50 rounded-full transition-colors flex items-center gap-2"
-                >
-                  <Trash2 size={16} />
-                  Delete ({selectedIds.length})
-                </button>
-              )}
+      <main className="flex-1 p-6 bg-white dark:bg-tpl-dark-2 dark:text-white rounded-[10px] shadow-tpl-1 overflow-auto">
+        {/* Filter Tabs and Mark as Read */}
+        <div className="flex items-center justify-between overflow-y-scroll gap-6 border-b border-dashboard-stroke pb-4 mb-5">
+          <div className="flex items-center flex-1">
+            <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
               <button
-                onClick={handleMarkAllAsRead}
-                className="px-4 py-1.5 text-sm font-bold text-dashboard-heading font-geist hover:text-dashboard-primary transition-colors"
+                onClick={() => setActiveFilter("all")}
+                className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
+                  activeFilter === "all"
+                    ? "bg-dashboard-primary dark:text-black text-white"
+                    : "text-dashboard-heading hover:text-dashboard-primary"
+                }`}
               >
-                Mark as Read
+                All
+              </button>
+              <button
+                onClick={() => setActiveFilter("unread")}
+                className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
+                  activeFilter === "unread"
+                    ? "bg-dashboard-primary dark:text-black text-white"
+                    : "text-dashboard-heading hover:text-dashboard-primary"
+                }`}
+              >
+                Unread
               </button>
             </div>
           </div>
 
-          {/* Notifications List */}
-          <div className="space-y-3">
-            {loading ? (
-              <div className="text-center py-10">Loading notifications...</div>
-            ) : (
-              notifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  onClick={() => handleOpenDetail(notification)}
-                  className={`border border-dashboard-stroke rounded-2xl dark:bg-black dark:text-white bg-white hover:shadow-sm transition-shadow cursor-pointer max-w-[1096px] ${
-                    !notification.isRead ? "bg-blue-50 dark:bg-gray-900" : ""
-                  }`}
-                >
-                  <div className="p-[18px]">
-                    <div className="flex items-start gap-4">
-                      {/* Checkbox */}
-                      <div 
-                        onClick={(e) => handleToggleSelect(notification._id, e)}
-                        className={`w-5 h-5 rounded border flex items-center justify-center mt-2 flex-shrink-0 transition-colors ${
-                          selectedIds.includes(notification._id) 
-                            ? "bg-dashboard-primary border-dashboard-primary text-white" 
-                            : "border-gray-300 bg-white"
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-1.5 text-sm font-bold text-red-500 font-geist hover:bg-red-50 rounded-full transition-colors flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                Delete ({selectedIds.length})
+              </button>
+            )}
+            <button
+              onClick={handleMarkAllAsRead}
+              className="px-4 py-1.5 text-sm font-bold text-dashboard-heading font-geist hover:text-dashboard-primary transition-colors"
+            >
+              Mark as Read
+            </button>
+          </div>
+        </div>
+
+        {/* Notifications List */}
+        <div className="space-y-3">
+          {isLoading ? (
+            <div className="text-center py-10">Loading notifications...</div>
+          ) : (
+            notifications.map((notification) => (
+              <div
+                key={notification._id}
+                onClick={() => handleOpenDetail(notification)}
+                className={`border border-dashboard-stroke rounded-2xl dark:bg-black dark:text-white bg-white hover:shadow-sm transition-shadow cursor-pointer max-w-[1096px] ${
+                  !notification.isRead ? "bg-blue-50 dark:bg-gray-900" : ""
+                }`}
+              >
+                <div className="p-[18px]">
+                  <div className="flex items-start gap-4">
+                    {/* Checkbox */}
+                    <div
+                      onClick={(e) => handleToggleSelect(notification._id, e)}
+                      className={`w-5 h-5 rounded border flex items-center justify-center mt-2 flex-shrink-0 transition-colors ${
+                        selectedIds.includes(notification._id)
+                          ? "bg-dashboard-primary border-dashboard-primary text-white"
+                          : "border-gray-300 bg-white"
+                      }`}
+                    >
+                      {selectedIds.includes(notification._id) && (
+                        <Check size={14} strokeWidth={3} />
+                      )}
+                    </div>
+
+                    {/* Avatar/Icon */}
+                    <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 flex-shrink-0">
+                      {getIcon(notification.type)}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 space-y-0.5">
+                      <h4
+                        className={`text-sm font-normal text-dashboard-title font-geist leading-[150%] ${
+                          !notification.isRead ? "font-semibold" : ""
                         }`}
                       >
-                        {selectedIds.includes(notification._id) && <Check size={14} strokeWidth={3} />}
-                      </div>
+                        {notification.title}
+                      </h4>
+                      <p className="text-xs text-dashboard-body font-geist leading-[150%] max-w-[906px] line-clamp-1">
+                        {notification.message}
+                      </p>
+                    </div>
 
-                      {/* Avatar/Icon */}
-                      <div className="w-[38px] h-[38px] rounded-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 flex-shrink-0">
-                        {getIcon(notification.type)}
+                    {/* Right Side - Time and Action */}
+                    <div className="flex flex-col items-end gap-3 pt-1.5 min-w-[80px]">
+                      <div className="flex items-center gap-3">
+                        {!notification.isRead && (
+                          <div className="w-2 h-2 bg-dashboard-primary rounded-full" />
+                        )}
+                        <button
+                          onClick={(e) => handleDelete(notification._id, e)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
-
-                      {/* Content */}
-                      <div className="flex-1 space-y-0.5">
-                        <h4 className={`text-sm font-normal text-dashboard-title font-geist leading-[150%] ${!notification.isRead ? 'font-semibold' : ''}`}>
-                          {notification.title}
-                        </h4>
-                        <p className="text-xs text-dashboard-body font-geist leading-[150%] max-w-[906px] line-clamp-1">
-                          {notification.message}
-                        </p>
-                      </div>
-
-                      {/* Right Side - Time and Action */}
-                      <div className="flex flex-col items-end gap-3 pt-1.5 min-w-[80px]">
-                        <div className="flex items-center gap-3">
-                          {!notification.isRead && (
-                            <div className="w-2 h-2 bg-dashboard-primary rounded-full"></div>
-                          )}
-                          <button 
-                            onClick={(e) => handleDelete(notification._id, e)}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                        <span className="text-sm text-dashboard-body font-geist leading-[150%] whitespace-nowrap">
-                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                        </span>
-                      </div>
+                      <span className="text-sm text-dashboard-body font-geist leading-[150%] whitespace-nowrap">
+                        {formatDistanceToNow(new Date(notification.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Empty State */}
-          {!loading && notifications.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <Bell size={48} className="text-gray-300 mb-4" />
-              <h3 className="text-lg font-semibold text-dashboard-heading font-geist mb-2">
-                No notifications
-              </h3>
-              <p className="text-dashboard-body font-plus-jakarta">
-                {activeFilter === "unread"
-                  ? "You don't have any unread notifications"
-                  : "You don't have any notifications yet"}
-              </p>
-            </div>
+              </div>
+            ))
           )}
-        </main>
+        </div>
 
-      {/* Detail Modal */}
-      {showDetailModal && selectedNotification && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-            {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+        {/* Empty State */}
+        {!isLoading && notifications.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <Bell size={48} className="text-gray-300 mb-4" />
+            <h3 className="text-lg font-semibold text-dashboard-heading font-geist mb-2">
+              No notifications
+            </h3>
+            <p className="text-dashboard-body font-plus-jakarta">
+              {activeFilter === "unread"
+                ? "You don't have any unread notifications"
+                : "You don't have any notifications yet"}
+            </p>
+          </div>
+        )}
+      </main>
+
+      {/* Detail Modal — shadcn Dialog (Escape + overlay-click close built-in) */}
+      <Dialog
+        open={showDetailModal && selectedNotification !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowDetailModal(false);
+            setSelectedNotification(null);
+          }
+        }}
+      >
+        {selectedNotification && (
+          <DialogContent className="sm:max-w-lg rounded-3xl p-0 overflow-hidden">
+            {/* Header */}
+            <DialogHeader className="p-6 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                   {getIcon(selectedNotification.type)}
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold dark:text-white">{selectedNotification.title}</h3>
-                  <p className="text-xs text-gray-400">
-                    {formatDistanceToNow(new Date(selectedNotification.createdAt), { addSuffix: true })}
-                  </p>
+                  <DialogTitle className="text-lg font-bold dark:text-white">
+                    {selectedNotification.title}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-gray-400 mt-0.5">
+                    {formatDistanceToNow(new Date(selectedNotification.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </DialogDescription>
                 </div>
               </div>
-              <button 
-                onClick={() => setShowDetailModal(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-full transition-colors"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
+            </DialogHeader>
 
-            {/* Modal Content */}
+            {/* Body */}
             <div className="p-8">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6">
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
@@ -354,44 +381,54 @@ const Notifications = () => {
 
               {selectedNotification.referenceId && (
                 <div className="mt-6">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Reference Info</p>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Reference Info
+                  </p>
                   <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl">
-                    <span className="text-sm font-medium dark:text-gray-400">Model: {selectedNotification.referenceModel}</span>
-                    <span className="text-xs font-mono text-gray-500 truncate ml-4">ID: {selectedNotification.referenceId}</span>
+                    <span className="text-sm font-medium dark:text-gray-400">
+                      Model: {selectedNotification.referenceModel}
+                    </span>
+                    <span className="text-xs font-mono text-gray-500 truncate ml-4">
+                      ID: {selectedNotification.referenceId}
+                    </span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-6 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3">
+            {/* Footer */}
+            <DialogFooter className="p-6 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3 sm:space-x-0">
               <button
-                onClick={() => {
-                  handleDelete(selectedNotification._id);
-                  setShowDetailModal(false);
-                }}
-                className="px-6 py-2.5 rounded-full text-sm font-bold text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2"
+                onClick={() => handleDelete(selectedNotification._id)}
+                className="px-6 py-2.5 rounded-full text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
               >
                 <Trash2 size={16} />
                 Delete
               </button>
               <button
-                onClick={() => setShowDetailModal(false)}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedNotification(null);
+                }}
                 className="px-8 py-2.5 rounded-full text-sm font-bold bg-dashboard-primary text-white hover:opacity-90 transition-opacity shadow-lg shadow-dashboard-primary/20"
               >
                 Close
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-      <ConfirmationDialog
-        isOpen={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
-        title={confirmDialog?.title ?? ""}
-        message={confirmDialog?.message ?? ""}
-        confirmText="Delete"
+            </DialogFooter>
+          </DialogContent>
+        )}
+      </Dialog>
+
+      {/* Delete Confirmation — shared ConfirmModal */}
+      <ConfirmModal
+        open={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title={confirmTitle}
+        description={confirmDescription}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={isConfirmLoading}
       />
     </AdminLayout>
   );

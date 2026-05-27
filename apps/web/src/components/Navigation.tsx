@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard,
   Calendar,
@@ -81,7 +82,7 @@ const menuItems: MenuItem[] = [
 ];
 
 const bottomMenuItems: MenuItem[] = [
-  { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications", badge: 8 },
+  { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
   { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
   { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help" },
   { id: "visit-site", label: "Visit Site", icon: Globe, path: "/" },
@@ -96,7 +97,7 @@ const Badge = ({ count, active }: { count: number; active: boolean }) => (
     min-w-[18px] h-[18px] px-1 rounded-full
     ${
       active
-        ? "bg-blue-600 text-white"
+        ? "bg-app-accent text-app-accent-fg"
         : "bg-gray-100 dark:bg-gray-700/80 text-gray-500 dark:text-gray-400"
     }
   `}
@@ -126,7 +127,7 @@ const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) =
     />
     {label}
     {badge !== undefined && badge > 0 && (
-      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-500 rounded-full leading-none">
+      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-app-accent text-app-accent-fg rounded-full leading-none">
         {badge}
       </span>
     )}
@@ -142,7 +143,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
 
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout } = useAuth();
   const isOpen = pinned || hoverOpen;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   const handleMouseEnter = () => {
     if (pinned) return;
@@ -195,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
                 transition-all duration-150
                 ${
                   active
-                    ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-app-accent text-app-accent-fg shadow-sm"
                     : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200"
                 }
               `}
@@ -203,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
               <item.icon size={18} />
               {/* notification dot */}
               {item.badge !== undefined && item.badge > 0 && !active && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 ring-2 ring-white dark:ring-[#0f1117]" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-app-accent ring-2 ring-white dark:ring-[#0f1117]" />
               )}
             </button>
             <CollapsedTooltip label={item.label} badge={item.badge} />
@@ -217,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
               transition-all duration-150
               ${
                 active
-                  ? "bg-gradient-to-r from-blue-50 to-indigo-50/40 dark:from-blue-500/[0.12] dark:to-indigo-500/[0.04] text-blue-700 dark:text-blue-400"
+                  ? "bg-app-accent-soft text-app-accent"
                   : "text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-100"
               }
             `}
@@ -226,7 +233,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             <span
               className={`
               absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full
-              bg-gradient-to-b from-blue-500 to-indigo-500
+              bg-app-accent
               transition-all duration-200
               ${active ? "h-6 opacity-100" : "h-0 opacity-0"}
             `}
@@ -235,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             <item.icon
               size={16}
               className={`shrink-0 transition-all duration-150
-                ${active ? "text-blue-600 dark:text-blue-400" : "group-hover:scale-110"}
+                ${active ? "text-app-accent" : "group-hover:scale-110"}
               `}
             />
 
@@ -281,21 +288,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
                         transition-colors duration-150 select-none
                         ${
                           ca
-                            ? "bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400"
+                            ? "bg-app-accent-soft text-app-accent"
                             : "text-gray-400 dark:text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
                         }
                       `}
                     >
                       <span
                         className={`w-1 h-1 rounded-full shrink-0 transition-colors duration-150
-                        ${ca ? "bg-blue-500" : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400"}
+                        ${ca ? "bg-app-accent" : "bg-gray-300 dark:bg-gray-600 group-hover:bg-gray-400"}
                       `}
                       />
                       <span className="flex-1 text-[12px] font-medium whitespace-nowrap">
                         {child.label}
                       </span>
                       {child.badge !== undefined && child.badge > 0 && (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-500 text-white leading-none">
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-app-accent text-app-accent-fg leading-none">
                           {child.badge}
                         </span>
                       )}
@@ -316,10 +323,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
       return (
         <div className="group relative flex justify-center py-1 px-2">
           <button
-            onClick={() => {
-              localStorage.clear();
-              window.location.href = "/login";
-            }}
+            onClick={handleLogout}
             className="flex items-center justify-center w-10 h-10 rounded-xl text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 transition-all duration-150"
           >
             <LogOut size={18} />
@@ -330,10 +334,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
     }
     return (
       <div
-        onClick={() => {
-          localStorage.clear();
-          window.location.href = "/login";
-        }}
+        onClick={handleLogout}
         className="flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl cursor-pointer select-none
           text-gray-400 dark:text-gray-500
           hover:bg-red-50 dark:hover:bg-red-500/10
@@ -376,8 +377,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             {/* logo mark */}
             <div
               className="w-8 h-8 shrink-0 rounded-xl
-              bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
-              shadow-lg shadow-blue-500/25
+              bg-app-accent shadow-sm
               flex items-center justify-center"
             >
               <span className="text-white font-black text-[13px] leading-none">T</span>
@@ -399,7 +399,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
                 ml-auto shrink-0 p-1.5 rounded-lg transition-all duration-150
                 ${
                   pinned
-                    ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10"
+                    ? "text-app-accent bg-app-accent-soft"
                     : "text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
                 }
               `}
@@ -410,8 +410,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
         ) : (
           <div
             className="w-8 h-8 rounded-xl
-            bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600
-            shadow-lg shadow-blue-500/25
+            bg-app-accent shadow-sm
             flex items-center justify-center"
           >
             <span className="text-white font-black text-[13px] leading-none">T</span>

@@ -1,7 +1,5 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
+import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -24,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Users,
   UserCheck,
@@ -39,6 +38,8 @@ import {
   TrendingUp,
   IndianRupee,
   Trash2,
+  AlertCircle,
+  Inbox,
 } from "lucide-react";
 import {
   AreaChart,
@@ -57,220 +58,131 @@ import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ChartTooltip } from "@/components/shared/ChartTooltip";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { formatINR } from "@/utils/formatCurrency";
+import { useDashboard } from "@/hooks/admin/useDashboard";
+import { adminKeys } from "@/hooks/admin/queryKeys";
+import { api } from "@/services/api";
 
-// ─── Chart component defined outside to prevent recreation on every render ────
+// ─── Chart card — template-style (white card, rounded-[10px], shadow-1) ──────
 const DashboardChart = ({
   title,
   data,
   type = "area",
-  color = "#0F5C8A",
+  color = "#5750F1",
   dataKey = "value",
+  loading = false,
 }: {
   title: string;
   data: any[];
   type?: "area" | "bar";
   color?: string;
   dataKey?: string;
+  loading?: boolean;
 }) => {
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
+  const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-white rounded-lg border border-surface-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-dashboard-body">{title}</h3>
-        <span className="text-[11px] px-2 py-0.5 bg-surface-muted rounded-full text-gray-400">
+    <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 px-6 pt-6 pb-4">
+      <div className="flex items-center justify-between mb-5">
+        <h3 className="text-[18px] font-bold text-tpl-dark dark:text-white">{title}</h3>
+        <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">
           Last 6 Months
         </span>
       </div>
-      <div className="h-44 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          {type === "area" ? (
-            <AreaChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
-              <defs>
-                <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor={color} stopOpacity={0.18} />
-                  <stop offset="95%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip content={<ChartTooltip valuePrefix={dataKey === "total" ? "₹" : ""} valueFormatter={dataKey === "total" ? formatINR : undefined} />} />
-              <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#${gradId})`} dot={false} />
-            </AreaChart>
-          ) : (
-            <BarChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-              <Tooltip cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-              <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
-            </BarChart>
-          )}
-        </ResponsiveContainer>
+      <div className="h-52 w-full">
+        {loading ? (
+          <div className="h-full w-full rounded-lg bg-tpl-gray-2 dark:bg-white/5 animate-pulse" />
+        ) : isEmpty ? (
+          <div className="h-full w-full flex flex-col items-center justify-center gap-2 text-tpl-dark-5 dark:text-tpl-dark-6">
+            <Inbox size={28} strokeWidth={1.5} className="opacity-50" />
+            <p className="text-[13px]">No data for this period</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {type === "area" ? (
+              <AreaChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={color} stopOpacity={0.18} />
+                    <stop offset="95%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <Tooltip content={<ChartTooltip valuePrefix={dataKey === "total" ? "₹" : ""} valueFormatter={dataKey === "total" ? formatINR : undefined} />} />
+                <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#${gradId})`} dot={false} />
+              </AreaChart>
+            ) : (
+              <BarChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+                <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
 };
 
-// ─── Count-up hook ─────────────────────────────────────────────────────────────
-function useCountUp(target: number, duration = 900) {
-  const [count, setCount] = useState(0);
-  const prev = useRef(0);
-  useEffect(() => {
-    const start = prev.current;
-    const diff = target - start;
-    if (diff === 0) return;
-    const startTime = performance.now();
-    const tick = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const ease = 1 - Math.pow(1 - progress, 3); // ease-out cubic
-      setCount(Math.round(start + diff * ease));
-      if (progress < 1) requestAnimationFrame(tick);
-      else prev.current = target;
-    };
-    requestAnimationFrame(tick);
-  }, [target, duration]);
-  return count;
-}
-
-// ─── Stat card ────────────────────────────────────────────────────────────────
-const StatCard = ({
-  title,
-  value,
-  icon: Icon,
-  bgColor,
-  iconBg,
-  onClick,
-  index,
-}: {
-  title: string;
-  value: string;
-  icon: React.ElementType;
-  bgColor: string;
-  iconBg: string;
-  onClick: () => void;
-  index: number;
-}) => {
-  const numericTarget = parseInt(value, 10);
-  const isNumeric = !isNaN(numericTarget) && value !== "—";
-  const animated = useCountUp(isNumeric ? numericTarget : 0);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.25, ease: "easeOut" }}
-      onClick={onClick}
-      className={`${bgColor} rounded-lg cursor-pointer px-4 py-3.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group`}
-    >
-      <div className="flex items-center gap-3">
-        <div className={`${iconBg} rounded-lg p-2 shrink-0 group-hover:scale-105 transition-transform duration-200`}>
-          <Icon size={15} className="text-gray-600" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[11px] font-medium text-gray-500 truncate">{title}</p>
-          <p className="text-lg font-bold text-dashboard-heading font-geist tracking-tight leading-tight mt-0.5">
-            {isNumeric ? animated : value}
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// ─── Auth header helper ────────────────────────────────────────────────────────
-const authHeader = () => ({
-  Authorization: `Bearer ${localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken")}`,
-});
-
 // ─── Main component ───────────────────────────────────────────────────────────
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: payload, isLoading, isError, refetch } = useDashboard();
+
   const [showHelpDeskPopup, setShowHelpDeskPopup] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<any>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [ticketSearch, setTicketSearch] = useState("");
   const [ticketSort, setTicketSort] = useState("date-desc");
 
-  const [statsCards, setStatsCards] = React.useState([
-    { title: "Total Users",      value: "—", icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
-    { title: "Active Users",     value: "—", icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
-    { title: "Total Vendors",    value: "—", icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
-    { title: "Active Vendors",   value: "—", icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
-    { title: "Pending KYC",      value: "—", icon: TrendingUp,     bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
-    { title: "Total Listings",   value: "—", icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
-    { title: "Pending Listings", value: "—", icon: ClipboardList,  bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
-    { title: "Total Revenue",    value: "—", icon: IndianRupee,    bgColor: "bg-amber-50",   iconBg: "bg-amber-100",   navigate: "/payments"           },
-  ]);
+  const d = payload?.data ?? {};
 
-  const [ticketData, setTicketData] = React.useState<any[]>([]);
-  const [graphs, setGraphs] = React.useState<any>({ revenue: [], users: [], vendors: [], bookings: [] });
+  // NextAdmin template palette — vibrant solid-fill circular icon badges.
+  const statsCards = useMemo(
+    () => [
+      { title: "Total Users",      value: String(d.stats?.users?.total        ?? 0), icon: Users,          iconColor: "#18BFFF", navigate: "/management/user"    },
+      { title: "Active Users",     value: String(d.stats?.users?.active       ?? 0), icon: UserCheck,      iconColor: "#3FD97F", navigate: "/management/user"    },
+      { title: "Total Vendors",    value: String(d.stats?.vendors?.total      ?? 0), icon: ClipboardCheck, iconColor: "#8155FF", navigate: "/management/vendor"  },
+      { title: "Active Vendors",   value: String(d.stats?.vendors?.active     ?? 0), icon: Wallet,         iconColor: "#5750F1", navigate: "/management/vendor"  },
+      { title: "Pending KYC",      value: String(d.stats?.vendors?.pendingKyc ?? 0), icon: TrendingUp,     iconColor: "#F59460", navigate: "/management/vendor"  },
+      { title: "Total Listings",   value: String(d.stats?.listings?.total     ?? 0), icon: MousePointer,   iconColor: "#3C50E0", navigate: "/management/listing" },
+      { title: "Pending Listings", value: String(d.stats?.listings?.pending   ?? 0), icon: ClipboardList,  iconColor: "#F56060", navigate: "/management/listing" },
+      { title: "Total Revenue",    value: formatINR(d.stats?.revenue?.total   ?? 0), icon: IndianRupee,    iconColor: "#FF9C55", navigate: "/payments"           },
+    ],
+    [d.stats],
+  );
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch("/api/admin/dashboard", { headers: authHeader() });
-        const json = await res.json();
-        const d = json?.data || {};
+  const graphs = d.graphs ?? { revenue: [], users: [], vendors: [], bookings: [] };
 
-        setStatsCards([
-          { title: "Total Users",        value: String(d.stats?.users?.total        ?? 0), icon: Users,          bgColor: "bg-orange-50",  iconBg: "bg-orange-100",  navigate: "/management/user"    },
-          { title: "Active Users",       value: String(d.stats?.users?.active       ?? 0), icon: UserCheck,      bgColor: "bg-green-50",   iconBg: "bg-green-100",   navigate: "/management/user"    },
-          { title: "Total Vendors",      value: String(d.stats?.vendors?.total      ?? 0), icon: ClipboardCheck, bgColor: "bg-blue-50",    iconBg: "bg-blue-100",    navigate: "/management/vendor"  },
-          { title: "Active Vendors",     value: String(d.stats?.vendors?.active     ?? 0), icon: Wallet,         bgColor: "bg-purple-50",  iconBg: "bg-purple-100",  navigate: "/management/vendor"  },
-          { title: "Pending KYC",        value: String(d.stats?.vendors?.pendingKyc ?? 0), icon: TrendingUp,     bgColor: "bg-yellow-50",  iconBg: "bg-yellow-100",  navigate: "/management/vendor"  },
-          { title: "Total Listings",     value: String(d.stats?.listings?.total     ?? 0), icon: MousePointer,   bgColor: "bg-indigo-50",  iconBg: "bg-indigo-100",  navigate: "/management/listing" },
-          { title: "Pending Listings",   value: String(d.stats?.listings?.pending   ?? 0), icon: ClipboardList,  bgColor: "bg-red-50",     iconBg: "bg-red-100",     navigate: "/management/listing" },
-          { title: "Total Revenue",      value: formatINR(d.stats?.revenue?.total   ?? 0), icon: IndianRupee,    bgColor: "bg-amber-50",   iconBg: "bg-amber-100",   navigate: "/payments"           },
-        ]);
-
-        if (d.graphs) setGraphs(d.graphs);
-
-        const tickets = Array.isArray(d.tickets) ? d.tickets : (d.latestTickets || []);
-        setTicketData(
-          tickets.map((t: any) => ({
-            _id: t._id,
-            vendorName: t.vendorName || t.name || "N/A",
-            email: t.email || t.vendorEmail || "N/A",
-            subject: t.subject || "N/A",
-            date: t.date || t.createdAt || "",
-            dateDisplay: new Date(t.date || t.createdAt).toLocaleDateString("en-GB"),
-            status: t.status || "Open",
-            message: t.description || t.message || "N/A",
-          })),
-        );
-      } catch {
-        // silently fail on poll — avoids noisy toast on every 60s cycle
-      }
-    };
-
-    fetchData();
-    const interval = setInterval(fetchData, 60_000);
-    return () => clearInterval(interval);
-  }, []);
+  const ticketData = useMemo(() => {
+    const tickets = Array.isArray(d.tickets) ? d.tickets : (d.latestTickets || []);
+    return tickets.map((t: any) => ({
+      _id: t._id,
+      vendorName: t.vendorName || t.name || "N/A",
+      email: t.email || t.vendorEmail || "N/A",
+      subject: t.subject || "N/A",
+      date: t.date || t.createdAt || "",
+      dateDisplay: new Date(t.date || t.createdAt).toLocaleDateString("en-GB"),
+      status: t.status || "Open",
+      message: t.description || t.message || "N/A",
+    }));
+  }, [d.tickets, d.latestTickets]);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
-      const res = await fetch(`/api/admin/helpdesk/${id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeader() },
-        body: JSON.stringify({ status: newStatus }),
-      });
-      if (res.ok) {
-        toast.success(`Ticket marked as ${newStatus}.`);
-        setTicketData((prev) => prev.map((t) => (t._id === id ? { ...t, status: newStatus } : t)));
-      } else {
-        toast.error("Failed to update status.");
-      }
+      await api.patch(`/admin/helpdesk/${id}/status`, { status: newStatus });
+      toast.success(`Ticket marked as ${newStatus}.`);
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     } catch {
-      toast.error("Error updating status.");
+      toast.error("Failed to update status.");
     }
-  };
-
-  const handleDeleteTicket = (id: string) => {
-    setConfirmDelete(id);
   };
 
   const confirmDeleteTicket = async () => {
@@ -278,15 +190,11 @@ const AdminDashboard = () => {
     const id = confirmDelete;
     setConfirmDelete(null);
     try {
-      const res = await fetch(`/api/admin/helpdesk/${id}`, { method: "DELETE", headers: authHeader() });
-      if (res.ok) {
-        toast.success("Ticket deleted.");
-        setTicketData((prev) => prev.filter((t) => t._id !== id));
-      } else {
-        toast.error("Failed to delete ticket.");
-      }
+      await api.delete(`/admin/helpdesk/${id}`);
+      toast.success("Ticket deleted.");
+      queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
     } catch {
-      toast.error("Error deleting ticket.");
+      toast.error("Failed to delete ticket.");
     }
   };
 
@@ -312,52 +220,79 @@ const AdminDashboard = () => {
     return rows;
   }, [ticketData, ticketSearch, ticketSort]);
 
-
   return (
-    <AdminLayout title="Dashboard">
-      <div className="space-y-[14px]">
-        {/* ── Stat Cards ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-[14px]">
-          {statsCards.map((stat, i) => (
-            <StatCard
-              key={stat.title}
-              title={stat.title}
-              value={stat.value}
-              icon={stat.icon}
-              bgColor={stat.bgColor}
-              iconBg={stat.iconBg}
-              onClick={() => navigate(stat.navigate)}
-              index={i}
-            />
-          ))}
+    <AdminLayout title="Dashboard" subtitle="Overview of your TravelHomes business">
+      <div className="space-y-6 md:space-y-7">
+        {/* ── Stat Cards ───────────────────────────────────────────────────── */}
+        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4 2xl:grid-cols-4 2xl:gap-7">
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 p-6 animate-pulse"
+                >
+                  <div className="size-14 rounded-full bg-tpl-gray-2 dark:bg-white/5" />
+                  <div className="mt-5 space-y-2">
+                    <div className="h-6 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
+                    <div className="h-3 w-24 rounded bg-tpl-gray-2 dark:bg-white/5" />
+                  </div>
+                </div>
+              ))
+            : statsCards.map((stat, i) => (
+                <AdminStatCard
+                  key={stat.title}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  iconColor={stat.iconColor}
+                  onClick={() => navigate(stat.navigate)}
+                  delay={i * 0.05}
+                />
+              ))}
         </div>
+
+        {isError && (
+          <div className="flex items-center justify-between gap-3 rounded-[10px] border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-4">
+            <div className="flex items-center gap-2.5 text-[13px] text-red-700 dark:text-red-400">
+              <AlertCircle size={18} />
+              Couldn’t load the latest dashboard data.
+            </div>
+            <button
+              onClick={() => refetch()}
+              className="rounded-full bg-red-600 hover:bg-red-700 px-4 h-9 text-[13px] font-semibold text-white transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        )}
 
         {/* ── Charts ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
-          <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#0F5C8A" dataKey="total" />
-          <DashboardChart title="Bookings"           data={graphs.bookings} type="area" color="#1D9E75" dataKey="count" />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
+          <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#5750F1" dataKey="total" loading={isLoading} />
+          <DashboardChart title="Bookings"           data={graphs.bookings} type="area" color="#22AD5C" dataKey="count" loading={isLoading} />
         </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-[14px]">
-          <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#1E88BA" dataKey="count" />
-          <DashboardChart title="Active Vendors" data={graphs.vendors} type="bar" color="#EF9F27" dataKey="count" />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
+          <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#3C50E0" dataKey="count" loading={isLoading} />
+          <DashboardChart title="Active Vendors" data={graphs.vendors} type="bar" color="#F59460" dataKey="count" loading={isLoading} />
         </div>
 
-        {/* ── Tickets Table ────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-lg border border-surface-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-surface-border flex items-center justify-between flex-wrap gap-3">
-            <h3 className="text-sm font-semibold text-dashboard-heading font-geist">Tickets Raised</h3>
+        {/* ── Tickets Table — template card style ──────────────────────────── */}
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+          <div className="px-6 py-5 border-b border-tpl-stroke dark:border-tpl-stroke flex items-center justify-between flex-wrap gap-3">
+            <h3 className="text-[20px] font-bold text-tpl-dark dark:text-white">Tickets Raised</h3>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">
-                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tpl-dark-5" />
                 <Input
+                  type="search"
                   placeholder="Search tickets…"
                   value={ticketSearch}
                   onChange={(e) => setTicketSearch(e.target.value)}
-                  className="pl-8 w-48 h-8 text-xs border-surface-border rounded-lg"
+                  className="w-52 h-10 text-sm pl-9"
                 />
               </div>
               <Select value={ticketSort} onValueChange={setTicketSort}>
-                <SelectTrigger className="w-36 h-8 text-xs border-surface-border">
+                <SelectTrigger className="w-40 h-10 text-sm rounded-full border-tpl-stroke bg-tpl-gray-2 dark:bg-white/5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,38 +306,51 @@ const AdminDashboard = () => {
           </div>
 
           <Table>
-            <TableHeader className="bg-surface-muted">
+            <TableHeader>
               <TableRow>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Name</TableHead>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Email</TableHead>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Subject</TableHead>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Date</TableHead>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9">Status</TableHead>
-                <TableHead className="font-semibold text-[11px] uppercase tracking-wide text-gray-400 h-9 text-right">Actions</TableHead>
+                <TableHead className="px-6">Name</TableHead>
+                <TableHead className="hidden md:table-cell">Email</TableHead>
+                <TableHead>Subject</TableHead>
+                <TableHead className="hidden lg:table-cell">Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTickets.length === 0 ? (
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={`sk-${i}`} className="animate-pulse">
+                    {Array.from({ length: 6 }).map((__, j) => (
+                      <TableCell key={j} className={j === 0 ? "px-6" : ""}>
+                        <div className={`h-3 rounded bg-tpl-gray-2 dark:bg-white/5 ${j === 5 ? "w-8 ml-auto" : j === 0 ? "w-28" : "w-20"}`} />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : filteredTickets.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-xs text-gray-400">
+                  <TableCell colSpan={6} className="text-center py-10 text-sm text-tpl-dark-5">
                     {ticketSearch ? "No tickets match your search." : "No tickets found."}
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredTickets.map((ticket) => (
-                  <TableRow key={ticket._id} className="border-b border-surface-border hover:bg-surface-muted/60 transition-colors">
-                    <TableCell className="font-medium text-xs py-2.5">{ticket.vendorName}</TableCell>
-                    <TableCell className="text-xs text-gray-500">{ticket.email}</TableCell>
-                    <TableCell className="text-xs text-gray-600 max-w-[200px] truncate">{ticket.subject}</TableCell>
-                    <TableCell className="text-xs text-gray-500">{ticket.dateDisplay}</TableCell>
+                  <TableRow key={ticket._id}>
+                    <TableCell className="font-medium text-tpl-dark dark:text-white px-6">{ticket.vendorName}</TableCell>
+                    <TableCell className="hidden md:table-cell">{ticket.email}</TableCell>
+                    <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
+                    <TableCell className="hidden lg:table-cell">{ticket.dateDisplay}</TableCell>
                     <TableCell>
                       <StatusBadge status={ticket.status} />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors focus:outline-none">
-                            <MoreHorizontal size={15} />
+                          <button
+                            className="p-1.5 rounded-md text-tpl-dark-5 hover:text-tpl-primary hover:bg-tpl-primary-soft transition-colors focus:outline-none"
+                            aria-label="Ticket actions"
+                          >
+                            <MoreHorizontal size={16} />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
@@ -410,15 +358,15 @@ const AdminDashboard = () => {
                             <Eye size={15} /> View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Read")} className="gap-2 cursor-pointer">
-                            <CheckCircle size={15} className="text-blue-500" /> Mark Read
+                            <CheckCircle size={15} className="text-tpl-blue" /> Mark Read
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Pending")} className="gap-2 cursor-pointer">
-                            <Clock size={15} className="text-orange-500" /> Mark Pending
+                            <Clock size={15} className="text-tpl-orange" /> Mark Pending
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Resolved")} className="gap-2 cursor-pointer">
-                            <CheckCircle size={15} className="text-green-500" /> Resolve
+                            <CheckCircle size={15} className="text-tpl-green" /> Resolve
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteTicket(ticket._id)} className="gap-2 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50">
+                          <DropdownMenuItem onClick={() => setConfirmDelete(ticket._id)} className="gap-2 cursor-pointer text-tpl-red focus:text-tpl-red focus:bg-tpl-red-soft">
                             <Trash2 size={15} /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

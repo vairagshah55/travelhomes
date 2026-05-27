@@ -13,6 +13,8 @@ import {
   LifeBuoy,
   LogOut,
   Megaphone,
+  Monitor,
+  Moon,
   Settings,
   Sun,
   User,
@@ -30,6 +32,7 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { useTheme } from "@/components/admin/ThemeProvider";
+import { useAuth } from "@/contexts/AdminAuthContext";
 
 interface AdminCommandPaletteProps {
   open: boolean;
@@ -47,6 +50,7 @@ interface AdminCommandPaletteProps {
 export default function AdminCommandPalette({ open, onOpenChange }: AdminCommandPaletteProps) {
   const navigate = useNavigate();
   const { setTheme } = useTheme();
+  const { logout } = useAuth();
 
   // Global ⌘K / Ctrl+K listener — toggles the palette.
   useEffect(() => {
@@ -67,8 +71,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
   const handleLogout = () => {
     onOpenChange(false);
-    localStorage.removeItem("adminToken");
-    sessionStorage.removeItem("adminToken");
+    logout();
     navigate("/admin/login");
   };
 
@@ -182,7 +185,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <Sun /> <span>Dark mode</span>
+            <Moon /> <span>Dark mode</span>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -191,7 +194,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <Sun /> <span>System theme</span>
+            <Monitor /> <span>System theme</span>
             <CommandShortcut>S</CommandShortcut>
           </CommandItem>
         </CommandGroup>

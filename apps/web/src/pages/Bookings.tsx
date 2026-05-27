@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ConfirmModal } from "@/components/shared";
@@ -44,28 +44,10 @@ const Bookings = () => {
 
   // ─── Toast helper ──────────────────────────────────────────────────────────
   const notify = (type: "success" | "error", message: string) => {
-    const styles: Record<string, any> = {
-      success: {
-        background: "#10B981",
-        color: "#fff",
-        fontWeight: 500,
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: "0 10px 25px rgba(16,185,129,0.4)",
-      },
-      error: {
-        background: "#EF4444",
-        color: "#fff",
-        fontWeight: 500,
-        borderRadius: 12,
-        padding: 16,
-        boxShadow: "0 10px 25px rgba(239,68,68,0.4)",
-      },
-    };
     if (type === "success") {
-      toast.success(message, { duration: 4000, position: "top-right", style: styles.success });
+      toast.success(message, { duration: 4000 });
     } else {
-      toast.error(message, { duration: 4000, position: "top-right", style: styles.error });
+      toast.error(message, { duration: 4000 });
     }
   };
 
@@ -381,21 +363,6 @@ const Bookings = () => {
           }
         }}
       />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            fontFamily: "Plus Jakarta Sans, sans-serif",
-            fontSize: 14,
-            fontWeight: 500,
-            borderRadius: 12,
-            padding: 16,
-            maxWidth: 400,
-          },
-        }}
-      />
-
       <ConfirmModal
         open={!!confirmDeleteId}
         onClose={() => setConfirmDeleteId(null)}

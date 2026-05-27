@@ -257,6 +257,59 @@ export default {
         booking: {
           link: "hsl(var(--booking-link))",
         },
+
+        /* ── NextAdmin template palette (scoped via [data-brand="admin"]) ──
+              See admin.css for the CSS-var fallbacks. Using `var(--tpl-*)`
+              means `bg-tpl-primary` only renders the template color inside
+              the admin shell — public-site pages keep their existing brand. */
+        /* Semantic surface/accent layer — see global.css. One shared component
+           set themes to both vendor (neutral grays + blue) and admin (tpl
+           palette + purple) via these CSS-var-backed tokens. */
+        app: {
+          surface:        "var(--surface)",
+          "surface-2":    "var(--surface-2)",
+          border:         "var(--surface-border)",
+          fg:             "var(--surface-fg)",
+          "fg-muted":     "var(--surface-fg-muted)",
+          "fg-subtle":    "var(--surface-fg-subtle)",
+          accent:         "var(--accent)",
+          "accent-hover": "var(--accent-hover)",
+          "accent-soft":  "var(--accent-soft)",
+          "accent-fg":    "var(--accent-fg)",
+        },
+        tpl: {
+          primary:       "var(--tpl-primary)",
+          "primary-hover":"var(--tpl-primary-hover)",
+          "primary-soft": "var(--tpl-primary-soft)",
+          stroke:        "var(--tpl-stroke)",
+          "body-bg":     "var(--tpl-body-bg)",
+          "card-bg":     "var(--tpl-card-bg)",
+          dark:          "var(--tpl-dark)",
+          "dark-2":      "var(--tpl-dark-2)",
+          "dark-3":      "var(--tpl-dark-3)",
+          "dark-4":      "var(--tpl-dark-4)",
+          "dark-5":      "var(--tpl-dark-5)",
+          "dark-6":      "var(--tpl-dark-6)",
+          "dark-7":      "var(--tpl-dark-7)",
+          "gray-1":      "var(--tpl-gray-1)",
+          "gray-2":      "var(--tpl-gray-2)",
+          "gray-3":      "var(--tpl-gray-3)",
+          "gray-4":      "var(--tpl-gray-4)",
+          "gray-5":      "var(--tpl-gray-5)",
+          "gray-6":      "var(--tpl-gray-6)",
+          "gray-7":      "var(--tpl-gray-7)",
+          green:         "var(--tpl-green)",
+          "green-light": "var(--tpl-green-light)",
+          "green-soft":  "var(--tpl-green-soft)",
+          red:           "var(--tpl-red)",
+          "red-light":   "var(--tpl-red-light)",
+          "red-soft":    "var(--tpl-red-soft)",
+          blue:          "var(--tpl-blue)",
+          "blue-soft":   "var(--tpl-blue-soft)",
+          yellow:        "var(--tpl-yellow)",
+          "yellow-soft": "var(--tpl-yellow-soft)",
+          orange:        "var(--tpl-orange)",
+        },
       },
 
       /* ─── SPACING (extends default) ────────────────────── */
@@ -293,6 +346,11 @@ export default {
 
       /* ─── BOX SHADOW ───────────────────────────────────── */
       boxShadow: {
+        /* NextAdmin template shadows */
+        "tpl-1":    "var(--tpl-shadow-1)",
+        "tpl-2":    "var(--tpl-shadow-2)",
+        "tpl-card": "var(--tpl-shadow-card)",
+        "tpl-card-2": "var(--tpl-shadow-card-2)",
         "th-xs":    "var(--th-shadow-xs)",
         "th-sm":    "var(--th-shadow-sm)",
         "th-md":    "var(--th-shadow-md)",

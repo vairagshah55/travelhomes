@@ -1,9 +1,9 @@
 import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import {
   X,
   Bold,
@@ -13,11 +13,11 @@ import {
   Link2,
   Upload,
   Trash2,
-  AlertTriangle,
   ImageIcon,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { marketingApi, adminCmsMediaApi, MarketingContentDTO, API_BASE_URL } from "@/lib/api";
+import { ConfirmModal } from "@/components/shared/ConfirmModal";
 
 const Marketing = () => {
   const [contentText, setContentText] = useState("");
@@ -26,7 +26,14 @@ const Marketing = () => {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{
+    title: string;
+    description: string;
+    variant: "danger" | "warning" | "info";
+    confirmLabel: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const marketingKey = ["marketing", "list"] as const;
   const { data: items = [] } = useQuery<MarketingContentDTO[]>({
@@ -70,18 +77,26 @@ const Marketing = () => {
   };
 
   const handleDeleteItem = (id: string) => {
-    setConfirmDelete(id);
-  };
-
-  const doDeleteItem = async (id: string) => {
-    try {
-      await marketingApi.delete(id);
-      queryClient.setQueryData<MarketingContentDTO[]>(marketingKey, (prev) =>
-        (prev ?? []).filter((item) => item._id !== id),
-      );
-    } catch {
-      toast.error("Failed to delete content.");
-    }
+    setConfirm({
+      title: "Delete post?",
+      description: "This marketing post will be permanently removed.",
+      variant: "danger",
+      confirmLabel: "Delete",
+      onConfirm: async () => {
+        setDeleteLoading(true);
+        try {
+          await marketingApi.delete(id);
+          queryClient.setQueryData<MarketingContentDTO[]>(marketingKey, (prev) =>
+            (prev ?? []).filter((item) => item._id !== id),
+          );
+        } catch {
+          toast.error("Failed to delete content.");
+        } finally {
+          setDeleteLoading(false);
+          setConfirm(null);
+        }
+      },
+    });
   };
 
   const handleSubmit = async () => {
@@ -318,54 +333,16 @@ const Marketing = () => {
         </div>
       </div>
 
-      {/* Confirm Delete Modal */}
-      <AnimatePresence>
-        {confirmDelete && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <motion.div
-              initial={{ scale: 0.96, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4"
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center shrink-0">
-                  <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 dark:text-white">Delete post?</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                    This marketing post will be permanently removed.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3 justify-end pt-1">
-                <button
-                  onClick={() => setConfirmDelete(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    doDeleteItem(confirmDelete);
-                    setConfirmDelete(null);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ConfirmModal
+        open={!!confirm}
+        onClose={() => !deleteLoading && setConfirm(null)}
+        onConfirm={() => confirm?.onConfirm()}
+        title={confirm?.title ?? ""}
+        description={confirm?.description}
+        confirmLabel={confirm?.confirmLabel}
+        variant={confirm?.variant}
+        isLoading={deleteLoading}
+      />
     </DashboardLayout>
   );
 };
