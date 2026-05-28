@@ -1,0 +1,17 @@
+<svg width="232" height="48" viewBox="0 0 232 48" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TravelHomes">
+  <defs>
+    <linearGradient id="thBrand" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E88BA"/>
+      <stop offset="1" stop-color="#0F5C8A"/>
+    </linearGradient>
+  </defs>
+  <!-- mark -->
+  <rect width="48" height="48" rx="13" fill="url(#thBrand)"/>
+  <path d="M24 10.2 L37.6 21.4 V35.4 a2.6 2.6 0 0 1-2.6 2.6 H13 a2.6 2.6 0 0 1-2.6-2.6 V21.4 Z" fill="#fff"/>
+  <circle cx="24" cy="22.6" r="3.4" fill="url(#thBrand)"/>
+  <rect x="20.6" y="29.4" width="6.8" height="8.6" rx="1.7" fill="url(#thBrand)"/>
+  <!-- wordmark -->
+  <text x="62" y="31" font-family="'Plus Jakarta Sans', Inter, system-ui, sans-serif" font-size="22" font-weight="800" letter-spacing="-0.4">
+    <tspan fill="#0A2B40">Travel</tspan><tspan fill="#0F5C8A">Homes</tspan>
+  </text>
+</svg>

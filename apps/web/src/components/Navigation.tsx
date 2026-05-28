@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   LayoutDashboard,
   Calendar,
@@ -374,23 +375,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
       >
         {isOpen ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            {/* logo mark */}
-            <div
-              className="w-8 h-8 shrink-0 rounded-xl
-              bg-app-accent shadow-sm
-              flex items-center justify-center"
-            >
-              <span className="text-white font-black text-[13px] leading-none">T</span>
-            </div>
-
-            <div className="min-w-0">
-              <p className="text-[14px] font-bold text-gray-900 dark:text-white tracking-tight whitespace-nowrap leading-tight">
-                TripHut
-              </p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight whitespace-nowrap">
-                Host Dashboard
-              </p>
-            </div>
+            <BrandLogo size={30} className="min-w-0" />
 
             <button
               onClick={handlePinToggle}
@@ -408,13 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             </button>
           </div>
         ) : (
-          <div
-            className="w-8 h-8 rounded-xl
-            bg-app-accent shadow-sm
-            flex items-center justify-center"
-          >
-            <span className="text-white font-black text-[13px] leading-none">T</span>
-          </div>
+          <BrandLogo variant="mark" size={32} />
         )}
       </div>
 

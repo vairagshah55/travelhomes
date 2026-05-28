@@ -1,132 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import { useTheme } from '../ThemeProvider'
 import { useAuth } from "@/contexts/AuthContext";
-import { settingsApi } from "@/lib/api";
-import { getImageUrl } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
 
+/**
+ * Public/vendor site logo. Renders the HD vector BrandLogo (TravelHomes) and
+ * links home (vendors → /dashboard, everyone else → /). The previous
+ * CMS-fetched/builder.io image logo was replaced with the in-app vector logo.
+ */
 const LogoWebsite = () => {
-     const { theme } = useTheme(); // or just: const theme = useTheme();
-    // console.log(theme);
-    const { user } = useAuth();
-    const [logoUrl, setLogoUrl] = useState<string>("");
-    const [logoDarkUrl, setLogoDarkUrl] = useState<string>("");
-    const [effectiveTheme, setEffectiveTheme] = useState<'light'|'dark'>('light');
+  const { user } = useAuth();
+  const has =
+    user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
 
-    useEffect(() => {
-        if (theme === 'system') {
-            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setEffectiveTheme(isDark ? 'dark' : 'light');
-        } else {
-            setEffectiveTheme(theme);
-        }
-    }, [theme]);
-
-    useEffect(() => {
-        const fetchLogo = async () => {
-            try {
-                const res = await settingsApi.getSeo('logo');
-                if (res.success && res.data) {
-                    setLogoUrl(res.data.logoUrl || "");
-                    setLogoDarkUrl(res.data.logoDarkUrl || "");
-                }
-            } catch (error) {
-                console.error("Failed to fetch logo:", error);
-            }
-        };
-        fetchLogo();
-    }, []);
-
-    const has = user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
-    
-    // Default logos (request 2x resolution for retina clarity)
-    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=400&quality=100"; // Black text
-    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=400&quality=100"; // White text
-    
-    // Determine which logo to show
-    let logoSrc;
-    if (effectiveTheme === 'light') {
-        // Light theme (white background) -> Use Light Theme Logo (Black)
-        logoSrc = logoUrl ? getImageUrl(logoUrl) : lightLogo;
-    } else {
-        // Dark theme (black background) -> Use Dark Theme Logo (White)
-        logoSrc = logoDarkUrl ? getImageUrl(logoDarkUrl) : darkLogo;
-    }
-    
   return (
-    <div>
-        <Link to={`${has ? "/dashboard" : "/"}`  }>
-        <img
-            src={logoSrc}
-            alt="Travel Homes Logo"
-            className="h-16 w-auto max-w-[200px] object-contain"
-            style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
-            draggable={false}
-          />
-          </Link>
-    </div>
+    <Link to={has ? "/dashboard" : "/"} aria-label="TravelHomes home">
+      <BrandLogo size={40} />
+    </Link>
   );
 };
 
-export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "light" | "dark" }){
-     const { theme } = useTheme(); // or just: const theme = useTheme();
-    // console.log(theme);
-    const { user } = useAuth();
-    const [logoUrl, setLogoUrl] = useState<string>("");
-    const [logoDarkUrl, setLogoDarkUrl] = useState<string>("");
-    const [effectiveTheme, setEffectiveTheme] = useState<'light'|'dark'>('light');
+/**
+ * Header variant — `variant="light"` forces the white wordmark for transparent
+ * hero headers sitting over photos.
+ */
+export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "light" | "dark" }) {
+  const { user } = useAuth();
+  const has =
+    user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
+  const tone = variant === "light" ? "light" : variant === "dark" ? "dark" : "auto";
 
-    useEffect(() => {
-        if (theme === 'system') {
-            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            setEffectiveTheme(isDark ? 'dark' : 'light');
-        } else {
-            setEffectiveTheme(theme);
-        }
-    }, [theme]);
-
-    useEffect(() => {
-        const fetchLogo = async () => {
-            try {
-                const res = await settingsApi.getSeo('logo');
-                 if (res.success && res.data) {
-                    setLogoUrl(res.data.logoUrl || "");
-                    setLogoDarkUrl(res.data.logoDarkUrl || "");
-                }
-            } catch (error) {
-                console.error("Failed to fetch logo:", error);
-            }
-        };
-        fetchLogo();
-    }, []);
-
-    const has = user?.vendorStatus === "approved" || user?.vendorStatus === "active" || user?.userType === "vendor";
-
-    const lightLogo = "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=400&quality=100"; // Black text
-    const darkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=400&quality=100"; // White text
-
-    const resolvedTheme = variant === "dark" ? "dark" : variant === "light" ? "light" : effectiveTheme;
-
-    let logoSrc;
-    if (resolvedTheme === 'dark') {
-         logoSrc = logoDarkUrl ? getImageUrl(logoDarkUrl) : darkLogo;
-    } else {
-         logoSrc = logoUrl ? getImageUrl(logoUrl) : lightLogo;
-    }
-    
   return (
-    <div>
-        <Link to={`${has ? "/dashboard" : "/"}`}>
-        <img
-            src={logoSrc}
-            alt="Travel Homes Logo"
-            className="h-16 w-auto max-w-[200px] object-contain"
-            style={{ imageRendering: '-webkit-optimize-contrast' } as React.CSSProperties}
-            draggable={false}
-          />
-          </Link>
-      </div>
+    <Link to={has ? "/dashboard" : "/"} aria-label="TravelHomes home">
+      <BrandLogo size={40} tone={tone} />
+    </Link>
   );
-};
+}
 
 export default LogoWebsite;

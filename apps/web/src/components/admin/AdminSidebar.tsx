@@ -10,7 +10,6 @@ import {
   ChevronsLeft,
   CreditCard,
   FileText,
-  Globe,
   HelpCircle,
   Layers,
   LayoutDashboard,
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 
 import LogoWebsite from "@/components/admin/LogoWebsite";
+import { BrandLogo } from "@/components/BrandLogo";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { getInitials } from "@/utils/getInitials";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -474,9 +474,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           }`}
         >
           {collapsed ? (
-            <div className="w-9 h-9 rounded-lg bg-tpl-primary flex items-center justify-center">
-              <Globe size={18} className="text-white" />
-            </div>
+            <BrandLogo variant="mark" size={36} />
           ) : (
             <LogoWebsite />
           )}

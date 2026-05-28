@@ -310,20 +310,17 @@ export default function SiteHeader({
                 >
                   {navTabs.map((tab) => {
                     const IconComponent = tab.icon;
-                    // User's explicit selection ALWAYS wins for visual feedback.
-                    // scrollHighlightFilter is a secondary "section-in-view" cue
-                    // shown as a subtle dot so clicks aren't swallowed.
+                    // Only the user's explicit click drives the visual state.
+                    // (The transient scroll-spy "section-in-view" highlight was
+                    // removed — it flashed a dot/tint on the tab for a few
+                    // seconds while scrolling, which read as a glitch.)
                     const isActive = activeFilter === tab.id;
-                    const isScrollHighlighted =
-                      !isActive && scrollHighlightFilter === tab.id;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => handleTabClick(tab.id)}
                         className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
-                          isActive
-                            ? "text-white"
-                            : "text-[#0A2B40] hover:text-[#0F5C8A]"
+                          isActive ? "text-white" : "text-[#0A2B40] hover:text-[#0F5C8A]"
                         }`}
                       >
                         {/* Active pill — shared layoutId slides between tabs */}
@@ -335,23 +332,17 @@ export default function SiteHeader({
                           />
                         )}
 
-                        {/* Idle background — subtle outlined chip, only when NOT active */}
+                        {/* Idle background — subtle outlined chip when NOT active */}
                         {!isActive && (
                           <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#E8F2F8] group-hover:border-[#0F5C8A]/30 transition-colors duration-150" />
                         )}
 
                         <IconComponent
                           className={`relative z-10 w-4 h-4 transition-colors duration-150 ${
-                            isActive
-                              ? "text-white"
-                              : "text-[#5F6A82] group-hover:text-[#0F5C8A]"
+                            isActive ? "text-white" : "text-[#5F6A82] group-hover:text-[#0F5C8A]"
                           }`}
                         />
                         <span className="relative z-10">{tab.label}</span>
-
-                        {isScrollHighlighted && (
-                          <span className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-1.5 h-1.5 rounded-full bg-[#0F5C8A]/40" />
-                        )}
                       </button>
                     );
                   })}
@@ -881,8 +872,8 @@ export default function SiteHeader({
                 >
                   <button
                     className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      isScrolled
-                        ? "bg-[#0A4670] text-white hover:bg-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                      isScrolled || isSearchPage
+                        ? "bg-[#0F5C8A] text-white hover:bg-[#14709F] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                         : "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
@@ -916,8 +907,8 @@ export default function SiteHeader({
                 >
                   <button
                     className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      isScrolled
-                        ? "bg-[#0A4670] text-white hover:bg-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                      isScrolled || isSearchPage
+                        ? "bg-[#0F5C8A] text-white hover:bg-[#14709F] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                         : "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}

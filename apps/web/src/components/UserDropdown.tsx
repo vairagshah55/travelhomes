@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import Header from "./Header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/utils";
+import { getInitials } from "@/utils/getInitials";
 
 interface UserDropdownProps {
   onSwitchToVendor: () => void;
@@ -109,30 +111,40 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
   };
 
   const displayName = user?.firstName || "User";
-  const photoUrl = user?.photo ? `${user.photo}` : "/user-avatar.svg";
-  
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || displayName;
+  const initials = getInitials(fullName);
+  const photoSrc = user?.photo ? getImageUrl(user.photo) : "";
+
   return (
     <div className="relative z-50 w-max" ref={dropdownRef}>
-      {/* Avatar Button */}
+      {/* Trigger — pill on md+ (Hi, Name · avatar · chevron); just the avatar on mobile. */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        aria-haspopup="true"
+        aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="flex bg-white max-md:px-1 md:px-3 rounded-full items-center gap-2 hover:opacity-80 transition-opacity focus:outline-none"
+        aria-label={`Account menu for ${displayName}`}
+        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F5C8A] focus-visible:ring-offset-2
+          md:pl-3.5 md:pr-1.5 md:bg-white md:border md:border-gray-200 md:shadow-sm md:hover:shadow-md md:hover:border-gray-300 md:hover:-translate-y-px
+          ${isOpen ? "md:border-[#0F5C8A]/40 md:shadow-md" : ""}`}
       >
-        <span className="text-sm font-medium text-gray-900">
-          Hi {displayName}
+        <span className="hidden md:inline-flex items-baseline gap-1 text-[13px] leading-none">
+          <span className="text-gray-500">Hi,</span>
+          <span className="text-gray-900 font-semibold tracking-tight max-w-[140px] truncate inline-block align-middle">
+            {displayName}
+          </span>
         </span>
-        <div className="w-10 h-10 bg-gray-300 rounded-full overflow-hidden">
-          <img
-            src={user?.photo ? getImageUrl(user.photo) : "/user-avatar.svg"}
-            onError={(e) => {
-              e.currentTarget.src = "/user-avatar.svg";
-            }}
-            alt={`${displayName}'s avatar`}
-            className="w-full h-full object-cover rounded-full"
-          />
-        </div>
+        <Avatar className="h-9 w-9 md:ring-2 md:ring-white shrink-0">
+          {photoSrc && <AvatarImage src={photoSrc} alt={`${displayName}'s avatar`} />}
+          <AvatarFallback className="bg-[#E8F2F8] text-[#0F5C8A] text-[12px] font-bold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <ChevronDown
+          size={14}
+          strokeWidth={2}
+          aria-hidden
+          className={`hidden md:block text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+        />
       </button>
 
       {/* Dropdown Menu */}
