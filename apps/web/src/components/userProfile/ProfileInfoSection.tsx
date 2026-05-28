@@ -1,7 +1,8 @@
+import { User, Phone, Mail, Calendar, MapPin, Building2 } from "lucide-react";
 import { formatDate } from "@/utils/formateTime";
 import ProfileField from "./ProfileField";
 
-interface User {
+interface UserProfile {
   firstName?: string;
   lastName?: string;
   email?: string;
@@ -12,32 +13,33 @@ interface User {
 }
 
 interface ProfileInfoSectionProps {
-  profile: User | null | undefined;
+  profile: UserProfile | null | undefined;
 }
 
 const ProfileInfoSection = ({ profile }: ProfileInfoSectionProps) => (
-  <div className="space-y-7 max-md:w-full mt-4">
-    {/* Name + Phone */}
-    <div className="grid grid-cols-2 gap-20">
+  <div className="bg-white border border-gray-100 rounded-2xl shadow-sm">
+    {/* Row 1 — Name + Phone */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8 px-6 py-5">
       <ProfileField
+        icon={User}
         label="Name"
         value={`${profile?.firstName ?? ""} ${profile?.lastName ?? ""}`.trim()}
       />
-      <ProfileField label="Phone Number" value={profile?.phoneNumber} />
+      <ProfileField icon={Phone} label="Phone Number" value={profile?.phoneNumber} />
     </div>
-    <hr className="border-gray-200" />
+    <div className="h-px bg-gray-100 mx-6" />
 
-    {/* Email + DOB */}
-    <div className="grid grid-cols-2 gap-20">
-      <ProfileField label="Email" value={profile?.email} />
-      <ProfileField label="Date of Birth" value={formatDate(profile?.dateOfBirth)} />
+    {/* Row 2 — Email + DOB */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8 px-6 py-5">
+      <ProfileField icon={Mail} label="Email" value={profile?.email} />
+      <ProfileField icon={Calendar} label="Date of Birth" value={formatDate(profile?.dateOfBirth)} />
     </div>
-    <hr className="border-gray-200" />
+    <div className="h-px bg-gray-100 mx-6" />
 
-    {/* State + City */}
-    <div className="grid grid-cols-2 gap-20">
-      <ProfileField label="State" value={profile?.state} />
-      <ProfileField label="City" value={profile?.city} />
+    {/* Row 3 — State + City */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-5 gap-x-8 px-6 py-5">
+      <ProfileField icon={Building2} label="State" value={profile?.state} />
+      <ProfileField icon={MapPin} label="City" value={profile?.city} />
     </div>
   </div>
 );

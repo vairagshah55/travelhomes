@@ -503,7 +503,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#14709F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -697,7 +697,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#14709F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -851,7 +851,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#14709F] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -872,9 +872,7 @@ export default function SiteHeader({
                 >
                   <button
                     className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      isScrolled || isSearchPage
-                        ? "bg-[#0F5C8A] text-white hover:bg-[#14709F] shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                        : "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                      "bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
@@ -907,9 +905,7 @@ export default function SiteHeader({
                 >
                   <button
                     className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      isScrolled || isSearchPage
-                        ? "bg-[#0F5C8A] text-white hover:bg-[#14709F] shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                        : "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A] shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                      "bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"
                     }`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
@@ -918,7 +914,7 @@ export default function SiteHeader({
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#0F5C8A] hover:bg-[#14709F] text-white shadow-sm hover:shadow-md transition-all duration-200"
+                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#0F5C8A] hover:bg-[#0A4670] text-white shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign up
                   </button>

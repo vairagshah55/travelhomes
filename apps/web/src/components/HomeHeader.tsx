@@ -253,7 +253,7 @@ function HeaderGuestDropdown({
 
         <Button
           onClick={onClose}
-          className="w-full bg-[#0F5C8A] text-white rounded-full py-3 hover:bg-[#14709F] transition-colors"
+          className="w-full bg-[#0F5C8A] text-white rounded-full py-3 hover:bg-[#0A4670] transition-colors"
         >
           Done
         </Button>
@@ -356,7 +356,7 @@ function HeaderCalendarDropdown({
             onSelect(localRange);
             onClose();
           }}
-          className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full px-6 py-2"
+          className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-full px-6 py-2"
         >
           Confirm
         </Button>
@@ -538,11 +538,7 @@ export function HomeHeader({
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <Button
-              className={`hidden md:flex ${
-                isTransparent
-                  ? "bg-white/15 backdrop-blur-md text-white border border-white/30 hover:bg-[#0F5C8A] hover:border-[#0F5C8A]"
-                  : "bg-[#0A4670] text-white border-0 hover:bg-[#0F5C8A]"
-              } rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200`}
+              className="hidden md:flex bg-[#0F5C8A] text-white hover:bg-[#0A4670] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
               onClick={() => navigate("/onboarding/service-selection")}
             >
               <div className="flex items-center gap-2">
@@ -559,7 +555,7 @@ export function HomeHeader({
                   className={`${
                     isTransparent
                       ? "bg-white/90 backdrop-blur-sm text-black hover:bg-white/100"
-                      : "bg-[#0F5C8A] text-white hover:bg-[#14709F]"
+                      : "bg-[#0F5C8A] text-white hover:bg-[#0A4670]"
                   } rounded-full px-4 md:px-6 h-10`}
                 >
                   Register
@@ -726,7 +722,7 @@ export function HomeHeader({
                     </Button>
                     <Button
                       onClick={handleHeaderSearch}
-                      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -935,7 +931,7 @@ export function HomeHeader({
                     </Button>
                     <Button
                       onClick={handleHeaderSearch}
-                      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />

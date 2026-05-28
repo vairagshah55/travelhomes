@@ -5,11 +5,16 @@ interface ProfileHeaderProps {
 }
 
 const ProfileHeader = ({ onEdit }: ProfileHeaderProps) => (
-  <div className="hidden lg:flex flex-row justify-between items-start md:items-center mb-9">
-    <h1 className="text-2xl max-md:text-lg font-semibold dark:bg-black dark:text-white text-gray-800 font-poppins mb-4 md:mb-0">
-      Profile
-    </h1>
-    <EditButton onClick={onEdit} className="px-4" />
+  <div className="hidden lg:flex flex-row justify-between items-center mb-5">
+    <div>
+      <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight font-poppins leading-tight">
+        Profile
+      </h1>
+      <p className="text-[13px] text-gray-500 mt-1">
+        Your personal details and verification status.
+      </p>
+    </div>
+    <EditButton onClick={onEdit} className="px-5" />
   </div>
 );
 

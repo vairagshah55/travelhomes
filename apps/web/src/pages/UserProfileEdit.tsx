@@ -1,15 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { SlArrowLeft } from "react-icons/sl";
+import { ChevronLeft, ShieldCheck, AlertCircle, Camera, CalendarDays } from "lucide-react";
+import { format, parseISO, isValid, subYears } from "date-fns";
 import { toast } from "sonner";
 import { userProfileApi } from "../lib/api";
 import { getImageUrl } from "@/lib/utils";
-import { Loader } from "@/components/ui/Loader";
+import { getInitials } from "@/utils/getInitials";
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 
@@ -25,37 +30,62 @@ interface EditFormData {
   photo: string;
 }
 
+type EditErrors = Partial<Record<keyof EditFormData, string>>;
+
+/** Pure validator — runs every rule and returns all field errors at once so
+ *  the user sees the full picture, not one error at a time. */
+function validateEditForm(d: EditFormData): EditErrors {
+  const errs: EditErrors = {};
+  const name = d.name.trim();
+  if (!name) errs.name = "Name is required";
+  else if (name.length < 2) errs.name = "Name must be at least 2 characters";
+  else if (!/^[\p{L} .'-]+$/u.test(name)) errs.name = "Use letters, spaces, and . ' - only";
+
+  if (!d.phoneNumber.trim()) errs.phoneNumber = "Phone number is required";
+  else if (!/^\d{10}$/.test(d.phoneNumber)) errs.phoneNumber = "Enter a valid 10-digit number";
+
+  const email = d.email.trim();
+  if (!email) errs.email = "Email is required";
+  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) errs.email = "Enter a valid email";
+
+  if (d.dateOfBirth) {
+    const dob = new Date(d.dateOfBirth);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (isNaN(dob.getTime())) errs.dateOfBirth = "Invalid date";
+    else if (dob > today) errs.dateOfBirth = "Date of birth can't be in the future";
+    else {
+      const ageYears = (today.getTime() - dob.getTime()) / (365.25 * 24 * 3600 * 1000);
+      if (ageYears < 13) errs.dateOfBirth = "You must be at least 13 years old";
+      else if (ageYears > 120) errs.dateOfBirth = "Please enter a valid year of birth";
+    }
+  }
+
+  if (!d.state.trim()) errs.state = "State is required";
+  if (!d.city.trim()) errs.city = "City is required";
+
+  return errs;
+}
+
 interface EditProfileFormProps {
   formData: EditFormData;
+  errors: EditErrors;
   onChange: (field: keyof EditFormData, value: string) => void;
   onSave: () => void;
 }
 
 /* ─── Sub-components ──────────────────────────────────────────────────────── */
 
-const VerificationStatus = ({ label, verified }: { label: string; verified: boolean }) => (
-  <div className="flex items-center gap-3">
-    {verified ? (
-      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 19 20">
-        <path
-          d="M3.16699 10L7.91699 14.75L15.8337 5.25"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ) : (
-      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.5"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    )}
-    <span className="text-sm font-plus-jakarta">{label}</span>
+const VerifyChip = ({ ok, okLabel, pendingLabel }: { ok: boolean; okLabel: string; pendingLabel: string }) => (
+  <div
+    className={`inline-flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium ${
+      ok
+        ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70"
+        : "bg-amber-50 text-amber-700 ring-1 ring-amber-200/70"
+    }`}
+  >
+    {ok ? <ShieldCheck size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
+    <span>{ok ? okLabel : pendingLabel}</span>
   </div>
 );
 
@@ -63,7 +93,7 @@ const MobileProfileEditHeader = ({ onBack }: { onBack: () => void }) => (
   <div className="md:hidden flex items-center gap-4 mb-6">
     <button
       onClick={onBack}
-      className="p-2 hover:bg-gray-200 dark:hover:bg-[#14709F] rounded-full transition-colors"
+      className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"
     >
       <SlArrowLeft size={20} />
     </button>
@@ -72,11 +102,10 @@ const MobileProfileEditHeader = ({ onBack }: { onBack: () => void }) => (
 );
 
 const IdentityVerificationSection = () => (
-  <div className="mb-8">
-    <h3 className="text-lg font-bold font-geist mb-3">Identity Verification</h3>
-    <p className="text-sm text-gray-300 font-plus-jakarta">
-      Whether you're traveling for leisure or business, we're committed to making your stay smooth,
-      enjoyable, and truly unforgettable.
+  <div>
+    <h3 className="text-[14px] font-semibold text-gray-900 mb-1.5">Identity Verification</h3>
+    <p className="text-[12.5px] text-gray-500 leading-relaxed">
+      Verify your details so vendors can trust your bookings and we can reach you when it matters.
     </p>
   </div>
 );
@@ -94,81 +123,57 @@ const EditProfileSidebar = ({
   onPhotoFileChange,
   onBack,
 }: EditProfileSidebarProps) => {
-  const displayName = user?.firstName || "Profile";
+  const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Profile";
+  const initials = getInitials(fullName);
+  const photoSrc = photoPreview || (user?.photo ? getImageUrl(user.photo) : "");
+  const emailVerified = !!user?.emailVerified || !!user?.email;
+  const mobileVerified = !!user?.mobileVerified;
+
   return (
-    <div className="bg-black rounded-md p-8 text-white max-md:hidden lg:w-80 flex-shrink-0 relative">
+    <aside className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 max-md:hidden lg:w-80 flex-shrink-0 relative">
       <button
         onClick={onBack}
-        className="absolute top-4 left-4 flex items-center gap-1 text-sm hover:opacity-80"
+        className="absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#0F5C8A] transition-colors"
       >
-        <SlArrowLeft size={12} />
+        <ChevronLeft size={14} />
         <span>Back</span>
       </button>
 
-      <div className="text-center mb-9 mt-4">
-        <div className="relative inline-block mb-3">
-          <img
-            src={photoPreview || (user?.photo ? getImageUrl(user.photo) : "/user-avatar.svg")}
-            onError={(e) => {
-              e.currentTarget.src = "/user-avatar.svg";
-            }}
-            alt={`${displayName} avatar`}
-            className="w-32 h-32 object-cover bg-white rounded-full"
-          />
-          <label className="absolute bottom-2 right-2 w-7 h-7 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center cursor-pointer hover:bg-white/70 transition-colors">
+      {/* Avatar with upload affordance */}
+      <div className="text-center pt-6 pb-6">
+        <div className="relative inline-block mb-4">
+          <Avatar className="w-28 h-28 ring-4 ring-[#E8F2F8]">
+            {photoSrc && <AvatarImage src={photoSrc} alt={`${fullName} avatar`} />}
+            <AvatarFallback className="bg-[#E8F2F8] text-[#0F5C8A] text-[28px] font-bold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <label
+            className="absolute bottom-1 right-1 w-9 h-9 bg-[#0F5C8A] hover:bg-[#0A4670] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
+            aria-label="Upload photo"
+          >
             <input type="file" accept="image/*" className="hidden" onChange={onPhotoFileChange} />
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 30 30"
-            >
-              <path
-                d="M14.333 8.33325H12.9997C9.66634 8.33325 8.33301 9.66659 8.33301 12.9999V16.9999C8.33301 20.3333 9.66634 21.6666 12.9997 21.6666H16.9997C20.333 21.6666 21.6663 20.3333 21.6663 16.9999V15.6666"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M17.6933 9.0135L12.4399 14.2668C12.2399 14.4668 12.0399 14.8602 11.9999 15.1468L11.7133 17.1535C11.6066 17.8802 12.1199 18.3868 12.8466 18.2868L14.8533 18.0002C15.1333 17.9602 15.5266 17.7602 15.7333 17.5602L20.9866 12.3068C21.8933 11.4002 22.3199 10.3468 20.9866 9.0135C19.6533 7.68017 18.5999 8.10684 17.6933 9.0135Z"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeMiterlimit="10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M16.9395 9.76685C17.3861 11.3602 18.6328 12.6068 20.2328 13.0602"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Camera size={14} className="text-white" />
           </label>
         </div>
-        <h2 className="text-xl font-bold font-geist">Upload a Photo</h2>
+        <h2 className="text-[16px] font-semibold text-gray-900 leading-tight">
+          {photoPreview ? "Photo selected" : "Tap the camera to change photo"}
+        </h2>
+        <p className="text-[12px] text-gray-500 mt-1">JPG or PNG, max 5MB</p>
       </div>
 
-      <IdentityVerificationSection />
+      <div className="h-px bg-gray-100 -mx-6 my-1" />
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-geist">
-          {user?.firstName} {user?.lastName}
-        </h3>
-        <div className="space-y-2">
-          <VerificationStatus
-            label={user?.email ? "Email Confirmed" : "Email Not Confirmed"}
-            verified={!!user?.email}
-          />
-          <VerificationStatus
-            label={user?.mobileVerified ? "Mobile Confirmed" : "Mobile Not Confirmed"}
-            verified={!!user?.mobileVerified}
-          />
-        </div>
+      {/* Identity verification */}
+      <div className="pt-5">
+        <IdentityVerificationSection />
       </div>
-    </div>
+
+      <div className="mt-4 space-y-2">
+        <VerifyChip ok={emailVerified} okLabel="Email Verified" pendingLabel="Email Not Verified" />
+        <VerifyChip ok={mobileVerified} okLabel="Mobile Verified" pendingLabel="Mobile Not Verified" />
+      </div>
+    </aside>
   );
 };
 
@@ -178,12 +183,19 @@ interface EditProfileHeaderProps {
 }
 
 const EditProfileHeader = ({ onSave, saving }: EditProfileHeaderProps) => (
-  <div className="hidden md:flex flex-col md:flex-row justify-between items-start md:items-center mb-9">
-    <h1 className="text-2xl font-semibold text-gray-800 font-poppins mb-4 md:mb-0">Profile</h1>
+  <div className="hidden md:flex flex-row justify-between items-center mb-5">
+    <div>
+      <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight font-poppins leading-tight">
+        Edit Profile
+      </h1>
+      <p className="text-[13px] text-gray-500 mt-1">
+        Update your personal details and verification info.
+      </p>
+    </div>
     <Button
       onClick={onSave}
       disabled={saving}
-      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white px-6 rounded-full font-geist disabled:opacity-60"
+      className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white px-6 rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:translate-y-0 disabled:shadow-md"
     >
       {saving ? "Saving…" : "Save"}
     </Button>
@@ -194,96 +206,272 @@ interface EditProfileFormPropsWithSaving extends EditProfileFormProps {
   saving: boolean;
 }
 
-const EditProfileForm = ({ formData, onChange, onSave, saving }: EditProfileFormPropsWithSaving) => (
-  <div className="space-y-8">
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          Name
-        </label>
-        <Input
-          value={formData.name}
-          maxLength={30}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange("name", v);
-            const parts = v.trim().split(/\s+/);
-            onChange("firstName", parts[0] || "");
-            onChange("lastName", parts.slice(1).join(" ") || "");
+const baseInputCls =
+  "w-full h-11 px-3 dark:bg-gray-900 dark:text-white rounded-lg text-[14px] text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0";
+const okBorderCls =
+  "border-gray-200 dark:border-gray-700 focus-visible:ring-[#0F5C8A] focus-visible:border-[#0F5C8A]";
+const errBorderCls =
+  "border-red-300 dark:border-red-500/40 focus-visible:ring-red-500 focus-visible:border-red-500";
+const labelCls =
+  "block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5";
+
+const FieldError = ({ message }: { message?: string }) =>
+  message ? (
+    <p className="mt-1.5 flex items-center gap-1 text-[12px] text-red-600">
+      <AlertCircle size={12} className="shrink-0" />
+      <span>{message}</span>
+    </p>
+  ) : null;
+
+const inputClass = (hasError?: boolean) =>
+  `${baseInputCls} ${hasError ? errBorderCls : okBorderCls}`;
+
+/* ─── Date-of-Birth picker ────────────────────────────────────────────────────
+ * Native <input type="date"> looks inconsistent across browsers and — more
+ * importantly — is awful for DOB entry: ChevronLeft × 480 clicks to reach 1985.
+ *
+ * This wraps shadcn Calendar (react-day-picker v8) in a Popover with
+ * captionLayout="dropdown-buttons" so the month/year are clickable selects,
+ * and clamps the selectable range to [1900, today]. Storage stays ISO
+ * YYYY-MM-DD so handleSave + the validator don't need to change.
+ * ───────────────────────────────────────────────────────────────────────── */
+interface DOBPickerProps {
+  value: string;
+  onChange: (v: string) => void;
+  hasError?: boolean;
+}
+
+const DOBPicker = ({ value, onChange, hasError }: DOBPickerProps) => {
+  const [open, setOpen] = useState(false);
+  const today = useMemo(() => new Date(), []);
+  const minYear = 1900;
+  const maxYear = today.getFullYear();
+
+  const selectedDate = useMemo(() => {
+    if (!value) return undefined;
+    const d = parseISO(value);
+    return isValid(d) ? d : undefined;
+  }, [value]);
+
+  // Opening with `today` as the visible month forces the user to dropdown
+  // back ~30 years on every fresh pick. Bias to age-25 for a sensible start.
+  const defaultMonth = selectedDate ?? subYears(today, 25);
+  const display = selectedDate ? format(selectedDate, "PPP") : "Select date of birth";
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-invalid={hasError}
+          aria-haspopup="dialog"
+          className={`w-full h-11 px-3 rounded-lg text-[14px] flex items-center justify-between gap-2 border dark:bg-gray-900 dark:text-white text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 ${
+            hasError ? errBorderCls : okBorderCls
+          }`}
+        >
+          <span className={selectedDate ? "text-gray-900 dark:text-white" : "text-gray-400"}>
+            {display}
+          </span>
+          <CalendarDays size={16} className="shrink-0 text-gray-500" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" side="bottom" sideOffset={6} className="w-auto p-0">
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          defaultMonth={defaultMonth}
+          onSelect={(d) => {
+            if (d) {
+              // Use local Y/M/D, not toISOString — toISOString shifts by tz
+              // and can off-by-one the saved date in negative-UTC regions.
+              onChange(format(d, "yyyy-MM-dd"));
+              setOpen(false);
+            } else {
+              onChange("");
+            }
           }}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          // `dropdown` (not `dropdown-buttons`) — month/year selects ONLY, no
+          // duplicated chevron buttons under the label. Side-prev/next arrows
+          // still work for ±1 month nudges, dropdowns handle the long jumps.
+          captionLayout="dropdown"
+          fromYear={minYear}
+          toYear={maxYear}
+          disabled={{ after: today }}
+          initialFocus
+          className="p-2"
+          classNames={{
+            // Compact the whole picker — DOB doesn't need 48px tap targets.
+            months: "flex flex-col space-y-2",
+            month: "space-y-3",
+            caption: "flex justify-center pt-1 pb-2 relative items-center",
+            caption_dropdowns: "flex items-center gap-1.5",
+            caption_label: "hidden",
+            dropdown:
+              "h-8 rounded-md border border-gray-200 bg-white px-2 text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0F5C8A] cursor-pointer",
+            dropdown_month: "min-w-[110px]",
+            dropdown_year: "min-w-[80px]",
+            nav_button: "h-7 w-7 bg-transparent p-0 opacity-60 hover:opacity-100 rounded-md hover:bg-gray-100",
+            nav_button_previous: "absolute left-1",
+            nav_button_next: "absolute right-1",
+            head_cell: "text-gray-400 rounded-md w-9 font-medium text-[11px] uppercase tracking-wide",
+            row: "flex w-full mt-1",
+            cell: "h-9 w-9 text-center text-[13px] p-0 relative focus-within:relative focus-within:z-20",
+            day: "h-9 w-9 p-0 font-normal rounded-md hover:bg-gray-100 aria-selected:opacity-100 transition-colors",
+            day_selected:
+              "bg-[#0F5C8A] text-white hover:bg-[#0A4670] hover:text-white focus:bg-[#0A4670] focus:text-white",
+            day_today: "ring-1 ring-[#0F5C8A]/40 text-[#0F5C8A] font-semibold",
+            day_outside: "text-gray-300",
+            day_disabled: "text-gray-300 opacity-50 cursor-not-allowed hover:bg-transparent",
+          }}
         />
-      </div>
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          Phone Number
-        </label>
-        <Input
-          type="tel"
-          maxLength={10}
-          value={formData.phoneNumber}
-          onChange={(e) => onChange("phoneNumber", e.target.value.replace(/\D/g, ""))}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const EditProfileForm = ({ formData, errors, onChange, onSave, saving }: EditProfileFormPropsWithSaving) => (
+  <>
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+        <div>
+          <label className={labelCls}>Name</label>
+          <Input
+            value={formData.name}
+            maxLength={30}
+            aria-invalid={!!errors.name}
+            onChange={(e) => {
+              const v = e.target.value;
+              onChange("name", v);
+              const parts = v.trim().split(/\s+/);
+              onChange("firstName", parts[0] || "");
+              onChange("lastName", parts.slice(1).join(" ") || "");
+            }}
+            className={inputClass(!!errors.name)}
+          />
+          <FieldError message={errors.name} />
+        </div>
+        <div>
+          <label className={labelCls}>Phone Number</label>
+          <Input
+            type="tel"
+            maxLength={10}
+            value={formData.phoneNumber}
+            aria-invalid={!!errors.phoneNumber}
+            onChange={(e) => onChange("phoneNumber", e.target.value.replace(/\D/g, ""))}
+            className={inputClass(!!errors.phoneNumber)}
+            placeholder="10-digit mobile"
+          />
+          <FieldError message={errors.phoneNumber} />
+        </div>
+        <div>
+          <label className={labelCls}>Email</label>
+          <Input
+            maxLength={40}
+            value={formData.email}
+            aria-invalid={!!errors.email}
+            onChange={(e) => onChange("email", e.target.value)}
+            className={inputClass(!!errors.email)}
+            placeholder="name@example.com"
+          />
+          <FieldError message={errors.email} />
+        </div>
+        <div>
+          <label className={labelCls}>Date of Birth</label>
+          <DOBPicker
+            value={formData.dateOfBirth}
+            hasError={!!errors.dateOfBirth}
+            onChange={(v) => onChange("dateOfBirth", v)}
+          />
+          <FieldError message={errors.dateOfBirth} />
+        </div>
+        <div>
+          <label className={labelCls}>State</label>
+          <Input
+            value={formData.state}
+            aria-invalid={!!errors.state}
+            onChange={(e) => onChange("state", e.target.value)}
+            className={inputClass(!!errors.state)}
+            placeholder="State"
+          />
+          <FieldError message={errors.state} />
+        </div>
+        <div>
+          <label className={labelCls}>City</label>
+          <Input
+            value={formData.city}
+            aria-invalid={!!errors.city}
+            onChange={(e) => onChange("city", e.target.value)}
+            className={inputClass(!!errors.city)}
+            placeholder="City"
+          />
+          <FieldError message={errors.city} />
+        </div>
       </div>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          Email
-        </label>
-        <Input
-          maxLength={40}
-          value={formData.email}
-          onChange={(e) => onChange("email", e.target.value)}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          Date of Birth
-        </label>
-        <Input
-          type="date"
-          value={formData.dateOfBirth}
-          onChange={(e) => onChange("dateOfBirth", e.target.value)}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          State
-        </label>
-        <Input
-          value={formData.state}
-          onChange={(e) => onChange("state", e.target.value)}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-      <div>
-        <label className="block text-base text-gray-700 dark:text-white font-plus-jakarta mb-3">
-          City
-        </label>
-        <Input
-          value={formData.city}
-          onChange={(e) => onChange("city", e.target.value)}
-          className="w-full px-3 py-6 border border-gray-400 dark:bg-black dark:text-white rounded-lg text-base text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-    </div>
-
-    <div className="lg:hidden flex items-start w-full mb-9 mt-6">
+    {/* Mobile Save — sticks to brand styling */}
+    <div className="lg:hidden w-full mt-5">
       <Button
         onClick={onSave}
         disabled={saving}
-        className="bg-[#0F5C8A] hover:bg-[#14709F] dark:bg-black dark:text-white text-white px-8 py-6 rounded-full w-full font-geist disabled:opacity-60"
+        className="w-full h-12 bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-full font-geist shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save"}
       </Button>
+    </div>
+  </>
+);
+
+/* ─── Skeleton — mirrors the real layout so there's no swap-flicker ─────── */
+
+const ShimmerBox = ({ className = "" }: { className?: string }) => (
+  <div className={`bg-gray-100 rounded animate-pulse ${className}`} />
+);
+
+const EditProfileSkeleton = () => (
+  <div className="flex flex-col lg:flex-row gap-12 max-w-7xl mx-auto">
+    {/* Sidebar skeleton */}
+    <aside className="max-md:hidden lg:w-80 flex-shrink-0">
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div className="flex justify-center pt-6 pb-4">
+          <div className="w-28 h-28 rounded-full bg-gray-100 animate-pulse ring-4 ring-[#E8F2F8]" />
+        </div>
+        <div className="space-y-2 text-center">
+          <ShimmerBox className="h-4 w-32 mx-auto" />
+          <ShimmerBox className="h-3 w-44 mx-auto" />
+        </div>
+        <div className="h-px bg-gray-100 -mx-6 my-5" />
+        <div className="space-y-2">
+          <ShimmerBox className="h-3.5 w-36" />
+          <ShimmerBox className="h-3 w-full" />
+          <ShimmerBox className="h-3 w-3/4" />
+        </div>
+        <div className="mt-5 space-y-2">
+          <ShimmerBox className="h-9" />
+          <ShimmerBox className="h-9" />
+        </div>
+      </div>
+    </aside>
+
+    {/* Form area skeleton */}
+    <div className="flex-1">
+      <div className="hidden md:flex justify-between items-center mb-5">
+        <div className="space-y-2">
+          <ShimmerBox className="h-5 w-32" />
+          <ShimmerBox className="h-3 w-64" />
+        </div>
+        <div className="h-10 w-24 rounded-full bg-gray-100 animate-pulse" />
+      </div>
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i}>
+              <ShimmerBox className="h-3 w-20 mb-2" />
+              <div className="h-11 rounded-lg bg-gray-50 border border-gray-100 animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -308,6 +496,7 @@ const UserProfileEdit = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<EditFormData>(EMPTY_FORM);
+  const [errors, setErrors] = useState<EditErrors>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
@@ -376,11 +565,34 @@ const UserProfileEdit = () => {
     };
   }, [user?.email]);
 
-  const handleChange = (field: keyof EditFormData, value: string) =>
+  const handleChange = (field: keyof EditFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // Clear the field's error as soon as the user starts fixing it — feels
+    // responsive without waiting for the next save attempt.
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  };
 
   const handleSave = async () => {
     if (saving) return;
+
+    // Validate first — show all errors at once, scroll to the first invalid
+    // field, and toast a summary. Don't even attempt the network call.
+    const found = validateEditForm(formData);
+    if (Object.keys(found).length) {
+      setErrors(found);
+      // Inline red messages + auto-scroll + focus tell the user what's wrong;
+      // a toast on top would be redundant. The first input flagged invalid by
+      // aria-invalid is the natural focus target — keeps screen readers and
+      // pointer users converging on the same element.
+      requestAnimationFrame(() => {
+        const firstEl = document.querySelector<HTMLElement>('[aria-invalid="true"]');
+        firstEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstEl?.focus({ preventScroll: true });
+      });
+      return;
+    }
+    setErrors({});
+
     setSaving(true);
     try {
       const payload = {
@@ -431,14 +643,7 @@ const UserProfileEdit = () => {
 
       <div className="px-4 mt-20 md:px-20 py-10 max-md:py-0">
         {loading ? (
-          <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="flex flex-col items-center gap-4">
-              <Loader size="xl" />
-              <p className="text-gray-600 dark:text-gray-400 animate-pulse font-medium">
-                Fetching profile details...
-              </p>
-            </div>
-          </div>
+          <EditProfileSkeleton />
         ) : (
           <div className="flex flex-col lg:flex-row gap-12 max-w-7xl mx-auto">
             <MobileProfileEditHeader onBack={() => navigate(-1)} />
@@ -454,6 +659,7 @@ const UserProfileEdit = () => {
               <EditProfileHeader onSave={handleSave} saving={saving} />
               <EditProfileForm
                 formData={formData}
+                errors={errors}
                 onChange={handleChange}
                 onSave={handleSave}
                 saving={saving}

@@ -1,6 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import {
+  ChevronDown,
+  User as UserIcon,
+  MapPin,
+  Heart,
+  Settings,
+  MessageCircle,
+  HelpCircle,
+  ArrowUpRight,
+  LogOut,
+  X as CloseIcon,
+  FileText,
+} from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/utils";
@@ -21,6 +33,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
     {
       label: "Profile",
       path: "/user-profile",
+      icon: UserIcon,
       active:
         location.pathname === "/user-profile" ||
         location.pathname === "/user-profile-edit",
@@ -28,20 +41,33 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
     {
       label: "Trips",
       path: "/user-trips",
+      icon: MapPin,
       active: location.pathname === "/user-trips",
     },
     {
       label: "Wishlist",
       path: "/wishlist",
+      icon: Heart,
       active: location.pathname === "/wishlist",
     },
     {
-      label: "Account Setting",
+      label: "Account Settings",
       path: "/account-settings",
+      icon: Settings,
       active: location.pathname === "/account-settings",
     },
-    { label: "Chat", path: "/chat", active: location.pathname === "/chat" },
-    { label: "Help", path: "/help", active: location.pathname === "/help" },
+    {
+      label: "Chat",
+      path: "/chat",
+      icon: MessageCircle,
+      active: location.pathname === "/chat",
+    },
+    {
+      label: "Help",
+      path: "/help",
+      icon: HelpCircle,
+      active: location.pathname === "/help",
+    },
   ];
 
   // Close on outside click
@@ -116,26 +142,26 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
   const photoSrc = user?.photo ? getImageUrl(user.photo) : "";
 
   return (
-    <div className="relative z-50 w-max" ref={dropdownRef}>
+    <div className={`relative w-max ${isOpen ? "z-[130]" : "z-50"}`} ref={dropdownRef}>
       {/* Trigger — pill on md+ (Hi, Name · avatar · chevron); just the avatar on mobile. */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`Account menu for ${displayName}`}
-        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F5C8A] focus-visible:ring-offset-2
-          md:pl-3.5 md:pr-1.5 md:bg-white md:border md:border-gray-200 md:shadow-sm md:hover:shadow-md md:hover:border-gray-300 md:hover:-translate-y-px
-          ${isOpen ? "md:border-[#0F5C8A]/40 md:shadow-md" : ""}`}
+        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F5C8A] md:pl-3.5 md:pr-1.5 md:bg-[#0F5C8A] md:hover:bg-[#0A4670] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
+          isOpen ? "md:bg-[#0A4670] md:shadow-lg" : ""
+        }`}
       >
         <span className="hidden md:inline-flex items-baseline gap-1 text-[13px] leading-none">
-          <span className="text-gray-500">Hi,</span>
-          <span className="text-gray-900 font-semibold tracking-tight max-w-[140px] truncate inline-block align-middle">
+          <span className="text-white/75">Hi,</span>
+          <span className="text-white font-semibold tracking-tight max-w-[140px] truncate inline-block align-middle">
             {displayName}
           </span>
         </span>
-        <Avatar className="h-9 w-9 md:ring-2 md:ring-white shrink-0">
+        <Avatar className="h-9 w-9 md:ring-2 md:ring-white/30 shrink-0">
           {photoSrc && <AvatarImage src={photoSrc} alt={`${displayName}'s avatar`} />}
-          <AvatarFallback className="bg-[#E8F2F8] text-[#0F5C8A] text-[12px] font-bold">
+          <AvatarFallback className="bg-white text-[#0F5C8A] text-[12px] font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -143,106 +169,121 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
           size={14}
           strokeWidth={2}
           aria-hidden
-          className={`hidden md:block text-gray-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
+          className={`hidden md:block text-white/80 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown menu — desktop popover (sm+), full-screen sheet on mobile.
+          A backdrop sits behind so any floating widget on the page (chat/search
+          FABs etc.) is dimmed and never bleeds into the menu. */}
       {isOpen && (
-        <div
-          className={`
-            bg-white z-50 
-            sm:absolute sm:right-0 sm:top-full sm:mt-2 sm:w-52 sm:rounded-lg sm:shadow-lg sm:border sm:border-gray-200 sm:translate-x-[-40px]
-            fixed top-0 left-0 w-full h-full sm:h-auto sm:block
-            flex flex-col
-          `}
-        >
-          {/* Mobile Header */}
-          {/* <div className="lg:hidden">
-            <Header variant="transparent" className="fixed w-full z-50" />
-          </div> */}
-
-          {/* Mobile Close + Title */}
-          <div className="flex   items-center justify-between px-4 py-3 border-b md:hidden">
+        <>
+          <div
+            aria-hidden
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 z-[110] bg-black/45 backdrop-blur-[2px] sm:bg-black/25 sm:backdrop-blur-[1px]"
+          />
+          <div
+            role="menu"
+            className="bg-white z-[120] flex flex-col overflow-hidden
+              sm:absolute sm:left-[14px] sm:right-auto sm:top-full sm:mt-3 sm:w-64 sm:rounded-2xl sm:shadow-2xl sm:border sm:border-gray-100 sm:max-h-[min(360px,calc(100vh-200px))] sm:overflow-y-auto
+              fixed top-0 left-0 w-full h-full sm:h-auto"
+          >
+          {/* ── Mobile-only: "List your offering" CTA + close ── */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 md:hidden">
             <button
               onClick={() => {
                 setIsOpen(false);
-                if (user) {
-                  navigate("/onboarding/service-selection");
-                } else {
-                  navigate("/register");
-                }
+                navigate(user ? "/onboarding/service-selection" : "/register");
               }}
-              className="flex items-center gap-2 text-sm font-medium bg-gray-100 px-4 py-2 rounded-full hover:bg-gray-200"
+              className="inline-flex items-center gap-2 text-sm font-medium bg-[#0F5C8A] text-white px-4 py-2 rounded-full hover:bg-[#0A4670] transition-colors"
             >
-              <svg className="w-6 h-6" viewBox="0 0 15 16" fill="none">
-                <path
-                  fillRule="evenodd"
-                  clipRule="evenodd"
-                  d="M10 1H5C2.79086 1 1 2.79086 1 5V11C1 13.2091 2.79086 15 5 15H10C12.2091 15 14 13.2091 14 11V5C14 2.79086 12.2091 1 10 1Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M7.5 1.75C7.91421 1.75 8.25 1.41421 8.25 1C8.25 0.585786 7.91421 0.25 7.5 0.25V1.75ZM1.5 0.25C1.08579 0.25 0.75 0.585786 0.75 1C0.75 1.41421 1.08579 1.75 1.5 1.75V0.25ZM7.5 4.75C7.91421 4.75 8.25 4.41421 8.25 4C8.25 3.58579 7.91421 3.25 7.5 3.25V4.75ZM1.5 3.25C1.08579 3.25 0.75 3.58579 0.75 4C0.75 4.41421 1.08579 4.75 1.5 4.75V3.25ZM4.5 7.75C4.91421 7.75 5.25 7.41421 5.25 7C5.25 6.58579 4.91421 6.25 4.5 6.25V7.75ZM1.5 6.25C1.08579 6.25 0.75 6.58579 0.75 7C0.75 7.41421 1.08579 7.75 1.5 7.75V6.25ZM7.5 1V0.25H1.5V1V1.75H7.5V1ZM7.5 4V3.25H1.5V4V4.75H7.5V4ZM4.5 7V6.25H1.5V7V7.75H4.5V7Z"
-                  fill="currentColor"
-                />
-              </svg>
+              <FileText size={16} strokeWidth={2} />
               List your offering
             </button>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-2xl text-gray-600 sm:hidden"
+              aria-label="Close menu"
+              className="w-9 h-9 grid place-items-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
             >
-              &times;
+              <CloseIcon size={18} />
             </button>
           </div>
 
-          {/* Menu Items */}
-          <div className="flex flex-col ">
-            {menuItems.map((item) => (
-              <button
-                key={item.path}
-                onClick={() => handleItemClick(item.path)}
-                className={`w-full px-4 py-3 text-left text-sm transition-colors ${
-                  item.active
-                    ? "bg-gray-100 hover:bg-gray-400 font-medium text-gray-900 "
-                    : "text-black hover:bg-gray-50"
-                }`}
-              >
-                <span className="max-md:text-sm">{item.label}</span>
-              </button>
-            ))}
-
-            <div className="h-px bg-gray-200 my-1" />
-
-            {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
-          <button
-                onClick={handleSwitchToVendor}
-                className="w-full px-4 py-3 text-left max-md:text-sm text-sm text-black hover:bg-gray-50 transition-colors"
-              >
-                Switch to Vendor
-              </button>
+          {/* ── Identity header — name + email only.
+              The avatar is intentionally NOT repeated here: it's already shown
+              in the trigger pill above (same visual moment). Showing it twice
+              adds no information and steals ~36px of menu height. ── */}
+          <div className="px-3.5 py-2.5 border-b border-gray-100">
+            <p className="text-[13px] font-semibold text-gray-900 leading-tight truncate">
+              {fullName}
+            </p>
+            {user?.email && (
+              <p className="text-[11.5px] text-gray-500 leading-tight truncate mt-1">
+                {user.email}
+              </p>
             )}
+          </div>
 
-            
+          {/* ── Primary nav ── */}
+          <div className="p-1 flex-1 sm:flex-none">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.path}
+                  role="menuitem"
+                  onClick={() => handleItemClick(item.path)}
+                  className={`group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium transition-colors ${
+                    item.active
+                      ? "bg-[#E8F2F8] text-[#0F5C8A]"
+                      : "text-gray-700 hover:bg-[#F4F9FC] hover:text-[#0F5C8A]"
+                  }`}
+                >
+                  <Icon
+                    size={14}
+                    strokeWidth={1.75}
+                    className={`shrink-0 transition-colors ${
+                      item.active ? "text-[#0F5C8A]" : "text-gray-400 group-hover:text-[#0F5C8A]"
+                    }`}
+                  />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
 
-            {/* <button
-              onClick={() => handleItemClick("/help")}
-              className="w-full px-4 py-3 text-left max-md:text-lg text-sm text-black hover:bg-gray-50 transition-colors"
-            >
-              Help
-            </button> */}
+          {/* ── Switch to Vendor (if vendor) ── */}
+          {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
+            <>
+              <div className="h-px bg-gray-100 mx-1.5" />
+              <div className="p-1">
+                <button
+                  role="menuitem"
+                  onClick={handleSwitchToVendor}
+                  className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-[#0F5C8A] hover:bg-[#E8F2F8] transition-colors"
+                >
+                  <ArrowUpRight size={14} strokeWidth={2} className="shrink-0" />
+                  Switch to Vendor
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ── Logout ── */}
+          <div className="h-px bg-gray-100 mx-1.5" />
+          <div className="p-1">
             <button
+              role="menuitem"
               onClick={handleLogout}
-              className="w-full px-4 py-3 text-left max-md:text-sm text-sm text-black hover:bg-gray-50 transition-colors"
+              className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
             >
+              <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
               Logout
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
   );
