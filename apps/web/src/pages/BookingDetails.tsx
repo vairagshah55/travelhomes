@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
@@ -21,7 +21,17 @@ import {
   IndianRupee,
   Clock,
   CalendarX,
+  Search,
+  ChevronDown,
+  Activity,
+  CalendarDays,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import DashboardLayout from "@/components/DashboardLayout";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
@@ -51,12 +61,124 @@ import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/adm
 
 const ITEMS_PER_PAGE = 15;
 
+/* ── Stats card ─────────────────────────────────────────────────────────── */
+const StatCard: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint?: string;
+  accent?: string;
+}> = ({ icon, label, value, hint, accent = TEAL }) => (
+  <div
+    style={{
+      backgroundColor: WHITE,
+      border: `1.5px solid ${GRAY_200}`,
+      borderRadius: 16,
+      padding: "14px 16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+    }}
+  >
+    <div
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: `${accent}14`,
+        border: `1.5px solid ${accent}30`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <p
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: GRAY_400,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          marginBottom: 2,
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: 18,
+          fontWeight: 800,
+          color: BLACK,
+          letterSpacing: "-0.02em",
+          lineHeight: 1.1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {value}
+      </p>
+      {hint && <p style={{ fontSize: 10.5, color: GRAY_500, marginTop: 2 }}>{hint}</p>}
+    </div>
+  </div>
+);
+
+/* ── Filter dropdown pill ──────────────────────────────────────────────── */
+const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        type="button"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          height: 42,
+          padding: "0 14px",
+          borderRadius: 12,
+          border: `1.5px solid ${GRAY_200}`,
+          backgroundColor: WHITE,
+          fontSize: 13,
+          fontWeight: 600,
+          color: BLACK,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+        <ChevronDown size={14} color={GRAY_400} />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="start" className="w-48 p-1.5">
+      {children}
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
+const FILTER_ITEM_CLASS =
+  "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
+  "transition-colors " +
+  "focus:bg-[rgba(15,92,138,0.10)] focus:text-[#0F5C8A] " +
+  "data-[highlighted]:bg-[rgba(15,92,138,0.10)] data-[highlighted]:text-[#0F5C8A]";
+
 const BookingDetails = () => {
   const { user, token: authToken } = useAuth();
   const token = authToken ?? undefined;
 
   const [activeTab, setActiveTab] = useState("upcoming");
   const [timeFilter, setTimeFilter] = useState<"all" | "today" | "week" | "month">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "confirmed" | "active" | "cancelled"
+  >("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
@@ -175,19 +297,80 @@ const BookingDetails = () => {
   });
 
   // ─── Filtering ─────────────────────────────────────────────────────────────
-  const filteredBookings = bookings.filter((b) => {
-    if (user?.userType === "vendor") {
-      const svcNames = availableServices.map((s) => s.name);
-      const isTheirs =
-        svcNames.includes(b.serviceName) ||
-        (b as any).vendorId === user.id ||
-        (b.contactEmail && b.contactEmail === user.email);
-      if (!isTheirs) return false;
+  // Vendor visibility + tab + time + status + search. The vendor + tab + time
+  // checks were already here; status + search are new.
+  const visibleBookings = useMemo(() => {
+    return bookings.filter((b) => {
+      if (user?.userType === "vendor") {
+        const svcNames = availableServices.map((s) => s.name);
+        const isTheirs =
+          svcNames.includes(b.serviceName) ||
+          (b as any).vendorId === user.id ||
+          (b.contactEmail && b.contactEmail === user.email);
+        if (!isTheirs) return false;
+      }
+      return true;
+    });
+  }, [bookings, user, availableServices]);
+
+  // Counts per tab — used in the tab labels so the user can see distribution
+  // at a glance.
+  const tabCounts = useMemo(() => {
+    const counts = { upcoming: 0, past: 0, cancelled: 0 };
+    for (const b of visibleBookings) {
+      const c = categorizeBooking(b);
+      if (c === "upcoming") counts.upcoming += 1;
+      else if (c === "past") counts.past += 1;
+      else if (c === "cancelled") counts.cancelled += 1;
     }
-    if (categorizeBooking(b) !== activeTab) return false;
-    if (!isDateInRange(parseBookingDate(b.checkIn), timeFilter)) return false;
-    return true;
-  });
+    return counts;
+  }, [visibleBookings]);
+
+  // KPI stats — derived from the visible-to-user set so vendors see their
+  // own numbers, not platform-wide totals.
+  const stats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let todayCount = 0;
+    let activeCount = 0;
+    let revenue = 0;
+    for (const b of visibleBookings) {
+      const ci = parseBookingDate(b.checkIn);
+      const co = parseBookingDate(b.checkOut);
+      if (ci && co) {
+        const ciD = new Date(ci); ciD.setHours(0, 0, 0, 0);
+        const coD = new Date(co); coD.setHours(0, 0, 0, 0);
+        if (today >= ciD && today <= coD && b.status !== "cancelled") todayCount += 1;
+      }
+      if (b.status === "active") activeCount += 1;
+      if (b.status !== "cancelled") {
+        const price = Number((b.servicePrice || "").replace(/[^\d.]/g, "")) || 0;
+        revenue += price;
+      }
+    }
+    return { total: visibleBookings.length, today: todayCount, active: activeCount, revenue };
+  }, [visibleBookings]);
+
+  const filteredBookings = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return visibleBookings.filter((b) => {
+      if (categorizeBooking(b) !== activeTab) return false;
+      if (!isDateInRange(parseBookingDate(b.checkIn), timeFilter)) return false;
+      if (statusFilter !== "all" && b.status !== statusFilter) return false;
+      if (q) {
+        const hay = `${b.id} ${b.clientName} ${b.serviceName}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [visibleBookings, activeTab, timeFilter, statusFilter, searchQuery]);
+
+  const currencyINR = (n: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(n);
 
   // ─── Pagination ────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(filteredBookings.length / ITEMS_PER_PAGE));
@@ -195,7 +378,8 @@ const BookingDetails = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
-  const hasActiveQuery = timeFilter !== "all";
+  const hasActiveQuery =
+    timeFilter !== "all" || statusFilter !== "all" || searchQuery.trim().length > 0;
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
   const handleView = (b: any) => {
@@ -564,76 +748,197 @@ const BookingDetails = () => {
               style={{ borderBottom: "1.5px solid #EBEBEB" }}
             >
               <div>
-                <div className="flex items-center gap-2.5 mb-1">
-                  <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      color: GRAY_400,
-                    }}
-                  >
-                    Management
-                  </span>
-                </div>
-                {/* Tabs */}
-                <div
-                  className="flex gap-1 mt-2"
-                  style={{ backgroundColor: SURFACE, borderRadius: 12, padding: 3 }}
+                <h1
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 800,
+                    color: BLACK,
+                    letterSpacing: "-0.025em",
+                    lineHeight: 1.2,
+                  }}
                 >
-                  {TABS.map((t) => {
-                    const active = activeTab === t.key;
-                    return (
-                      <button
-                        key={t.key}
-                        type="button"
-                        onClick={() => setActiveTab(t.key)}
-                        style={{
-                          padding: "8px 16px",
-                          borderRadius: 9,
-                          border: `1.5px solid ${active ? `${TEAL}30` : "transparent"}`,
-                          backgroundColor: active ? WHITE : "transparent",
-                          color: active ? TEAL : GRAY_400,
-                          fontSize: 13,
-                          fontWeight: 700,
-                          cursor: "pointer",
-                          transition: "all 0.15s",
-                          boxShadow: active ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
-                        }}
-                      >
-                        {t.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                  Bookings
+                </h1>
+                <p style={{ fontSize: 13, color: GRAY_400, marginTop: 3 }}>
+                  Manage reservations and schedules
+                </p>
               </div>
-              {tealBtn(() => setCreateOpen(true), <Plus size={15} />, "New Booking")}
             </div>
 
-            {/* Time filters */}
-            <div className="flex flex-wrap gap-2 mb-5">
-              {TIME_FILTERS.map((f) => {
-                const active = timeFilter === f.key;
-                return (
-                  <button
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+              <StatCard
+                icon={<CalendarDays size={15} color={TEAL} strokeWidth={2.2} />}
+                label="Total"
+                value={String(stats.total)}
+                hint="All bookings"
+              />
+              <StatCard
+                icon={<Calendar size={15} color="#8b5cf6" strokeWidth={2.2} />}
+                label="Today"
+                value={String(stats.today)}
+                hint="Active stays"
+                accent="#8b5cf6"
+              />
+              <StatCard
+                icon={<Activity size={15} color="#22c55e" strokeWidth={2.2} />}
+                label="Active"
+                value={String(stats.active)}
+                hint="Currently active"
+                accent="#22c55e"
+              />
+              <StatCard
+                icon={<IndianRupee size={15} color="#f59e0b" strokeWidth={2.2} />}
+                label="Revenue"
+                value={currencyINR(stats.revenue)}
+                hint="Total billed"
+                accent="#f59e0b"
+              />
+            </div>
+
+            {/* Filters row */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-4">
+              {/* Search */}
+              <div
+                className="flex items-center"
+                style={{
+                  flex: "1 1 220px",
+                  minWidth: 200,
+                  maxWidth: 320,
+                  height: 42,
+                  borderRadius: 12,
+                  border: `1.5px solid ${GRAY_200}`,
+                  backgroundColor: WHITE,
+                  padding: "0 12px",
+                  gap: 8,
+                }}
+              >
+                <Search size={15} color={GRAY_400} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search bookings, client, ID…"
+                  style={{
+                    flex: 1,
+                    height: "100%",
+                    border: "none",
+                    outline: "none",
+                    fontSize: 13,
+                    color: BLACK,
+                    backgroundColor: "transparent",
+                    fontWeight: 450,
+                  }}
+                />
+              </div>
+
+              {/* Status filter */}
+              <FilterPill
+                label={
+                  statusFilter === "all"
+                    ? "All Statuses"
+                    : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                }
+              >
+                {([
+                  ["all", "All Statuses"],
+                  ["pending", "Pending"],
+                  ["confirmed", "Confirmed"],
+                  ["active", "Active"],
+                  ["cancelled", "Cancelled"],
+                ] as const).map(([key, label]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    className={FILTER_ITEM_CLASS}
+                    onClick={() => {
+                      setStatusFilter(key);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </FilterPill>
+
+              {/* Date / time filter */}
+              <FilterPill
+                label={
+                  TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"
+                }
+              >
+                {TIME_FILTERS.map((f) => (
+                  <DropdownMenuItem
                     key={f.key}
-                    type="button"
-                    onClick={() => setTimeFilter(f.key as any)}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 99,
-                      border: `1.5px solid ${active ? TEAL : GRAY_200}`,
-                      backgroundColor: active ? TEAL_BG : "transparent",
-                      color: active ? TEAL : GRAY_500,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s",
+                    className={FILTER_ITEM_CLASS}
+                    onClick={() => {
+                      setTimeFilter(f.key as any);
+                      setCurrentPage(1);
                     }}
                   >
                     {f.label}
+                  </DropdownMenuItem>
+                ))}
+              </FilterPill>
+
+              {/* Spacer + New Booking */}
+              <div className="ml-auto">
+                {tealBtn(() => setCreateOpen(true), <Plus size={15} />, "New Booking")}
+              </div>
+            </div>
+
+            {/* Tabs with counts */}
+            <div
+              className="flex gap-1 mb-4"
+              style={{ backgroundColor: SURFACE, borderRadius: 12, padding: 3, width: "fit-content" }}
+            >
+              {TABS.map((t) => {
+                const active = activeTab === t.key;
+                const count =
+                  t.key === "upcoming"
+                    ? tabCounts.upcoming
+                    : t.key === "past"
+                      ? tabCounts.past
+                      : tabCounts.cancelled;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => {
+                      setActiveTab(t.key);
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "8px 16px",
+                      borderRadius: 9,
+                      border: `1.5px solid ${active ? `${TEAL}30` : "transparent"}`,
+                      backgroundColor: active ? WHITE : "transparent",
+                      color: active ? TEAL : GRAY_400,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      boxShadow: active ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
+                    }}
+                  >
+                    {t.label}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "1px 7px",
+                        borderRadius: 999,
+                        backgroundColor: active ? `${TEAL}14` : "#EBEBEB",
+                        color: active ? TEAL : GRAY_500,
+                      }}
+                    >
+                      {count}
+                    </span>
                   </button>
                 );
               })}
@@ -653,7 +958,7 @@ const BookingDetails = () => {
                 emptyTitle="No bookings yet"
                 emptyDescription="Create your first booking using the button above."
                 noResultsTitle="No bookings found"
-                noResultsDescription="Try adjusting your tab or time filter."
+                noResultsDescription="Try adjusting your search, status, or time filter."
                 onRowClick={(b) => handleView(b)}
                 rowActions={rowActions}
                 pagination={{

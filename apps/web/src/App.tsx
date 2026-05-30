@@ -489,6 +489,27 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+                    {/* VendorChat lives inside the shell because it uses
+                        <DashboardLayout> for its title + content styling.
+                        Keeping it outside the shell while the page wraps
+                        itself in DashboardLayout was the source of the
+                        "two sidebars" double-render. */}
+                    <Route
+                      path="/dashchat"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <VendorChat />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/vendor-chat"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <VendorChat />
+                        </ProtectedRoute>
+                      }
+                    />
                   </Route>
 
                   {/* Standalone protected routes — full-screen pages without the dashboard shell */}
@@ -497,22 +518,6 @@ const App = () => {
                     element={
                       <ProtectedRoute allowedRoles={["vendor", "user"]}>
                         <Chat />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/dashchat"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <VendorChat />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/vendor-chat"
-                    element={
-                      <ProtectedRoute allowedRoles={["vendor"]}>
-                        <VendorChat />
                       </ProtectedRoute>
                     }
                   />

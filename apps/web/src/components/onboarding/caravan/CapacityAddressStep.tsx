@@ -8,13 +8,12 @@ import {
   GRAY_400,
   GRAY_200,
   ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
   SectionCard,
   Field,
   ErrorMsg,
   StyledInput,
   StyledSelect,
+  SearchableSelect,
   Stepper,
   StepHeader,
 } from "../shared/primitives";
@@ -37,6 +36,9 @@ interface CapacityAddressStepProps {
   onCityChange: (value: string) => void;
   onPincodeChange: (value: string) => void;
   clearError?: (field: string) => void;
+  // Render without the StepHeader + centered max-width wrapper when used
+  // inside an existing scrollable form (e.g. edit page).
+  embedded?: boolean;
 }
 
 const CapacityRow = ({
@@ -68,9 +70,10 @@ const CapacityRow = ({
         justifyContent: "space-between",
         padding: "16px 18px",
         borderRadius: 14,
-        backgroundColor: error ? ERROR_BG : SURFACE,
+        // Neutral fill always — only the border tints subtly on error, to
+        // match the rest of the validation pattern (no pink-wash, no ring).
+        backgroundColor: SURFACE,
         border: `1.5px solid ${error ? ERROR_SOFT : "transparent"}`,
-        boxShadow: error ? `0 0 0 3px ${ERROR_RING}` : "none",
         transition: "all 0.15s",
       }}
     >
@@ -123,18 +126,39 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
   onCityChange,
   onPincodeChange,
   clearError,
+  embedded,
 }) => {
   const clear = (field: string) => clearError?.(field);
 
-  return (
-    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      <StepHeader
-        kicker="Setup"
-        title={<>Capacity &amp; Location</>}
-        subtitle="Set your caravan's capacity and where guests can find it."
-      />
+  const country = React.useMemo(
+    () => locationData.find((c: any) => c.name === locality),
+    [locationData, locality],
+  );
+  const stateOptions = React.useMemo(
+    () => (country?.states ?? []).map((st: any) => ({ label: st.name, value: st.name })),
+    [country],
+  );
+  const cityOptions = React.useMemo(() => {
+    const st = country?.states?.find((s: any) => s.name === state);
+    return (st?.cities ?? []).map((ct: any) => ({ label: ct.name, value: ct.name }));
+  }, [country, state]);
 
-      <div className="w-full flex flex-col gap-4">
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
+    embedded ? (
+      <div className="w-full flex flex-col gap-4">{children}</div>
+    ) : (
+      <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+        <StepHeader
+          kicker="Setup"
+          title={<>Capacity &amp; Location</>}
+          subtitle="Set your caravan's capacity and where guests can find it."
+        />
+        <div className="w-full flex flex-col gap-4">{children}</div>
+      </div>
+    );
+
+  return (
+    <Wrapper>
         <SectionCard
           icon={<Users size={16} color={TEAL} strokeWidth={2.5} />}
           title="Capacity"
@@ -152,7 +176,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               max={20}
             />
             <CapacityRow
-              icon={<BedDouble size={16} color={errors.sleepingCapacity ? "#f87171" : GRAY_400} />}
+              icon={<BedDouble size={16} color={GRAY_400} />}
               label="Sleeping Capacity"
               description="Guests who can sleep overnight"
               value={sleepingCapacity}
@@ -221,48 +245,34 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="State" required error={errors.state}>
-                <StyledSelect
+                <SearchableSelect
                   value={state}
                   onChange={(v) => {
                     onStateChange(v);
                     clear("state");
                   }}
+                  options={stateOptions}
+                  placeholder="Select State"
+                  searchPlaceholder="Search states…"
+                  emptyMessage="No states found"
                   error={!!errors.state}
-                >
-                  <option value="" disabled>
-                    Select State
-                  </option>
-                  {locationData
-                    .find((c: any) => c.name === locality)
-                    ?.states?.map((st: any, idx: number) => (
-                      <option key={idx} value={st.name}>
-                        {st.name}
-                      </option>
-                    ))}
-                </StyledSelect>
+                />
               </Field>
 
               <Field label="City" required error={errors.city}>
-                <StyledSelect
+                <SearchableSelect
                   value={city}
                   onChange={(v) => {
                     onCityChange(v);
                     clear("city");
                   }}
+                  options={cityOptions}
+                  placeholder={state ? "Select City" : "Select a state first"}
+                  searchPlaceholder="Search cities…"
+                  emptyMessage="No cities found"
+                  disabled={!state}
                   error={!!errors.city}
-                >
-                  <option value="" disabled>
-                    Select City
-                  </option>
-                  {locationData
-                    .find((c: any) => c.name === locality)
-                    ?.states?.find((st: any) => st.name === state)
-                    ?.cities?.map((ct: any, idx: number) => (
-                      <option key={idx} value={ct.name}>
-                        {ct.name}
-                      </option>
-                    ))}
-                </StyledSelect>
+                />
               </Field>
             </div>
           </div>
@@ -301,8 +311,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
             />
           </div>
         )}
-      </div>
-    </div>
+    </Wrapper>
   );
 };
 

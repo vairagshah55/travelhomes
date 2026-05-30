@@ -7,8 +7,6 @@ import {
   SURFACE,
   ERROR,
   ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
   GRAY_400,
 } from "./tokens";
 
@@ -20,17 +18,17 @@ interface StyledInputProps {
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   type?: string;
   error?: boolean;
-  // The original DescriptionStep used a softer red border (#ef4444) for inline
-  // text fields, while CapacityAddress used a paler red (#fca5a5). Default to
-  // the paler shade so error fields don't scream; set `hardErrorBorder` to use
-  // the bolder color for fields embedded inside header-level error cards.
+  // Opt-in bolder border for error cards / contexts that need extra emphasis.
+  // Default error treatment is now subtle (border only — no bg fill, no ring),
+  // matching the UserProfileEdit pattern. `hardErrorBorder` keeps the previous
+  // saturated red border available for the rare case it's still wanted.
   hardErrorBorder?: boolean;
-  // The original DescriptionStep StyledInput did not fill the background red
-  // on error. Pass `softErrorBg` to opt into the lighter pink background used
-  // by CapacityAddress / PricingStep.
-  softErrorBg?: boolean;
   // Font sizing presets — matches the 14 / 14.5 split between sibling files.
   fontSize?: number;
+  // Kept as a no-op prop so existing call-sites compile; the bg + ring
+  // treatments it used to enable were producing a "blast red" effect we've
+  // explicitly retired. Safe to delete once all call-sites stop passing it.
+  softErrorBg?: boolean;
 }
 
 const StyledInput: React.FC<StyledInputProps> = ({
@@ -42,7 +40,6 @@ const StyledInput: React.FC<StyledInputProps> = ({
   type = "text",
   error,
   hardErrorBorder,
-  softErrorBg,
   fontSize = 14.5,
 }) => {
   const [focused, setFocused] = React.useState(false);
@@ -70,15 +67,15 @@ const StyledInput: React.FC<StyledInputProps> = ({
         padding: "0 16px",
         fontSize,
         color: value ? BLACK : GRAY_400,
-        backgroundColor: error && softErrorBg ? ERROR_BG : focused ? WHITE : SURFACE,
+        // Background never tints red — keep it neutral whether the field has
+        // an error or not. The border + inline ErrorMsg carry the signal.
+        backgroundColor: focused ? WHITE : SURFACE,
         border: `1.5px solid ${borderColor}`,
         borderRadius: 13,
         outline: "none",
         boxShadow: active
           ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-          : error
-            ? `0 0 0 3px ${ERROR_RING}`
-            : "none",
+          : "none",
         transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
         fontWeight: 450,
         letterSpacing: "-0.005em",

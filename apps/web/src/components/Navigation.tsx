@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -147,6 +147,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
   const { logout } = useAuth();
   const isOpen = pinned || hoverOpen;
 
+  // IDs of parent menu items whose children contain the current route. These
+  // should ALWAYS be considered expanded (in addition to whatever the user
+  // toggled manually), so that re-opening the sidebar on a sub-route shows
+  // the active sub-link instead of a collapsed parent.
+  const matchPath = (path: string) =>
+    location.pathname === path || location.pathname.startsWith(path + "/");
+  const activeParentIds = useMemo(() => {
+    const ids: string[] = [];
+    [...menuItems, ...bottomMenuItems].forEach((item) => {
+      if (item.children?.some((c) => matchPath(c.path))) ids.push(item.id);
+    });
+    return ids;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Whenever the URL changes, fold the active parent(s) into expandedItems so
+  // the matching sub-menu is visible the moment the sidebar opens.
+  useEffect(() => {
+    if (activeParentIds.length === 0) return;
+    setExpandedItems((prev) => {
+      const next = new Set(prev);
+      activeParentIds.forEach((id) => next.add(id));
+      return next;
+    });
+  }, [activeParentIds]);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -160,7 +186,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
     if (hoverTimer.current) clearTimeout(hoverTimer.current);
     if (!pinned) {
       setHoverOpen(false);
-      setExpandedItems(new Set());
+      // Reset to the active-parents baseline (not empty) so that when the
+      // sidebar hovers open again, the parent containing the current page
+      // is still expanded. User-toggled expansions of *other* parents do
+      // collapse — that matches the previous "clean slate on close" feel,
+      // while keeping the current sub-route visible.
+      setExpandedItems(new Set(activeParentIds));
     }
   };
   const handlePinToggle = () => {
@@ -184,6 +215,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
     location.pathname === path || location.pathname.startsWith(path + "/");
   const isParentActive = (item: MenuItem) =>
     isActive(item.path) || (item.children?.some((c) => isActive(c.path)) ?? false);
+
+  // For sibling children where one path is a prefix of another (e.g. /offering
+  // and /offering/add), the plain prefix test in `isActive` lights up BOTH.
+  // Only the most specific match should be active — i.e. the sibling whose
+  // path is the longest matching prefix of the current URL.
+  const isChildActive = (child: MenuItem, siblings: MenuItem[]) => {
+    if (!isActive(child.path)) return false;
+    return !siblings.some(
+      (s) => s.id !== child.id && isActive(s.path) && s.path.length > child.path.length,
+    );
+  };
 
   /* ─── single nav row (top-level) ─── */
   const renderItem = (item: MenuItem) => {
@@ -276,7 +318,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             >
               <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l-2 border-gray-100 dark:border-gray-800/80 pl-3 pr-0">
                 {item.children!.map((child, subIndex) => {
-                  const ca = isActive(child.path);
+                  const ca = isChildActive(child, item.children!);
                   return (
                     <motion.div
                       key={child.id}

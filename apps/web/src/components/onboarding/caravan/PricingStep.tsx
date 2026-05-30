@@ -35,6 +35,9 @@ interface PricingStepProps {
   onUpdatePriceItem: (field: PriceField, index: number, value: string) => void;
   onRemovePriceItem: (field: PriceField, index: number) => void;
   clearError: (field: string) => void;
+  // Render without StepHeader + centered wrapper when used inside an existing
+  // scrollable form (e.g. edit page).
+  embedded?: boolean;
 }
 
 const PriceInput = ({
@@ -465,15 +468,10 @@ const PricingStep: React.FC<PricingStepProps> = ({
   onUpdatePriceItem,
   onRemovePriceItem,
   clearError,
+  embedded,
 }) => {
-  return (
-    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      <StepHeader
-        kicker="Pricing"
-        title="Pricing Details"
-        subtitle="Set your pricing for different travel modes. At least one is required."
-      />
-
+  const content = (
+    <>
       {errors.pricing && (
         <div
           className="flex items-center gap-2 w-full"
@@ -546,6 +544,21 @@ const PricingStep: React.FC<PricingStepProps> = ({
           errorKey="perDayCharge"
         />
       </div>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="w-full flex flex-col gap-4">{content}</div>;
+  }
+
+  return (
+    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+      <StepHeader
+        kicker="Pricing"
+        title="Pricing Details"
+        subtitle="Set your pricing for different travel modes. At least one is required."
+      />
+      {content}
     </div>
   );
 };

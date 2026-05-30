@@ -30,6 +30,9 @@ interface DiscountOffersStepProps {
   onOfferChange: (key: OfferKey, field: keyof DiscountOffer, value: string) => void;
   errors: Record<string, string>;
   weeklyLabel?: string;
+  // Hide the StepHeader + centered max-width wrapper when used inside an
+  // existing scrollable form (e.g. edit page).
+  embedded?: boolean;
 }
 
 const OFFER_CONFIG: Record<
@@ -477,6 +480,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   onOfferChange,
   errors,
   weeklyLabel,
+  embedded,
 }) => {
   const activeCount = Object.values(offers).filter((o) => o.enabled).length;
 
@@ -486,6 +490,37 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
     { offerKey: "weekly", customLabel: weeklyLabel },
     { offerKey: "special" },
   ];
+
+  const cards = (
+    <div className="w-full flex flex-col gap-3">
+      {offerEntries.map(({ offerKey, customLabel }) => (
+        <OfferCard
+          key={offerKey}
+          offerKey={offerKey}
+          customLabel={customLabel}
+          offer={offers[offerKey]}
+          onToggle={() => onToggle(offerKey)}
+          onOfferChange={(field, value) => onOfferChange(offerKey, field, value)}
+          errors={errors}
+        />
+      ))}
+    </div>
+  );
+
+  const emptyHint = activeCount === 0 && (
+    <p style={{ fontSize: 12, color: GRAY_400, textAlign: "center" }}>
+      Toggle any offer above to enable it — discounts help your listing get discovered faster.
+    </p>
+  );
+
+  if (embedded) {
+    return (
+      <div className="w-full flex flex-col gap-4">
+        {cards}
+        {emptyHint}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
@@ -517,26 +552,8 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
           ) : null
         }
       />
-
-      <div className="w-full flex flex-col gap-3">
-        {offerEntries.map(({ offerKey, customLabel }) => (
-          <OfferCard
-            key={offerKey}
-            offerKey={offerKey}
-            customLabel={customLabel}
-            offer={offers[offerKey]}
-            onToggle={() => onToggle(offerKey)}
-            onOfferChange={(field, value) => onOfferChange(offerKey, field, value)}
-            errors={errors}
-          />
-        ))}
-      </div>
-
-      {activeCount === 0 && (
-        <p style={{ fontSize: 12, color: GRAY_400, textAlign: "center" }}>
-          Toggle any offer above to enable it — discounts help your listing get discovered faster.
-        </p>
-      )}
+      {cards}
+      {emptyHint}
     </div>
   );
 };

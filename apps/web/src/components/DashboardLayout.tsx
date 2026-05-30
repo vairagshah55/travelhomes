@@ -5,6 +5,20 @@ import { Sidebar } from "@/components/Navigation";
 import { DashboardHeader } from "@/components/Header";
 import MobileVendorNav from "@/components/MobileVendorNav";
 
+// NOTE: <DashboardLayout> is ALWAYS expected to be rendered inside a
+// <DashboardLayoutShell /> route (see App.tsx). The page wrapper is now a
+// thin pass-through — it propagates the page title to the shell and applies
+// page-level content styling, but renders no sidebar/header of its own.
+//
+// Previously this file had a "standalone" fallback that rendered its own
+// sidebar + header when no shell was detected. That fallback fired when the
+// context lookup returned null (e.g. lazy-chunked pages whose useContext
+// resolution didn't see the provider in time), producing the bug where every
+// page rendered two sidebars + two headers stacked on top of each other.
+// The fix: kill the fallback entirely so the only way to get the chrome is
+// via the shell route, and put every page that uses DashboardLayout inside
+// that route block.
+
 /** Tiny content-area placeholder for lazy chunk loads — keeps the shell visible. */
 const ContentLoader = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -77,60 +91,31 @@ const DashboardLayout = ({
 }: DashboardLayoutProps) => {
   const ctx = useContext(LayoutContext);
 
-  // Hooks must be called unconditionally. useLayoutEffect (instead of
-  // useEffect) updates the title in the shell BEFORE the browser paints,
-  // so the header never flashes the previous page's title.
+  // useLayoutEffect (instead of useEffect) updates the title in the shell
+  // BEFORE the browser paints, so the header never flashes the previous
+  // page's title between route transitions. Safe to call unconditionally —
+  // the if-guard inside handles the (now-illegal) missing-shell case.
   useLayoutEffect(() => {
     if (ctx) ctx.setTitle(title);
+    else if (import.meta.env.DEV) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[DashboardLayout] "${title}" rendered without a DashboardLayoutShell parent. ` +
+          "Wrap the route in <DashboardLayoutShell /> — see App.tsx.",
+      );
+    }
   }, [title, ctx]);
 
-  // Pass-through mode: a parent DashboardLayoutShell is already mounted.
-  // Just render the page content, transitioning between routes. We merge
-  // outerClassName + contentClassName here because in shell mode there's
-  // only one wrapper (no separate outer/content layers).
-  if (ctx) {
-    return (
-      <motion.div
-        key={title}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
-        className={`${outerClassName} ${contentClassName}`.trim()}
-      >
-        {children}
-      </motion.div>
-    );
-  }
-
-  // Standalone mode (legacy — no shell parent). Renders the full layout
-  // so any code path that still calls <DashboardLayout> directly without
-  // a route shell continues to work.
   return (
-    <div
-      data-brand="admin"
-      className={`flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg font-plus-jakarta ${outerClassName}`}
+    <motion.div
+      key={title}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className={`${outerClassName} ${contentClassName}`.trim()}
     >
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
-
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <DashboardHeader Headtitle={title} />
-        <motion.div
-          key={title}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.22, ease: "easeOut" }}
-          className={contentClassName}
-        >
-          {children}
-        </motion.div>
-      </div>
-
-      <div className="lg:hidden fixed bottom-0 w-full z-50">
-        <MobileVendorNav />
-      </div>
-    </div>
+      {children}
+    </motion.div>
   );
 };
 

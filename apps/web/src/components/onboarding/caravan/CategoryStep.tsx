@@ -17,6 +17,9 @@ interface CategoryStepProps {
   category: string | null;
   dynamicCategories?: any[];
   onSelect: (categoryName: string) => void;
+  // Hide the kicker/title/subtitle and centered wrapper when used inside
+  // an existing scrollable form (e.g. edit page).
+  embedded?: boolean;
 }
 
 const CATEGORIES = [
@@ -64,45 +67,9 @@ const CATEGORIES = [
   },
 ];
 
-const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect }) => {
-  return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Vehicle Type
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          Choose a caravan category
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Select the type that best describes your vehicle.
-        </p>
-      </div>
-
-      {/* ── Category list ── */}
-      <div className="w-full flex flex-col gap-3">
+const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedded }) => {
+  const list = (
+    <div className="w-full flex flex-col gap-3">
         {CATEGORIES.map((cat) => {
           const selected = category === cat.name;
           return (
@@ -214,7 +181,48 @@ const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect }) => {
             </button>
           );
         })}
+    </div>
+  );
+
+  if (embedded) return list;
+
+  return (
+    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
+      {/* ── Header ── */}
+      <div className="text-center space-y-2 pb-1">
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
+            Vehicle Type
+          </span>
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+        </div>
+        <h1
+          className="font-serif"
+          style={{
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
+            lineHeight: 1.15,
+          }}
+        >
+          Choose a caravan category
+        </h1>
+        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+          Select the type that best describes your vehicle.
+        </p>
       </div>
+
+      {list}
     </div>
   );
 };

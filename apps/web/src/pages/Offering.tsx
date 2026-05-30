@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Award } from "lucide-react";
+import {
+  Plus,
+  Award,
+  Search,
+  ChevronDown,
+  CheckCircle2,
+  Clock,
+  IndianRupee,
+} from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, type OfferDTO } from "@/lib/api";
@@ -11,17 +19,137 @@ import {
   OfferingCard,
   OfferPanel,
   TEAL,
-  TEAL_BG,
   BLACK,
   GRAY_400,
+  GRAY_500,
   GRAY_200,
   WHITE,
-  SURFACE,
 } from "@/components/offering";
-import { TabStrip, EmptyState } from "@/components/shared";
+import { EmptyState } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ITEMS_PER_PAGE = 12;
+
+/* ── Stats card ─────────────────────────────────────────────────────────── */
+const StatCard: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  hint?: string;
+  accent?: string;
+}> = ({ icon, label, value, hint, accent = TEAL }) => (
+  <div
+    style={{
+      backgroundColor: WHITE,
+      border: `1.5px solid ${GRAY_200}`,
+      borderRadius: 16,
+      padding: "14px 16px",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+    }}
+  >
+    <div
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: `${accent}14`,
+        border: `1.5px solid ${accent}30`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <p
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: GRAY_400,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          marginBottom: 2,
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: 18,
+          fontWeight: 800,
+          color: BLACK,
+          letterSpacing: "-0.02em",
+          lineHeight: 1.1,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        }}
+      >
+        {value}
+      </p>
+      {hint && <p style={{ fontSize: 10.5, color: GRAY_500, marginTop: 2 }}>{hint}</p>}
+    </div>
+  </div>
+);
+
+/* ── Filter dropdown pill ──────────────────────────────────────────────── */
+const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        type="button"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 8,
+          height: 42,
+          padding: "0 14px",
+          borderRadius: 12,
+          border: `1.5px solid ${GRAY_200}`,
+          backgroundColor: WHITE,
+          fontSize: 13,
+          fontWeight: 600,
+          color: BLACK,
+          cursor: "pointer",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {label}
+        <ChevronDown size={14} color={GRAY_400} />
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="start" className="w-48 p-1.5">
+      {children}
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
+
+const FILTER_ITEM_CLASS =
+  "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
+  "transition-colors " +
+  "focus:bg-[rgba(15,92,138,0.10)] focus:text-[#0F5C8A] " +
+  "data-[highlighted]:bg-[rgba(15,92,138,0.10)] data-[highlighted]:text-[#0F5C8A]";
+
+const currencyINR = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
 
 const Offering = () => {
   const navigate = useNavigate();
@@ -30,6 +158,11 @@ const Offering = () => {
   const [activeTab, setActiveTab] = useState<"approved" | "pending">(initialTab);
   const [page, setPage] = useState(1);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  // Service-type filter for the property grid (e.g. only Camper Vans).
+  const [typeFilter, setTypeFilter] = useState<"all" | "camper-van" | "unique-stay" | "activity">(
+    "all",
+  );
   const { user, token: authToken } = useAuth();
   const queryClient = useQueryClient();
   const token = authToken ?? undefined;
@@ -83,9 +216,47 @@ const Offering = () => {
     queryClient.invalidateQueries({ queryKey: ["offerings"] });
   };
 
-  const offers = activeTab === "approved" ? approvedOffers : pendingOffers;
+  const baseOffers = activeTab === "approved" ? approvedOffers : pendingOffers;
+
+  // Search + type filtering applied on top of the active tab.
+  const offers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return baseOffers.filter((o) => {
+      if (typeFilter !== "all") {
+        const st = (o.serviceType || "").toLowerCase();
+        if (st !== typeFilter) return false;
+      }
+      if (q) {
+        const hay = `${o.name ?? ""} ${o.category ?? ""} ${o.city ?? ""} ${o.state ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [baseOffers, typeFilter, searchQuery]);
+
+  // Reset to page 1 whenever filters change so the user isn't stranded on a
+  // page that no longer has rows.
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, typeFilter]);
+
+  // KPI cards reflect the user's total catalog (not the filtered view) — they
+  // measure the business, not the search.
+  const stats = useMemo(() => {
+    const revenue = approvedOffers.reduce(
+      (sum, o) => sum + Number(o.regularPrice || 0),
+      0,
+    );
+    return {
+      approved: approvedOffers.length,
+      pending: pendingOffers.length,
+      revenue,
+    };
+  }, [approvedOffers, pendingOffers]);
+
   const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
   const paginated = offers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const hasActiveQuery = typeFilter !== "all" || searchQuery.trim().length > 0;
 
   const onDelete = (id: string) => {
     const listing = offers.find((o) => o._id === id);
@@ -132,31 +303,24 @@ const Offering = () => {
         contentClassName="flex-1 flex flex-col overflow-hidden p-4 lg:p-5"
       >
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* ── Toolbar ── */}
-          <div className="flex items-center justify-between pb-4">
+          {/* ── Header (title + subtitle + primary CTA) ── */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5">
             <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: GRAY_400,
-                  }}
-                >
-                  Manage
-                </span>
-              </div>
-              {/* Tabs */}
-              <TabStrip
-                tabs={tabs.map((t) => ({ key: t.key, label: t.label, count: t.count }))}
-                activeKey={activeTab}
-                onChange={(k) => setActiveTab(k as "approved" | "pending")}
-              />
+              <h1
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  color: BLACK,
+                  letterSpacing: "-0.025em",
+                  lineHeight: 1.2,
+                }}
+              >
+                Offerings
+              </h1>
+              <p style={{ fontSize: 13, color: GRAY_400, marginTop: 3 }}>
+                Manage Properties
+              </p>
             </div>
-
             <button
               type="button"
               onClick={() => navigate("/offering/add")}
@@ -171,14 +335,148 @@ const Offering = () => {
                 backgroundColor: TEAL,
                 fontSize: 13,
                 fontWeight: 700,
-                color: BLACK,
+                color: WHITE,
                 cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
+                boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
                 transition: "all 0.15s",
+                width: "fit-content",
               }}
             >
               <Plus size={16} strokeWidth={2.5} /> Add Offering
             </button>
+          </div>
+
+          {/* ── Stats cards ── */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pb-4">
+            <StatCard
+              icon={<CheckCircle2 size={15} color="#22c55e" strokeWidth={2.2} />}
+              label="Approved"
+              value={String(stats.approved)}
+              hint="Live listings"
+              accent="#22c55e"
+            />
+            <StatCard
+              icon={<Clock size={15} color="#f59e0b" strokeWidth={2.2} />}
+              label="Pending"
+              value={String(stats.pending)}
+              hint="Awaiting review"
+              accent="#f59e0b"
+            />
+            <StatCard
+              icon={<IndianRupee size={15} color={TEAL} strokeWidth={2.2} />}
+              label="Revenue"
+              value={currencyINR(stats.revenue)}
+              hint="Approved catalog value"
+            />
+          </div>
+
+          {/* ── Filter row (search + type) ── */}
+          <div className="flex flex-wrap items-center gap-2.5 pb-4">
+            <div
+              className="flex items-center"
+              style={{
+                flex: "1 1 220px",
+                minWidth: 200,
+                maxWidth: 360,
+                height: 42,
+                borderRadius: 12,
+                border: `1.5px solid ${GRAY_200}`,
+                backgroundColor: WHITE,
+                padding: "0 12px",
+                gap: 8,
+              }}
+            >
+              <Search size={15} color={GRAY_400} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search property…"
+                style={{
+                  flex: 1,
+                  height: "100%",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 13,
+                  color: BLACK,
+                  backgroundColor: "transparent",
+                  fontWeight: 450,
+                }}
+              />
+            </div>
+            <FilterPill
+              label={
+                typeFilter === "all"
+                  ? "All Types"
+                  : typeFilter === "camper-van"
+                    ? "Camper Vans"
+                    : typeFilter === "unique-stay"
+                      ? "Unique Stays"
+                      : "Activities"
+              }
+            >
+              {(
+                [
+                  ["all", "All Types"],
+                  ["camper-van", "Camper Vans"],
+                  ["unique-stay", "Unique Stays"],
+                  ["activity", "Activities"],
+                ] as const
+              ).map(([key, label]) => (
+                <DropdownMenuItem
+                  key={key}
+                  className={FILTER_ITEM_CLASS}
+                  onClick={() => setTypeFilter(key)}
+                >
+                  {label}
+                </DropdownMenuItem>
+              ))}
+            </FilterPill>
+          </div>
+
+          {/* ── Status tabs (with counts) ── */}
+          <div
+            className="flex gap-1 mb-4"
+            style={{ width: "fit-content" }}
+          >
+            {tabs.map((t) => {
+              const active = activeTab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setActiveTab(t.key)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "8px 16px",
+                    borderRadius: 999,
+                    border: `1.5px solid ${active ? `${TEAL}30` : GRAY_200}`,
+                    backgroundColor: active ? `${TEAL}10` : WHITE,
+                    color: active ? TEAL : GRAY_500,
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                >
+                  {t.label}
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: "1px 7px",
+                      borderRadius: 999,
+                      backgroundColor: active ? `${TEAL}1f` : "#EBEBEB",
+                      color: active ? TEAL : GRAY_500,
+                    }}
+                  >
+                    {t.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           {/* ── Grid ── */}
@@ -189,20 +487,34 @@ const Offering = () => {
             {loading ? (
               <UniqueStaysSkeleton />
             ) : offers.length === 0 ? (
-              <EmptyState
-                icon={Award}
-                title={activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
-                description={
-                  activeTab === "approved"
-                    ? "Once the admin approves your submitted offerings, they'll appear here."
-                    : "Offerings you create go into pending review first. Create one to get started."
-                }
-                actionLabel={activeTab === "approved" ? "View pending offerings" : "Create your first offering"}
-                onAction={() =>
-                  activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
-                }
-                className="min-h-[400px]"
-              />
+              hasActiveQuery ? (
+                <EmptyState
+                  icon={Award}
+                  title="No offerings match your filters"
+                  description="Try clearing the search or pick a different type."
+                  actionLabel="Clear filters"
+                  onAction={() => {
+                    setSearchQuery("");
+                    setTypeFilter("all");
+                  }}
+                  className="min-h-[400px]"
+                />
+              ) : (
+                <EmptyState
+                  icon={Award}
+                  title={activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
+                  description={
+                    activeTab === "approved"
+                      ? "Once the admin approves your submitted offerings, they'll appear here."
+                      : "Offerings you create go into pending review first. Create one to get started."
+                  }
+                  actionLabel={activeTab === "approved" ? "View pending offerings" : "Create your first offering"}
+                  onAction={() =>
+                    activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
+                  }
+                  className="min-h-[400px]"
+                />
+              )
             ) : (
               <>
                 <div

@@ -6,8 +6,6 @@ import {
   WHITE,
   SURFACE,
   ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
   GRAY_400,
 } from "./tokens";
 
@@ -41,7 +39,9 @@ const StyledSelect: React.FC<StyledSelectProps> = ({
           padding: "0 40px 0 16px",
           fontSize: 14,
           color: value ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
-          backgroundColor: disabled ? SURFACE : error ? ERROR_BG : focused ? WHITE : SURFACE,
+          // Neutral background regardless of error state — the border is the
+          // single visual signal; ErrorMsg renders the message inline.
+          backgroundColor: disabled ? SURFACE : focused ? WHITE : SURFACE,
           border: `1.5px solid ${error ? ERROR_SOFT : focused ? TEAL : "transparent"}`,
           borderRadius: 13,
           outline: "none",
@@ -49,9 +49,7 @@ const StyledSelect: React.FC<StyledSelectProps> = ({
           boxShadow:
             focused && !error
               ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-              : error
-                ? `0 0 0 3px ${ERROR_RING}`
-                : "none",
+              : "none",
           transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
           cursor: disabled ? "not-allowed" : "pointer",
           fontWeight: 450,

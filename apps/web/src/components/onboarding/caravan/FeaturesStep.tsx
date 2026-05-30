@@ -49,6 +49,9 @@ interface FeaturesStepProps {
   onToggleCustomInput: () => void;
   onCustomFeatureInputChange: (value: string) => void;
   onAddCustomFeature: () => void;
+  // Hide the kicker/title/subtitle and centered wrapper when used inside an
+  // existing scrollable form (e.g. edit page).
+  embedded?: boolean;
 }
 
 const STATIC_FEATURES: { name: string; icon: React.ReactNode }[] = [
@@ -78,56 +81,21 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   onToggleCustomInput,
   onCustomFeatureInputChange,
   onAddCustomFeature,
+  embedded,
 }) => {
   const selectedCount = features.length + customFeatures.length;
 
-  return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
-            Amenities
-          </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-        </div>
-        <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
-        >
-          What does your caravan offer?
-        </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-          Select all features and amenities available to guests.
-        </p>
-      </div>
-
-      {/* ── Feature grid ── */}
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: WHITE,
-          border: "1.5px solid #D3D1C7",
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        }}
-      >
+  const grid = (
+    <div
+      style={{
+        width: "100%",
+        backgroundColor: WHITE,
+        border: "1.5px solid #D3D1C7",
+        borderRadius: 20,
+        padding: "20px 22px 22px",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
+      }}
+    >
         {/* Selected count badge */}
         <div className="flex items-center justify-between mb-4">
           <p
@@ -326,7 +294,48 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             </button>
           </div>
         )}
+    </div>
+  );
+
+  if (embedded) return grid;
+
+  return (
+    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
+      {/* ── Header ── */}
+      <div className="text-center space-y-2 pb-1">
+        <div className="flex items-center justify-center gap-2.5 mb-3">
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <span
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: GRAY_400,
+            }}
+          >
+            Amenities
+          </span>
+          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+        </div>
+        <h1
+          className="font-serif"
+          style={{
+            fontSize: "clamp(24px, 3.6vw, 32px)",
+            fontWeight: 400,
+            color: NAVY,
+            letterSpacing: "-0.015em",
+            lineHeight: 1.15,
+          }}
+        >
+          What does your caravan offer?
+        </h1>
+        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+          Select all features and amenities available to guests.
+        </p>
       </div>
+
+      {grid}
     </div>
   );
 };

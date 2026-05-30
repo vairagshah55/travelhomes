@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useQueryClient } from "@tanstack/react-query";
 import { IndianRupee, MapPin, FileText, Camera, Tag, Tent, Percent, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -117,6 +118,7 @@ const FEATURES: Record<string, string[]> = {
 // ═════════════════════════════════════════════════════════════════════════════
 const AddOfferings = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("camper-van");
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
@@ -389,6 +391,11 @@ const AddOfferings = () => {
         } as any,
         token,
       );
+
+      // Bust the bookings page's resources cache so the new service shows up
+      // immediately in the New Booking modal's Service Name dropdown without
+      // requiring a hard reload.
+      queryClient.invalidateQueries({ queryKey: ["bookings", "resources"] });
 
       setShowSuccessAlert(true);
       setTimeout(() => {

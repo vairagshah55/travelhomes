@@ -1,24 +1,12 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  IndianRupee,
-  MapPin,
-  FileText,
-  Camera,
-  Tag,
-  Tent,
-  Percent,
-  Check,
-  Loader2,
-  Trash2,
-  ImagePlus,
-} from "lucide-react";
+import { IndianRupee, MapPin, Tag, Tent, Percent, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { getImageUrl } from "@/lib/utils";
+import { useCountriesData } from "@/hooks/useCountriesData";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
 import {
@@ -38,9 +26,18 @@ import {
   StyledSelect,
   RulesList,
   FeaturePill,
-  DiscountRow,
 } from "@/components/offering";
+import { DiscountOffersStep } from "@/components/onboarding/shared";
+import type { DiscountOffer } from "@/components/onboarding/shared";
+import { SearchableSelect } from "@/components/onboarding/shared/primitives";
 import { CamperVanPricing, UniqueStayPricing, ActivityPricing } from "@/components/offering";
+import {
+  DescriptionStep as CaravanDescriptionStep,
+  CategoryStep as CaravanCategoryStep,
+  FeaturesStep as CaravanFeaturesStep,
+  CapacityAddressStep as CaravanCapacityAddressStep,
+  PricingStep as CaravanPricingStep,
+} from "@/components/onboarding/caravan";
 
 // ─── Constants (mirrors AddOfferings) ─────────────────────────────────────────
 const TABS = [
@@ -49,18 +46,9 @@ const TABS = [
   { key: "activity", label: "Activities", icon: <GiBinoculars size={16} /> },
 ];
 
+// Camper-van categories live in CaravanCategoryStep — single source of
+// truth. Keep unique-stay + activity here until those tabs are migrated too.
 const CATEGORIES: Record<string, string[]> = {
-  "camper-van": [
-    "Camper Trailer",
-    "Luxury RV",
-    "Basic Van",
-    "Adventure Vehicle",
-    "Panel Van",
-    "Cargo Van",
-    "Motorhome",
-    "Campervan",
-    "Caravan",
-  ],
   "unique-stay": [
     "Villa",
     "Cabin",
@@ -88,21 +76,9 @@ const CATEGORIES: Record<string, string[]> = {
   ],
 };
 
+// Camper-van features live in CaravanFeaturesStep — single source of truth.
+// Keep unique-stay + activity here until those tabs are migrated too.
 const FEATURES: Record<string, string[]> = {
-  "camper-van": [
-    "Fan",
-    "AC",
-    "Kitchen",
-    "Water",
-    "Wifi",
-    "Solar",
-    "Toilet",
-    "Shower",
-    "Fridge",
-    "TV",
-    "Music",
-    "GPS",
-  ],
   "unique-stay": [
     "WiFi",
     "AC",
@@ -121,227 +97,8 @@ const FEATURES: Record<string, string[]> = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-// ─── Photo section (edit-aware: works with URLs + accepts new file uploads) ───
-const EditPhotoGrid = ({
-  coverUrl,
-  galleryUrls,
-  onCoverChange,
-  onGalleryAdd,
-  onGalleryRemove,
-  uploading,
-  coverError,
-  galleryError,
-  token,
-}: {
-  coverUrl: string;
-  galleryUrls: string[];
-  onCoverChange: (url: string) => void;
-  onGalleryAdd: (url: string) => void;
-  onGalleryRemove: (index: number) => void;
-  uploading: boolean;
-  coverError?: string;
-  galleryError?: string;
-  token: string | null;
-}) => {
-  const uploadFile = async (file: File): Promise<string> => {
-    const fd = new FormData();
-    fd.append("files", file);
-    const res = await fetch(`${API_BASE_URL}/api/vendorchats/upload`, {
-      method: "POST",
-      body: fd,
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    const json = await res.json();
-    if (json.success && json.data?.length > 0) {
-      const url = json.data[0].url;
-      return url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
-    }
-    throw new Error(json.message || "Upload failed");
-  };
-
-  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const url = await uploadFile(file);
-      onCoverChange(url);
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
-    }
-    e.target.value = "";
-  };
-
-  const handleGallerySelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    for (const file of files) {
-      try {
-        const url = await uploadFile(file);
-        onGalleryAdd(url);
-      } catch (err: any) {
-        toast.error(`Failed to upload ${file.name}`);
-      }
-    }
-    e.target.value = "";
-  };
-
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Cover */}
-      <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: GRAY_500, marginBottom: 8 }}>
-          Cover Photo
-        </p>
-        <div
-          style={{
-            position: "relative",
-            height: 180,
-            borderRadius: 14,
-            overflow: "hidden",
-            border: `2px dashed ${coverError ? "#fca5a5" : GRAY_200}`,
-            backgroundColor: SURFACE,
-          }}
-        >
-          {coverUrl ? (
-            <>
-              <img
-                src={getImageUrl(coverUrl)}
-                alt="Cover"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-              <button
-                type="button"
-                onClick={() => onCoverChange("")}
-                style={{
-                  position: "absolute",
-                  top: 8,
-                  right: 8,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(239,68,68,0.9)",
-                  border: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: WHITE,
-                }}
-              >
-                <Trash2 size={13} />
-              </button>
-            </>
-          ) : (
-            <label
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                cursor: "pointer",
-              }}
-            >
-              <ImagePlus size={24} color={GRAY_400} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: GRAY_500 }}>
-                Upload cover image
-              </span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleCoverSelect} />
-            </label>
-          )}
-        </div>
-        {coverError && <p style={{ fontSize: 11, color: ERROR, marginTop: 4 }}>{coverError}</p>}
-      </div>
-
-      {/* Gallery */}
-      <div>
-        <p style={{ fontSize: 12, fontWeight: 600, color: GRAY_500, marginBottom: 8 }}>
-          Gallery Photos{" "}
-          <span style={{ color: GRAY_400, fontWeight: 400 }}>
-            ({galleryUrls.length} uploaded, min 5)
-          </span>
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {galleryUrls.map((url, i) => (
-            <div
-              key={i}
-              style={{
-                position: "relative",
-                aspectRatio: "1",
-                borderRadius: 10,
-                overflow: "hidden",
-                border: `1.5px solid ${GRAY_200}`,
-              }}
-              className="group"
-            >
-              <img
-                src={getImageUrl(url)}
-                alt=""
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-              />
-              <button
-                type="button"
-                onClick={() => onGalleryRemove(i)}
-                style={{
-                  position: "absolute",
-                  top: 4,
-                  right: 4,
-                  width: 22,
-                  height: 22,
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(239,68,68,0.85)",
-                  border: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  opacity: 0,
-                  transition: "opacity 0.15s",
-                }}
-                className="group-hover:!opacity-100"
-              >
-                <Trash2 size={11} color={WHITE} />
-              </button>
-            </div>
-          ))}
-          <label
-            style={{
-              aspectRatio: "1",
-              borderRadius: 10,
-              border: `2px dashed ${galleryError ? "#fca5a5" : GRAY_200}`,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 4,
-              cursor: uploading ? "not-allowed" : "pointer",
-              backgroundColor: SURFACE,
-            }}
-          >
-            {uploading ? (
-              <Loader2 size={20} color={GRAY_400} className="animate-spin" />
-            ) : (
-              <>
-                <ImagePlus size={20} color={GRAY_400} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: GRAY_400 }}>Add</span>
-              </>
-            )}
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={handleGallerySelect}
-              disabled={uploading}
-            />
-          </label>
-        </div>
-        {galleryError && <p style={{ fontSize: 11, color: ERROR, marginTop: 4 }}>{galleryError}</p>}
-      </div>
-    </div>
-  );
-};
+// EditPhotoGrid removed — all three tabs now use CaravanDescriptionStep for
+// photo + cover handling (via handleBridgeCoverUpload/handleBridgePhotoUpload).
 
 // ═════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -396,19 +153,24 @@ const EditOfferings = () => {
     regularPrice: "",
     priceIncludes: [] as string[],
     priceExcludes: [] as string[],
-    // Discounts
+    // Discounts — UI-only state; the model has no discount fields so these
+    // reset on every reload. finalPrice fields mirror the onboarding shape.
     firstUserDiscount: false,
     firstUserDiscountType: "percentage",
     firstUserDiscountValue: "",
+    firstUserDiscountFinalPrice: "",
     festivalOffers: false,
     festivalOffersType: "percentage",
     festivalOffersValue: "",
+    festivalOffersFinalPrice: "",
     weeklyMonthlyOffers: false,
     weeklyMonthlyOffersType: "percentage",
     weeklyMonthlyOffersValue: "",
+    weeklyMonthlyOffersFinalPrice: "",
     specialOffers: false,
     specialOffersType: "percentage",
     specialOffersValue: "",
+    specialOffersFinalPrice: "",
   });
 
   // Photos tracked as URLs directly (edit-safe)
@@ -485,15 +247,19 @@ const EditOfferings = () => {
       firstUserDiscount: false,
       firstUserDiscountType: "percentage",
       firstUserDiscountValue: "",
+      firstUserDiscountFinalPrice: "",
       festivalOffers: false,
       festivalOffersType: "percentage",
       festivalOffersValue: "",
+      festivalOffersFinalPrice: "",
       weeklyMonthlyOffers: false,
       weeklyMonthlyOffersType: "percentage",
       weeklyMonthlyOffersValue: "",
+      weeklyMonthlyOffersFinalPrice: "",
       specialOffers: false,
       specialOffersType: "percentage",
       specialOffersValue: "",
+      specialOffersFinalPrice: "",
     });
 
     setCoverUrl(o.photos?.coverUrl || "");
@@ -541,6 +307,192 @@ const EditOfferings = () => {
       ...p,
       features: p.features.includes(f) ? p.features.filter((x) => x !== f) : [...p.features, f],
     }));
+
+  // ─── Onboarding-step bridging ──────────────────────────────────────────────
+  // The camper-van branch reuses the onboarding step components inline so the
+  // edit page matches the create flow. These bridges adapt EditOfferings'
+  // URL-based photo state and string-typed capacity to the shapes the step
+  // components expect, plus expose the location data + map source they need.
+  const locationData = useCountriesData();
+  const mapQuery =
+    `${formData.address || ""} ${formData.city || ""} ${formData.state || ""} ${formData.pincode || ""} India`.trim();
+  const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
+
+  // Used by the unique-stay + activity tabs' Location section so State/City
+  // become searchable dropdowns matching the camper-van flow.
+  const locationCountry = useMemo(
+    () => locationData.find((c: any) => c.name === (formData.locality || "India")),
+    [locationData, formData.locality],
+  );
+  const stateOptions = useMemo(
+    () =>
+      ((locationCountry as any)?.states ?? []).map((st: any) => ({
+        label: st.name,
+        value: st.name,
+      })),
+    [locationCountry],
+  );
+  const cityOptions = useMemo(() => {
+    const st = (locationCountry as any)?.states?.find((s: any) => s.name === formData.state);
+    return (st?.cities ?? []).map((ct: any) => ({ label: ct.name, value: ct.name }));
+  }, [locationCountry, formData.state]);
+
+  const [customFeatures, setCustomFeatures] = useState<{ name: string; icon: any }[]>([]);
+  const [showCustomFeaturesInput, setShowCustomFeaturesInput] = useState(false);
+  const [customFeatureInput, setCustomFeatureInput] = useState("");
+
+  const handleAddCustomFeature = () => {
+    const name = customFeatureInput.trim();
+    if (!name) return;
+    setCustomFeatures((prev) => [...prev, { name, icon: null }]);
+    // Also fold the custom name into the persisted features array so save
+    // round-trips it; on next load it'll just show as a regular pill.
+    setFormData((p) => ({
+      ...p,
+      features: p.features.includes(name) ? p.features : [...p.features, name],
+    }));
+    setCustomFeatureInput("");
+    setShowCustomFeaturesInput(false);
+  };
+
+  const handleRemoveCustomFeature = (idx: number) => {
+    setCustomFeatures((prev) => {
+      const removed = prev[idx]?.name;
+      if (removed) {
+        setFormData((p) => ({
+          ...p,
+          features: p.features.filter((f) => f !== removed),
+        }));
+      }
+      return prev.filter((_, i) => i !== idx);
+    });
+  };
+
+  const adjustCapacity = (type: "seating" | "sleeping", direction: "increase" | "decrease") => {
+    const field = type === "seating" ? "seatingCapacity" : "sleepingCapacity";
+    setFormData((p) => {
+      const current = Number((p as any)[field] || 0);
+      const min = type === "seating" ? 1 : 0;
+      const next =
+        direction === "increase" ? Math.min(20, current + 1) : Math.max(min, current - 1);
+      return { ...p, [field]: String(next) };
+    });
+  };
+
+  // Single-file upload helper, lifted out of EditPhotoGrid so the camper-van
+  // branch can hand FileList objects from DescriptionStep into the same path.
+  const uploadFileToServer = async (file: File): Promise<string> => {
+    const fd = new FormData();
+    fd.append("files", file);
+    const res = await fetch(`${API_BASE_URL}/api/vendorchats/upload`, {
+      method: "POST",
+      body: fd,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    const json = await res.json();
+    if (json.success && json.data?.length > 0) {
+      const url = json.data[0].url;
+      return url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+    }
+    throw new Error(json.message || "Upload failed");
+  };
+
+  const handleBridgeCoverUpload = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    try {
+      const url = await uploadFileToServer(file);
+      setCoverUrl(url);
+      clearError("cover");
+      clearError("coverImage");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    }
+  };
+
+  const handleBridgePhotoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        try {
+          const url = await uploadFileToServer(file);
+          setGalleryUrls((prev) => [...prev, url]);
+          clearError("gallery");
+          clearError("photos");
+        } catch (err: any) {
+          toast.error(`Failed to upload ${file.name}`);
+        }
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Discount bridging — DiscountOffersStep takes a structured `offers` object
+  // with toggle/change handlers, but our state stores them as flat fields per
+  // legacy edit form. Map between the two shapes here. Discounts are still
+  // not persisted on save (no fields in OfferDTO).
+  const DISCOUNT_PREFIX: Record<
+    "firstUser" | "festival" | "weekly" | "special",
+    "firstUserDiscount" | "festivalOffers" | "weeklyMonthlyOffers" | "specialOffers"
+  > = {
+    firstUser: "firstUserDiscount",
+    festival: "festivalOffers",
+    weekly: "weeklyMonthlyOffers",
+    special: "specialOffers",
+  };
+
+  const discountOffers: Record<"firstUser" | "festival" | "weekly" | "special", DiscountOffer> = {
+    firstUser: {
+      enabled: formData.firstUserDiscount,
+      type: formData.firstUserDiscountType,
+      value: formData.firstUserDiscountValue,
+      finalPrice: formData.firstUserDiscountFinalPrice,
+    },
+    festival: {
+      enabled: formData.festivalOffers,
+      type: formData.festivalOffersType,
+      value: formData.festivalOffersValue,
+      finalPrice: formData.festivalOffersFinalPrice,
+    },
+    weekly: {
+      enabled: formData.weeklyMonthlyOffers,
+      type: formData.weeklyMonthlyOffersType,
+      value: formData.weeklyMonthlyOffersValue,
+      finalPrice: formData.weeklyMonthlyOffersFinalPrice,
+    },
+    special: {
+      enabled: formData.specialOffers,
+      type: formData.specialOffersType,
+      value: formData.specialOffersValue,
+      finalPrice: formData.specialOffersFinalPrice,
+    },
+  };
+
+  const handleDiscountToggle = (key: "firstUser" | "festival" | "weekly" | "special") => {
+    const field = DISCOUNT_PREFIX[key];
+    setFormData((p) => ({ ...p, [field]: !(p as any)[field] }));
+  };
+
+  const handleDiscountOfferChange = (
+    key: "firstUser" | "festival" | "weekly" | "special",
+    field: keyof DiscountOffer,
+    value: string,
+  ) => {
+    if (field === "enabled") return;
+    const suffix = field === "type" ? "Type" : field === "value" ? "Value" : "FinalPrice";
+    const stateField = `${DISCOUNT_PREFIX[key]}${suffix}`;
+    setFormData((p) => ({ ...p, [stateField]: value }));
+  };
+
+  // Rules in onboarding's DescriptionStep are 0-indexed text entries with
+  // dedicated add/update/remove handlers (no sentinel empty row). Edit seeds
+  // rules with `[""]` so the existing form shows a blank row; bridge both.
+  const handleAddRule = () => addArrayItem("rules");
+  const handleUpdateRule = (index: number, value: string) =>
+    handleArrayChange("rules", index, value);
+  const handleRemoveRule = (index: number) => removeArrayItem("rules", index);
 
   // ─── Validation ────────────────────────────────────────────────────────────
   const validate = (): boolean => {
@@ -605,6 +557,18 @@ const EditOfferings = () => {
         };
       }
 
+      // Camper-van uses perKm/perDay charges + their own includes/excludes,
+      // so we omit the unique-stay/activity regularPrice + priceIncludes/
+      // priceExcludes fields to avoid stomping them with zeros/empties.
+      const sharedPriceFields =
+        activeTab === "camper-van"
+          ? {}
+          : {
+              regularPrice: Number(formData.regularPrice || 0),
+              priceIncludes: formData.priceIncludes.filter(Boolean),
+              priceExcludes: formData.priceExcludes.filter(Boolean),
+            };
+
       const payload: Partial<OfferDTO> = {
         name: activeTab === "activity" ? formData.activityName : formData.name,
         category: formData.category,
@@ -616,9 +580,7 @@ const EditOfferings = () => {
         pincode: formData.pincode,
         city: formData.city,
         state: formData.state,
-        regularPrice: Number(formData.regularPrice || 0),
-        priceIncludes: formData.priceIncludes.filter(Boolean),
-        priceExcludes: formData.priceExcludes.filter(Boolean),
+        ...sharedPriceFields,
         photos: { coverUrl, galleryUrls },
         serviceType: activeTab,
         status: "pending",
@@ -688,132 +650,185 @@ const EditOfferings = () => {
               </p>
             </div>
 
-            {/* ── Tabs ── */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                backgroundColor: SURFACE,
-                borderRadius: 14,
-                padding: 4,
-              }}
-            >
-              {TABS.map((tab) => {
-                const active = activeTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(tab.key);
-                      setErrors({});
-                    }}
-                    style={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      height: 42,
-                      borderRadius: 11,
-                      border: `1.5px solid ${active ? `${TEAL}30` : "transparent"}`,
-                      backgroundColor: active ? WHITE : "transparent",
-                      color: active ? TEAL : GRAY_400,
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      boxShadow: active ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                    }}
-                  >
-                    {tab.icon} {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+            {/* ── Offering-type badge (read-only on edit; the offering's type
+                is fixed at creation and a tab switcher here would share state
+                across types and risk converting the offering on save). ── */}
+            {(() => {
+              const tab = TABS.find((t) => t.key === activeTab);
+              if (!tab) return null;
+              return (
+                <div
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    alignSelf: "flex-start",
+                    padding: "8px 14px",
+                    borderRadius: 99,
+                    backgroundColor: `${TEAL}12`,
+                    border: `1.5px solid ${TEAL}30`,
+                    color: TEAL,
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </div>
+              );
+            })()}
 
-            {/* ── Description ── */}
-            <SectionCard
-              icon={<FileText size={16} color={TEAL} strokeWidth={2.5} />}
-              title="Description"
-              subtitle="Basic info about your offering"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field
-                  label={activeTab === "activity" ? "Activity Name" : "Name"}
-                  required
-                  error={errors.name || errors.activityName}
-                >
-                  <StyledInput
-                    value={activeTab === "activity" ? formData.activityName : formData.name}
-                    onChange={(v) => set(activeTab === "activity" ? "activityName" : "name", v)}
-                    placeholder={
-                      activeTab === "activity" ? "e.g. River Rafting" : "e.g. Sunset Villa"
-                    }
-                    error={!!(errors.name || errors.activityName)}
-                  />
-                </Field>
-                <Field
-                  label={activeTab === "activity" ? "Activity Type" : "Category"}
-                  required
-                  error={errors.category}
-                >
-                  <StyledSelect
-                    value={formData.category}
-                    onChange={(v) => set("category", v)}
-                    placeholder="Select"
-                    error={!!errors.category}
-                  >
-                    {categories.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </StyledSelect>
-                </Field>
-              </div>
-              <Field label="Description" required error={errors.description}>
-                <StyledTextarea
-                  value={formData.description}
-                  onChange={(v) => set("description", v)}
-                  placeholder="Describe your offering in detail…"
-                  error={!!errors.description}
-                />
-              </Field>
-              <Field label="Rules">
-                <RulesList
+            {activeTab === "camper-van" ? (
+              <>
+                {/* Camper-van edit now reuses the onboarding step components so
+                    the create/edit flows share one UI. Discount section below
+                    still renders for all tabs. */}
+                <CaravanDescriptionStep
+                  embedded
+                  name={formData.name}
+                  description={formData.description}
                   rules={formData.rules}
-                  onChange={(i, v) => handleArrayChange("rules", i, v)}
-                  onAdd={() => addArrayItem("rules")}
-                  onRemove={(i) => removeArrayItem("rules", i)}
+                  photos={galleryUrls}
+                  coverImage={coverUrl ? [coverUrl] : []}
+                  errors={{
+                    ...errors,
+                    coverImage: errors.cover,
+                    photos: errors.gallery,
+                  }}
+                  onNameChange={(v) => set("name", v)}
+                  onDescriptionChange={(v) => set("description", v)}
+                  onAddRule={handleAddRule}
+                  onRemoveRule={handleRemoveRule}
+                  onUpdateRule={handleUpdateRule}
+                  onPhotoUpload={handleBridgePhotoUpload}
+                  onCoverUpload={handleBridgeCoverUpload}
+                  onRemovePhoto={(i) =>
+                    setGalleryUrls((p) => p.filter((_, idx) => idx !== i))
+                  }
+                  onRemoveCover={() => setCoverUrl("")}
+                  clearError={clearError}
                 />
+
+                <CaravanCategoryStep
+                  embedded
+                  category={formData.category || null}
+                  onSelect={(name) => set("category", name)}
+                />
+
+                <CaravanFeaturesStep
+                  embedded
+                  features={formData.features}
+                  customFeatures={customFeatures}
+                  showCustomFeaturesInput={showCustomFeaturesInput}
+                  customFeatureInput={customFeatureInput}
+                  onToggleFeature={toggleFeature}
+                  onRemoveCustomFeature={handleRemoveCustomFeature}
+                  onToggleCustomInput={() =>
+                    setShowCustomFeaturesInput(!showCustomFeaturesInput)
+                  }
+                  onCustomFeatureInputChange={setCustomFeatureInput}
+                  onAddCustomFeature={handleAddCustomFeature}
+                />
+
+                <CaravanCapacityAddressStep
+                  embedded
+                  seatingCapacity={Number(formData.seatingCapacity) || 1}
+                  sleepingCapacity={Number(formData.sleepingCapacity) || 0}
+                  address={formData.address}
+                  locality={formData.locality || "India"}
+                  state={formData.state}
+                  city={formData.city}
+                  pincode={formData.pincode}
+                  locationData={locationData}
+                  mapSrc={mapSrc}
+                  errors={errors}
+                  onAdjustCapacity={adjustCapacity}
+                  onAddressChange={(v) => set("address", v)}
+                  onLocalityChange={(v) =>
+                    setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
+                  }
+                  onStateChange={(v) =>
+                    setFormData((p) => ({ ...p, state: v, city: "" }))
+                  }
+                  onCityChange={(v) => set("city", v)}
+                  onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
+                  clearError={clearError}
+                />
+
+                <CaravanPricingStep
+                  embedded
+                  perKmCharge={formData.perKmCharge}
+                  perDayCharge={formData.perDayCharge}
+                  perKmIncludes={formData.perKmIncludes}
+                  perKmExcludes={formData.perKmExcludes}
+                  perDayIncludes={formData.perDayIncludes}
+                  perDayExcludes={formData.perDayExcludes}
+                  errors={errors}
+                  onPerKmChargeChange={(v) => set("perKmCharge", v)}
+                  onPerDayChargeChange={(v) => set("perDayCharge", v)}
+                  onAddPriceItem={(field) => addArrayItem(field)}
+                  onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
+                  onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
+                  clearError={clearError}
+                />
+              </>
+            ) : (
+              <>
+            {/* ── Category (small section since DescriptionStep doesn't carry it) ── */}
+            <SectionCard
+              icon={<Tag size={16} color={TEAL} strokeWidth={2.5} />}
+              title={activeTab === "activity" ? "Activity Type" : "Category"}
+              subtitle="Pick the type that best describes your offering"
+            >
+              <Field
+                label={activeTab === "activity" ? "Activity Type" : "Category"}
+                required
+                error={errors.category}
+              >
+                <StyledSelect
+                  value={formData.category}
+                  onChange={(v) => set("category", v)}
+                  placeholder="Select"
+                  error={!!errors.category}
+                >
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </StyledSelect>
               </Field>
             </SectionCard>
 
-            {/* ── Photos ── */}
-            <SectionCard
-              icon={<Camera size={16} color={TEAL} strokeWidth={2.5} />}
-              title="Photos"
-              subtitle="Cover and gallery images"
-            >
-              <EditPhotoGrid
-                coverUrl={coverUrl}
-                galleryUrls={galleryUrls}
-                onCoverChange={(url) => {
-                  setCoverUrl(url);
-                  clearError("cover");
-                }}
-                onGalleryAdd={(url) => {
-                  setGalleryUrls((p) => [...p, url]);
-                  clearError("gallery");
-                }}
-                onGalleryRemove={(i) => setGalleryUrls((p) => p.filter((_, idx) => idx !== i))}
-                uploading={uploading}
-                coverError={errors.cover}
-                galleryError={errors.gallery}
-                token={token}
-              />
-            </SectionCard>
+            {/* ── Description + Photos via the same component the onboarding flow uses ── */}
+            <CaravanDescriptionStep
+              embedded
+              nameLabel={activeTab === "activity" ? "Activity Name" : "Property Name"}
+              namePlaceholder={
+                activeTab === "activity" ? "e.g. River Rafting" : "e.g. Sunset Villa"
+              }
+              name={activeTab === "activity" ? formData.activityName : formData.name}
+              description={formData.description}
+              rules={formData.rules}
+              photos={galleryUrls}
+              coverImage={coverUrl ? [coverUrl] : []}
+              errors={{
+                ...errors,
+                coverImage: errors.cover,
+                photos: errors.gallery,
+              }}
+              onNameChange={(v) => set(activeTab === "activity" ? "activityName" : "name", v)}
+              onDescriptionChange={(v) => set("description", v)}
+              onAddRule={handleAddRule}
+              onRemoveRule={handleRemoveRule}
+              onUpdateRule={handleUpdateRule}
+              onPhotoUpload={handleBridgePhotoUpload}
+              onCoverUpload={handleBridgeCoverUpload}
+              onRemovePhoto={(i) => setGalleryUrls((p) => p.filter((_, idx) => idx !== i))}
+              onRemoveCover={() => setCoverUrl("")}
+              clearError={clearError}
+            />
 
             {/* ── Features ── */}
             <SectionCard
@@ -848,18 +863,27 @@ const EditOfferings = () => {
               </Field>
               <div className="grid grid-cols-2 gap-3">
                 <Field label="State" required error={errors.state}>
-                  <StyledInput
+                  <SearchableSelect
                     value={formData.state}
-                    onChange={(v) => set("state", v)}
-                    placeholder="State"
+                    onChange={(v) =>
+                      setFormData((p) => ({ ...p, state: v, city: "" }))
+                    }
+                    options={stateOptions}
+                    placeholder="Select State"
+                    searchPlaceholder="Search states…"
+                    emptyMessage="No states found"
                     error={!!errors.state}
                   />
                 </Field>
                 <Field label="City" required error={errors.city}>
-                  <StyledInput
+                  <SearchableSelect
                     value={formData.city}
                     onChange={(v) => set("city", v)}
-                    placeholder="City"
+                    options={cityOptions}
+                    placeholder={formData.state ? "Select City" : "Select a state first"}
+                    searchPlaceholder="Search cities…"
+                    emptyMessage="No cities found"
+                    disabled={!formData.state}
                     error={!!errors.city}
                   />
                 </Field>
@@ -904,6 +928,8 @@ const EditOfferings = () => {
                 <ActivityPricing formData={formData} set={set} errors={errors} {...arrayHelpers} />
               )}
             </SectionCard>
+              </>
+            )}
 
             {/* ── Discounts ── */}
             <SectionCard
@@ -911,44 +937,14 @@ const EditOfferings = () => {
               title="Discounts"
               subtitle="Optional promotional offers"
             >
-              <div className="flex flex-col gap-3">
-                <DiscountRow
-                  label="First User Discount"
-                  enabled={formData.firstUserDiscount}
-                  onToggle={(v) => set("firstUserDiscount", v)}
-                  type={formData.firstUserDiscountType}
-                  value={formData.firstUserDiscountValue}
-                  onTypeChange={(v) => set("firstUserDiscountType", v)}
-                  onValueChange={(v) => set("firstUserDiscountValue", v)}
-                />
-                <DiscountRow
-                  label="Festival Offers"
-                  enabled={formData.festivalOffers}
-                  onToggle={(v) => set("festivalOffers", v)}
-                  type={formData.festivalOffersType}
-                  value={formData.festivalOffersValue}
-                  onTypeChange={(v) => set("festivalOffersType", v)}
-                  onValueChange={(v) => set("festivalOffersValue", v)}
-                />
-                <DiscountRow
-                  label="Weekly / Monthly Offers"
-                  enabled={formData.weeklyMonthlyOffers}
-                  onToggle={(v) => set("weeklyMonthlyOffers", v)}
-                  type={formData.weeklyMonthlyOffersType}
-                  value={formData.weeklyMonthlyOffersValue}
-                  onTypeChange={(v) => set("weeklyMonthlyOffersType", v)}
-                  onValueChange={(v) => set("weeklyMonthlyOffersValue", v)}
-                />
-                <DiscountRow
-                  label="Special Offers"
-                  enabled={formData.specialOffers}
-                  onToggle={(v) => set("specialOffers", v)}
-                  type={formData.specialOffersType}
-                  value={formData.specialOffersValue}
-                  onTypeChange={(v) => set("specialOffersType", v)}
-                  onValueChange={(v) => set("specialOffersValue", v)}
-                />
-              </div>
+              <DiscountOffersStep
+                embedded
+                offers={discountOffers}
+                onToggle={handleDiscountToggle}
+                onOfferChange={handleDiscountOfferChange}
+                errors={errors}
+                weeklyLabel="Weekly / Monthly Offers"
+              />
             </SectionCard>
 
             {/* ── Submit error ── */}
