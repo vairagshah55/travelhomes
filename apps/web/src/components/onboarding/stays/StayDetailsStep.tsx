@@ -1,19 +1,7 @@
 import React from "react";
 import EntireStayForm from "./EntireStayForm";
 import IndividualRoomForm from "./IndividualRoomForm";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+import { cn } from "@/lib/utils";
 
 interface Room {
   id: string;
@@ -94,58 +82,27 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Listing Setup
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Stay Details
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Configure your property listing details.
         </p>
       </div>
 
       <div className="w-full flex flex-col gap-5">
         {/* ── Stay Type Selection ── */}
-        <div
-          style={{
-            backgroundColor: WHITE,
-            border: "1.5px solid #D3D1C7",
-            borderRadius: 20,
-            padding: "20px 22px 22px",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_500,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-              marginBottom: 14,
-            }}
-          >
+        <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em] mb-[14px]">
             How would you like to list?
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -156,54 +113,20 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
                   key={opt.key}
                   type="button"
                   onClick={() => setStayType(opt.key)}
-                  style={{
-                    position: "relative",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "20px 14px",
-                    borderRadius: 16,
-                    border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                    backgroundColor: selected ? TEAL_BG : SURFACE,
-                    boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    textAlign: "center",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!selected) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selected) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                    }
-                  }}
+                  className={cn(
+                    "relative flex flex-col items-center gap-2 px-[14px] py-5 rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150 text-center",
+                    selected
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)]"
+                      : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
+                  )}
                 >
                   {/* Selection check */}
                   {selected && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: 10,
-                        right: 10,
-                        width: 18,
-                        height: 18,
-                        borderRadius: "50%",
-                        backgroundColor: TEAL,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
+                    <div className="absolute top-2.5 right-2.5 w-[18px] h-[18px] rounded-full bg-th-brand flex items-center justify-center">
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path
                           d="M2 5l2.5 2.5L8 3"
-                          stroke={WHITE}
+                          stroke="white"
                           strokeWidth="1.8"
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -211,20 +134,17 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
                       </svg>
                     </div>
                   )}
-                  <span style={{ fontSize: 24 }}>{opt.emoji}</span>
+                  <span className="text-[24px]">{opt.emoji}</span>
                   <div>
                     <p
-                      style={{
-                        fontSize: 13.5,
-                        fontWeight: 700,
-                        color: selected ? TEAL : BLACK,
-                        letterSpacing: "-0.01em",
-                        transition: "color 0.15s",
-                      }}
+                      className={cn(
+                        "text-[13.5px] font-bold tracking-[-0.01em] transition-colors duration-150",
+                        selected ? "text-th-brand" : "text-th-text-primary",
+                      )}
                     >
                       {opt.title}
                     </p>
-                    <p style={{ fontSize: 11.5, color: GRAY_500, marginTop: 3 }}>{opt.desc}</p>
+                    <p className="text-[11.5px] text-th-warm-text-dark mt-[3px]">{opt.desc}</p>
                   </div>
                 </button>
               );

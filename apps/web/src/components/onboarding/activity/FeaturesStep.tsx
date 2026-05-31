@@ -1,21 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { MoreHorizontal, X, Plus } from "lucide-react";
-import { getImageUrl } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { IconType } from "react-icons";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_600 = "#2C2C2A";
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
 
 interface FeatureItem {
   label: string;
@@ -75,33 +61,18 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Amenities
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
         >
           Activity Features
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           {selectedActivities.length > 0
             ? `Select features for your ${selectedActivities.length === 1 ? "activity" : "activities"}.`
             : "Select features for your activity."}
@@ -109,41 +80,14 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
       </div>
 
       {/* ── Feature card ── */}
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: WHITE,
-          border: "1.5px solid #D3D1C7",
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        }}
-      >
+      <div className="w-full bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] px-[22px] pt-5 pb-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         {/* Header row */}
         <div className="flex items-center justify-between mb-4">
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_500,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}
-          >
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
             Features
           </p>
           {selectedCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: `1px solid ${TEAL_RING}`,
-                borderRadius: 99,
-                padding: "2px 10px",
-              }}
-            >
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-[10px] py-[2px]">
               {selectedCount} selected
             </span>
           )}
@@ -156,24 +100,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
               key={`custom-${idx}`}
               type="button"
               onClick={() => onRemoveCustomFeature(idx)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "8px 14px",
-                borderRadius: 99,
-                border: `1.5px solid ${TEAL}`,
-                backgroundColor: TEAL_BG,
-                boxShadow: `0 0 0 3px ${TEAL_RING}`,
-                cursor: "pointer",
-                color: TEAL,
-              }}
+              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] cursor-pointer text-th-brand"
             >
-              <MoreHorizontal size={14} color={TEAL} />
-              <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+              <MoreHorizontal size={14} className="text-th-brand" />
+              <span className="text-[13px] font-semibold tracking-[-0.01em]">
                 {customFeature}
               </span>
-              <X size={12} color={TEAL} />
+              <X size={12} className="text-th-brand" />
             </button>
           ))}
 
@@ -190,65 +123,28 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={idx}
                 type="button"
                 onClick={() => onToggleFeature(feature.value)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 14px",
-                  borderRadius: 99,
-                  border: `1.5px solid ${selected ? TEAL : isRecommended ? "rgba(15,92,138,0.3)" : GRAY_200}`,
-                  backgroundColor: selected
-                    ? TEAL_BG
+                className={cn(
+                  "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                  selected
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
                     : isRecommended
-                      ? "rgba(15,92,138,0.04)"
-                      : SURFACE,
-                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  color: selected ? TEAL : GRAY_600,
-                }}
-                onMouseEnter={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = isRecommended
-                      ? "rgba(15,92,138,0.3)"
-                      : GRAY_200;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = isRecommended
-                      ? "rgba(15,92,138,0.04)"
-                      : SURFACE;
-                  }
-                }}
+                      ? "border-th-brand-border-soft bg-[rgba(15,92,138,0.04)] text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft"
+                      : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+                )}
               >
                 <span
-                  style={{
-                    color: selected ? TEAL : GRAY_400,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
+                  className={cn(
+                    "flex items-center",
+                    selected ? "text-th-brand" : "text-th-warm-text-muted",
+                  )}
                 >
                   <feature.icon size={16} />
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">
                   {feature.label}
                 </span>
                 {isRecommended && !selected && (
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      color: TEAL,
-                      backgroundColor: TEAL_BG,
-                      border: `1px solid ${TEAL_RING}`,
-                      borderRadius: 99,
-                      padding: "1px 7px",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
+                  <span className="text-[10px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-[7px] py-[1px] tracking-[0.02em]">
                     Suggested
                   </span>
                 )}
@@ -264,51 +160,26 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={feature.id || `admin-${idx}`}
                 type="button"
                 onClick={() => onToggleFeature(feature.name)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 14px",
-                  borderRadius: 99,
-                  border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                  backgroundColor: selected ? TEAL_BG : SURFACE,
-                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  color: selected ? TEAL : GRAY_600,
-                }}
-                onMouseEnter={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                  }
-                }}
+                className={cn(
+                  "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                  selected
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                    : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+                )}
               >
                 <span
-                  style={{
-                    width: 18,
-                    height: 18,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    opacity: selected ? 1 : 0.65,
-                    transition: "opacity 0.15s",
-                  }}
+                  className={cn(
+                    "w-[18px] h-[18px] flex items-center justify-center flex-shrink-0 transition-opacity duration-150",
+                    selected ? "opacity-100" : "opacity-65",
+                  )}
                 >
                   <img
                     src={getImageUrl(feature.icon)}
                     alt=""
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                    className="w-full h-full object-contain"
                   />
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">
                   {feature.name}
                 </span>
               </button>
@@ -318,18 +189,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           {/* ── Inline custom input pill ── */}
           {customFeatures.length < 20 &&
             (showCustomFeaturesInput ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 6px 4px 14px",
-                  borderRadius: 99,
-                  border: `1.5px solid ${TEAL}`,
-                  backgroundColor: WHITE,
-                  boxShadow: `0 0 0 3px ${TEAL_RING}`,
-                }}
-              >
+              <div className="flex items-center gap-1.5 pl-[14px] pr-[6px] py-1 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(15,92,138,0.20)]">
                 <input
                   ref={inputRef}
                   type="text"
@@ -344,34 +204,18 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   }}
                   placeholder="Feature name…"
                   maxLength={50}
-                  style={{
-                    width: 130,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: BLACK,
-                    backgroundColor: "transparent",
-                    border: "none",
-                    outline: "none",
-                    letterSpacing: "-0.01em",
-                  }}
+                  className="w-[130px] text-[13px] font-semibold text-th-text-primary bg-transparent border-none outline-none tracking-[-0.01em]"
                 />
                 <button
                   type="button"
                   onClick={handleAdd}
                   disabled={!customFeatureInput.trim()}
-                  style={{
-                    height: 28,
-                    padding: "0 12px",
-                    borderRadius: 99,
-                    border: "none",
-                    backgroundColor: customFeatureInput.trim() ? TEAL : GRAY_200,
-                    color: customFeatureInput.trim() ? WHITE : GRAY_400,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: customFeatureInput.trim() ? "pointer" : "not-allowed",
-                    transition: "all 0.15s",
-                    flexShrink: 0,
-                  }}
+                  className={cn(
+                    "h-7 px-3 rounded-full border-none text-[12px] font-bold transition-all duration-150 flex-shrink-0",
+                    customFeatureInput.trim()
+                      ? "bg-th-brand text-th-text-inverse cursor-pointer"
+                      : "bg-th-warm-border text-th-warm-text-muted cursor-not-allowed",
+                  )}
                 >
                   Add
                 </button>
@@ -381,49 +225,19 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                     onSetShowCustomFeaturesInput(false);
                     onSetCustomFeatureInput("");
                   }}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 99,
-                    border: "none",
-                    backgroundColor: "transparent",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    flexShrink: 0,
-                  }}
+                  className="w-7 h-7 rounded-full border-none bg-transparent flex items-center justify-center cursor-pointer flex-shrink-0"
                 >
-                  <X size={13} color={GRAY_400} />
+                  <X size={13} className="text-th-warm-text-muted" />
                 </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={() => onSetShowCustomFeaturesInput(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "8px 14px",
-                  borderRadius: 99,
-                  border: `1.5px dashed ${GRAY_200}`,
-                  backgroundColor: "transparent",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  color: GRAY_400,
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                  (e.currentTarget as HTMLButtonElement).style.color = TEAL;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                  (e.currentTarget as HTMLButtonElement).style.color = GRAY_400;
-                }}
+                className="flex items-center gap-1.5 px-[14px] py-2 rounded-full border-[1.5px] border-dashed border-th-warm-border bg-transparent cursor-pointer transition-all duration-150 text-th-warm-text-muted hover:border-th-brand hover:text-th-brand"
               >
                 <Plus size={13} strokeWidth={2.5} />
-                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">
                   Add custom
                 </span>
               </button>

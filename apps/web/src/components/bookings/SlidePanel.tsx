@@ -1,13 +1,6 @@
 import React, { useEffect } from "react";
 import { X } from "lucide-react";
 
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL    = "#0F5C8A";
-const BLACK   = "#131313";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e4e4e4";
-const WHITE   = "#ffffff";
-
 /**
  * Generic right-side slide panel used for Detail / Create / Edit booking views.
  * Slides in from the right with backdrop overlay.
@@ -41,65 +34,51 @@ export const SlidePanel = ({ open, onClose, title, icon, width = 520, children, 
       {/* Backdrop */}
       <div
         onClick={onClose}
+        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-[2px] transition-opacity duration-[250ms] ease-linear"
         style={{
-          position: "fixed", inset: 0, zIndex: 50,
-          backgroundColor: "rgba(0,0,0,0.3)",
-          backdropFilter: "blur(2px)",
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
-          transition: "opacity 0.25s ease",
         }}
       />
 
       {/* Panel */}
       <div
+        className="fixed top-0 right-0 bottom-0 z-[51] bg-th-surface-0 flex flex-col overflow-hidden"
         style={{
-          position: "fixed", top: 0, right: 0, bottom: 0,
-          width, maxWidth: "100vw",
-          zIndex: 51,
-          backgroundColor: WHITE,
+          width,
+          maxWidth: "100vw",
           boxShadow: open ? "-8px 0 40px rgba(0,0,0,0.12)" : "none",
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
-          display: "flex", flexDirection: "column",
-          overflow: "hidden",
         }}
       >
         {/* Header */}
-        <div
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "18px 24px",
-            borderBottom: "1.5px solid #EBEBEB",
-            flexShrink: 0,
-          }}
-        >
+        <div className="flex items-center justify-between px-6 py-[18px] border-b border-[#EBEBEB] flex-shrink-0">
           <div className="flex items-center gap-3">
             {icon && (
-              <div style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: "rgba(7,228,228,0.07)", border: "1.5px solid rgba(7,228,228,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div className="w-[34px] h-[34px] rounded-[10px] bg-th-brand-soft border border-th-brand-border-soft flex items-center justify-center">
                 {icon}
               </div>
             )}
-            <h2 style={{ fontSize: 16, fontWeight: 800, color: BLACK, letterSpacing: "-0.02em" }}>{title}</h2>
+            <h2 className="text-base font-extrabold text-th-text-primary tracking-[-0.02em]">{title}</h2>
           </div>
           <button
-            type="button" onClick={onClose}
-            style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "#F7F8FA", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background-color 0.15s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#EBEBEB"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#F7F8FA"; }}
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-th-warm-surface border-none flex items-center justify-center cursor-pointer transition-colors hover:bg-[#EBEBEB]"
           >
-            <X size={15} color={GRAY_400} />
+            <X size={15} className="text-th-warm-text-muted" />
           </button>
         </div>
 
         {/* Scrollable body */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+        <div className="flex-1 overflow-y-auto px-6 py-5">
           {children}
         </div>
 
         {/* Sticky footer */}
         {footer && (
-          <div style={{ padding: "16px 24px", borderTop: "1.5px solid #EBEBEB", flexShrink: 0, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <div className="px-6 py-4 border-t border-[#EBEBEB] flex-shrink-0 flex justify-end gap-2.5">
             {footer}
           </div>
         )}

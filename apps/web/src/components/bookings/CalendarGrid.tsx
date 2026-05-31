@@ -1,21 +1,12 @@
 import React, { useState } from "react";
 import { Calendar } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { type BookingData, getDaysInMonth, formatDateRange, isDateBooked } from "./api";
-
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-const TEAL    = "#0F5C8A";
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const BLACK   = "#131313";
-const GRAY_500 = "#6b6b6b";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e4e4e4";
-const WHITE   = "#ffffff";
-const SURFACE = "#F7F8FA";
 
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string; barBg: string }> = {
   Confirmed:    { bg: "#eff6ff", text: "#1d4ed8", border: "#bfdbfe", barBg: "#93c5fd" },
   "Checked-in": { bg: "#f0fdf4", text: "#16a34a", border: "#bbf7d0", barBg: "#86efac" },
-  "Checked-out":{ bg: SURFACE,   text: GRAY_500, border: GRAY_200, barBg: "#d1d5db" },
+  "Checked-out":{ bg: "#F7F8FA",   text: "#6b6b6b", border: "#e4e4e4", barBg: "#d1d5db" },
   Cancelled:    { bg: "#fef2f2", text: "#dc2626", border: "#fecaca", barBg: "#fca5a5" },
 };
 
@@ -30,17 +21,17 @@ const BookingBlock = ({ booking, span, onClick, onDragStart, onDragEnd }: {
   return (
     <div
       draggable onDragStart={onDragStart} onDragEnd={onDragEnd} onClick={onClick}
+      className="flex items-center rounded-[10px] cursor-pointer transition-all hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] z-10"
       style={{
-        width: span * 60 - 8, minHeight: 44, margin: 4,
-        display: "flex", alignItems: "center", padding: "0 12px",
-        borderRadius: 10, cursor: "pointer",
-        backgroundColor: c.barBg, border: `1.5px solid ${c.border}`,
-        transition: "all 0.15s", zIndex: 10,
+        width: span * 60 - 8,
+        minHeight: 44,
+        margin: 4,
+        padding: "0 12px",
+        backgroundColor: c.barBg,
+        border: `1.5px solid ${c.border}`,
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.02)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 12px rgba(0,0,0,0.12)"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
     >
-      <div className="flex items-center justify-between w-full" style={{ fontSize: 12 }}>
+      <div className="flex items-center justify-between w-full text-[12px]">
         <div className="flex items-center gap-2">
           <span style={{ fontWeight: 700, color: c.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>{booking.guestName}</span>
           <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 99, backgroundColor: c.bg, color: c.text, border: `1px solid ${c.border}`, whiteSpace: "nowrap" }}>{booking.status}</span>
@@ -97,26 +88,33 @@ export const CalendarGrid = ({ currentMonth, currentYear, bookings, onBookingCli
   };
 
   return (
-    <div style={{ border: "1.5px solid #EBEBEB", borderRadius: 16, backgroundColor: WHITE, overflow: "auto", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+    <div className="border border-[#EBEBEB] rounded-[16px] bg-th-surface-0 overflow-auto shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
       {/* Header row */}
-      <div className="flex min-w-max" style={{ backgroundColor: SURFACE, borderBottom: "1.5px solid #EBEBEB" }}>
-        <div style={{ width: 300, flexShrink: 0, padding: "12px 16px", borderRight: "1.5px solid #EBEBEB", fontSize: 12, fontWeight: 700, color: GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+      <div className="flex min-w-max bg-th-warm-surface border-b border-[#EBEBEB]">
+        <div className="w-[300px] flex-shrink-0 px-4 py-3 border-r border-[#EBEBEB] text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
           Service Name
         </div>
         {days.map((d) => (
-          <div key={d} style={{ width: 60, flexShrink: 0, padding: "12px 0", textAlign: "center", borderRight: "1px solid #EBEBEB", fontSize: 12, fontWeight: 700, color: GRAY_500 }}>
+          <div key={d} className="w-[60px] flex-shrink-0 py-3 text-center border-r border-[#EBEBEB] text-[12px] font-bold text-th-warm-text-dark">
             {d.toString().padStart(2, "0")}
           </div>
         ))}
       </div>
 
       {/* Body */}
-      <div style={{ position: "relative" }}>
+      <div className="relative">
         {vehicleNames.map((vehicle, vi) => (
-          <div key={vi} className="flex min-w-max" style={{ height: 60, borderBottom: "1px solid #EBEBEB", backgroundColor: vi % 2 === 1 ? SURFACE : WHITE, transition: "background-color 0.1s" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = TEAL_BG; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = vi % 2 === 1 ? SURFACE : WHITE; }}>
-            <div style={{ width: 300, flexShrink: 0, padding: "0 16px", borderRight: "1.5px solid #EBEBEB", display: "flex", alignItems: "center", fontSize: 13, fontWeight: 600, color: BLACK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div
+            key={vi}
+            className="flex min-w-max border-b border-[#EBEBEB] transition-colors duration-100 hover:bg-th-brand-soft"
+            style={{
+              height: 60,
+              backgroundColor: vi % 2 === 1 ? "#F7F8FA" : "#ffffff",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(15,92,138,0.07)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.backgroundColor = vi % 2 === 1 ? "#F7F8FA" : "#ffffff"; }}
+          >
+            <div className="w-[300px] flex-shrink-0 px-4 border-r border-[#EBEBEB] flex items-center text-[13px] font-semibold text-th-text-primary overflow-hidden text-ellipsis whitespace-nowrap">
               {vehicle}
             </div>
             {days.map((day) => {
@@ -131,18 +129,16 @@ export const CalendarGrid = ({ currentMonth, currentYear, bookings, onBookingCli
 
               return (
                 <div key={day}
+                  className="w-[60px] flex-shrink-0 flex items-center justify-center border-r border-[#EBEBEB] cursor-pointer relative transition-colors duration-100"
                   style={{
-                    width: 60, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-                    borderRight: "1px solid #EBEBEB", cursor: "pointer", position: "relative",
                     backgroundColor: isDragOver ? "#bfdbfe" : booked ? "#fef2f2" : "transparent",
-                    transition: "background-color 0.1s",
                   }}
                   onClick={() => currentBooking ? onBookingClick(currentBooking) : onDateClick(day, vehicle)}
                   onDragOver={handleDragOver(day, vehicle)} onDrop={handleDrop(day, vehicle)}>
-                  <span style={{ fontSize: booked ? 8 : 11, fontWeight: booked ? 700 : 500, color: booked ? "#dc2626" : GRAY_400, zIndex: 1, lineHeight: 1.2, textAlign: "center", wordBreak: "break-all" }}>
+                  <span style={{ fontSize: booked ? 8 : 11, fontWeight: booked ? 700 : 500, color: booked ? "#dc2626" : "#9a9a9a", zIndex: 1, lineHeight: 1.2, textAlign: "center", wordBreak: "break-all" }}>
                     {booked ? currentBooking?.guestName : day.toString().padStart(2, "0")}
                   </span>
-                  {booked && <div style={{ position: "absolute", inset: 0, backgroundColor: "rgba(254,202,202,0.25)", borderRadius: 2 }} />}
+                  {booked && <div className="absolute inset-0 bg-[rgba(254,202,202,0.25)] rounded-[2px]" />}
                 </div>
               );
             })}
@@ -150,14 +146,14 @@ export const CalendarGrid = ({ currentMonth, currentYear, bookings, onBookingCli
         ))}
 
         {/* Overlay booking bars */}
-        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {monthlyBookings.map((b) => {
             const vi = vehicleNames.indexOf(b.resourceName);
             if (vi === -1) return null;
             const pos = getBookingPosition(b, vi);
             if (pos.startCol < 1 || pos.startCol > daysInMonth) return null;
             return (
-              <div key={b._id} style={{ position: "absolute", top: pos.top, left: pos.left, zIndex: 10, pointerEvents: "auto" }}>
+              <div key={b._id} className="absolute z-10 pointer-events-auto" style={{ top: pos.top, left: pos.left }}>
                 <BookingBlock booking={b} span={pos.span} onClick={() => onBookingClick(b)} onDragStart={handleDragStart(b)} onDragEnd={handleDragEnd} />
               </div>
             );

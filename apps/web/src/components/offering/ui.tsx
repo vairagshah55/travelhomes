@@ -1,16 +1,17 @@
 import React from "react";
 import { Plus, X, ChevronDown, Check, ImagePlus } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 
-// ─── Brand tokens (sourced from canonical palette) ─────────────────────────
-import { BRAND, BRAND_BG, BRAND_FOCUS, INK } from "@/lib/brandColors";
-export const TEAL       = BRAND;
-export const TEAL_BG    = BRAND_BG;
-export const TEAL_FOCUS = BRAND_FOCUS;
-export const BLACK      = INK;
+// ─── Token constants kept for consumers that import them directly ──────────
+// These are the raw hex values; Tailwind classes are used in this file.
+export const TEAL       = "#0F5C8A";
+export const TEAL_BG    = "rgba(15, 92, 138, 0.07)";
+export const TEAL_FOCUS = "rgba(15, 92, 138, 0.15)";
+export const BLACK      = "#0A2B40";
 export const GRAY_500   = "#6b6b6b";
-export const GRAY_400   = "#9a9a9a";
-export const GRAY_200   = "#e4e4e4";
+export const GRAY_400   = "#888780";
+export const GRAY_200   = "#D3D1C7";
 export const WHITE      = "#ffffff";
 export const SURFACE    = "#F7F8FA";
 export const ERROR      = "#ef4444";
@@ -21,12 +22,12 @@ export const ERROR_RING = "rgba(239,68,68,0.1)";
 export const SectionCard = ({ icon, title, subtitle, children }: {
   icon: React.ReactNode; title: string; subtitle?: string; children: React.ReactNode;
 }) => (
-  <div style={{ backgroundColor: WHITE, border: "1.5px solid #EBEBEB", borderRadius: 20, padding: "20px 22px 22px", boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)" }}>
+  <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: TEAL_BG, border: "1.5px solid rgba(7,228,228,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{icon}</div>
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border border-th-brand-border-soft flex items-center justify-center flex-shrink-0">{icon}</div>
       <div>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>{title}</p>
-        {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
+        <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">{title}</p>
+        {subtitle && <p className="text-[11px] text-th-warm-text-muted mt-[1px]">{subtitle}</p>}
       </div>
     </div>
     <div className="flex flex-col gap-4">{children}</div>
@@ -38,14 +39,14 @@ export const Field = ({ label, required, error, children }: {
   label: string; required?: boolean; error?: string; children: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label style={{ fontSize: 12, fontWeight: 600, color: error ? ERROR : GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-      {label}{required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
+    <label className={cn("text-[12px] font-semibold uppercase tracking-[0.03em]", error ? "text-th-error-bright" : "text-th-warm-text-dark")}>
+      {label}{required && <span className="text-th-error-bright ml-[3px]">*</span>}
     </label>
     {children}
     {error && (
       <div className="flex items-center gap-1.5">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" /><path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" /></svg>
-        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" className="stroke-th-error-bright" strokeWidth="1.5" /><path d="M6 3.5v3M6 8.25v.25" className="stroke-th-error-bright" strokeWidth="1.5" strokeLinecap="round" /></svg>
+        <p className="text-[11.5px] text-th-error-bright">{error}</p>
       </div>
     )}
   </div>
@@ -54,44 +55,67 @@ export const Field = ({ label, required, error, children }: {
 /* ─── Styled input ────────────────────────────────────────────────────────── */
 export const StyledInput = ({ value, onChange, placeholder, type = "text", error, ...rest }: {
   value: string; onChange: (v: string) => void; placeholder?: string; type?: string; error?: boolean;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <input type={type} value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder}
-      style={{ width: "100%", height: 48, padding: "0 16px", fontSize: 14, color: BLACK, fontWeight: 450, backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE, border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`, borderRadius: 13, outline: "none", boxShadow: focused && !error ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)` : error ? `0 0 0 3px ${ERROR_RING}` : "none", transition: "all 0.15s" }}
-      {...rest}
-    />
-  );
-};
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    className={cn(
+      "w-full h-12 px-4 text-[14px] text-th-text-primary font-[450]",
+      "rounded-[13px] outline-none transition-all duration-150 border-[1.5px]",
+      "bg-th-warm-surface focus:bg-th-surface-0",
+      error
+        ? "bg-th-error-bright-bg border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+        : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+    )}
+    {...rest}
+  />
+);
 
 /* ─── Styled textarea ─────────────────────────────────────────────────────── */
 export const StyledTextarea = ({ value, onChange, placeholder, error, maxLength }: {
   value: string; onChange: (v: string) => void; placeholder?: string; error?: boolean; maxLength?: number;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <textarea value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} placeholder={placeholder} maxLength={maxLength}
-      style={{ width: "100%", minHeight: 100, padding: "12px 16px", fontSize: 14, color: BLACK, fontWeight: 450, backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE, border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`, borderRadius: 13, outline: "none", resize: "none", boxShadow: focused && !error ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)` : error ? `0 0 0 3px ${ERROR_RING}` : "none", transition: "all 0.15s" }}
-    />
-  );
-};
+}) => (
+  <textarea
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    maxLength={maxLength}
+    className={cn(
+      "w-full min-h-[100px] px-4 py-3 text-[14px] text-th-text-primary font-[450]",
+      "rounded-[13px] outline-none resize-none transition-all duration-150 border-[1.5px]",
+      "bg-th-warm-surface focus:bg-th-surface-0",
+      error
+        ? "bg-th-error-bright-bg border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+        : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+    )}
+  />
+);
 
 /* ─── Styled select ───────────────────────────────────────────────────────── */
 export const StyledSelect = ({ value, onChange, children, error, placeholder }: {
   value: string; onChange: (v: string) => void; children: React.ReactNode; error?: boolean; placeholder?: string;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div style={{ position: "relative" }}>
-      <select value={value} onChange={(e) => onChange(e.target.value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-        style={{ width: "100%", height: 48, padding: "0 40px 0 16px", fontSize: 14, color: value ? BLACK : GRAY_400, fontWeight: 450, backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE, border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`, borderRadius: 13, outline: "none", appearance: "none", boxShadow: focused && !error ? `0 0 0 4px ${TEAL_FOCUS}` : error ? `0 0 0 3px ${ERROR_RING}` : "none", transition: "all 0.15s", cursor: "pointer" }}>
-        {placeholder && <option value="" disabled>{placeholder}</option>}
-        {children}
-      </select>
-      <ChevronDown size={15} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: GRAY_400 }} />
-    </div>
-  );
-};
+}) => (
+  <div className="relative">
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        "w-full h-12 pl-4 pr-10 text-[14px] font-[450]",
+        "rounded-[13px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px]",
+        value ? "text-th-text-primary" : "text-th-warm-text-muted",
+        error
+          ? "bg-th-error-bright-bg border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+          : "bg-th-warm-surface border-transparent focus:bg-th-surface-0 focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring)]",
+      )}
+    >
+      {placeholder && <option value="" disabled>{placeholder}</option>}
+      {children}
+    </select>
+    <ChevronDown size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-th-warm-text-muted" />
+  </div>
+);
 
 /* ─── Rules list ──────────────────────────────────────────────────────────── */
 export const RulesList = ({ rules, onChange, onAdd, onRemove }: {
@@ -100,20 +124,21 @@ export const RulesList = ({ rules, onChange, onAdd, onRemove }: {
   <div className="flex flex-col gap-2.5">
     {rules.map((rule, i) => (
       <div key={i} className="flex items-center gap-2.5">
-        <div style={{ width: 24, height: 24, borderRadius: "50%", backgroundColor: SURFACE, border: `1.5px solid ${GRAY_200}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: GRAY_400 }}>{i + 1}</span>
+        <div className="w-6 h-6 rounded-full bg-th-warm-surface border border-th-warm-border flex items-center justify-center flex-shrink-0">
+          <span className="text-[10px] font-bold text-th-warm-text-muted">{i + 1}</span>
         </div>
-        <input value={rule} onChange={(e) => onChange(i, e.target.value)} placeholder="Add a rule\u2026"
-          style={{ flex: 1, height: 42, padding: "0 14px", fontSize: 13, color: BLACK, fontWeight: 450, backgroundColor: SURFACE, border: "1.5px solid transparent", borderRadius: 11, outline: "none", transition: "all 0.15s" }}
-          onFocus={(e) => { e.target.style.borderColor = TEAL; e.target.style.backgroundColor = WHITE; e.target.style.boxShadow = `0 0 0 4px ${TEAL_FOCUS}`; }}
-          onBlur={(e) => { e.target.style.borderColor = "transparent"; e.target.style.backgroundColor = SURFACE; e.target.style.boxShadow = "none"; }}
+        <input
+          value={rule}
+          onChange={(e) => onChange(i, e.target.value)}
+          placeholder="Add a rule…"
+          className="flex-1 h-[42px] px-3.5 text-[13px] text-th-text-primary font-[450] bg-th-warm-surface border-[1.5px] border-transparent rounded-[11px] outline-none transition-all duration-150 focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]"
         />
-        <button type="button" onClick={() => onRemove(i)} style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "transparent", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-          <X size={13} color={GRAY_400} />
+        <button type="button" onClick={() => onRemove(i)} className="w-7 h-7 rounded-full bg-transparent border-none flex items-center justify-center cursor-pointer">
+          <X size={13} className="text-th-warm-text-muted" />
         </button>
       </div>
     ))}
-    <button type="button" onClick={onAdd} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: TEAL, backgroundColor: "transparent", border: "none", cursor: "pointer", paddingLeft: 34 }}>
+    <button type="button" onClick={onAdd} className="flex items-center gap-1.5 text-[12px] font-bold text-th-brand bg-transparent border-none cursor-pointer pl-[34px]">
       <Plus size={13} /> Add rule
     </button>
   </div>
@@ -126,21 +151,27 @@ export const PhotoGrid = ({ coverPreview, galleryPreviews, onCoverSelect, onGall
 }) => (
   <div className="flex flex-col gap-3">
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-      <label htmlFor={`${idPrefix}-cover`} style={{ gridColumn: "span 1", position: "relative", height: 190, borderRadius: 16, overflow: "hidden", border: `2px dashed ${error ? "#fca5a5" : GRAY_200}`, backgroundColor: SURFACE, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", transition: "all 0.15s" }}>
+      <label
+        htmlFor={`${idPrefix}-cover`}
+        className={cn(
+          "col-span-1 relative h-[190px] rounded-[16px] overflow-hidden border-2 border-dashed bg-th-warm-surface flex flex-col items-center justify-center gap-2 cursor-pointer transition-all",
+          error ? "border-th-error-bright-soft" : "border-th-warm-border",
+        )}
+      >
         {coverPreview ? (
-          <img src={coverPreview} alt="Cover" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={coverPreview} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
         ) : (
-          <><ImagePlus size={24} color={GRAY_400} /><span style={{ fontSize: 13, fontWeight: 600, color: GRAY_500 }}>Cover Photo</span></>
+          <><ImagePlus size={24} className="text-th-warm-text-muted" /><span className="text-[13px] font-semibold text-th-warm-text-dark">Cover Photo</span></>
         )}
         <input id={`${idPrefix}-cover`} type="file" accept="image/*" className="hidden" onChange={onCoverSelect} />
       </label>
       <div className="lg:col-span-2 grid grid-cols-2 gap-3">
         {[0, 1, 2, 3].map((i) => (
-          <label key={i} htmlFor={`${idPrefix}-gallery-${i}`} style={{ position: "relative", height: 190, borderRadius: 16, overflow: "hidden", border: `2px dashed ${GRAY_200}`, backgroundColor: SURFACE, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer", transition: "all 0.15s" }}>
+          <label key={i} htmlFor={`${idPrefix}-gallery-${i}`} className="relative h-[190px] rounded-[16px] overflow-hidden border-2 border-dashed border-th-warm-border bg-th-warm-surface flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all">
             {galleryPreviews[i] ? (
-              <img src={galleryPreviews[i]} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={galleryPreviews[i]} alt="" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
-              <><Plus size={20} color={GRAY_400} /><span style={{ fontSize: 12, color: GRAY_400 }}>Photo {i + 1}</span></>
+              <><Plus size={20} className="text-th-warm-text-muted" /><span className="text-[12px] text-th-warm-text-muted">Photo {i + 1}</span></>
             )}
             <input id={`${idPrefix}-gallery-${i}`} type="file" accept="image/*" className="hidden" onChange={(e) => onGallerySelect(e, i)} />
           </label>
@@ -149,8 +180,8 @@ export const PhotoGrid = ({ coverPreview, galleryPreviews, onCoverSelect, onGall
     </div>
     {error && (
       <div className="flex items-center gap-1.5">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" /><path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" /></svg>
-        <p style={{ fontSize: 11.5, color: ERROR }}>{error}</p>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" className="stroke-th-error-bright" strokeWidth="1.5" /><path d="M6 3.5v3M6 8.25v.25" className="stroke-th-error-bright" strokeWidth="1.5" strokeLinecap="round" /></svg>
+        <p className="text-[11.5px] text-th-error-bright">{error}</p>
       </div>
     )}
   </div>
@@ -158,10 +189,16 @@ export const PhotoGrid = ({ coverPreview, galleryPreviews, onCoverSelect, onGall
 
 /* ─── Feature pill ────────────────────────────────────────────────────────── */
 export const FeaturePill = ({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) => (
-  <button type="button" onClick={onClick}
-    style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 99, border: `1.5px solid ${selected ? TEAL : GRAY_200}`, backgroundColor: selected ? TEAL_BG : SURFACE, boxShadow: selected ? "0 0 0 3px rgba(7,228,228,0.2)" : "none", cursor: "pointer", transition: "all 0.15s", color: selected ? TEAL : GRAY_500, fontSize: 13, fontWeight: 600 }}
-    onMouseEnter={(e) => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL; (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG; } }}
-    onMouseLeave={(e) => { if (!selected) { (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200; (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE; } }}>
+  <button
+    type="button"
+    onClick={onClick}
+    className={cn(
+      "flex items-center gap-2 px-3.5 py-2 rounded-full border-[1.5px] cursor-pointer transition-all text-[13px] font-semibold",
+      selected
+        ? "border-th-brand bg-th-brand-soft text-th-brand shadow-[0_0_0_3px_rgba(7,228,228,0.2)]"
+        : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+    )}
+  >
     {label}
     {selected && <Check size={12} strokeWidth={2.5} />}
   </button>
@@ -172,16 +209,19 @@ export const DiscountRow = ({ label, enabled, onToggle, type, value, onTypeChang
   label: string; enabled: boolean; onToggle: (v: boolean) => void;
   type: string; value: string; onTypeChange: (v: string) => void; onValueChange: (v: string) => void;
 }) => (
-  <div style={{ padding: "14px 16px", borderRadius: 13, border: `1.5px solid ${enabled ? TEAL : GRAY_200}`, backgroundColor: enabled ? TEAL_BG : SURFACE, transition: "all 0.15s" }}>
+  <div className={cn(
+    "px-4 py-3.5 rounded-[13px] border-[1.5px] transition-all",
+    enabled ? "border-th-brand bg-th-brand-soft" : "border-th-warm-border bg-th-warm-surface",
+  )}>
     <div className="flex items-center gap-3">
       <Checkbox checked={enabled} onCheckedChange={onToggle} />
-      <span style={{ fontSize: 13, fontWeight: 600, color: enabled ? TEAL : GRAY_500 }}>{label}</span>
+      <span className={cn("text-[13px] font-semibold", enabled ? "text-th-brand" : "text-th-warm-text-dark")}>{label}</span>
     </div>
     {enabled && (
       <div className="grid grid-cols-2 gap-3 mt-3 pl-7">
         <StyledSelect value={type} onChange={onTypeChange}>
           <option value="percentage">Percentage (%)</option>
-          <option value="fixed">Fixed Amount (\u20B9)</option>
+          <option value="fixed">Fixed Amount (₹)</option>
         </StyledSelect>
         <StyledInput value={value} onChange={onValueChange} placeholder={type === "percentage" ? "e.g. 20" : "e.g. 500"} />
       </div>

@@ -1,5 +1,4 @@
 import React from "react";
-import { GRAY_500, GRAY_400, GRAY_200, ERROR, SURFACE } from "./tokens";
 import ErrorMsg from "./ErrorMsg";
 
 interface FieldProps {
@@ -25,37 +24,19 @@ const Field: React.FC<FieldProps> = ({
 }) => (
   <div className="flex flex-col gap-1.5">
     <div className={`flex items-center ${right ? "justify-between" : "gap-2"} mb-0.5`}>
-      <label
-        style={{
-          fontSize: 12,
-          fontWeight: 600,
-          color: GRAY_500,
-          letterSpacing: "0.03em",
-          textTransform: "uppercase",
-        }}
-      >
+      <label className="text-xs font-semibold text-th-warm-text-dark tracking-[0.03em] uppercase">
         {label}
-        {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
+        {required && <span className="text-th-error-bright ml-[3px]">*</span>}
       </label>
       {optional && !right && (
-        <span
-          style={{
-            fontSize: 10,
-            fontWeight: 600,
-            color: GRAY_400,
-            backgroundColor: SURFACE,
-            border: `1px solid ${GRAY_200}`,
-            borderRadius: 99,
-            padding: "1px 7px",
-          }}
-        >
+        <span className="text-[10px] font-semibold text-th-warm-text-muted bg-th-warm-surface border border-th-warm-border rounded-full px-[7px] py-px">
           Optional
         </span>
       )}
       {right}
     </div>
     {children}
-    {help && <div style={{ fontSize: 11, color: GRAY_400, marginTop: 5 }}>{help}</div>}
+    {help && <div className="text-[11px] text-th-warm-text-muted mt-[5px]">{help}</div>}
     <ErrorMsg message={error} marginTop={2} />
   </div>
 );

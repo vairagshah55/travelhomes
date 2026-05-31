@@ -43,15 +43,7 @@ import {
   vendorAnalyticsApi,
   BookingDetailDTO,
   VendorAnalyticsCounts,
-  VendorAnalyticsGraphData,
 } from "../lib/api";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
 import { formatDate, format, isPast, isFuture } from "date-fns";
 
 const BRAND = "#0F5C8A";
@@ -121,103 +113,9 @@ const avatarCls = (n: string) =>
     ] as const
   )[n.charCodeAt(0) % 5];
 
-// ─── chart configs ─────────────────────────────────────────────────────────────
-const earningsConfig = { earnings: { label: "Earnings", color: "#1D9E75" } } satisfies ChartConfig;
-const visitorsConfig = { visitors: { label: "Visitors", color: BRAND } } satisfies ChartConfig;
-
-// ─── ChartCard ────────────────────────────────────────────────────────────────
-const ChartCard = ({
-  title,
-  config,
-  dataKey,
-  gradientId,
-  data,
-  loading,
-}: {
-  title: string;
-  config: ChartConfig;
-  dataKey: string;
-  gradientId: string;
-  data: VendorAnalyticsGraphData[];
-  loading: boolean;
-}) => {
-  const color = (config[dataKey] as any)?.color ?? BRAND;
-  const total = data.reduce((s, d) => s + ((d as any)[dataKey] ?? 0), 0);
-
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6 flex flex-col">
-      <div className="flex items-start justify-between mb-1">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.09em] text-gray-400 dark:text-gray-500">
-          {title}
-        </p>
-        <Select defaultValue="month">
-          <SelectTrigger className="h-7 w-auto text-[11px] border-gray-200 dark:border-gray-700 rounded-lg gap-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="week">This Week</SelectItem>
-            <SelectItem value="month">This Month</SelectItem>
-            <SelectItem value="year">This Year</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {loading ? (
-        <Sk className="w-32 h-8 mb-6" />
-      ) : (
-        <p className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-6">
-          {dataKey === "earnings" ? `₹${total.toLocaleString()}` : total.toLocaleString()}
-        </p>
-      )}
-
-      {loading ? (
-        <Sk className="flex-1 min-h-[200px]" />
-      ) : (
-        <div className="flex-1 min-h-[200px]">
-          <ChartContainer config={config} className="h-full w-full">
-            <AreaChart data={data} margin={{ top: 4, right: 2, left: -26, bottom: 0 }}>
-              <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.2} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                vertical={false}
-                strokeDasharray="3 3"
-                stroke="rgba(107,114,128,0.08)"
-              />
-              <XAxis
-                dataKey="name"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={10}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tickMargin={6}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Area
-                type="monotone"
-                dataKey={dataKey}
-                stroke={color}
-                strokeWidth={2.5}
-                fillOpacity={1}
-                fill={`url(#${gradientId})`}
-                dot={false}
-                activeDot={{ r: 5, fill: color, strokeWidth: 2.5, stroke: "#fff" }}
-              />
-            </AreaChart>
-          </ChartContainer>
-        </div>
-      )}
-    </div>
-  );
-};
+// ChartCard / earningsConfig / visitorsConfig removed along with the Total
+// Earnings + Total Visitors panels. If charts come back, restore from git
+// history rather than re-introducing the dead config here.
 
 // ─── BookingTable ─────────────────────────────────────────────────────────────
 const BookingTable = ({ data, loading }: { data: BookingDetailDTO[]; loading: boolean }) => {
@@ -534,19 +432,9 @@ const Dashboard = () => {
     },
   });
 
-  const graphsQuery = useQuery<VendorAnalyticsGraphData[]>({
-    queryKey: ["dashboard", "graphs", user?.id],
-    enabled,
-    queryFn: async () => {
-      const res = await vendorAnalyticsApi.getGraphs(token!);
-      return res.success ? res.data : [];
-    },
-  });
-
   const stats = statsQuery.data ?? null;
   const bookings = bookingsQuery.data ?? [];
-  const graphData = graphsQuery.data ?? [];
-  const loading = statsQuery.isLoading || bookingsQuery.isLoading || graphsQuery.isLoading;
+  const loading = statsQuery.isLoading || bookingsQuery.isLoading;
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -787,25 +675,10 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* ── CHARTS ─────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <ChartCard
-                title="Total Earnings"
-                config={earningsConfig}
-                dataKey="earnings"
-                gradientId="fillEarnings"
-                data={graphData}
-                loading={loading}
-              />
-              <ChartCard
-                title="Total Visitors"
-                config={visitorsConfig}
-                dataKey="visitors"
-                gradientId="fillVisitors"
-                data={graphData}
-                loading={loading}
-              />
-            </div>
+            {/* Total Earnings / Total Visitors charts removed from the vendor
+                dashboard — the numbers were misleading until the graph data
+                feed was vendor-scoped, and the Revenue page already covers
+                earnings in more detail. */}
 
             {/* ── BOOKINGS TABLE ──────────────────────────────────────────── */}
             <BookingTable data={bookings} loading={loading} />

@@ -2,14 +2,7 @@ import React from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MONTH_NAMES } from "./api";
-
-const TEAL    = "#0F5C8A";
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const BLACK   = "#131313";
-const GRAY_400 = "#9a9a9a";
-const GRAY_200 = "#e4e4e4";
-const WHITE   = "#ffffff";
-const SURFACE = "#F7F8FA";
+import { cn } from "@/lib/utils";
 
 export const DateNavigation = ({ currentMonth, currentYear, onMonthChange, onYearChange }: {
   currentMonth: number; currentYear: number;
@@ -21,42 +14,53 @@ export const DateNavigation = ({ currentMonth, currentYear, onMonthChange, onYea
   const next = () => { if (currentMonth === 11) { onMonthChange(0); onYearChange(currentYear + 1); } else onMonthChange(currentMonth + 1); };
 
   const navBtn = (onClick: () => void, icon: React.ReactNode) => (
-    <button type="button" onClick={onClick}
-      style={{ width: 34, height: 34, borderRadius: 10, border: `1.5px solid ${GRAY_200}`, backgroundColor: WHITE, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s" }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL; (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200; (e.currentTarget as HTMLButtonElement).style.backgroundColor = WHITE; }}>
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-[34px] h-[34px] rounded-[10px] border border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer transition-all hover:border-th-brand hover:bg-th-brand-soft"
+    >
       {icon}
     </button>
   );
 
   return (
     <div className="flex items-center gap-3">
-      {navBtn(prev, <ChevronLeft size={16} color={GRAY_400} />)}
+      {navBtn(prev, <ChevronLeft size={16} className="text-th-warm-text-muted" />)}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 12, backgroundColor: "transparent", border: "none", cursor: "pointer" }}>
-            <span style={{ fontSize: 20, fontWeight: 800, color: BLACK, letterSpacing: "-0.02em" }}>
+          <button type="button" className="flex items-center gap-2 px-3.5 py-1.5 rounded-[12px] bg-transparent border-none cursor-pointer">
+            <span className="text-[20px] font-extrabold text-th-text-primary tracking-[-0.02em]">
               {MONTH_NAMES[currentMonth]}, {currentYear}
             </span>
-            <ChevronDown size={18} color={GRAY_400} />
+            <ChevronDown size={18} className="text-th-warm-text-muted" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 p-3">
-          <p style={{ fontSize: 11, fontWeight: 700, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 6 }}>Month</p>
+          <p className="text-[11px] font-bold text-th-warm-text-muted uppercase tracking-[0.03em] mb-1.5">Month</p>
           <div className="grid grid-cols-3 gap-1 mb-3">
             {MONTH_NAMES.map((m, i) => (
               <button key={m} type="button" onClick={() => onMonthChange(i)}
-                style={{ padding: "6px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: i === currentMonth ? 700 : 500, backgroundColor: i === currentMonth ? TEAL : "transparent", color: i === currentMonth ? BLACK : GRAY_400, cursor: "pointer", transition: "all 0.15s" }}>
+                className={cn(
+                  "py-1.5 rounded-lg border-none text-[12px] cursor-pointer transition-all",
+                  i === currentMonth
+                    ? "font-bold bg-th-brand text-th-text-primary"
+                    : "font-medium bg-transparent text-th-warm-text-muted"
+                )}>
                 {m.slice(0, 3)}
               </button>
             ))}
           </div>
-          <p style={{ fontSize: 11, fontWeight: 700, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 6 }}>Year</p>
+          <p className="text-[11px] font-bold text-th-warm-text-muted uppercase tracking-[0.03em] mb-1.5">Year</p>
           <div className="grid grid-cols-2 gap-1">
             {years.map((y) => (
               <button key={y} type="button" onClick={() => onYearChange(y)}
-                style={{ padding: "6px 0", borderRadius: 8, border: "none", fontSize: 12, fontWeight: y === currentYear ? 700 : 500, backgroundColor: y === currentYear ? TEAL : "transparent", color: y === currentYear ? BLACK : GRAY_400, cursor: "pointer", transition: "all 0.15s" }}>
+                className={cn(
+                  "py-1.5 rounded-lg border-none text-[12px] cursor-pointer transition-all",
+                  y === currentYear
+                    ? "font-bold bg-th-brand text-th-text-primary"
+                    : "font-medium bg-transparent text-th-warm-text-muted"
+                )}>
                 {y}
               </button>
             ))}
@@ -64,7 +68,7 @@ export const DateNavigation = ({ currentMonth, currentYear, onMonthChange, onYea
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {navBtn(next, <ChevronRight size={16} color={GRAY_400} />)}
+      {navBtn(next, <ChevronRight size={16} className="text-th-warm-text-muted" />)}
     </div>
   );
 };

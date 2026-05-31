@@ -36,16 +36,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
 import { SlidePanel } from "@/components/bookings";
-import {
-  TEAL,
-  TEAL_BG,
-  BLACK,
-  GRAY_500,
-  GRAY_400,
-  GRAY_200,
-  WHITE,
-  SURFACE,
-} from "@/components/offering";
+import { cn } from "@/lib/utils";
 import {
   PanelInput,
   PanelSelect,
@@ -68,62 +59,25 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = TEAL }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: `1.5px solid ${GRAY_200}`,
-      borderRadius: 16,
-      padding: "14px 16px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-    }}
-  >
+}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+  <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
+      className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
       style={{
-        width: 38,
-        height: 38,
-        borderRadius: 11,
         backgroundColor: `${accent}14`,
-        border: `1.5px solid ${accent}30`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
+        borderColor: `${accent}30`,
       }}
     >
       {icon}
     </div>
-    <div style={{ minWidth: 0 }}>
-      <p
-        style={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: GRAY_400,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          marginBottom: 2,
-        }}
-      >
+    <div className="min-w-0">
+      <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.04em] mb-[2px]">
         {label}
       </p>
-      <p
-        style={{
-          fontSize: 18,
-          fontWeight: 800,
-          color: BLACK,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
+      <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
         {value}
       </p>
-      {hint && <p style={{ fontSize: 10.5, color: GRAY_500, marginTop: 2 }}>{hint}</p>}
+      {hint && <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>}
     </div>
   </div>
 );
@@ -137,24 +91,10 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
     <DropdownMenuTrigger asChild>
       <button
         type="button"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          height: 42,
-          padding: "0 14px",
-          borderRadius: 12,
-          border: `1.5px solid ${GRAY_200}`,
-          backgroundColor: WHITE,
-          fontSize: 13,
-          fontWeight: 600,
-          color: BLACK,
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-        }}
+        className="inline-flex items-center gap-2 h-[42px] px-3.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 text-[13px] font-semibold text-th-text-primary cursor-pointer whitespace-nowrap"
       >
         {label}
-        <ChevronDown size={14} color={GRAY_400} />
+        <ChevronDown size={14} className="text-th-warm-text-muted" />
       </button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" className="w-48 p-1.5">
@@ -297,8 +237,6 @@ const BookingDetails = () => {
   });
 
   // ─── Filtering ─────────────────────────────────────────────────────────────
-  // Vendor visibility + tab + time + status + search. The vendor + tab + time
-  // checks were already here; status + search are new.
   const visibleBookings = useMemo(() => {
     return bookings.filter((b) => {
       if (user?.userType === "vendor") {
@@ -313,8 +251,6 @@ const BookingDetails = () => {
     });
   }, [bookings, user, availableServices]);
 
-  // Counts per tab — used in the tab labels so the user can see distribution
-  // at a glance.
   const tabCounts = useMemo(() => {
     const counts = { upcoming: 0, past: 0, cancelled: 0 };
     for (const b of visibleBookings) {
@@ -326,8 +262,6 @@ const BookingDetails = () => {
     return counts;
   }, [visibleBookings]);
 
-  // KPI stats — derived from the visible-to-user set so vendors see their
-  // own numbers, not platform-wide totals.
   const stats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -601,7 +535,7 @@ const BookingDetails = () => {
       key: "id",
       header: "Booking ID",
       cell: (b) => (
-        <span className="flex items-center gap-1 font-bold" style={{ color: TEAL, whiteSpace: "nowrap" }}>
+        <span className="flex items-center gap-1 font-bold text-th-brand whitespace-nowrap">
           {b.id}
         </span>
       ),
@@ -609,25 +543,25 @@ const BookingDetails = () => {
     {
       key: "clientName",
       header: "Client",
-      cell: (b) => <span style={{ fontWeight: 500, color: BLACK }}>{b.clientName}</span>,
+      cell: (b) => <span className="font-medium text-th-text-primary">{b.clientName}</span>,
     },
     {
       key: "serviceName",
       header: "Service",
       hideBelow: "md",
-      cell: (b) => <span style={{ fontWeight: 600, color: GRAY_500 }}>{b.serviceName}</span>,
+      cell: (b) => <span className="font-semibold text-th-warm-text-dark">{b.serviceName}</span>,
     },
     {
       key: "checkIn",
       header: "Check In",
       hideBelow: "lg",
-      cell: (b) => <span style={{ color: GRAY_500 }}>{formatDate(b.checkIn)}</span>,
+      cell: (b) => <span className="text-th-warm-text-dark">{formatDate(b.checkIn)}</span>,
     },
     {
       key: "checkOut",
       header: "Check Out",
       hideBelow: "lg",
-      cell: (b) => <span style={{ color: GRAY_500 }}>{formatDate(b.checkOut)}</span>,
+      cell: (b) => <span className="text-th-warm-text-dark">{formatDate(b.checkOut)}</span>,
     },
     {
       key: "guests",
@@ -635,7 +569,7 @@ const BookingDetails = () => {
       hideBelow: "md",
       align: "center",
       cell: (b) => (
-        <span className="flex items-center gap-1 justify-center" style={{ color: GRAY_500 }}>
+        <span className="flex items-center gap-1 justify-center text-th-warm-text-dark">
           <Users size={14} /> {b.guests}
         </span>
       ),
@@ -648,33 +582,11 @@ const BookingDetails = () => {
   ];
 
   const rowActions: RowAction<BookingDetailDTO>[] = [
-    {
-      label: "View",
-      icon: Eye,
-      onClick: (b) => handleView(b),
-    },
-    {
-      label: "Edit",
-      icon: Pencil,
-      onClick: (b) => handleEdit(b),
-    },
-    {
-      label: "Cancel",
-      icon: Ban,
-      onClick: (b) => handleCancel(b),
-      hidden: (b) => b.status === "cancelled",
-    },
-    {
-      label: "Print Invoice",
-      icon: Printer,
-      onClick: (b) => handlePrint(b.id),
-    },
-    {
-      label: "Delete",
-      icon: Trash2,
-      onClick: (b) => handleDelete(b),
-      variant: "danger",
-    },
+    { label: "View", icon: Eye, onClick: (b) => handleView(b) },
+    { label: "Edit", icon: Pencil, onClick: (b) => handleEdit(b) },
+    { label: "Cancel", icon: Ban, onClick: (b) => handleCancel(b), hidden: (b) => b.status === "cancelled" },
+    { label: "Print Invoice", icon: Printer, onClick: (b) => handlePrint(b.id) },
+    { label: "Delete", icon: Trash2, onClick: (b) => handleDelete(b), variant: "danger" },
   ];
 
   const tealBtn = (
@@ -687,23 +599,10 @@ const BookingDetails = () => {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 6,
-        height: 40,
-        padding: "0 18px",
-        borderRadius: 11,
-        border: "none",
-        backgroundColor: TEAL,
-        fontSize: 13,
-        fontWeight: 700,
-        color: BLACK,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
-        transition: "all 0.15s",
-      }}
+      className={cn(
+        "flex items-center gap-1.5 h-10 px-[18px] rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+      )}
     >
       {icon} {label}
     </button>
@@ -713,17 +612,7 @@ const BookingDetails = () => {
     <button
       type="button"
       onClick={onClick}
-      style={{
-        height: 40,
-        padding: "0 18px",
-        borderRadius: 11,
-        border: `1.5px solid ${GRAY_200}`,
-        backgroundColor: "transparent",
-        fontSize: 13,
-        fontWeight: 600,
-        color: GRAY_500,
-        cursor: "pointer",
-      }}
+      className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
     >
       {label}
     </button>
@@ -732,595 +621,390 @@ const BookingDetails = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout title="Booking Details" outerClassName="overflow-hidden" contentClassName="flex-1 overflow-auto p-3 lg:p-5">
+      <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] min-h-full">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#EBEBEB]">
+          <div>
+            <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
+              Bookings
+            </h1>
+            <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
+              Manage reservations and schedules
+            </p>
+          </div>
+        </div>
+
+        {/* Stats cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+          <StatCard
+            icon={<CalendarDays size={15} className="text-th-brand" strokeWidth={2.2} />}
+            label="Total"
+            value={String(stats.total)}
+            hint="All bookings"
+          />
+          <StatCard
+            icon={<Calendar size={15} color="#8b5cf6" strokeWidth={2.2} />}
+            label="Today"
+            value={String(stats.today)}
+            hint="Active stays"
+            accent="#8b5cf6"
+          />
+          <StatCard
+            icon={<Activity size={15} color="#22c55e" strokeWidth={2.2} />}
+            label="Active"
+            value={String(stats.active)}
+            hint="Currently active"
+            accent="#22c55e"
+          />
+          <StatCard
+            icon={<IndianRupee size={15} color="#f59e0b" strokeWidth={2.2} />}
+            label="Revenue"
+            value={currencyINR(stats.revenue)}
+            hint="Total billed"
+            accent="#f59e0b"
+          />
+        </div>
+
+        {/* Filters row */}
+        <div className="flex flex-wrap items-center gap-2.5 mb-4">
+          {/* Search */}
           <div
-            style={{
-              backgroundColor: WHITE,
-              border: "1.5px solid #EBEBEB",
-              borderRadius: 20,
-              padding: "20px 22px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-              minHeight: "100%",
-            }}
+            className="flex items-center gap-2 h-[42px] px-3 rounded-[12px] border border-th-warm-border bg-th-surface-0"
+            style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 320 }}
           >
-            {/* Header */}
-            <div
-              className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4"
-              style={{ borderBottom: "1.5px solid #EBEBEB" }}
-            >
-              <div>
-                <h1
-                  style={{
-                    fontSize: 22,
-                    fontWeight: 800,
-                    color: BLACK,
-                    letterSpacing: "-0.025em",
-                    lineHeight: 1.2,
-                  }}
-                >
-                  Bookings
-                </h1>
-                <p style={{ fontSize: 13, color: GRAY_400, marginTop: 3 }}>
-                  Manage reservations and schedules
-                </p>
-              </div>
-            </div>
-
-            {/* Stats cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-              <StatCard
-                icon={<CalendarDays size={15} color={TEAL} strokeWidth={2.2} />}
-                label="Total"
-                value={String(stats.total)}
-                hint="All bookings"
-              />
-              <StatCard
-                icon={<Calendar size={15} color="#8b5cf6" strokeWidth={2.2} />}
-                label="Today"
-                value={String(stats.today)}
-                hint="Active stays"
-                accent="#8b5cf6"
-              />
-              <StatCard
-                icon={<Activity size={15} color="#22c55e" strokeWidth={2.2} />}
-                label="Active"
-                value={String(stats.active)}
-                hint="Currently active"
-                accent="#22c55e"
-              />
-              <StatCard
-                icon={<IndianRupee size={15} color="#f59e0b" strokeWidth={2.2} />}
-                label="Revenue"
-                value={currencyINR(stats.revenue)}
-                hint="Total billed"
-                accent="#f59e0b"
-              />
-            </div>
-
-            {/* Filters row */}
-            <div className="flex flex-wrap items-center gap-2.5 mb-4">
-              {/* Search */}
-              <div
-                className="flex items-center"
-                style={{
-                  flex: "1 1 220px",
-                  minWidth: 200,
-                  maxWidth: 320,
-                  height: 42,
-                  borderRadius: 12,
-                  border: `1.5px solid ${GRAY_200}`,
-                  backgroundColor: WHITE,
-                  padding: "0 12px",
-                  gap: 8,
-                }}
-              >
-                <Search size={15} color={GRAY_400} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Search bookings, client, ID…"
-                  style={{
-                    flex: 1,
-                    height: "100%",
-                    border: "none",
-                    outline: "none",
-                    fontSize: 13,
-                    color: BLACK,
-                    backgroundColor: "transparent",
-                    fontWeight: 450,
-                  }}
-                />
-              </div>
-
-              {/* Status filter */}
-              <FilterPill
-                label={
-                  statusFilter === "all"
-                    ? "All Statuses"
-                    : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
-                }
-              >
-                {([
-                  ["all", "All Statuses"],
-                  ["pending", "Pending"],
-                  ["confirmed", "Confirmed"],
-                  ["active", "Active"],
-                  ["cancelled", "Cancelled"],
-                ] as const).map(([key, label]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    className={FILTER_ITEM_CLASS}
-                    onClick={() => {
-                      setStatusFilter(key);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {label}
-                  </DropdownMenuItem>
-                ))}
-              </FilterPill>
-
-              {/* Date / time filter */}
-              <FilterPill
-                label={
-                  TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"
-                }
-              >
-                {TIME_FILTERS.map((f) => (
-                  <DropdownMenuItem
-                    key={f.key}
-                    className={FILTER_ITEM_CLASS}
-                    onClick={() => {
-                      setTimeFilter(f.key as any);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {f.label}
-                  </DropdownMenuItem>
-                ))}
-              </FilterPill>
-
-              {/* Spacer + New Booking */}
-              <div className="ml-auto">
-                {tealBtn(() => setCreateOpen(true), <Plus size={15} />, "New Booking")}
-              </div>
-            </div>
-
-            {/* Tabs with counts */}
-            <div
-              className="flex gap-1 mb-4"
-              style={{ backgroundColor: SURFACE, borderRadius: 12, padding: 3, width: "fit-content" }}
-            >
-              {TABS.map((t) => {
-                const active = activeTab === t.key;
-                const count =
-                  t.key === "upcoming"
-                    ? tabCounts.upcoming
-                    : t.key === "past"
-                      ? tabCounts.past
-                      : tabCounts.cancelled;
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(t.key);
-                      setCurrentPage(1);
-                    }}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      padding: "8px 16px",
-                      borderRadius: 9,
-                      border: `1.5px solid ${active ? `${TEAL}30` : "transparent"}`,
-                      backgroundColor: active ? WHITE : "transparent",
-                      color: active ? TEAL : GRAY_400,
-                      fontSize: 13,
-                      fontWeight: 700,
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      boxShadow: active ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
-                    }}
-                  >
-                    {t.label}
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 700,
-                        padding: "1px 7px",
-                        borderRadius: 999,
-                        backgroundColor: active ? `${TEAL}14` : "#EBEBEB",
-                        color: active ? TEAL : GRAY_500,
-                      }}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Table */}
-            <div style={{ border: "1.5px solid #EBEBEB", borderRadius: 14, overflow: "hidden" }}>
-              <AdminDataTable<BookingDetailDTO>
-                columns={columns}
-                data={paginatedRows}
-                isLoading={isLoading}
-                isError={isError}
-                errorMessage="Failed to load bookings. Check your connection and try again."
-                onRetry={() => refetch()}
-                hasActiveQuery={hasActiveQuery}
-                emptyIcon={CalendarX}
-                emptyTitle="No bookings yet"
-                emptyDescription="Create your first booking using the button above."
-                noResultsTitle="No bookings found"
-                noResultsDescription="Try adjusting your search, status, or time filter."
-                onRowClick={(b) => handleView(b)}
-                rowActions={rowActions}
-                pagination={{
-                  currentPage,
-                  totalPages,
-                  totalItems: filteredBookings.length,
-                  onPageChange: setCurrentPage,
-                }}
-              />
-            </div>
+            <Search size={15} className="text-th-warm-text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              placeholder="Search bookings, client, ID…"
+              className="flex-1 h-full border-none outline-none text-[13px] text-th-text-primary bg-transparent font-[450]"
+            />
           </div>
 
-          {/* ── Detail Panel (right slide) ── */}
-          <SlidePanel
-            open={detailOpen}
-            onClose={() => setDetailOpen(false)}
-            title="Booking Detail"
-            icon={<Eye size={16} color={TEAL} />}
-          >
-            {selectedBooking && (
-              <div className="flex flex-col gap-1">
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 16,
-                  }}
-                >
-                  <span
-                    style={{ fontSize: 13, fontWeight: 700, color: TEAL, fontFamily: "monospace" }}
-                  >
-                    {selectedBooking.id}
-                  </span>
-                  <StatusBadge status={selectedBooking.status} />
-                </div>
-                <InfoRow
-                  icon={<User size={15} />}
-                  label="Client Name"
-                  value={selectedBooking.clientName}
-                />
-                <InfoRow
-                  icon={<MapPin size={15} />}
-                  label="Service"
-                  value={selectedBooking.serviceName}
-                />
-                <InfoRow
-                  icon={<Calendar size={15} />}
-                  label="Check In"
-                  value={selectedBooking.checkIn}
-                />
-                <InfoRow
-                  icon={<Clock size={15} />}
-                  label="Check Out"
-                  value={selectedBooking.checkOut}
-                />
-                <InfoRow
-                  icon={<Users size={15} />}
-                  label="Guests"
-                  value={String(selectedBooking.guests || "—")}
-                />
-                <InfoRow
-                  icon={<IndianRupee size={15} />}
-                  label="Price"
-                  value={selectedBooking.servicePrice}
-                />
-                <InfoRow
-                  icon={<MapPin size={15} />}
-                  label="Location"
-                  value={selectedBooking.location}
-                />
-                {selectedBooking.contactEmail && (
-                  <InfoRow
-                    icon={<Mail size={15} />}
-                    label="Email"
-                    value={selectedBooking.contactEmail}
-                  />
-                )}
-                {selectedBooking.contactPhone && (
-                  <InfoRow
-                    icon={<Phone size={15} />}
-                    label="Phone"
-                    value={selectedBooking.contactPhone}
-                  />
-                )}
-              </div>
-            )}
-          </SlidePanel>
-
-          {/* ── Create Panel (right slide) ── */}
-          <SlidePanel
-            open={createOpen}
-            onClose={() => setCreateOpen(false)}
-            title="New Booking"
-            icon={<Plus size={16} color={TEAL} />}
-            width={560}
-            footer={
-              <>
-                {ghostBtn(() => setCreateOpen(false), "Cancel")}{" "}
-                {tealBtn(
-                  handleCreate,
-                  <Save size={14} />,
-                  saving ? "Creating…" : "Create Booking",
-                  saving,
-                )}
-              </>
+          {/* Status filter */}
+          <FilterPill
+            label={
+              statusFilter === "all"
+                ? "All Statuses"
+                : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
             }
           >
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-2 flex-wrap">
-                {[
-                  { v: "van", l: "Van", I: Car },
-                  { v: "unique-stays", l: "Stays", I: Home },
-                  { v: "activity", l: "Activity", I: MapPin },
-                ].map(({ v, l, I }) => {
-                  const active = createForm.serviceType === v;
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => setCreateForm((p) => ({ ...p, serviceType: v }))}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        padding: "8px 14px",
-                        borderRadius: 99,
-                        border: `1.5px solid ${active ? TEAL : GRAY_200}`,
-                        backgroundColor: active ? TEAL_BG : SURFACE,
-                        color: active ? TEAL : GRAY_500,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      <I size={14} /> {l}
-                    </button>
-                  );
-                })}
-              </div>
-              <PanelSelect
-                label="Service Name"
-                required
-                value={createForm.serviceName}
-                onChange={(v) => {
-                  setCreateForm((p) => ({ ...p, serviceName: v }));
-                  if (createErrors.serviceName) setCreateErrors((p) => ({ ...p, serviceName: "" }));
+            {([
+              ["all", "All Statuses"],
+              ["pending", "Pending"],
+              ["confirmed", "Confirmed"],
+              ["active", "Active"],
+              ["cancelled", "Cancelled"],
+            ] as const).map(([key, label]) => (
+              <DropdownMenuItem
+                key={key}
+                className={FILTER_ITEM_CLASS}
+                onClick={() => {
+                  setStatusFilter(key);
+                  setCurrentPage(1);
                 }}
-                error={createErrors.serviceName}
               >
-                <option value="">Select a service</option>
-                {availableServices.map((s) => (
-                  <option key={s.name} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </PanelSelect>
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Customer Name"
-                  required
-                  value={createForm.customerName}
-                  onChange={(v) => {
-                    setCreateForm((p) => ({ ...p, customerName: v }));
-                    if (createErrors.customerName)
-                      setCreateErrors((p) => ({ ...p, customerName: "" }));
-                  }}
-                  error={createErrors.customerName}
-                  placeholder="Guest name"
-                />
-                <PanelInput
-                  label="Email"
-                  required
-                  value={createForm.email}
-                  onChange={(v) => {
-                    setCreateForm((p) => ({ ...p, email: v }));
-                    if (createErrors.email) setCreateErrors((p) => ({ ...p, email: "" }));
-                  }}
-                  error={createErrors.email}
-                  type="email"
-                  placeholder="email@example.com"
-                />
-              </div>
-              <PanelInput
-                label="Phone"
-                required
-                value={createForm.phone}
-                onChange={(v) => setCreateForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))}
-                error={createErrors.phone}
-                placeholder="+91 XXXXXXXXXX"
-                maxLength={12}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Check-in Date"
-                  required
-                  value={createForm.checkInDate}
-                  onChange={(v) => setCreateForm((p) => ({ ...p, checkInDate: v }))}
-                  error={createErrors.checkInDate}
-                  type="date"
-                />
-                <PanelInput
-                  label="Check-in Time"
-                  value={createForm.checkInTime}
-                  onChange={(v) => setCreateForm((p) => ({ ...p, checkInTime: v }))}
-                  type="time"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Check-out Date"
-                  required
-                  value={createForm.checkOutDate}
-                  onChange={(v) => setCreateForm((p) => ({ ...p, checkOutDate: v }))}
-                  error={createErrors.checkOutDate}
-                  type="date"
-                />
-                <PanelInput
-                  label="Check-out Time"
-                  value={createForm.checkOutTime}
-                  onChange={(v) => setCreateForm((p) => ({ ...p, checkOutTime: v }))}
-                  type="time"
-                />
-              </div>
-              <PanelSelect
-                label="Location"
-                value={createForm.locationFrom}
-                onChange={(v) => setCreateForm((p) => ({ ...p, locationFrom: v }))}
-              >
-                <option value="">Select location</option>
-                {LOCATIONS.map((l) => (
-                  <option key={l} value={l}>
-                    {l}
-                  </option>
-                ))}
-              </PanelSelect>
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Price"
-                  value={createForm.servicePrice}
-                  onChange={(v) =>
-                    setCreateForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))
-                  }
-                  placeholder="₹ 0"
-                />
-                <PanelInput
-                  label="Guests"
-                  value={createForm.guests}
-                  onChange={(v) => setCreateForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          </SlidePanel>
+                {label}
+              </DropdownMenuItem>
+            ))}
+          </FilterPill>
 
-          {/* ── Edit Panel (right slide) ── */}
-          <SlidePanel
-            open={editOpen}
-            onClose={() => setEditOpen(false)}
-            title={`Edit — ${selectedBooking?.id || ""}`}
-            icon={<Pencil size={16} color={TEAL} />}
-            width={560}
-            footer={
-              <>
-                {ghostBtn(() => setEditOpen(false), "Cancel")}{" "}
-                {tealBtn(handleUpdate, <Save size={14} />, saving ? "Updating…" : "Update", saving)}
-              </>
+          {/* Date / time filter */}
+          <FilterPill
+            label={
+              TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"
             }
           >
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Customer Name"
-                  value={editForm.customerName}
-                  onChange={(v) => setEditForm((p) => ({ ...p, customerName: v }))}
-                />
-                <PanelInput
-                  label="Phone"
-                  value={editForm.phone}
-                  onChange={(v) => setEditForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))}
-                  maxLength={12}
-                />
-              </div>
-              <PanelInput
-                label="Email"
-                value={editForm.email}
-                onChange={(v) => setEditForm((p) => ({ ...p, email: v }))}
-                type="email"
-              />
-              <PanelSelect
-                label="Status"
-                value={editForm.status}
-                onChange={(v) => setEditForm((p) => ({ ...p, status: v }))}
+            {TIME_FILTERS.map((f) => (
+              <DropdownMenuItem
+                key={f.key}
+                className={FILTER_ITEM_CLASS}
+                onClick={() => {
+                  setTimeFilter(f.key as any);
+                  setCurrentPage(1);
+                }}
               >
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="active">Active</option>
-                <option value="cancelled">Cancelled</option>
-              </PanelSelect>
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Check-in Date"
-                  value={editForm.checkInDate}
-                  onChange={(v) => setEditForm((p) => ({ ...p, checkInDate: v }))}
-                  type="date"
-                />
-                <PanelInput
-                  label="Check-in Time"
-                  value={editForm.checkInTime}
-                  onChange={(v) => setEditForm((p) => ({ ...p, checkInTime: v }))}
-                  type="time"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Check-out Date"
-                  value={editForm.checkOutDate}
-                  onChange={(v) => setEditForm((p) => ({ ...p, checkOutDate: v }))}
-                  type="date"
-                />
-                <PanelInput
-                  label="Check-out Time"
-                  value={editForm.checkOutTime}
-                  onChange={(v) => setEditForm((p) => ({ ...p, checkOutTime: v }))}
-                  type="time"
-                />
-              </div>
-              <PanelInput
-                label="Location"
-                value={editForm.locationFrom}
-                onChange={(v) => setEditForm((p) => ({ ...p, locationFrom: v }))}
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <PanelInput
-                  label="Price"
-                  value={editForm.servicePrice}
-                  onChange={(v) =>
-                    setEditForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))
-                  }
-                  placeholder="₹ 0"
-                />
-                <PanelInput
-                  label="Guests"
-                  value={editForm.guests}
-                  onChange={(v) => setEditForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-          </SlidePanel>
+                {f.label}
+              </DropdownMenuItem>
+            ))}
+          </FilterPill>
 
-          <ConfirmModal
-            open={!!confirmDialog}
-            onClose={() => !confirmLoading && setConfirmDialog(null)}
-            onConfirm={() => confirmDialog?.onConfirm()}
-            title={confirmDialog?.title ?? ""}
-            description={confirmDialog?.description}
-            confirmLabel={confirmDialog?.confirmLabel}
-            variant={confirmDialog?.variant}
-            isLoading={confirmLoading}
+          {/* Spacer + New Booking */}
+          <div className="ml-auto">
+            {tealBtn(() => setCreateOpen(true), <Plus size={15} />, "New Booking")}
+          </div>
+        </div>
+
+        {/* Tabs with counts */}
+        <div className="flex gap-1 mb-4 w-fit bg-th-warm-surface rounded-[12px] p-[3px]">
+          {TABS.map((t) => {
+            const active = activeTab === t.key;
+            const count =
+              t.key === "upcoming"
+                ? tabCounts.upcoming
+                : t.key === "past"
+                  ? tabCounts.past
+                  : tabCounts.cancelled;
+            return (
+              <button
+                key={t.key}
+                type="button"
+                onClick={() => {
+                  setActiveTab(t.key);
+                  setCurrentPage(1);
+                }}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-4 py-2 rounded-[9px] border-[1.5px] text-[13px] font-bold cursor-pointer transition-all duration-150",
+                  active
+                    ? "border-th-brand-border-soft bg-th-surface-0 text-th-brand shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
+                    : "border-transparent bg-transparent text-th-warm-text-muted",
+                )}
+              >
+                {t.label}
+                <span
+                  className={cn(
+                    "text-[11px] font-bold px-[7px] py-[1px] rounded-full",
+                    active ? "bg-th-brand-soft text-th-brand" : "bg-[#EBEBEB] text-th-warm-text-dark",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Table */}
+        <div className="border border-[#EBEBEB] rounded-[14px] overflow-hidden">
+          <AdminDataTable<BookingDetailDTO>
+            columns={columns}
+            data={paginatedRows}
+            isLoading={isLoading}
+            isError={isError}
+            errorMessage="Failed to load bookings. Check your connection and try again."
+            onRetry={() => refetch()}
+            hasActiveQuery={hasActiveQuery}
+            emptyIcon={CalendarX}
+            emptyTitle="No bookings yet"
+            emptyDescription="Create your first booking using the button above."
+            noResultsTitle="No bookings found"
+            noResultsDescription="Try adjusting your search, status, or time filter."
+            onRowClick={(b) => handleView(b)}
+            rowActions={rowActions}
+            pagination={{
+              currentPage,
+              totalPages,
+              totalItems: filteredBookings.length,
+              onPageChange: setCurrentPage,
+            }}
           />
+        </div>
+      </div>
+
+      {/* ── Detail Panel ── */}
+      <SlidePanel
+        open={detailOpen}
+        onClose={() => setDetailOpen(false)}
+        title="Booking Detail"
+        icon={<Eye size={16} className="text-th-brand" />}
+      >
+        {selectedBooking && (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[13px] font-bold text-th-brand font-mono">
+                {selectedBooking.id}
+              </span>
+              <StatusBadge status={selectedBooking.status} />
+            </div>
+            <InfoRow icon={<User size={15} />} label="Client Name" value={selectedBooking.clientName} />
+            <InfoRow icon={<MapPin size={15} />} label="Service" value={selectedBooking.serviceName} />
+            <InfoRow icon={<Calendar size={15} />} label="Check In" value={selectedBooking.checkIn} />
+            <InfoRow icon={<Clock size={15} />} label="Check Out" value={selectedBooking.checkOut} />
+            <InfoRow icon={<Users size={15} />} label="Guests" value={String(selectedBooking.guests || "—")} />
+            <InfoRow icon={<IndianRupee size={15} />} label="Price" value={selectedBooking.servicePrice} />
+            <InfoRow icon={<MapPin size={15} />} label="Location" value={selectedBooking.location} />
+            {selectedBooking.contactEmail && (
+              <InfoRow icon={<Mail size={15} />} label="Email" value={selectedBooking.contactEmail} />
+            )}
+            {selectedBooking.contactPhone && (
+              <InfoRow icon={<Phone size={15} />} label="Phone" value={selectedBooking.contactPhone} />
+            )}
+          </div>
+        )}
+      </SlidePanel>
+
+      {/* ── Create Panel ── */}
+      <SlidePanel
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New Booking"
+        icon={<Plus size={16} className="text-th-brand" />}
+        width={560}
+        footer={
+          <>
+            {ghostBtn(() => setCreateOpen(false), "Cancel")}{" "}
+            {tealBtn(
+              handleCreate,
+              <Save size={14} />,
+              saving ? "Creating…" : "Create Booking",
+              saving,
+            )}
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-2 flex-wrap">
+            {[
+              { v: "van", l: "Van", I: Car },
+              { v: "unique-stays", l: "Stays", I: Home },
+              { v: "activity", l: "Activity", I: MapPin },
+            ].map(({ v, l, I }) => {
+              const active = createForm.serviceType === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setCreateForm((p) => ({ ...p, serviceType: v }))}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-2 rounded-full border-[1.5px] text-[12px] font-bold cursor-pointer transition-all duration-150",
+                    active
+                      ? "border-th-brand bg-th-brand-soft text-th-brand"
+                      : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark",
+                  )}
+                >
+                  <I size={14} /> {l}
+                </button>
+              );
+            })}
+          </div>
+          <PanelSelect
+            label="Service Name"
+            required
+            value={createForm.serviceName}
+            onChange={(v) => {
+              setCreateForm((p) => ({ ...p, serviceName: v }));
+              if (createErrors.serviceName) setCreateErrors((p) => ({ ...p, serviceName: "" }));
+            }}
+            error={createErrors.serviceName}
+          >
+            <option value="">Select a service</option>
+            {availableServices.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </PanelSelect>
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput
+              label="Customer Name"
+              required
+              value={createForm.customerName}
+              onChange={(v) => {
+                setCreateForm((p) => ({ ...p, customerName: v }));
+                if (createErrors.customerName) setCreateErrors((p) => ({ ...p, customerName: "" }));
+              }}
+              error={createErrors.customerName}
+              placeholder="Guest name"
+            />
+            <PanelInput
+              label="Email"
+              required
+              value={createForm.email}
+              onChange={(v) => {
+                setCreateForm((p) => ({ ...p, email: v }));
+                if (createErrors.email) setCreateErrors((p) => ({ ...p, email: "" }));
+              }}
+              error={createErrors.email}
+              type="email"
+              placeholder="email@example.com"
+            />
+          </div>
+          <PanelInput
+            label="Phone"
+            required
+            value={createForm.phone}
+            onChange={(v) => setCreateForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))}
+            error={createErrors.phone}
+            placeholder="+91 XXXXXXXXXX"
+            maxLength={12}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Check-in Date" required value={createForm.checkInDate} onChange={(v) => setCreateForm((p) => ({ ...p, checkInDate: v }))} error={createErrors.checkInDate} type="date" />
+            <PanelInput label="Check-in Time" value={createForm.checkInTime} onChange={(v) => setCreateForm((p) => ({ ...p, checkInTime: v }))} type="time" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Check-out Date" required value={createForm.checkOutDate} onChange={(v) => setCreateForm((p) => ({ ...p, checkOutDate: v }))} error={createErrors.checkOutDate} type="date" />
+            <PanelInput label="Check-out Time" value={createForm.checkOutTime} onChange={(v) => setCreateForm((p) => ({ ...p, checkOutTime: v }))} type="time" />
+          </div>
+          <PanelSelect label="Location" value={createForm.locationFrom} onChange={(v) => setCreateForm((p) => ({ ...p, locationFrom: v }))}>
+            <option value="">Select location</option>
+            {LOCATIONS.map((l) => (
+              <option key={l} value={l}>{l}</option>
+            ))}
+          </PanelSelect>
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Price" value={createForm.servicePrice} onChange={(v) => setCreateForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))} placeholder="₹ 0" />
+            <PanelInput label="Guests" value={createForm.guests} onChange={(v) => setCreateForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))} placeholder="0" />
+          </div>
+        </div>
+      </SlidePanel>
+
+      {/* ── Edit Panel ── */}
+      <SlidePanel
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        title={`Edit — ${selectedBooking?.id || ""}`}
+        icon={<Pencil size={16} className="text-th-brand" />}
+        width={560}
+        footer={
+          <>
+            {ghostBtn(() => setEditOpen(false), "Cancel")}{" "}
+            {tealBtn(handleUpdate, <Save size={14} />, saving ? "Updating…" : "Update", saving)}
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Customer Name" value={editForm.customerName} onChange={(v) => setEditForm((p) => ({ ...p, customerName: v }))} />
+            <PanelInput label="Phone" value={editForm.phone} onChange={(v) => setEditForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))} maxLength={12} />
+          </div>
+          <PanelInput label="Email" value={editForm.email} onChange={(v) => setEditForm((p) => ({ ...p, email: v }))} type="email" />
+          <PanelSelect label="Status" value={editForm.status} onChange={(v) => setEditForm((p) => ({ ...p, status: v }))}>
+            <option value="pending">Pending</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="active">Active</option>
+            <option value="cancelled">Cancelled</option>
+          </PanelSelect>
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Check-in Date" value={editForm.checkInDate} onChange={(v) => setEditForm((p) => ({ ...p, checkInDate: v }))} type="date" />
+            <PanelInput label="Check-in Time" value={editForm.checkInTime} onChange={(v) => setEditForm((p) => ({ ...p, checkInTime: v }))} type="time" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Check-out Date" value={editForm.checkOutDate} onChange={(v) => setEditForm((p) => ({ ...p, checkOutDate: v }))} type="date" />
+            <PanelInput label="Check-out Time" value={editForm.checkOutTime} onChange={(v) => setEditForm((p) => ({ ...p, checkOutTime: v }))} type="time" />
+          </div>
+          <PanelInput label="Location" value={editForm.locationFrom} onChange={(v) => setEditForm((p) => ({ ...p, locationFrom: v }))} />
+          <div className="grid grid-cols-2 gap-3">
+            <PanelInput label="Price" value={editForm.servicePrice} onChange={(v) => setEditForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))} placeholder="₹ 0" />
+            <PanelInput label="Guests" value={editForm.guests} onChange={(v) => setEditForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))} placeholder="0" />
+          </div>
+        </div>
+      </SlidePanel>
+
+      <ConfirmModal
+        open={!!confirmDialog}
+        onClose={() => !confirmLoading && setConfirmDialog(null)}
+        onConfirm={() => confirmDialog?.onConfirm()}
+        title={confirmDialog?.title ?? ""}
+        description={confirmDialog?.description}
+        confirmLabel={confirmDialog?.confirmLabel}
+        variant={confirmDialog?.variant}
+        isLoading={confirmLoading}
+      />
     </DashboardLayout>
   );
 };

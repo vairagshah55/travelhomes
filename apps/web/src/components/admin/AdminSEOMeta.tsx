@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { settingsService } from '../../services/api';
+import { settingsApi } from '../../lib/api';
 import { getImageUrl } from '../../lib/utils';
 
 const AdminSEOMeta: React.FC = () => {
@@ -9,8 +9,8 @@ const AdminSEOMeta: React.FC = () => {
   useEffect(() => {
     const updateFavicon = async () => {
       try {
-        const response = await settingsService.getSeo('favicon');
-        const faviconUrl = response?.faviconUrl;
+        const response = await settingsApi.getSeo('favicon');
+        const faviconUrl = response?.data?.faviconUrl;
 
         if (faviconUrl) {
           let link: HTMLLinkElement | null = document.querySelector("link[rel~='icon']");

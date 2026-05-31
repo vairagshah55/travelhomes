@@ -1,15 +1,6 @@
 import React from "react";
 import type { BookingDetailDTO } from "@/lib/api";
-import {
-  TEAL,
-  TEAL_FOCUS,
-  BLACK,
-  GRAY_500,
-  GRAY_400,
-  WHITE,
-  SURFACE,
-  ERROR,
-} from "@/components/offering";
+import { cn } from "@/lib/utils";
 
 export const GREEN = "#16a34a";
 export const AMBER = "#d97706";
@@ -33,54 +24,35 @@ export const PanelInput = ({
   type?: string;
   placeholder?: string;
   error?: string;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: error ? ERROR : GRAY_500,
-          textTransform: "uppercase",
-          letterSpacing: "0.03em",
-        }}
-      >
-        {label}
-        {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
-      </label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        style={{
-          width: "100%",
-          height: 44,
-          padding: "0 14px",
-          fontSize: 13,
-          color: BLACK,
-          fontWeight: 450,
-          backgroundColor: error ? "rgba(239,68,68,0.04)" : focused ? WHITE : SURFACE,
-          border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-          borderRadius: 11,
-          outline: "none",
-          boxShadow:
-            focused && !error
-              ? `0 0 0 3px ${TEAL_FOCUS}`
-              : error
-                ? "0 0 0 3px rgba(239,68,68,0.1)"
-                : "none",
-          transition: "all 0.15s",
-        }}
-        {...rest}
-      />
-      {error && <p style={{ fontSize: 11, color: ERROR }}>{error}</p>}
-    </div>
-  );
-};
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) => (
+  <div className="flex flex-col gap-1.5">
+    <label
+      className={cn(
+        "text-[11px] font-bold uppercase tracking-[0.03em]",
+        error ? "text-th-error-bright" : "text-th-warm-text-dark",
+      )}
+    >
+      {label}
+      {required && <span className="text-th-error-bright ml-[3px]">*</span>}
+    </label>
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className={cn(
+        "w-full h-11 px-3.5 text-[13px] text-th-text-primary font-[450]",
+        "rounded-[11px] outline-none transition-all duration-150 border-[1.5px]",
+        "bg-th-warm-surface focus:bg-th-surface-0",
+        error
+          ? "bg-th-error-bright-bg border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+          : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+      )}
+      {...rest}
+    />
+    {error && <p className="text-[11px] text-th-error-bright">{error}</p>}
+  </div>
+);
 
 /** Styled select used in the slide-out edit panel. */
 export const PanelSelect = ({
@@ -100,39 +72,29 @@ export const PanelSelect = ({
 }) => (
   <div className="flex flex-col gap-1.5">
     <label
-      style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: error ? ERROR : GRAY_500,
-        textTransform: "uppercase",
-        letterSpacing: "0.03em",
-      }}
+      className={cn(
+        "text-[11px] font-bold uppercase tracking-[0.03em]",
+        error ? "text-th-error-bright" : "text-th-warm-text-dark",
+      )}
     >
       {label}
-      {required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
+      {required && <span className="text-th-error-bright ml-[3px]">*</span>}
     </label>
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      style={{
-        width: "100%",
-        height: 44,
-        padding: "0 14px",
-        fontSize: 13,
-        color: value ? BLACK : GRAY_400,
-        fontWeight: 450,
-        backgroundColor: error ? "rgba(239,68,68,0.04)" : SURFACE,
-        border: `1.5px solid ${error ? "#fca5a5" : "transparent"}`,
-        borderRadius: 11,
-        outline: "none",
-        appearance: "none",
-        cursor: "pointer",
-        transition: "all 0.15s",
-      }}
+      className={cn(
+        "w-full h-11 px-3.5 text-[13px] font-[450]",
+        "rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px]",
+        value ? "text-th-text-primary" : "text-th-warm-text-muted",
+        error
+          ? "bg-th-error-bright-bg border-th-error-bright-soft"
+          : "bg-th-warm-surface border-transparent",
+      )}
     >
       {children}
     </select>
-    {error && <p style={{ fontSize: 11, color: ERROR }}>{error}</p>}
+    {error && <p className="text-[11px] text-th-error-bright">{error}</p>}
   </div>
 );
 
@@ -147,23 +109,14 @@ export const InfoRow = ({
   value: string;
 }) => (
   <div
-    className="flex items-center gap-3"
-    style={{ padding: "10px 0", borderBottom: `1px solid #EBEBEB` }}
+    className="flex items-center gap-3 py-2.5 border-b border-[#EBEBEB]"
   >
-    <span style={{ color: TEAL, flexShrink: 0 }}>{icon}</span>
-    <div style={{ flex: 1 }}>
-      <p
-        style={{
-          fontSize: 11,
-          color: GRAY_400,
-          fontWeight: 600,
-          textTransform: "uppercase",
-          letterSpacing: "0.03em",
-        }}
-      >
+    <span className="text-th-brand flex-shrink-0">{icon}</span>
+    <div className="flex-1">
+      <p className="text-[11px] text-th-warm-text-muted font-semibold uppercase tracking-[0.03em]">
         {label}
       </p>
-      <p style={{ fontSize: 14, fontWeight: 600, color: BLACK, marginTop: 1 }}>{value || "—"}</p>
+      <p className="text-[14px] font-semibold text-th-text-primary mt-[1px]">{value || "—"}</p>
     </div>
   </div>
 );
@@ -172,7 +125,7 @@ export const STATUS_STYLES: Record<string, { bg: string; color: string; border: 
   pending: { bg: "#fffbeb", color: AMBER, border: `${AMBER}25` },
   confirmed: { bg: "#eff6ff", color: BLUE, border: `${BLUE}25` },
   active: { bg: "#f0fdf4", color: GREEN, border: `${GREEN}25` },
-  cancelled: { bg: "#fef2f2", color: ERROR, border: `${ERROR}25` },
+  cancelled: { bg: "#fef2f2", color: "#ef4444", border: `#ef444425` },
 };
 
 /** Colored pill badge for a booking status (pending/confirmed/active/cancelled). */
@@ -180,16 +133,11 @@ export const StatusBadge = ({ status }: { status: string }) => {
   const s = STATUS_STYLES[status] || STATUS_STYLES.pending;
   return (
     <span
+      className="inline-block text-[11px] font-bold px-2.5 py-[3px] rounded-full capitalize"
       style={{
-        display: "inline-block",
-        fontSize: 11,
-        fontWeight: 700,
-        padding: "3px 10px",
-        borderRadius: 99,
         backgroundColor: s.bg,
         color: s.color,
         border: `1px solid ${s.border}`,
-        textTransform: "capitalize",
       }}
     >
       {status}

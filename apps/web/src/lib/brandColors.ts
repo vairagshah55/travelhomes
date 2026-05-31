@@ -23,9 +23,3 @@ export const INK = "#0A2B40";             // ocean-800 — hero bg, primary text
 export const CHAMPAGNE = "#C8A96A";       // luxury accent fill (warm pairing)
 export const CHAMPAGNE_TINT = "#E7D3A6";  // soft tint background
 export const CHAMPAGNE_TEXT = "#8C6F33";  // contrast-safe text
-
-/** Legacy aliases — kept so existing `TEAL` re-exports keep compiling. */
-export const TEAL = BRAND;
-export const TEAL_BG = BRAND_BG;
-export const TEAL_FOCUS = BRAND_FOCUS;
-export const TEAL_BORDER = BRAND_BORDER;

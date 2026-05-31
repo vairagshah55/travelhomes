@@ -1,5 +1,6 @@
 import React from "react";
 import { Heart, MapPin, Star as StarIcon, Users, Home } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ActiveDiscount {
   originalPrice: number;
@@ -50,19 +51,8 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
     <div className="w-full max-w-[320px] mx-auto">
       {/* Preview label */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        <span
-          className="inline-block w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: "#0F5C8A" }}
-        />
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: "0.13em",
-            textTransform: "uppercase",
-            color: "#888780",
-          }}
-        >
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-th-brand" />
+        <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
           Live Preview
         </span>
       </div>
@@ -71,7 +61,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
       <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(10,70,112,0.08)] border border-[#EBEBEB]">
         {/* Image */}
         <div className="relative">
-          <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-[#F7F8FA]">
+          <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-th-warm-surface">
             {coverImage ? (
               <img
                 src={coverImage}
@@ -80,14 +70,11 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                  style={{ backgroundColor: "rgba(15, 92, 138, 0.07)" }}
-                >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-th-brand-soft">
                   {/* House icon placeholder */}
-                  <Home className="w-5 h-5" style={{ color: "#0F5C8A" }} />
+                  <Home className="w-5 h-5 text-th-brand" />
                 </div>
-                <p className="text-[11px] font-medium text-[#888780]">
+                <p className="text-[11px] font-medium text-th-warm-text-muted">
                   Cover photo will appear here
                 </p>
               </div>
@@ -114,15 +101,16 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
           {/* Title + Rating */}
           <div className="flex items-start justify-between gap-2">
             <h3
-              className={`font-semibold text-[15px] leading-snug line-clamp-1 ${
-                title ? "text-gray-900" : "text-[#A8A6A0] italic"
-              }`}
+              className={cn(
+                "font-semibold text-[15px] leading-snug line-clamp-1",
+                title ? "text-gray-900" : "text-[#A8A6A0] italic",
+              )}
             >
               {title || PLACEHOLDER_TITLE}
             </h3>
             <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
               <StarIcon className="w-3.5 h-3.5 fill-current text-gray-300" />
-              <span className="text-[12px] font-medium text-[#888780]">New</span>
+              <span className="text-[12px] font-medium text-th-warm-text-muted">New</span>
             </div>
           </div>
 
@@ -130,9 +118,10 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
           <div className="flex items-center gap-1.5">
             <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
             <span
-              className={`text-[13px] truncate ${
-                locationText ? "text-gray-500" : "text-[#A8A6A0] italic"
-              }`}
+              className={cn(
+                "text-[13px] truncate",
+                locationText ? "text-gray-500" : "text-[#A8A6A0] italic",
+              )}
             >
               {locationText ?? "Location — added in step 2"}
             </span>
@@ -175,15 +164,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
           {/* Discount label */}
           {activeDiscount && activeDiscount.finalPrice > 0 && (
             <div className="pt-0.5">
-              <span
-                className="inline-block text-[10.5px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                style={{
-                  color: "#0F5C8A",
-                  backgroundColor: "rgba(15, 92, 138, 0.08)",
-                  border: "1px solid rgba(15, 92, 138, 0.25)",
-                  letterSpacing: "0.06em",
-                }}
-              >
+              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.25)]">
                 {activeDiscount.label}
               </span>
             </div>
@@ -192,7 +173,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
       </div>
 
       {/* Helper hint */}
-      <p className="mt-4 text-[11px] text-center" style={{ color: "#A8A6A0" }}>
+      <p className="mt-4 text-[11px] text-center text-[#A8A6A0]">
         This is how guests will see your listing.
       </p>
     </div>

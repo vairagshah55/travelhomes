@@ -92,11 +92,10 @@ const OfferSchema = new Schema(
     rejectionReason: {
       type: String
     },
-    impressions: {
-      type: Number,
-      default: 0,
-      min: 0
-    },
+    // Impressions are now stored exclusively in AdminAnalyticsMetric (per-day
+    // rows keyed by serviceId), so the per-offer counter that used to live
+    // here was dead code — only the admin reset endpoint touched it. Removed
+    // to make AdminAnalyticsMetric.impressions the single source of truth.
     clicks: {
       type: Number,
       default: 0,
@@ -137,6 +136,37 @@ const OfferSchema = new Schema(
     sourceModel: {
       type: String,
       enum: ['ActivityOnboarding', 'CaravanOnboarding', 'StayOnboarding']
+    },
+    // ─── Discount offers ───────────────────────────────────────────────
+    // Four optional discount "slots" the vendor can toggle on for an offer.
+    // Each has an enabled flag, a type (percentage|fixed), a value, and the
+    // pre-computed final price (so the UI doesn't have to recompute on read).
+    // Stored as a sub-doc for grouping; null/undefined entries are absent.
+    discounts: {
+      firstUser: {
+        enabled: { type: Boolean, default: false },
+        type: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+        value: { type: String, default: '' },
+        finalPrice: { type: String, default: '' },
+      },
+      festival: {
+        enabled: { type: Boolean, default: false },
+        type: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+        value: { type: String, default: '' },
+        finalPrice: { type: String, default: '' },
+      },
+      weekly: {
+        enabled: { type: Boolean, default: false },
+        type: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+        value: { type: String, default: '' },
+        finalPrice: { type: String, default: '' },
+      },
+      special: {
+        enabled: { type: Boolean, default: false },
+        type: { type: String, enum: ['percentage', 'fixed'], default: 'percentage' },
+        value: { type: String, default: '' },
+        finalPrice: { type: String, default: '' },
+      },
     }
   },
   {

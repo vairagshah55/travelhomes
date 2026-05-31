@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country } from "country-state-city";
-import { MoreHorizontal, Clock, CheckCircle2, Home } from "lucide-react";
+import { MoreHorizontal, Clock, Home } from "lucide-react";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
@@ -52,7 +52,7 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
 
 const CaravanOnboarding = () => {
   const navigate = useNavigate();
-  const { updateUserType, isAuthenticated, user } = useAuth();
+  const { updateUserType, isAuthenticated } = useAuth();
 
   const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
@@ -119,7 +119,7 @@ const CaravanOnboarding = () => {
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [isStatusLoading, setIsStatusLoading] = useState(true);
 
-  const { userDetails, updateUserDetails } = useUserDetails();
+  const { userDetails, loading: userDetailsLoading, updateUserDetails } = useUserDetails();
 
   // Camper Van features (cached + shared with other consumers).
   const { data: camperVanFeatures } = useFeatures("Camper Van");
@@ -130,18 +130,26 @@ const CaravanOnboarding = () => {
     setDynamicFeatures(enabled.filter((f: any) => f.type === "feature" || !f.type));
   }, [camperVanFeatures]);
 
-  // Check for existing data
+  // Load the draft / approved-resubmit reset exactly once per mount, after the
+  // userDetails query has settled. Re-running on every userDetails identity
+  // change would replace formData while the user is typing — wiping input.
+  const draftLoadedRef = useRef(false);
   useEffect(() => {
+    if (draftLoadedRef.current) return;
+    if (userDetailsLoading) return;
+    draftLoadedRef.current = true;
     loadCaravanDraft({
       setFormData,
+      setCurrentStep,
       setIdProofImage,
       setStatus,
       setRejectionReason,
       setIsStatusLoading,
       userDetails,
-      isExistingVendor: user?.userType === "vendor",
+      formStorageKey: FORM_STORAGE_KEY,
+      stepStorageKey: "caravan_onboarding_step",
     });
-  }, [userDetails]);
+  }, [userDetailsLoading, userDetails]);
 
   // Auto-calculate final prices for discounts
   useEffect(() => {
@@ -626,22 +634,15 @@ const CaravanOnboarding = () => {
     );
   }
 
-  if (status === "pending" || status === "approved") {
+  if (status === "pending") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] px-4">
         <div className="bg-white rounded-2xl shadow-sm border border-[#E8E4DC] p-8 max-w-md w-full text-center">
-          {status === "pending" ? (
-            <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
-          ) : (
-            <CheckCircle2 className="w-12 h-12 text-[#22C55E] mx-auto mb-4" />
-          )}
-          <h2 className="text-xl font-semibold text-[#1a1a1a] mb-2">
-            {status === "pending" ? "Application Under Review" : "Application Approved!"}
-          </h2>
+          <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-[#1a1a1a] mb-2">Application Under Review</h2>
           <p className="text-sm text-[#888780] mb-4">
-            {status === "pending"
-              ? "Your camper van listing has been submitted and is being reviewed by our team. We'll notify you once it's approved."
-              : "Congratulations! Your camper van listing has been approved and is now live."}
+            Your camper van listing has been submitted and is being reviewed by our team. We'll
+            notify you once it's approved.
           </p>
           {formData.name && (
             <div className="inline-flex items-center gap-2 bg-[#F7F8FA] rounded-full px-4 py-2 mb-6">

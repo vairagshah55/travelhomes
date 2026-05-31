@@ -6,6 +6,7 @@
  * a real JWT.
  */
 const express = require("express");
+const rateLimit = require("express-rate-limit");
 
 const validate = require("../../shared/validate");
 const { requireJwt } = require("../../middleware/auth");
@@ -14,8 +15,37 @@ const dto = require("./offers.dto");
 
 const router = express.Router();
 
+// Rate limits on the analytics-fueling endpoints. The listing API fires an
+// impression on each public hit and getById fires a visitor count; without a
+// cap, a script could trivially inflate vendor metrics. Numbers picked to be
+// generous for legitimate UI flows but tight enough to stop bulk abuse.
+const listLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 60, // 60 list calls / minute per IP — covers normal browsing + filter toggling
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests. Please slow down." },
+});
+
+const detailLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30, // 30 detail-page opens / minute per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests. Please slow down." },
+});
+
+const clickLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20, // 20 clicks / minute per IP — no real user clicks faster than this
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests. Please slow down." },
+});
+
 router.get(
   "/",
+  listLimiter,
   requireJwt({ optional: true }),
   validate({ query: dto.listQuery }),
   controller.list,
@@ -25,6 +55,7 @@ router.post("/", requireJwt(), validate({ body: dto.upsertBody }), controller.cr
 
 router.get(
   "/:id",
+  detailLimiter,
   requireJwt({ optional: true }),
   validate({ params: dto.idParams }),
   controller.getById,
@@ -53,6 +84,11 @@ router.post(
   controller.rate,
 );
 
-router.post("/:id/click", validate({ params: dto.idParams }), controller.trackClick);
+router.post(
+  "/:id/click",
+  clickLimiter,
+  validate({ params: dto.idParams }),
+  controller.trackClick,
+);
 
 module.exports = router;

@@ -124,6 +124,28 @@ export default {
 
           overlay:         "var(--th-overlay)",
           "booking-link":  "var(--th-booking-link)",
+
+          /* Onboarding warm-palette tokens (preserve current colors) */
+          "warm-text-dark":  "var(--th-warm-text-dark)",
+          "warm-text-muted": "var(--th-warm-text-muted)",
+          "warm-border":     "var(--th-warm-border)",
+          "warm-surface":    "var(--th-warm-surface)",
+
+          "brand-soft":         "var(--th-brand-soft)",
+          "brand-border-soft":  "var(--th-brand-border-soft)",
+
+          "error-bright":       "var(--th-error-bright)",
+          "error-bright-soft":  "var(--th-error-bright-soft)",
+          "error-bright-bg":    "var(--th-error-bright-bg)",
+          "error-bright-ring":  "var(--th-error-bright-ring)",
+
+          "success-bright":         "var(--th-success-bright)",
+          "success-bright-bg":      "var(--th-success-bright-bg)",
+          "success-bright-border":  "var(--th-success-bright-border)",
+
+          "warn-bright":         "var(--th-warn-bright)",
+          "warn-bright-bg":      "var(--th-warn-bright-bg)",
+          "warn-bright-border":  "var(--th-warn-bright-border)",
         },
 
         /* shadcn compat (unchanged) */

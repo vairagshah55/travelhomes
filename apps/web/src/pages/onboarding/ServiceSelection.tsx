@@ -5,27 +5,7 @@ import { toast } from "sonner";
 import { useAuth } from "../../contexts/AuthContext";
 import { getOnboardingData, cmsPublicApi } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
-
-// ─── Brand tokens (designe.md) ──────────────────────────────────────────────
-// Primary CTA color is ds-deep #0F5C8A with ds-navy hover.
-const DEEP = "#0F5C8A"; // brand / CTA
-const NAVY = "#0A4670"; // headings / dark hover
-const DEEP_BG = "rgba(15, 92, 138, 0.07)"; // selected card tint
-const DEEP_GLOW = "rgba(15, 92, 138, 0.22)"; // CTA shadow
-const DEEP_BORDER = "rgba(15, 92, 138, 0.35)"; // hover border accent
-const SKY = "#E6F1FB"; // hover card tint
-const CHARCOAL = "#2C2C2A"; // body text
-const SLATE = "#888780"; // muted text
-const PEBBLE = "#D3D1C7"; // borders
-const LINEN = "#F1EFE8"; // muted surface
-const WHITE = "#ffffff";
-
-// Legacy aliases preserved to minimize churn through the existing inline-style block.
-const GRAY_600 = CHARCOAL;
-const GRAY_400 = SLATE;
-const GRAY_200 = PEBBLE;
-const GRAY_100 = LINEN;
-const BLACK = NAVY;
+import { cn } from "@/lib/utils";
 
 type ServiceType = "caravan" | "stay" | "activity";
 
@@ -171,18 +151,9 @@ const ServiceSelection = () => {
   );
 
   return (
-    <div className="min-h-screen overflow-hidden" style={{ backgroundColor: WHITE, color: BLACK }}>
+    <div className="min-h-screen overflow-hidden bg-th-surface-0 text-[#0A4670]">
       {/* ─── Header ─────────────────────────────────────────────────────────── */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between"
-        style={{
-          height: 64,
-          padding: "0 48px",
-          backgroundColor: "rgba(255,255,255,0.97)",
-          backdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${GRAY_200}`,
-        }}
-      >
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-12 bg-white/97 backdrop-blur-[16px] border-b border-th-warm-border">
         <img
           src="https://travelhomes.in/wp-content/uploads/2022/03/th-logo.png"
           srcSet="https://travelhomes.in/wp-content/uploads/2022/03/th-logo-300x209.png 300w, https://travelhomes.in/wp-content/uploads/2022/03/th-logo.png 384w"
@@ -202,21 +173,17 @@ const ServiceSelection = () => {
             <React.Fragment key={step.n}>
               <div className="flex items-center gap-2">
                 <div
-                  className="flex items-center justify-center text-[11px] font-bold"
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: "50%",
-                    backgroundColor: step.done ? DEEP : GRAY_100,
-                    color: step.done ? BLACK : GRAY_400,
-                    transition: "all 0.2s",
-                  }}
+                  className={cn(
+                    "w-[26px] h-[26px] rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-200",
+                    step.done ? "bg-th-brand" : "bg-[#F1EFE8]",
+                    step.done ? "text-[#0A4670]" : "text-th-warm-text-muted",
+                  )}
                 >
                   {step.done ? (
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path
                         d="M2.5 6L5 8.5L9.5 3.5"
-                        stroke={WHITE}
+                        stroke="currentColor"
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -227,43 +194,28 @@ const ServiceSelection = () => {
                   )}
                 </div>
                 <span
-                  className="text-[12px] whitespace-nowrap"
-                  style={{
-                    fontWeight: step.done ? 600 : 400,
-                    color: step.done ? BLACK : GRAY_400,
-                  }}
+                  className={cn(
+                    "text-[12px] whitespace-nowrap",
+                    step.done ? "font-semibold text-[#0A4670]" : "font-normal text-th-warm-text-muted",
+                  )}
                 >
                   {step.label}
                 </span>
               </div>
-              {i < 2 && <div style={{ width: 28, height: 1, backgroundColor: GRAY_200 }} />}
+              {i < 2 && <div className="w-7 h-px bg-th-warm-border" />}
             </React.Fragment>
           ))}
         </div>
       </header>
 
       {/* ─── Main ────────────────────────────────────────────────────────────── */}
-      <div
-        className="w-full max-w-7xl mx-auto flex max-lg:flex-col items-stretch min-h-screen"
-        style={{ paddingTop: 64, paddingLeft: 48, paddingRight: 48 }}
-      >
+      <div className="w-full max-w-7xl mx-auto flex max-lg:flex-col items-stretch min-h-screen pt-16 px-12">
         {/* ── Left ── */}
         <div className="w-full lg:w-[55%] flex flex-col justify-center py-12 lg:pr-16">
           {/* Back */}
           <button
             onClick={handleBack}
-            className="flex items-center gap-1.5 w-fit mb-10 transition-colors"
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              fontSize: 13,
-              fontWeight: 500,
-              color: GRAY_400,
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = BLACK)}
-            onMouseLeave={(e) => (e.currentTarget.style.color = GRAY_400)}
+            className="flex items-center gap-1.5 w-fit mb-10 bg-transparent border-none p-0 cursor-pointer text-[13px] font-medium text-th-warm-text-muted transition-colors hover:text-[#0A4670]"
           >
             <GoChevronLeft size={17} />
             Back to home
@@ -271,61 +223,38 @@ const ServiceSelection = () => {
 
           {/* Step label */}
           <div className="flex items-center gap-2.5 mb-5">
-            <div style={{ width: 32, height: 3, borderRadius: 99, backgroundColor: DEEP }} />
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.13em",
-                textTransform: "uppercase",
-                color: GRAY_400,
-              }}
-            >
+            <div className="w-8 h-[3px] rounded-full bg-th-brand" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.13em] text-th-warm-text-muted">
               Step 1 of 3
             </span>
           </div>
 
-          {/* Heading — DM Serif Display per designe.md (H1, navy, weight 400). */}
+          {/* Heading */}
           <h1
-            className="mb-3 font-serif"
-            style={{
-              fontSize: "clamp(30px, 4.2vw, 42px)",
-              fontWeight: 400,
-              color: NAVY,
-              lineHeight: 1.12,
-              letterSpacing: "-0.015em",
-            }}
+            className="mb-3 font-serif font-normal text-[#0A4670] leading-[1.12] tracking-[-0.015em]"
+            style={{ fontSize: "clamp(30px, 4.2vw, 42px)" }}
           >
             Which service are
             <br className="hidden sm:block" /> you offering?
           </h1>
-          <p
-            className="mb-10"
-            style={{ fontSize: 15, color: GRAY_600, lineHeight: 1.65, maxWidth: 420 }}
-          >
+          <p className="mb-10 text-[15px] text-th-warm-text-dark leading-[1.65] max-w-[420px]">
             Choose the type of listing you'd like to add to TravelHomes. You can always expand your
             offerings later.
           </p>
 
           {/* ── Pending application banner ── */}
           {hasPendingApplication && pendingData && (
-            <div
-              className="mb-8 p-5 rounded-2xl flex items-start gap-3"
-              style={{
-                backgroundColor: "#fffbeb",
-                border: "1.5px solid #fcd34d",
-              }}
-            >
+            <div className="mb-8 p-5 rounded-2xl flex items-start gap-3 bg-[#fffbeb] border border-[#fcd34d] border-[1.5px]">
               <span className="text-xl mt-0.5">⏳</span>
               <div className="flex-1">
-                <h3 className="font-semibold text-sm" style={{ color: "#92400e" }}>
+                <h3 className="font-semibold text-sm text-[#92400e]">
                   Your{" "}
                   {pendingServiceType
                     ? SERVICE_META[pendingServiceType as ServiceType]?.title
                     : "listing"}{" "}
                   is under review
                 </h3>
-                <p className="text-xs mt-1 leading-relaxed" style={{ color: "#b45309" }}>
+                <p className="text-xs mt-1 leading-relaxed text-[#b45309]">
                   Submitted{" "}
                   {new Date(pendingData.createdAt).toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -334,14 +263,8 @@ const ServiceSelection = () => {
                   })}
                   . Our team will review within 24–48 hours.
                 </p>
-                <span
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full mt-3"
-                  style={{ backgroundColor: "#fef3c7", color: "#92400e" }}
-                >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full animate-pulse"
-                    style={{ backgroundColor: "#f59e0b" }}
-                  />
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full mt-3 bg-[#fef3c7] text-[#92400e]">
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#f59e0b]" />
                   Pending Review
                 </span>
               </div>
@@ -384,7 +307,7 @@ const ServiceSelection = () => {
                   strokeLinecap="round"
                 />
               </svg>
-              <p style={{ fontSize: 13, color: "#ef4444", fontWeight: 500 }}>
+              <p className="text-[13px] font-medium text-th-error-bright">
                 Please select a service to continue
               </p>
             </div>
@@ -394,21 +317,10 @@ const ServiceSelection = () => {
           <button
             key={shakeKey}
             onClick={handleContinue}
-            className={`ss-cta-btn flex items-center justify-center gap-2${showError && !selectedService ? " ss-cta-shake" : ""}`}
-            style={{
-              height: 52,
-              padding: "0 44px",
-              borderRadius: 99,
-              border: "none",
-              cursor: "pointer",
-              fontSize: 15,
-              fontWeight: 700,
-              letterSpacing: "-0.01em",
-              backgroundColor: DEEP,
-              color: WHITE,
-              boxShadow: `0 8px 28px ${DEEP_GLOW}`,
-              width: "fit-content",
-            }}
+            className={cn(
+              "ss-cta-btn flex items-center justify-center gap-2 h-[52px] px-11 rounded-full border-none cursor-pointer text-[15px] font-bold tracking-[-0.01em] bg-th-brand text-th-text-inverse shadow-[0_8px_28px_rgba(15,92,138,0.22)] w-fit",
+              showError && !selectedService && "ss-cta-shake",
+            )}
           >
             Continue
             <svg width="17" height="17" viewBox="0 0 17 17" fill="none" className="ss-cta-arrow">
@@ -425,40 +337,23 @@ const ServiceSelection = () => {
 
         {/* ── Right — Illustration ── */}
         <div className="hidden lg:flex lg:w-[45%] items-center justify-center relative">
-          {/* Teal glow blob */}
+          {/* Teal glow blobs — kept as inline style: dynamic blur values */}
           <div
-            className="absolute pointer-events-none"
-            style={{
-              width: 440,
-              height: 440,
-              borderRadius: "50%",
-              backgroundColor: DEEP,
-              opacity: 0.07,
-              filter: "blur(90px)",
-            }}
+            className="absolute pointer-events-none rounded-full bg-th-brand opacity-[0.07]"
+            style={{ width: 440, height: 440, filter: "blur(90px)" }}
           />
-          {/* Secondary glow — offset */}
           <div
-            className="absolute pointer-events-none"
-            style={{
-              width: 220,
-              height: 220,
-              top: "25%",
-              right: "10%",
-              borderRadius: "50%",
-              backgroundColor: DEEP,
-              opacity: 0.05,
-              filter: "blur(60px)",
-            }}
+            className="absolute pointer-events-none rounded-full bg-th-brand opacity-[0.05]"
+            style={{ width: 220, height: 220, top: "25%", right: "10%", filter: "blur(60px)" }}
           />
 
-          {/* Illustration */}
+          {/* Illustration — kept as inline style: computed size from design spec */}
           <img
             key={selectedService}
             src={getIllustrationImage()}
             alt="Service illustration"
-            className="ss-img-fade relative z-10"
-            style={{ width: 420, height: 420, objectFit: "contain" }}
+            className="ss-img-fade relative z-10 object-contain"
+            style={{ width: 420, height: 420 }}
           />
 
           {/* Floating badge — bottom left */}
@@ -466,20 +361,11 @@ const ServiceSelection = () => {
             className="absolute z-20 ss-badge-enter"
             style={{ bottom: 80, left: 12, animationDelay: "350ms" }}
           >
-            <div
-              className="flex items-center gap-3"
-              style={{
-                backgroundColor: WHITE,
-                borderRadius: 14,
-                padding: "11px 16px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.09)",
-                border: `1px solid ${GRAY_200}`,
-              }}
-            >
-              <span style={{ fontSize: 18 }}>🛡️</span>
+            <div className="flex items-center gap-3 bg-th-surface-0 rounded-[14px] px-4 py-[11px] shadow-[0_8px_32px_rgba(0,0,0,0.09)] border border-th-warm-border">
+              <span className="text-[18px]">🛡️</span>
               <div>
-                <p style={{ fontSize: 12, fontWeight: 700, color: BLACK }}>Verified Hosts</p>
-                <p style={{ fontSize: 10, color: GRAY_400 }}>Identity verified</p>
+                <p className="text-[12px] font-bold text-[#0A4670]">Verified Hosts</p>
+                <p className="text-[10px] text-th-warm-text-muted">Identity verified</p>
               </div>
             </div>
           </div>
@@ -489,33 +375,23 @@ const ServiceSelection = () => {
             className="absolute z-20 ss-badge-enter"
             style={{ top: 100, right: 12, animationDelay: "500ms" }}
           >
-            <div
-              className="flex items-center gap-3"
-              style={{
-                backgroundColor: WHITE,
-                borderRadius: 14,
-                padding: "11px 16px",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.09)",
-                border: `1px solid ${GRAY_200}`,
-              }}
-            >
-              <span style={{ fontSize: 18 }}>⚡</span>
+            <div className="flex items-center gap-3 bg-th-surface-0 rounded-[14px] px-4 py-[11px] shadow-[0_8px_32px_rgba(0,0,0,0.09)] border border-th-warm-border">
+              <span className="text-[18px]">⚡</span>
               <div>
-                <p style={{ fontSize: 12, fontWeight: 700, color: BLACK }}>Quick Setup</p>
-                <p style={{ fontSize: 10, color: GRAY_400 }}>List in minutes</p>
+                <p className="text-[12px] font-bold text-[#0A4670]">Quick Setup</p>
+                <p className="text-[10px] text-th-warm-text-muted">List in minutes</p>
               </div>
             </div>
           </div>
 
-          {/* Teal accent dot pattern */}
-          <div className="absolute bottom-32 right-8 pointer-events-none" style={{ opacity: 0.35 }}>
+          {/* Dot grid */}
+          <div className="absolute bottom-32 right-8 pointer-events-none opacity-[0.35]">
             <DotGrid />
           </div>
         </div>
       </div>
 
       <style>{`
-        /* Card entrance */
         @keyframes ssCardEnter {
           from { opacity: 0; transform: translateY(14px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -523,8 +399,6 @@ const ServiceSelection = () => {
         .ss-card-enter {
           animation: ssCardEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
-
-        /* Badge entrance */
         @keyframes ssBadgeEnter {
           from { opacity: 0; transform: translateY(10px); }
           to   { opacity: 1; transform: translateY(0); }
@@ -532,8 +406,6 @@ const ServiceSelection = () => {
         .ss-badge-enter {
           animation: ssBadgeEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
         }
-
-        /* Illustration fade + scale */
         @keyframes ssImgFade {
           from { opacity: 0; transform: scale(0.96); }
           to   { opacity: 1; transform: scale(1); }
@@ -541,14 +413,12 @@ const ServiceSelection = () => {
         .ss-img-fade {
           animation: ssImgFade 0.4s ease-out both;
         }
-
-        /* CTA button hover */
         .ss-cta-btn {
           transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
         .ss-cta-btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 36px ${DEEP_GLOW} !important;
+          box-shadow: 0 12px 36px rgba(15,92,138,0.22) !important;
         }
         .ss-cta-btn:active {
           transform: translateY(0);
@@ -559,7 +429,6 @@ const ServiceSelection = () => {
         .ss-cta-arrow {
           transition: transform 0.18s ease;
         }
-        /* Shake on validation error */
         @keyframes ssCTAShake {
           0%, 100% { transform: translateX(0); }
           20%       { transform: translateX(-6px); }
@@ -577,10 +446,10 @@ const ServiceSelection = () => {
 
 /* ─── Dot grid decoration ────────────────────────────────────────────────── */
 const DotGrid = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+  <svg width="72" height="72" viewBox="0 0 72 72" fill="none" className="text-th-brand">
     {[0, 18, 36, 54].map((cy) =>
       [0, 18, 36, 54].map((cx) => (
-        <circle key={`${cx}-${cy}`} cx={cx + 6} cy={cy + 6} r="2.5" fill={DEEP} />
+        <circle key={`${cx}-${cy}`} cx={cx + 6} cy={cy + 6} r="2.5" fill="currentColor" />
       )),
     )}
   </svg>
@@ -639,134 +508,73 @@ const ServiceCard = ({
   icon: React.ReactNode;
   active: boolean;
   onClick: () => void;
-}) => {
-  const [hovered, setHovered] = useState(false);
+}) => (
+  <div
+    onClick={onClick}
+    className={cn(
+      "flex items-center gap-[18px] px-5 py-[17px] rounded-[16px] cursor-pointer select-none relative overflow-hidden transition-all duration-200",
+      active
+        ? "border-2 border-th-brand bg-th-brand-soft shadow-[0_4px_24px_rgba(15,92,138,0.22)]"
+        : "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(15,92,138,0.04)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]",
+    )}
+  >
+    {/* Active tag */}
+    {active && tag && (
+      <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-brand text-th-text-inverse">
+        {tag}
+      </span>
+    )}
 
-  return (
+    {/* Icon container */}
     <div
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 18,
-        padding: "17px 20px",
-        borderRadius: 16,
-        cursor: "pointer",
-        userSelect: "none",
-        position: "relative",
-        overflow: "hidden",
-        border: active
-          ? `2px solid ${DEEP}`
-          : hovered
-            ? `1.5px solid ${DEEP_BORDER}`
-            : `1.5px solid ${GRAY_200}`,
-        backgroundColor: active ? DEEP_BG : hovered ? "rgba(15, 92, 138, 0.04)" : WHITE,
-        boxShadow: active
-          ? `0 4px 24px ${DEEP_GLOW}`
-          : hovered
-            ? "0 2px 12px rgba(0,0,0,0.06)"
-            : "0 1px 4px rgba(0,0,0,0.04)",
-        transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
-      }}
-    >
-      {/* Active tag */}
-      {active && tag && (
-        <span
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            fontSize: 9,
-            fontWeight: 800,
-            letterSpacing: "0.09em",
-            textTransform: "uppercase",
-            padding: "3px 9px",
-            borderRadius: 99,
-            backgroundColor: DEEP,
-            color: WHITE,
-          }}
-        >
-          {tag}
-        </span>
+      className={cn(
+        "w-[50px] h-[50px] rounded-[14px] flex-shrink-0 flex items-center justify-center transition-all duration-200",
+        active
+          ? "bg-th-brand text-th-text-inverse"
+          : "bg-[#F1EFE8] text-th-warm-text-muted hover:bg-[rgba(15,92,138,0.10)] hover:text-th-brand",
       )}
+    >
+      {icon}
+    </div>
 
-      {/* Icon container */}
-      <div
-        style={{
-          width: 50,
-          height: 50,
-          borderRadius: 14,
-          flexShrink: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: active ? DEEP : hovered ? "rgba(15, 92, 138, 0.10)" : GRAY_100,
-          color: active ? WHITE : hovered ? DEEP : GRAY_400,
-          transition: "all 0.2s",
-        }}
+    {/* Text */}
+    <div className="flex-1 min-w-0">
+      <h3 className="text-[14px] font-bold text-[#0A4670] mb-1 leading-[1.3] tracking-[-0.01em]">
+        {title}
+      </h3>
+      <p
+        className={cn(
+          "text-[13px] leading-[1.55] m-0 transition-colors duration-200",
+          active ? "text-th-warm-text-dark" : "text-th-warm-text-muted",
+        )}
       >
-        {icon}
-      </div>
+        {description}
+      </p>
+    </div>
 
-      {/* Text */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <h3
-          style={{
-            fontSize: 14,
-            fontWeight: 700,
-            color: BLACK,
-            marginBottom: 4,
-            lineHeight: 1.3,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {title}
-        </h3>
-        <p
-          style={{
-            fontSize: 13,
-            lineHeight: 1.55,
-            color: active ? GRAY_600 : GRAY_400,
-            margin: 0,
-            transition: "color 0.2s",
-          }}
-        >
-          {description}
-        </p>
-      </div>
-
-      {/* Radio indicator */}
-      <div style={{ flexShrink: 0, marginLeft: 4 }}>
-        <div
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: "50%",
-            border: active ? `2px solid ${DEEP}` : `2px solid ${GRAY_200}`,
-            backgroundColor: active ? DEEP : WHITE,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
-          }}
-        >
-          {active && (
-            <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-              <path
-                d="M2 5.5L4.5 8L9 3"
-                stroke={WHITE}
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </div>
+    {/* Radio indicator */}
+    <div className="flex-shrink-0 ml-1">
+      <div
+        className={cn(
+          "w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-all duration-200",
+          active ? "border-th-brand bg-th-brand" : "border-th-warm-border bg-th-surface-0",
+        )}
+      >
+        {active && (
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+            <path
+              d="M2 5.5L4.5 8L9 3"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-th-text-inverse"
+            />
+          </svg>
+        )}
       </div>
     </div>
-  );
-};
+  </div>
+);
 
 export default ServiceSelection;

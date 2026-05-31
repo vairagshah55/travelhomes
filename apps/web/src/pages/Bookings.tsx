@@ -23,7 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { offersApi, activitiesApi } from "@/lib/api";
-import { TEAL, BLACK, GRAY_400 } from "@/components/offering";
+import { cn } from "@/lib/utils";
 
 import {
   type BookingData,
@@ -41,12 +41,7 @@ import {
   EditBookingModal,
 } from "@/components/bookings";
 
-// Local brand tokens kept in sync with the rest of the bookings UI.
-const GRAY_200 = "#e4e4e4";
-const GRAY_500 = "#6b6b6b";
-const WHITE = "#ffffff";
-
-/* ── Filter dropdown trigger (search-row chip) ──────────────────────────────── */
+/* ── Filter dropdown trigger ─────────────────────────────────────────────── */
 const FilterPill: React.FC<{
   icon: React.ReactNode;
   label: string;
@@ -56,26 +51,11 @@ const FilterPill: React.FC<{
     <DropdownMenuTrigger asChild>
       <button
         type="button"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          height: 42,
-          padding: "0 14px",
-          borderRadius: 12,
-          border: `1.5px solid ${GRAY_200}`,
-          backgroundColor: WHITE,
-          fontSize: 13,
-          fontWeight: 600,
-          color: BLACK,
-          cursor: "pointer",
-          letterSpacing: "-0.005em",
-          whiteSpace: "nowrap",
-        }}
+        className="inline-flex items-center gap-2 h-[42px] px-3.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 text-[13px] font-semibold text-th-text-primary cursor-pointer tracking-[-0.005em] whitespace-nowrap"
       >
         {icon}
         {label}
-        <ChevronDown size={14} color={GRAY_400} />
+        <ChevronDown size={14} className="text-th-warm-text-muted" />
       </button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" className="w-52 p-1.5">
@@ -84,9 +64,6 @@ const FilterPill: React.FC<{
   </DropdownMenu>
 );
 
-// Tailwind classes for the filter dropdown items. The project's default
-// `focus:bg-accent` was rendering with a near-invisible tint; this explicit
-// teal-pill highlight makes hover and keyboard navigation legible.
 const FILTER_ITEM_CLASS =
   "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
   "transition-colors " +
@@ -101,63 +78,26 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = TEAL }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: `1.5px solid ${GRAY_200}`,
-      borderRadius: 16,
-      padding: "14px 16px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-    }}
-  >
+}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+  <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
+      className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
       style={{
-        width: 38,
-        height: 38,
-        borderRadius: 11,
         backgroundColor: `${accent}14`,
-        border: `1.5px solid ${accent}30`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
+        borderColor: `${accent}30`,
       }}
     >
       {icon}
     </div>
-    <div style={{ minWidth: 0 }}>
-      <p
-        style={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: GRAY_400,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          marginBottom: 2,
-        }}
-      >
+    <div className="min-w-0">
+      <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.04em] mb-[2px]">
         {label}
       </p>
-      <p
-        style={{
-          fontSize: 18,
-          fontWeight: 800,
-          color: BLACK,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
+      <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
         {value}
       </p>
       {hint && (
-        <p style={{ fontSize: 10.5, color: GRAY_500, marginTop: 2 }}>{hint}</p>
+        <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>
       )}
     </div>
   </div>
@@ -172,9 +112,6 @@ const Bookings = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [vehicleNames, setVehicleNames] = useState<string[]>([]);
-  // Structured service list with category metadata, so the New Booking modal
-  // can render a grouped dropdown (Camper Vans / Unique Stays / Activities)
-  // instead of a flat name list.
   const [services, setServices] = useState<
     { name: string; type: "camper-van" | "unique-stay" | "activity" }[]
   >([]);
@@ -186,9 +123,6 @@ const Bookings = () => {
   const [newBookingForm, setNewBookingForm] = useState<NewBookingForm>(EMPTY_BOOKING_FORM);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
-  // Filter / view-mode UI state. viewMode is a placeholder — only Month view
-  // is wired into CalendarGrid today; Week is shown in the dropdown for
-  // parity with the design and will route through here when implemented.
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
@@ -202,8 +136,7 @@ const Bookings = () => {
     }
   };
 
-  // ─── Resources (offers + activities) used to populate vehicleNames ─────────
-  // Stable cache key per (user, token) — reuses across month/year navigation.
+  // ─── Resources ─────────────────────────────────────────────────────────────
   useQuery({
     queryKey: ["bookings", "resources", user?.id, token],
     enabled: !!user,
@@ -236,7 +169,6 @@ const Bookings = () => {
           const t = (o.serviceType || "").toLowerCase();
           structured.push({
             name: o.name,
-            // Fall back to camper-van for legacy rows missing serviceType.
             type: t === "unique-stay" ? "unique-stay" : t === "activity" ? "activity" : "camper-van",
           });
         }
@@ -255,7 +187,7 @@ const Bookings = () => {
     },
   });
 
-  // ─── Bookings list — keyed by (month, year, user, token) ───────────────────
+  // ─── Bookings list ─────────────────────────────────────────────────────────
   const bookingsKey = ["bookings", "calendar", currentMonth, currentYear, user?.id, token] as const;
   const { data: bookings = [], isLoading: loading } = useQuery<BookingData[]>({
     queryKey: bookingsKey,
@@ -408,7 +340,6 @@ const Bookings = () => {
     }
   };
 
-  // Vendor visibility + UI filters (search by guest/booking, service dropdown).
   const filteredBookings = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return bookings.filter((b) => {
@@ -425,8 +356,6 @@ const Bookings = () => {
     });
   }, [bookings, user, vehicleNames, serviceFilter, searchQuery]);
 
-  // Stats — derived from the same filtered set, so changing the service or
-  // search query immediately updates the cards.
   const stats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -457,135 +386,61 @@ const Bookings = () => {
       outerClassName="overflow-hidden"
       contentClassName="flex-1 overflow-auto p-3 lg:p-5"
     >
-      <div
-        style={{
-          backgroundColor: "#ffffff",
-          border: "1.5px solid #EBEBEB",
-          borderRadius: 20,
-          padding: "20px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-          minHeight: "100%",
-        }}
-      >
+      <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] min-h-full">
         {/* Header */}
-        <div
-          className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4"
-          style={{ borderBottom: "1.5px solid #EBEBEB" }}
-        >
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4 border-b border-[#EBEBEB]">
           <div>
-            <h1
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: BLACK,
-                letterSpacing: "-0.025em",
-                lineHeight: 1.2,
-              }}
-            >
+            <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
               Calendar
             </h1>
-            <p style={{ fontSize: 13, color: GRAY_400, marginTop: 3 }}>
+            <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
               Manage appointments and schedules
             </p>
           </div>
           <button
             type="button"
             onClick={handleNewBooking}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              height: 42,
-              padding: "0 20px",
-              borderRadius: 13,
-              border: "none",
-              backgroundColor: TEAL,
-              fontSize: 13,
-              fontWeight: 700,
-              color: WHITE,
-              cursor: "pointer",
-              // Drop shadow tinted with the actual brand teal — the previous
-              // cyan rgba was a leftover from the older palette.
-              boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
-              width: "fit-content",
-            }}
+            className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(15,92,138,0.30)] w-fit"
           >
             <Plus size={16} strokeWidth={2.5} /> New Booking
           </button>
         </div>
 
-        {/* Filters row — search + service + month + view selectors */}
+        {/* Filters row */}
         <div className="flex flex-wrap items-center gap-2.5 mb-4">
           {/* Search */}
           <div
-            className="flex items-center"
-            style={{
-              flex: "1 1 220px",
-              minWidth: 200,
-              maxWidth: 320,
-              height: 42,
-              borderRadius: 12,
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: WHITE,
-              padding: "0 12px",
-              gap: 8,
-            }}
+            className="flex items-center gap-2 h-[42px] px-3 rounded-[12px] border border-th-warm-border bg-th-surface-0"
+            style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 320 }}
           >
-            <Search size={15} color={GRAY_400} />
+            <Search size={15} className="text-th-warm-text-muted" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search bookings, guest, ID…"
-              style={{
-                flex: 1,
-                height: "100%",
-                border: "none",
-                outline: "none",
-                fontSize: 13,
-                color: BLACK,
-                backgroundColor: "transparent",
-                fontWeight: 450,
-              }}
+              className="flex-1 h-full border-none outline-none text-[13px] text-th-text-primary bg-transparent font-[450]"
             />
           </div>
 
           {/* Service filter */}
           <FilterPill
-            icon={<Package size={14} color={GRAY_400} />}
+            icon={<Package size={14} className="text-th-warm-text-muted" />}
             label={serviceFilter === "all" ? "All Services" : serviceFilter}
           >
-            <DropdownMenuItem
-              className={FILTER_ITEM_CLASS}
-              onClick={() => setServiceFilter("all")}
-            >
+            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setServiceFilter("all")}>
               All Services
             </DropdownMenuItem>
             {vehicleNames.map((name) => (
-              <DropdownMenuItem
-                key={name}
-                className={FILTER_ITEM_CLASS}
-                onClick={() => setServiceFilter(name)}
-              >
+              <DropdownMenuItem key={name} className={FILTER_ITEM_CLASS} onClick={() => setServiceFilter(name)}>
                 {name}
               </DropdownMenuItem>
             ))}
           </FilterPill>
 
-          {/* Month selector — reuses the existing DateNavigation dropdown */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              height: 42,
-              padding: "0 6px 0 12px",
-              borderRadius: 12,
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: WHITE,
-              gap: 6,
-            }}
-          >
-            <CalendarIcon size={14} color={GRAY_400} />
+          {/* Month selector */}
+          <div className="flex items-center h-[42px] pl-3 pr-1.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 gap-1.5">
+            <CalendarIcon size={14} className="text-th-warm-text-muted" />
             <DateNavigation
               currentMonth={currentMonth}
               currentYear={currentYear}
@@ -594,22 +449,15 @@ const Bookings = () => {
             />
           </div>
 
-          {/* View mode — placeholder until Week view ships */}
+          {/* View mode */}
           <FilterPill
-            icon={<LayoutGrid size={14} color={GRAY_400} />}
+            icon={<LayoutGrid size={14} className="text-th-warm-text-muted" />}
             label={viewMode === "month" ? "Month View" : "Week View"}
           >
-            <DropdownMenuItem
-              className={FILTER_ITEM_CLASS}
-              onClick={() => setViewMode("month")}
-            >
+            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("month")}>
               Month View
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className={FILTER_ITEM_CLASS}
-              onClick={() => setViewMode("week")}
-              disabled
-            >
+            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("week")} disabled>
               Week View (soon)
             </DropdownMenuItem>
           </FilterPill>
@@ -618,7 +466,7 @@ const Bookings = () => {
         {/* Stats cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
           <StatCard
-            icon={<CalendarIcon size={15} color={TEAL} strokeWidth={2.2} />}
+            icon={<CalendarIcon size={15} className="text-th-brand" strokeWidth={2.2} />}
             label="Bookings"
             value={String(stats.total)}
             hint="This month"
@@ -649,12 +497,9 @@ const Bookings = () => {
         {/* Calendar */}
         <div className="overflow-auto" key={`${currentYear}-${currentMonth}`}>
           {loading ? (
-            <div
-              className="flex items-center justify-center h-64 gap-2"
-              style={{ color: GRAY_400 }}
-            >
+            <div className="flex items-center justify-center h-64 gap-2 text-th-warm-text-muted">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              <span style={{ fontSize: 13 }}>Loading bookings…</span>
+              <span className="text-[13px]">Loading bookings…</span>
             </div>
           ) : (
             <CalendarGrid

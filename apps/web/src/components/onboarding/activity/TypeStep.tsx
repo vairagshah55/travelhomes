@@ -1,18 +1,5 @@
 import React from "react";
-import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_600 = "#2C2C2A";
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+import { cn, getImageUrl } from "@/lib/utils";
 
 interface ActivityType {
   id: string;
@@ -34,73 +21,31 @@ const TypeStep: React.FC<TypeStepProps> = ({ selectedActivities, activityTypes, 
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Activity Types
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
         >
           Types of Activity
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Select all activity types that apply to your listing.
         </p>
       </div>
 
       {/* ── Activity grid ── */}
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: WHITE,
-          border: "1.5px solid #D3D1C7",
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        }}
-      >
+      <div className="w-full bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         {/* Selected count badge */}
         <div className="flex items-center justify-between mb-4">
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_500,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}
-          >
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
             Activities
           </p>
           {selectedCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: `1px solid ${TEAL_RING}`,
-                borderRadius: 99,
-                padding: "2px 10px",
-              }}
-            >
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-[10px] py-[2px]">
               {selectedCount} selected
             </span>
           )}
@@ -114,54 +59,29 @@ const TypeStep: React.FC<TypeStepProps> = ({ selectedActivities, activityTypes, 
                 key={activity.id}
                 type="button"
                 onClick={() => onToggle(activity.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 14px",
-                  borderRadius: 99,
-                  border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                  backgroundColor: selected ? TEAL_BG : SURFACE,
-                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                  color: selected ? TEAL : GRAY_600,
-                }}
-                onMouseEnter={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                  }
-                }}
+                className={cn(
+                  "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                  selected
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                    : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+                )}
               >
                 <span
-                  style={{
-                    width: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                    opacity: selected ? 1 : 0.7,
-                    transition: "opacity 0.15s",
-                  }}
+                  className={cn(
+                    "w-5 h-5 flex items-center justify-center flex-shrink-0 transition-opacity duration-150",
+                    selected ? "opacity-100" : "opacity-70",
+                  )}
                 >
                   <img
                     src={getImageUrl(activity.icon)}
                     alt={activity.name}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}
                   />
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">
                   {activity.name}
                 </span>
               </button>
@@ -170,7 +90,7 @@ const TypeStep: React.FC<TypeStepProps> = ({ selectedActivities, activityTypes, 
         </div>
 
         {activityTypes.length === 0 && (
-          <p style={{ fontSize: 13, color: GRAY_400, textAlign: "center", padding: "20px 0" }}>
+          <p className="text-[13px] text-th-warm-text-muted text-center py-5">
             No activity types available.
           </p>
         )}

@@ -10,21 +10,8 @@ import {
   UploadCloud,
   Sparkles,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  TEAL,
-  TEAL_BG,
-  TEAL_BORDER,
-  TEAL_FOCUS,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_700,
-  GRAY_200,
-  ERROR_SOFT,
-  SUCCESS,
-  SUCCESS_BG,
-  SUCCESS_BORDER,
   SectionCard,
   Field,
   ErrorMsg,
@@ -77,35 +64,21 @@ const PillCTA: React.FC<{
   children?: React.ReactNode;
   size?: "sm" | "md";
 }> = ({ icon, label, as = "button", onClick, children, size = "sm" }) => {
-  const padY = size === "md" ? 8 : 6;
-  const padX = size === "md" ? 16 : 14;
-  const fontSize = size === "md" ? 12.5 : 12;
-  const baseStyle: React.CSSProperties = {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 6,
-    fontSize,
-    fontWeight: 700,
-    color: TEAL,
-    backgroundColor: TEAL_BG,
-    border: `1.5px solid ${TEAL_BORDER}`,
-    borderRadius: 999,
-    padding: `${padY}px ${padX}px`,
-    cursor: "pointer",
-    letterSpacing: "0.01em",
-    transition: "background-color 0.15s",
-    whiteSpace: "nowrap",
-  };
-  const hoverIn = (e: React.SyntheticEvent<HTMLElement>) => {
-    (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(15, 92, 138, 0.14)";
-  };
-  const hoverOut = (e: React.SyntheticEvent<HTMLElement>) => {
-    (e.currentTarget as HTMLElement).style.backgroundColor = TEAL_BG;
-  };
+  const padY = size === "md" ? "py-2" : "py-1.5";
+  const padX = size === "md" ? "px-4" : "px-[14px]";
+  const fontSize = size === "md" ? "text-[12.5px]" : "text-[12px]";
+
+  const baseClass = cn(
+    "inline-flex items-center gap-1.5 font-bold text-th-brand bg-th-brand-soft border-[1.5px] border-th-brand-border-soft rounded-full cursor-pointer tracking-[0.01em] transition-colors duration-150 whitespace-nowrap",
+    "hover:bg-[rgba(15,92,138,0.14)]",
+    padY,
+    padX,
+    fontSize
+  );
 
   if (as === "label") {
     return (
-      <label style={baseStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
+      <label className={baseClass}>
         {icon}
         {label}
         {children}
@@ -113,13 +86,7 @@ const PillCTA: React.FC<{
     );
   }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={baseStyle}
-      onMouseEnter={hoverIn}
-      onMouseLeave={hoverOut}
-    >
+    <button type="button" onClick={onClick} className={baseClass}>
       {icon}
       {label}
     </button>
@@ -147,24 +114,10 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   nameLabel = "Caravan Name",
   namePlaceholder = "e.g. Cozy Mountain Camper",
 }) => {
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
-    embedded ? (
-      <div className="w-full flex flex-col gap-4">{children}</div>
-    ) : (
-      <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-        <StepHeader
-          kicker="Caravan Details"
-          title="Tell guests about your caravan"
-          subtitle="Great photos and a clear description help guests choose you."
-        />
-        <div className="w-full flex flex-col gap-4">{children}</div>
-      </div>
-    );
-
-  return (
-    <Wrapper>
-        <SectionCard
-          icon={<Type size={16} color={TEAL} strokeWidth={2.5} />}
+  const sections = (
+    <>
+      <SectionCard
+          icon={<Type size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Identity"
           subtitle="How your listing appears to guests"
         >
@@ -212,7 +165,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<ShieldCheck size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Rules & Regulations"
           subtitle="Guidelines guests must follow"
           action={
@@ -239,7 +192,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<Camera size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Camera size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Photos"
           subtitle="High quality photos get more bookings"
         >
@@ -254,7 +207,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
               onRemove={() => onRemoveCover(0)}
             />
 
-            <div style={{ height: 1, backgroundColor: "#F0F0F0" }} />
+            <div className="h-px bg-[#F0F0F0]" />
 
             <GalleryBlock
               photos={photos}
@@ -267,7 +220,21 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             />
           </div>
         </SectionCard>
-    </Wrapper>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="w-full flex flex-col gap-4">{sections}</div>;
+  }
+  return (
+    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+      <StepHeader
+        kicker="Caravan Details"
+        title="Tell guests about your caravan"
+        subtitle="Great photos and a clear description help guests choose you."
+      />
+      <div className="w-full flex flex-col gap-4">{sections}</div>
+    </div>
   );
 };
 
@@ -277,36 +244,22 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
 
 const RulesEmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
   <div
-    className="flex flex-col items-center justify-center gap-3"
-    style={{
-      padding: "26px 20px",
-      border: `1.5px dashed ${TEAL_BORDER}`,
-      borderRadius: 14,
+    className={cn(
+      "flex flex-col items-center justify-center gap-3",
+      "px-5 py-[26px] border-[1.5px] border-dashed border-th-brand-border-soft rounded-[14px]",
       // Subtle teal-tinted background so the empty state feels intentional /
       // inviting rather than a "you forgot something" grey panel.
-      backgroundColor: TEAL_BG,
-    }}
+      "bg-th-brand-soft"
+    )}
   >
-    <div
-      style={{
-        width: 42,
-        height: 42,
-        borderRadius: 13,
-        backgroundColor: WHITE,
-        border: `1.5px solid ${TEAL_BORDER}`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        boxShadow: "0 2px 8px rgba(15, 92, 138, 0.08)",
-      }}
-    >
-      <ShieldCheck size={18} color={TEAL} strokeWidth={2.2} />
+    <div className="w-[42px] h-[42px] rounded-[13px] bg-th-surface-0 border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_2px_8px_rgba(15,92,138,0.08)]">
+      <ShieldCheck size={18} className="text-th-brand" strokeWidth={2.2} />
     </div>
     <div className="text-center">
-      <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+      <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
         No house rules yet
       </p>
-      <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>
+      <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">
         Add a few so guests know what to expect.
       </p>
     </div>
@@ -328,88 +281,41 @@ const RuleRow = ({
   value: string;
   onChange: (v: string) => void;
   onRemove: () => void;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div
-      className="flex items-center gap-2.5"
-      style={{
-        backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${focused ? TEAL : "transparent"}`,
-        borderRadius: 13,
-        padding: "6px 8px 6px 10px",
-        boxShadow: focused ? `0 0 0 4px ${TEAL_FOCUS}` : "none",
-        transition: "all 0.15s",
-      }}
+}) => (
+  <div
+    className={cn(
+      "flex items-center gap-2.5 rounded-[13px] px-[10px] py-[6px] transition-all duration-150",
+      "bg-th-warm-surface border-[1.5px] border-transparent",
+      "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring)]"
+    )}
+  >
+    <span
+      className={cn(
+        "w-6 h-6 rounded-full border-[1.5px] text-[10.5px] font-extrabold flex items-center justify-center shrink-0 transition-all duration-150",
+        "bg-th-warm-border border-transparent text-th-warm-text-muted",
+        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand"
+      )}
     >
-      <span
-        style={{
-          width: 24,
-          height: 24,
-          borderRadius: "50%",
-          backgroundColor: focused ? TEAL_BG : GRAY_200,
-          border: `1.5px solid ${focused ? TEAL_BORDER : "transparent"}`,
-          color: focused ? TEAL : GRAY_400,
-          fontSize: 10.5,
-          fontWeight: 800,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
-      >
-        {index + 1}
-      </span>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={`Rule ${index + 1}…`}
-        maxLength={250}
-        style={{
-          flex: 1,
-          height: 36,
-          padding: "0 4px",
-          fontSize: 13.5,
-          color: BLACK,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          fontWeight: 450,
-        }}
-      />
-      <button
-        type="button"
-        onClick={onRemove}
-        aria-label={`Remove rule ${index + 1}`}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          border: "none",
-          backgroundColor: "transparent",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.15s",
-          flexShrink: 0,
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
-        }}
-      >
-        <X size={13} color={GRAY_400} />
-      </button>
-    </div>
-  );
-};
+      {index + 1}
+    </span>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={`Rule ${index + 1}…`}
+      maxLength={250}
+      className="flex-1 h-9 px-1 text-[13.5px] text-th-text-primary bg-transparent border-none outline-none font-[450]"
+    />
+    <button
+      type="button"
+      onClick={onRemove}
+      aria-label={`Remove rule ${index + 1}`}
+      className="w-7 h-7 rounded-[8px] border-none bg-transparent flex items-center justify-center cursor-pointer transition-all duration-150 shrink-0 hover:bg-[#fef2f2]"
+    >
+      <X size={13} className="text-th-warm-text-muted" />
+    </button>
+  </div>
+);
 
 // ============================================================================
 // Cover photo
@@ -424,36 +330,15 @@ const CoverPhotoBlock: React.FC<{
   <div className="flex flex-col gap-3">
     <div className="flex items-center justify-between">
       <div>
-        <p
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: GRAY_700,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
-        >
+        <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
           Cover Photo
         </p>
-        <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>
+        <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">
           First image guests see — make it count
         </p>
       </div>
       {file ? (
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 10.5,
-            fontWeight: 700,
-            color: SUCCESS,
-            backgroundColor: SUCCESS_BG,
-            border: `1px solid ${SUCCESS_BORDER}`,
-            borderRadius: 99,
-            padding: "2px 9px 2px 7px",
-          }}
-        >
+        <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-th-success-bright bg-th-success-bright-bg border border-th-success-bright-border rounded-full px-[9px] py-[2px] pl-[7px]">
           <Check size={10} strokeWidth={3} />
           Set
         </span>
@@ -473,76 +358,24 @@ const CoverPreview: React.FC<{
   onUpload: (files: FileList | null) => void;
   onRemove: () => void;
 }> = ({ file, onUpload, onRemove }) => {
-  const [hovered, setHovered] = React.useState(false);
   const src = useObjectURL(file);
   return (
     <div
-      className="relative w-full overflow-hidden bg-gray-100"
-      // Taller box (260) plus the dual-layer image strategy keeps portrait
-      // covers visible without cropping. The blurred backdrop fills the
-      // letterbox gutters so the card still feels like a photo, not a thumbnail
-      // floating on a flat color.
-      style={{ height: 260, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.10)" }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="group relative w-full h-[260px] overflow-hidden bg-gray-100 rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.10)]"
     >
       <img
         src={src}
         alt=""
         aria-hidden="true"
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          filter: "blur(28px)",
-          transform: "scale(1.15)",
-          opacity: 0.55,
-        }}
+        className="absolute inset-0 w-full h-full object-cover opacity-[0.55] blur-[28px] scale-[1.15]"
       />
       <img
         src={src}
         alt="Cover"
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-        }}
+        className="absolute inset-0 w-full h-full object-contain"
       />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: `linear-gradient(to top, rgba(0,0,0,${hovered ? 0.42 : 0.12}), transparent 55%)`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          transition: "all 0.25s",
-        }}
-      >
-        <label
-          style={{
-            opacity: hovered ? 1 : 0,
-            transform: hovered ? "translateY(0)" : "translateY(6px)",
-            transition: "opacity 0.2s, transform 0.2s",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            backgroundColor: "rgba(255,255,255,0.96)",
-            backdropFilter: "blur(8px)",
-            color: BLACK,
-            fontSize: 12.5,
-            fontWeight: 700,
-            padding: "9px 18px",
-            borderRadius: 99,
-            cursor: "pointer",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.18)",
-            letterSpacing: "0.01em",
-          }}
-        >
+      <div className="absolute inset-0 flex items-center justify-center transition-all duration-[250ms] bg-[linear-gradient(to_top,rgba(0,0,0,0.12),transparent_55%)] group-hover:bg-[linear-gradient(to_top,rgba(0,0,0,0.42),transparent_55%)]">
+        <label className="opacity-0 translate-y-[6px] group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200 inline-flex items-center gap-1.5 bg-[rgba(255,255,255,0.96)] backdrop-blur-[8px] text-th-text-primary text-[12.5px] font-bold px-[18px] py-[9px] rounded-full cursor-pointer shadow-[0_4px_16px_rgba(0,0,0,0.18)] tracking-[0.01em]">
           <ImagePlus size={13} strokeWidth={2.5} />
           Change Photo
           <input
@@ -557,24 +390,9 @@ const CoverPreview: React.FC<{
         type="button"
         onClick={onRemove}
         aria-label="Remove cover photo"
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          width: 30,
-          height: 30,
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.94)",
-          backdropFilter: "blur(6px)",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
-        }}
+        className="absolute top-[10px] right-[10px] w-[30px] h-[30px] rounded-full bg-[rgba(255,255,255,0.94)] backdrop-blur-[6px] border-none flex items-center justify-center cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.15)]"
       >
-        <X size={12} color={BLACK} />
+        <X size={12} className="text-th-text-primary" />
       </button>
     </div>
   );
@@ -583,66 +401,50 @@ const CoverPreview: React.FC<{
 const CoverDropzone: React.FC<{
   error?: string;
   onUpload: (files: FileList | null) => void;
-}> = ({ error, onUpload }) => {
-  const [hovered, setHovered] = React.useState(false);
-  const borderColor = error ? ERROR_SOFT : hovered ? TEAL : GRAY_200;
-  const bgColor = !error && hovered ? TEAL_BG : SURFACE;
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label
-        className="w-full flex flex-col items-center justify-center gap-3 cursor-pointer"
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        style={{
-          height: 200,
-          // Subtle radial highlight so the empty dropzone reads as a
-          // "drop here" target rather than a flat grey card.
-          backgroundImage: `radial-gradient(circle at 50% 30%, rgba(15, 92, 138, 0.05), transparent 60%)`,
-          backgroundColor: bgColor,
-          border: `2px dashed ${borderColor}`,
-          borderRadius: 18,
-          transition: "all 0.2s",
-        }}
+}> = ({ error, onUpload }) => (
+  <div className="flex flex-col gap-1.5">
+    <label
+      className={cn(
+        "w-full flex flex-col items-center justify-center gap-3 cursor-pointer",
+        "h-[200px] rounded-[18px] border-2 border-dashed transition-all duration-200",
+        // Subtle radial highlight so the empty dropzone reads as a
+        // "drop here" target rather than a flat grey card.
+        "bg-th-warm-surface [background-image:radial-gradient(circle_at_50%_30%,rgba(15,92,138,0.05),transparent_60%)]",
+        error
+          ? "border-th-error-bright-soft"
+          : "border-th-warm-border hover:border-th-brand hover:bg-th-brand-soft"
+      )}
+    >
+      <div
+        className={cn(
+          "w-14 h-14 rounded-[17px] bg-th-surface-0 border-[1.5px] flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all duration-200",
+          error ? "border-th-warm-border" : "border-th-warm-border group-hover:border-th-brand-border-soft"
+        )}
       >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 17,
-            backgroundColor: WHITE,
-            border: `1.5px solid ${hovered && !error ? TEAL_BORDER : GRAY_200}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
-            transition: "all 0.2s",
-          }}
-        >
-          <UploadCloud
-            size={24}
-            color={hovered && !error ? TEAL : GRAY_400}
-            strokeWidth={2}
-          />
-        </div>
-        <div className="text-center">
-          <p style={{ fontSize: 13.5, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
-            Drop a photo here, or click to browse
-          </p>
-          <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
-            JPG, PNG or WEBP · landscape orientation works best
-          </p>
-        </div>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => onUpload(e.target.files)}
-          className="hidden"
+        <UploadCloud
+          size={24}
+          strokeWidth={2}
+          className={cn(error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand")}
         />
-      </label>
-      <ErrorMsg message={error} />
-    </div>
-  );
-};
+      </div>
+      <div className="text-center">
+        <p className="text-[13.5px] font-bold text-th-text-primary tracking-[-0.01em]">
+          Drop a photo here, or click to browse
+        </p>
+        <p className="text-[11px] text-th-warm-text-muted mt-[3px]">
+          JPG, PNG or WEBP · landscape orientation works best
+        </p>
+      </div>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => onUpload(e.target.files)}
+        className="hidden"
+      />
+    </label>
+    <ErrorMsg message={error} />
+  </div>
+);
 
 // ============================================================================
 // Gallery — 5-slot grid that doubles as the progress visualization
@@ -664,37 +466,27 @@ const GalleryBlock: React.FC<{
     <div className="flex flex-col gap-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_700,
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
             Gallery Photos
           </p>
           <p
-            style={{
-              fontSize: 11.5,
-              color: complete ? SUCCESS : GRAY_400,
-              marginTop: 2,
-              fontWeight: complete ? 600 : 400,
-            }}
+            className={cn(
+              "text-[11.5px] mt-0.5",
+              complete ? "text-th-success-bright font-semibold" : "text-th-warm-text-muted font-normal"
+            )}
           >
             {complete ? (
               <>
                 <Sparkles
                   size={11}
                   strokeWidth={2.5}
-                  style={{ display: "inline", verticalAlign: "-1px", marginRight: 4 }}
+                  className="inline align-[-1px] mr-1"
                 />
                 Minimum reached — add more for a richer listing
               </>
             ) : (
               <>
-                <strong style={{ color: BLACK, fontWeight: 700 }}>
+                <strong className="text-th-text-primary font-bold">
                   {filled}/{GALLERY_TARGET}
                 </strong>{" "}
                 photos · {remainingMin} more recommended
@@ -746,15 +538,7 @@ const GalleryBlock: React.FC<{
 
       {bonusPhotos.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: GRAY_400,
-              textTransform: "uppercase",
-              letterSpacing: "0.06em",
-            }}
-          >
+          <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.06em]">
             Bonus Photos · {bonusPhotos.length}
           </p>
           <div className="grid grid-cols-5 gap-2">
@@ -783,83 +567,47 @@ const EmptySlot: React.FC<{
   index: number;
   error: boolean;
   onUpload: (files: FileList | null) => void;
-}> = ({ index, error, onUpload }) => {
-  const [hovered, setHovered] = React.useState(false);
-  const borderColor = error ? ERROR_SOFT : hovered ? TEAL : GRAY_200;
-  const bgColor = !error && hovered ? TEAL_BG : SURFACE;
-  return (
-    <label
-      className="relative aspect-square flex flex-col items-center justify-center gap-1.5 cursor-pointer"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        border: `1.5px dashed ${borderColor}`,
-        borderRadius: 12,
-        backgroundColor: bgColor,
-        transition: "all 0.15s",
-      }}
+}> = ({ index, error, onUpload }) => (
+  <label
+    className={cn(
+      "relative aspect-square flex flex-col items-center justify-center gap-1.5 cursor-pointer",
+      "border-[1.5px] border-dashed rounded-[12px] transition-all duration-150",
+      error
+        ? "border-th-error-bright-soft bg-th-warm-surface"
+        : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft"
+    )}
+  >
+    <span className="absolute top-1.5 left-1.5 w-[17px] h-[17px] rounded-full bg-th-surface-0 border border-th-warm-border text-th-warm-text-muted text-[9.5px] font-extrabold flex items-center justify-center">
+      {index + 1}
+    </span>
+    <Plus
+      size={16}
+      strokeWidth={2.5}
+      className={cn(error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand")}
+    />
+    <span
+      className={cn(
+        "text-[9.5px] font-bold tracking-[0.06em]",
+        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand"
+      )}
     >
-      <span
-        style={{
-          position: "absolute",
-          top: 6,
-          left: 6,
-          width: 17,
-          height: 17,
-          borderRadius: "50%",
-          backgroundColor: WHITE,
-          border: `1px solid ${GRAY_200}`,
-          color: GRAY_400,
-          fontSize: 9.5,
-          fontWeight: 800,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {index + 1}
-      </span>
-      <Plus size={16} color={hovered && !error ? TEAL : GRAY_400} strokeWidth={2.5} />
-      <span
-        style={{
-          fontSize: 9.5,
-          color: hovered && !error ? TEAL : GRAY_400,
-          fontWeight: 700,
-          letterSpacing: "0.06em",
-        }}
-      >
-        ADD
-      </span>
-      <input
-        type="file"
-        multiple
-        accept="image/*"
-        onChange={(e) => onUpload(e.target.files)}
-        className="hidden"
-      />
-    </label>
-  );
-};
+      ADD
+    </span>
+    <input
+      type="file"
+      multiple
+      accept="image/*"
+      onChange={(e) => onUpload(e.target.files)}
+      className="hidden"
+    />
+  </label>
+);
 
 const BonusAddTile: React.FC<{ onUpload: (files: FileList | null) => void }> = ({ onUpload }) => (
   <label
-    className="aspect-square flex items-center justify-center cursor-pointer"
-    style={{
-      border: `1.5px dashed ${GRAY_200}`,
-      borderRadius: 12,
-      backgroundColor: SURFACE,
-      transition: "all 0.15s",
-    }}
-    onMouseEnter={(e) => {
-      (e.currentTarget as HTMLLabelElement).style.borderColor = TEAL;
-      (e.currentTarget as HTMLLabelElement).style.backgroundColor = TEAL_BG;
-    }}
-    onMouseLeave={(e) => {
-      (e.currentTarget as HTMLLabelElement).style.borderColor = GRAY_200;
-      (e.currentTarget as HTMLLabelElement).style.backgroundColor = SURFACE;
-    }}
+    className="aspect-square flex items-center justify-center cursor-pointer border-[1.5px] border-dashed border-th-warm-border bg-th-warm-surface rounded-[12px] transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft"
   >
-    <Plus size={18} color={GRAY_400} strokeWidth={2.5} />
+    <Plus size={18} strokeWidth={2.5} className="text-th-warm-text-muted" />
     <input
       type="file"
       multiple
@@ -876,47 +624,19 @@ const GalleryThumb: React.FC<{
   showIndex?: boolean;
   onRemove: () => void;
 }> = ({ photo, index, showIndex, onRemove }) => {
-  const [hovered, setHovered] = React.useState(false);
   const src = useObjectURL(photo);
   return (
     <div
-      className="relative aspect-square overflow-hidden"
-      style={{
-        borderRadius: 12,
-        boxShadow: hovered ? "0 6px 18px rgba(0,0,0,0.16)" : "0 1px 4px rgba(0,0,0,0.08)",
-        transform: hovered ? "scale(1.02)" : "scale(1)",
-        transition: "box-shadow 0.15s, transform 0.15s",
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      className="group relative aspect-square overflow-hidden rounded-[12px] transition-[box-shadow,transform] duration-150 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.16)] hover:scale-[1.02]"
     >
       <img
         src={src}
         alt={`Photo ${index + 1}`}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        className="w-full h-full object-cover"
       />
 
       {showIndex && (
-        <span
-          style={{
-            position: "absolute",
-            top: 6,
-            left: 6,
-            minWidth: 19,
-            height: 19,
-            padding: "0 5px",
-            borderRadius: 99,
-            backgroundColor: "rgba(0,0,0,0.62)",
-            backdropFilter: "blur(4px)",
-            color: WHITE,
-            fontSize: 10,
-            fontWeight: 800,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            letterSpacing: "0.02em",
-          }}
-        >
+        <span className="absolute top-1.5 left-1.5 min-w-[19px] h-[19px] px-[5px] rounded-full bg-[rgba(0,0,0,0.62)] backdrop-blur-[4px] text-th-text-inverse text-[10px] font-extrabold flex items-center justify-center tracking-[0.02em]">
           {index + 1}
         </span>
       )}
@@ -925,25 +645,9 @@ const GalleryThumb: React.FC<{
         type="button"
         onClick={onRemove}
         aria-label={`Remove photo ${index + 1}`}
-        style={{
-          position: "absolute",
-          top: 5,
-          right: 5,
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          backgroundColor: "rgba(0,0,0,0.62)",
-          backdropFilter: "blur(4px)",
-          border: "none",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          opacity: hovered ? 1 : 0,
-          transition: "opacity 0.15s",
-        }}
+        className="absolute top-[5px] right-[5px] w-[22px] h-[22px] rounded-full bg-[rgba(0,0,0,0.62)] backdrop-blur-[4px] border-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150"
       >
-        <X size={10} color={WHITE} />
+        <X size={10} className="text-th-text-inverse" />
       </button>
     </div>
   );

@@ -1,23 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, X, Search, MoreHorizontal } from "lucide-react";
-import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const TEAL_FOCUS = "rgba(15, 92, 138, 0.15)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_600 = "#2C2C2A";
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
+import { cn, getImageUrl } from "@/lib/utils";
 
 interface FeatureItem {
   label: string;
@@ -55,7 +38,6 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   errors,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -104,76 +86,39 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Amenities
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Amenities &amp; Features
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Select everything your property offers — it helps guests decide.
         </p>
       </div>
 
       {/* ── Feature card ── */}
       <div
-        style={{
-          width: "100%",
-          backgroundColor: WHITE,
-          border: `1.5px solid ${hasError ? "#fca5a5" : "#D3D1C7"}`,
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: hasError
-            ? "0 0 0 3px rgba(239,68,68,0.10)"
-            : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-          transition: "all 0.2s",
-        }}
+        className={cn(
+          "w-full bg-th-surface-0 rounded-[20px] p-[20px_22px_22px] transition-all duration-200",
+          hasError
+            ? "border-[1.5px] border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+            : "border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]",
+        )}
       >
         {/* Header row */}
         <div className="flex items-center justify-between mb-4">
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_500,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}
-          >
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
             Features
           </p>
           {totalSelected > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: `1px solid ${TEAL_RING}`,
-                borderRadius: 99,
-                padding: "2px 10px",
-              }}
-            >
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-2.5 py-[2px]">
               {totalSelected} selected
             </span>
           )}
@@ -181,60 +126,29 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
 
         {/* Search */}
         {allStandardFeatures.length > 8 && (
-          <div style={{ position: "relative", marginBottom: 14 }}>
+          <div className="relative mb-[14px]">
             <Search
               size={14}
-              style={{
-                position: "absolute",
-                left: 14,
-                top: "50%",
-                transform: "translateY(-50%)",
-                pointerEvents: "none",
-                color: searchFocused ? TEAL : GRAY_400,
-                transition: "color 0.15s",
-              }}
+              className="absolute left-[14px] top-1/2 -translate-y-1/2 pointer-events-none text-th-warm-text-muted"
             />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder="Search features\u2026"
-              style={{
-                width: "100%",
-                height: 40,
-                paddingLeft: 36,
-                paddingRight: 34,
-                fontSize: 13,
-                color: BLACK,
-                fontWeight: 450,
-                backgroundColor: searchFocused ? WHITE : SURFACE,
-                border: `1.5px solid ${searchFocused ? TEAL : "transparent"}`,
-                borderRadius: 11,
-                outline: "none",
-                boxShadow: searchFocused ? `0 0 0 3px ${TEAL_FOCUS}` : "none",
-                transition: "all 0.15s",
-              }}
+              placeholder="Search features…"
+              className={cn(
+                "w-full h-10 pl-9 pr-[34px] text-[13px] text-th-text-primary font-[450] rounded-[11px] outline-none transition-all duration-150",
+                "focus:bg-th-surface-0 focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+                "bg-th-warm-surface border-[1.5px] border-transparent",
+              )}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer flex items-center justify-center"
               >
-                <X size={13} color={GRAY_400} />
+                <X size={13} className="text-th-warm-text-muted" />
               </button>
             )}
           </div>
@@ -242,28 +156,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
 
         {/* Pills */}
         {filteredFeatures.length === 0 && !searchQuery ? null : filteredFeatures.length === 0 ? (
-          <div
-            style={{
-              padding: "30px 0",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-            }}
-          >
-            <Search size={22} color={GRAY_200} />
-            <p style={{ fontSize: 13, color: GRAY_400 }}>No features match "{searchQuery}"</p>
+          <div className="py-[30px] flex flex-col items-center gap-2">
+            <Search size={22} className="text-th-warm-border" />
+            <p className="text-[13px] text-th-warm-text-muted">No features match "{searchQuery}"</p>
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              style={{
-                fontSize: 12,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: "transparent",
-                border: "none",
-                cursor: "pointer",
-              }}
+              className="text-[12px] font-bold text-th-brand bg-transparent border-none cursor-pointer"
             >
               Clear search
             </button>
@@ -276,24 +175,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={`custom-${idx}`}
                 type="button"
                 onClick={() => handleRemoveCustom(idx)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 14px",
-                  borderRadius: 99,
-                  border: `1.5px solid ${TEAL}`,
-                  backgroundColor: TEAL_BG,
-                  boxShadow: `0 0 0 3px ${TEAL_RING}`,
-                  cursor: "pointer",
-                  color: TEAL,
-                }}
+                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] cursor-pointer text-th-brand"
               >
-                <MoreHorizontal size={14} color={TEAL} />
-                <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                <MoreHorizontal size={14} />
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">
                   {feature}
                 </span>
-                <X size={12} color={TEAL} />
+                <X size={12} />
               </button>
             ))}
 
@@ -307,57 +195,32 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   key={feature.value + idx}
                   type="button"
                   onClick={() => toggleFeatureSelection(feature.value)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "8px 14px",
-                    borderRadius: 99,
-                    border: `1.5px solid ${isSelected ? TEAL : GRAY_200}`,
-                    backgroundColor: isSelected ? TEAL_BG : SURFACE,
-                    boxShadow: isSelected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    color: isSelected ? TEAL : GRAY_600,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isSelected) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isSelected) {
-                      (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                      (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                    }
-                  }}
+                  className={cn(
+                    "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                    isSelected
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                      : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+                  )}
                 >
                   <span
-                    style={{
-                      width: 18,
-                      height: 18,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                      opacity: isSelected ? 1 : 0.65,
-                      transition: "opacity 0.15s",
-                    }}
+                    className={cn(
+                      "w-[18px] h-[18px] flex items-center justify-center shrink-0 transition-opacity duration-150",
+                      isSelected ? "opacity-100" : "opacity-65",
+                    )}
                   >
                     {isAdminFeature ? (
                       <img
                         src={getImageUrl(feature.icon as string)}
                         alt=""
-                        style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                        className="w-full h-full object-contain"
                       />
                     ) : typeof feature.icon === "string" ? (
-                      <span style={{ fontSize: 14, lineHeight: 1 }}>{feature.icon}</span>
+                      <span className="text-[14px] leading-none">{feature.icon}</span>
                     ) : (
                       <feature.icon size={15} />
                     )}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                  <span className="text-[13px] font-semibold tracking-[-0.01em]">
                     {feature.label}
                   </span>
                 </button>
@@ -367,18 +230,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             {/* ── Inline custom input pill ── */}
             {customFeatures.length < 20 &&
               (showCustomFeaturesInput ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "4px 6px 4px 14px",
-                    borderRadius: 99,
-                    border: `1.5px solid ${TEAL}`,
-                    backgroundColor: WHITE,
-                    boxShadow: `0 0 0 3px ${TEAL_RING}`,
-                  }}
-                >
+                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(15,92,138,0.20)]">
                   <input
                     ref={inputRef}
                     type="text"
@@ -391,36 +243,20 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                         setCustomFeatureInput("");
                       }
                     }}
-                    placeholder="Feature name\u2026"
+                    placeholder="Feature name…"
                     maxLength={50}
-                    style={{
-                      width: 130,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: BLACK,
-                      backgroundColor: "transparent",
-                      border: "none",
-                      outline: "none",
-                      letterSpacing: "-0.01em",
-                    }}
+                    className="w-[130px] text-[13px] font-semibold text-th-text-primary bg-transparent border-none outline-none tracking-[-0.01em]"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustom}
                     disabled={!customFeatureInput.trim()}
-                    style={{
-                      height: 28,
-                      padding: "0 12px",
-                      borderRadius: 99,
-                      border: "none",
-                      backgroundColor: customFeatureInput.trim() ? TEAL : GRAY_200,
-                      color: customFeatureInput.trim() ? WHITE : GRAY_400,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: customFeatureInput.trim() ? "pointer" : "not-allowed",
-                      transition: "all 0.15s",
-                      flexShrink: 0,
-                    }}
+                    className={cn(
+                      "h-7 px-3 rounded-full border-none text-[12px] font-bold transition-all duration-150 shrink-0",
+                      customFeatureInput.trim()
+                        ? "bg-th-brand text-th-text-inverse cursor-pointer"
+                        : "bg-th-warm-border text-th-warm-text-muted cursor-not-allowed",
+                    )}
                   >
                     Add
                   </button>
@@ -430,49 +266,19 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                       setShowCustomFeaturesInput(false);
                       setCustomFeatureInput("");
                     }}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 99,
-                      border: "none",
-                      backgroundColor: "transparent",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      flexShrink: 0,
-                    }}
+                    className="w-7 h-7 rounded-full border-none bg-transparent flex items-center justify-center cursor-pointer shrink-0"
                   >
-                    <X size={13} color={GRAY_400} />
+                    <X size={13} className="text-th-warm-text-muted" />
                   </button>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => setShowCustomFeaturesInput(true)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 14px",
-                    borderRadius: 99,
-                    border: `1.5px dashed ${GRAY_200}`,
-                    backgroundColor: "transparent",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                    color: GRAY_400,
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                    (e.currentTarget as HTMLButtonElement).style.color = TEAL;
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                    (e.currentTarget as HTMLButtonElement).style.color = GRAY_400;
-                  }}
+                  className="flex items-center gap-1.5 px-[14px] py-2 rounded-full border-[1.5px] border-dashed border-th-warm-border bg-transparent cursor-pointer transition-all duration-150 text-th-warm-text-muted hover:border-th-brand hover:text-th-brand"
                 >
                   <Plus size={13} strokeWidth={2.5} />
-                  <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                  <span className="text-[13px] font-semibold tracking-[-0.01em]">
                     Add custom
                   </span>
                 </button>
@@ -483,23 +289,18 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
 
       {/* ── Error message ── */}
       {hasError && (
-        <div
-          style={{
-            width: "100%",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "10px 14px",
-            borderRadius: 13,
-            backgroundColor: ERROR_BG,
-            border: "1.5px solid #fca5a5",
-          }}
-        >
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-            <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+        <div className="w-full flex items-center gap-2 px-[14px] py-2.5 rounded-[13px] bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="shrink-0 text-th-error-bright"
+          >
+            <circle cx="6" cy="6" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M6 3.5v3M6 8.25v.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <p style={{ fontSize: 12, fontWeight: 600, color: ERROR }}>{errors.features}</p>
+          <p className="text-[12px] font-semibold text-th-error-bright">{errors.features}</p>
         </div>
       )}
     </div>

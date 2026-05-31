@@ -18,13 +18,8 @@ import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
 import {
   OfferingCard,
   OfferPanel,
-  TEAL,
-  BLACK,
-  GRAY_400,
-  GRAY_500,
-  GRAY_200,
-  WHITE,
 } from "@/components/offering";
+import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import {
@@ -43,62 +38,25 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = TEAL }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: `1.5px solid ${GRAY_200}`,
-      borderRadius: 16,
-      padding: "14px 16px",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-    }}
-  >
+}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+  <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
+      className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
       style={{
-        width: 38,
-        height: 38,
-        borderRadius: 11,
         backgroundColor: `${accent}14`,
-        border: `1.5px solid ${accent}30`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
+        borderColor: `${accent}30`,
       }}
     >
       {icon}
     </div>
-    <div style={{ minWidth: 0 }}>
-      <p
-        style={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: GRAY_400,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          marginBottom: 2,
-        }}
-      >
+    <div className="min-w-0">
+      <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.04em] mb-[2px]">
         {label}
       </p>
-      <p
-        style={{
-          fontSize: 18,
-          fontWeight: 800,
-          color: BLACK,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.1,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
+      <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
         {value}
       </p>
-      {hint && <p style={{ fontSize: 10.5, color: GRAY_500, marginTop: 2 }}>{hint}</p>}
+      {hint && <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>}
     </div>
   </div>
 );
@@ -112,24 +70,10 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
     <DropdownMenuTrigger asChild>
       <button
         type="button"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          height: 42,
-          padding: "0 14px",
-          borderRadius: 12,
-          border: `1.5px solid ${GRAY_200}`,
-          backgroundColor: WHITE,
-          fontSize: 13,
-          fontWeight: 600,
-          color: BLACK,
-          cursor: "pointer",
-          whiteSpace: "nowrap",
-        }}
+        className="inline-flex items-center gap-2 h-[42px] px-3.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 text-[13px] font-semibold text-th-text-primary cursor-pointer whitespace-nowrap"
       >
         {label}
-        <ChevronDown size={14} color={GRAY_400} />
+        <ChevronDown size={14} className="text-th-warm-text-muted" />
       </button>
     </DropdownMenuTrigger>
     <DropdownMenuContent align="start" className="w-48 p-1.5">
@@ -159,7 +103,6 @@ const Offering = () => {
   const [page, setPage] = useState(1);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  // Service-type filter for the property grid (e.g. only Camper Vans).
   const [typeFilter, setTypeFilter] = useState<"all" | "camper-van" | "unique-stay" | "activity">(
     "all",
   );
@@ -171,7 +114,6 @@ const Offering = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editing, setEditing] = useState<OfferDTO | null>(null);
 
-  // Confirm state — single object drives one ConfirmModal
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
@@ -186,9 +128,6 @@ const Offering = () => {
   }, [activeTab]);
   const enabled = !!user?.id;
 
-  // Two parallel queries — one per status. The legacy code refetched
-  // BOTH every 100s; useQuery's refetchInterval gives us the same
-  // polling cadence and dedupes on tab switches.
   const approvedQuery = useQuery<OfferDTO[]>({
     queryKey: ["offerings", "approved", user?.id],
     enabled,
@@ -218,7 +157,6 @@ const Offering = () => {
 
   const baseOffers = activeTab === "approved" ? approvedOffers : pendingOffers;
 
-  // Search + type filtering applied on top of the active tab.
   const offers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return baseOffers.filter((o) => {
@@ -234,14 +172,10 @@ const Offering = () => {
     });
   }, [baseOffers, typeFilter, searchQuery]);
 
-  // Reset to page 1 whenever filters change so the user isn't stranded on a
-  // page that no longer has rows.
   useEffect(() => {
     setPage(1);
   }, [searchQuery, typeFilter]);
 
-  // KPI cards reflect the user's total catalog (not the filtered view) — they
-  // measure the business, not the search.
   const stats = useMemo(() => {
     const revenue = approvedOffers.reduce(
       (sum, o) => sum + Number(o.regularPrice || 0),
@@ -303,44 +237,20 @@ const Offering = () => {
         contentClassName="flex-1 flex flex-col overflow-hidden p-4 lg:p-5"
       >
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* ── Header (title + subtitle + primary CTA) ── */}
+          {/* ── Header ── */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5">
             <div>
-              <h1
-                style={{
-                  fontSize: 22,
-                  fontWeight: 800,
-                  color: BLACK,
-                  letterSpacing: "-0.025em",
-                  lineHeight: 1.2,
-                }}
-              >
+              <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
                 Offerings
               </h1>
-              <p style={{ fontSize: 13, color: GRAY_400, marginTop: 3 }}>
+              <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
                 Manage Properties
               </p>
             </div>
             <button
               type="button"
               onClick={() => navigate("/offering/add")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                height: 42,
-                padding: "0 20px",
-                borderRadius: 13,
-                border: "none",
-                backgroundColor: TEAL,
-                fontSize: 13,
-                fontWeight: 700,
-                color: WHITE,
-                cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
-                transition: "all 0.15s",
-                width: "fit-content",
-              }}
+              className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150 w-fit"
             >
               <Plus size={16} strokeWidth={2.5} /> Add Offering
             </button>
@@ -363,45 +273,26 @@ const Offering = () => {
               accent="#f59e0b"
             />
             <StatCard
-              icon={<IndianRupee size={15} color={TEAL} strokeWidth={2.2} />}
+              icon={<IndianRupee size={15} className="text-th-brand" strokeWidth={2.2} />}
               label="Revenue"
               value={currencyINR(stats.revenue)}
               hint="Approved catalog value"
             />
           </div>
 
-          {/* ── Filter row (search + type) ── */}
+          {/* ── Filter row ── */}
           <div className="flex flex-wrap items-center gap-2.5 pb-4">
             <div
-              className="flex items-center"
-              style={{
-                flex: "1 1 220px",
-                minWidth: 200,
-                maxWidth: 360,
-                height: 42,
-                borderRadius: 12,
-                border: `1.5px solid ${GRAY_200}`,
-                backgroundColor: WHITE,
-                padding: "0 12px",
-                gap: 8,
-              }}
+              className="flex items-center gap-2 h-[42px] px-3 rounded-[12px] border border-th-warm-border bg-th-surface-0"
+              style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 360 }}
             >
-              <Search size={15} color={GRAY_400} />
+              <Search size={15} className="text-th-warm-text-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search property…"
-                style={{
-                  flex: 1,
-                  height: "100%",
-                  border: "none",
-                  outline: "none",
-                  fontSize: 13,
-                  color: BLACK,
-                  backgroundColor: "transparent",
-                  fontWeight: 450,
-                }}
+                className="flex-1 h-full border-none outline-none text-[13px] text-th-text-primary bg-transparent font-[450]"
               />
             </div>
             <FilterPill
@@ -434,11 +325,8 @@ const Offering = () => {
             </FilterPill>
           </div>
 
-          {/* ── Status tabs (with counts) ── */}
-          <div
-            className="flex gap-1 mb-4"
-            style={{ width: "fit-content" }}
-          >
+          {/* ── Status tabs ── */}
+          <div className="flex gap-1 mb-4 w-fit">
             {tabs.map((t) => {
               const active = activeTab === t.key;
               return (
@@ -446,31 +334,19 @@ const Offering = () => {
                   key={t.key}
                   type="button"
                   onClick={() => setActiveTab(t.key)}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "8px 16px",
-                    borderRadius: 999,
-                    border: `1.5px solid ${active ? `${TEAL}30` : GRAY_200}`,
-                    backgroundColor: active ? `${TEAL}10` : WHITE,
-                    color: active ? TEAL : GRAY_500,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-[1.5px] text-[13px] font-bold cursor-pointer transition-all duration-150",
+                    active
+                      ? "border-th-brand-border-soft bg-th-brand-soft text-th-brand"
+                      : "border-th-warm-border bg-th-surface-0 text-th-warm-text-dark",
+                  )}
                 >
                   {t.label}
                   <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      padding: "1px 7px",
-                      borderRadius: 999,
-                      backgroundColor: active ? `${TEAL}1f` : "#EBEBEB",
-                      color: active ? TEAL : GRAY_500,
-                    }}
+                    className={cn(
+                      "text-[11px] font-bold px-[7px] py-[1px] rounded-full",
+                      active ? "bg-th-brand-soft text-th-brand" : "bg-[#EBEBEB] text-th-warm-text-dark",
+                    )}
                   >
                     {t.count}
                   </span>

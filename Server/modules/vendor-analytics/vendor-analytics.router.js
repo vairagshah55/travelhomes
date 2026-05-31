@@ -9,8 +9,19 @@ const router = express.Router();
 
 router.get("/snapshot/latest", controller.getLatestSnapshot);
 router.post("/snapshot", controller.createSnapshot);
-router.get("/graphs", validate({ query: dto.graphsQuery }), controller.getGraphs);
-router.delete("/reset", requireJwt(), controller.resetMetrics);
+// requireJwt(optional) so an admin/public hit still works (falls back to
+// platform-wide totals) but a logged-in vendor sees their own series only.
+router.get(
+  "/graphs",
+  requireJwt({ optional: true }),
+  validate({ query: dto.graphsQuery }),
+  controller.getGraphs,
+);
+// Admin-only — this endpoint wipes platform-wide impressions, visitors, and
+// click counters. Was previously open to any vendor JWT, which meant a leaked
+// vendor token could nuke everyone's analytics. The CLI fallback at
+// `Server/scripts/reset-impressions.js` remains available for local dev.
+router.delete("/reset", requireJwt({ adminOnly: true }), controller.resetMetrics);
 
 router.get("/", requireJwt({ optional: true }), controller.getCounts);
 

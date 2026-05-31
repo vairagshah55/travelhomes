@@ -2,23 +2,14 @@ import React from "react";
 import { MoreHorizontal, Edit2, Eye, Trash2, MapPin, Users, Moon, Image as ImageIcon, IndianRupee } from "lucide-react";
 import { type OfferDTO, offersApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
-const TEAL      = "#0F5C8A";
-const TEAL_BG   = "rgba(15, 92, 138, 0.07)";
-const BLACK     = "#131313";
-const GRAY_500  = "#6b6b6b";
-const GRAY_400  = "#9a9a9a";
-const GRAY_200  = "#e4e4e4";
-const WHITE     = "#ffffff";
-const SURFACE   = "#F7F8FA";
-const GREEN     = "#16a34a";
-const AMBER     = "#d97706";
-const ERROR     = "#ef4444";
-
+// Status colors kept as data objects since they come from non-token palette
+// (semantic green/amber/red for approved/pending/cancelled — not th-brand).
 const STATUS: Record<string, { bg: string; color: string; border: string }> = {
-  approved:  { bg: "#f0fdf4", color: GREEN, border: `${GREEN}25` },
-  pending:   { bg: "#fffbeb", color: AMBER, border: `${AMBER}25` },
-  cancelled: { bg: "#fef2f2", color: ERROR, border: `${ERROR}25` },
+  approved:  { bg: "#f0fdf4", color: "#16a34a", border: "#16a34a25" },
+  pending:   { bg: "#fffbeb", color: "#d97706", border: "#d9770625" },
+  cancelled: { bg: "#fef2f2", color: "#ef4444", border: "#ef444425" },
 };
 
 export const OfferingCard = ({ listing, showDropdown, onToggleDropdown, onDelete, onEdit, onCardClick }: {
@@ -42,50 +33,51 @@ export const OfferingCard = ({ listing, showDropdown, onToggleDropdown, onDelete
   return (
     <div
       onClick={() => onCardClick(id)}
-      style={{
-        backgroundColor: WHITE,
-        border: "1.5px solid #EBEBEB",
-        borderRadius: 20,
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "all 0.2s",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-      }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 12px 32px rgba(0,0,0,0.1)"; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 12px rgba(0,0,0,0.04)"; }}
+      className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] overflow-hidden cursor-pointer transition-all duration-200 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(0,0,0,0.1)]"
     >
       {/* Image */}
-      <div style={{ position: "relative", height: 200, overflow: "hidden", backgroundColor: SURFACE }}>
+      <div className="relative h-[200px] overflow-hidden bg-th-warm-surface">
         {cover ? (
-          <img src={getImageUrl(cover)} alt={listing.name} style={{ width: "100%", height: "100%", objectFit: "cover", transition: "transform 0.5s" }} />
+          <img src={getImageUrl(cover)} alt={listing.name} className="w-full h-full object-cover transition-transform duration-500" />
         ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <ImageIcon size={36} color={GRAY_200} />
+          <div className="w-full h-full flex items-center justify-center">
+            <ImageIcon size={36} className="text-th-warm-border" />
           </div>
         )}
 
         {/* Status + menu overlay */}
-        <div style={{ position: "absolute", top: 12, left: 12, right: 12, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, backgroundColor: s.bg, color: s.color, border: `1px solid ${s.border}`, textTransform: "capitalize", backdropFilter: "blur(4px)" }}>
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+          <span
+            className="text-[11px] font-bold px-2.5 py-[3px] rounded-full capitalize backdrop-blur-sm"
+            style={{ backgroundColor: s.bg, color: s.color, border: `1px solid ${s.border}` }}
+          >
             {status}
           </span>
 
-          <div style={{ position: "relative" }} onClick={(e) => e.stopPropagation()}>
-            <button type="button" onClick={() => onToggleDropdown(id)}
-              style={{ width: 32, height: 32, borderRadius: "50%", backgroundColor: "rgba(255,255,255,0.9)", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", backdropFilter: "blur(4px)", boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-              <MoreHorizontal size={14} color={GRAY_500} />
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => onToggleDropdown(id)}
+              className="w-8 h-8 rounded-full bg-white/90 border-none flex items-center justify-center cursor-pointer backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
+            >
+              <MoreHorizontal size={14} className="text-th-warm-text-dark" />
             </button>
             {showDropdown === id && (
-              <div style={{ position: "absolute", right: 0, top: 38, width: 160, backgroundColor: WHITE, border: "1.5px solid #EBEBEB", borderRadius: 14, boxShadow: "0 8px 30px rgba(0,0,0,0.12)", overflow: "hidden", zIndex: 20 }}>
+              <div className="absolute right-0 top-[38px] w-[160px] bg-th-surface-0 border border-[#EBEBEB] rounded-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden z-20">
                 {[
-                  { icon: <Edit2 size={13} />, label: "Edit", action: () => onEdit(listing), color: GRAY_500 },
-                  { icon: <Eye size={13} />, label: "View Details", action: () => onCardClick(id), color: GRAY_500 },
-                  ...(status !== "approved" ? [{ icon: <Trash2 size={13} />, label: "Delete", action: () => onDelete(id), color: ERROR }] : []),
+                  { icon: <Edit2 size={13} />, label: "Edit", action: () => onEdit(listing), danger: false },
+                  { icon: <Eye size={13} />, label: "View Details", action: () => onCardClick(id), danger: false },
+                  ...(status !== "approved" ? [{ icon: <Trash2 size={13} />, label: "Delete", action: () => onDelete(id), danger: true }] : []),
                 ].map((item) => (
-                  <button key={item.label} type="button" onClick={item.action}
-                    style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", backgroundColor: "transparent", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600, color: item.color, transition: "background-color 0.1s" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent"; }}>
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={item.action}
+                    className={cn(
+                      "w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-transparent border-none cursor-pointer text-[13px] font-semibold transition-colors hover:bg-th-warm-surface",
+                      item.danger ? "text-th-error-bright" : "text-th-warm-text-dark",
+                    )}
+                  >
                     {item.icon} {item.label}
                   </button>
                 ))}
@@ -95,36 +87,38 @@ export const OfferingCard = ({ listing, showDropdown, onToggleDropdown, onDelete
         </div>
 
         {/* Category */}
-        <div style={{ position: "absolute", bottom: 12, left: 12 }}>
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, backgroundColor: "rgba(0,0,0,0.5)", color: WHITE, backdropFilter: "blur(4px)" }}>
+        <div className="absolute bottom-3 left-3">
+          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/50 text-th-text-inverse backdrop-blur-sm">
             {category}
           </span>
         </div>
       </div>
 
       {/* Content */}
-      <div style={{ padding: "14px 16px 16px" }}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: BLACK, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div className="px-4 pb-4 pt-3.5">
+        <h3 className="text-[14px] font-bold text-th-text-primary mb-[2px] whitespace-nowrap overflow-hidden text-ellipsis">
           {listing.name}
         </h3>
         {location && (
-          <p style={{ fontSize: 12, color: GRAY_400, marginBottom: 10, display: "flex", alignItems: "center", gap: 4 }}>
+          <p className="text-[12px] text-th-warm-text-muted mb-2.5 flex items-center gap-1">
             <MapPin size={11} /> {location}
           </p>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: GRAY_400, marginBottom: 12 }}>
-          {seats > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Users size={12} /> {seats} seats</span>}
-          {seats > 0 && sleeps > 0 && <span style={{ color: GRAY_200 }}>·</span>}
-          {sleeps > 0 && <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Moon size={12} /> {sleeps} sleeps</span>}
+        <div className="flex items-center gap-2 text-[12px] text-th-warm-text-muted mb-3">
+          {seats > 0 && <span className="flex items-center gap-[3px]"><Users size={12} /> {seats} seats</span>}
+          {seats > 0 && sleeps > 0 && <span className="text-th-warm-border">·</span>}
+          {sleeps > 0 && <span className="flex items-center gap-[3px]"><Moon size={12} /> {sleeps} sleeps</span>}
         </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div className="flex items-center justify-between">
           <div>
-            <span style={{ fontSize: 18, fontWeight: 800, color: BLACK }}>₹{price.toLocaleString("en-IN")}</span>
-            <span style={{ fontSize: 11, color: GRAY_400, marginLeft: 4 }}>/ day</span>
+            <span className="text-[18px] font-extrabold text-th-text-primary">₹{price.toLocaleString("en-IN")}</span>
+            <span className="text-[11px] text-th-warm-text-muted ml-1">/ day</span>
           </div>
-          <button type="button"
+          <button
+            type="button"
             onClick={(e) => { e.stopPropagation(); onCardClick(id); }}
-            style={{ fontSize: 12, fontWeight: 700, padding: "6px 14px", borderRadius: 99, border: `1.5px solid ${TEAL}`, backgroundColor: TEAL_BG, color: TEAL, cursor: "pointer", transition: "all 0.15s" }}>
+            className="text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-th-brand bg-th-brand-soft text-th-brand cursor-pointer transition-all"
+          >
             View
           </button>
         </div>

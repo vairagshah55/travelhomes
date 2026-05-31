@@ -7,24 +7,15 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountriesData } from "@/hooks/useCountriesData";
+import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
+import { cn } from "@/lib/utils";
 import {
-  TEAL,
-  BLACK,
-  GRAY_500,
-  GRAY_400,
-  GRAY_200,
-  WHITE,
-  SURFACE,
-  ERROR,
-  ERROR_BG,
   SectionCard,
   Field,
   StyledInput,
-  StyledTextarea,
   StyledSelect,
-  RulesList,
   FeaturePill,
 } from "@/components/offering";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
@@ -39,66 +30,30 @@ import {
   PricingStep as CaravanPricingStep,
 } from "@/components/onboarding/caravan";
 
-// ─── Constants (mirrors AddOfferings) ─────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────────────────────────
 const TABS = [
   { key: "camper-van", label: "Camper Van", icon: <PiVanBold size={16} /> },
   { key: "unique-stay", label: "Unique Stays", icon: <Tent size={16} /> },
   { key: "activity", label: "Activities", icon: <GiBinoculars size={16} /> },
 ];
 
-// Camper-van categories live in CaravanCategoryStep — single source of
-// truth. Keep unique-stay + activity here until those tabs are migrated too.
-const CATEGORIES: Record<string, string[]> = {
-  "unique-stay": [
-    "Villa",
-    "Cabin",
-    "Castle",
-    "Cave",
-    "Farmhouse",
-    "Camping",
-    "Hut",
-    "Heritage",
-    "Tiny Home",
-    "Tent",
-    "Container",
-    "Treehouse",
-  ],
-  activity: [
-    "Hiking",
-    "Camping",
-    "Rafting",
-    "Paragliding",
-    "Trekking",
-    "Biking",
-    "Safari",
-    "Snorkeling",
-    "Kayaking",
-  ],
-};
-
-// Camper-van features live in CaravanFeaturesStep — single source of truth.
-// Keep unique-stay + activity here until those tabs are migrated too.
-const FEATURES: Record<string, string[]> = {
-  "unique-stay": [
-    "WiFi",
-    "AC",
-    "Kitchen",
-    "Pool",
-    "Parking",
-    "Garden",
-    "BBQ",
-    "Fireplace",
-    "Hot Tub",
-    "Gym",
-    "Laundry",
-  ],
-  activity: ["Guide", "Equipment", "Meals", "Transport", "Insurance", "Photography"],
-};
+// Categories + features for unique-stay & activity tabs are now CMS-driven
+// via useOfferingCatalog() (see hooks/useOfferingCatalog.ts). Camper-van
+// uses the onboarding step components' own hardcoded taxonomy directly.
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
-// EditPhotoGrid removed — all three tabs now use CaravanDescriptionStep for
-// photo + cover handling (via handleBridgeCoverUpload/handleBridgePhotoUpload).
+// Wizard step definitions for the edit page. No "Type" step because the
+// service type is fixed at create time and can't be changed via edit. Mirrors
+// the AddOfferings wizard so vendors get the same flow on both surfaces.
+const STEPS = [
+  { key: "category", label: "Category", short: "Category" },
+  { key: "basics", label: "Basics & Photos", short: "Basics" },
+  { key: "features", label: "Features", short: "Features" },
+  { key: "location", label: "Location & Capacity", short: "Location" },
+  { key: "pricing", label: "Pricing & Discounts", short: "Pricing" },
+  { key: "review", label: "Review & Save", short: "Review" },
+] as const;
 
 // ═════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -108,9 +63,10 @@ const EditOfferings = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const [activeTab, setActiveTab] = useState("camper-van");
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [, setUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // ─── Form state ────────────────────────────────────────────────────────────
@@ -125,7 +81,6 @@ const EditOfferings = () => {
     pincode: "",
     city: "",
     state: "",
-    // Camper Van
     seatingCapacity: "1",
     sleepingCapacity: "0",
     perKmCharge: "",
@@ -134,7 +89,6 @@ const EditOfferings = () => {
     perKmExcludes: [] as string[],
     perDayIncludes: [] as string[],
     perDayExcludes: [] as string[],
-    // Unique Stay
     stayType: "entire",
     guestCapacity: 1,
     numberOfRooms: 0,
@@ -143,18 +97,14 @@ const EditOfferings = () => {
     rooms: [] as any[],
     entireStayRules: [] as string[],
     optionalRules: [] as string[],
-    // Activity
     activityName: "",
     timeDuration: "",
     personCapacity: 1,
     expectations: [] as string[],
     priceDetails: [] as any[],
-    // Pricing
     regularPrice: "",
     priceIncludes: [] as string[],
     priceExcludes: [] as string[],
-    // Discounts — UI-only state; the model has no discount fields so these
-    // reset on every reload. finalPrice fields mirror the onboarding shape.
     firstUserDiscount: false,
     firstUserDiscountType: "percentage",
     firstUserDiscountValue: "",
@@ -173,13 +123,9 @@ const EditOfferings = () => {
     specialOffersFinalPrice: "",
   });
 
-  // Photos tracked as URLs directly (edit-safe)
   const [coverUrl, setCoverUrl] = useState("");
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
 
-  // ─── Load offer ────────────────────────────────────────────────────────────
-  // useQuery caches the offer keyed by id so navigating from /offering →
-  // /offering/:id/edit and back doesn't re-hit the API.
   const offerQuery = useQuery({
     queryKey: ["offer", id],
     enabled: !!id,
@@ -189,10 +135,6 @@ const EditOfferings = () => {
     },
   });
 
-  // Mirror the fetched offer into the editable form state on first load.
-  // Keyed by `offerQuery.data` so resetting the cache (e.g. invalidate)
-  // re-seeds the form. We don't restore unsaved edits on refetch — this
-  // matches the legacy fire-once behavior.
   useEffect(() => {
     if (!offerQuery.data) return;
     const o = offerQuery.data;
@@ -216,7 +158,6 @@ const EditOfferings = () => {
       pincode: o.pincode || "",
       city: o.city || "",
       state: o.state || "",
-      // Camper Van
       seatingCapacity: String(o.seatingCapacity || "1"),
       sleepingCapacity: String(o.sleepingCapacity || "0"),
       perKmCharge: String(o.perKmCharge || ""),
@@ -225,7 +166,6 @@ const EditOfferings = () => {
       perKmExcludes: o.perKmExcludes || [],
       perDayIncludes: o.perDayIncludes || [],
       perDayExcludes: o.perDayExcludes || [],
-      // Unique Stay
       stayType: o.stayType || "entire",
       guestCapacity: Number(o.guestCapacity || 1),
       numberOfRooms: Number(o.numberOfRooms || 0),
@@ -234,32 +174,32 @@ const EditOfferings = () => {
       rooms: [],
       entireStayRules: [],
       optionalRules: [],
-      // Activity
       timeDuration: o.timeDuration || "",
       personCapacity: Number(o.personCapacity || 1),
       expectations: o.expectations || [],
       priceDetails: [],
-      // Pricing
       regularPrice: String(o.regularPrice || ""),
       priceIncludes: o.priceIncludes?.length ? o.priceIncludes : [],
       priceExcludes: o.priceExcludes?.length ? o.priceExcludes : [],
-      // Discounts (not persisted in model, reset)
-      firstUserDiscount: false,
-      firstUserDiscountType: "percentage",
-      firstUserDiscountValue: "",
-      firstUserDiscountFinalPrice: "",
-      festivalOffers: false,
-      festivalOffersType: "percentage",
-      festivalOffersValue: "",
-      festivalOffersFinalPrice: "",
-      weeklyMonthlyOffers: false,
-      weeklyMonthlyOffersType: "percentage",
-      weeklyMonthlyOffersValue: "",
-      weeklyMonthlyOffersFinalPrice: "",
-      specialOffers: false,
-      specialOffersType: "percentage",
-      specialOffersValue: "",
-      specialOffersFinalPrice: "",
+      // Seed discount slots from the persisted sub-doc (server-side
+      // schema: Offer.discounts). Falls back to "off + percentage" defaults
+      // when an offer has never had its discounts saved.
+      firstUserDiscount: o.discounts?.firstUser?.enabled ?? false,
+      firstUserDiscountType: o.discounts?.firstUser?.type ?? "percentage",
+      firstUserDiscountValue: o.discounts?.firstUser?.value ?? "",
+      firstUserDiscountFinalPrice: o.discounts?.firstUser?.finalPrice ?? "",
+      festivalOffers: o.discounts?.festival?.enabled ?? false,
+      festivalOffersType: o.discounts?.festival?.type ?? "percentage",
+      festivalOffersValue: o.discounts?.festival?.value ?? "",
+      festivalOffersFinalPrice: o.discounts?.festival?.finalPrice ?? "",
+      weeklyMonthlyOffers: o.discounts?.weekly?.enabled ?? false,
+      weeklyMonthlyOffersType: o.discounts?.weekly?.type ?? "percentage",
+      weeklyMonthlyOffersValue: o.discounts?.weekly?.value ?? "",
+      weeklyMonthlyOffersFinalPrice: o.discounts?.weekly?.finalPrice ?? "",
+      specialOffers: o.discounts?.special?.enabled ?? false,
+      specialOffersType: o.discounts?.special?.type ?? "percentage",
+      specialOffersValue: o.discounts?.special?.value ?? "",
+      specialOffersFinalPrice: o.discounts?.special?.finalPrice ?? "",
     });
 
     setCoverUrl(o.photos?.coverUrl || "");
@@ -308,18 +248,11 @@ const EditOfferings = () => {
       features: p.features.includes(f) ? p.features.filter((x) => x !== f) : [...p.features, f],
     }));
 
-  // ─── Onboarding-step bridging ──────────────────────────────────────────────
-  // The camper-van branch reuses the onboarding step components inline so the
-  // edit page matches the create flow. These bridges adapt EditOfferings'
-  // URL-based photo state and string-typed capacity to the shapes the step
-  // components expect, plus expose the location data + map source they need.
   const locationData = useCountriesData();
   const mapQuery =
     `${formData.address || ""} ${formData.city || ""} ${formData.state || ""} ${formData.pincode || ""} India`.trim();
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;
 
-  // Used by the unique-stay + activity tabs' Location section so State/City
-  // become searchable dropdowns matching the camper-van flow.
   const locationCountry = useMemo(
     () => locationData.find((c: any) => c.name === (formData.locality || "India")),
     [locationData, formData.locality],
@@ -345,8 +278,6 @@ const EditOfferings = () => {
     const name = customFeatureInput.trim();
     if (!name) return;
     setCustomFeatures((prev) => [...prev, { name, icon: null }]);
-    // Also fold the custom name into the persisted features array so save
-    // round-trips it; on next load it'll just show as a regular pill.
     setFormData((p) => ({
       ...p,
       features: p.features.includes(name) ? p.features : [...p.features, name],
@@ -379,8 +310,6 @@ const EditOfferings = () => {
     });
   };
 
-  // Single-file upload helper, lifted out of EditPhotoGrid so the camper-van
-  // branch can hand FileList objects from DescriptionStep into the same path.
   const uploadFileToServer = async (file: File): Promise<string> => {
     const fd = new FormData();
     fd.append("files", file);
@@ -429,10 +358,6 @@ const EditOfferings = () => {
     }
   };
 
-  // Discount bridging — DiscountOffersStep takes a structured `offers` object
-  // with toggle/change handlers, but our state stores them as flat fields per
-  // legacy edit form. Map between the two shapes here. Discounts are still
-  // not persisted on save (no fields in OfferDTO).
   const DISCOUNT_PREFIX: Record<
     "firstUser" | "festival" | "weekly" | "special",
     "firstUserDiscount" | "festivalOffers" | "weeklyMonthlyOffers" | "specialOffers"
@@ -486,9 +411,6 @@ const EditOfferings = () => {
     setFormData((p) => ({ ...p, [stateField]: value }));
   };
 
-  // Rules in onboarding's DescriptionStep are 0-indexed text entries with
-  // dedicated add/update/remove handlers (no sentinel empty row). Edit seeds
-  // rules with `[""]` so the existing form shows a blank row; bridge both.
   const handleAddRule = () => addArrayItem("rules");
   const handleUpdateRule = (index: number, value: string) =>
     handleArrayChange("rules", index, value);
@@ -557,9 +479,6 @@ const EditOfferings = () => {
         };
       }
 
-      // Camper-van uses perKm/perDay charges + their own includes/excludes,
-      // so we omit the unique-stay/activity regularPrice + priceIncludes/
-      // priceExcludes fields to avoid stomping them with zeros/empties.
       const sharedPriceFields =
         activeTab === "camper-van"
           ? {}
@@ -568,6 +487,37 @@ const EditOfferings = () => {
               priceIncludes: formData.priceIncludes.filter(Boolean),
               priceExcludes: formData.priceExcludes.filter(Boolean),
             };
+
+      // Discount sub-doc — UI was already wired (see DiscountOffersStep);
+      // now we actually persist it on save so vendors don't lose their config
+      // on every edit. Only the four canonical slots are written, matching
+      // the schema on Offer.discounts.
+      const discounts = {
+        firstUser: {
+          enabled: !!formData.firstUserDiscount,
+          type: formData.firstUserDiscountType as "percentage" | "fixed",
+          value: formData.firstUserDiscountValue || "",
+          finalPrice: formData.firstUserDiscountFinalPrice || "",
+        },
+        festival: {
+          enabled: !!formData.festivalOffers,
+          type: formData.festivalOffersType as "percentage" | "fixed",
+          value: formData.festivalOffersValue || "",
+          finalPrice: formData.festivalOffersFinalPrice || "",
+        },
+        weekly: {
+          enabled: !!formData.weeklyMonthlyOffers,
+          type: formData.weeklyMonthlyOffersType as "percentage" | "fixed",
+          value: formData.weeklyMonthlyOffersValue || "",
+          finalPrice: formData.weeklyMonthlyOffersFinalPrice || "",
+        },
+        special: {
+          enabled: !!formData.specialOffers,
+          type: formData.specialOffersType as "percentage" | "fixed",
+          value: formData.specialOffersValue || "",
+          finalPrice: formData.specialOffersFinalPrice || "",
+        },
+      };
 
       const payload: Partial<OfferDTO> = {
         name: activeTab === "activity" ? formData.activityName : formData.name,
@@ -584,6 +534,7 @@ const EditOfferings = () => {
         photos: { coverUrl, galleryUrls },
         serviceType: activeTab,
         status: "pending",
+        discounts,
         ...specificData,
       };
 
@@ -601,9 +552,70 @@ const EditOfferings = () => {
     }
   };
 
-  const categories = CATEGORIES[activeTab] || [];
-  const features = FEATURES[activeTab] || [];
+  const catalog = useOfferingCatalog();
+  const baseCategories = catalog.categories[activeTab] || [];
+  const baseFeatures = catalog.features[activeTab] || [];
+
+  // Defensive merge: if the offering being edited has a category or features
+  // saved with a name that's NOT in the current CMS list (e.g. legacy taxonomy
+  // like "Villa" / "WiFi" that pre-dates the CMS-driven flow), keep those
+  // names visible in the dropdown / pill grid so re-saving doesn't blank
+  // them out. New CMS-listed values take precedence; legacy ones get
+  // appended after.
+  const categories = useMemo(() => {
+    if (!formData.category) return baseCategories;
+    if (baseCategories.includes(formData.category)) return baseCategories;
+    return [...baseCategories, formData.category];
+  }, [baseCategories, formData.category]);
+
+  const features = useMemo(() => {
+    const set = new Set(baseFeatures);
+    const extras = (formData.features || []).filter((f) => f && !set.has(f));
+    return extras.length ? [...baseFeatures, ...extras] : baseFeatures;
+  }, [baseFeatures, formData.features]);
+
   const arrayHelpers = { handleArrayChange, addArrayItem, removeArrayItem };
+
+  // ─── Per-step validation (gates the wizard's Continue button) ─────────
+  const stepCanAdvance = useMemo(() => {
+    const name = activeTab === "activity" ? formData.activityName : formData.name;
+    switch (step) {
+      case 0: // Category
+        return !!formData.category;
+      case 1: // Basics + photos
+        return (
+          !!name?.trim() &&
+          !!formData.description?.trim() &&
+          !!coverUrl &&
+          galleryUrls.length >= 5
+        );
+      case 2: // Features — optional
+        return true;
+      case 3: // Location & capacity
+        return !!formData.state && !!formData.city;
+      case 4: // Pricing
+        if (activeTab === "camper-van") {
+          return !!formData.perKmCharge || !!formData.perDayCharge;
+        }
+        if (activeTab === "activity") {
+          return !!formData.regularPrice && !!formData.timeDuration;
+        }
+        return !!formData.regularPrice;
+      case 5: // Review
+        return true;
+      default:
+        return true;
+    }
+  }, [step, activeTab, formData, coverUrl, galleryUrls]);
+
+  const isLastStep = step === STEPS.length - 1;
+  const onNext = () => {
+    if (isLastStep) handleSubmit();
+    else setStep((s) => Math.min(STEPS.length - 1, s + 1));
+  };
+  const onPrev = () => setStep((s) => Math.max(0, s - 1));
+
+  const currentTab = TABS.find((t) => t.key === activeTab);
 
   if (loading) {
     return (
@@ -616,168 +628,135 @@ const EditOfferings = () => {
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout title="Edit Offering" contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
-          <div className="max-w-3xl mx-auto flex flex-col gap-6">
-            {/* ── Page header ── */}
-            <div className="text-center space-y-2 pt-2">
-              <div className="flex items-center justify-center gap-2.5 mb-3">
-                <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-                <span
-                  style={{
-                    fontSize: 10.5,
-                    fontWeight: 700,
-                    letterSpacing: "0.13em",
-                    textTransform: "uppercase",
-                    color: GRAY_400,
-                  }}
-                >
-                  Edit Listing
-                </span>
-                <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-              </div>
-              <h1
-                style={{
-                  fontSize: "clamp(22px, 3.5vw, 30px)",
-                  fontWeight: 800,
-                  color: BLACK,
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1.15,
-                }}
-              >
-                Edit Offering
-              </h1>
-              <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
-                Update details for your service offering.
-              </p>
+      <div className="max-w-3xl mx-auto flex flex-col gap-6">
+        {/* ── Page header ── */}
+        <div className="text-center space-y-2 pt-2">
+          <div className="flex items-center justify-center gap-2.5 mb-3">
+            <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+            <span className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-th-warm-text-muted">
+              Edit Listing
+            </span>
+            <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          </div>
+          <h1
+            className="font-extrabold text-th-text-primary tracking-[-0.03em] leading-[1.15]"
+            style={{ fontSize: "clamp(22px, 3.5vw, 30px)" }}
+          >
+            Edit Offering
+          </h1>
+          <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
+            Update details for your service offering.
+          </p>
+        </div>
+
+        {/* ── Offering-type badge (read-only) ── */}
+        {(() => {
+          const tab = TABS.find((t) => t.key === activeTab);
+          if (!tab) return null;
+          return (
+            <div className="inline-flex items-center gap-2 self-start px-3.5 py-2 rounded-full bg-th-brand-soft border border-th-brand-border-soft text-th-brand text-[12.5px] font-bold tracking-[0.01em]">
+              {tab.icon}
+              {tab.label}
             </div>
+          );
+        })()}
 
-            {/* ── Offering-type badge (read-only on edit; the offering's type
-                is fixed at creation and a tab switcher here would share state
-                across types and risk converting the offering on save). ── */}
-            {(() => {
-              const tab = TABS.find((t) => t.key === activeTab);
-              if (!tab) return null;
-              return (
-                <div
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    alignSelf: "flex-start",
-                    padding: "8px 14px",
-                    borderRadius: 99,
-                    backgroundColor: `${TEAL}12`,
-                    border: `1.5px solid ${TEAL}30`,
-                    color: TEAL,
-                    fontSize: 12.5,
-                    fontWeight: 700,
-                    letterSpacing: "0.01em",
-                  }}
-                >
-                  {tab.icon}
-                  {tab.label}
-                </div>
-              );
-            })()}
+        {activeTab === "camper-van" ? (
+          <>
+            <CaravanDescriptionStep
+              embedded
+              name={formData.name}
+              description={formData.description}
+              rules={formData.rules}
+              photos={galleryUrls}
+              coverImage={coverUrl ? [coverUrl] : []}
+              errors={{
+                ...errors,
+                coverImage: errors.cover,
+                photos: errors.gallery,
+              }}
+              onNameChange={(v) => set("name", v)}
+              onDescriptionChange={(v) => set("description", v)}
+              onAddRule={handleAddRule}
+              onRemoveRule={handleRemoveRule}
+              onUpdateRule={handleUpdateRule}
+              onPhotoUpload={handleBridgePhotoUpload}
+              onCoverUpload={handleBridgeCoverUpload}
+              onRemovePhoto={(i) =>
+                setGalleryUrls((p) => p.filter((_, idx) => idx !== i))
+              }
+              onRemoveCover={() => setCoverUrl("")}
+              clearError={clearError}
+            />
 
-            {activeTab === "camper-van" ? (
-              <>
-                {/* Camper-van edit now reuses the onboarding step components so
-                    the create/edit flows share one UI. Discount section below
-                    still renders for all tabs. */}
-                <CaravanDescriptionStep
-                  embedded
-                  name={formData.name}
-                  description={formData.description}
-                  rules={formData.rules}
-                  photos={galleryUrls}
-                  coverImage={coverUrl ? [coverUrl] : []}
-                  errors={{
-                    ...errors,
-                    coverImage: errors.cover,
-                    photos: errors.gallery,
-                  }}
-                  onNameChange={(v) => set("name", v)}
-                  onDescriptionChange={(v) => set("description", v)}
-                  onAddRule={handleAddRule}
-                  onRemoveRule={handleRemoveRule}
-                  onUpdateRule={handleUpdateRule}
-                  onPhotoUpload={handleBridgePhotoUpload}
-                  onCoverUpload={handleBridgeCoverUpload}
-                  onRemovePhoto={(i) =>
-                    setGalleryUrls((p) => p.filter((_, idx) => idx !== i))
-                  }
-                  onRemoveCover={() => setCoverUrl("")}
-                  clearError={clearError}
-                />
+            <CaravanCategoryStep
+              embedded
+              category={formData.category || null}
+              onSelect={(name) => set("category", name)}
+            />
 
-                <CaravanCategoryStep
-                  embedded
-                  category={formData.category || null}
-                  onSelect={(name) => set("category", name)}
-                />
+            <CaravanFeaturesStep
+              embedded
+              features={formData.features}
+              customFeatures={customFeatures}
+              showCustomFeaturesInput={showCustomFeaturesInput}
+              customFeatureInput={customFeatureInput}
+              onToggleFeature={toggleFeature}
+              onRemoveCustomFeature={handleRemoveCustomFeature}
+              onToggleCustomInput={() =>
+                setShowCustomFeaturesInput(!showCustomFeaturesInput)
+              }
+              onCustomFeatureInputChange={setCustomFeatureInput}
+              onAddCustomFeature={handleAddCustomFeature}
+            />
 
-                <CaravanFeaturesStep
-                  embedded
-                  features={formData.features}
-                  customFeatures={customFeatures}
-                  showCustomFeaturesInput={showCustomFeaturesInput}
-                  customFeatureInput={customFeatureInput}
-                  onToggleFeature={toggleFeature}
-                  onRemoveCustomFeature={handleRemoveCustomFeature}
-                  onToggleCustomInput={() =>
-                    setShowCustomFeaturesInput(!showCustomFeaturesInput)
-                  }
-                  onCustomFeatureInputChange={setCustomFeatureInput}
-                  onAddCustomFeature={handleAddCustomFeature}
-                />
+            <CaravanCapacityAddressStep
+              embedded
+              seatingCapacity={Number(formData.seatingCapacity) || 1}
+              sleepingCapacity={Number(formData.sleepingCapacity) || 0}
+              address={formData.address}
+              locality={formData.locality || "India"}
+              state={formData.state}
+              city={formData.city}
+              pincode={formData.pincode}
+              locationData={locationData}
+              mapSrc={mapSrc}
+              errors={errors}
+              onAdjustCapacity={adjustCapacity}
+              onAddressChange={(v) => set("address", v)}
+              onLocalityChange={(v) =>
+                setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
+              }
+              onStateChange={(v) =>
+                setFormData((p) => ({ ...p, state: v, city: "" }))
+              }
+              onCityChange={(v) => set("city", v)}
+              onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
+              clearError={clearError}
+            />
 
-                <CaravanCapacityAddressStep
-                  embedded
-                  seatingCapacity={Number(formData.seatingCapacity) || 1}
-                  sleepingCapacity={Number(formData.sleepingCapacity) || 0}
-                  address={formData.address}
-                  locality={formData.locality || "India"}
-                  state={formData.state}
-                  city={formData.city}
-                  pincode={formData.pincode}
-                  locationData={locationData}
-                  mapSrc={mapSrc}
-                  errors={errors}
-                  onAdjustCapacity={adjustCapacity}
-                  onAddressChange={(v) => set("address", v)}
-                  onLocalityChange={(v) =>
-                    setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
-                  }
-                  onStateChange={(v) =>
-                    setFormData((p) => ({ ...p, state: v, city: "" }))
-                  }
-                  onCityChange={(v) => set("city", v)}
-                  onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
-                  clearError={clearError}
-                />
-
-                <CaravanPricingStep
-                  embedded
-                  perKmCharge={formData.perKmCharge}
-                  perDayCharge={formData.perDayCharge}
-                  perKmIncludes={formData.perKmIncludes}
-                  perKmExcludes={formData.perKmExcludes}
-                  perDayIncludes={formData.perDayIncludes}
-                  perDayExcludes={formData.perDayExcludes}
-                  errors={errors}
-                  onPerKmChargeChange={(v) => set("perKmCharge", v)}
-                  onPerDayChargeChange={(v) => set("perDayCharge", v)}
-                  onAddPriceItem={(field) => addArrayItem(field)}
-                  onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
-                  onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
-                  clearError={clearError}
-                />
-              </>
-            ) : (
-              <>
-            {/* ── Category (small section since DescriptionStep doesn't carry it) ── */}
+            <CaravanPricingStep
+              embedded
+              perKmCharge={formData.perKmCharge}
+              perDayCharge={formData.perDayCharge}
+              perKmIncludes={formData.perKmIncludes}
+              perKmExcludes={formData.perKmExcludes}
+              perDayIncludes={formData.perDayIncludes}
+              perDayExcludes={formData.perDayExcludes}
+              errors={errors}
+              onPerKmChargeChange={(v) => set("perKmCharge", v)}
+              onPerDayChargeChange={(v) => set("perDayCharge", v)}
+              onAddPriceItem={(field) => addArrayItem(field)}
+              onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
+              onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
+              clearError={clearError}
+            />
+          </>
+        ) : (
+          <>
+            {/* ── Category ── */}
             <SectionCard
-              icon={<Tag size={16} color={TEAL} strokeWidth={2.5} />}
+              icon={<Tag size={16} className="text-th-brand" strokeWidth={2.5} />}
               title={activeTab === "activity" ? "Activity Type" : "Category"}
               subtitle="Pick the type that best describes your offering"
             >
@@ -789,7 +768,7 @@ const EditOfferings = () => {
                 <StyledSelect
                   value={formData.category}
                   onChange={(v) => set("category", v)}
-                  placeholder="Select"
+                  placeholder={catalog.isLoading ? "Loading…" : "Select"}
                   error={!!errors.category}
                 >
                   {categories.map((c) => (
@@ -801,7 +780,7 @@ const EditOfferings = () => {
               </Field>
             </SectionCard>
 
-            {/* ── Description + Photos via the same component the onboarding flow uses ── */}
+            {/* ── Description + Photos ── */}
             <CaravanDescriptionStep
               embedded
               nameLabel={activeTab === "activity" ? "Activity Name" : "Property Name"}
@@ -832,7 +811,7 @@ const EditOfferings = () => {
 
             {/* ── Features ── */}
             <SectionCard
-              icon={<Tag size={16} color={TEAL} strokeWidth={2.5} />}
+              icon={<Tag size={16} className="text-th-brand" strokeWidth={2.5} />}
               title="Features"
               subtitle="What your offering includes"
             >
@@ -850,7 +829,7 @@ const EditOfferings = () => {
 
             {/* ── Location ── */}
             <SectionCard
-              icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
+              icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
               title="Location"
               subtitle="Where is your offering located?"
             >
@@ -909,7 +888,7 @@ const EditOfferings = () => {
 
             {/* ── Pricing (tab-specific) ── */}
             <SectionCard
-              icon={<IndianRupee size={16} color={TEAL} strokeWidth={2.5} />}
+              icon={<IndianRupee size={16} className="text-th-brand" strokeWidth={2.5} />}
               title="Pricing"
               subtitle="Set your rates"
             >
@@ -928,83 +907,54 @@ const EditOfferings = () => {
                 <ActivityPricing formData={formData} set={set} errors={errors} {...arrayHelpers} />
               )}
             </SectionCard>
-              </>
-            )}
+          </>
+        )}
 
-            {/* ── Discounts ── */}
-            <SectionCard
-              icon={<Percent size={16} color={TEAL} strokeWidth={2.5} />}
-              title="Discounts"
-              subtitle="Optional promotional offers"
-            >
-              <DiscountOffersStep
-                embedded
-                offers={discountOffers}
-                onToggle={handleDiscountToggle}
-                onOfferChange={handleDiscountOfferChange}
-                errors={errors}
-                weeklyLabel="Weekly / Monthly Offers"
-              />
-            </SectionCard>
+        {/* ── Discounts ── */}
+        <SectionCard
+          icon={<Percent size={16} className="text-th-brand" strokeWidth={2.5} />}
+          title="Discounts"
+          subtitle="Optional promotional offers"
+        >
+          <DiscountOffersStep
+            embedded
+            offers={discountOffers}
+            onToggle={handleDiscountToggle}
+            onOfferChange={handleDiscountOfferChange}
+            errors={errors}
+            weeklyLabel="Weekly / Monthly Offers"
+          />
+        </SectionCard>
 
-            {/* ── Submit error ── */}
-            {errors.submit && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "12px 16px",
-                  borderRadius: 13,
-                  backgroundColor: ERROR_BG,
-                  border: "1.5px solid #fca5a5",
-                }}
-              >
-                <p style={{ fontSize: 13, fontWeight: 600, color: ERROR }}>{errors.submit}</p>
-              </div>
-            )}
-
-            {/* ── Footer ── */}
-            <div className="flex justify-end gap-3 pt-2 pb-6">
-              <button
-                type="button"
-                onClick={() => navigate(`/offering/${id}`)}
-                style={{
-                  height: 44,
-                  padding: "0 24px",
-                  borderRadius: 13,
-                  border: `1.5px solid ${GRAY_200}`,
-                  backgroundColor: "transparent",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: GRAY_500,
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                style={{
-                  height: 44,
-                  padding: "0 28px",
-                  borderRadius: 13,
-                  border: "none",
-                  backgroundColor: TEAL,
-                  fontSize: 14,
-                  fontWeight: 700,
-                  color: BLACK,
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.5 : 1,
-                  boxShadow: "0 4px 20px rgba(7,228,228,0.3)",
-                }}
-              >
-                {isSubmitting ? "Saving…" : "Save Changes"}
-              </button>
-            </div>
+        {/* ── Submit error ── */}
+        {errors.submit && (
+          <div className="flex items-center gap-2 px-4 py-3 rounded-[13px] bg-th-error-bright-bg border border-th-error-bright-soft">
+            <p className="text-[13px] font-semibold text-th-error-bright">{errors.submit}</p>
           </div>
+        )}
+
+        {/* ── Footer ── */}
+        <div className="flex justify-end gap-3 pt-2 pb-6">
+          <button
+            type="button"
+            onClick={() => navigate(`/offering/${id}`)}
+            className="h-11 px-6 rounded-[13px] border border-th-warm-border bg-transparent text-[14px] font-semibold text-th-warm-text-dark cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={cn(
+              "h-11 px-7 rounded-[13px] border-none bg-th-brand text-[14px] font-bold text-th-text-inverse shadow-[0_4px_20px_rgba(15,92,138,0.30)]",
+              isSubmitting ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+            )}
+          >
+            {isSubmitting ? "Saving…" : "Save Changes"}
+          </button>
+        </div>
+      </div>
     </DashboardLayout>
   );
 };

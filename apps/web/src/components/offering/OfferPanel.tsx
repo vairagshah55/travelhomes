@@ -4,20 +4,9 @@ import { Plus, Save, X, Trash2, ImagePlus, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { type OfferDTO, offersApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { SlidePanel } from "@/components/bookings/SlidePanel";
 import {
-  TEAL,
-  TEAL_BG,
-  TEAL_FOCUS,
-  BLACK,
-  GRAY_500,
-  GRAY_400,
-  GRAY_200,
-  WHITE,
-  SURFACE,
-  ERROR,
-  ERROR_BG,
-  ERROR_RING,
   Field,
   StyledInput,
   StyledTextarea,
@@ -218,24 +207,14 @@ export const OfferPanel = ({
       open={open}
       onClose={() => onOpenChange(false)}
       title={isEdit ? "Edit Offer" : "Add New Offer"}
-      icon={<Plus size={16} color={TEAL} />}
+      icon={<Plus size={16} className="text-th-brand" />}
       width={560}
       footer={
         <>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            style={{
-              height: 40,
-              padding: "0 18px",
-              borderRadius: 11,
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: "transparent",
-              fontSize: 13,
-              fontWeight: 600,
-              color: GRAY_500,
-              cursor: "pointer",
-            }}
+            className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
           >
             Cancel
           </button>
@@ -243,22 +222,10 @@ export const OfferPanel = ({
             type="button"
             onClick={submit}
             disabled={saving}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              height: 40,
-              padding: "0 20px",
-              borderRadius: 11,
-              border: "none",
-              backgroundColor: TEAL,
-              fontSize: 13,
-              fontWeight: 700,
-              color: BLACK,
-              cursor: saving ? "not-allowed" : "pointer",
-              opacity: saving ? 0.5 : 1,
-              boxShadow: "0 4px 16px rgba(7,228,228,0.3)",
-            }}
+            className={cn(
+              "flex items-center gap-1.5 h-10 px-5 rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(15,92,138,0.30)]",
+              saving ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+            )}
           >
             <Save size={14} /> {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Offer"}
           </button>
@@ -389,62 +356,33 @@ export const OfferPanel = ({
         {/* Cover Image */}
         <Field label="Cover Image" required error={errors.cover}>
           <div
-            style={{
-              position: "relative",
-              height: 180,
-              borderRadius: 14,
-              overflow: "hidden",
-              border: `2px dashed ${errors.cover ? "#fca5a5" : GRAY_200}`,
-              backgroundColor: SURFACE,
-            }}
+            className={cn(
+              "relative h-[180px] rounded-[14px] overflow-hidden border-2 border-dashed bg-th-warm-surface",
+              errors.cover ? "border-th-error-bright-soft" : "border-th-warm-border",
+            )}
           >
             {form.photos?.coverUrl ? (
               <>
                 <img
                   src={getImageUrl(form.photos.coverUrl)}
                   alt="Cover"
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  className="w-full h-full object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => update("photos", { ...(form.photos || {}), coverUrl: "" })}
-                  style={{
-                    position: "absolute",
-                    top: 8,
-                    right: 8,
-                    width: 28,
-                    height: 28,
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(239,68,68,0.9)",
-                    border: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: WHITE,
-                  }}
+                  className="absolute top-2 right-2 w-7 h-7 rounded-full bg-[rgba(239,68,68,0.9)] border-none flex items-center justify-center cursor-pointer text-th-text-inverse"
                 >
                   <X size={14} />
                 </button>
               </>
             ) : (
-              <label
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                }}
-              >
-                <ImagePlus size={24} color={GRAY_400} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: GRAY_500 }}>
+              <label className="w-full h-full flex flex-col items-center justify-center gap-2 cursor-pointer">
+                <ImagePlus size={24} className="text-th-warm-text-muted" />
+                <span className="text-[13px] font-semibold text-th-warm-text-dark">
                   Upload cover image
                 </span>
-                <span style={{ fontSize: 11, color: GRAY_400 }}>PNG, JPG up to 10MB</span>
+                <span className="text-[11px] text-th-warm-text-muted">PNG, JPG up to 10MB</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -458,41 +396,21 @@ export const OfferPanel = ({
 
         {/* Gallery */}
         <Field label={`Gallery Images (Min 5)`} required error={errors.gallery}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 8,
-            }}
-          >
-            <div
-              style={{
-                width: "100%",
-                height: 4,
-                backgroundColor: SURFACE,
-                borderRadius: 99,
-                overflow: "hidden",
-              }}
-            >
+          <div className="flex items-center justify-between mb-2">
+            <div className="w-full h-1 bg-th-warm-surface rounded-full overflow-hidden">
               <div
+                className="h-full rounded-full transition-[width] duration-[400ms]"
                 style={{
-                  height: "100%",
-                  borderRadius: 99,
                   width: `${Math.min(100, (galleryCount / 5) * 100)}%`,
-                  backgroundColor: galleryCount >= 5 ? "#22c55e" : TEAL,
-                  transition: "width 0.4s",
+                  backgroundColor: galleryCount >= 5 ? "#22c55e" : "#0F5C8A",
                 }}
               />
             </div>
             <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: galleryCount >= 5 ? "#16a34a" : GRAY_400,
-                marginLeft: 10,
-                whiteSpace: "nowrap",
-              }}
+              className={cn(
+                "text-[11px] font-bold ml-2.5 whitespace-nowrap",
+                galleryCount >= 5 ? "text-th-success-bright" : "text-th-warm-text-muted",
+              )}
             >
               {galleryCount}/5
             </span>
@@ -501,67 +419,29 @@ export const OfferPanel = ({
             {(form.photos?.galleryUrls || []).map((u, i) => (
               <div
                 key={i}
-                style={{
-                  position: "relative",
-                  aspectRatio: "1",
-                  borderRadius: 10,
-                  overflow: "hidden",
-                  border: `1.5px solid ${GRAY_200}`,
-                }}
-                className="group"
+                className="relative aspect-square rounded-[10px] overflow-hidden border border-th-warm-border group"
               >
                 <img
                   src={getImageUrl(u)}
                   alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  className="w-full h-full object-cover"
                 />
                 <button
                   type="button"
                   onClick={() => removeGalleryUrl(i)}
-                  style={{
-                    position: "absolute",
-                    top: 4,
-                    right: 4,
-                    width: 22,
-                    height: 22,
-                    borderRadius: "50%",
-                    backgroundColor: "rgba(239,68,68,0.85)",
-                    border: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    opacity: 0,
-                    transition: "opacity 0.15s",
-                  }}
-                  className="group-hover:!opacity-100"
+                  className="absolute top-1 right-1 w-[22px] h-[22px] rounded-full bg-[rgba(239,68,68,0.85)] border-none flex items-center justify-center cursor-pointer opacity-0 transition-opacity group-hover:opacity-100"
                 >
-                  <Trash2 size={11} color={WHITE} />
+                  <Trash2 size={11} className="text-th-text-inverse" />
                 </button>
               </div>
             ))}
-            <label
-              style={{
-                aspectRatio: "1",
-                borderRadius: 10,
-                border: `2px dashed ${GRAY_200}`,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 4,
-                cursor: "pointer",
-                backgroundColor: SURFACE,
-                transition: "all 0.15s",
-                position: "relative",
-              }}
-            >
+            <label className="relative aspect-square rounded-[10px] border-2 border-dashed border-th-warm-border flex flex-col items-center justify-center gap-1 cursor-pointer bg-th-warm-surface transition-all">
               {uploading ? (
-                <Loader2 size={20} color={GRAY_400} className="animate-spin" />
+                <Loader2 size={20} className="text-th-warm-text-muted animate-spin" />
               ) : (
                 <>
-                  <Plus size={20} color={GRAY_400} />
-                  <span style={{ fontSize: 11, fontWeight: 600, color: GRAY_400 }}>Add</span>
+                  <Plus size={20} className="text-th-warm-text-muted" />
+                  <span className="text-[11px] font-semibold text-th-warm-text-muted">Add</span>
                 </>
               )}
               <input

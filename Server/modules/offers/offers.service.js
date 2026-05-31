@@ -251,31 +251,86 @@ function pickSort(sort) {
   return { createdAt: -1 };
 }
 
-async function trackImpressions(data) {
+// Bot / crawler / link-preview / scripting-client User-Agent patterns.
+// Conservative list — anything matching is dropped from impression counts.
+// Headless browsers count as bots too (Lighthouse, Puppeteer, etc.).
+const BOT_UA_REGEX =
+  /bot|spider|crawler|crawl|slurp|baidu|bing|google|yandex|duckduck|facebookexternalhit|facebot|whatsapp|telegram|preview|curl|wget|axios|node-fetch|python-requests|java\/|httpclient|headless|phantom|nightmare|selenium|playwright|puppeteer/i;
+function isBotUA(ua) {
+  if (!ua) return true; // no UA at all → almost always automation
+  return BOT_UA_REGEX.test(ua);
+}
+
+async function trackImpressions(data, meta = {}) {
   if (!data.length) return;
+  const { userAgent, visitorId, viewerVendorIds = [] } = meta;
+
+  // Bot / crawler / link-preview filter — these inflate the count and provide
+  // no business signal. Drop early before doing any DB work.
+  if (isBotUA(userAgent)) return;
+
+  // Per-offer self-exclusion: when a vendor browses the public catalog they
+  // shouldn't accumulate impressions for their OWN listings (only impressions
+  // on OTHER vendors' listings should count from their session). The
+  // page-level `ownerView` flag in list() only catches the "my listings"
+  // dashboard case; this catches incidental browsing.
+  const viewerSet = new Set(viewerVendorIds.map(String).filter(Boolean));
+
   try {
     const today = getToday();
-    // One impression per vendor per page-load, not one per offer — so a
-    // vendor with 5 listings doesn't get artificially inflated.
+    // One impression per vendor per page-load — vendors with many listings
+    // shouldn't be artificially inflated. Orphan offers with no vendorId/userId
+    // are skipped entirely (the old fallback to offer._id silently created
+    // phantom per-offer "vendors" and bypassed dedupe).
     const vendorFirstOffer = {};
     for (const o of data) {
-      const vid = String(o.vendorId || o.userId || o._id);
-      if (!vendorFirstOffer[vid]) vendorFirstOffer[vid] = o;
+      const vid = o.vendorId || o.userId;
+      if (!vid) continue;
+      const key = String(vid);
+      // Skip if this offer belongs to the viewer themselves.
+      if (viewerSet.has(key)) continue;
+      if (!vendorFirstOffer[key]) vendorFirstOffer[key] = o;
     }
-    const ops = Object.values(vendorFirstOffer).map((o) => ({
-      updateOne: {
-        filter: { serviceId: o._id, metricDate: today, category: "listing" },
-        update: { $inc: { impressions: 1 } },
-        upsert: true,
-      },
-    }));
-    if (ops.length) AdminAnalyticsMetric.bulkWrite(ops).catch(() => {});
+
+    const seedOps = Object.values(vendorFirstOffer);
+    if (!seedOps.length) return;
+
+    // Session dedupe: only increment if this visitor hasn't already counted
+    // toward this vendor today. The `visitorIds: { $ne: visitorId }` filter
+    // makes the upsert a no-op once the visitor's id is in the day's set.
+    //
+    // Without a visitorId we can't dedupe per-session (anonymous request
+    // with no IP — rare). In that case we fall back to a simple increment
+    // capped to once per page-load by the per-vendor dedupe above.
+    const ops = seedOps.map((o) => {
+      const filter = {
+        serviceId: o._id,
+        metricDate: today,
+        category: "listing",
+      };
+      const update = { $inc: { impressions: 1 } };
+      if (visitorId) {
+        filter.visitorIds = { $ne: visitorId };
+        update.$addToSet = { visitorIds: visitorId };
+      }
+      return { updateOne: { filter, update, upsert: true } };
+    });
+
+    // ordered:false → one duplicate-key error (the unique index catching a
+    // race) doesn't abort the rest of the batch.
+    AdminAnalyticsMetric.bulkWrite(ops, { ordered: false }).catch((err) => {
+      // Duplicate-key errors are the dedupe + race-protection working as
+      // designed — don't spam logs for those. Anything else is worth knowing.
+      if (err && err.code !== 11000) {
+        logger.warn({ err: err.message }, "impression bulkWrite failed");
+      }
+    });
   } catch (err) {
     logger.error({ err: err.message }, "Impression tracking error");
   }
 }
 
-async function list(q, user) {
+async function list(q, user, meta = {}) {
   let query = buildListFilter(q, user);
   query = await applyOwnerFilter(query, user);
   query = applySearchFilter(query);
@@ -289,8 +344,24 @@ async function list(q, user) {
   ]);
 
   // Public users only — owners and admins shouldn't pollute their own metrics.
-  const ownerView = q.mine === "true" || q.mine === true;
-  if (!ownerView && !isAdmin(user)) await trackImpressions(data);
+  // Fire-and-forget so DB latency on the metric write doesn't slow the listing
+  // response. No `await` here — trackImpressions handles its own errors.
+  const ownerView = String(q.mine).toLowerCase() === "true";
+  if (!ownerView && !isAdmin(user)) {
+    // Collect every identifier the offer.vendorId / offer.userId could match
+    // for THIS viewer, so trackImpressions can skip their own listings even
+    // when they appear mixed into public search results.
+    const viewerVendorIds = [];
+    if (user) {
+      const uid = userIdOf(user);
+      if (uid) viewerVendorIds.push(String(uid));
+      if (user.email) {
+        const v = await Vendor.findOne({ email: user.email }).lean();
+        if (v && v.vendorId) viewerVendorIds.push(String(v.vendorId));
+      }
+    }
+    trackImpressions(data, { ...meta, viewerVendorIds });
+  }
 
   return {
     data,

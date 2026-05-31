@@ -182,6 +182,31 @@
     --th-congrats-sec-400: #363f5e;
     --th-congrats-sec-500: #242c3d;
 
+    /* ─── Onboarding warm-palette tokens ──────────────────────
+       Preserve the warm/desert grey + bright error/success palette
+       used by the onboarding flow. These exist alongside the cool
+       th-* tokens until a follow-up palette-reconciliation pass. */
+    --th-warm-text-dark: #2c2c2a;          /* GRAY_700 / GRAY_500 */
+    --th-warm-text-muted: #888780;         /* GRAY_400 */
+    --th-warm-border: #d3d1c7;             /* GRAY_200 */
+    --th-warm-surface: #f7f8fa;            /* SURFACE */
+
+    --th-brand-soft: rgba(15, 92, 138, 0.07);     /* TEAL_BG */
+    --th-brand-border-soft: rgba(15, 92, 138, 0.3); /* TEAL_BORDER */
+
+    --th-error-bright: #ef4444;            /* ERROR */
+    --th-error-bright-soft: #fca5a5;       /* ERROR_SOFT */
+    --th-error-bright-bg: rgba(239, 68, 68, 0.04); /* ERROR_BG */
+    --th-error-bright-ring: rgba(239, 68, 68, 0.1); /* ERROR_RING */
+
+    --th-success-bright: #22c55e;          /* SUCCESS */
+    --th-success-bright-bg: rgba(34, 197, 94, 0.08);     /* SUCCESS_BG */
+    --th-success-bright-border: rgba(34, 197, 94, 0.2);  /* SUCCESS_BORDER */
+
+    --th-warn-bright: #f59e0b;             /* WARN */
+    --th-warn-bright-bg: rgba(245, 158, 11, 0.1);        /* WARN_BG */
+    --th-warn-bright-border: rgba(245, 158, 11, 0.25);   /* WARN_BORDER */
+
     /* ─── 2. SPACING SCALE ───────────────────────────────────── */
     --th-space-0: 0px;
     --th-space-px: 1px;

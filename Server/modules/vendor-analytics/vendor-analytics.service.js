@@ -184,9 +184,21 @@ function getDateBounds(period) {
   return { startDate, dateIterator, nextDateStep, formatLabel, matchKey, mongoGroupBy };
 }
 
-async function getGraphs({ period = "monthly" } = {}) {
+async function getGraphs({ period = "monthly" } = {}, user) {
   const { startDate, dateIterator, nextDateStep, formatLabel, matchKey, mongoGroupBy } =
     getDateBounds(period);
+
+  // Resolve vendor scope the same way computeCounts does, so the KPI card and
+  // the time-series chart show numbers from the same dataset. Without this,
+  // the chart was returning platform-wide visitors regardless of who was
+  // logged in.
+  const vendorId = await resolveVendorIdFromUser(user);
+  let vendorOfferIds = null;
+  if (vendorId) {
+    const vendorOfferFilter = { $or: [{ vendorId }, { userId: vendorId }] };
+    const vendorOffers = await Offer.find(vendorOfferFilter, { _id: 1 }).lean();
+    vendorOfferIds = vendorOffers.map((o) => o._id);
+  }
 
   const buildPipeline = (collection, dateField, amountField) => {
     // Cheap-and-cheerful $-replace JSON trick mirrors legacy controller.
@@ -197,12 +209,29 @@ async function getGraphs({ period = "monthly" } = {}) {
     const match = { [dateField]: { $gte: startDate } };
     if (collection === "Payment") match.status = { $in: ["completed", "paid"] };
 
+    // AdminAnalyticsMetric is shared across vendors — restrict to visitor
+    // rows (categories that match offer.serviceType) AND to THIS vendor's
+    // offers. Mirrors the offerViewFilter in computeCounts.
+    if (collection === "AdminAnalyticsMetric") {
+      match.category = { $in: ["activity", "camper-van", "unique-stay"] };
+      if (vendorOfferIds) match.serviceId = { $in: vendorOfferIds };
+    }
+
     return [{ $match: match }, { $group: { _id: groupBy, total: { $sum: `$${amountField}` } } }];
   };
 
+  // If we have a vendorId but zero offers, short-circuit visitors to 0 — the
+  // $in: [] match would still run but it's clearer to avoid the round-trip.
+  const visitorsPromise =
+    vendorId && (!vendorOfferIds || vendorOfferIds.length === 0)
+      ? Promise.resolve([])
+      : AdminAnalyticsMetric.aggregate(
+          buildPipeline("AdminAnalyticsMetric", "metricDate", "visitors"),
+        );
+
   const [earningsAgg, visitorsAgg] = await Promise.all([
     Payment.aggregate(buildPipeline("Payment", "paymentDate", "amount")),
-    AdminAnalyticsMetric.aggregate(buildPipeline("AdminAnalyticsMetric", "metricDate", "visitors")),
+    visitorsPromise,
   ]);
 
   const data = [];
@@ -228,8 +257,10 @@ async function getGraphs({ period = "monthly" } = {}) {
 }
 
 async function resetMetrics() {
+  // `impressions` field on Offer no longer exists — AdminAnalyticsMetric is
+  // the sole store. Clicks and visitors are still tracked on the Offer doc.
   await Promise.all([
-    Offer.updateMany({}, { $set: { impressions: 0, clicks: 0, visitors: 0 } }),
+    Offer.updateMany({}, { $set: { clicks: 0, visitors: 0 } }),
     AdminAnalyticsMetric.deleteMany({}),
   ]);
   return { message: "All impressions, clicks, and visitor data have been reset." };

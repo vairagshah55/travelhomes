@@ -21,28 +21,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { type BookingData, type NewBookingForm } from "./api";
 import { SlidePanel } from "./SlidePanel";
 
 // Sentinel value emitted by Bookings.tsx when the vendor has no services yet.
-// We filter it out of the service dropdown so it never becomes a real booking.
 const NO_SERVICE_SENTINEL = "No Service Available";
 
-const TEAL       = "#0F5C8A";
-const TEAL_FOCUS = "rgba(15, 92, 138, 0.12)";
-const BLACK      = "#131313";
-const GRAY_500   = "#6b6b6b";
-const GRAY_400   = "#9a9a9a";
-const GRAY_200   = "#e4e4e4";
-const WHITE      = "#ffffff";
-const SURFACE    = "#F7F8FA";
-const ERROR      = "#ef4444";
-const ERROR_BG   = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.1)";
-
 /* ─── Section header inside the panel ────────────────────────────────────── */
-// Compact uppercase label with optional icon + count chip. Used to group fields
-// like Guest / Booking / Pricing / Payment within a single panel.
 const SectionHeader = ({
   icon,
   title,
@@ -54,59 +40,40 @@ const SectionHeader = ({
 }) => (
   <div className="flex items-center gap-2 mt-1 mb-1">
     {icon && (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 26,
-          height: 26,
-          borderRadius: 8,
-          backgroundColor: `${TEAL}14`,
-          border: `1.5px solid ${TEAL}30`,
-        }}
-      >
+      <span className="inline-flex items-center justify-center w-[26px] h-[26px] rounded-lg bg-th-brand-soft border border-th-brand-border-soft">
         {icon}
       </span>
     )}
-    <p
-      style={{
-        fontSize: 11,
-        fontWeight: 800,
-        color: BLACK,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-      }}
-    >
+    <p className="text-[11px] font-extrabold text-th-text-primary uppercase tracking-[0.06em]">
       {title}
     </p>
-    {hint && <p style={{ fontSize: 11, color: GRAY_400, marginLeft: 4 }}>{hint}</p>}
-    <div style={{ flex: 1, height: 1, backgroundColor: GRAY_200, marginLeft: 6 }} />
+    {hint && <p className="text-[11px] text-th-warm-text-muted ml-1">{hint}</p>}
+    <div className="flex-1 h-px bg-th-warm-border ml-1.5" />
   </div>
 );
 
 /* ─── Field wrapper with error ────────────────────────────────────────────── */
-// Error treatment is intentionally subtle: label and input fill stay neutral,
-// only the inline message below the field (and a soft border on the input)
-// carry the signal. Matches the pattern used by StyledInput / DescriptionStep.
 const PanelField = ({ label, required, error, children }: {
   label: string; required?: boolean; error?: string; children: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label style={{ fontSize: 11, fontWeight: 700, color: GRAY_500, textTransform: "uppercase", letterSpacing: "0.03em" }}>
-      {label}{required && <span style={{ color: ERROR, marginLeft: 3 }}>*</span>}
+    <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
+      {label}{required && <span className="text-th-error-bright ml-[3px]">*</span>}
     </label>
     {children}
     {error && (
       <div className="flex items-center gap-1.5">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" /><path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" /></svg>
-        <p style={{ fontSize: 11, color: ERROR }}>{error}</p>
+        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+          <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
+          <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <p className="text-[11px] text-th-error-bright">{error}</p>
       </div>
     )}
   </div>
 );
 
-/* ─── Styled input with error ─────────────────────────────────────────────── */
+/* ─── Styled input with focus/error via CSS ────────────────────────────────── */
 const PanelInput = ({ value, onChange, onBlur, placeholder, type = "text", error, ...rest }: {
   value: string;
   onChange: (v: string) => void;
@@ -114,51 +81,50 @@ const PanelInput = ({ value, onChange, onBlur, placeholder, type = "text", error
   placeholder?: string;
   type?: string;
   error?: boolean;
-} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type" | "onBlur">) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => {
-        setFocused(false);
-        onBlur?.();
-      }}
-      placeholder={placeholder}
-      style={{
-        // Background stays neutral whether the field has an error or not —
-        // the inline message + soft border carry the signal. No red wash.
-        width: "100%", height: 44, padding: "0 14px", fontSize: 13, color: BLACK, fontWeight: 450,
-        backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${error ? "#fca5a5" : focused ? TEAL : "transparent"}`,
-        borderRadius: 11, outline: "none",
-        boxShadow: focused && !error ? `0 0 0 3px ${TEAL_FOCUS}` : "none",
-        transition: "all 0.15s",
-      }}
-      {...rest}
-    />
-  );
-};
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type" | "onBlur">) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    onBlur={onBlur}
+    placeholder={placeholder}
+    className={cn(
+      "w-full h-11 px-3.5 text-[13px] text-th-text-primary font-[450]",
+      "rounded-[11px] outline-none transition-all duration-150 border-[1.5px]",
+      "bg-th-warm-surface focus:bg-th-surface-0",
+      error
+        ? "border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+        : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+    )}
+    {...rest}
+  />
+);
 
 const tealBtn = (onClick: () => void, icon: React.ReactNode, label: string, disabled?: boolean) => (
-  <button type="button" onClick={onClick} disabled={disabled}
-    style={{ display: "flex", alignItems: "center", gap: 6, height: 40, padding: "0 20px", borderRadius: 11, border: "none", backgroundColor: TEAL, fontSize: 13, fontWeight: 700, color: WHITE, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.5 : 1, boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)", transition: "all 0.15s" }}>
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    className={cn(
+      "flex items-center gap-1.5 h-10 px-5 rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150",
+      disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+    )}
+  >
     {icon} {label}
   </button>
 );
 
 const ghostBtn = (onClick: () => void, label: string) => (
-  <button type="button" onClick={onClick}
-    style={{ height: 40, padding: "0 18px", borderRadius: 11, border: `1.5px solid ${GRAY_200}`, backgroundColor: "transparent", fontSize: 13, fontWeight: 600, color: GRAY_500, cursor: "pointer" }}>
+  <button
+    type="button"
+    onClick={onClick}
+    className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
+  >
     {label}
   </button>
 );
 
 /* ─── Date picker (Popover + Calendar) ────────────────────────────────────── */
-// Value is an ISO date string ("YYYY-MM-DD") so it round-trips through the
-// existing form state without changes. We parse/format only at the boundary.
 const DatePickerField = ({
   value,
   onChange,
@@ -189,45 +155,29 @@ const DatePickerField = ({
       <PopoverTrigger asChild>
         <button
           type="button"
-          style={{
-            // Same neutral-on-error treatment as PanelInput — soft border only.
-            width: "100%",
-            height: 44,
-            padding: "0 14px",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            fontSize: 13,
-            color: hasValue ? BLACK : GRAY_400,
-            fontWeight: 450,
-            backgroundColor: open ? WHITE : SURFACE,
-            border: `1.5px solid ${error ? "#fca5a5" : open ? TEAL : "transparent"}`,
-            borderRadius: 11,
-            outline: "none",
-            boxShadow: open && !error ? `0 0 0 3px ${TEAL_FOCUS}` : "none",
-            cursor: "pointer",
-            transition: "all 0.15s",
-            textAlign: "left",
-          }}
+          className={cn(
+            "w-full h-11 px-3.5 flex items-center gap-2.5 text-[13px] font-[450] rounded-[11px] outline-none transition-all duration-150 border-[1.5px] cursor-pointer text-left",
+            hasValue ? "text-th-text-primary" : "text-th-warm-text-muted",
+            open ? "bg-th-surface-0" : "bg-th-warm-surface",
+            error
+              ? "border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+              : open
+                ? "border-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
+                : "border-transparent",
+          )}
         >
-          <CalendarIcon size={14} color={open ? TEAL : GRAY_400} />
-          <span style={{ flex: 1 }}>
+          <CalendarIcon size={14} className={open ? "text-th-brand" : "text-th-warm-text-muted"} />
+          <span className="flex-1">
             {hasValue ? format(selected!, "EEE, MMM d, yyyy") : placeholder}
           </span>
         </button>
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        // SlidePanel sits at z-index 51; the default Popover z-50 lands BEHIND
-        // the panel and the calendar appears not to open. Lift it above.
         className="w-auto p-0 z-[60]"
       >
-        {/* Quick-pick shortcuts — handle the common cases in one click so the
-            user doesn't have to navigate the grid for "today" or "tomorrow". */}
-        <div
-          className="flex flex-wrap gap-1.5 p-2 border-b"
-          style={{ borderColor: GRAY_200 }}
-        >
+        {/* Quick-pick shortcuts */}
+        <div className="flex flex-wrap gap-1.5 p-2 border-b border-th-warm-border">
           {[
             { label: "Today", offset: 0 },
             { label: "Tomorrow", offset: 1 },
@@ -248,31 +198,12 @@ const DatePickerField = ({
                   onChange(format(target, "yyyy-MM-dd"));
                   setOpen(false);
                 }}
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  padding: "5px 10px",
-                  borderRadius: 999,
-                  border: `1px solid ${GRAY_200}`,
-                  backgroundColor: disabled ? "transparent" : WHITE,
-                  color: disabled ? GRAY_400 : BLACK,
-                  cursor: disabled ? "not-allowed" : "pointer",
-                  opacity: disabled ? 0.5 : 1,
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (disabled) return;
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                    "rgba(15, 92, 138, 0.07)";
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                  (e.currentTarget as HTMLButtonElement).style.color = TEAL;
-                }}
-                onMouseLeave={(e) => {
-                  if (disabled) return;
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = WHITE;
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                  (e.currentTarget as HTMLButtonElement).style.color = BLACK;
-                }}
+                className={cn(
+                  "text-[11px] font-semibold px-2.5 py-[5px] rounded-full border border-th-warm-border transition-all duration-150",
+                  disabled
+                    ? "bg-transparent text-th-warm-text-muted cursor-not-allowed opacity-50"
+                    : "bg-th-surface-0 text-th-text-primary cursor-pointer hover:bg-th-brand-soft hover:border-th-brand hover:text-th-brand",
+                )}
               >
                 {label}
               </button>
@@ -289,10 +220,6 @@ const DatePickerField = ({
           }}
           disabled={minDate ? { before: minDate } : undefined}
           initialFocus
-          // Shrink the default shadcn calendar so it fits inside the slide
-          // panel. Default cells are h-12 w-12 (~190px wide grid) — that's
-          // huge for a modal field. These overrides bring it down to ~270px
-          // overall with 8x8 day cells, the comfortable touch-target floor.
           className="p-2"
           classNames={{
             months: "flex flex-col",
@@ -334,18 +261,9 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
   open: boolean; onOpenChange: (v: boolean) => void;
   form: NewBookingForm; setForm: React.Dispatch<React.SetStateAction<NewBookingForm>>;
   vehicleNames: string[]; onCreate: () => void;
-  // When provided, the Service Name dropdown renders grouped sections
-  // (Camper Vans / Unique Stays / Activities) instead of a flat list. Falls
-  // back to vehicleNames if omitted.
   services?: ServiceOption[];
-  // Invoked when the user clicks "Add a service" in the empty-state row. Parent
-  // decides where to send them (typically /offering/add); modal stays
-  // navigation-agnostic.
   onAddService?: () => void;
 }) => {
-  // Touched gates per-field visibility (set on blur). Attempted is flipped by
-  // Create Booking — once attempted, every error stays live and updates as
-  // the user fixes each field. Together: gentle while typing, decisive on submit.
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [attempted, setAttempted] = useState(false);
 
@@ -355,8 +273,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
   const setNumeric = (field: keyof NewBookingForm, value: string) => set(field, value.replace(/\D/g, ""));
   const markTouched = (field: string) => setTouched((p) => ({ ...p, [field]: true }));
 
-  // Reset touched/attempted whenever the panel reopens — otherwise the next
-  // booking session inherits stale "all fields invalid" state.
   React.useEffect(() => {
     if (open) {
       setTouched({});
@@ -364,13 +280,9 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
     }
   }, [open]);
 
-  // Only real services count — the placeholder sentinel is filtered out so the
-  // dropdown either lists actual services or shows a clear empty state.
   const realServices = vehicleNames.filter((v) => v !== NO_SERVICE_SENTINEL);
   const hasServices = realServices.length > 0;
 
-  // Group services by type for a categorised dropdown. If the parent didn't
-  // pass `services` metadata, fall back to a flat list using `vehicleNames`.
   const groupedServices = React.useMemo(() => {
     if (!services || services.length === 0) return null;
     const groups: { type: ServiceOption["type"]; label: string; items: string[] }[] = [
@@ -386,8 +298,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
     return groups.filter((g) => g.items.length > 0);
   }, [services]);
 
-  // Live-computed full error map. Always reflects the current form state —
-  // visibility is gated separately by `errFor` so we don't shout while typing.
   const errors: Record<string, string> = React.useMemo(() => {
     const e: Record<string, string> = {};
     if (!form.guestName.trim()) e.guestName = "Guest name is required";
@@ -416,8 +326,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
     return e;
   }, [form]);
 
-  // Show an error only after the user has interacted with that field, or
-  // after they've tried to submit at least once.
   const errFor = (field: string): string | undefined =>
     attempted || touched[field] ? errors[field] : undefined;
 
@@ -427,10 +335,16 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
   };
 
   return (
-    <SlidePanel open={open} onClose={() => onOpenChange(false)} title="New Booking" icon={<Plus size={16} color={TEAL} />} width={540}
-      footer={<>{ghostBtn(() => onOpenChange(false), "Cancel")} {tealBtn(handleCreate, <Save size={14} />, "Create Booking")}</>}>
+    <SlidePanel
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title="New Booking"
+      icon={<Plus size={16} className="text-th-brand" />}
+      width={540}
+      footer={<>{ghostBtn(() => onOpenChange(false), "Cancel")} {tealBtn(handleCreate, <Save size={14} />, "Create Booking")}</>}
+    >
       <div className="flex flex-col gap-4">
-        <SectionHeader icon={<User size={13} color={TEAL} />} title="Guest Information" />
+        <SectionHeader icon={<User size={13} className="text-th-brand" />} title="Guest Information" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Guest Name" required error={errFor("guestName")}>
             <PanelInput
@@ -441,11 +355,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
               error={!!errFor("guestName")}
             />
           </PanelField>
-          <PanelField
-            label="Service Name"
-            required
-            error={errFor("resourceName")}
-          >
+          <PanelField label="Service Name" required error={errFor("resourceName")}>
             <Select
               value={form.resourceName === NO_SERVICE_SENTINEL ? "" : form.resourceName}
               onValueChange={(v) => {
@@ -464,8 +374,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
               </SelectTrigger>
               <SelectContent className="z-[60]">
                 {groupedServices ? (
-                  // Categorised view: one section per service type, each with
-                  // a header label. Sections with no items are hidden upstream.
                   groupedServices.map((g) => (
                     <SelectGroup key={g.type}>
                       <SelectLabel className="text-[10px] font-bold uppercase tracking-[0.06em] text-gray-400 px-2 py-1.5">
@@ -479,7 +387,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
                     </SelectGroup>
                   ))
                 ) : (
-                  // Flat fallback when the parent doesn't supply service metadata.
                   realServices.map((v) => (
                     <SelectItem key={v} value={v}>
                       {v}
@@ -495,20 +402,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
                   onOpenChange(false);
                   onAddService?.();
                 }}
-                style={{
-                  marginTop: 6,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: TEAL,
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
+                className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-th-brand bg-none border-none p-0 cursor-pointer text-left"
               >
                 <Plus size={12} strokeWidth={2.5} />
                 Add a service to get started
@@ -517,7 +411,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<CalendarIcon size={13} color={TEAL} />} title="Booking Dates" />
+        <SectionHeader icon={<CalendarIcon size={13} className="text-th-brand" />} title="Booking Dates" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Start Date" required error={errFor("startDate")}>
             <DatePickerField
@@ -525,8 +419,6 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
               onChange={(v) => {
                 set("startDate", v);
                 markTouched("startDate");
-                // Auto-clear end-date if it falls before the new start so the
-                // user doesn't have to re-pick manually.
                 if (form.endDate && new Date(v) > new Date(form.endDate)) set("endDate", v);
               }}
               onBlur={() => markTouched("startDate")}
@@ -549,7 +441,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<Phone size={13} color={TEAL} />} title="Contact" />
+        <SectionHeader icon={<Phone size={13} className="text-th-brand" />} title="Contact" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Phone Number" required error={errFor("phoneNumber")}>
             <PanelInput
@@ -573,7 +465,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<Users size={13} color={TEAL} />} title="Guests" />
+        <SectionHeader icon={<Users size={13} className="text-th-brand" />} title="Guests" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Adults" required error={errFor("adults")}>
             <PanelInput
@@ -595,7 +487,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<IndianRupee size={13} color={TEAL} />} title="Pricing" />
+        <SectionHeader icon={<IndianRupee size={13} className="text-th-brand" />} title="Pricing" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
             <PanelInput
@@ -617,7 +509,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<CreditCard size={13} color={TEAL} />} title="Payment" />
+        <SectionHeader icon={<CreditCard size={13} className="text-th-brand" />} title="Payment" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Payment Method" required error={errFor("paymentMethod")}>
             <select
@@ -627,7 +519,12 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
                 markTouched("paymentMethod");
               }}
               onBlur={() => markTouched("paymentMethod")}
-              style={{ width: "100%", height: 44, padding: "0 14px", fontSize: 13, color: form.paymentMethod ? BLACK : GRAY_400, fontWeight: 450, backgroundColor: SURFACE, border: `1.5px solid ${errFor("paymentMethod") ? "#fca5a5" : "transparent"}`, borderRadius: 11, outline: "none", appearance: "none", cursor: "pointer", transition: "all 0.15s" }}>
+              className={cn(
+                "w-full h-11 px-3.5 text-[13px] font-[450] rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px] bg-th-warm-surface",
+                form.paymentMethod ? "text-th-text-primary" : "text-th-warm-text-muted",
+                errFor("paymentMethod") ? "border-th-error-bright-soft" : "border-transparent",
+              )}
+            >
               <option value="" disabled>Select method</option>
               <option value="cash">Cash</option>
               <option value="card">Card</option>
@@ -648,7 +545,7 @@ export const NewBookingModal = ({ open, onOpenChange, form, setForm, vehicleName
           </PanelField>
         </div>
 
-        <SectionHeader icon={<FileText size={13} color={TEAL} />} title="Additional Information" />
+        <SectionHeader icon={<FileText size={13} className="text-th-brand" />} title="Additional Information" />
         <PanelField label="Notes">
           <Textarea
             value={form.notes}
@@ -705,47 +602,50 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
   const handleUpdate = () => { if (validate()) onUpdate(); };
 
   return (
-    <SlidePanel open={open} onClose={() => onOpenChange(false)} title={`Edit — ${booking.bookingId}`} icon={<Edit size={16} color={TEAL} />} width={540}
+    <SlidePanel
+      open={open}
+      onClose={() => onOpenChange(false)}
+      title={`Edit — ${booking.bookingId}`}
+      icon={<Edit size={16} className="text-th-brand" />}
+      width={540}
       footer={
         <>
-          <button type="button" onClick={() => onPrint(booking)} style={{ height: 40, padding: "0 16px", borderRadius: 11, border: `1.5px solid ${GRAY_200}`, backgroundColor: "transparent", fontSize: 13, fontWeight: 600, color: GRAY_500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, marginRight: "auto" }}>
+          <button
+            type="button"
+            onClick={() => onPrint(booking)}
+            className="h-10 px-4 rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer flex items-center gap-1.5 mr-auto"
+          >
             <Printer size={14} /> Print
           </button>
-          <button type="button" onClick={() => onDelete(booking._id)} style={{ height: 40, padding: "0 16px", borderRadius: 11, border: "1.5px solid #fca5a5", backgroundColor: ERROR_BG, fontSize: 13, fontWeight: 700, color: ERROR, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => onDelete(booking._id)}
+            className="h-10 px-4 rounded-[11px] border border-th-error-bright-soft bg-th-error-bright-bg text-[13px] font-bold text-th-error-bright cursor-pointer flex items-center gap-1.5"
+          >
             <Trash2 size={14} /> Delete
           </button>
           {ghostBtn(() => onOpenChange(false), "Cancel")}
           {tealBtn(handleUpdate, <Save size={14} />, "Update")}
         </>
-      }>
+      }
+    >
       <div className="flex flex-col gap-4">
-        {/* ── Read-only summary banner — shows the immutable booking facts so
-              the user has context while editing the mutable fields below. ── */}
-        <div
-          style={{
-            padding: "12px 14px",
-            backgroundColor: `${TEAL}08`,
-            borderRadius: 12,
-            border: `1.5px solid ${TEAL}20`,
-          }}
-        >
+        {/* ── Read-only summary banner ── */}
+        <div className="p-3.5 bg-th-brand-soft rounded-[12px] border border-th-brand-border-soft">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { icon: <User size={13} color={TEAL} />, label: "Guest", value: booking.guestName },
-              { icon: <MapPin size={13} color={TEAL} />, label: "Service", value: booking.resourceName },
-              { icon: <CalendarIcon size={13} color={TEAL} />, label: "Duration", value: `${booking.totalDays || "—"} days` },
-              { icon: <Users size={13} color={TEAL} />, label: "Guests", value: booking.totalGuests || `${Number(booking.adults || 0) + Number(booking.children || 0)}` },
+              { icon: <User size={13} className="text-th-brand" />, label: "Guest", value: booking.guestName },
+              { icon: <MapPin size={13} className="text-th-brand" />, label: "Service", value: booking.resourceName },
+              { icon: <CalendarIcon size={13} className="text-th-brand" />, label: "Duration", value: `${booking.totalDays || "—"} days` },
+              { icon: <Users size={13} className="text-th-brand" />, label: "Guests", value: booking.totalGuests || `${Number(booking.adults || 0) + Number(booking.children || 0)}` },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
                 {item.icon}
                 <div className="min-w-0">
-                  <p style={{ fontSize: 10, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700 }}>
+                  <p className="text-[10px] text-th-warm-text-muted uppercase tracking-[0.04em] font-bold">
                     {item.label}
                   </p>
-                  <p
-                    className="truncate"
-                    style={{ fontSize: 12, fontWeight: 700, color: BLACK }}
-                  >
+                  <p className="truncate text-[12px] font-bold text-th-text-primary">
                     {item.value || "—"}
                   </p>
                 </div>
@@ -753,14 +653,11 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
             ))}
           </div>
           {(booking.createdAt || booking.createdBy) && (
-            <div
-              className="mt-2 pt-2 flex items-center gap-2"
-              style={{ borderTop: `1px solid ${TEAL}1f`, fontSize: 11, color: GRAY_500 }}
-            >
-              <Clock size={11} color={GRAY_400} />
+            <div className="mt-2 pt-2 flex items-center gap-2 border-t border-th-brand-border-soft text-[11px] text-th-warm-text-dark">
+              <Clock size={11} className="text-th-warm-text-muted" />
               Created
               {booking.createdAt && (
-                <span style={{ color: BLACK, fontWeight: 600 }}>
+                <span className="text-th-text-primary font-semibold">
                   {new Date(booking.createdAt).toLocaleString()}
                 </span>
               )}
@@ -769,8 +666,8 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
           )}
         </div>
 
-        {/* ── Guest Information ─────────────────────────────────────────── */}
-        <SectionHeader icon={<User size={13} color={TEAL} />} title="Guest Information" />
+        {/* ── Guest Information ── */}
+        <SectionHeader icon={<User size={13} className="text-th-brand" />} title="Guest Information" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Guest Name" required error={errors.guestName}>
             <PanelInput
@@ -797,8 +694,8 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
           />
         </PanelField>
 
-        {/* ── Booking Dates + Status ────────────────────────────────────── */}
-        <SectionHeader icon={<CalendarIcon size={13} color={TEAL} />} title="Booking Dates & Status" />
+        {/* ── Booking Dates + Status ── */}
+        <SectionHeader icon={<CalendarIcon size={13} className="text-th-brand" />} title="Booking Dates & Status" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Start Date">
             <DatePickerField
@@ -830,8 +727,8 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
           </Select>
         </PanelField>
 
-        {/* ── Guests count ──────────────────────────────────────────────── */}
-        <SectionHeader icon={<Users size={13} color={TEAL} />} title="Guests" />
+        {/* ── Guests count ── */}
+        <SectionHeader icon={<Users size={13} className="text-th-brand" />} title="Guests" />
         <div className="grid grid-cols-3 gap-3">
           <PanelField label="Adults">
             <PanelInput
@@ -848,28 +745,14 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
             />
           </PanelField>
           <PanelField label="Total (auto)">
-            <div
-              style={{
-                width: "100%",
-                height: 44,
-                padding: "0 14px",
-                display: "flex",
-                alignItems: "center",
-                fontSize: 13,
-                fontWeight: 600,
-                color: BLACK,
-                backgroundColor: SURFACE,
-                border: `1.5px dashed ${GRAY_200}`,
-                borderRadius: 11,
-              }}
-            >
+            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-semibold text-th-text-primary bg-th-warm-surface border border-dashed border-th-warm-border rounded-[11px]">
               {Number(booking.adults || 0) + Number(booking.children || 0)}
             </div>
           </PanelField>
         </div>
 
-        {/* ── Pricing ──────────────────────────────────────────────────── */}
-        <SectionHeader icon={<IndianRupee size={13} color={TEAL} />} title="Pricing" />
+        {/* ── Pricing ── */}
+        <SectionHeader icon={<IndianRupee size={13} className="text-th-brand" />} title="Pricing" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Base Price (₹)" required error={errors.basePrice}>
             <PanelInput
@@ -889,28 +772,13 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
           </PanelField>
         </div>
         <PanelField label="Total Amount (auto)">
-          <div
-            style={{
-              width: "100%",
-              height: 44,
-              padding: "0 14px",
-              display: "flex",
-              alignItems: "center",
-              fontSize: 14,
-              fontWeight: 800,
-              color: TEAL,
-              backgroundColor: `${TEAL}10`,
-              border: `1.5px solid ${TEAL}30`,
-              borderRadius: 11,
-              letterSpacing: "-0.01em",
-            }}
-          >
+          <div className="w-full h-11 px-3.5 flex items-center text-[14px] font-extrabold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-[11px] tracking-[-0.01em]">
             ₹ {Number(booking.basePrice || 0) + Number(booking.extraCharges || 0)}
           </div>
         </PanelField>
 
-        {/* ── Payment ──────────────────────────────────────────────────── */}
-        <SectionHeader icon={<CreditCard size={13} color={TEAL} />} title="Payment" />
+        {/* ── Payment ── */}
+        <SectionHeader icon={<CreditCard size={13} className="text-th-brand" />} title="Payment" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Method">
             <Select
@@ -956,21 +824,7 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
             />
           </PanelField>
           <PanelField label="Pending (auto)">
-            <div
-              style={{
-                width: "100%",
-                height: 44,
-                padding: "0 14px",
-                display: "flex",
-                alignItems: "center",
-                fontSize: 13,
-                fontWeight: 700,
-                color: BLACK,
-                backgroundColor: SURFACE,
-                border: `1.5px dashed ${GRAY_200}`,
-                borderRadius: 11,
-              }}
-            >
+            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-bold text-th-text-primary bg-th-warm-surface border border-dashed border-th-warm-border rounded-[11px]">
               ₹{" "}
               {Math.max(
                 0,
@@ -982,8 +836,8 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
           </PanelField>
         </div>
 
-        {/* ── Additional Information ───────────────────────────────────── */}
-        <SectionHeader icon={<FileText size={13} color={TEAL} />} title="Additional Information" />
+        {/* ── Additional Information ── */}
+        <SectionHeader icon={<FileText size={13} className="text-th-brand" />} title="Additional Information" />
         <PanelField label="Notes">
           <Textarea
             value={booking.notes || ""}
@@ -1004,13 +858,10 @@ export const EditBookingModal = ({ open, onOpenChange, booking, setBooking, onUp
         </PanelField>
 
         {/* Read-only ID footer */}
-        <div
-          className="flex items-center gap-2 mt-1"
-          style={{ fontSize: 11, color: GRAY_400 }}
-        >
+        <div className="flex items-center gap-2 mt-1 text-[11px] text-th-warm-text-muted">
           <Info size={11} />
           Booking ID:
-          <span style={{ color: BLACK, fontWeight: 700 }}>{booking.bookingId}</span>
+          <span className="text-th-text-primary font-bold">{booking.bookingId}</span>
         </div>
       </div>
     </SlidePanel>

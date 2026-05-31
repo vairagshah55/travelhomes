@@ -1,17 +1,5 @@
 import React from "react";
-
-// ─── Brand tokens ─────────────────────────────────────────────────────────────
-// designe.md tokens — primary ds-deep #0F5C8A, navy headings.
-const TEAL = "#0F5C8A";
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA";
+import { cn } from "@/lib/utils";
 
 interface CategoryStepProps {
   category: string | null;
@@ -77,100 +65,55 @@ const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedde
               key={cat.name}
               type="button"
               onClick={() => onSelect(cat.name)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                padding: "16px 18px",
-                borderRadius: 16,
-                border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                backgroundColor: selected ? TEAL_BG : WHITE,
-                boxShadow: selected
-                  ? `0 0 0 3px ${TEAL_RING}, 0 2px 12px rgba(0,0,0,0.04)`
-                  : "0 1px 3px rgba(0,0,0,0.04)",
-                cursor: "pointer",
-                textAlign: "left",
-                transition: "all 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                if (!selected) {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!selected) {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = WHITE;
-                }
-              }}
+              className={cn(
+                "w-full flex items-center gap-4 px-[18px] py-4 rounded-[16px] border-[1.5px] cursor-pointer text-left transition-all duration-150",
+                selected
+                  ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
+                  : "border-th-warm-border bg-th-surface-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-th-brand hover:bg-th-brand-soft"
+              )}
             >
               {/* Icon */}
               <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 14,
-                  backgroundColor: selected ? "rgba(15, 92, 138, 0.12)" : SURFACE,
-                  border: `1.5px solid ${selected ? "rgba(15, 92, 138, 0.30)" : GRAY_200}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 22,
-                  flexShrink: 0,
-                  transition: "all 0.15s",
-                }}
+                className={cn(
+                  "w-12 h-12 rounded-[14px] border-[1.5px] flex items-center justify-center text-[22px] shrink-0 transition-all duration-150",
+                  selected
+                    ? "bg-[rgba(15,92,138,0.12)] border-th-brand-border-soft"
+                    : "bg-th-warm-surface border-th-warm-border"
+                )}
               >
                 {cat.emoji}
               </div>
 
               {/* Text */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="flex-1 min-w-0">
                 <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: selected ? TEAL : BLACK,
-                    letterSpacing: "-0.01em",
-                    marginBottom: 3,
-                    transition: "color 0.15s",
-                  }}
+                  className={cn(
+                    "text-[14px] font-bold tracking-[-0.01em] mb-[3px] transition-colors duration-150",
+                    selected ? "text-th-brand" : "text-th-text-primary"
+                  )}
                 >
                   {cat.name}
                 </p>
-                <p
-                  style={{
-                    fontSize: 12.5,
-                    color: GRAY_500,
-                    lineHeight: 1.55,
-                    fontWeight: 400,
-                  }}
-                >
+                <p className="text-[12.5px] text-th-warm-text-dark leading-[1.55] font-normal">
                   {cat.description}
                 </p>
               </div>
 
               {/* Selection indicator */}
               <div
-                style={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: "50%",
-                  border: `2px solid ${selected ? TEAL : GRAY_200}`,
-                  backgroundColor: selected ? TEAL : "transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  transition: "all 0.15s",
-                }}
+                className={cn(
+                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150",
+                  selected
+                    ? "border-th-brand bg-th-brand"
+                    : "border-th-warm-border bg-transparent"
+                )}
               >
                 {selected && (
                   <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                     <path
                       d="M2 5l2.5 2.5L8 3"
-                      stroke={WHITE}
+                      stroke="currentColor"
+                      className="text-th-text-inverse"
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -191,33 +134,19 @@ const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedde
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-[99px] bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Vehicle Type
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-[99px] bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          style={{ fontSize: "clamp(24px, 3.6vw, 32px)" }}
         >
           Choose a caravan category
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Select the type that best describes your vehicle.
         </p>
       </div>

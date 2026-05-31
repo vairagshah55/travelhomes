@@ -1,17 +1,5 @@
 import React from "react";
-import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+import { cn, getImageUrl } from "@/lib/utils";
 
 interface PropertyType {
   id: string;
@@ -38,85 +26,38 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Property Types
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Types of Property
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Select the property types you'd like to list.
         </p>
       </div>
 
       {/* ── Property grid ── */}
-      <div
-        style={{
-          width: "100%",
-          backgroundColor: WHITE,
-          border: "1.5px solid #D3D1C7",
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        }}
-      >
+      <div className="w-full bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         {/* Selected count badge */}
         <div className="flex items-center justify-between mb-4">
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 700,
-              color: GRAY_500,
-              textTransform: "uppercase",
-              letterSpacing: "0.03em",
-            }}
-          >
+          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
             Properties
           </p>
           {selectedCount > 0 && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: `1px solid ${TEAL_RING}`,
-                borderRadius: 99,
-                padding: "2px 10px",
-              }}
-            >
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-2.5 py-[2px]">
               {selectedCount} selected
             </span>
           )}
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
-            gap: 10,
-          }}
-        >
+        <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))" }}>
           {propertyTypes.map((property) => {
             const selected = selectedProperties.includes(property.id);
             return (
@@ -124,54 +65,20 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
                 key={property.id}
                 type="button"
                 onClick={() => onToggle(property.id)}
-                style={{
-                  position: "relative",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 10,
-                  padding: "18px 10px",
-                  borderRadius: 16,
-                  border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                  backgroundColor: selected ? TEAL_BG : SURFACE,
-                  boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!selected) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                    (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                  }
-                }}
+                className={cn(
+                  "relative flex flex-col items-center justify-center gap-2.5 px-2.5 py-[18px] rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150",
+                  selected
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)]"
+                    : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
+                )}
               >
                 {/* Selection check */}
                 {selected && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 18,
-                      height: 18,
-                      borderRadius: "50%",
-                      backgroundColor: TEAL,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <div className="absolute top-2 right-2 w-[18px] h-[18px] rounded-full bg-th-brand flex items-center justify-center">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                       <path
                         d="M2 5l2.5 2.5L8 3"
-                        stroke={WHITE}
+                        stroke="white"
                         strokeWidth="1.8"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -182,20 +89,15 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
 
                 {/* Icon */}
                 <div
-                  style={{
-                    width: 36,
-                    height: 36,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: selected ? 1 : 0.7,
-                    transition: "opacity 0.15s",
-                  }}
+                  className={cn(
+                    "w-9 h-9 flex items-center justify-center transition-opacity duration-150",
+                    selected ? "opacity-100" : "opacity-70",
+                  )}
                 >
                   <img
                     src={getImageUrl(property.icon)}
                     alt={property.name}
-                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                    className="w-full h-full object-contain"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
                     }}
@@ -204,15 +106,10 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
 
                 {/* Name */}
                 <span
-                  style={{
-                    fontSize: 12.5,
-                    fontWeight: 600,
-                    color: selected ? TEAL : GRAY_500,
-                    letterSpacing: "-0.01em",
-                    transition: "color 0.15s",
-                    textAlign: "center",
-                    lineHeight: 1.3,
-                  }}
+                  className={cn(
+                    "text-[12.5px] font-semibold tracking-[-0.01em] transition-colors duration-150 text-center leading-[1.3]",
+                    selected ? "text-th-brand" : "text-th-warm-text-dark",
+                  )}
                 >
                   {property.name}
                 </span>
@@ -222,7 +119,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
         </div>
 
         {propertyTypes.length === 0 && (
-          <p style={{ fontSize: 13, color: GRAY_400, textAlign: "center", padding: "20px 0" }}>
+          <p className="text-[13px] text-th-warm-text-muted text-center py-5">
             No property types available.
           </p>
         )}

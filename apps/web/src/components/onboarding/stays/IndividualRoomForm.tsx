@@ -11,22 +11,7 @@ import {
   BedDouble,
   Bath,
 } from "lucide-react";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_FOCUS = "rgba(15, 92, 138, 0.15)";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
-const ERROR = "#ef4444"; // red-500
-const ERROR_BG = "rgba(239,68,68,0.04)";
-const ERROR_RING = "rgba(239,68,68,0.10)";
-const GREEN = "#22c55e";
+import { cn } from "@/lib/utils";
 
 interface Room {
   id: string;
@@ -76,65 +61,28 @@ const RoomCounter = ({
   onDecrement: () => void;
   onIncrement: () => void;
 }) => (
-  <div
-    style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      padding: "10px 0",
-    }}
-  >
+  <div className="flex items-center justify-between py-2.5">
     <div className="flex items-center gap-2.5">
-      <span style={{ color: GRAY_400 }}>{icon}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: GRAY_500 }}>{label}</span>
+      <span className="text-th-warm-text-muted">{icon}</span>
+      <span className="text-[13px] font-medium text-th-warm-text-dark">{label}</span>
     </div>
     <div className="flex items-center gap-3">
       <button
         type="button"
         onClick={onDecrement}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "50%",
-          border: `1.5px solid ${GRAY_200}`,
-          backgroundColor: WHITE,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.15s",
-        }}
+        className="w-7 h-7 rounded-full border-[1.5px] border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer transition-all duration-150"
       >
-        <Minus size={11} color={GRAY_400} />
+        <Minus size={11} className="text-th-warm-text-muted" />
       </button>
-      <span
-        style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: BLACK,
-          minWidth: 22,
-          textAlign: "center" as const,
-        }}
-      >
+      <span className="text-[14px] font-bold text-th-text-primary min-w-[22px] text-center">
         {isFinite(value) ? value : 0}
       </span>
       <button
         type="button"
         onClick={onIncrement}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: "50%",
-          border: `1.5px solid ${GRAY_200}`,
-          backgroundColor: WHITE,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          transition: "all 0.15s",
-        }}
+        className="w-7 h-7 rounded-full border-[1.5px] border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer transition-all duration-150"
       >
-        <Plus size={11} color={GRAY_400} />
+        <Plus size={11} className="text-th-warm-text-muted" />
       </button>
     </div>
   </div>
@@ -144,11 +92,11 @@ const RoomCounter = ({
 const ErrorMsg = ({ message }: { message?: string }) =>
   message ? (
     <div className="flex items-center gap-1.5 mt-0.5">
-      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-        <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+      <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-th-error-bright">
+        <circle cx="6" cy="6" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M6 3.5v3M6 8.25v.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
-      <p style={{ fontSize: 11.5, color: ERROR }}>{message}</p>
+      <p className="text-[11.5px] text-th-error-bright">{message}</p>
     </div>
   ) : null;
 
@@ -192,100 +140,46 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* ── Cover Photo ── */}
-      <div
-        style={{
-          backgroundColor: WHITE,
-          border: "1.5px solid #EBEBEB",
-          borderRadius: 20,
-          padding: "20px 22px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        }}
-      >
+      <div className="bg-th-surface-0 border-[1.5px] border-[#EBEBEB] rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-3 mb-5">
-          <div
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 11,
-              backgroundColor: TEAL_BG,
-              border: "1.5px solid rgba(15,92,138,0.25)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <ImagePlus size={16} color={TEAL} strokeWidth={2.5} />
+          <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(15,92,138,0.25)] flex items-center justify-center shrink-0 text-th-brand">
+            <ImagePlus size={16} strokeWidth={2.5} />
           </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          <div className="flex-1">
+            <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
               Property Cover Photo
             </p>
-            <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>
+            <p className="text-[11px] text-th-warm-text-muted mt-[1px]">
               Shown as the main property image
             </p>
           </div>
           {errors.coverImage && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: ERROR }}>{errors.coverImage}</span>
+            <span className="text-[11px] font-semibold text-th-error-bright">{errors.coverImage}</span>
           )}
         </div>
 
         <div
-          style={{
-            position: "relative",
-            width: "100%",
-            height: 190,
-            borderRadius: 16,
-            overflow: "hidden",
-            border: `2px solid ${errors.coverImage ? "#fca5a5" : GRAY_200}`,
-            boxShadow: errors.coverImage ? `0 0 0 3px ${ERROR_RING}` : "none",
-          }}
+          className={cn(
+            "relative w-full h-[190px] rounded-[16px] overflow-hidden border-2",
+            errors.coverImage
+              ? "border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+              : "border-th-warm-border",
+          )}
         >
           {coverImage ? (
             <>
               <img
                 src={renderImageSrc(coverImage)}
                 alt="Cover"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                className="w-full h-full object-cover"
               />
               <button
                 onClick={removeCoverImage}
-                style={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  border: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                }}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 border-none flex items-center justify-center cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
               >
-                <X size={14} color={GRAY_500} />
+                <X size={14} className="text-th-warm-text-dark" />
               </button>
-              <label
-                style={{
-                  position: "absolute",
-                  bottom: 12,
-                  right: 12,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "6px 14px",
-                  borderRadius: 99,
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: GRAY_500,
-                  cursor: "pointer",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                }}
-              >
+              <label className="absolute bottom-3 right-3 flex items-center gap-1.5 px-[14px] py-1.5 rounded-full bg-white/90 text-[12px] font-bold text-th-warm-text-dark cursor-pointer shadow-[0_2px_8px_rgba(0,0,0,0.15)]">
                 <ImagePlus size={12} />
                 Change
                 <input
@@ -297,44 +191,13 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
               </label>
             </>
           ) : (
-            <label
-              style={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 10,
-                cursor: "pointer",
-                backgroundColor: SURFACE,
-                transition: "background-color 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLLabelElement).style.backgroundColor = TEAL_BG;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLLabelElement).style.backgroundColor = SURFACE;
-              }}
-            >
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: "50%",
-                  backgroundColor: WHITE,
-                  border: `1.5px solid ${GRAY_200}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                }}
-              >
-                <ImagePlus size={20} color={GRAY_400} />
+            <label className="w-full h-full flex flex-col items-center justify-center gap-2.5 cursor-pointer bg-th-warm-surface transition-colors duration-150 hover:bg-th-brand-soft">
+              <div className="w-12 h-12 rounded-full bg-th-surface-0 border-[1.5px] border-th-warm-border flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.06)]">
+                <ImagePlus size={20} className="text-th-warm-text-muted" />
               </div>
-              <div style={{ textAlign: "center" }}>
-                <p style={{ fontSize: 13, fontWeight: 700, color: GRAY_500 }}>Upload cover photo</p>
-                <p style={{ fontSize: 11, color: GRAY_400, marginTop: 2 }}>
+              <div className="text-center">
+                <p className="text-[13px] font-bold text-th-warm-text-dark">Upload cover photo</p>
+                <p className="text-[11px] text-th-warm-text-muted mt-0.5">
                   Shown as the main property image
                 </p>
               </div>
@@ -350,21 +213,10 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
       </div>
 
       {/* ── Room count control ── */}
-      <div
-        style={{
-          backgroundColor: WHITE,
-          border: "1.5px solid #EBEBEB",
-          borderRadius: 20,
-          padding: "16px 22px",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <div className="bg-th-surface-0 border-[1.5px] border-[#EBEBEB] rounded-[20px] px-[22px] py-4 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] flex items-center justify-between">
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK }}>Rooms</p>
-          <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>
+          <p className="text-[13px] font-bold text-th-text-primary">Rooms</p>
+          <p className="text-[11px] text-th-warm-text-muted mt-[1px]">
             Configure each room individually
           </p>
         </div>
@@ -372,47 +224,19 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
           <button
             type="button"
             onClick={removeRoom}
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: WHITE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
+            className="w-[30px] h-[30px] rounded-full border-[1.5px] border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer"
           >
-            <Minus size={12} color={GRAY_400} />
+            <Minus size={12} className="text-th-warm-text-muted" />
           </button>
-          <span
-            style={{
-              fontSize: 15,
-              fontWeight: 700,
-              color: BLACK,
-              minWidth: 24,
-              textAlign: "center" as const,
-            }}
-          >
+          <span className="text-[15px] font-bold text-th-text-primary min-w-6 text-center">
             {rooms.length}
           </span>
           <button
             type="button"
             onClick={addRoom}
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: "50%",
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: WHITE,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
+            className="w-[30px] h-[30px] rounded-full border-[1.5px] border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer"
           >
-            <Plus size={12} color={GRAY_400} />
+            <Plus size={12} className="text-th-warm-text-muted" />
           </button>
         </div>
       </div>
@@ -427,55 +251,24 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
         return (
           <div
             key={room.id}
-            style={{
-              backgroundColor: WHITE,
-              border: `1.5px solid ${hasError ? "#fca5a5" : isComplete ? "#86efac" : "#D3D1C7"}`,
-              borderRadius: 20,
-              overflow: "hidden",
-              boxShadow: hasError
-                ? `0 0 0 3px ${ERROR_RING}`
+            className={cn(
+              "bg-th-surface-0 rounded-[20px] overflow-hidden transition-all duration-200",
+              hasError
+                ? "border-[1.5px] border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
                 : isComplete
-                  ? "0 0 0 3px rgba(34,197,94,0.1)"
-                  : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-              transition: "all 0.2s",
-            }}
+                  ? "border-[1.5px] border-[#86efac] shadow-[0_0_0_3px_rgba(34,197,94,0.1)]"
+                  : "border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]",
+            )}
           >
             {/* Card header */}
             <button
               type="button"
               onClick={() => setExpandedRoom(isExpanded ? "" : room.id)}
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                padding: "16px 20px",
-                backgroundColor: WHITE,
-                border: "none",
-                cursor: "pointer",
-                transition: "background-color 0.15s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = WHITE;
-              }}
+              className="w-full flex items-center justify-between px-5 py-4 bg-th-surface-0 border-none cursor-pointer transition-colors duration-150 hover:bg-th-warm-surface"
             >
               <div className="flex items-center gap-3">
                 {isComplete ? (
-                  <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      backgroundColor: GREEN,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
+                  <div className="w-5 h-5 rounded-full bg-th-success-bright flex items-center justify-center shrink-0">
                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                       <path
                         d="M2 5l2.5 2.5L8 3"
@@ -488,28 +281,28 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                   </div>
                 ) : (
                   <div
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: "50%",
-                      border: `2px solid ${hasError ? "#fca5a5" : GRAY_200}`,
-                      flexShrink: 0,
-                    }}
+                    className={cn(
+                      "w-5 h-5 rounded-full border-2 shrink-0",
+                      hasError ? "border-th-error-bright-soft" : "border-th-warm-border",
+                    )}
                   />
                 )}
-                <div style={{ textAlign: "left" }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: BLACK }}>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-th-text-primary">
                     {room.name?.trim() || `Room ${index + 1}`}
                   </p>
                   <p
-                    style={{
-                      fontSize: 11,
-                      color: isComplete ? GREEN : hasError ? ERROR : GRAY_400,
-                      marginTop: 2,
-                    }}
+                    className={cn(
+                      "text-[11px] mt-0.5",
+                      isComplete
+                        ? "text-th-success-bright"
+                        : hasError
+                          ? "text-th-error-bright"
+                          : "text-th-warm-text-muted",
+                    )}
                   >
                     {isComplete
-                      ? `${room.guestCapacity} guests · ${room.beds} beds · \u20B9${room.price}/night`
+                      ? `${room.guestCapacity} guests · ${room.beds} beds · ₹${room.price}/night`
                       : hasError
                         ? "Needs attention"
                         : `${photoCount}/${MIN_PHOTOS} photos · fill in details`}
@@ -517,63 +310,40 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                 </div>
               </div>
               {isExpanded ? (
-                <ChevronUp size={16} color={GRAY_400} />
+                <ChevronUp size={16} className="text-th-warm-text-muted" />
               ) : (
-                <ChevronDown size={16} color={GRAY_400} />
+                <ChevronDown size={16} className="text-th-warm-text-muted" />
               )}
             </button>
 
             {/* Expanded body */}
             {isExpanded && (
-              <div style={{ padding: "0 20px 20px", borderTop: `1.5px solid ${GRAY_200}` }}>
-                <div className="flex flex-col gap-5" style={{ paddingTop: 18 }}>
+              <div className="px-5 pb-5 border-t-[1.5px] border-th-warm-border">
+                <div className="flex flex-col gap-5 pt-[18px]">
                   {/* Name */}
                   <div className="flex flex-col gap-1.5">
                     <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: errors[`room_${index}_name`] ? ERROR : GRAY_500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.03em",
-                      }}
+                      className={cn(
+                        "text-[12px] font-semibold uppercase tracking-[0.03em]",
+                        errors[`room_${index}_name`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                      )}
                     >
-                      Room Name <span style={{ color: ERROR }}>*</span>
+                      Room Name <span className="text-th-error-bright">*</span>
                     </label>
                     <input
-                      placeholder="e.g. Master Bedroom, Deluxe Suite\u2026"
+                      placeholder="e.g. Master Bedroom, Deluxe Suite…"
                       value={room.name}
                       onChange={(e) => {
                         updateRoom(room.id, "name", e.target.value);
                         clearError(`room_${index}_name`);
                       }}
-                      style={{
-                        width: "100%",
-                        height: 48,
-                        padding: "0 14px",
-                        fontSize: 14,
-                        color: BLACK,
-                        fontWeight: 450,
-                        backgroundColor: errors[`room_${index}_name`] ? ERROR_BG : SURFACE,
-                        border: `1.5px solid ${errors[`room_${index}_name`] ? "#fca5a5" : "transparent"}`,
-                        borderRadius: 13,
-                        outline: "none",
-                        transition: "all 0.15s",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = TEAL;
-                        e.target.style.backgroundColor = WHITE;
-                        e.target.style.boxShadow = `0 0 0 4px ${TEAL_FOCUS}`;
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = errors[`room_${index}_name`]
-                          ? "#fca5a5"
-                          : "transparent";
-                        e.target.style.backgroundColor = errors[`room_${index}_name`]
-                          ? ERROR_BG
-                          : SURFACE;
-                        e.target.style.boxShadow = "none";
-                      }}
+                      className={cn(
+                        "w-full h-12 px-[14px] text-[14px] text-th-text-primary font-[450] rounded-[13px] outline-none transition-all duration-150",
+                        "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
+                        errors[`room_${index}_name`]
+                          ? "bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft"
+                          : "bg-th-warm-surface border-[1.5px] border-transparent",
+                      )}
                     />
                     <ErrorMsg message={errors[`room_${index}_name`]} />
                   </div>
@@ -581,70 +351,39 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                   {/* Description */}
                   <div className="flex flex-col gap-1.5">
                     <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: errors[`room_${index}_description`] ? ERROR : GRAY_500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.03em",
-                      }}
+                      className={cn(
+                        "text-[12px] font-semibold uppercase tracking-[0.03em]",
+                        errors[`room_${index}_description`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                      )}
                     >
-                      Description <span style={{ color: ERROR }}>*</span>
+                      Description <span className="text-th-error-bright">*</span>
                     </label>
                     <textarea
-                      placeholder="Describe the room \u2014 size, view, unique features\u2026"
+                      placeholder="Describe the room — size, view, unique features…"
                       maxLength={200}
                       value={room.description}
                       onChange={(e) => {
                         updateRoom(room.id, "description", e.target.value);
                         clearError(`room_${index}_description`);
                       }}
-                      style={{
-                        width: "100%",
-                        minHeight: 88,
-                        padding: "12px 14px",
-                        fontSize: 14,
-                        color: BLACK,
-                        fontWeight: 450,
-                        backgroundColor: errors[`room_${index}_description`] ? ERROR_BG : SURFACE,
-                        border: `1.5px solid ${errors[`room_${index}_description`] ? "#fca5a5" : "transparent"}`,
-                        borderRadius: 13,
-                        outline: "none",
-                        resize: "none",
-                        transition: "all 0.15s",
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = TEAL;
-                        e.target.style.backgroundColor = WHITE;
-                        e.target.style.boxShadow = `0 0 0 4px ${TEAL_FOCUS}`;
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = errors[`room_${index}_description`]
-                          ? "#fca5a5"
-                          : "transparent";
-                        e.target.style.backgroundColor = errors[`room_${index}_description`]
-                          ? ERROR_BG
-                          : SURFACE;
-                        e.target.style.boxShadow = "none";
-                      }}
+                      className={cn(
+                        "w-full min-h-[88px] px-[14px] py-3 text-[14px] text-th-text-primary font-[450] rounded-[13px] outline-none resize-none transition-all duration-150",
+                        "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
+                        errors[`room_${index}_description`]
+                          ? "bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft"
+                          : "bg-th-warm-surface border-[1.5px] border-transparent",
+                      )}
                     />
                     <div className="flex justify-between">
                       <ErrorMsg message={errors[`room_${index}_description`]} />
-                      <p style={{ fontSize: 11, color: GRAY_400 }}>
+                      <p className="text-[11px] text-th-warm-text-muted">
                         {room.description?.length || 0}/200
                       </p>
                     </div>
                   </div>
 
                   {/* Stats */}
-                  <div
-                    style={{
-                      borderRadius: 13,
-                      border: `1.5px solid ${GRAY_200}`,
-                      padding: "4px 14px",
-                      backgroundColor: SURFACE,
-                    }}
-                  >
+                  <div className="rounded-[13px] border-[1.5px] border-th-warm-border px-[14px] py-1 bg-th-warm-surface">
                     <RoomCounter
                       icon={<Users size={14} />}
                       label="Guest Capacity"
@@ -656,7 +395,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                         updateRoom(room.id, "guestCapacity", (isFinite(room.guestCapacity) ? room.guestCapacity : 0) + 1)
                       }
                     />
-                    <div style={{ height: 1, backgroundColor: GRAY_200 }} />
+                    <div className="h-px bg-th-warm-border" />
                     <RoomCounter
                       icon={<BedDouble size={14} />}
                       label="Beds"
@@ -664,7 +403,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       onDecrement={() => updateRoom(room.id, "beds", Math.max(1, (isFinite(room.beds) ? room.beds : 1) - 1))}
                       onIncrement={() => updateRoom(room.id, "beds", (isFinite(room.beds) ? room.beds : 0) + 1)}
                     />
-                    <div style={{ height: 1, backgroundColor: GRAY_200 }} />
+                    <div className="h-px bg-th-warm-border" />
                     <RoomCounter
                       icon={<Bath size={14} />}
                       label="Bathrooms"
@@ -679,42 +418,23 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                   {/* Price */}
                   <div className="flex flex-col gap-1.5">
                     <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: errors[`room_${index}_price`] ? ERROR : GRAY_500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.03em",
-                      }}
+                      className={cn(
+                        "text-[12px] font-semibold uppercase tracking-[0.03em]",
+                        errors[`room_${index}_price`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                      )}
                     >
-                      Price per Night <span style={{ color: ERROR }}>*</span>
+                      Price per Night <span className="text-th-error-bright">*</span>
                     </label>
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        borderRadius: 13,
-                        overflow: "hidden",
-                        border: `1.5px solid ${errors[`room_${index}_price`] ? "#fca5a5" : "transparent"}`,
-                        backgroundColor: errors[`room_${index}_price`] ? ERROR_BG : SURFACE,
-                        boxShadow: errors[`room_${index}_price`]
-                          ? `0 0 0 3px ${ERROR_RING}`
-                          : "none",
-                        transition: "all 0.15s",
-                      }}
+                      className={cn(
+                        "flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
+                        errors[`room_${index}_price`]
+                          ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+                          : "border-transparent bg-th-warm-surface",
+                      )}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "0 12px",
-                          height: 48,
-                          borderRight: `1.5px solid ${GRAY_200}`,
-                          backgroundColor: SURFACE,
-                          flexShrink: 0,
-                        }}
-                      >
-                        <IndianRupee size={13} color={GRAY_400} />
+                      <div className="flex items-center px-3 h-12 border-r-[1.5px] border-th-warm-border bg-th-warm-surface shrink-0">
+                        <IndianRupee size={13} className="text-th-warm-text-muted" />
                       </div>
                       <input
                         type="number"
@@ -724,17 +444,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                           updateRoom(room.id, "price", Number(e.target.value));
                           clearError(`room_${index}_price`);
                         }}
-                        style={{
-                          flex: 1,
-                          height: 48,
-                          padding: "0 14px",
-                          fontSize: 14,
-                          fontWeight: 600,
-                          color: BLACK,
-                          backgroundColor: "transparent",
-                          border: "none",
-                          outline: "none",
-                        }}
+                        className="flex-1 h-12 px-[14px] text-[14px] font-semibold text-th-text-primary bg-transparent border-none outline-none"
                       />
                     </div>
                     <ErrorMsg message={errors[`room_${index}_price`]} />
@@ -744,77 +454,59 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                   <div className="flex flex-col gap-2.5">
                     <div className="flex items-center justify-between">
                       <label
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: errors[`room_${index}_photos`] ? ERROR : GRAY_500,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.03em",
-                        }}
+                        className={cn(
+                          "text-[12px] font-semibold uppercase tracking-[0.03em]",
+                          errors[`room_${index}_photos`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                        )}
                       >
-                        Photos <span style={{ color: ERROR }}>*</span>
+                        Photos <span className="text-th-error-bright">*</span>
                       </label>
                       <span
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color:
-                            photoCount >= MIN_PHOTOS
-                              ? GREEN
-                              : errors[`room_${index}_photos`]
-                                ? ERROR
-                                : GRAY_400,
-                        }}
+                        className={cn(
+                          "text-[11px] font-bold",
+                          photoCount >= MIN_PHOTOS
+                            ? "text-th-success-bright"
+                            : errors[`room_${index}_photos`]
+                              ? "text-th-error-bright"
+                              : "text-th-warm-text-muted",
+                        )}
                       >
                         {photoCount}/{MIN_PHOTOS} required
                       </span>
                     </div>
 
                     {/* Progress */}
-                    <div
-                      style={{
-                        width: "100%",
-                        height: 3,
-                        backgroundColor: SURFACE,
-                        borderRadius: 99,
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div className="w-full h-[3px] bg-th-warm-surface rounded-full overflow-hidden">
                       <div
-                        style={{
-                          height: "100%",
-                          borderRadius: 99,
-                          width: `${(Math.min(photoCount, MIN_PHOTOS) / MIN_PHOTOS) * 100}%`,
-                          backgroundColor: photoCount >= MIN_PHOTOS ? GREEN : TEAL,
-                          transition: "width 0.4s ease",
-                        }}
+                        className={cn(
+                          "h-full rounded-full transition-[width] duration-[400ms] ease-out",
+                          photoCount >= MIN_PHOTOS ? "bg-th-success-bright" : "bg-th-brand",
+                        )}
+                        style={{ width: `${(Math.min(photoCount, MIN_PHOTOS) / MIN_PHOTOS) * 100}%` }}
                       />
                     </div>
 
                     <label
-                      style={{
-                        display: "flex",
-                        height: 72,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 10,
-                        borderRadius: 13,
-                        border: `2px dashed ${errors[`room_${index}_photos`] ? "#fca5a5" : GRAY_200}`,
-                        backgroundColor: errors[`room_${index}_photos`] ? ERROR_BG : SURFACE,
-                        cursor: "pointer",
-                        transition: "all 0.15s",
-                      }}
+                      className={cn(
+                        "flex h-[72px] items-center justify-center gap-2.5 rounded-[13px] border-2 border-dashed cursor-pointer transition-all duration-150",
+                        errors[`room_${index}_photos`]
+                          ? "border-th-error-bright-soft bg-th-error-bright-bg"
+                          : "border-th-warm-border bg-th-warm-surface",
+                      )}
                     >
                       <ImagePlus
                         size={16}
-                        color={errors[`room_${index}_photos`] ? ERROR : GRAY_400}
+                        className={
+                          errors[`room_${index}_photos`]
+                            ? "text-th-error-bright"
+                            : "text-th-warm-text-muted"
+                        }
                       />
                       <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: errors[`room_${index}_photos`] ? ERROR : GRAY_500,
-                        }}
+                        className={cn(
+                          "text-[13px] font-semibold",
+                          errors[`room_${index}_photos`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                        )}
                       >
                         {errors[`room_${index}_photos`] || "Add room photos"}
                       </span>
@@ -835,35 +527,15 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                         {room.photos.map((photo, photoIndex) => (
                           <div
                             key={photoIndex}
-                            style={{
-                              position: "relative",
-                              aspectRatio: "1",
-                              borderRadius: 10,
-                              overflow: "hidden",
-                              border: `1.5px solid ${GRAY_200}`,
-                            }}
-                            className="group"
+                            className="relative aspect-square rounded-[10px] overflow-hidden border-[1.5px] border-th-warm-border group"
                           >
                             <img
                               src={renderImageSrc(photo)}
                               alt={`Room photo ${photoIndex + 1}`}
-                              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              className="w-full h-full object-cover"
                             />
                             {photoIndex < MIN_PHOTOS && (
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  top: 4,
-                                  left: 4,
-                                  width: 14,
-                                  height: 14,
-                                  borderRadius: "50%",
-                                  backgroundColor: GREEN,
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                }}
-                              >
+                              <div className="absolute top-1 left-1 w-[14px] h-[14px] rounded-full bg-th-success-bright flex items-center justify-center">
                                 <svg width="7" height="7" viewBox="0 0 12 12" fill="none">
                                   <path
                                     d="M2.5 6L5 8.5L9.5 3.5"
@@ -877,25 +549,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                             )}
                             <button
                               onClick={() => removeRoomImage(room.id, photoIndex)}
-                              style={{
-                                position: "absolute",
-                                top: 4,
-                                right: 4,
-                                width: 18,
-                                height: 18,
-                                borderRadius: "50%",
-                                backgroundColor: "rgba(0,0,0,0.55)",
-                                border: "none",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                cursor: "pointer",
-                                opacity: 0,
-                                transition: "opacity 0.15s",
-                              }}
-                              className="group-hover:!opacity-100"
+                              className="absolute top-1 right-1 w-[18px] h-[18px] rounded-full bg-black/55 border-none flex items-center justify-center cursor-pointer opacity-0 transition-opacity duration-150 group-hover:!opacity-100"
                             >
-                              <X size={9} color="white" />
+                              <X size={9} className="text-white" />
                             </button>
                           </div>
                         ))}
@@ -905,99 +561,38 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
 
                   {/* Rules */}
                   <div className="flex flex-col gap-2.5">
-                    <label
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: GRAY_500,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.03em",
-                      }}
-                    >
+                    <label className="text-[12px] font-semibold text-th-warm-text-dark uppercase tracking-[0.03em]">
                       Room Rules
                     </label>
                     {(roomRules[room.id] || [""]).map((rule, ruleIndex) => (
                       <div key={ruleIndex} className="flex items-center gap-2">
-                        <div
-                          style={{
-                            width: 22,
-                            height: 22,
-                            borderRadius: "50%",
-                            backgroundColor: SURFACE,
-                            border: `1.5px solid ${GRAY_200}`,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          <span style={{ fontSize: 9, fontWeight: 700, color: GRAY_400 }}>
+                        <div className="w-[22px] h-[22px] rounded-full bg-th-warm-surface border-[1.5px] border-th-warm-border flex items-center justify-center shrink-0">
+                          <span className="text-[9px] font-bold text-th-warm-text-muted">
                             {ruleIndex + 1}
                           </span>
                         </div>
                         <input
-                          placeholder="Add a rule\u2026"
+                          placeholder="Add a rule…"
                           value={rule}
                           onChange={(e) => updateRoomRule(room.id, ruleIndex, e.target.value)}
-                          style={{
-                            flex: 1,
-                            height: 40,
-                            padding: "0 12px",
-                            fontSize: 13,
-                            color: BLACK,
-                            fontWeight: 450,
-                            backgroundColor: SURFACE,
-                            border: "1.5px solid transparent",
-                            borderRadius: 11,
-                            outline: "none",
-                            transition: "all 0.15s",
-                          }}
-                          onFocus={(e) => {
-                            e.target.style.borderColor = TEAL;
-                            e.target.style.backgroundColor = WHITE;
-                            e.target.style.boxShadow = `0 0 0 4px ${TEAL_FOCUS}`;
-                          }}
-                          onBlur={(e) => {
-                            e.target.style.borderColor = "transparent";
-                            e.target.style.backgroundColor = SURFACE;
-                            e.target.style.boxShadow = "none";
-                          }}
+                          className={cn(
+                            "flex-1 h-10 px-3 text-[13px] text-th-text-primary font-[450] bg-th-warm-surface border-[1.5px] border-transparent rounded-[11px] outline-none transition-all duration-150",
+                            "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
+                          )}
                         />
                         <button
                           type="button"
                           onClick={() => removeRoomRule(room.id, ruleIndex)}
-                          style={{
-                            width: 26,
-                            height: 26,
-                            borderRadius: "50%",
-                            backgroundColor: "transparent",
-                            border: "none",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            flexShrink: 0,
-                          }}
+                          className="w-[26px] h-[26px] rounded-full bg-transparent border-none flex items-center justify-center cursor-pointer shrink-0"
                         >
-                          <X size={12} color={GRAY_400} />
+                          <X size={12} className="text-th-warm-text-muted" />
                         </button>
                       </div>
                     ))}
                     <button
                       type="button"
                       onClick={() => addRoomRule(room.id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: TEAL,
-                        backgroundColor: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        paddingLeft: 30,
-                      }}
+                      className="flex items-center gap-1.5 text-[12px] font-bold text-th-brand bg-transparent border-none cursor-pointer pl-[30px]"
                     >
                       <Plus size={11} />
                       Add rule
@@ -1014,30 +609,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
       <button
         type="button"
         onClick={addRoom}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          width: "100%",
-          padding: "14px 0",
-          borderRadius: 16,
-          border: `2px dashed ${GRAY_200}`,
-          backgroundColor: "transparent",
-          fontSize: 13,
-          fontWeight: 700,
-          color: TEAL,
-          cursor: "pointer",
-          transition: "all 0.15s",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
-        }}
+        className="flex items-center justify-center gap-2 w-full py-[14px] rounded-[16px] border-2 border-dashed border-th-warm-border bg-transparent text-[13px] font-bold text-th-brand cursor-pointer transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft"
       >
         <Plus size={15} />
         Add another room

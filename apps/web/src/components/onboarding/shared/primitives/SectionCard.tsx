@@ -1,5 +1,4 @@
 import React from "react";
-import { WHITE, TEAL_BG, TEAL_BORDER, BLACK, GRAY_400, GRAY_200 } from "./tokens";
 
 interface SectionCardProps {
   icon: React.ReactNode;
@@ -20,37 +19,17 @@ const SectionCard: React.FC<SectionCardProps> = ({
   children,
   bodyGap,
 }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: `1.5px solid ${GRAY_200}`,
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
+  <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] px-[22px] pt-5 pb-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className={`flex ${action ? "items-start" : "items-center"} justify-between mb-5`}>
       <div className="flex items-center gap-3">
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 11,
-            backgroundColor: TEAL_BG,
-            border: `1.5px solid ${TEAL_BORDER}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
+        <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-th-brand-border-soft flex items-center justify-center shrink-0">
           {icon}
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
             {title}
           </p>
-          {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
+          {subtitle && <p className="text-[11px] text-th-warm-text-muted mt-px">{subtitle}</p>}
         </div>
       </div>
       {action}

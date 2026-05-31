@@ -9,19 +9,8 @@ import {
   ImageIcon,
   Fingerprint,
 } from "lucide-react";
-import { getImageUrl } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import {
-  TEAL,
-  TEAL_BG,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_200,
-  ERROR,
-  ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
   SectionCard,
   Field,
   IconInput,
@@ -65,8 +54,6 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
   onIdProofUpload,
   uploadError,
 }) => {
-  const [uploadHovered, setUploadHovered] = React.useState(false);
-
   const statesForCountry = locationData.find((c) => c.name === countryName)?.states ?? [];
   const citiesForState = statesForCountry.find((s: any) => s.name === selectedState)?.cities ?? [];
 
@@ -82,7 +69,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
 
       <div className="w-full flex flex-col gap-4">
         <SectionCard
-          icon={<User size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<User size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Personal Info"
           subtitle="Your full legal name"
           bodyGap
@@ -113,7 +100,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<Calendar size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Calendar size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Personal Details"
           subtitle="Date of birth and relationship status"
           bodyGap
@@ -146,46 +133,18 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Personal Address"
           subtitle="Your current residential address"
           bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Country">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  height: 52,
-                  borderRadius: 13,
-                  backgroundColor: SURFACE,
-                  opacity: 0.7,
-                  border: "1.5px solid transparent",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    padding: "0 12px",
-                    height: "100%",
-                    borderRight: `1.5px solid ${GRAY_200}`,
-                    fontSize: 18,
-                    flexShrink: 0,
-                  }}
-                >
+              <div className="flex items-center h-[52px] rounded-[13px] bg-th-warm-surface opacity-70 border-[1.5px] border-transparent">
+                <div className="flex items-center px-3 h-full border-r border-[1.5px] border-th-warm-border text-[18px] flex-shrink-0">
                   🇮🇳
                 </div>
-                <span
-                  style={{
-                    flex: 1,
-                    padding: "0 14px",
-                    fontSize: 14,
-                    color: GRAY_400,
-                    fontWeight: 450,
-                  }}
-                >
+                <span className="flex-1 px-[14px] text-[14px] text-th-warm-text-muted font-[450]">
                   India
                 </span>
               </div>
@@ -245,7 +204,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<ShieldCheck size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Identity Verification"
           subtitle="Government-issued ID for verification"
           bodyGap
@@ -266,75 +225,28 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
 
           <Field label="Upload ID Photo" required error={uploadError || errors.idPhotos}>
             <label
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                width: "100%",
-                height: 180,
-                borderRadius: 16,
-                cursor: "pointer",
-                border: `2px dashed ${uploadHasError ? ERROR_SOFT : idProofImage ? TEAL : GRAY_200}`,
-                backgroundColor: uploadHasError
-                  ? ERROR_BG
-                  : idProofImage || uploadHovered
-                    ? TEAL_BG
-                    : SURFACE,
-                boxShadow: uploadHasError
-                  ? `0 0 0 3px ${ERROR_RING}`
+              className={cn(
+                "group relative flex flex-col items-center justify-center w-full h-[180px]",
+                "rounded-[16px] cursor-pointer border-2 border-dashed overflow-hidden",
+                "transition-all duration-200",
+                uploadHasError
+                  ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
                   : idProofImage
-                    ? `0 0 0 3px rgba(15, 92, 138, 0.12)`
-                    : "none",
-                overflow: "hidden",
-                position: "relative",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={() => setUploadHovered(true)}
-              onMouseLeave={() => setUploadHovered(false)}
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.12)]"
+                    : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
+              )}
             >
               {idProofImage ? (
                 <>
                   <img
                     src={getImageUrl(idProofImage)}
                     alt="ID Proof"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      position: "absolute",
-                      inset: 0,
-                    }}
+                    className="w-full h-full object-cover absolute inset-0"
                   />
-                  <div
-                    style={{
-                      position: "absolute",
-                      inset: 0,
-                      backgroundColor: `rgba(0,0,0,${uploadHovered ? 0.45 : 0})`,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      transition: "background-color 0.2s",
-                    }}
-                  >
-                    <div
-                      style={{
-                        opacity: uploadHovered ? 1 : 0,
-                        transform: uploadHovered ? "translateY(0)" : "translateY(6px)",
-                        transition: "opacity 0.2s, transform 0.2s",
-                        backgroundColor: "rgba(255,255,255,0.92)",
-                        backdropFilter: "blur(8px)",
-                        borderRadius: 99,
-                        padding: "8px 18px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 7,
-                      }}
-                    >
-                      <Upload size={14} color={BLACK} />
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: BLACK }}>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/45 flex flex-col items-center justify-center gap-2 transition-colors duration-200">
+                    <div className="opacity-0 translate-y-[6px] group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200 bg-white/[0.92] backdrop-blur-[8px] rounded-full py-2 px-[18px] flex items-center gap-[7px]">
+                      <Upload size={14} className="text-th-text-primary" />
+                      <span className="text-[12.5px] font-bold text-th-text-primary">
                         Change Photo
                       </span>
                     </div>
@@ -343,33 +255,28 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
               ) : (
                 <div className="flex flex-col items-center gap-3 px-6 text-center">
                   <div
-                    style={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 15,
-                      backgroundColor: WHITE,
-                      border: `1.5px solid ${uploadHasError ? ERROR_SOFT : GRAY_200}`,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.07)",
-                      transition: "transform 0.2s",
-                      transform: uploadHovered ? "scale(1.08)" : "scale(1)",
-                    }}
+                    className={cn(
+                      "w-[50px] h-[50px] rounded-[15px] bg-th-surface-0 flex items-center justify-center",
+                      "border-[1.5px] shadow-[0_2px_10px_rgba(0,0,0,0.07)]",
+                      "transition-transform duration-200 group-hover:scale-[1.08]",
+                      uploadHasError ? "border-th-error-bright-soft" : "border-th-warm-border",
+                    )}
                   >
-                    <ImageIcon size={22} color={uploadHasError ? "#f87171" : GRAY_400} />
+                    <ImageIcon
+                      size={22}
+                      className={uploadHasError ? "text-[#f87171]" : "text-th-warm-text-muted"}
+                    />
                   </div>
                   <div>
                     <p
-                      style={{
-                        fontSize: 13.5,
-                        fontWeight: 700,
-                        color: uploadHasError ? ERROR : BLACK,
-                      }}
+                      className={cn(
+                        "text-[13.5px] font-bold",
+                        uploadHasError ? "text-th-error-bright" : "text-th-text-primary",
+                      )}
                     >
                       Click to upload ID photo
                     </p>
-                    <p style={{ fontSize: 11, color: GRAY_400, marginTop: 3 }}>
+                    <p className="text-[11px] text-th-warm-text-muted mt-[3px]">
                       JPG, PNG or PDF · Max 5 MB
                     </p>
                   </div>
@@ -379,15 +286,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 type="file"
                 accept=".jpg,.jpeg,.png,.pdf"
                 onChange={onIdProofUpload}
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  width: "100%",
-                  height: "100%",
-                  opacity: 0,
-                  cursor: "pointer",
-                  zIndex: 10,
-                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
             </label>
           </Field>

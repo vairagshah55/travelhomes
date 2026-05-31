@@ -20,7 +20,15 @@ const create = asyncHandler(async (req, res) => {
 });
 
 const list = asyncHandler(async (req, res) => {
-  const { data, pagination } = await service.list(req.validated.query, req.user);
+  // Pass through the request meta so the service can:
+  //  - drop bot UAs from impression tracking
+  //  - dedupe impressions per (visitor, vendor, day) so a refresh doesn't
+  //    inflate counts.
+  const meta = {
+    userAgent: req.headers["user-agent"] || "",
+    visitorId: getVisitorId(req),
+  };
+  const { data, pagination } = await service.list(req.validated.query, req.user, meta);
   res.json({ success: true, data, pagination });
 });
 

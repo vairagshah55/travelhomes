@@ -50,19 +50,8 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
     <div className="w-full max-w-[320px] mx-auto">
       {/* Preview label */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        <span
-          className="inline-block w-1.5 h-1.5 rounded-full"
-          style={{ backgroundColor: "#0F5C8A" }}
-        />
-        <span
-          style={{
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: "0.13em",
-            textTransform: "uppercase",
-            color: "#888780",
-          }}
-        >
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-th-brand" />
+        <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
           Live Preview
         </span>
       </div>
@@ -80,24 +69,21 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                <div
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                  style={{ backgroundColor: "rgba(15, 92, 138, 0.07)" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-th-brand-soft">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-th-brand">
                     <rect
                       x="3"
                       y="5"
                       width="18"
                       height="14"
                       rx="2"
-                      stroke="#0F5C8A"
+                      stroke="currentColor"
                       strokeWidth="1.8"
                     />
-                    <circle cx="9" cy="11" r="1.5" fill="#0F5C8A" />
+                    <circle cx="9" cy="11" r="1.5" fill="currentColor" />
                     <path
                       d="M21 16l-5-5-9 8"
-                      stroke="#0F5C8A"
+                      stroke="currentColor"
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -184,15 +170,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
           {/* Discount label */}
           {activeDiscount && activeDiscount.finalPrice > 0 && (
             <div className="pt-0.5">
-              <span
-                className="inline-block text-[10.5px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                style={{
-                  color: "#0F5C8A",
-                  backgroundColor: "rgba(15, 92, 138, 0.08)",
-                  border: "1px solid rgba(15, 92, 138, 0.25)",
-                  letterSpacing: "0.06em",
-                }}
-              >
+              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-th-brand-border-soft">
                 {activeDiscount.label}
               </span>
             </div>
@@ -203,26 +181,17 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
       {/* Description excerpt below the card — what guests see on detail page */}
       {description && (
         <div className="mt-4 px-1">
-          <p
-            className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
-            style={{ color: "#888780", letterSpacing: "0.08em" }}
-          >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] mb-1.5 text-th-warm-text-muted">
             On the listing page
           </p>
-          <p
-            className="text-[13px] leading-relaxed line-clamp-4"
-            style={{ color: "#2C2C2A" }}
-          >
+          <p className="text-[13px] leading-relaxed line-clamp-4 text-th-warm-text-dark">
             {description}
           </p>
         </div>
       )}
 
       {/* Helper hint */}
-      <p
-        className="mt-4 text-[11px] text-center"
-        style={{ color: "#A8A6A0" }}
-      >
+      <p className="mt-4 text-[11px] text-center text-[#A8A6A0]">
         This is how guests will see your listing.
       </p>
     </div>

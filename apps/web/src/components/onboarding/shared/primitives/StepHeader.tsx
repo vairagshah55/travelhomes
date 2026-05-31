@@ -1,5 +1,4 @@
 import React from "react";
-import { TEAL, NAVY, GRAY_400, GRAY_500 } from "./tokens";
 
 interface StepHeaderProps {
   kicker: string;
@@ -11,34 +10,17 @@ interface StepHeaderProps {
 const StepHeader: React.FC<StepHeaderProps> = ({ kicker, title, subtitle, extra }) => (
   <div className="text-center space-y-2 pb-1">
     <div className="flex items-center justify-center gap-2.5 mb-3">
-      <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-      <span
-        style={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          letterSpacing: "0.13em",
-          textTransform: "uppercase",
-          color: GRAY_400,
-        }}
-      >
+      <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+      <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
         {kicker}
       </span>
-      <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+      <div className="w-6 h-[3px] rounded-full bg-th-brand" />
     </div>
-    <h1
-      className="font-serif"
-      style={{
-        fontSize: "clamp(24px, 3.6vw, 32px)",
-        fontWeight: 400,
-        color: NAVY,
-        letterSpacing: "-0.015em",
-        lineHeight: 1.15,
-      }}
-    >
+    <h1 className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]">
       {title}
     </h1>
     {subtitle && (
-      <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>{subtitle}</p>
+      <p className="text-sm text-th-warm-text-dark leading-[1.6]">{subtitle}</p>
     )}
     {extra}
   </div>

@@ -1,23 +1,7 @@
 import React from "react";
 import { Plus, X, Check, IndianRupee, Car, Calendar } from "lucide-react";
-import {
-  TEAL,
-  TEAL_BG,
-  TEAL_BORDER,
-  TEAL_FOCUS,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_500,
-  GRAY_200,
-  ERROR,
-  ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
-  ErrorMsg,
-  StepHeader,
-} from "../shared/primitives";
+import { ErrorMsg, StepHeader } from "../shared/primitives";
+import { cn } from "@/lib/utils";
 
 type PriceField = "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes";
 
@@ -48,79 +32,37 @@ const PriceInput = ({
   value: string;
   onChange: (v: string) => void;
   error?: boolean;
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderRadius: 13,
-        overflow: "hidden",
-        border: `1.5px solid ${error ? ERROR_SOFT : focused ? TEAL : "transparent"}`,
-        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow:
-          focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "all 0.15s",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 4,
-          padding: "0 12px",
-          height: 52,
-          borderRight: `1.5px solid ${focused ? TEAL_BORDER : GRAY_200}`,
-          backgroundColor: focused ? TEAL_BG : SURFACE,
-          transition: "all 0.15s",
-          flexShrink: 0,
-        }}
-      >
-        <IndianRupee size={13} color={focused ? TEAL : GRAY_400} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: focused ? TEAL : GRAY_400 }}>INR</span>
-      </div>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder="0"
-        min="0"
-        style={{
-          flex: 1,
-          height: 52,
-          padding: "0 16px",
-          fontSize: 18,
-          fontWeight: 700,
-          color: value ? BLACK : GRAY_400,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          letterSpacing: "-0.02em",
-        }}
-      />
-      {value && Number(value) > 0 && (
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: TEAL,
-            paddingRight: 14,
-            flexShrink: 0,
-          }}
-        >
-          / unit
-        </span>
-      )}
+}) => (
+  <div
+    className={cn(
+      "group flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
+      error
+        ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+        : "border-transparent bg-th-warm-surface focus-within:border-th-brand focus-within:bg-th-surface-0 focus-within:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+    )}
+  >
+    <div className="flex items-center gap-1 px-3 h-[52px] border-r-[1.5px] border-th-warm-border bg-th-warm-surface group-focus-within:border-th-brand-border-soft group-focus-within:bg-th-brand-soft transition-all duration-150 flex-shrink-0">
+      <IndianRupee size={13} className="text-th-warm-text-muted group-focus-within:text-th-brand" />
+      <span className="text-[12px] font-bold text-th-warm-text-muted group-focus-within:text-th-brand">INR</span>
     </div>
-  );
-};
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder="0"
+      min="0"
+      className={cn(
+        "flex-1 h-[52px] px-4 text-[18px] font-bold tracking-[-0.02em] bg-transparent border-none outline-none",
+        value ? "text-th-text-primary" : "text-th-warm-text-muted",
+      )}
+    />
+    {value && Number(value) > 0 && (
+      <span className="text-[11px] font-semibold text-th-brand pr-[14px] flex-shrink-0">
+        / unit
+      </span>
+    )}
+  </div>
+);
 
 const ItemRow = ({
   value,
@@ -137,34 +79,17 @@ const ItemRow = ({
   onUpdate: (field: PriceField, index: number, value: string) => void;
   onRemove: (field: PriceField, index: number) => void;
 }) => {
-  const [focused, setFocused] = React.useState(false);
   const isInclude = type === "include";
   return (
-    <div
-      className="flex items-center gap-2.5"
-      style={{
-        backgroundColor: focused ? WHITE : SURFACE,
-        border: `1.5px solid ${focused ? TEAL : "transparent"}`,
-        borderRadius: 11,
-        padding: "5px 8px 5px 10px",
-        boxShadow: focused ? `0 0 0 3px ${TEAL_FOCUS}` : "none",
-        transition: "all 0.15s",
-      }}
-    >
+    <div className="flex items-center gap-2.5 rounded-[11px] px-[10px] py-[5px] pr-2 border-[1.5px] border-transparent bg-th-warm-surface focus-within:border-th-brand focus-within:bg-th-surface-0 focus-within:shadow-[0_0_0_3px_var(--th-ring)] transition-all duration-150">
       <div
-        style={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          backgroundColor: isInclude ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.08)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
+        className={cn(
+          "w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0",
+          isInclude ? "bg-th-success-bright-bg" : "bg-th-error-bright-bg",
+        )}
       >
         {isInclude ? (
-          <Check size={11} color="#22c55e" strokeWidth={2.5} />
+          <Check size={11} className="text-th-success-bright" strokeWidth={2.5} />
         ) : (
           <X size={11} color="#f87171" strokeWidth={2.5} />
         )}
@@ -173,46 +98,16 @@ const ItemRow = ({
         type="text"
         value={value}
         onChange={(e) => onUpdate(field, index, e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={isInclude ? "e.g. Driver allowance" : "e.g. Fuel charges"}
         maxLength={250}
-        style={{
-          flex: 1,
-          height: 34,
-          padding: "0 4px",
-          fontSize: 13,
-          color: BLACK,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          fontWeight: 450,
-        }}
+        className="flex-1 h-[34px] px-1 text-[13px] text-th-text-primary font-[450] bg-transparent border-none outline-none"
       />
       <button
         type="button"
         onClick={() => onRemove(field, index)}
-        style={{
-          width: 26,
-          height: 26,
-          borderRadius: 7,
-          border: "none",
-          backgroundColor: "transparent",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          flexShrink: 0,
-          transition: "background-color 0.15s",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
-        }}
+        className="w-[26px] h-[26px] rounded-[7px] flex items-center justify-center flex-shrink-0 cursor-pointer bg-transparent hover:bg-red-50 transition-colors duration-150"
       >
-        <X size={12} color={GRAY_400} />
+        <X size={12} className="text-th-warm-text-muted" />
       </button>
     </div>
   );
@@ -240,31 +135,17 @@ const ItemList = ({
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: error ? ERROR : isInclude ? "#22c55e" : "#f87171",
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
+          className={cn(
+            "text-[11px] font-bold uppercase tracking-[0.04em]",
+            error ? "text-th-error-bright" : isInclude ? "text-th-success-bright" : "text-[#f87171]",
+          )}
         >
           {isInclude ? "✓ Included" : "✕ Excluded"}
         </p>
         <button
           type="button"
           onClick={() => onAdd(field)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            fontSize: 11,
-            fontWeight: 700,
-            color: TEAL,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: "2px 0",
-          }}
+          className="flex items-center gap-1 text-[11px] font-bold text-th-brand bg-transparent border-none cursor-pointer py-0.5"
         >
           <Plus size={11} strokeWidth={2.5} />
           Add
@@ -273,14 +154,14 @@ const ItemList = ({
 
       {items.length === 0 ? (
         <div
-          style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            backgroundColor: error ? ERROR_BG : SURFACE,
-            border: `1.5px dashed ${error ? ERROR_SOFT : GRAY_200}`,
-          }}
+          className={cn(
+            "px-[14px] py-[10px] rounded-[10px] border-[1.5px] border-dashed",
+            error
+              ? "bg-th-error-bright-bg border-th-error-bright-soft"
+              : "bg-th-warm-surface border-th-warm-border",
+          )}
         >
-          <p style={{ fontSize: 12, color: error ? ERROR : GRAY_400 }}>
+          <p className={cn("text-[12px]", error ? "text-th-error-bright" : "text-th-warm-text-muted")}>
             {error ?? `No items yet — click Add`}
           </p>
         </div>
@@ -344,72 +225,44 @@ const PriceCard = ({
   const hasValue = value && Number(value) > 0;
   return (
     <div
-      style={{
-        backgroundColor: WHITE,
-        border: `1.5px solid ${error ? ERROR_SOFT : GRAY_200}`,
-        borderRadius: 20,
-        padding: "20px 22px 22px",
-        boxShadow: error
-          ? `0 0 0 3px ${ERROR_RING}, 0 2px 12px rgba(0,0,0,0.04)`
-          : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        transition: "all 0.15s",
-      }}
+      className={cn(
+        "bg-th-surface-0 rounded-[20px] px-[22px] pt-5 pb-[22px] border-[1.5px] transition-all duration-150",
+        error
+          ? "border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring),0_2px_12px_rgba(0,0,0,0.04)]"
+          : "border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]",
+      )}
     >
       <div className="flex items-center gap-3 mb-5">
         <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 11,
-            backgroundColor: hasValue ? TEAL_BG : SURFACE,
-            border: `1.5px solid ${hasValue ? TEAL_BORDER : GRAY_200}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            transition: "all 0.2s",
-          }}
+          className={cn(
+            "w-9 h-9 rounded-[11px] border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-200",
+            hasValue
+              ? "bg-th-brand-soft border-th-brand-border-soft"
+              : "bg-th-warm-surface border-th-warm-border",
+          )}
         >
           {icon}
         </div>
         <div className="flex-1">
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
             {title}
           </p>
-          <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>
+          <p className="text-[11px] text-th-warm-text-muted mt-px">{subtitle}</p>
         </div>
         {hasValue && (
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: "#22c55e",
-              backgroundColor: "rgba(34,197,94,0.08)",
-              border: "1px solid rgba(34,197,94,0.2)",
-              borderRadius: 99,
-              padding: "2px 10px",
-            }}
-          >
+          <span className="text-[10.5px] font-bold text-th-success-bright bg-th-success-bright-bg border border-th-success-bright-border rounded-full px-[10px] py-0.5">
             ✓ Set
           </span>
         )}
       </div>
 
       <div className="flex flex-col gap-1 mb-1">
-        <label
-          style={{
-            fontSize: 11,
-            fontWeight: 600,
-            color: GRAY_500,
-            textTransform: "uppercase",
-            letterSpacing: "0.04em",
-          }}
-        >
+        <label className="text-[11px] font-semibold text-th-warm-text-dark uppercase tracking-[0.04em]">
           Charge amount{" "}
           {error ? (
             ""
           ) : (
-            <span style={{ color: GRAY_400, fontWeight: 400, textTransform: "none" }}>
+            <span className="text-th-warm-text-muted font-normal normal-case">
               — optional if other mode is set
             </span>
           )}
@@ -473,21 +326,12 @@ const PricingStep: React.FC<PricingStepProps> = ({
   const content = (
     <>
       {errors.pricing && (
-        <div
-          className="flex items-center gap-2 w-full"
-          style={{
-            padding: "12px 16px",
-            borderRadius: 12,
-            backgroundColor: ERROR_BG,
-            border: `1.5px solid rgba(239,68,68,0.25)`,
-            boxShadow: `0 0 0 3px ${ERROR_RING}`,
-          }}
-        >
+        <div className="flex items-center gap-2 w-full px-4 py-3 rounded-xl bg-th-error-bright-bg border-[1.5px] border-[rgba(239,68,68,0.25)] shadow-[0_0_0_3px_var(--th-error-bright-ring)] text-th-error-bright">
           <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-            <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-            <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="6" cy="6" r="5.25" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M6 3.5v3M6 8.25v.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-          <p style={{ fontSize: 13, color: ERROR, fontWeight: 500 }}>{errors.pricing}</p>
+          <p className="text-[13px] font-medium">{errors.pricing}</p>
         </div>
       )}
 
@@ -496,7 +340,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
           icon={
             <Car
               size={16}
-              color={perKmCharge && Number(perKmCharge) > 0 ? TEAL : GRAY_400}
+              className={perKmCharge && Number(perKmCharge) > 0 ? "text-th-brand" : "text-th-warm-text-muted"}
               strokeWidth={2}
             />
           }
@@ -522,7 +366,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
           icon={
             <Calendar
               size={16}
-              color={perDayCharge && Number(perDayCharge) > 0 ? TEAL : GRAY_400}
+              className={perDayCharge && Number(perDayCharge) > 0 ? "text-th-brand" : "text-th-warm-text-muted"}
               strokeWidth={2}
             />
           }

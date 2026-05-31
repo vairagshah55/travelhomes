@@ -1,19 +1,5 @@
 import React from "react";
-import { getImageUrl } from "@/lib/utils";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_RING = "rgba(15, 92, 138, 0.20)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_600 = "#2C2C2A";
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+import { cn, getImageUrl } from "@/lib/utils";
 
 interface Category {
   id: string;
@@ -49,35 +35,14 @@ const SectionCard = ({
   trailing?: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: "1.5px solid #D3D1C7",
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
+  <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(15,92,138,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-          overflow: "hidden",
-        }}
-      >
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(15,92,138,0.25)] flex items-center justify-center shrink-0 overflow-hidden">
         {icon}
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
+          <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
             {title}
           </p>
           {badge}
@@ -103,56 +68,29 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Categories
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Category Selection
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Select the categories that best describe your property.
         </p>
 
         {totalSelected > 0 && (
           <div className="flex justify-center mt-1">
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 11,
-                fontWeight: 700,
-                color: TEAL,
-                backgroundColor: TEAL_BG,
-                border: `1px solid ${TEAL_RING}`,
-                borderRadius: 99,
-                padding: "3px 12px",
-              }}
-            >
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-3 py-[3px]">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path
                   d="M2 5l2.5 2.5L8 3"
-                  stroke={TEAL}
+                  stroke="currentColor"
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -197,26 +135,16 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                   <img
                     src={getImageUrl(property.icon)}
                     alt={property.name}
-                    style={{ width: 18, height: 18, objectFit: "contain" }}
+                    className="w-[18px] h-[18px] object-contain"
                   />
                 ) : (
-                  <span style={{ fontSize: 16 }}>🏠</span>
+                  <span className="text-base">🏠</span>
                 )
               }
               title={property.name}
               badge={
                 selectedInSection.length > 0 ? (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: TEAL,
-                      backgroundColor: TEAL_BG,
-                      border: `1px solid ${TEAL_RING}`,
-                      borderRadius: 99,
-                      padding: "1px 9px",
-                    }}
-                  >
+                  <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-[9px] py-[1px]">
                     {selectedInSection.length}/{categories.length}
                   </span>
                 ) : undefined
@@ -226,16 +154,7 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: TEAL,
-                      backgroundColor: "transparent",
-                      border: "none",
-                      cursor: "pointer",
-                      padding: "4px 0",
-                      flexShrink: 0,
-                    }}
+                    className="text-[12px] font-bold text-th-brand bg-transparent border-none cursor-pointer py-1 shrink-0"
                   >
                     {allSelected ? "Deselect all" : "Select all"}
                   </button>
@@ -243,17 +162,8 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
               }
             >
               {categories.length === 0 ? (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "28px 0",
-                    borderRadius: 13,
-                    border: `2px dashed ${GRAY_200}`,
-                  }}
-                >
-                  <p style={{ fontSize: 13, color: GRAY_400 }}>
+                <div className="flex items-center justify-center py-7 rounded-[13px] border-2 border-dashed border-th-warm-border">
+                  <p className="text-[13px] text-th-warm-text-muted">
                     No categories available for this property type
                   </p>
                 </div>
@@ -268,53 +178,28 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                         key={categoryKey}
                         type="button"
                         onClick={() => onCategoryToggle(categoryKey)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 14px",
-                          borderRadius: 99,
-                          border: `1.5px solid ${selected ? TEAL : GRAY_200}`,
-                          backgroundColor: selected ? TEAL_BG : SURFACE,
-                          boxShadow: selected ? `0 0 0 3px ${TEAL_RING}` : "none",
-                          cursor: "pointer",
-                          transition: "all 0.15s",
-                          color: selected ? TEAL : GRAY_600,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!selected) {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!selected) {
-                            (e.currentTarget as HTMLButtonElement).style.borderColor = GRAY_200;
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                          }
-                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                          selected
+                            ? "border-th-brand-border-soft bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                            : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
+                        )}
                       >
                         {category.icon && (
                           <span
-                            style={{
-                              width: 16,
-                              height: 16,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                              opacity: selected ? 1 : 0.7,
-                              transition: "opacity 0.15s",
-                            }}
+                            className={cn(
+                              "w-4 h-4 flex items-center justify-center shrink-0 transition-opacity duration-150",
+                              selected ? "opacity-100" : "opacity-70",
+                            )}
                           >
                             <img
                               src={getImageUrl(category.icon)}
                               alt=""
-                              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                              className="w-full h-full object-contain"
                             />
                           </span>
                         )}
-                        <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em" }}>
+                        <span className="text-[13px] font-semibold tracking-[-0.01em]">
                           {category.name}
                         </span>
                         {selected && (
@@ -323,11 +208,11 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                             height="12"
                             viewBox="0 0 10 10"
                             fill="none"
-                            style={{ flexShrink: 0, marginLeft: 2 }}
+                            className="shrink-0 ml-0.5 text-th-brand"
                           >
                             <path
                               d="M2 5l2.5 2.5L8 3"
-                              stroke={TEAL}
+                              stroke="currentColor"
                               strokeWidth="1.8"
                               strokeLinecap="round"
                               strokeLinejoin="round"

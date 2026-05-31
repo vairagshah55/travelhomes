@@ -316,6 +316,14 @@ export interface OfferDTO {
   photos: { coverUrl?: string; galleryUrls: string[] };
   status: "pending" | "approved" | "cancelled" | "deactivated" | "blocked" | "rejected";
   rejectionReason?: string;
+  // Discount offers — UI was already in place; this is the persisted shape
+  // matching the server-side `discounts` sub-doc on the Offer model.
+  discounts?: {
+    firstUser?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
+    festival?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
+    weekly?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
+    special?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
+  };
   createdAt?: string;
   updatedAt?: string;
 }

@@ -1,18 +1,6 @@
 import React, { useState } from "react";
 import { Plus, X, Check, AlertCircle, Lightbulb } from "lucide-react";
-
-// ─── Brand tokens (designe.md) ───────────────────────────────────────────────
-// Primary brand color: ds-deep #0F5C8A with sky/mist tints for focus & accent.
-const TEAL = "#0F5C8A"; // primary (legacy name preserved)
-const TEAL_BG = "rgba(15, 92, 138, 0.07)";
-const TEAL_FOCUS = "rgba(15, 92, 138, 0.15)";
-const NAVY = "#0A4670";
-const BLACK = "#0A4670"; // headings → navy per spec
-const GRAY_500 = "#2C2C2A"; // body → charcoal
-const GRAY_400 = "#888780"; // muted → slate
-const GRAY_200 = "#D3D1C7"; // borders → pebble
-const WHITE = "#ffffff";
-const SURFACE = "#F7F8FA"; // input neutral fill — kept cool
+import { cn } from "@/lib/utils";
 
 interface InclusionExclusionStepProps {
   priceIncludes: string[];
@@ -41,36 +29,14 @@ const SectionCard = ({
   badge?: React.ReactNode;
   children: React.ReactNode;
 }) => (
-  <div
-    style={{
-      backgroundColor: WHITE,
-      border: "1.5px solid #D3D1C7",
-      borderRadius: 20,
-      padding: "20px 22px 22px",
-      boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-    }}
-  >
+  <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] px-[22px] pt-5 pb-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 11,
-          backgroundColor: TEAL_BG,
-          border: "1.5px solid rgba(15,92,138,0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(15,92,138,0.25)] flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontSize: 13, fontWeight: 700, color: BLACK, letterSpacing: "-0.01em" }}>
-          {title}
-        </p>
-        {subtitle && <p style={{ fontSize: 11, color: GRAY_400, marginTop: 1 }}>{subtitle}</p>}
+      <div className="flex-1">
+        <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">{title}</p>
+        {subtitle && <p className="text-[11px] text-th-warm-text-muted mt-[1px]">{subtitle}</p>}
       </div>
       {badge}
     </div>
@@ -96,16 +62,10 @@ const ChipList = ({
       {items.map((item, index) => (
         <div
           key={index}
+          className="flex items-center gap-1.5 pl-3 pr-[6px] py-[5px] rounded-full text-[13px] font-medium"
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "5px 6px 5px 12px",
-            borderRadius: 99,
             border: `1.5px solid ${accentColor}25`,
             backgroundColor: chipBg,
-            fontSize: 13,
-            fontWeight: 500,
             color: accentColor,
           }}
         >
@@ -113,24 +73,7 @@ const ChipList = ({
           <button
             type="button"
             onClick={() => onRemove(index)}
-            style={{
-              width: 20,
-              height: 20,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "transparent",
-              border: "none",
-              cursor: "pointer",
-              transition: "background-color 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${accentColor}18`;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
-            }}
+            className="w-5 h-5 rounded-full flex items-center justify-center bg-transparent border-none cursor-pointer transition-colors duration-150 hover:bg-black/10"
           >
             <X size={11} />
           </button>
@@ -151,7 +94,6 @@ const AddInput = ({
   onAdd: (value: string) => void;
 }) => {
   const [value, setValue] = useState("");
-  const [focused, setFocused] = useState(false);
 
   const handleAdd = () => {
     const trimmed = value.trim();
@@ -161,7 +103,7 @@ const AddInput = ({
   };
 
   return (
-    <div style={{ display: "flex", gap: 8 }}>
+    <div className="flex gap-2">
       <input
         type="text"
         value={value}
@@ -172,44 +114,29 @@ const AddInput = ({
             handleAdd();
           }
         }}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        style={{
-          flex: 1,
-          height: 48,
-          padding: "0 16px",
-          fontSize: 14,
-          color: BLACK,
-          backgroundColor: focused ? WHITE : SURFACE,
-          border: `1.5px solid ${focused ? TEAL : "transparent"}`,
-          borderRadius: 13,
-          outline: "none",
-          boxShadow: focused ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)` : "none",
-          transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-          fontWeight: 450,
-        }}
+        className={cn(
+          "flex-1 h-12 px-4 text-[14px] text-th-text-primary bg-th-warm-surface",
+          "border-[1.5px] border-transparent rounded-[13px] outline-none font-[450]",
+          "transition-[background-color,border-color,box-shadow] duration-150",
+          "focus:bg-th-surface-0 focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+        )}
       />
       <button
         type="button"
         onClick={handleAdd}
         disabled={!value.trim()}
+        className="h-12 px-[18px] flex items-center gap-1.5 rounded-[13px] border-[1.5px] text-[13px] font-semibold transition-all duration-150 flex-shrink-0"
         style={{
-          height: 48,
-          padding: "0 18px",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          borderRadius: 13,
-          border: `1.5px solid ${value.trim() ? accentColor : GRAY_200}`,
-          backgroundColor: value.trim() ? `${accentColor}10` : "transparent",
-          color: value.trim() ? accentColor : GRAY_400,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: value.trim() ? "pointer" : "not-allowed",
-          transition: "all 0.15s",
-          flexShrink: 0,
+          borderColor: value.trim() ? accentColor : undefined,
+          backgroundColor: value.trim() ? `${accentColor}10` : undefined,
+          color: value.trim() ? accentColor : undefined,
         }}
+        // When value is empty, fall back to muted styles via className
+        {...(!value.trim() && {
+          className:
+            "h-12 px-[18px] flex items-center gap-1.5 rounded-[13px] border-[1.5px] border-th-warm-border bg-transparent text-th-warm-text-muted text-[13px] font-semibold transition-all duration-150 flex-shrink-0 cursor-not-allowed",
+        })}
       >
         <Plus size={14} />
         Add
@@ -232,28 +159,28 @@ const SECTIONS: {
     key: "priceIncludes",
     title: "What's Included",
     subtitle: "Items or services covered in the price",
-    icon: <Check size={16} color={TEAL} strokeWidth={2.5} />,
+    icon: <Check size={16} className="text-th-brand" strokeWidth={2.5} />,
     accentColor: "#16a34a",
     chipBg: "#f0fdf4",
-    placeholder: "e.g. Equipment, Guide, Meals\u2026",
+    placeholder: "e.g. Equipment, Guide, Meals…",
   },
   {
     key: "priceExcludes",
     title: "What's Not Included",
     subtitle: "Things guests need to arrange or pay separately",
-    icon: <AlertCircle size={16} color={TEAL} strokeWidth={2.5} />,
+    icon: <AlertCircle size={16} className="text-th-brand" strokeWidth={2.5} />,
     accentColor: "#dc2626",
     chipBg: "#fef2f2",
-    placeholder: "e.g. Flights, Travel insurance\u2026",
+    placeholder: "e.g. Flights, Travel insurance…",
   },
   {
     key: "expectations",
     title: "What We Expect from Guests",
     subtitle: "Requirements or things guests should bring/do",
-    icon: <Lightbulb size={16} color={TEAL} strokeWidth={2.5} />,
+    icon: <Lightbulb size={16} className="text-th-brand" strokeWidth={2.5} />,
     accentColor: "#d97706",
     chipBg: "#fffbeb",
-    placeholder: "e.g. Wear comfortable shoes, Arrive 15 min early\u2026",
+    placeholder: "e.g. Wear comfortable shoes, Arrive 15 min early…",
   },
 ];
 
@@ -276,33 +203,18 @@ const InclusionExclusionStep: React.FC<InclusionExclusionStepProps> = ({
       {/* ── Header ── */}
       <div className="text-center space-y-2 pb-1">
         <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-          <span
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: GRAY_400,
-            }}
-          >
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
             Transparency
           </span>
-          <div style={{ width: 24, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
+          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif"
-          style={{
-            fontSize: "clamp(24px, 3.6vw, 32px)",
-            fontWeight: 400,
-            color: NAVY,
-            letterSpacing: "-0.015em",
-            lineHeight: 1.15,
-          }}
+          className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
         >
           Inclusions &amp; Exclusions
         </h1>
-        <p style={{ fontSize: 14, color: GRAY_500, lineHeight: 1.6 }}>
+        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
           Be transparent with guests about what's covered and what isn't.
         </p>
       </div>
@@ -319,14 +231,11 @@ const InclusionExclusionStep: React.FC<InclusionExclusionStepProps> = ({
               badge={
                 items.length > 0 ? (
                   <span
+                    className="text-[11px] font-bold rounded-full px-[10px] py-[2px] border-[1.5px]"
                     style={{
-                      fontSize: 11,
-                      fontWeight: 700,
                       color: section.accentColor,
                       backgroundColor: section.chipBg,
-                      border: `1.5px solid ${section.accentColor}25`,
-                      borderRadius: 99,
-                      padding: "2px 10px",
+                      borderColor: `${section.accentColor}25`,
                     }}
                   >
                     {items.length}

@@ -1,13 +1,6 @@
 import React from "react";
 import { Users, BedDouble, MapPin, Navigation } from "lucide-react";
 import {
-  TEAL,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_200,
-  ERROR_SOFT,
   SectionCard,
   Field,
   ErrorMsg,
@@ -17,6 +10,7 @@ import {
   Stepper,
   StepHeader,
 } from "../shared/primitives";
+import { cn } from "@/lib/utils";
 
 interface CapacityAddressStepProps {
   seatingCapacity: number;
@@ -64,41 +58,21 @@ const CapacityRow = ({
 }) => (
   <div className="flex flex-col gap-1.5">
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "16px 18px",
-        borderRadius: 14,
-        // Neutral fill always — only the border tints subtly on error, to
-        // match the rest of the validation pattern (no pink-wash, no ring).
-        backgroundColor: SURFACE,
-        border: `1.5px solid ${error ? ERROR_SOFT : "transparent"}`,
-        transition: "all 0.15s",
-      }}
+      className={cn(
+        "flex items-center justify-between px-[18px] py-4 rounded-[14px] bg-th-warm-surface transition-all duration-150",
+        error ? "border-[1.5px] border-th-error-bright-soft" : "border-[1.5px] border-transparent",
+      )}
     >
       <div className="flex items-center gap-3">
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 11,
-            backgroundColor: WHITE,
-            border: `1.5px solid ${GRAY_200}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-          }}
-        >
+        <div className="w-[38px] h-[38px] rounded-[11px] bg-th-surface-0 border-[1.5px] border-th-warm-border flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
           {icon}
         </div>
         <div>
-          <p style={{ fontSize: 13.5, fontWeight: 600, color: BLACK, letterSpacing: "-0.01em" }}>
+          <p className="text-[13.5px] font-semibold text-th-text-primary tracking-[-0.01em]">
             {label}
           </p>
           {description && (
-            <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>{description}</p>
+            <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">{description}</p>
           )}
         </div>
       </div>
@@ -143,30 +117,16 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
     return (st?.cities ?? []).map((ct: any) => ({ label: ct.name, value: ct.name }));
   }, [country, state]);
 
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) =>
-    embedded ? (
-      <div className="w-full flex flex-col gap-4">{children}</div>
-    ) : (
-      <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-        <StepHeader
-          kicker="Setup"
-          title={<>Capacity &amp; Location</>}
-          subtitle="Set your caravan's capacity and where guests can find it."
-        />
-        <div className="w-full flex flex-col gap-4">{children}</div>
-      </div>
-    );
-
-  return (
-    <Wrapper>
-        <SectionCard
-          icon={<Users size={16} color={TEAL} strokeWidth={2.5} />}
+  const sections = (
+    <>
+      <SectionCard
+          icon={<Users size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Capacity"
           subtitle="How many guests your caravan accommodates"
         >
           <div className="flex flex-col gap-3">
             <CapacityRow
-              icon={<Users size={16} color={GRAY_400} />}
+              icon={<Users size={16} className="text-th-warm-text-muted" />}
               label="Seating Capacity"
               description="Guests who can sit during the journey"
               value={seatingCapacity}
@@ -176,7 +136,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
               max={20}
             />
             <CapacityRow
-              icon={<BedDouble size={16} color={GRAY_400} />}
+              icon={<BedDouble size={16} className="text-th-warm-text-muted" />}
               label="Sleeping Capacity"
               description="Guests who can sleep overnight"
               value={sleepingCapacity}
@@ -193,7 +153,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Location"
           subtitle="Where guests can find your caravan"
         >
@@ -279,24 +239,10 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
         </SectionCard>
 
         {mapSrc && (
-          <div
-            style={{
-              borderRadius: 20,
-              overflow: "hidden",
-              border: `1.5px solid ${GRAY_200}`,
-              boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-            }}
-          >
-            <div
-              className="flex items-center gap-2"
-              style={{
-                padding: "12px 18px",
-                backgroundColor: WHITE,
-                borderBottom: `1.5px solid ${GRAY_200}`,
-              }}
-            >
-              <Navigation size={13} color={TEAL} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: BLACK }}>
+          <div className="rounded-[20px] overflow-hidden border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+            <div className="flex items-center gap-2 px-[18px] py-3 bg-th-surface-0 border-b-[1.5px] border-th-warm-border">
+              <Navigation size={13} className="text-th-brand" />
+              <span className="text-[12px] font-semibold text-th-text-primary">
                 {[address, city, state].filter(Boolean).join(", ") || "Map Preview"}
               </span>
             </div>
@@ -311,7 +257,21 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
             />
           </div>
         )}
-    </Wrapper>
+    </>
+  );
+
+  if (embedded) {
+    return <div className="w-full flex flex-col gap-4">{sections}</div>;
+  }
+  return (
+    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+      <StepHeader
+        kicker="Setup"
+        title={<>Capacity &amp; Location</>}
+        subtitle="Set your caravan's capacity and where guests can find it."
+      />
+      <div className="w-full flex flex-col gap-4">{sections}</div>
+    </div>
   );
 };
 

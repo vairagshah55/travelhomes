@@ -1,16 +1,6 @@
 import React from "react";
 import { Search, Check } from "lucide-react";
-import {
-  BLACK,
-  TEAL,
-  TEAL_BG,
-  TEAL_FOCUS,
-  WHITE,
-  SURFACE,
-  ERROR_SOFT,
-  GRAY_400,
-  GRAY_200,
-} from "./tokens";
+import { cn } from "@/lib/utils";
 
 export interface SearchableOption {
   label: string;
@@ -39,7 +29,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   error,
 }) => {
   const [open, setOpen] = React.useState(false);
-  const [focused, setFocused] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [activeIdx, setActiveIdx] = React.useState(0);
 
@@ -63,7 +52,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     const handler = (e: MouseEvent) => {
       if (!wrapRef.current?.contains(e.target as Node)) {
         setOpen(false);
-        setFocused(false);
         setQuery("");
       }
     };
@@ -96,7 +84,6 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     if (!opt) return;
     onChange(opt.value);
     setOpen(false);
-    setFocused(false);
     setQuery("");
   };
 
@@ -113,55 +100,37 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     } else if (e.key === "Escape") {
       e.preventDefault();
       setOpen(false);
-      setFocused(false);
       setQuery("");
     }
   };
 
-  const triggerActive = open || focused;
-
   return (
-    <div ref={wrapRef} style={{ position: "relative" }}>
+    <div ref={wrapRef} className="relative">
       <button
         type="button"
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        style={{
-          width: "100%",
-          height: 52,
-          padding: "0 40px 0 16px",
-          textAlign: "left",
-          fontSize: 14,
-          color: selectedLabel ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
-          backgroundColor: disabled ? SURFACE : triggerActive ? WHITE : SURFACE,
-          border: `1.5px solid ${error ? ERROR_SOFT : triggerActive ? TEAL : "transparent"}`,
-          borderRadius: 13,
-          outline: "none",
-          boxShadow:
-            triggerActive && !error
-              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-              : "none",
-          transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-          cursor: disabled ? "not-allowed" : "pointer",
-          fontWeight: 450,
-          letterSpacing: "-0.005em",
-        }}
+        className={cn(
+          "w-full h-[52px] pl-4 pr-10 text-left text-sm rounded-[13px] border-[1.5px] outline-none font-normal tracking-[-0.005em]",
+          "transition-[background-color,border-color,box-shadow] duration-150",
+          "border-transparent",
+          disabled
+            ? "bg-th-warm-surface text-th-warm-text-muted cursor-not-allowed"
+            : "cursor-pointer bg-th-warm-surface focus:bg-th-surface-0",
+          !disabled && (selectedLabel ? "text-th-text-primary" : "text-th-warm-text-muted"),
+          open && !error && "bg-th-surface-0 border-th-brand shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+          !open && !disabled && !error && "focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+          error && "border-th-error-bright-soft",
+        )}
       >
         {selectedLabel || placeholder}
       </button>
 
       <svg
-        style={{
-          position: "absolute",
-          right: 14,
-          top: 26,
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-          transition: "transform 0.15s",
-          ...(open ? { transform: "translateY(-50%) rotate(180deg)" } : {}),
-        }}
+        className={cn(
+          "absolute right-[14px] top-[26px] -translate-y-1/2 pointer-events-none transition-transform duration-150 text-th-warm-text-muted",
+          open && "rotate-180",
+        )}
         width="16"
         height="16"
         viewBox="0 0 16 16"
@@ -169,7 +138,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       >
         <path
           d="M4 6l4 4 4-4"
-          stroke={GRAY_400}
+          stroke="currentColor"
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -177,31 +146,9 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
       </svg>
 
       {open && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            right: 0,
-            zIndex: 30,
-            backgroundColor: WHITE,
-            border: `1.5px solid ${GRAY_200}`,
-            borderRadius: 13,
-            boxShadow: "0 10px 28px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04)",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "10px 12px",
-              borderBottom: `1px solid ${GRAY_200}`,
-              backgroundColor: SURFACE,
-            }}
-          >
-            <Search size={14} color={GRAY_400} />
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 z-30 bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[13px] overflow-hidden shadow-[0_10px_28px_rgba(0,0,0,0.10),0_2px_6px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 px-3 py-2.5 border-b border-th-warm-border bg-th-warm-surface">
+            <Search size={14} className="text-th-warm-text-muted" />
             <input
               ref={inputRef}
               type="text"
@@ -212,36 +159,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               }}
               onKeyDown={onKeyDown}
               placeholder={searchPlaceholder}
-              style={{
-                flex: 1,
-                height: 28,
-                fontSize: 13.5,
-                color: BLACK,
-                backgroundColor: "transparent",
-                border: "none",
-                outline: "none",
-                fontWeight: 450,
-              }}
+              className="flex-1 h-7 text-[13.5px] text-th-text-primary bg-transparent border-none outline-none font-normal placeholder:text-th-warm-text-muted"
             />
           </div>
 
-          <div
-            ref={listRef}
-            style={{
-              maxHeight: 240,
-              overflowY: "auto",
-              padding: "4px 0",
-            }}
-          >
+          <div ref={listRef} className="max-h-60 overflow-y-auto py-1">
             {filtered.length === 0 ? (
-              <div
-                style={{
-                  padding: "14px 16px",
-                  fontSize: 13,
-                  color: GRAY_400,
-                  textAlign: "center",
-                }}
-              >
+              <div className="px-4 py-3.5 text-[13px] text-th-warm-text-muted text-center">
                 {emptyMessage}
               </div>
             ) : (
@@ -258,20 +182,14 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       e.preventDefault();
                       commit(idx);
                     }}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "9px 14px",
-                      fontSize: 13.5,
-                      color: BLACK,
-                      backgroundColor: active ? TEAL_BG : "transparent",
-                      cursor: "pointer",
-                      fontWeight: selected ? 600 : 450,
-                    }}
+                    className={cn(
+                      "flex items-center justify-between px-3.5 py-[9px] text-[13.5px] text-th-text-primary cursor-pointer",
+                      selected ? "font-semibold" : "font-normal",
+                      active && "bg-th-brand-soft",
+                    )}
                   >
                     <span>{opt.label}</span>
-                    {selected && <Check size={14} color={TEAL} strokeWidth={2.5} />}
+                    {selected && <Check size={14} strokeWidth={2.5} className="text-th-brand" />}
                   </div>
                 );
               })

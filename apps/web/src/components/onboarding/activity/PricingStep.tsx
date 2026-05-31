@@ -1,15 +1,7 @@
 import React from "react";
 import { IndianRupee, Clock, Users, MapPin } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  TEAL,
-  TEAL_FOCUS,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_200,
-  ERROR_BG,
-  ERROR_RING,
   SectionCard,
   Field,
   StyledInput,
@@ -69,38 +61,23 @@ const PricingStep: React.FC<PricingStepProps> = ({
 
       <div className="w-full flex flex-col gap-4">
         <SectionCard
-          icon={<IndianRupee size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<IndianRupee size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Pricing"
           subtitle="How much guests pay per booking"
         >
           <div className="flex flex-col gap-5">
             <Field label="Price per Person" required error={errors.regularPrice}>
               <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  borderRadius: 13,
-                  overflow: "hidden",
-                  border: `1.5px solid ${errors.regularPrice ? "#fca5a5" : "transparent"}`,
-                  backgroundColor: errors.regularPrice ? ERROR_BG : SURFACE,
-                  boxShadow: errors.regularPrice ? `0 0 0 3px ${ERROR_RING}` : "none",
-                  transition: "all 0.15s",
-                }}
+                className={cn(
+                  "flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
+                  errors.regularPrice
+                    ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+                    : "border-transparent bg-th-warm-surface",
+                )}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "0 14px",
-                    height: 52,
-                    borderRight: `1.5px solid ${GRAY_200}`,
-                    backgroundColor: SURFACE,
-                    flexShrink: 0,
-                  }}
-                >
-                  <IndianRupee size={13} color={GRAY_400} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: GRAY_400 }}>INR</span>
+                <div className="flex items-center gap-1 px-[14px] h-[52px] border-r-[1.5px] border-th-warm-border bg-th-warm-surface shrink-0">
+                  <IndianRupee size={13} className="text-th-warm-text-muted" />
+                  <span className="text-[12px] font-bold text-th-warm-text-muted">INR</span>
                 </div>
                 <input
                   type="number"
@@ -108,29 +85,14 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   onChange={(e) => onUpdateFormData("regularPrice", e.target.value)}
                   placeholder="0"
                   min="0"
-                  style={{
-                    flex: 1,
-                    height: 52,
-                    padding: "0 16px",
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: regularPrice ? BLACK : GRAY_400,
-                    backgroundColor: "transparent",
-                    border: "none",
-                    outline: "none",
-                    letterSpacing: "-0.02em",
-                  }}
+                  className={cn(
+                    "flex-1 h-[52px] px-4 text-[18px] font-bold tracking-[-0.02em]",
+                    "bg-transparent border-none outline-none",
+                    regularPrice ? "text-th-text-primary" : "text-th-warm-text-muted",
+                  )}
                 />
                 {regularPrice && Number(regularPrice) > 0 && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      color: TEAL,
-                      paddingRight: 14,
-                      flexShrink: 0,
-                    }}
-                  >
+                  <span className="text-[11px] font-semibold text-th-brand pr-[14px] shrink-0">
                     / person
                   </span>
                 )}
@@ -138,17 +100,10 @@ const PricingStep: React.FC<PricingStepProps> = ({
             </Field>
 
             <Field label="Duration">
-              <div style={{ position: "relative" }}>
+              <div className="relative">
                 <Clock
                   size={15}
-                  color={GRAY_400}
-                  style={{
-                    position: "absolute",
-                    left: 16,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    pointerEvents: "none",
-                  }}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-th-warm-text-muted"
                 />
                 <input
                   type="text"
@@ -156,29 +111,13 @@ const PricingStep: React.FC<PricingStepProps> = ({
                   onChange={(e) => onUpdateFormData("timeDuration", e.target.value)}
                   placeholder="e.g. 3 hours"
                   list="duration-options"
-                  style={{
-                    width: "100%",
-                    height: 52,
-                    padding: "0 16px 0 42px",
-                    fontSize: 14,
-                    color: BLACK,
-                    backgroundColor: SURFACE,
-                    border: "1.5px solid transparent",
-                    borderRadius: 13,
-                    outline: "none",
-                    fontWeight: 450,
-                    transition: "all 0.15s",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.border = `1.5px solid ${TEAL}`;
-                    e.currentTarget.style.backgroundColor = WHITE;
-                    e.currentTarget.style.boxShadow = `0 0 0 4px ${TEAL_FOCUS}`;
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.border = "1.5px solid transparent";
-                    e.currentTarget.style.backgroundColor = SURFACE;
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
+                  className={cn(
+                    "w-full h-[52px] pl-[42px] pr-4 text-[14px] font-[450] text-th-text-primary",
+                    "bg-th-warm-surface border-[1.5px] border-transparent rounded-[13px] outline-none",
+                    "transition-all duration-150",
+                    "focus:border-th-brand focus:bg-th-surface-0",
+                    "focus:shadow-[0_0_0_4px_var(--th-ring)]",
+                  )}
                 />
                 <datalist id="duration-options">
                   {DURATION_OPTIONS.map((opt) => (
@@ -191,40 +130,18 @@ const PricingStep: React.FC<PricingStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<Users size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Users size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Capacity"
           subtitle="Maximum participants per session"
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "16px 18px",
-              borderRadius: 14,
-              backgroundColor: SURFACE,
-              border: "1.5px solid transparent",
-            }}
-          >
+          <div className="flex items-center justify-between p-[16px_18px] rounded-[14px] bg-th-warm-surface border-[1.5px] border-transparent">
             <div className="flex items-center gap-3">
-              <div
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 11,
-                  backgroundColor: WHITE,
-                  border: `1.5px solid ${GRAY_200}`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-                }}
-              >
-                <Users size={17} color={GRAY_400} />
+              <div className="w-[38px] h-[38px] rounded-[11px] bg-th-surface-0 border-[1.5px] border-th-warm-border flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+                <Users size={17} className="text-th-warm-text-muted" />
               </div>
               <div>
-                <p style={{ fontSize: 13.5, fontWeight: 600, color: BLACK }}>Person Capacity</p>
-                <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 2 }}>
+                <p className="text-[13.5px] font-semibold text-th-text-primary">Person Capacity</p>
+                <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">
                   Max participants per session
                 </p>
               </div>
@@ -240,7 +157,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<MapPin size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Location"
           subtitle="Where the activity takes place"
         >

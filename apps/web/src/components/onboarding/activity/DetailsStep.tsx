@@ -1,18 +1,7 @@
 import React from "react";
 import { ImagePlus, X, Plus, Check, Type, Camera, ShieldCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
-  TEAL,
-  TEAL_BG,
-  TEAL_BORDER,
-  TEAL_FOCUS,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_200,
-  ERROR,
-  ERROR_BG,
-  SUCCESS,
   SectionCard,
   Field,
   StyledInput,
@@ -59,45 +48,11 @@ const CoverPreview = ({
       <img
         src={src}
         alt="Cover"
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        className="w-full h-full object-cover"
       />
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0)",
-          transition: "background-color 0.2s",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(0,0,0,0.28)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.backgroundColor = "rgba(0,0,0,0)";
-        }}
-      >
-        <label
-          style={{
-            cursor: "pointer",
-            backgroundColor: "rgba(255,255,255,0.92)",
-            color: BLACK,
-            fontSize: 12,
-            fontWeight: 700,
-            padding: "6px 18px",
-            borderRadius: 99,
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-            opacity: 0,
-            transition: "opacity 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLLabelElement).style.opacity = "1";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLLabelElement).style.opacity = "0";
-          }}
-        >
+      {/* Rule 2: hover overlay via CSS group-hover instead of onMouseEnter/Leave */}
+      <div className="absolute inset-0 bg-black/0 hover:bg-black/[0.28] transition-colors duration-200 flex items-center justify-center group/overlay">
+        <label className="cursor-pointer bg-white/[0.92] text-th-text-primary text-[12px] font-bold px-[18px] py-[6px] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] opacity-0 group-hover/overlay:opacity-100 transition-opacity duration-200">
           Change Photo
           <input
             type="file"
@@ -110,23 +65,9 @@ const CoverPreview = ({
       <button
         type="button"
         onClick={onRemove}
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          width: 28,
-          height: 28,
-          borderRadius: "50%",
-          backgroundColor: "rgba(255,255,255,0.9)",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-        }}
+        className="absolute top-[10px] right-[10px] w-[28px] h-[28px] rounded-full bg-white/90 border-none cursor-pointer flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.15)]"
       >
-        <X size={13} color={GRAY_400} />
+        <X size={13} className="text-th-warm-text-muted" />
       </button>
     </>
   );
@@ -144,61 +85,24 @@ const PhotoThumb = ({
   const src = useObjectURL(photo);
   return (
     <div
-      style={{
-        position: "relative",
-        aspectRatio: "1",
-        borderRadius: 11,
-        overflow: "hidden",
-        border: `1.5px solid ${GRAY_200}`,
-      }}
-      className="group"
+      className="relative aspect-square rounded-[11px] overflow-hidden border-[1.5px] border-th-warm-border group"
     >
       <img
         src={src}
         alt={`Photo ${index + 1}`}
-        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        className="w-full h-full object-cover"
       />
       {index < GALLERY_TARGET && (
-        <div
-          style={{
-            position: "absolute",
-            top: 6,
-            left: 6,
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            backgroundColor: SUCCESS,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-          }}
-        >
-          <Check size={9} color={WHITE} strokeWidth={2.5} />
+        <div className="absolute top-[6px] left-[6px] w-[18px] h-[18px] rounded-full bg-th-success-bright flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
+          <Check size={9} strokeWidth={2.5} className="text-th-text-inverse" />
         </div>
       )}
       <button
         type="button"
         onClick={onRemove}
-        style={{
-          position: "absolute",
-          top: 6,
-          right: 6,
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          backgroundColor: "rgba(0,0,0,0.5)",
-          border: "none",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          opacity: 0,
-          transition: "opacity 0.15s",
-        }}
-        className="group-hover:!opacity-100"
+        className="absolute top-[6px] right-[6px] w-[22px] h-[22px] rounded-full bg-black/50 border-none cursor-pointer flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150"
       >
-        <X size={11} color={WHITE} />
+        <X size={11} className="text-th-text-inverse" />
       </button>
     </div>
   );
@@ -250,7 +154,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
 
       <div className="w-full flex flex-col gap-4">
         <SectionCard
-          icon={<Type size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Type size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Identity"
           subtitle="How your listing appears to guests"
         >
@@ -296,23 +200,17 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<Camera size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Camera size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Photos"
           subtitle="Cover photo + gallery shown to guests"
         >
           <div className="flex flex-col gap-6">
             <Field label="Cover Photo" required error={errors.coverImage}>
               <div
-                style={{
-                  position: "relative",
-                  width: "100%",
-                  height: 200,
-                  borderRadius: 14,
-                  overflow: "hidden",
-                  border: `2px dashed ${errors.coverImage ? ERROR : GRAY_200}`,
-                  backgroundColor: SURFACE,
-                  cursor: "pointer",
-                }}
+                className={cn(
+                  "relative w-full h-[200px] rounded-[14px] overflow-hidden border-2 border-dashed bg-th-warm-surface cursor-pointer",
+                  errors.coverImage ? "border-th-error-bright" : "border-th-warm-border",
+                )}
               >
                 {coverImage ? (
                   <CoverPreview
@@ -324,35 +222,14 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                     onRemove={() => onRemoveFile("coverImage")}
                   />
                 ) : (
-                  <label
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 13,
-                        backgroundColor: GRAY_200,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <ImagePlus size={20} color={GRAY_400} />
+                  <label className="w-full h-full flex flex-col items-center justify-center gap-2 cursor-pointer">
+                    <div className="w-[44px] h-[44px] rounded-[13px] bg-th-warm-border flex items-center justify-center">
+                      <ImagePlus size={20} className="text-th-warm-text-muted" />
                     </div>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: BLACK }}>
+                    <p className="text-[13px] font-semibold text-th-text-primary">
                       Upload cover photo
                     </p>
-                    <p style={{ fontSize: 12, color: GRAY_400 }}>Click to browse</p>
+                    <p className="text-[12px] text-th-warm-text-muted">Click to browse</p>
                     <input
                       type="file"
                       accept="image/*"
@@ -372,19 +249,12 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
               error={errors.photos}
               right={
                 <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: errors.photos ? ERROR : TEAL,
-                    cursor: "pointer",
-                    padding: "3px 10px",
-                    borderRadius: 99,
-                    border: `1px solid ${errors.photos ? ERROR : TEAL_BORDER}`,
-                    backgroundColor: errors.photos ? ERROR_BG : TEAL_BG,
-                  }}
+                  className={cn(
+                    "flex items-center gap-[5px] text-[11px] font-bold cursor-pointer px-[10px] py-[3px] rounded-full border",
+                    errors.photos
+                      ? "text-th-error-bright border-th-error-bright bg-th-error-bright-bg"
+                      : "text-th-brand border-th-brand-border-soft bg-th-brand-soft",
+                  )}
                 >
                   <Plus size={11} strokeWidth={2.5} />
                   Add Photos
@@ -402,32 +272,22 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
               }
             >
               <div className="flex items-center gap-2 mb-3">
-                <div
-                  style={{
-                    flex: 1,
-                    height: 5,
-                    borderRadius: 99,
-                    backgroundColor: GRAY_200,
-                    overflow: "hidden",
-                  }}
-                >
+                <div className="flex-1 h-[5px] rounded-full bg-th-warm-border overflow-hidden">
                   <div
-                    style={{
-                      height: "100%",
-                      borderRadius: 99,
-                      width: `${galleryPct}%`,
-                      backgroundColor: galleryFilled >= GALLERY_TARGET ? SUCCESS : TEAL,
-                      transition: "width 0.4s ease",
-                    }}
+                    className={cn(
+                      "h-full rounded-full transition-[width] duration-[400ms] ease-out",
+                      galleryFilled >= GALLERY_TARGET ? "bg-th-success-bright" : "bg-th-brand",
+                    )}
+                    style={{ width: `${galleryPct}%` }}
                   />
                 </div>
                 <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: galleryFilled >= GALLERY_TARGET ? SUCCESS : GRAY_400,
-                    whiteSpace: "nowrap",
-                  }}
+                  className={cn(
+                    "text-[11px] font-bold whitespace-nowrap",
+                    galleryFilled >= GALLERY_TARGET
+                      ? "text-th-success-bright"
+                      : "text-th-warm-text-muted",
+                  )}
                 >
                   {galleryFilled}/{GALLERY_TARGET}
                 </span>
@@ -446,20 +306,23 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 </div>
               ) : (
                 <div
-                  style={{
-                    padding: "28px 0",
-                    borderRadius: 13,
-                    border: `2px dashed ${errors.photos ? ERROR : GRAY_200}`,
-                    backgroundColor: errors.photos ? ERROR_BG : SURFACE,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
+                  className={cn(
+                    "py-[28px] rounded-[13px] border-2 border-dashed flex flex-col items-center justify-center gap-2",
+                    errors.photos
+                      ? "border-th-error-bright bg-th-error-bright-bg"
+                      : "border-th-warm-border bg-th-warm-surface",
+                  )}
                 >
-                  <ImagePlus size={22} color={errors.photos ? ERROR : GRAY_400} />
-                  <p style={{ fontSize: 13, color: errors.photos ? ERROR : GRAY_400 }}>
+                  <ImagePlus
+                    size={22}
+                    className={errors.photos ? "text-th-error-bright" : "text-th-warm-text-muted"}
+                  />
+                  <p
+                    className={cn(
+                      "text-[13px]",
+                      errors.photos ? "text-th-error-bright" : "text-th-warm-text-muted",
+                    )}
+                  >
                     {errors.photos ?? "No gallery photos yet"}
                   </p>
                 </div>
@@ -469,7 +332,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<ShieldCheck size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<ShieldCheck size={16} strokeWidth={2.5} className="text-th-brand" />}
           title="Rules & Regulations"
           subtitle="Optional — house rules guests must follow"
         >
@@ -479,77 +342,29 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 {rulesAndRegulations.map((rule, index) => (
                   <div
                     key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "10px 12px",
-                      backgroundColor: SURFACE,
-                      borderRadius: 11,
-                      border: "1.5px solid transparent",
-                    }}
+                    className="flex items-center gap-[10px] px-3 py-[10px] bg-th-warm-surface rounded-[11px] border-[1.5px] border-transparent"
                   >
-                    <span
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: "50%",
-                        backgroundColor: TEAL_BG,
-                        border: `1.5px solid ${TEAL_BORDER}`,
-                        color: TEAL,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
+                    <span className="w-[22px] h-[22px] rounded-full bg-th-brand-soft border-[1.5px] border-th-brand-border-soft text-th-brand text-[10px] font-extrabold flex items-center justify-center shrink-0">
                       {index + 1}
                     </span>
-                    <span
-                      style={{
-                        flex: 1,
-                        fontSize: 13,
-                        color: BLACK,
-                        fontWeight: 450,
-                        lineHeight: 1.5,
-                      }}
-                    >
+                    <span className="flex-1 text-[13px] text-th-text-primary font-[450] leading-[1.5]">
                       {rule}
                     </span>
+                    {/* Rule 2: hover background via CSS :hover instead of onMouseEnter/Leave */}
                     <button
                       type="button"
                       onClick={() => onRemoveRule(index)}
-                      style={{
-                        width: 26,
-                        height: 26,
-                        borderRadius: 7,
-                        border: "none",
-                        backgroundColor: "transparent",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: "pointer",
-                        flexShrink: 0,
-                        transition: "background-color 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor = "#fef2f2";
-                      }}
-                      onMouseLeave={(e) => {
-                        (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                          "transparent";
-                      }}
+                      className="w-[26px] h-[26px] rounded-[7px] border-none bg-transparent hover:bg-red-50 flex items-center justify-center cursor-pointer shrink-0 transition-colors duration-150"
                     >
-                      <X size={12} color={GRAY_400} />
+                      <X size={12} className="text-th-warm-text-muted" />
                     </button>
                   </div>
                 ))}
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 8 }}>
+            <div className="flex gap-2">
+              {/* Rule 2: focus styles via CSS :focus instead of onFocus/onBlur */}
               <input
                 type="text"
                 value={ruleInput}
@@ -562,47 +377,25 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 }}
                 placeholder="Add a rule… press Enter to add"
                 maxLength={100}
-                style={{
-                  flex: 1,
-                  height: 46,
-                  padding: "0 14px",
-                  borderRadius: 11,
-                  outline: "none",
-                  border: "1.5px solid transparent",
-                  backgroundColor: SURFACE,
-                  fontSize: 13,
-                  color: BLACK,
-                  fontWeight: 450,
-                  transition: "all 0.15s",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.border = `1.5px solid ${TEAL}`;
-                  e.currentTarget.style.backgroundColor = WHITE;
-                  e.currentTarget.style.boxShadow = `0 0 0 3px ${TEAL_FOCUS}`;
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.border = "1.5px solid transparent";
-                  e.currentTarget.style.backgroundColor = SURFACE;
-                  e.currentTarget.style.boxShadow = "none";
-                }}
+                className={cn(
+                  "flex-1 h-[46px] px-[14px] rounded-[11px] outline-none",
+                  "border-[1.5px] border-transparent bg-th-warm-surface",
+                  "text-[13px] text-th-text-primary font-[450]",
+                  "transition-all duration-150",
+                  "focus:border-th-brand focus:bg-th-surface-0",
+                  "focus:shadow-[0_0_0_3px_var(--th-ring)]",
+                )}
               />
               <button
                 type="button"
                 onClick={handleAddRule}
                 disabled={!ruleInput.trim()}
-                style={{
-                  height: 46,
-                  padding: "0 20px",
-                  borderRadius: 11,
-                  border: "none",
-                  backgroundColor: ruleInput.trim() ? TEAL : GRAY_200,
-                  color: ruleInput.trim() ? WHITE : GRAY_400,
-                  fontSize: 13,
-                  fontWeight: 700,
-                  cursor: ruleInput.trim() ? "pointer" : "not-allowed",
-                  transition: "all 0.15s",
-                  flexShrink: 0,
-                }}
+                className={cn(
+                  "h-[46px] px-5 rounded-[11px] border-none text-[13px] font-bold shrink-0 transition-all duration-150",
+                  ruleInput.trim()
+                    ? "bg-th-brand text-th-text-inverse cursor-pointer"
+                    : "bg-th-warm-border text-th-warm-text-muted cursor-not-allowed",
+                )}
               >
                 Add
               </button>

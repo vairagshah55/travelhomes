@@ -1,18 +1,8 @@
 import React from "react";
 import { IndianRupee, Percent, Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { type DiscountOffer } from "./types";
 import {
-  TEAL,
-  TEAL_BG,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_500,
-  GRAY_200,
-  ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
   ErrorMsg,
   StepHeader,
 } from "./primitives";
@@ -84,32 +74,20 @@ const Toggle = ({
     role="switch"
     aria-checked={enabled}
     style={{
-      position: "relative",
-      width: 44,
-      height: 24,
-      borderRadius: 99,
-      backgroundColor: enabled ? color : GRAY_200,
-      border: "none",
-      cursor: "pointer",
-      flexShrink: 0,
-      transition: "background-color 0.25s",
+      backgroundColor: enabled ? color : undefined,
       boxShadow: enabled ? `0 0 0 3px ${color}22` : "none",
     }}
+    className={cn(
+      "relative w-[44px] h-[24px] rounded-full border-none cursor-pointer flex-shrink-0 transition-colors duration-[250ms]",
+      !enabled && "bg-th-warm-border",
+    )}
   >
     <span
       style={{
-        position: "absolute",
-        top: 3,
-        left: 3,
-        width: 18,
-        height: 18,
-        borderRadius: "50%",
-        backgroundColor: WHITE,
-        boxShadow: "0 1px 4px rgba(0,0,0,0.2)",
         transform: enabled ? "translateX(20px)" : "translateX(0)",
         transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1)",
-        display: "block",
       }}
+      className="absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.2)] block"
     />
   </button>
 );
@@ -123,15 +101,7 @@ const TypeSegment = ({
   onChange: (v: string) => void;
   color: string;
 }) => (
-  <div
-    style={{
-      display: "flex",
-      borderRadius: 11,
-      backgroundColor: SURFACE,
-      padding: 3,
-      gap: 3,
-    }}
-  >
+  <div className="flex rounded-[11px] bg-th-warm-surface p-[3px] gap-[3px]">
     {[
       { label: "Percentage", val: "percentage", Icon: Percent },
       { label: "Fixed Amount", val: "fixed", Icon: IndianRupee },
@@ -143,23 +113,16 @@ const TypeSegment = ({
           type="button"
           onClick={() => onChange(val)}
           style={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            height: 36,
-            borderRadius: 9,
-            border: `1.5px solid ${active ? `${color}30` : "transparent"}`,
-            backgroundColor: active ? WHITE : "transparent",
-            color: active ? color : GRAY_400,
-            fontSize: 12,
-            fontWeight: 700,
-            cursor: "pointer",
-            transition: "background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s",
-            boxShadow: active ? "0 1px 4px rgba(0,0,0,0.08)" : "0 1px 4px transparent",
-            letterSpacing: "0.01em",
+            ...(active
+              ? { border: `1.5px solid ${color}30`, color, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
+              : { border: "1.5px solid transparent" }),
           }}
+          className={cn(
+            "flex-1 flex items-center justify-center gap-[6px] h-[36px] rounded-[9px]",
+            "text-[12px] font-bold cursor-pointer tracking-[0.01em]",
+            "transition-[background-color,color,border-color,box-shadow] duration-150",
+            active ? "bg-th-surface-0" : "bg-transparent text-th-warm-text-muted",
+          )}
         >
           <Icon size={12} />
           {label}
@@ -184,41 +147,54 @@ const AmountInput = ({
   color: string;
   error?: boolean;
 }) => {
+  // focused state is kept because border/bg/shadow use the dynamic `color` prop
+  // which can't be expressed as a static Tailwind class
   const [focused, setFocused] = React.useState(false);
   return (
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderRadius: 12,
-        overflow: "hidden",
-        border: `1.5px solid ${error ? ERROR_SOFT : focused ? color : "transparent"}`,
-        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow:
-          focused && !error
-            ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "all 0.15s",
-      }}
+      style={
+        error
+          ? {}
+          : {
+              border: `1.5px solid ${focused ? color : "transparent"}`,
+              backgroundColor: focused ? "#ffffff" : undefined,
+              boxShadow: focused
+                ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
+                : undefined,
+            }
+      }
+      className={cn(
+        "flex items-center rounded-[12px] overflow-hidden transition-all duration-150",
+        error
+          ? "border-[1.5px] border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+          : !focused
+            ? "bg-th-warm-surface"
+            : undefined,
+      )}
     >
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 10px",
-          height: 46,
-          borderRight: `1.5px solid ${focused ? `${color}30` : GRAY_200}`,
-          backgroundColor: focused ? `${color}12` : SURFACE,
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
+        style={
+          focused
+            ? { borderRight: `1.5px solid ${color}30`, backgroundColor: `${color}12` }
+            : {}
+        }
+        className={cn(
+          "flex items-center px-[10px] h-[46px] flex-shrink-0 transition-all duration-150",
+          !focused && "border-r border-th-warm-border bg-th-warm-surface",
+        )}
       >
         {isPercent ? (
-          <Percent size={12} color={focused ? color : GRAY_400} />
+          <Percent
+            size={12}
+            style={{ color: focused ? color : undefined }}
+            className={cn(!focused && "text-th-warm-text-muted")}
+          />
         ) : (
-          <IndianRupee size={12} color={focused ? color : GRAY_400} />
+          <IndianRupee
+            size={12}
+            style={{ color: focused ? color : undefined }}
+            className={cn(!focused && "text-th-warm-text-muted")}
+          />
         )}
       </div>
       <input
@@ -229,30 +205,15 @@ const AmountInput = ({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={placeholder}
-        style={{
-          flex: 1,
-          height: 46,
-          padding: "0 12px",
-          fontSize: 15,
-          fontWeight: 600,
-          color: value ? BLACK : GRAY_400,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          letterSpacing: "-0.01em",
-          minWidth: 0,
-        }}
+        className={cn(
+          "flex-1 h-[46px] px-3 text-[15px] font-semibold bg-transparent border-none outline-none tracking-[-0.01em] min-w-0",
+          value ? "text-th-text-primary" : "text-th-warm-text-muted",
+        )}
       />
       {isPercent && (
         <span
-          style={{
-            paddingRight: 12,
-            fontSize: 12,
-            color: GRAY_400,
-            fontWeight: 600,
-            opacity: value ? 1 : 0,
-            transition: "opacity 0.15s",
-          }}
+          className="pr-3 text-[12px] text-th-warm-text-muted font-semibold transition-opacity duration-150"
+          style={{ opacity: value ? 1 : 0 }}
         >
           %
         </span>
@@ -295,57 +256,48 @@ const OfferCard = ({
   return (
     <div
       style={{
-        backgroundColor: WHITE,
-        border: `1.5px solid ${offer.enabled ? cfg.color : GRAY_200}`,
-        borderRadius: 20,
-        overflow: "hidden",
+        ...(offer.enabled ? { border: `1.5px solid ${cfg.color}` } : {}),
         boxShadow: offer.enabled
           ? `0 0 0 3px ${cfg.color}18, 0 2px 12px rgba(0,0,0,0.04)`
           : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-        transition: "all 0.2s",
       }}
+      className={cn(
+        "bg-th-surface-0 rounded-[20px] overflow-hidden transition-all duration-200",
+        !offer.enabled && "border-[1.5px] border-th-warm-border",
+      )}
     >
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "16px 20px",
-          backgroundColor: offer.enabled ? cfg.bg : WHITE,
-          transition: "background-color 0.2s",
-        }}
+        style={{ backgroundColor: offer.enabled ? cfg.bg : undefined }}
+        className={cn(
+          "flex items-center justify-between px-5 py-4 transition-colors duration-200",
+          !offer.enabled && "bg-th-surface-0",
+        )}
       >
         <div className="flex items-center gap-3">
           <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 13,
-              backgroundColor: offer.enabled ? `${cfg.color}18` : SURFACE,
-              border: `1.5px solid ${offer.enabled ? `${cfg.color}30` : GRAY_200}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 20,
-              flexShrink: 0,
-              transition: "all 0.2s",
-            }}
+            style={
+              offer.enabled
+                ? { backgroundColor: `${cfg.color}18`, border: `1.5px solid ${cfg.color}30` }
+                : {}
+            }
+            className={cn(
+              "w-[42px] h-[42px] rounded-[13px] flex items-center justify-center text-[20px] flex-shrink-0 transition-all duration-200",
+              !offer.enabled && "bg-th-warm-surface border-[1.5px] border-th-warm-border",
+            )}
           >
             {cfg.emoji}
           </div>
           <div>
             <p
-              style={{
-                fontSize: 13.5,
-                fontWeight: 700,
-                color: offer.enabled ? cfg.color : BLACK,
-                letterSpacing: "-0.01em",
-                transition: "color 0.2s",
-              }}
+              style={{ color: offer.enabled ? cfg.color : undefined }}
+              className={cn(
+                "text-[13.5px] font-bold tracking-[-0.01em] transition-colors duration-200",
+                !offer.enabled && "text-th-text-primary",
+              )}
             >
               {label}
             </p>
-            <p style={{ fontSize: 11.5, color: GRAY_500, marginTop: 2 }}>{cfg.description}</p>
+            <p className="text-[11.5px] text-th-warm-text-dark mt-[2px]">{cfg.description}</p>
           </div>
         </div>
 
@@ -353,15 +305,11 @@ const OfferCard = ({
           {savingsHint && (
             <span
               style={{
-                fontSize: 11,
-                fontWeight: 700,
                 color: cfg.color,
                 backgroundColor: `${cfg.color}14`,
                 border: `1px solid ${cfg.color}30`,
-                borderRadius: 99,
-                padding: "3px 10px",
-                whiteSpace: "nowrap",
               }}
+              className="text-[11px] font-bold rounded-full px-[10px] py-[3px] whitespace-nowrap"
             >
               {savingsHint}
             </span>
@@ -372,24 +320,17 @@ const OfferCard = ({
 
       {offer.enabled && (
         <div
-          style={{
-            padding: "0 20px 20px",
-            backgroundColor: cfg.bg,
-          }}
+          style={{ backgroundColor: cfg.bg }}
+          className="px-5 pb-5"
         >
-          <div style={{ height: 1, backgroundColor: `${cfg.color}25`, marginBottom: 18 }} />
+          <div
+            style={{ backgroundColor: `${cfg.color}25` }}
+            className="h-px mb-[18px]"
+          />
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: GRAY_500,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
+              <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
                 Discount Type
               </label>
               <TypeSegment
@@ -401,15 +342,7 @@ const OfferCard = ({
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: GRAY_500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                  }}
-                >
+                <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
                   {offer.type === "percentage" ? "Percentage" : "Fixed Amount"}
                 </label>
                 <AmountInput
@@ -427,15 +360,7 @@ const OfferCard = ({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: GRAY_500,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                  }}
-                >
+                <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
                   Final Price
                 </label>
                 <AmountInput
@@ -452,17 +377,16 @@ const OfferCard = ({
             {offer.value && offer.finalPrice && (
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "10px 14px",
-                  borderRadius: 11,
                   backgroundColor: `${cfg.color}10`,
                   border: `1px solid ${cfg.color}25`,
                 }}
+                className="flex items-center gap-2 px-[14px] py-[10px] rounded-[11px]"
               >
-                <span style={{ fontSize: 16 }}>✓</span>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: cfg.color }}>
+                <span className="text-[16px]">✓</span>
+                <span
+                  style={{ color: cfg.color }}
+                  className="text-[12.5px] font-semibold"
+                >
                   {savingsHint} · Final price ₹{offer.finalPrice}
                 </span>
               </div>
@@ -508,7 +432,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   );
 
   const emptyHint = activeCount === 0 && (
-    <p style={{ fontSize: 12, color: GRAY_400, textAlign: "center" }}>
+    <p className="text-[12px] text-th-warm-text-muted text-center">
       Toggle any offer above to enable it — discounts help your listing get discovered faster.
     </p>
   );
@@ -531,20 +455,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
         extra={
           activeCount > 0 ? (
             <div className="flex justify-center mt-1">
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: TEAL,
-                  backgroundColor: TEAL_BG,
-                  border: "1px solid rgba(15, 92, 138, 0.30)",
-                  borderRadius: 99,
-                  padding: "4px 14px",
-                }}
-              >
+              <span className="inline-flex items-center gap-[6px] text-[12px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-[14px] py-1">
                 <Tag size={11} strokeWidth={2.5} />
                 {activeCount} offer{activeCount > 1 ? "s" : ""} active
               </span>

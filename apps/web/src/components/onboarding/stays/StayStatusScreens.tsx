@@ -15,10 +15,10 @@ interface StayStatusScreensProps {
  */
 export function StayStatusLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
+    <div className="min-h-screen flex items-center justify-center bg-th-warm-surface">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 rounded-full border-2 border-[#0F5C8A] border-t-transparent animate-spin" />
-        <p className="text-sm text-[#888780]">Loading…</p>
+        <div className="w-10 h-10 rounded-full border-2 border-th-brand border-t-transparent animate-spin" />
+        <p className="text-sm text-th-warm-text-muted">Loading…</p>
       </div>
     </div>
   );
@@ -39,7 +39,7 @@ export function StayStatusScreen({
   const isPending = status === "pending";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] p-6">
+    <div className="min-h-screen flex items-center justify-center bg-th-warm-surface p-6">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(10,70,112,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center"
@@ -50,15 +50,15 @@ export function StayStatusScreen({
           {isPending ? (
             <Clock className="w-8 h-8 text-yellow-500" />
           ) : (
-            <CheckCircle2 className="w-8 h-8" style={{ color: "#1D9E75" }} />
+            <CheckCircle2 className="w-8 h-8 text-[#1D9E75]" />
           )}
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold" style={{ color: "#0A4670" }}>
+          <h2 className="text-xl font-semibold text-[#0A4670]">
             {isPending ? "Submission Under Review" : "Listing Approved!"}
           </h2>
-          <p className="text-sm leading-relaxed" style={{ color: "#888780" }}>
+          <p className="text-sm leading-relaxed text-th-warm-text-muted">
             {isPending
               ? "Your stay listing has been submitted and is currently being reviewed by our team. You'll be notified once a decision is made."
               : "Your stay listing has been approved and is now live for guests to discover and book."}
@@ -66,14 +66,7 @@ export function StayStatusScreen({
         </div>
 
         {primaryPropertyName && (
-          <div
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium"
-            style={{
-              backgroundColor: "rgba(15,92,138,0.07)",
-              color: "#0F5C8A",
-              border: "1px solid rgba(15,92,138,0.2)",
-            }}
-          >
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(15,92,138,0.2)]">
             <Home className="w-4 h-4" />
             {stayType === "entire" ? `Entire ${primaryPropertyName}` : primaryPropertyName}
           </div>
@@ -82,20 +75,14 @@ export function StayStatusScreen({
         <div className="w-full flex flex-col gap-3 pt-2">
           <button
             onClick={onGoDashboard}
-            className="w-full py-3 rounded-xl text-white text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ backgroundColor: "#0F5C8A" }}
+            className="w-full py-3 rounded-xl text-th-text-inverse text-sm font-semibold transition-opacity hover:opacity-90 bg-th-brand"
           >
             Go to Dashboard
           </button>
           {isPending && (
             <button
               onClick={onSubmitAnother}
-              className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80"
-              style={{
-                backgroundColor: "transparent",
-                color: "#888780",
-                border: "1px solid #D3D1C7",
-              }}
+              className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 bg-transparent text-th-warm-text-muted border border-th-warm-border"
             >
               Submit Another Service
             </button>

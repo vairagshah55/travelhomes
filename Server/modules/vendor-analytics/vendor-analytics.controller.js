@@ -17,7 +17,10 @@ const getLatestSnapshot = asyncHandler(async (_req, res) => {
 });
 
 const getGraphs = asyncHandler(async (req, res) => {
-  const { data } = await service.getGraphs(req.validated.query);
+  // Pass req.user so the chart's visitor aggregation is scoped to THIS
+  // vendor's offers — matches the KPI card. Without the user, the chart
+  // falls back to platform-wide totals.
+  const { data } = await service.getGraphs(req.validated.query, req.user);
   res.json({ success: true, data });
 });
 

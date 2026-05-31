@@ -1,18 +1,5 @@
 import React from "react";
-import {
-  BLACK,
-  TEAL,
-  TEAL_BG,
-  TEAL_BORDER,
-  TEAL_FOCUS,
-  WHITE,
-  SURFACE,
-  ERROR_SOFT,
-  ERROR_BG,
-  ERROR_RING,
-  GRAY_400,
-  GRAY_200,
-} from "./tokens";
+import { cn } from "@/lib/utils";
 
 interface IconInputProps {
   icon: React.ReactNode;
@@ -38,66 +25,40 @@ const IconInput: React.FC<IconInputProps> = ({
   mono,
   suffix,
   error,
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
+}) => (
+  <div
+    className={cn(
+      "group flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
+      "bg-th-warm-surface border-transparent",
+      !error && "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+      error && "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
+    )}
+  >
     <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        borderRadius: 13,
-        overflow: "hidden",
-        border: `1.5px solid ${error ? ERROR_SOFT : focused ? TEAL : "transparent"}`,
-        backgroundColor: error ? ERROR_BG : focused ? WHITE : SURFACE,
-        boxShadow:
-          focused && !error
-            ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-            : error
-              ? `0 0 0 3px ${ERROR_RING}`
-              : "none",
-        transition: "all 0.15s",
-      }}
+      className={cn(
+        "flex items-center px-3 h-[52px] border-r-[1.5px] shrink-0 transition-all duration-150",
+        "bg-th-warm-surface border-th-warm-border text-th-warm-text-muted",
+        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand",
+      )}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          padding: "0 12px",
-          height: 52,
-          borderRight: `1.5px solid ${focused ? TEAL_BORDER : GRAY_200}`,
-          backgroundColor: focused ? TEAL_BG : SURFACE,
-          flexShrink: 0,
-          transition: "all 0.15s",
-        }}
-      >
-        <span style={{ color: focused ? TEAL : GRAY_400 }}>{icon}</span>
-      </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        maxLength={maxLength}
-        inputMode={inputMode}
-        style={{
-          flex: 1,
-          height: 52,
-          padding: "0 14px",
-          fontSize: 14,
-          color: value ? BLACK : GRAY_400,
-          backgroundColor: "transparent",
-          border: "none",
-          outline: "none",
-          fontWeight: 450,
-          letterSpacing: mono ? "0.08em" : "-0.005em",
-          fontFamily: mono ? "monospace" : "inherit",
-        }}
-      />
-      {suffix}
+      {icon}
     </div>
-  );
-};
+    <input
+      type={type}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      inputMode={inputMode}
+      className={cn(
+        "flex-1 h-[52px] px-[14px] text-sm bg-transparent border-none outline-none font-normal",
+        "placeholder:text-th-warm-text-muted",
+        value ? "text-th-text-primary" : "text-th-warm-text-muted",
+        mono ? "font-mono tracking-[0.08em]" : "tracking-[-0.005em]",
+      )}
+    />
+    {suffix}
+  </div>
+);
 
 export default IconInput;

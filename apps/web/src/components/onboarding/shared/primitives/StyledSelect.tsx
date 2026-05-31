@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  BLACK,
-  TEAL,
-  TEAL_FOCUS,
-  WHITE,
-  SURFACE,
-  ERROR_SOFT,
-  GRAY_400,
-} from "./tokens";
+import { cn } from "@/lib/utils";
 
 interface StyledSelectProps {
   value: string;
@@ -23,63 +15,42 @@ const StyledSelect: React.FC<StyledSelectProps> = ({
   disabled,
   error,
   children,
-}) => {
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div style={{ position: "relative" }}>
-      <select
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        disabled={disabled}
-        style={{
-          width: "100%",
-          height: 52,
-          padding: "0 40px 0 16px",
-          fontSize: 14,
-          color: value ? (disabled ? GRAY_400 : BLACK) : GRAY_400,
-          // Neutral background regardless of error state — the border is the
-          // single visual signal; ErrorMsg renders the message inline.
-          backgroundColor: disabled ? SURFACE : focused ? WHITE : SURFACE,
-          border: `1.5px solid ${error ? ERROR_SOFT : focused ? TEAL : "transparent"}`,
-          borderRadius: 13,
-          outline: "none",
-          appearance: "none",
-          boxShadow:
-            focused && !error
-              ? `0 0 0 4px ${TEAL_FOCUS}, 0 1px 4px rgba(0,0,0,0.06)`
-              : "none",
-          transition: "background-color 0.15s, border-color 0.15s, box-shadow 0.2s",
-          cursor: disabled ? "not-allowed" : "pointer",
-          fontWeight: 450,
-        }}
-      >
-        {children}
-      </select>
-      <svg
-        style={{
-          position: "absolute",
-          right: 14,
-          top: "50%",
-          transform: "translateY(-50%)",
-          pointerEvents: "none",
-        }}
-        width="16"
-        height="16"
-        viewBox="0 0 16 16"
-        fill="none"
-      >
-        <path
-          d="M4 6l4 4 4-4"
-          stroke={GRAY_400}
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  );
-};
+}) => (
+  <div className="relative">
+    <select
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      disabled={disabled}
+      className={cn(
+        "w-full h-[52px] pl-4 pr-10 text-sm rounded-[13px] border-[1.5px] outline-none appearance-none font-normal",
+        "transition-[background-color,border-color,box-shadow] duration-150",
+        "border-transparent",
+        disabled
+          ? "bg-th-warm-surface text-th-warm-text-muted cursor-not-allowed"
+          : "cursor-pointer bg-th-warm-surface focus:bg-th-surface-0",
+        !disabled && (value ? "text-th-text-primary" : "text-th-warm-text-muted"),
+        !error && !disabled && "focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+        error && "border-th-error-bright-soft",
+      )}
+    >
+      {children}
+    </select>
+    <svg
+      className="absolute right-[14px] top-1/2 -translate-y-1/2 pointer-events-none text-th-warm-text-muted"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+    >
+      <path
+        d="M4 6l4 4 4-4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  </div>
+);
 
 export default StyledSelect;

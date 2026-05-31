@@ -13,18 +13,9 @@ import {
   ChevronDown,
   Navigation,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { type CountryOption } from "./types";
 import {
-  TEAL,
-  TEAL_BG,
-  BLACK,
-  WHITE,
-  SURFACE,
-  GRAY_400,
-  GRAY_500,
-  GRAY_200,
-  ERROR_SOFT,
-  ERROR_RING,
   SectionCard,
   Field,
   IconInput,
@@ -83,84 +74,27 @@ const CountryPickerModal = ({
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <DialogBackdrop
-        style={{
-          position: "fixed",
-          inset: 0,
-          backgroundColor: "rgba(0,0,0,0.45)",
-          backdropFilter: "blur(4px)",
-          zIndex: 40,
-        }}
-      />
-      <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "center",
-          zIndex: 50,
-          padding: 16,
-        }}
-      >
-        <DialogPanel
-          style={{
-            width: "100%",
-            maxWidth: 400,
-            backgroundColor: WHITE,
-            borderRadius: 24,
-            boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            maxHeight: "75vh",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "16px 20px",
-              borderBottom: `1px solid ${GRAY_200}`,
-              flexShrink: 0,
-            }}
-          >
-            <p style={{ fontSize: 14, fontWeight: 700, color: BLACK }}>Select Country Code</p>
+      <DialogBackdrop className="fixed inset-0 bg-black/45 backdrop-blur-[4px] z-40" />
+      <div className="fixed inset-0 flex items-end justify-center z-50 p-4">
+        <DialogPanel className="w-full max-w-[400px] bg-th-surface-0 rounded-[24px] shadow-[0_20px_60px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden max-h-[75vh]">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-th-warm-border flex-shrink-0">
+            <p className="text-[14px] font-bold text-th-text-primary">Select Country Code</p>
             <button
               onClick={() => {
                 onClose();
                 setSearch("");
               }}
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                backgroundColor: SURFACE,
-                border: "none",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-              }}
+              className="w-[30px] h-[30px] rounded-full bg-th-warm-surface border-none flex items-center justify-center cursor-pointer"
             >
-              <X size={13} color={GRAY_500} />
+              <X size={13} className="text-th-warm-text-dark" />
             </button>
           </div>
 
-          <div
-            style={{ padding: "12px 16px", borderBottom: `1px solid ${GRAY_200}`, flexShrink: 0 }}
-          >
-            <div style={{ position: "relative" }}>
+          <div className="px-4 py-3 border-b border-th-warm-border flex-shrink-0">
+            <div className="relative">
               <Search
                 size={14}
-                style={{
-                  position: "absolute",
-                  left: 12,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: GRAY_400,
-                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-th-warm-text-muted"
               />
               <input
                 type="text"
@@ -168,65 +102,32 @@ const CountryPickerModal = ({
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search country or code…"
                 autoFocus
-                style={{
-                  width: "100%",
-                  height: 40,
-                  paddingLeft: 36,
-                  paddingRight: 36,
-                  fontSize: 13,
-                  color: BLACK,
-                  backgroundColor: SURFACE,
-                  border: `1.5px solid ${GRAY_200}`,
-                  borderRadius: 11,
-                  outline: "none",
-                  transition: "border-color 0.15s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = TEAL;
-                  e.target.style.boxShadow = `0 0 0 3px rgba(15, 92, 138, 0.15)`;
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = GRAY_200;
-                  e.target.style.boxShadow = "none";
-                }}
+                className={cn(
+                  "w-full h-[40px] pl-9 pr-9 text-[13px] text-th-text-primary",
+                  "bg-th-warm-surface border-[1.5px] border-th-warm-border rounded-[11px]",
+                  "outline-none transition-[border-color,box-shadow] duration-150",
+                  "focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+                )}
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
+                  className="absolute right-[10px] top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer"
                 >
-                  <X size={12} color={GRAY_400} />
+                  <X size={12} className="text-th-warm-text-muted" />
                 </button>
               )}
             </div>
           </div>
 
-          <div style={{ overflowY: "auto", flex: 1 }}>
+          <div className="overflow-y-auto flex-1">
             {filtered.length === 0 ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: "40px 0",
-                  gap: 8,
-                }}
-              >
-                <Search size={20} color={GRAY_200} />
-                <p style={{ fontSize: 13, color: GRAY_400 }}>No results for "{search}"</p>
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <Search size={20} className="text-th-warm-border" />
+                <p className="text-[13px] text-th-warm-text-muted">No results for "{search}"</p>
               </div>
             ) : (
-              <ul style={{ padding: "8px 0", margin: 0, listStyle: "none" }}>
+              <ul className="py-2 m-0 list-none">
                 {filtered.map((c) => {
                   const isSelected = selected?.isoCode === c.isoCode;
                   const FlagIcon = (Flags as any)[c.isoCode];
@@ -240,64 +141,42 @@ const CountryPickerModal = ({
                           onClose();
                           setSearch("");
                         }}
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          padding: "10px 20px",
-                          backgroundColor: isSelected ? TEAL_BG : "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          transition: "background-color 0.1s",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected)
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected)
-                            (e.currentTarget as HTMLButtonElement).style.backgroundColor =
-                              "transparent";
-                        }}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-5 py-[10px]",
+                          "border-none cursor-pointer transition-colors duration-100",
+                          isSelected
+                            ? "bg-th-brand-soft"
+                            : "bg-transparent hover:bg-th-warm-surface",
+                        )}
                       >
                         {FlagIcon && (
-                          <FlagIcon style={{ width: 22, flexShrink: 0 }} title={c.name} />
+                          <FlagIcon style={{ width: 22 }} className="flex-shrink-0" title={c.name} />
                         )}
                         <span
-                          style={{
-                            flex: 1,
-                            fontSize: 13,
-                            color: isSelected ? TEAL : BLACK,
-                            fontWeight: isSelected ? 700 : 400,
-                            textAlign: "left",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
+                          className={cn(
+                            "flex-1 text-[13px] text-left whitespace-nowrap overflow-hidden text-ellipsis",
+                            isSelected
+                              ? "text-th-brand font-bold"
+                              : "text-th-text-primary font-normal",
+                          )}
                         >
                           {c.name}
                         </span>
-                        <span style={{ fontSize: 12, color: GRAY_400, flexShrink: 0 }}>
+                        <span className="text-[12px] text-th-warm-text-muted flex-shrink-0">
                           {dialCode}
                         </span>
                         {isSelected && (
-                          <div
-                            style={{
-                              width: 18,
-                              height: 18,
-                              borderRadius: "50%",
-                              backgroundColor: TEAL,
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0,
-                            }}
-                          >
-                            <svg width="9" height="9" viewBox="0 0 8 8" fill="none">
+                          <div className="w-[18px] h-[18px] rounded-full bg-th-brand flex items-center justify-center flex-shrink-0">
+                            <svg
+                              width="9"
+                              height="9"
+                              viewBox="0 0 8 8"
+                              fill="none"
+                              className="text-th-text-inverse"
+                            >
                               <path
                                 d="M1.5 4l2 2L6.5 2"
-                                stroke={WHITE}
+                                stroke="currentColor"
                                 strokeWidth="1.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -351,7 +230,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
 
       <div className="w-full flex flex-col gap-4">
         <SectionCard
-          icon={<Briefcase size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Briefcase size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Company Info"
           subtitle="Your registered business identity"
           bodyGap
@@ -389,7 +268,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
               maxLength={15}
               mono
               suffix={
-                <span style={{ paddingRight: 14, fontSize: 11, fontWeight: 600, color: GRAY_400 }}>
+                <span className="pr-[14px] text-[11px] font-semibold text-th-warm-text-muted">
                   {values.gstNumber.length}/15
                 </span>
               }
@@ -398,7 +277,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<Phone size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<Phone size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Contact"
           subtitle="How guests and your team can reach you"
           bodyGap
@@ -419,30 +298,15 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
               <button
                 type="button"
                 onClick={() => setCountryDialogOpen(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  height: 52,
-                  padding: "0 14px",
-                  backgroundColor: SURFACE,
-                  border: `1.5px solid ${errors.businessPhone ? ERROR_SOFT : "transparent"}`,
-                  borderRadius: 13,
-                  cursor: "pointer",
-                  flexShrink: 0,
-                  transition: "all 0.15s",
-                  boxShadow: errors.businessPhone ? `0 0 0 3px ${ERROR_RING}` : "none",
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = TEAL;
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = TEAL_BG;
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = errors.businessPhone
-                    ? ERROR_SOFT
-                    : "transparent";
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = SURFACE;
-                }}
+                className={cn(
+                  "flex items-center gap-2 h-[52px] px-[14px]",
+                  "bg-th-warm-surface border-[1.5px] rounded-[13px]",
+                  "cursor-pointer flex-shrink-0 transition-all duration-150",
+                  errors.businessPhone
+                    ? "border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+                    : "border-transparent",
+                  "hover:border-th-brand hover:bg-th-brand-soft",
+                )}
               >
                 {selectedCountry && (Flags as any)[selectedCountry.isoCode] ? (
                   React.createElement((Flags as any)[selectedCountry.isoCode], {
@@ -450,21 +314,13 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
                     title: selectedCountry.name,
                   })
                 ) : (
-                  <span
-                    style={{
-                      width: 20,
-                      height: 14,
-                      backgroundColor: GRAY_200,
-                      borderRadius: 3,
-                      display: "block",
-                    }}
-                  />
+                  <span className="w-[20px] h-[14px] bg-th-warm-border rounded-[3px] block" />
                 )}
-                <span style={{ fontSize: 13.5, fontWeight: 600, color: BLACK }}>{dialCode}</span>
-                <ChevronDown size={13} color={GRAY_400} />
+                <span className="text-[13.5px] font-semibold text-th-text-primary">{dialCode}</span>
+                <ChevronDown size={13} className="text-th-warm-text-muted" />
               </button>
 
-              <div style={{ flex: 1 }}>
+              <div className="flex-1">
                 <IconInput
                   icon={<Phone size={15} />}
                   value={values.businessPhone}
@@ -480,7 +336,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
         </SectionCard>
 
         <SectionCard
-          icon={<MapPin size={16} color={TEAL} strokeWidth={2.5} />}
+          icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
           title="Business Address"
           subtitle="Where your business is registered"
           bodyGap
@@ -549,24 +405,10 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
           </div>
 
           {mapSrc && (
-            <div
-              style={{
-                borderRadius: 16,
-                overflow: "hidden",
-                border: `1.5px solid ${GRAY_200}`,
-                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-              }}
-            >
-              <div
-                className="flex items-center gap-2"
-                style={{
-                  padding: "10px 16px",
-                  backgroundColor: WHITE,
-                  borderBottom: `1.5px solid ${GRAY_200}`,
-                }}
-              >
-                <Navigation size={13} color={TEAL} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: BLACK }}>
+            <div className="rounded-[16px] overflow-hidden border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+              <div className="flex items-center gap-2 px-4 py-[10px] bg-th-surface-0 border-b border-[1.5px] border-th-warm-border">
+                <Navigation size={13} className="text-th-brand" />
+                <span className="text-[12px] font-semibold text-th-text-primary">
                   {[selectedCity, selectedState].filter(Boolean).join(", ") || "Map Preview"}
                 </span>
               </div>
@@ -574,7 +416,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
                 src={mapSrc}
                 width="100%"
                 height="220"
-                style={{ border: 0, display: "block" }}
+                className="border-0 block"
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
                 title="Business Location Map"
