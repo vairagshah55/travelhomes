@@ -1,6 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { IndianRupee, MapPin, Tag, Tent, Percent, Loader2 } from "lucide-react";
+import {
+  Tag,
+  Tent,
+  Loader2,
+  X,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -10,12 +20,17 @@ import { useCountriesData } from "@/hooks/useCountriesData";
 import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
-import { cn } from "@/lib/utils";
 import {
+  TEAL,
+  BLACK,
+  GRAY_500,
+  GRAY_400,
+  GRAY_200,
+  ERROR,
+  ERROR_BG,
   SectionCard,
   Field,
   StyledInput,
-  StyledSelect,
   FeaturePill,
 } from "@/components/offering";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
@@ -584,10 +599,7 @@ const EditOfferings = () => {
         return !!formData.category;
       case 1: // Basics + photos
         return (
-          !!name?.trim() &&
-          !!formData.description?.trim() &&
-          !!coverUrl &&
-          galleryUrls.length >= 5
+          !!name?.trim() && !!formData.description?.trim() && !!coverUrl && galleryUrls.length >= 5
         );
       case 2: // Features — optional
         return true;
@@ -627,176 +639,234 @@ const EditOfferings = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <DashboardLayout title="Edit Offering" contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
-      <div className="max-w-3xl mx-auto flex flex-col gap-6">
-        {/* ── Page header ── */}
-        <div className="text-center space-y-2 pt-2">
-          <div className="flex items-center justify-center gap-2.5 mb-3">
-            <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-            <span className="text-[10.5px] font-bold uppercase tracking-[0.13em] text-th-warm-text-muted">
-              Edit Listing
-            </span>
-            <div className="w-6 h-[3px] rounded-full bg-th-brand" />
+    <DashboardLayout
+      title="Edit Offering"
+      contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24"
+    >
+      <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-20">
+        {/* ── Header: title + locked type badge + close ── */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.04em",
+                  textTransform: "uppercase",
+                  backgroundColor: `${TEAL}14`,
+                  border: `1.5px solid ${TEAL}30`,
+                  color: TEAL,
+                }}
+              >
+                {currentTab?.icon}
+                {currentTab?.label}
+              </span>
+            </div>
+            <h1
+              style={{
+                fontSize: "clamp(22px, 3.4vw, 28px)",
+                fontWeight: 800,
+                color: BLACK,
+                letterSpacing: "-0.025em",
+                lineHeight: 1.2,
+              }}
+            >
+              Edit Offering
+            </h1>
+            <p style={{ fontSize: 13.5, color: GRAY_500, marginTop: 4 }}>
+              {STEPS[step].label} · Step {step + 1} of {STEPS.length}
+            </p>
           </div>
-          <h1
-            className="font-extrabold text-th-text-primary tracking-[-0.03em] leading-[1.15]"
-            style={{ fontSize: "clamp(22px, 3.5vw, 30px)" }}
+          <button
+            type="button"
+            onClick={() => navigate(`/offering/${id}`)}
+            aria-label="Close"
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 99,
+              backgroundColor: "#F7F8FA",
+              border: `1.5px solid ${GRAY_200}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
           >
-            Edit Offering
-          </h1>
-          <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
-            Update details for your service offering.
-          </p>
+            <X size={16} color={GRAY_500} />
+          </button>
         </div>
 
-        {/* ── Offering-type badge (read-only) ── */}
-        {(() => {
-          const tab = TABS.find((t) => t.key === activeTab);
-          if (!tab) return null;
-          return (
-            <div className="inline-flex items-center gap-2 self-start px-3.5 py-2 rounded-full bg-th-brand-soft border border-th-brand-border-soft text-th-brand text-[12.5px] font-bold tracking-[0.01em]">
-              {tab.icon}
-              {tab.label}
-            </div>
-          );
-        })()}
-
-        {activeTab === "camper-van" ? (
-          <>
-            <CaravanDescriptionStep
-              embedded
-              name={formData.name}
-              description={formData.description}
-              rules={formData.rules}
-              photos={galleryUrls}
-              coverImage={coverUrl ? [coverUrl] : []}
-              errors={{
-                ...errors,
-                coverImage: errors.cover,
-                photos: errors.gallery,
-              }}
-              onNameChange={(v) => set("name", v)}
-              onDescriptionChange={(v) => set("description", v)}
-              onAddRule={handleAddRule}
-              onRemoveRule={handleRemoveRule}
-              onUpdateRule={handleUpdateRule}
-              onPhotoUpload={handleBridgePhotoUpload}
-              onCoverUpload={handleBridgeCoverUpload}
-              onRemovePhoto={(i) =>
-                setGalleryUrls((p) => p.filter((_, idx) => idx !== i))
-              }
-              onRemoveCover={() => setCoverUrl("")}
-              clearError={clearError}
-            />
-
-            <CaravanCategoryStep
-              embedded
-              category={formData.category || null}
-              onSelect={(name) => set("category", name)}
-            />
-
-            <CaravanFeaturesStep
-              embedded
-              features={formData.features}
-              customFeatures={customFeatures}
-              showCustomFeaturesInput={showCustomFeaturesInput}
-              customFeatureInput={customFeatureInput}
-              onToggleFeature={toggleFeature}
-              onRemoveCustomFeature={handleRemoveCustomFeature}
-              onToggleCustomInput={() =>
-                setShowCustomFeaturesInput(!showCustomFeaturesInput)
-              }
-              onCustomFeatureInputChange={setCustomFeatureInput}
-              onAddCustomFeature={handleAddCustomFeature}
-            />
-
-            <CaravanCapacityAddressStep
-              embedded
-              seatingCapacity={Number(formData.seatingCapacity) || 1}
-              sleepingCapacity={Number(formData.sleepingCapacity) || 0}
-              address={formData.address}
-              locality={formData.locality || "India"}
-              state={formData.state}
-              city={formData.city}
-              pincode={formData.pincode}
-              locationData={locationData}
-              mapSrc={mapSrc}
-              errors={errors}
-              onAdjustCapacity={adjustCapacity}
-              onAddressChange={(v) => set("address", v)}
-              onLocalityChange={(v) =>
-                setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
-              }
-              onStateChange={(v) =>
-                setFormData((p) => ({ ...p, state: v, city: "" }))
-              }
-              onCityChange={(v) => set("city", v)}
-              onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
-              clearError={clearError}
-            />
-
-            <CaravanPricingStep
-              embedded
-              perKmCharge={formData.perKmCharge}
-              perDayCharge={formData.perDayCharge}
-              perKmIncludes={formData.perKmIncludes}
-              perKmExcludes={formData.perKmExcludes}
-              perDayIncludes={formData.perDayIncludes}
-              perDayExcludes={formData.perDayExcludes}
-              errors={errors}
-              onPerKmChargeChange={(v) => set("perKmCharge", v)}
-              onPerDayChargeChange={(v) => set("perDayCharge", v)}
-              onAddPriceItem={(field) => addArrayItem(field)}
-              onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
-              onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
-              clearError={clearError}
-            />
-          </>
-        ) : (
-          <>
-            {/* ── Category ── */}
-            <SectionCard
-              icon={<Tag size={16} className="text-th-brand" strokeWidth={2.5} />}
-              title={activeTab === "activity" ? "Activity Type" : "Category"}
-              subtitle="Pick the type that best describes your offering"
-            >
-              <Field
-                label={activeTab === "activity" ? "Activity Type" : "Category"}
-                required
-                error={errors.category}
-              >
-                <StyledSelect
-                  value={formData.category}
-                  onChange={(v) => set("category", v)}
-                  placeholder={catalog.isLoading ? "Loading…" : "Select"}
-                  error={!!errors.category}
+        {/* ── Progress chips ── */}
+        <div className="flex items-center gap-2">
+          {STEPS.map((s, i) => {
+            const done = i < step;
+            const active = i === step;
+            return (
+              <React.Fragment key={s.key}>
+                <button
+                  type="button"
+                  onClick={() => i < step && setStep(i)}
+                  disabled={i > step}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    border: `1.5px solid ${active ? TEAL : done ? `${TEAL}50` : GRAY_200}`,
+                    backgroundColor: active ? `${TEAL}14` : done ? `${TEAL}08` : "#fff",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: active ? TEAL : done ? TEAL : GRAY_400,
+                    cursor: i < step ? "pointer" : "default",
+                    whiteSpace: "nowrap",
+                    transition: "all 0.15s",
+                  }}
                 >
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </StyledSelect>
-              </Field>
-            </SectionCard>
+                  <span
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: active ? TEAL : done ? TEAL : GRAY_200,
+                      color: active || done ? "#fff" : GRAY_400,
+                      fontSize: 9.5,
+                      fontWeight: 800,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {done ? <Check size={10} strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span className="hidden sm:inline">{s.short}</span>
+                </button>
+                {i < STEPS.length - 1 && (
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      flex: 1,
+                      height: 2,
+                      borderRadius: 99,
+                      backgroundColor: done ? TEAL : GRAY_200,
+                      minWidth: 8,
+                      opacity: 0.6,
+                    }}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
 
-            {/* ── Description + Photos ── */}
+        {/* ── Step content card ── */}
+        <div
+          style={{
+            backgroundColor: "#fff",
+            border: `1.5px solid ${GRAY_200}`,
+            borderRadius: 20,
+            padding: "24px 22px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+            minHeight: 360,
+          }}
+        >
+          {/* STEP 0 — Category */}
+          {step === 0 && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  {currentTab?.label}
+                </p>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
+                  {activeTab === "activity" ? "Activity type" : "Category"}
+                </h2>
+                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
+                  Pick the type that best describes this offering.
+                </p>
+              </div>
+              {activeTab === "camper-van" ? (
+                <CaravanCategoryStep
+                  embedded
+                  category={formData.category || null}
+                  onSelect={(name) => set("category", name)}
+                />
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {(categories.length > 0 ? categories : ["Loading…"]).map((c) => {
+                    const active = formData.category === c;
+                    const disabled = c === "Loading…";
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => set("category", c)}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: 13,
+                          border: `1.5px solid ${active ? TEAL : GRAY_200}`,
+                          backgroundColor: active ? `${TEAL}08` : "#fff",
+                          color: active ? TEAL : disabled ? GRAY_400 : BLACK,
+                          fontSize: 13,
+                          fontWeight: active ? 700 : 500,
+                          cursor: disabled ? "not-allowed" : "pointer",
+                          textAlign: "left",
+                          transition: "all 0.15s",
+                          boxShadow: active ? `0 0 0 3px ${TEAL}1a` : "none",
+                        }}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STEP 1 — Basics + Photos */}
+          {step === 1 && (
             <CaravanDescriptionStep
               embedded
-              nameLabel={activeTab === "activity" ? "Activity Name" : "Property Name"}
+              nameLabel={
+                activeTab === "activity"
+                  ? "Activity Name"
+                  : activeTab === "unique-stay"
+                    ? "Property Name"
+                    : "Caravan Name"
+              }
               namePlaceholder={
-                activeTab === "activity" ? "e.g. River Rafting" : "e.g. Sunset Villa"
+                activeTab === "activity"
+                  ? "e.g. River Rafting Day Trip"
+                  : activeTab === "unique-stay"
+                    ? "e.g. Sunset Villa"
+                    : "e.g. Cozy Mountain Camper"
               }
               name={activeTab === "activity" ? formData.activityName : formData.name}
               description={formData.description}
               rules={formData.rules}
               photos={galleryUrls}
               coverImage={coverUrl ? [coverUrl] : []}
-              errors={{
-                ...errors,
-                coverImage: errors.cover,
-                photos: errors.gallery,
-              }}
+              errors={{ ...errors, coverImage: errors.cover, photos: errors.gallery }}
               onNameChange={(v) => set(activeTab === "activity" ? "activityName" : "name", v)}
               onDescriptionChange={(v) => set("description", v)}
               onAddRule={handleAddRule}
@@ -808,150 +878,478 @@ const EditOfferings = () => {
               onRemoveCover={() => setCoverUrl("")}
               clearError={clearError}
             />
+          )}
 
-            {/* ── Features ── */}
-            <SectionCard
-              icon={<Tag size={16} className="text-th-brand" strokeWidth={2.5} />}
-              title="Features"
-              subtitle="What your offering includes"
-            >
-              <div className="flex flex-wrap gap-2.5">
-                {features.map((f) => (
-                  <FeaturePill
-                    key={f}
-                    label={f}
-                    selected={formData.features.includes(f)}
-                    onClick={() => toggleFeature(f)}
-                  />
-                ))}
+          {/* STEP 2 — Features */}
+          {step === 2 && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  {currentTab?.label}
+                </p>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
+                  What does it include?
+                </h2>
+                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
+                  Tick everything that applies.
+                </p>
               </div>
-            </SectionCard>
-
-            {/* ── Location ── */}
-            <SectionCard
-              icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
-              title="Location"
-              subtitle="Where is your offering located?"
-            >
-              <Field label="Address">
-                <StyledInput
-                  value={formData.address}
-                  onChange={(v) => set("address", v)}
-                  placeholder="Street address"
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="State" required error={errors.state}>
-                  <SearchableSelect
-                    value={formData.state}
-                    onChange={(v) =>
-                      setFormData((p) => ({ ...p, state: v, city: "" }))
-                    }
-                    options={stateOptions}
-                    placeholder="Select State"
-                    searchPlaceholder="Search states…"
-                    emptyMessage="No states found"
-                    error={!!errors.state}
-                  />
-                </Field>
-                <Field label="City" required error={errors.city}>
-                  <SearchableSelect
-                    value={formData.city}
-                    onChange={(v) => set("city", v)}
-                    options={cityOptions}
-                    placeholder={formData.state ? "Select City" : "Select a state first"}
-                    searchPlaceholder="Search cities…"
-                    emptyMessage="No cities found"
-                    disabled={!formData.state}
-                    error={!!errors.city}
-                  />
-                </Field>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Pincode">
-                  <StyledInput
-                    value={formData.pincode}
-                    onChange={(v) => set("pincode", v.replace(/\D/g, ""))}
-                    placeholder="6-digit code"
-                    maxLength={6}
-                  />
-                </Field>
-                <Field label="Locality">
-                  <StyledInput
-                    value={formData.locality}
-                    onChange={(v) => set("locality", v)}
-                    placeholder="Locality / Country"
-                  />
-                </Field>
-              </div>
-            </SectionCard>
-
-            {/* ── Pricing (tab-specific) ── */}
-            <SectionCard
-              icon={<IndianRupee size={16} className="text-th-brand" strokeWidth={2.5} />}
-              title="Pricing"
-              subtitle="Set your rates"
-            >
-              {activeTab === "camper-van" && (
-                <CamperVanPricing formData={formData} set={set} errors={errors} {...arrayHelpers} />
+              {features.length === 0 ? (
+                <p style={{ fontSize: 13, color: GRAY_400 }}>Loading features…</p>
+              ) : (
+                <div className="flex flex-wrap gap-2.5">
+                  {features.map((f) => (
+                    <FeaturePill
+                      key={f}
+                      label={f}
+                      selected={formData.features.includes(f)}
+                      onClick={() => toggleFeature(f)}
+                    />
+                  ))}
+                </div>
               )}
-              {activeTab === "unique-stay" && (
-                <UniqueStayPricing
-                  formData={formData}
-                  set={set}
+              {formData.features.length > 0 && (
+                <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 4 }}>
+                  <Sparkles size={11} className="inline" /> {formData.features.length} feature
+                  {formData.features.length === 1 ? "" : "s"} selected
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* STEP 3 — Location & Capacity */}
+          {step === 3 && (
+            <div className="flex flex-col gap-5">
+              {activeTab === "camper-van" ? (
+                <CaravanCapacityAddressStep
+                  embedded
+                  seatingCapacity={Number(formData.seatingCapacity) || 1}
+                  sleepingCapacity={Number(formData.sleepingCapacity) || 0}
+                  address={formData.address}
+                  locality={formData.locality || "India"}
+                  state={formData.state}
+                  city={formData.city}
+                  pincode={formData.pincode}
+                  locationData={locationData}
+                  mapSrc={mapSrc}
                   errors={errors}
-                  {...arrayHelpers}
+                  onAdjustCapacity={adjustCapacity}
+                  onAddressChange={(v) => set("address", v)}
+                  onLocalityChange={(v) =>
+                    setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
+                  }
+                  onStateChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
+                  onCityChange={(v) => set("city", v)}
+                  onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
+                  clearError={clearError}
                 />
+              ) : (
+                <>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: GRAY_400,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      {currentTab?.label}
+                    </p>
+                    <h2
+                      className="font-serif"
+                      style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                    >
+                      Where is it located?
+                    </h2>
+                  </div>
+                  <Field label="Street Address">
+                    <StyledInput
+                      value={formData.address}
+                      onChange={(v) => set("address", v)}
+                      placeholder="Street address"
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="State" required error={errors.state}>
+                      <SearchableSelect
+                        value={formData.state}
+                        onChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
+                        options={stateOptions}
+                        placeholder="Select State"
+                        searchPlaceholder="Search states…"
+                        error={!!errors.state}
+                      />
+                    </Field>
+                    <Field label="City" required error={errors.city}>
+                      <SearchableSelect
+                        value={formData.city}
+                        onChange={(v) => set("city", v)}
+                        options={cityOptions}
+                        placeholder={formData.state ? "Select City" : "Pick a state first"}
+                        searchPlaceholder="Search cities…"
+                        disabled={!formData.state}
+                        error={!!errors.city}
+                      />
+                    </Field>
+                  </div>
+                  <Field label="Pincode">
+                    <StyledInput
+                      value={formData.pincode}
+                      onChange={(v) => set("pincode", v.replace(/\D/g, ""))}
+                      placeholder="6-digit code"
+                      maxLength={6}
+                    />
+                  </Field>
+                </>
               )}
-              {activeTab === "activity" && (
-                <ActivityPricing formData={formData} set={set} errors={errors} {...arrayHelpers} />
-              )}
-            </SectionCard>
-          </>
-        )}
+            </div>
+          )}
 
-        {/* ── Discounts ── */}
-        <SectionCard
-          icon={<Percent size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Discounts"
-          subtitle="Optional promotional offers"
+          {/* STEP 4 — Pricing + Discount */}
+          {step === 4 && (
+            <div className="flex flex-col gap-6">
+              <div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  {currentTab?.label}
+                </p>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
+                  Pricing & discounts
+                </h2>
+                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
+                  Discounts are optional — toggle any to enable.
+                </p>
+              </div>
+
+              <SectionCard
+                icon={<Tag size={16} color={TEAL} strokeWidth={2.5} />}
+                title="Pricing"
+                subtitle="What you'll charge"
+              >
+                {activeTab === "camper-van" && (
+                  <CaravanPricingStep
+                    embedded
+                    perKmCharge={formData.perKmCharge}
+                    perDayCharge={formData.perDayCharge}
+                    perKmIncludes={formData.perKmIncludes}
+                    perKmExcludes={formData.perKmExcludes}
+                    perDayIncludes={formData.perDayIncludes}
+                    perDayExcludes={formData.perDayExcludes}
+                    errors={errors}
+                    onPerKmChargeChange={(v) => set("perKmCharge", v)}
+                    onPerDayChargeChange={(v) => set("perDayCharge", v)}
+                    onAddPriceItem={(field) => addArrayItem(field)}
+                    onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
+                    onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
+                    clearError={clearError}
+                  />
+                )}
+                {activeTab === "unique-stay" && (
+                  <UniqueStayPricing
+                    formData={formData}
+                    set={set}
+                    errors={errors}
+                    {...arrayHelpers}
+                  />
+                )}
+                {activeTab === "activity" && (
+                  <ActivityPricing
+                    formData={formData}
+                    set={set}
+                    errors={errors}
+                    {...arrayHelpers}
+                  />
+                )}
+              </SectionCard>
+
+              <SectionCard
+                icon={<Sparkles size={16} color={TEAL} strokeWidth={2.5} />}
+                title="Discounts"
+                subtitle="Optional — toggle any offer to enable"
+              >
+                <DiscountOffersStep
+                  embedded
+                  offers={discountOffers}
+                  onToggle={handleDiscountToggle}
+                  onOfferChange={handleDiscountOfferChange}
+                  errors={errors}
+                  weeklyLabel="Weekly / Monthly Offers"
+                />
+              </SectionCard>
+            </div>
+          )}
+
+          {/* STEP 5 — Review */}
+          {step === 5 && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  Final check
+                </p>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
+                  Review changes
+                </h2>
+                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
+                  Confirm the details below, then save.
+                </p>
+              </div>
+
+              {[
+                {
+                  label: "Category",
+                  jumpTo: 0,
+                  rows: [["Category", formData.category || "—"]] as [string, string][],
+                },
+                {
+                  label: "Basics",
+                  jumpTo: 1,
+                  rows: [
+                    ["Name", activeTab === "activity" ? formData.activityName : formData.name],
+                    [
+                      "Description",
+                      (formData.description || "").slice(0, 120) +
+                        (formData.description.length > 120 ? "…" : ""),
+                    ],
+                    ["Cover photo", coverUrl ? "✓ Set" : "Missing"],
+                    ["Gallery", `${galleryUrls.length} photos`],
+                  ] as [string, string][],
+                },
+                {
+                  label: "Features",
+                  jumpTo: 2,
+                  rows: [
+                    [
+                      "Selected",
+                      formData.features.length > 0 ? formData.features.join(", ") : "None",
+                    ],
+                  ] as [string, string][],
+                },
+                {
+                  label: "Location & Capacity",
+                  jumpTo: 3,
+                  rows: [
+                    [
+                      "Where",
+                      [formData.address, formData.city, formData.state, formData.pincode]
+                        .filter(Boolean)
+                        .join(", ") || "—",
+                    ],
+                    ...(activeTab === "camper-van"
+                      ? ([
+                          [
+                            "Capacity",
+                            `${formData.seatingCapacity} seating · ${formData.sleepingCapacity} sleeping`,
+                          ],
+                        ] as [string, string][])
+                      : activeTab === "unique-stay"
+                        ? ([["Guests", String(formData.guestCapacity)]] as [string, string][])
+                        : ([
+                            ["Persons", String(formData.personCapacity)],
+                            ["Duration", formData.timeDuration || "—"],
+                          ] as [string, string][])),
+                  ] as [string, string][],
+                },
+                {
+                  label: "Pricing",
+                  jumpTo: 4,
+                  rows: (() => {
+                    if (activeTab === "camper-van") {
+                      return [
+                        ["Per Km", formData.perKmCharge ? `₹${formData.perKmCharge}` : "—"],
+                        ["Per Day", formData.perDayCharge ? `₹${formData.perDayCharge}` : "—"],
+                      ] as [string, string][];
+                    }
+                    return [
+                      ["Regular price", formData.regularPrice ? `₹${formData.regularPrice}` : "—"],
+                    ] as [string, string][];
+                  })(),
+                },
+              ].map((section) => (
+                <div
+                  key={section.label}
+                  style={{
+                    border: `1.5px solid ${GRAY_200}`,
+                    borderRadius: 14,
+                    padding: "14px 16px",
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: GRAY_400,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {section.label}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setStep(section.jumpTo)}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                        fontSize: 11.5,
+                        fontWeight: 700,
+                        color: TEAL,
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <Edit2 size={11} /> Edit
+                    </button>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {section.rows.map(([k, v]) => (
+                      <div key={k} className="flex gap-3" style={{ fontSize: 13 }}>
+                        <span
+                          style={{
+                            color: GRAY_400,
+                            minWidth: 110,
+                            flexShrink: 0,
+                          }}
+                        >
+                          {k}
+                        </span>
+                        <span style={{ color: BLACK, fontWeight: 500 }}>{v || "—"}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {errors.submit && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    borderRadius: 12,
+                    backgroundColor: ERROR_BG,
+                    border: "1.5px solid #fca5a5",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
+                    <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
+                    <path
+                      d="M6 3.5v3M6 8.25v.25"
+                      stroke={ERROR}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: ERROR }}>{errors.submit}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Footer / nav ── */}
+        <div
+          className="flex items-center justify-between gap-3"
+          style={{ position: "sticky", bottom: 0, padding: "12px 0" }}
         >
-          <DiscountOffersStep
-            embedded
-            offers={discountOffers}
-            onToggle={handleDiscountToggle}
-            onOfferChange={handleDiscountOfferChange}
-            errors={errors}
-            weeklyLabel="Weekly / Monthly Offers"
-          />
-        </SectionCard>
-
-        {/* ── Submit error ── */}
-        {errors.submit && (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-[13px] bg-th-error-bright-bg border border-th-error-bright-soft">
-            <p className="text-[13px] font-semibold text-th-error-bright">{errors.submit}</p>
-          </div>
-        )}
-
-        {/* ── Footer ── */}
-        <div className="flex justify-end gap-3 pt-2 pb-6">
           <button
             type="button"
-            onClick={() => navigate(`/offering/${id}`)}
-            className="h-11 px-6 rounded-[13px] border border-th-warm-border bg-transparent text-[14px] font-semibold text-th-warm-text-dark cursor-pointer"
+            onClick={step === 0 ? () => navigate(`/offering/${id}`) : onPrev}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              height: 44,
+              padding: "0 18px",
+              borderRadius: 13,
+              border: `1.5px solid ${GRAY_200}`,
+              backgroundColor: "#fff",
+              fontSize: 13,
+              fontWeight: 700,
+              color: GRAY_500,
+              cursor: "pointer",
+            }}
           >
-            Cancel
+            <ChevronLeft size={16} /> {step === 0 ? "Cancel" : "Back"}
           </button>
+
+          <p style={{ fontSize: 12, color: GRAY_400, fontWeight: 600 }}>
+            Step {step + 1} of {STEPS.length}
+          </p>
+
           <button
             type="button"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className={cn(
-              "h-11 px-7 rounded-[13px] border-none bg-th-brand text-[14px] font-bold text-th-text-inverse shadow-[0_4px_20px_rgba(15,92,138,0.30)]",
-              isSubmitting ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-            )}
+            onClick={onNext}
+            disabled={!stepCanAdvance || isSubmitting}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              height: 44,
+              padding: "0 24px",
+              borderRadius: 13,
+              border: "none",
+              backgroundColor: TEAL,
+              fontSize: 13.5,
+              fontWeight: 800,
+              color: "#fff",
+              cursor: !stepCanAdvance || isSubmitting ? "not-allowed" : "pointer",
+              opacity: !stepCanAdvance || isSubmitting ? 0.5 : 1,
+              boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
+              transition: "all 0.15s",
+            }}
           >
-            {isSubmitting ? "Saving…" : "Save Changes"}
+            {isLastStep ? (
+              isSubmitting ? (
+                "Saving…"
+              ) : (
+                <>
+                  <Check size={16} strokeWidth={3} /> Save Changes
+                </>
+              )
+            ) : (
+              <>
+                Continue <ChevronRight size={16} />
+              </>
+            )}
           </button>
         </div>
       </div>
