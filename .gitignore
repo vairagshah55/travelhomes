@@ -49,6 +49,9 @@ Thumbs.db
 # Claude Code local config
 .claude/
 
+# Local-only deployment runbook (contains server hosts/paths)
+/DEPLOY.md
+
 # Husky binary cache
 .husky/_/
 
