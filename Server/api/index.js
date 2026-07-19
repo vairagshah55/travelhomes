@@ -41,6 +41,8 @@ const allowedOrigins = [
   "http://localhost:3001",
   "https://115.sofmatics.com",
   "https://travel-f.erpbuz.com",
+  "https://socialpartner.in",
+  "https://www.socialpartner.in",
 ];
 
 app.use(
