@@ -46,6 +46,9 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 
+# Claude Code local config
+.claude/
+
 # Husky binary cache
 .husky/_/
 
