@@ -6,26 +6,34 @@ import { LayoutDashboard, Users2, Calendar, MessageSquare, Settings } from "luci
 // (vendor) routes and bounces admins to the vendor login.
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
-  { label: "Users",     icon: Users2,          path: "/admin/management/user" },
-  { label: "Bookings",  icon: Calendar,        path: "/admin/management/booking" },
-  { label: "Tickets",   icon: MessageSquare,   path: "/admin/help-desk" },
-  { label: "Settings",  icon: Settings,        path: "/admin/global-settings" },
+  { label: "Users", icon: Users2, path: "/admin/management/user" },
+  { label: "Bookings", icon: Calendar, path: "/admin/management/booking" },
+  { label: "Tickets", icon: MessageSquare, path: "/admin/help-desk" },
+  { label: "Settings", icon: Settings, path: "/admin/global-settings" },
 ];
 
 export function MobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Resolve a single active item: the LONGEST path the current URL falls under
+  // (with a "/" boundary so /admin/dashboard never matches /admin/dashboard-x).
+  // Same approach as the desktop sidebar — avoids two items lighting up at once.
+  const { pathname } = location;
+  const activePath = NAV_ITEMS.map((i) => i.path)
+    .filter((p) => pathname === p || pathname.startsWith(p + "/"))
+    .sort((a, b) => b.length - a.length)[0];
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 md:hidden flex items-center justify-around h-14 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-tpl-dark-2 border-t border-gray-200 dark:border-tpl-stroke md:hidden flex items-center justify-around h-14 px-2">
       {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
-        const isActive = location.pathname.startsWith(path);
+        const isActive = path === activePath;
         return (
           <button
             key={path}
             onClick={() => navigate(path)}
             className={`flex flex-col items-center gap-0.5 flex-1 py-2 cursor-pointer transition-colors ${
-              isActive ? "text-brand-500" : "text-gray-400"
+              isActive ? "text-tpl-primary" : "text-tpl-dark-5"
             }`}
           >
             <Icon size={20} strokeWidth={isActive ? 2 : 1.5} />

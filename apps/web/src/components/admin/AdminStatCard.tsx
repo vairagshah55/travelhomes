@@ -66,36 +66,47 @@ export function AdminStatCard({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `${title}: ${displayValue}` : undefined}
-      className={`bg-app-surface rounded-[10px] shadow-sm border border-app-border p-6 transition-all duration-200 group outline-none ${
+      className={`relative overflow-hidden bg-app-surface rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.4)] border border-app-border p-5 transition-all duration-200 group outline-none ${
         clickable
-          ? "cursor-pointer hover:shadow-md hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2"
+          ? "cursor-pointer hover:border-[var(--teal-border)] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app-surface"
           : ""
       } ${className}`}
     >
+      {/* Top accent stripe — thin hue gradient bleeding from the icon corner */}
+      <span
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-0.5"
+        style={{ background: `linear-gradient(90deg, ${iconColor}, transparent)` }}
+      />
+
       <div
-        className={`size-14 rounded-full grid place-items-center text-white shrink-0 transition-transform duration-200 ${
+        className={`size-11 rounded-xl grid place-items-center shrink-0 transition-transform duration-200 ${
           clickable ? "group-hover:scale-105" : ""
         }`}
-        style={{ backgroundColor: iconColor }}
+        style={{ backgroundColor: `${iconColor}1f`, color: iconColor }}
       >
-        <Icon size={26} strokeWidth={2} />
+        <Icon size={22} strokeWidth={2} />
       </div>
 
       <div className="mt-5 flex items-end justify-between gap-3">
         <dl className="min-w-0">
-          <dt className="mb-1 text-[22px] font-bold text-app-fg tracking-tight leading-tight truncate">
+          <dt className="mb-1 text-2xl font-bold text-app-fg tracking-tight leading-tight tabular-nums truncate">
             {displayValue}
           </dt>
-          <dd className="text-[13px] font-medium text-app-fg-muted truncate">
+          <dd className="text-[11px] font-medium uppercase tracking-wide text-app-fg-muted truncate">
             {title}
           </dd>
         </dl>
 
         {hasDelta && (
-          <dl className={`text-[13px] font-medium shrink-0 ${isDecreasing ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+          <dl
+            className={`text-[13px] font-medium shrink-0 ${isDecreasing ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}
+          >
             <dt className="flex items-center gap-1">
               {Math.abs(growthRate!)}%
-              <span aria-hidden className="text-[10px]">{isDecreasing ? "▼" : "▲"}</span>
+              <span aria-hidden className="text-[10px]">
+                {isDecreasing ? "▼" : "▲"}
+              </span>
             </dt>
           </dl>
         )}

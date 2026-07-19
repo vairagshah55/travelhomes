@@ -1,8 +1,17 @@
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, ChevronUp, HelpCircle, LayoutDashboard, LogOut, Menu, Search, Settings, User as UserIcon } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
+import {
+  Bell,
+  ChevronUp,
+  HelpCircle,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Search,
+  Settings,
+  User as UserIcon,
+} from "lucide-react";
 import AdminCommandPalette from "./AdminCommandPalette";
 import {
   DropdownMenu,
@@ -86,7 +95,7 @@ export default function AdminHeader({
   const isNested = crumbs.length > 1;
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 py-4 md:py-5 bg-white dark:bg-tpl-dark-2 border-b border-tpl-stroke dark:border-tpl-stroke shrink-0 shadow-tpl-1">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 py-4 md:py-5 bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0 shadow-tpl-1">
       {/* Left — mobile menu + page title block. min-w-0 lets the title
           truncate gracefully when the right cluster needs room. */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -168,7 +177,9 @@ export default function AdminHeader({
         >
           <Search size={18} strokeWidth={1.75} />
           <span className="flex-1 text-left">Search</span>
-          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded border border-tpl-stroke dark:border-tpl-stroke text-tpl-dark-5">⌘K</span>
+          <span className="text-[11px] font-mono px-1.5 py-0.5 rounded border border-tpl-stroke dark:border-tpl-stroke text-tpl-dark-5">
+            ⌘K
+          </span>
         </button>
 
         {/* Compact search trigger — icon only. Replaces the pill below xl. */}
@@ -179,8 +190,6 @@ export default function AdminHeader({
         >
           <Search size={18} />
         </button>
-
-        <ThemeToggle />
 
         {/* Notifications — circular button with red ping dot */}
         <motion.button

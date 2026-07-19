@@ -24,13 +24,19 @@ interface AdminLayoutProps {
  * components/shared/, so anything that uses `bg-brand`/`text-brand` renders
  * the admin blue palette inside this subtree.
  */
-export default function AdminLayout({ title, subtitle, headerActions, children }: AdminLayoutProps) {
+export default function AdminLayout({
+  title,
+  subtitle,
+  headerActions,
+  children,
+}: AdminLayoutProps) {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   return (
     <div
       data-brand="admin"
-      className="flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg overflow-hidden font-plus-jakarta"
+      data-admin-skin="sf"
+      className="dark flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
     >
       <AdminSidebar
         showMobileSidebar={showMobileSidebar}

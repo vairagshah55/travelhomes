@@ -14,39 +14,39 @@
     --4: 4px;
     --12: 12px;
     --8: 8px;
-    --pRIMARY: #0F5C8A;
-    --Black-Heading: #0A2B40;
-    --Black-Stroke: #E4E8F0;
+    --pRIMARY: #0f5c8a;
+    --Black-Heading: #0a2b40;
+    --Black-Stroke: #e4e8f0;
     --White: #fff;
-    --Title: #1F2A44;
-    --Stroke: #E4E8F0;
+    --Title: #1f2a44;
+    --Stroke: #e4e8f0;
     --Primary-0: #fff;
-    --Neutral-06: #9AA3B5;
-    --Neutral-07: #5F6A82;
-    --Body: #1F2A44;
-    --Secondary-30: #E8F2F8;
-    --Heading: #0A2B40;
-    --Text: #0A2B40;
+    --Neutral-06: #9aa3b5;
+    --Neutral-07: #5f6a82;
+    --Body: #1f2a44;
+    --Secondary-30: #e8f2f8;
+    --Heading: #0a2b40;
+    --Text: #0a2b40;
 
     /* ── Midnight Indigo brand tokens (shared with frontend) ── */
-    --ds-sky:     #E8F2F8;
-    --ds-mist:    #D0E4EF;
-    --ds-ocean:   #1E88BA;
-    --ds-deep:    #0F5C8A;  /* main brand */
-    --ds-navy:    #0A2B40;
-    --ds-sand:    #E7D3A6;
-    --ds-dune:    #C8A96A;
-    --ds-rust:    #B42318;
-    --ds-lagoon:  #E1F5EE;
-    --ds-palm:    #0E7C66;
-    --ds-forest:  #085041;
-    --ds-linen:   #F6F8FB;
-    --ds-pebble:  #C9D1E0;
-    --ds-slate:   #5F6A82;
-    --ds-charcoal:#1F2A44;
-    --ds-error:   #B42318;
-    --ds-success: #0E7C66;
-    --ds-warning: #A47200;
+    --ds-sky: #e8f2f8;
+    --ds-mist: #d0e4ef;
+    --ds-ocean: #1e88ba;
+    --ds-deep: #0f5c8a; /* main brand */
+    --ds-navy: #0a2b40;
+    --ds-sand: #e7d3a6;
+    --ds-dune: #c8a96a;
+    --ds-rust: #b42318;
+    --ds-lagoon: #e1f5ee;
+    --ds-palm: #0e7c66;
+    --ds-forest: #085041;
+    --ds-linen: #f6f8fb;
+    --ds-pebble: #c9d1e0;
+    --ds-slate: #5f6a82;
+    --ds-charcoal: #1f2a44;
+    --ds-error: #b42318;
+    --ds-success: #0e7c66;
+    --ds-warning: #a47200;
 
     /* Travel Dashboard specific colors — Midnight Indigo */
     --dashboard-bg: 220 33% 97%; /* #F6F8FB */
@@ -92,13 +92,13 @@
     --radius: 0.75rem; /* 12px like in design */
 
     /* Sidebar colors — light, content-first (Stripe/Notion) */
-    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
-    --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
-    --sidebar-primary: 226 64% 33%;           /* #0F5C8A active nav */
+    --sidebar-background: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 222 38% 20%; /* #1F2A44 body */
+    --sidebar-primary: 226 64% 33%; /* #0F5C8A active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 96%;            /* #E8F2F8 hover bg */
+    --sidebar-accent: 224 64% 96%; /* #E8F2F8 hover bg */
     --sidebar-accent-foreground: 218 68% 21%; /* #0A4670 hover text */
-    --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
+    --sidebar-border: 220 21% 92%; /* #E4E8F0 */
     --sidebar-ring: 226 64% 33%;
 
     /* Additional dashboard neutral colors */
@@ -134,10 +134,10 @@
     --dashboard-blue-600: 226 64% 33%; /* #0F5C8A */
 
     /* Authentication colors */
-    --auth-blackish-green: #0A2B40;
-    --auth-neutral-06: #9AA3B5;
-    --auth-neutral-07: #5F6A82;
-    --auth-primary: #0F5C8A;
+    --auth-blackish-green: #0a2b40;
+    --auth-neutral-06: #9aa3b5;
+    --auth-neutral-07: #5f6a82;
+    --auth-primary: #0f5c8a;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(31, 42, 68, 0.75);
 
@@ -262,7 +262,15 @@
   }
 
   .font-geist {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
   }
 
   .font-display {
@@ -274,11 +282,27 @@
   }
 
   .font-poppins {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      "Inter",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
   }
 
   .font-plus-jakarta {
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family:
+      "Plus Jakarta Sans",
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      Helvetica,
+      Arial,
+      sans-serif;
   }
 }
 
@@ -413,10 +437,12 @@
     background: var(--ds-deep);
     color: #fff;
     border-radius: 8px;
-    transition: background 200ms ease, box-shadow 200ms ease;
+    transition:
+      background 200ms ease,
+      box-shadow 200ms ease;
   }
   .btn-brand:hover {
-    background: #14709F;
+    background: #14709f;
     box-shadow: 0 4px 12px rgba(15, 92, 138, 0.3);
   }
 
@@ -945,8 +971,8 @@
   display: none;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none;   
-  scrollbar-width: none;     
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 /* Booking calendar styles */
 .calendar-grid {
@@ -1169,83 +1195,204 @@
    without rewriting every page's JSX. The public site keeps its ocean palette. */
 [data-brand="admin"] {
   /* Background + primary CTA → template purple */
-  --dashboard-primary:        243 87% 63%;  /* #5750F1 */
-  --dashboard-primary-hover:  244 65% 56%;  /* #4A44D4 */
+  --dashboard-primary: 243 87% 63%; /* #5750F1 */
+  --dashboard-primary-hover: 244 65% 56%; /* #4A44D4 */
   /* Text — template's near-black blue-gray (#111928 → #1F2A37) */
-  --dashboard-heading:        220 24% 12%;  /* #111928 */
-  --dashboard-body:           221 22% 17%;  /* #1F2A37 */
-  --dashboard-title:          221 22% 17%;
-  --dashboard-text:           220 24% 12%;
+  --dashboard-heading: 220 24% 12%; /* #111928 */
+  --dashboard-body: 221 22% 17%; /* #1F2A37 */
+  --dashboard-title: 221 22% 17%;
+  --dashboard-text: 220 24% 12%;
   /* Surfaces */
-  --dashboard-bg:             220 14% 98%;  /* #f9fafb */
-  --dashboard-stroke:         215 25% 92%;  /* #e6ebf1 */
-  --dashboard-neutral-06:     220 14% 71%;  /* #9ca3af */
-  --dashboard-neutral-07:     220 9% 46%;   /* #6b7280 */
+  --dashboard-bg: 220 14% 98%; /* #f9fafb */
+  --dashboard-stroke: 215 25% 92%; /* #e6ebf1 */
+  --dashboard-neutral-06: 220 14% 71%; /* #9ca3af */
+  --dashboard-neutral-07: 220 9% 46%; /* #6b7280 */
   /* Booking ID link color → template purple */
-  --booking-link:             243 87% 63%;
+  --booking-link: 243 87% 63%;
   /* Sidebar variables — already overridden via JSX, but for consistency */
-  --sidebar-primary:          243 87% 63%;
-  --sidebar-ring:             243 87% 63%;
+  --sidebar-primary: 243 87% 63%;
+  --sidebar-ring: 243 87% 63%;
 }
 
 [data-brand="admin"] {
   /* Brand */
-  --tpl-primary:        #5750f1;
-  --tpl-primary-hover:  #4a44d4;
-  --tpl-primary-soft:   rgba(87, 80, 241, 0.07);
+  --tpl-primary: #5750f1;
+  --tpl-primary-hover: #4a44d4;
+  --tpl-primary-soft: rgba(87, 80, 241, 0.07);
   --tpl-primary-soft-2: rgba(87, 80, 241, 0.14);
 
   /* Neutrals — light surface */
-  --tpl-body-bg:        #f9fafb; /* page bg */
-  --tpl-card-bg:        #ffffff;
-  --tpl-stroke:         #e6ebf1;
+  --tpl-body-bg: #f9fafb; /* page bg */
+  --tpl-card-bg: #ffffff;
+  --tpl-stroke: #e6ebf1;
 
-  --tpl-gray-1:         #f9fafb;
-  --tpl-gray-2:         #f3f4f6;
-  --tpl-gray-3:         #e5e7eb;
-  --tpl-gray-4:         #d1d5db;
-  --tpl-gray-5:         #9ca3af;
-  --tpl-gray-6:         #6b7280;
-  --tpl-gray-7:         #374151;
-  --tpl-dark:           #111928;
-  --tpl-dark-2:         #1f2a37;
-  --tpl-dark-3:         #374151;
-  --tpl-dark-4:         #4b5563;
-  --tpl-dark-5:         #6b7280;
-  --tpl-dark-6:         #9ca3af;
-  --tpl-dark-7:         #d1d5db;
-  --tpl-dark-8:         #e5e7eb;
+  --tpl-gray-1: #f9fafb;
+  --tpl-gray-2: #f3f4f6;
+  --tpl-gray-3: #e5e7eb;
+  --tpl-gray-4: #d1d5db;
+  --tpl-gray-5: #9ca3af;
+  --tpl-gray-6: #6b7280;
+  --tpl-gray-7: #374151;
+  --tpl-dark: #111928;
+  --tpl-dark-2: #1f2a37;
+  --tpl-dark-3: #374151;
+  --tpl-dark-4: #4b5563;
+  --tpl-dark-5: #6b7280;
+  --tpl-dark-6: #9ca3af;
+  --tpl-dark-7: #d1d5db;
+  --tpl-dark-8: #e5e7eb;
 
   /* Status */
-  --tpl-green:          #22ad5c;
-  --tpl-green-light:    #2cd673;
-  --tpl-green-soft:     #daf8e6;
-  --tpl-red:            #f23030;
-  --tpl-red-light:      #f56060;
-  --tpl-red-soft:       #feebeb;
-  --tpl-blue:           #3c50e0;
-  --tpl-blue-soft:      #e1e8ff;
-  --tpl-yellow:         #f59e0b;
-  --tpl-yellow-soft:    #fffbeb;
-  --tpl-orange:         #f59460;
+  --tpl-green: #22ad5c;
+  --tpl-green-light: #2cd673;
+  --tpl-green-soft: #daf8e6;
+  --tpl-red: #f23030;
+  --tpl-red-light: #f56060;
+  --tpl-red-soft: #feebeb;
+  --tpl-blue: #3c50e0;
+  --tpl-blue-soft: #e1e8ff;
+  --tpl-yellow: #f59e0b;
+  --tpl-yellow-soft: #fffbeb;
+  --tpl-orange: #f59460;
 
   /* Shadows */
-  --tpl-shadow-1:       0px 1px 2px 0px rgba(84, 87, 118, 0.12);
-  --tpl-shadow-2:       0px 2px 3px 0px rgba(84, 87, 118, 0.15);
-  --tpl-shadow-card:    0px 1px 2px 0px rgba(0, 0, 0, 0.12);
-  --tpl-shadow-card-2:  0px 8px 13px -3px rgba(0, 0, 0, 0.07);
+  --tpl-shadow-1: 0px 1px 2px 0px rgba(84, 87, 118, 0.12);
+  --tpl-shadow-2: 0px 2px 3px 0px rgba(84, 87, 118, 0.15);
+  --tpl-shadow-card: 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
+  --tpl-shadow-card-2: 0px 8px 13px -3px rgba(0, 0, 0, 0.07);
 
   /* Radii */
-  --tpl-radius-card:    10px;
+  --tpl-radius-card: 10px;
 }
 
+/* Vendor-dashboard dark mode also uses [data-brand="admin"] (see global.css).
+   Keep its ORIGINAL slate dark tokens here so the 57facets restyle below —
+   which is gated on the admin-only [data-admin-skin="sf"] marker — never
+   leaks into the vendor dashboard's dark mode.                              */
 [data-brand="admin"].dark,
 .dark [data-brand="admin"] {
-  --tpl-body-bg:        #122031;
-  --tpl-card-bg:        #1f2a37;
-  --tpl-stroke:         #27303e;
-  --tpl-primary-soft:   rgba(255, 255, 255, 0.06);
-  --tpl-primary-soft-2: rgba(255, 255, 255, 0.10);
+  --tpl-body-bg: #122031;
+  --tpl-card-bg: #1f2a37;
+  --tpl-stroke: #27303e;
+  --tpl-primary-soft: rgba(255, 255, 255, 0.06);
+  --tpl-primary-soft-2: rgba(255, 255, 255, 0.1);
+}
+
+/* ── 57 Facets dark-luxury palette (admin only) ───────────────────────────
+   Scoped to [data-admin-skin="sf"], which ONLY the AdminLayout root carries
+   (alongside data-brand="admin" + a forced `dark` class). This compound
+   selector (0,3,0) outranks the vendor block above (0,2,0) and the light
+   [data-brand="admin"] block, and never matches the vendor dashboard. We keep
+   every variable NAME the existing JSX references and only swap VALUES —
+   near-black layered surfaces + teal accent across ALL token namespaces
+   (tpl-*, dashboard-*, app/surface-*, brand-*) so components re-skin without
+   per-file edits.                                                            */
+[data-brand="admin"][data-admin-skin="sf"].dark,
+.dark [data-brand="admin"][data-admin-skin="sf"] {
+  /* Brand → teal */
+  --tpl-primary: #30b8bf;
+  --tpl-primary-hover: #2aa6ac;
+  --tpl-primary-soft: rgba(48, 184, 191, 0.14);
+  --tpl-primary-soft-2: rgba(48, 184, 191, 0.22);
+
+  /* Layered dark surfaces (depth via color steps, not shadows) */
+  --tpl-body-bg: #080a0d; /* page bg            */
+  --tpl-card-bg: #0d1118; /* cards / sidebar    */
+  --tpl-stroke: #1c2535; /* borders / dividers */
+
+  /* Grays remapped to dark surfaces + light text */
+  --tpl-gray-1: #0d1118;
+  --tpl-gray-2: #131a25; /* table head / search fill / secondary */
+  --tpl-gray-3: #1a2235; /* elevated / hover                     */
+  --tpl-gray-4: #243049;
+  --tpl-gray-5: #8a929f;
+  --tpl-gray-6: #a8b0bf;
+  --tpl-gray-7: #c7cdd9;
+  --tpl-dark: #ffffff; /* primary text */
+  --tpl-dark-2: #0d1118; /* card / sidebar / header surface */
+  --tpl-dark-3: #c7cdd9;
+  --tpl-dark-4: #a8b0bf;
+  --tpl-dark-5: #8a929f; /* muted text  */
+  --tpl-dark-6: #a8b0bf; /* secondary text */
+  --tpl-dark-7: #e5e9f0;
+  --tpl-dark-8: #1a2235;
+
+  /* Status soft fills — darker, semi-transparent over the dark surface */
+  --tpl-green-soft: rgba(74, 222, 128, 0.12);
+  --tpl-red-soft: rgba(248, 113, 113, 0.12);
+  --tpl-blue-soft: rgba(56, 128, 190, 0.14);
+  --tpl-yellow-soft: rgba(251, 146, 60, 0.12);
+
+  /* Shadows — deeper on dark */
+  --tpl-shadow-1: 0px 1px 3px 0px rgba(0, 0, 0, 0.4);
+  --tpl-shadow-2: 0px 4px 12px 0px rgba(0, 0, 0, 0.5);
+  --tpl-shadow-card: 0px 1px 3px 0px rgba(0, 0, 0, 0.4);
+
+  /* Glass / teal utility tokens (57facets) */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-border-strong: rgba(255, 255, 255, 0.12);
+  --glass-header: rgba(13, 17, 24, 0.72);
+  --teal-glass: rgba(48, 184, 191, 0.18);
+  --teal-border: rgba(48, 184, 191, 0.25);
+  --teal-subtle: rgba(48, 184, 191, 0.1);
+  --shadow-teal: 0 0 0 1px rgba(48, 184, 191, 0.45);
+  --search-focus-ring: rgba(48, 184, 191, 0.18);
+
+  /* HSL --dashboard-* layer (~190 usages: text-dashboard-heading, etc.) */
+  --dashboard-bg: 216 24% 4%;
+  --dashboard-stroke: 218 31% 16%;
+  --dashboard-primary: 183 60% 47%;
+  --dashboard-primary-hover: 183 60% 42%;
+  --dashboard-heading: 0 0% 100%;
+  --dashboard-body: 219 15% 70%;
+  --dashboard-title: 219 15% 70%;
+  --dashboard-text: 0 0% 100%;
+  --dashboard-neutral-06: 217 10% 58%;
+  --dashboard-neutral-07: 219 15% 70%;
+  --booking-link: 183 60% 47%;
+  --sidebar-primary: 183 60% 47%;
+  --sidebar-ring: 183 60% 47%;
+
+  /* app-* / --surface-* semantic layer (AdminStatCard, app-accent, etc.) */
+  --surface: #0d1118;
+  --surface-2: #131a25;
+  --surface-border: #1c2535;
+  --surface-fg: #ffffff;
+  --surface-fg-muted: #8a929f;
+  --surface-fg-subtle: #a8b0bf;
+  --accent: #30b8bf;
+  --accent-hover: #2aa6ac;
+  --accent-soft: rgba(48, 184, 191, 0.14);
+  --accent-fg: #ffffff;
+
+  /* brand-* (TabStrip text-brand, shared primitives) → teal */
+  --brand: 183 60% 47%;
+  --brand-hover: 183 60% 42%;
+  --brand-fg: 0 0% 100%;
+  --brand-subtle: 200 30% 14%;
+
+  /* shadcn semantic tokens (in-tree Input, Select trigger, Checkbox, Table,
+     Button) → near-black + teal. NOTE: portaled content (Dialog/Select
+     dropdown/DropdownMenu) renders outside this scope and is themed in a
+     follow-up. We intentionally leave shadcn --accent alone: it collides
+     with the app-layer hex --accent (hex wins app-wide). */
+  --background: 216 24% 4%;
+  --foreground: 0 0% 100%;
+  --card: 218 30% 7%;
+  --card-foreground: 0 0% 100%;
+  --popover: 218 31% 16%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 183 60% 47%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 218 30% 11%;
+  --secondary-foreground: 219 15% 70%;
+  --muted: 218 30% 11%;
+  --muted-foreground: 217 10% 58%;
+  --border: 218 31% 16%;
+  --input: 218 31% 16%;
+  --ring: 183 60% 47%;
 }
 
 /* Utility shortcuts for the template look — keeps the JSX legible */
@@ -1254,23 +1401,41 @@
   border-radius: var(--tpl-radius-card);
   box-shadow: var(--tpl-shadow-1);
 }
-.tpl-card-flush { /* same as .tpl-card but for nested grids that need no extra padding */
+.tpl-card-flush {
+  /* same as .tpl-card but for nested grids that need no extra padding */
   background-color: var(--tpl-card-bg);
   border-radius: var(--tpl-radius-card);
   box-shadow: var(--tpl-shadow-1);
 }
-.tpl-heading-5 { font-size: 28px; line-height: 40px; font-weight: 700; }
-.tpl-heading-6 { font-size: 24px; line-height: 30px; font-weight: 700; }
-.tpl-body-2xlg { font-size: 22px; line-height: 28px; }
-.tpl-body-sm   { font-size: 14px; line-height: 22px; }
-.tpl-body-xs   { font-size: 12px; line-height: 20px; }
+.tpl-heading-5 {
+  font-size: 28px;
+  line-height: 40px;
+  font-weight: 700;
+}
+.tpl-heading-6 {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 700;
+}
+.tpl-body-2xlg {
+  font-size: 22px;
+  line-height: 28px;
+}
+.tpl-body-sm {
+  font-size: 14px;
+  line-height: 22px;
+}
+.tpl-body-xs {
+  font-size: 12px;
+  line-height: 20px;
+}
 
 /* ── Table styling — ported from the NextAdmin InvoiceTable pattern ──────
    Template default: light-blue tinted header row (#F7F9FC), bigger non-
    uppercase text in dark color, generous py-4 cells. Applies to any
    <Table> primitive inside the admin shell.                              */
 [data-brand="admin"] thead tr {
-  background-color: #f7f9fc;
+  background-color: var(--tpl-gray-2);
   border-bottom: 1px solid var(--tpl-stroke);
 }
 [data-brand="admin"] thead th {
@@ -1290,19 +1455,29 @@
   vertical-align: middle;
 }
 [data-brand="admin"] tbody tr {
-  border-bottom: 1px solid #eeeeee;
+  border-bottom: 1px solid var(--tpl-stroke);
 }
 [data-brand="admin"] tbody tr:last-child {
   border-bottom: 0;
 }
 [data-brand="admin"] tbody tr:hover {
-  background-color: rgba(87, 80, 241, 0.03);
+  background-color: var(--glass-bg-hover, rgba(87, 80, 241, 0.03));
 }
-.dark [data-brand="admin"] thead tr { background-color: var(--tpl-dark-2); }
-.dark [data-brand="admin"] thead th { color: #ffffff; }
-.dark [data-brand="admin"] tbody td { color: var(--tpl-dark-7); }
-.dark [data-brand="admin"] tbody tr { border-bottom-color: var(--tpl-stroke); }
-.dark [data-brand="admin"] tbody tr:hover { background-color: rgba(255, 255, 255, 0.03); }
+.dark [data-brand="admin"] thead tr {
+  background-color: var(--tpl-dark-2);
+}
+.dark [data-brand="admin"] thead th {
+  color: #ffffff;
+}
+.dark [data-brand="admin"] tbody td {
+  color: var(--tpl-dark-7);
+}
+.dark [data-brand="admin"] tbody tr {
+  border-bottom-color: var(--tpl-stroke);
+}
+.dark [data-brand="admin"] tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
 
 /* ── Search input pill — ported from template's Header search box ─────
    Any <input type="search"> inside the admin shell renders as the
@@ -1316,7 +1491,9 @@
   padding-bottom: 0.625rem;
   padding-left: 2.75rem; /* leaves room for the search icon */
   padding-right: 1rem;
-  transition: border-color 150ms ease, background-color 150ms ease;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
   outline: none;
 }
 [data-brand="admin"] input[type="search"]:hover {
@@ -1327,13 +1504,13 @@
   border-color: var(--tpl-primary);
   background-color: var(--tpl-card-bg);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(87, 80, 241, 0.10);
+  box-shadow: 0 0 0 3px var(--search-focus-ring, rgba(87, 80, 241, 0.1));
 }
 .dark [data-brand="admin"] input[type="search"] {
   background-color: rgba(255, 255, 255, 0.05);
 }
 .dark [data-brand="admin"] input[type="search"]:hover {
-  background-color: rgba(255, 255, 255, 0.10);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 /* Focus ring for non-search inputs: subtle purple, no double-outline */
@@ -1355,15 +1532,32 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
-main::-webkit-scrollbar { width: 5px; }
-main::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar {
+  width: 5px;
+}
+main::-webkit-scrollbar-track {
+  background: transparent;
+}
 main::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 3px;
 }
-main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+main::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Admin (57facets) gets a dark/teal scrollbar — scoped so the public site keeps
+   the light thumb above. */
+[data-admin-skin="sf"] main::-webkit-scrollbar-thumb {
+  background: #243049;
+}
+[data-admin-skin="sf"] main::-webkit-scrollbar-thumb:hover {
+  background: #30b8bf;
+}
 
 /* Smooth focus outline on buttons and inputs — scoped to the admin shell.
    Portaled content (dialogs, popovers, command palette) lives outside this
@@ -1378,22 +1572,29 @@ main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
 }
 
 /* Consistent link-style interactions */
-a { transition: color 150ms ease, opacity 150ms ease; }
+a {
+  transition:
+    color 150ms ease,
+    opacity 150ms ease;
+}
 
 /* Table hover enhancement */
-tbody tr { transition: background-color 120ms ease; }
+tbody tr {
+  transition: background-color 120ms ease;
+}
 
 /* Card lift on hover (shared utility) */
 .card-lift {
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 .card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 /* No html font-size override. Standard 16px browser default + Tailwind's
    type scale (text-xs/sm/base) gives us the same density Stripe/Linear/
    Vercel use. Custom rem bases force every shared component to fight the
    cascade — better to design at the system default. */
-

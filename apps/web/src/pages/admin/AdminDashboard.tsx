@@ -83,7 +83,7 @@ const DashboardChart = ({
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 px-6 pt-6 pb-4">
+    <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 px-6 pt-6 pb-4">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[18px] font-bold text-tpl-dark dark:text-white">{title}</h3>
         <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">
@@ -108,18 +108,51 @@ const DashboardChart = ({
                     <stop offset="95%" stopColor={color} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="rgba(255,255,255,0.06)"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                <Tooltip content={<ChartTooltip valuePrefix={dataKey === "total" ? "₹" : ""} valueFormatter={dataKey === "total" ? formatINR : undefined} />} />
-                <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2} fillOpacity={1} fill={`url(#${gradId})`} dot={false} />
+                <Tooltip
+                  content={
+                    <ChartTooltip
+                      valuePrefix={dataKey === "total" ? "₹" : ""}
+                      valueFormatter={dataKey === "total" ? formatINR : undefined}
+                    />
+                  }
+                />
+                <Area
+                  type="monotone"
+                  dataKey={dataKey}
+                  stroke={color}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill={`url(#${gradId})`}
+                  dot={false}
+                />
               </AreaChart>
             ) : (
               <BarChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="rgba(255,255,255,0.06)"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11, fill: "#9ca3af" }}
+                />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                <Tooltip cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+                <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} />
                 <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
@@ -147,14 +180,62 @@ const AdminDashboard = () => {
   // NextAdmin template palette — vibrant solid-fill circular icon badges.
   const statsCards = useMemo(
     () => [
-      { title: "Total Users",      value: String(d.stats?.users?.total        ?? 0), icon: Users,          iconColor: "#18BFFF", navigate: "/management/user"    },
-      { title: "Active Users",     value: String(d.stats?.users?.active       ?? 0), icon: UserCheck,      iconColor: "#3FD97F", navigate: "/management/user"    },
-      { title: "Total Vendors",    value: String(d.stats?.vendors?.total      ?? 0), icon: ClipboardCheck, iconColor: "#8155FF", navigate: "/management/vendor"  },
-      { title: "Active Vendors",   value: String(d.stats?.vendors?.active     ?? 0), icon: Wallet,         iconColor: "#5750F1", navigate: "/management/vendor"  },
-      { title: "Pending KYC",      value: String(d.stats?.vendors?.pendingKyc ?? 0), icon: TrendingUp,     iconColor: "#F59460", navigate: "/management/vendor"  },
-      { title: "Total Listings",   value: String(d.stats?.listings?.total     ?? 0), icon: MousePointer,   iconColor: "#3C50E0", navigate: "/management/listing" },
-      { title: "Pending Listings", value: String(d.stats?.listings?.pending   ?? 0), icon: ClipboardList,  iconColor: "#F56060", navigate: "/management/listing" },
-      { title: "Total Revenue",    value: formatINR(d.stats?.revenue?.total   ?? 0), icon: IndianRupee,    iconColor: "#FF9C55", navigate: "/payments"           },
+      {
+        title: "Total Users",
+        value: String(d.stats?.users?.total ?? 0),
+        icon: Users,
+        iconColor: "#18BFFF",
+        navigate: "/management/user",
+      },
+      {
+        title: "Active Users",
+        value: String(d.stats?.users?.active ?? 0),
+        icon: UserCheck,
+        iconColor: "#3FD97F",
+        navigate: "/management/user",
+      },
+      {
+        title: "Total Vendors",
+        value: String(d.stats?.vendors?.total ?? 0),
+        icon: ClipboardCheck,
+        iconColor: "#8155FF",
+        navigate: "/management/vendor",
+      },
+      {
+        title: "Active Vendors",
+        value: String(d.stats?.vendors?.active ?? 0),
+        icon: Wallet,
+        iconColor: "#5750F1",
+        navigate: "/management/vendor",
+      },
+      {
+        title: "Pending KYC",
+        value: String(d.stats?.vendors?.pendingKyc ?? 0),
+        icon: TrendingUp,
+        iconColor: "#F59460",
+        navigate: "/management/vendor",
+      },
+      {
+        title: "Total Listings",
+        value: String(d.stats?.listings?.total ?? 0),
+        icon: MousePointer,
+        iconColor: "#3C50E0",
+        navigate: "/management/listing",
+      },
+      {
+        title: "Pending Listings",
+        value: String(d.stats?.listings?.pending ?? 0),
+        icon: ClipboardList,
+        iconColor: "#F56060",
+        navigate: "/management/listing",
+      },
+      {
+        title: "Total Revenue",
+        value: formatINR(d.stats?.revenue?.total ?? 0),
+        icon: IndianRupee,
+        iconColor: "#FF9C55",
+        navigate: "/payments",
+      },
     ],
     [d.stats],
   );
@@ -162,7 +243,7 @@ const AdminDashboard = () => {
   const graphs = d.graphs ?? { revenue: [], users: [], vendors: [], bookings: [] };
 
   const ticketData = useMemo(() => {
-    const tickets = Array.isArray(d.tickets) ? d.tickets : (d.latestTickets || []);
+    const tickets = Array.isArray(d.tickets) ? d.tickets : d.latestTickets || [];
     return tickets.map((t: any) => ({
       _id: t._id,
       vendorName: t.vendorName || t.name || "N/A",
@@ -211,10 +292,11 @@ const AdminDashboard = () => {
       );
     }
     rows.sort((a, b) => {
-      if (ticketSort === "date-desc") return new Date(b.date).getTime() - new Date(a.date).getTime();
-      if (ticketSort === "date-asc")  return new Date(a.date).getTime() - new Date(b.date).getTime();
-      if (ticketSort === "status")    return a.status.localeCompare(b.status);
-      if (ticketSort === "name")      return a.vendorName.localeCompare(b.vendorName);
+      if (ticketSort === "date-desc")
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (ticketSort === "date-asc") return new Date(a.date).getTime() - new Date(b.date).getTime();
+      if (ticketSort === "status") return a.status.localeCompare(b.status);
+      if (ticketSort === "name") return a.vendorName.localeCompare(b.vendorName);
       return 0;
     });
     return rows;
@@ -229,11 +311,11 @@ const AdminDashboard = () => {
             ? Array.from({ length: 8 }).map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 p-6 animate-pulse"
+                  className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-app-border shadow-tpl-1 p-5 animate-pulse"
                 >
-                  <div className="size-14 rounded-full bg-tpl-gray-2 dark:bg-white/5" />
+                  <div className="size-11 rounded-xl bg-tpl-gray-2 dark:bg-white/5" />
                   <div className="mt-5 space-y-2">
-                    <div className="h-6 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
+                    <div className="h-7 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
                     <div className="h-3 w-24 rounded bg-tpl-gray-2 dark:bg-white/5" />
                   </div>
                 </div>
@@ -268,21 +350,52 @@ const AdminDashboard = () => {
 
         {/* ── Charts ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
-          <DashboardChart title="Revenue Generated" data={graphs.revenue} type="area" color="#5750F1" dataKey="total" loading={isLoading} />
-          <DashboardChart title="Bookings"           data={graphs.bookings} type="area" color="#22AD5C" dataKey="count" loading={isLoading} />
+          <DashboardChart
+            title="Revenue Generated"
+            data={graphs.revenue}
+            type="area"
+            color="#30B8BF"
+            dataKey="total"
+            loading={isLoading}
+          />
+          <DashboardChart
+            title="Bookings"
+            data={graphs.bookings}
+            type="area"
+            color="#22AD5C"
+            dataKey="count"
+            loading={isLoading}
+          />
         </div>
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
-          <DashboardChart title="Active Users"   data={graphs.users}   type="bar" color="#3C50E0" dataKey="count" loading={isLoading} />
-          <DashboardChart title="Active Vendors" data={graphs.vendors} type="bar" color="#F59460" dataKey="count" loading={isLoading} />
+          <DashboardChart
+            title="Active Users"
+            data={graphs.users}
+            type="bar"
+            color="#2660A0"
+            dataKey="count"
+            loading={isLoading}
+          />
+          <DashboardChart
+            title="Active Vendors"
+            data={graphs.vendors}
+            type="bar"
+            color="#F59460"
+            dataKey="count"
+            loading={isLoading}
+          />
         </div>
 
         {/* ── Tickets Table — template card style ──────────────────────────── */}
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
           <div className="px-6 py-5 border-b border-tpl-stroke dark:border-tpl-stroke flex items-center justify-between flex-wrap gap-3">
             <h3 className="text-[20px] font-bold text-tpl-dark dark:text-white">Tickets Raised</h3>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-tpl-dark-5" />
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-tpl-dark-5"
+                />
                 <Input
                   type="search"
                   placeholder="Search tickets…"
@@ -322,7 +435,9 @@ const AdminDashboard = () => {
                   <TableRow key={`sk-${i}`} className="animate-pulse">
                     {Array.from({ length: 6 }).map((__, j) => (
                       <TableCell key={j} className={j === 0 ? "px-6" : ""}>
-                        <div className={`h-3 rounded bg-tpl-gray-2 dark:bg-white/5 ${j === 5 ? "w-8 ml-auto" : j === 0 ? "w-28" : "w-20"}`} />
+                        <div
+                          className={`h-3 rounded bg-tpl-gray-2 dark:bg-white/5 ${j === 5 ? "w-8 ml-auto" : j === 0 ? "w-28" : "w-20"}`}
+                        />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -336,7 +451,9 @@ const AdminDashboard = () => {
               ) : (
                 filteredTickets.map((ticket) => (
                   <TableRow key={ticket._id}>
-                    <TableCell className="font-medium text-tpl-dark dark:text-white px-6">{ticket.vendorName}</TableCell>
+                    <TableCell className="font-medium text-tpl-dark dark:text-white px-6">
+                      {ticket.vendorName}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell">{ticket.email}</TableCell>
                     <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
                     <TableCell className="hidden lg:table-cell">{ticket.dateDisplay}</TableCell>
@@ -354,19 +471,37 @@ const AdminDashboard = () => {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem onClick={() => { setSelectedTicket(ticket); setShowHelpDeskPopup(true); }} className="gap-2 cursor-pointer">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedTicket(ticket);
+                              setShowHelpDeskPopup(true);
+                            }}
+                            className="gap-2 cursor-pointer"
+                          >
                             <Eye size={15} /> View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Read")} className="gap-2 cursor-pointer">
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateStatus(ticket._id, "Read")}
+                            className="gap-2 cursor-pointer"
+                          >
                             <CheckCircle size={15} className="text-tpl-blue" /> Mark Read
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Pending")} className="gap-2 cursor-pointer">
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateStatus(ticket._id, "Pending")}
+                            className="gap-2 cursor-pointer"
+                          >
                             <Clock size={15} className="text-tpl-orange" /> Mark Pending
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleUpdateStatus(ticket._id, "Resolved")} className="gap-2 cursor-pointer">
+                          <DropdownMenuItem
+                            onClick={() => handleUpdateStatus(ticket._id, "Resolved")}
+                            className="gap-2 cursor-pointer"
+                          >
                             <CheckCircle size={15} className="text-tpl-green" /> Resolve
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setConfirmDelete(ticket._id)} className="gap-2 cursor-pointer text-tpl-red focus:text-tpl-red focus:bg-tpl-red-soft">
+                          <DropdownMenuItem
+                            onClick={() => setConfirmDelete(ticket._id)}
+                            className="gap-2 cursor-pointer text-tpl-red focus:text-tpl-red focus:bg-tpl-red-soft"
+                          >
                             <Trash2 size={15} /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell($out = & cmd /c \"cd /d c:\\\\vairag\\\\travelhomes\\\\apps\\\\web && node_modules\\\\.bin\\\\vite.cmd build 2>&1\"; \"EXIT=$LASTEXITCODE\"; \\($out | Out-String\\) -split \"`n\" | Select-Object -Last 30)"
+      "PowerShell($out = & cmd /c \"cd /d c:\\\\vairag\\\\travelhomes\\\\apps\\\\web && node_modules\\\\.bin\\\\vite.cmd build 2>&1\"; \"EXIT=$LASTEXITCODE\"; \\($out | Out-String\\) -split \"`n\" | Select-Object -Last 30)",
+      "Bash(node c:/vairag/travelhomes/Server/scripts/_swap-edit-offerings.js)"
     ]
   }
 }

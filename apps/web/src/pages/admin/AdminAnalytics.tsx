@@ -8,30 +8,42 @@ const AdminAnalytics = () => {
 
   return (
     <AdminLayout title="Analytics">
-      <div className="flex-1 flex flex-col overflow-x-hidden">
-        <div className="flex items-center justify-between bg-white dark:bg-tpl-dark-2 rounded-t-[10px] px-6 py-5 shadow-tpl-1 border-b border-tpl-stroke">
+      <div className="space-y-6">
+        {/* Toolbar — title + Overview/Report segmented control */}
+        <div className="flex items-center justify-between gap-4 bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke px-6 py-4 shadow-tpl-1">
           <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
             {activeTab === "analytics" ? "Analytics Overview" : "Analytics Report"}
           </h2>
           <div className="flex gap-1 bg-tpl-gray-2 dark:bg-white/5 rounded-lg p-1">
-            {(["analytics", "report"] as const).map((tab) => (
+            {(
+              [
+                ["analytics", "Overview"],
+                ["report", "Report"],
+              ] as const
+            ).map(([tab, label]) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize ${
+                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === tab
-                    ? "bg-white dark:bg-tpl-dark-2 text-tpl-primary shadow-tpl-1"
+                    ? "bg-white dark:bg-white/10 text-tpl-primary shadow-tpl-1"
                     : "text-tpl-dark-5 hover:text-tpl-dark dark:hover:text-white"
                 }`}
               >
-                {tab}
+                {label}
               </button>
             ))}
           </div>
         </div>
-        <div className="flex-1 bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 overflow-x-hidden">
-          {activeTab === "analytics" ? <AdminAnalyticsOverview /> : <AdminAnalyticsReport />}
-        </div>
+
+        {/* Content — overview cards sit on the page bg; report stays in a card */}
+        {activeTab === "analytics" ? (
+          <AdminAnalyticsOverview />
+        ) : (
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
+            <AdminAnalyticsReport />
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

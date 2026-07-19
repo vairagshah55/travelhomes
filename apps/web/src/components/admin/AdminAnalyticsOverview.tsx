@@ -1,393 +1,290 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import {
+  Eye,
+  MousePointerClick,
+  TrendingUp,
+  Building2,
+  CalendarDays,
+  IndianRupee,
+  Tent,
+  Home,
+  Compass,
+  type LucideIcon,
+} from "lucide-react";
 import { analyticsService } from "@/services/api";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
+import { formatINR } from "@/utils/formatCurrency";
 
-interface MetricCard {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  bgColor: string;
-  iconBgColor: string;
-  navigate?: string;
+/**
+ * Analytics Overview — aggregate KPI strip + per-service performance cards.
+ *
+ * Data comes from `analyticsService.getOverview()` keyed by service category
+ * (camper-van / unique-stay / activity). We render a top-line summary across
+ * all services, then a card per service with engagement (impressions/clicks/
+ * CTR), an active-vs-total properties bar, and bookings/revenue.
+ */
+
+interface CatStats {
+  impressions: number;
+  clicks: number;
+  totalProperties: number;
+  activeProperties: number;
+  inactiveProperties: number;
+  totalBookings: number;
+  totalRevenue: number;
 }
+
+const SERVICES: { key: string; label: string; color: string; icon: LucideIcon }[] = [
+  { key: "camper-van", label: "Camper Van", color: "#30b8bf", icon: Tent },
+  { key: "unique-stay", label: "Unique Stay", color: "#a855f7", icon: Home },
+  { key: "activity", label: "Activity", color: "#f59e0b", icon: Compass },
+];
+
+const num = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);
+const pct = (a: number, b: number) => (b > 0 ? (a / b) * 100 : 0);
+const intl = (n: number) => n.toLocaleString("en-IN");
 
 const AdminAnalyticsOverview = () => {
   const navigate = useNavigate();
-  const [data, setData] = React.useState<any>(null);
-  React.useEffect(() => {
+  const [data, setData] = useState<Record<string, any> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
     (async () => {
       try {
         const json = await analyticsService.getOverview();
         setData(json?.data || null);
       } catch (e) {
-        console.error('Failed to load analytics overview', e);
+        console.error("Failed to load analytics overview", e);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
-  // Custom icons matching Figma design
-  const UserIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M9.99967 9.99984C12.3009 9.99984 14.1663 8.13436 14.1663 5.83317C14.1663 3.53198 12.3009 1.6665 9.99967 1.6665C7.69849 1.6665 5.83301 3.53198 5.83301 5.83317C5.83301 8.13436 7.69849 9.99984 9.99967 9.99984Z"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M17.1585 18.3333C17.1585 15.1083 13.9501 12.5 10.0001 12.5C6.05013 12.5 2.8418 15.1083 2.8418 18.3333"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 
-  const ClickIcon = () => (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M14.9998 14.9998L12.9998 19.9998L8.99983 8.99976L19.9998 12.9998L14.9998 14.9998ZM14.9998 14.9998L19.9998 19.9998M7.18806 2.23828L7.96452 5.13606M5.13606 7.96448L2.23828 7.18802M13.9495 4.05005L11.8282 6.17137M6.17146 11.8281L4.05014 13.9494"
-        stroke="#111827"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const ClipboardIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M7.75879 12.2498L9.00879 13.4998L12.3421 10.1665"
-        stroke="#292D32"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M8.33366 4.99984H11.667C13.3337 4.99984 13.3337 4.1665 13.3337 3.33317C13.3337 1.6665 12.5003 1.6665 11.667 1.6665H8.33366C7.50033 1.6665 6.66699 1.6665 6.66699 3.33317C6.66699 4.99984 7.50033 4.99984 8.33366 4.99984Z"
-        stroke="#292D32"
-        strokeWidth="1.5"
-        strokeMiterlimit="10"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M13.3333 3.3501C16.1083 3.5001 17.5 4.5251 17.5 8.33343V13.3334C17.5 16.6668 16.6667 18.3334 12.5 18.3334H7.5C3.33333 18.3334 2.5 16.6668 2.5 13.3334V8.33343C2.5 4.53343 3.89167 3.5001 6.66667 3.3501"
-        stroke="#292D32"
-        strokeWidth="1.5"
-        strokeMiterlimit="10"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const WalletIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M15.033 11.2918C14.683 11.6335 14.483 12.1252 14.533 12.6502C14.608 13.5502 15.433 14.2085 16.333 14.2085H17.9163V15.2002C17.9163 16.9252 16.508 18.3335 14.783 18.3335H5.21634C3.49134 18.3335 2.08301 16.9252 2.08301 15.2002V9.59184C2.08301 7.86684 3.49134 6.4585 5.21634 6.4585H14.783C16.508 6.4585 17.9163 7.86684 17.9163 9.59184V10.7918H16.233C15.7663 10.7918 15.3413 10.9752 15.033 11.2918Z"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2.08301 10.3416V6.5333C2.08301 5.54163 2.69134 4.65826 3.61634 4.30826L10.233 1.80826C11.2663 1.41659 12.3747 2.18329 12.3747 3.29162V6.45828"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M18.7987 11.642V13.3587C18.7987 13.817 18.432 14.192 17.9653 14.2086H16.332C15.432 14.2086 14.607 13.5503 14.532 12.6503C14.482 12.1253 14.682 11.6336 15.032 11.292C15.3404 10.9753 15.7653 10.792 16.232 10.792H17.9653C18.432 10.8087 18.7987 11.1836 18.7987 11.642Z"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M5.83301 10H11.6663"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const TaskIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M9.16699 16.25H17.5003"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.16699 10.4165H17.5003"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.16699 4.5835H17.5003"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2.5 4.58317L3.33333 5.4165L5.83333 2.9165"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2.5 10.4167L3.33333 11.25L5.83333 8.75"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M2.5 16.2502L3.33333 17.0835L5.83333 14.5835"
-        stroke="#131313"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
-  const defaultServiceData = [
-    {
-      title: "Camper Van",
-      firstRow: [
-        {
-          title: "Total Impression",
-          value: "0",
-          icon: <UserIcon />,
-          bgColor: "bg-orange-50",
-          iconBgColor: "bg-orange-100",
-        },
-        {
-          title: "Total Clicks",
-          value: "0",
-          icon: <ClickIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-        },
-        {
-          title: "Total Properties",
-          value: "0",
-          icon: <ClipboardIcon />,
-          bgColor: "bg-cyan-50",
-          iconBgColor: "bg-cyan-100",
-        },
-        {
-          title: "Active Properties",
-          value: "0",
-          icon: <WalletIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-        },
-      ],
-      secondRow: [
-        {
-          title: "Inactive Properties",
-          value: "0",
-          icon: <WalletIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-        },
-        {
-          title: "Total days of Booking",
-          value: "0",
-          icon: <ClickIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-        },
-        {
-          title: "Total Revenue",
-          value: "0",
-          icon: <TaskIcon />,
-          bgColor: "bg-green-50",
-          iconBgColor: "bg-green-100",
-        },
-      ],
-    },
-    // Repeat structure for others if needed for initial render, 
-    // or just rely on the map logic below.
-  ];
-
-  const mapStats = (cat: string, title: string) => {
-    const stats = data ? data[cat] : null;
+  const statsFor = (key: string): CatStats => {
+    const s = data?.[key] ?? {};
     return {
-      title,
-      firstRow: [
-        {
-          title: "Total Impression",
-          value: stats?.impressions?.toString() || "0",
-          icon: <UserIcon />,
-          bgColor: "bg-orange-50",
-          iconBgColor: "bg-orange-100",
-        },
-        {
-          title: "Total Clicks",
-          value: stats?.clicks?.toString() || "0",
-          icon: <ClickIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-        },
-        {
-          title: "Total Properties",
-          value: stats?.totalProperties?.toString() || "0",
-          icon: <ClipboardIcon />,
-          bgColor: "bg-cyan-50",
-          iconBgColor: "bg-cyan-100",
-          navigate: "/management/listing",
-        },
-        {
-          title: "Active Properties",
-          value: stats?.activeProperties?.toString() || "0",
-          icon: <WalletIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-          navigate: "/management/listing",
-        },
-      ],
-      secondRow: [
-        {
-          title: "Inactive Properties",
-          value: stats?.inactiveProperties?.toString() || "0",
-          icon: <WalletIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-          navigate: "/management/listing",
-        },
-        {
-          title: "Total days of Booking",
-          value: stats?.totalBookings?.toString() || "0",
-          icon: <ClickIcon />,
-          bgColor: "bg-purple-50",
-          iconBgColor: "bg-purple-100",
-          navigate: "/management/booking",
-        },
-        {
-          title: "Total Revenue",
-          value: stats?.totalRevenue?.toString() || "0",
-          icon: <TaskIcon />,
-          bgColor: "bg-green-50",
-          iconBgColor: "bg-green-100",
-          navigate: "/admin/payments",
-        },
-      ],
+      impressions: num(s.impressions),
+      clicks: num(s.clicks),
+      totalProperties: num(s.totalProperties),
+      activeProperties: num(s.activeProperties),
+      inactiveProperties: num(s.inactiveProperties),
+      totalBookings: num(s.totalBookings),
+      totalRevenue: num(s.totalRevenue),
     };
   };
 
-  const serviceData = [
-    mapStats('camper-van', 'Camper Van'),
-    mapStats('unique-stay', 'Unique Stay'),
-    mapStats('activity', 'Activity')
+  const services = SERVICES.map((s) => ({ ...s, ...statsFor(s.key) }));
+  const sum = (f: (c: CatStats) => number) => services.reduce((t, c) => t + f(c), 0);
+  const totals = {
+    impressions: sum((c) => c.impressions),
+    clicks: sum((c) => c.clicks),
+    totalProperties: sum((c) => c.totalProperties),
+    totalBookings: sum((c) => c.totalBookings),
+    totalRevenue: sum((c) => c.totalRevenue),
+  };
+  const ctr = pct(totals.clicks, totals.impressions);
+
+  const kpis: {
+    title: string;
+    value: string | number;
+    icon: LucideIcon;
+    iconColor: string;
+    nav?: string;
+  }[] = [
+    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#30b8bf" },
+    { title: "Total Clicks", value: totals.clicks, icon: MousePointerClick, iconColor: "#3b82f6" },
+    { title: "Avg. CTR", value: `${ctr.toFixed(1)}%`, icon: TrendingUp, iconColor: "#22c55e" },
+    {
+      title: "Total Properties",
+      value: totals.totalProperties,
+      icon: Building2,
+      iconColor: "#a855f7",
+      nav: "/management/listing",
+    },
+    {
+      title: "Total Bookings",
+      value: totals.totalBookings,
+      icon: CalendarDays,
+      iconColor: "#ec4899",
+      nav: "/management/booking",
+    },
+    {
+      title: "Total Revenue",
+      value: formatINR(totals.totalRevenue),
+      icon: IndianRupee,
+      iconColor: "#f59e0b",
+      nav: "/admin/payments",
+    },
   ];
 
-  const MetricCardComponent = ({ metric, index = 0 }: { metric: MetricCard; index?: number }) => (
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[116px] rounded-2xl border border-tpl-stroke bg-white dark:bg-tpl-dark-2 animate-pulse"
+            />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[280px] rounded-2xl border border-tpl-stroke bg-white dark:bg-tpl-dark-2 animate-pulse"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Aggregate KPI strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        {kpis.map((k, i) => (
+          <AdminStatCard
+            key={k.title}
+            title={k.title}
+            value={k.value}
+            icon={k.icon}
+            iconColor={k.iconColor}
+            delay={i * 0.05}
+            onClick={k.nav ? () => navigate(k.nav!) : undefined}
+          />
+        ))}
+      </div>
+
+      {/* Per-service performance */}
+      <div>
+        <h3 className="mb-3 text-[13px] font-semibold uppercase tracking-wider text-tpl-dark-5 dark:text-tpl-dark-6">
+          Performance by service
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {services.map((s, i) => (
+            <ServiceCard
+              key={s.key}
+              s={s}
+              delay={i * 0.06}
+              onProperties={() => navigate("/management/listing")}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── Engagement stat tile ─────────────────────────────────────────────────── */
+function Stat({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-tpl-stroke bg-[var(--glass-bg)] p-3">
+      <div className="flex items-center gap-1.5 text-tpl-dark-5 dark:text-tpl-dark-6 mb-1">
+        <Icon size={13} />
+        <span className="text-[11px] font-medium">{label}</span>
+      </div>
+      <p className="text-lg font-bold text-tpl-dark dark:text-white tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+/* ── Per-service performance card ─────────────────────────────────────────── */
+function ServiceCard({
+  s,
+  delay,
+  onProperties,
+}: {
+  s: CatStats & { label: string; color: string; icon: LucideIcon };
+  delay: number;
+  onProperties: () => void;
+}) {
+  const ctr = pct(s.clicks, s.impressions);
+  const activeRate = pct(s.activeProperties, s.totalProperties);
+
+  return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.25, ease: "easeOut" }}
-      onClick={() => metric.navigate && navigate(metric.navigate)}
-      className={`p-4 rounded-xl ${metric.bgColor} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer group flex-1 min-w-[250px]`}
+      transition={{ delay, duration: 0.25, ease: "easeOut" }}
+      className="flex flex-col gap-5 rounded-2xl border border-tpl-stroke bg-white dark:bg-tpl-dark-2 p-5 shadow-tpl-1"
     >
-      <div className="flex items-start gap-5">
-        <div
-          className={`w-12 h-12 rounded-full ${metric.iconBgColor} flex items-center justify-center group-hover:scale-110 transition-transform mt-1 flex-shrink-0`}
-        >
-          {metric.icon}
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className="grid place-items-center w-10 h-10 rounded-xl shrink-0"
+            style={{ backgroundColor: `${s.color}1f`, color: s.color }}
+          >
+            <s.icon size={20} />
+          </span>
+          <h3 className="text-base font-bold text-tpl-dark dark:text-white truncate">{s.label}</h3>
         </div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-600 font-plus-jakarta mb-2">
-            {metric.title}
+        <span
+          className="shrink-0 text-[11px] font-semibold px-2 py-1 rounded-full tabular-nums"
+          style={{ backgroundColor: `${s.color}1f`, color: s.color }}
+        >
+          {ctr.toFixed(1)}% CTR
+        </span>
+      </div>
+
+      {/* Engagement */}
+      <div className="grid grid-cols-2 gap-3">
+        <Stat icon={Eye} label="Impressions" value={intl(s.impressions)} />
+        <Stat icon={MousePointerClick} label="Clicks" value={intl(s.clicks)} />
+      </div>
+
+      {/* Properties — active vs total */}
+      <button onClick={onProperties} className="text-left group">
+        <div className="flex items-center justify-between text-[12px] mb-2">
+          <span className="font-medium text-tpl-dark-5 dark:text-tpl-dark-6 group-hover:text-tpl-primary transition-colors">
+            Properties
+          </span>
+          <span className="font-semibold text-tpl-dark dark:text-white tabular-nums">
+            {s.totalProperties}
+          </span>
+        </div>
+        <div className="h-2 rounded-full bg-[var(--glass-bg-hover)] overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${activeRate}%`, backgroundColor: s.color }}
+          />
+        </div>
+        <div className="mt-1.5 flex items-center justify-between text-[11px] text-tpl-dark-5 dark:text-tpl-dark-6">
+          <span className="inline-flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
+            {intl(s.activeProperties)} active
+          </span>
+          <span>{intl(s.inactiveProperties)} inactive</span>
+        </div>
+      </button>
+
+      {/* Bookings + Revenue */}
+      <div className="grid grid-cols-2 gap-3 pt-4 border-t border-tpl-stroke">
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-tpl-dark-5 dark:text-tpl-dark-6 mb-0.5">
+            Bookings
           </p>
-          <p className="text-2xl font-bold text-black font-geist">
-            {metric.value}
+          <p className="text-lg font-bold text-tpl-dark dark:text-white tabular-nums">
+            {intl(s.totalBookings)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-wide text-tpl-dark-5 dark:text-tpl-dark-6 mb-0.5">
+            Revenue
+          </p>
+          <p className="text-lg font-bold text-tpl-dark dark:text-white tabular-nums">
+            {formatINR(s.totalRevenue)}
           </p>
         </div>
       </div>
     </motion.div>
   );
-
-  const ServiceSection = ({
-    service,
-  }: {
-    service: (typeof serviceData)[0];
-  }) => (
-    <div className="space-y-3">
-      <h3 className="text-xl font-bold text-black font-geist">
-        {service.title}
-      </h3>
-
-      {/* First Row */}
-      <div className="grid grid-cols-4 gap-3">
-        {service.firstRow.map((metric, index) => (
-          <MetricCardComponent key={index} metric={metric} index={index} />
-        ))}
-      </div>
-
-      {/* Second Row */}
-      <div className="flex flex-wrap gap-3">
-        {service.secondRow.map((metric, index) => (
-          <MetricCardComponent key={index} metric={metric} index={index + 4} />
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="p-5">
-      <div className="max-w-none overflow-x-hidden  max-xl:flex-wrap space-y-6">
-        {serviceData.map((service, index) => (
-          <ServiceSection key={index} service={service} />
-        ))}
-      </div>
-    </div>
-  );
-};
+}
 
 export default AdminAnalyticsOverview;
