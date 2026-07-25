@@ -30,7 +30,10 @@ const Help = () => {
 
     // Phone is appended to the body since the helpdesk ticket DTO has no
     // dedicated phone field.
-    const body = [formData.message.trim(), formData.phoneNumber.trim() && `Phone: ${formData.phoneNumber.trim()}`]
+    const body = [
+      formData.message.trim(),
+      formData.phoneNumber.trim() && `Phone: ${formData.phoneNumber.trim()}`,
+    ]
       .filter(Boolean)
       .join("\n\n");
 
@@ -138,7 +141,7 @@ const Help = () => {
                 <Button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="bg-tpl-primary text-white px-6 sm:px-10 py-3 rounded-full hover:bg-tpl-primary/90 font-geist disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-tpl-primary text-black px-6 sm:px-10 py-3 rounded-full hover:bg-tpl-primary/90 font-geist disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Submitting…" : "Submit"}
                 </Button>

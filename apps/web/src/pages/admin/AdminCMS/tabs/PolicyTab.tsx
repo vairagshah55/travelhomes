@@ -20,9 +20,7 @@ const TAB_TO_KEY: Record<PolicyTabId, string> = {
 export function PolicyTab() {
   const [activeTab, setActiveTab] = useState<PolicyTabId>("Privacy Policy");
   const [policyName, setPolicyName] = useState("");
-  const [policySections, setPolicySections] = useState<
-    { heading: string; content: string }[]
-  >([]);
+  const [policySections, setPolicySections] = useState<{ heading: string; content: string }[]>([]);
 
   useEffect(() => {
     const fetchPage = async () => {
@@ -53,11 +51,7 @@ export function PolicyTab() {
     setPolicySections(newSections);
   };
 
-  const handleSectionChange = (
-    index: number,
-    field: "heading" | "content",
-    value: string,
-  ) => {
+  const handleSectionChange = (index: number, field: "heading" | "content", value: string) => {
     const newSections = [...policySections];
     newSections[index][field] = value;
     setPolicySections(newSections);
@@ -80,7 +74,11 @@ export function PolicyTab() {
   };
 
   const fullTitle =
-    activeTab === "T&C" ? "Terms & Conditions" : activeTab === "Privacy Policy" ? "Privacy Policy" : "Vendor Policy";
+    activeTab === "T&C"
+      ? "Terms & Conditions"
+      : activeTab === "Privacy Policy"
+        ? "Privacy Policy"
+        : "Vendor Policy";
 
   return (
     <div className="space-y-4 flex-1">
@@ -94,7 +92,7 @@ export function PolicyTab() {
                   onClick={() => setActiveTab(t)}
                   className={`px-6 py-3 rounded-full max-sm:text-xs max-xs:px-2 max-sm:py-1 text-sm font-semibold transition-all ${
                     activeTab === t
-                      ? "bg-dashboard-primary text-white"
+                      ? "bg-dashboard-primary text-black"
                       : "text-dashboard-primary hover:bg-gray-50"
                   }`}
                 >
@@ -105,7 +103,7 @@ export function PolicyTab() {
           </div>
           <button
             onClick={handleSave}
-            className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
           >
             Save Policy
           </button>

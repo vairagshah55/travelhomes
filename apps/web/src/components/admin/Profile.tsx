@@ -95,17 +95,11 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex">
       {/* Sidebar */}
-      <AdminSidebar
-        showMobileSidebar={mobileOpen}
-        setShowMobileSidebar={setMobileOpen}
-      />
+      <AdminSidebar showMobileSidebar={mobileOpen} setShowMobileSidebar={setMobileOpen} />
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-x-hidden">
         {/* Top Header */}
-        <AdminHeader
-          title="Profile"
-          onOpenMobileSidebar={() => setMobileOpen(true)}
-        />
+        <AdminHeader title="Profile" onOpenMobileSidebar={() => setMobileOpen(true)} />
 
         {/* Profile Content */}
         <main className="flex-1 p-4 lg:p-5 dark:bg-black dark:text-white bg-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
@@ -244,7 +238,7 @@ const Profile = () => {
               <div className="flex justify-end">
                 <Button
                   variant="outline"
-                  className="px-6 dark:bg-white dark:text-black py-3 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-white rounded-full font-geist flex items-center gap-2"
+                  className="px-6 dark:bg-white dark:text-black py-3 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-black rounded-full font-geist flex items-center gap-2"
                 >
                   <Edit size={18} />
                   Edit
@@ -265,8 +259,7 @@ const Profile = () => {
                         Connected Account
                       </h3>
                       <p className="text-base text-dashboard-title font-plus-jakarta">
-                        Build trust with your network by connecting your social
-                        profiles
+                        Build trust with your network by connecting your social profiles
                       </p>
                     </div>
 
@@ -626,7 +619,7 @@ const Profile = () => {
               <div className="flex justify-end">
                 <Button
                   variant="outline"
-                  className="px-6 py-3 dark:bg-white dark:text-black border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-white rounded-full font-geist flex items-center gap-2"
+                  className="px-6 py-3 dark:bg-white dark:text-black border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-black rounded-full font-geist flex items-center gap-2"
                 >
                   <Edit size={18} />
                   Edit Business Details
@@ -638,10 +631,7 @@ const Profile = () => {
       </div>
 
       {/* Change Password Modal */}
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onOpenChange={setIsChangePasswordOpen}
-      />
+      <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
     </div>
   );
 };

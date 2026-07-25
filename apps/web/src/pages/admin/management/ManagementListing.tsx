@@ -25,11 +25,7 @@ import {
   type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
-import {
-  AdminDataTable,
-  type ColumnDef,
-  type RowAction,
-} from "@/components/admin/AdminDataTable";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { useListings, type Offer } from "@/hooks/admin/useListings";
 import { vendorService } from "@/services/api";
 import { getImageUrl } from "@/lib/adminUtils";
@@ -92,8 +88,7 @@ const ManagementListing = () => {
   const [vendorError, setVendorError] = useState<string | null>(null);
 
   /* ── Data ── */
-  const { query, createListing, updateListing, setStatus, deleteListing } =
-    useListings(activeTab);
+  const { query, createListing, updateListing, setStatus, deleteListing } = useListings(activeTab);
   const offers = query.data ?? [];
 
   /* ── Reset page when tab / search / sort / filters change ── */
@@ -114,9 +109,7 @@ const ManagementListing = () => {
 
   const locationOptions = useMemo(() => {
     const set = new Set(
-      offers
-        .map((o) => [o.city, o.locality, o.state].filter(Boolean).join(", "))
-        .filter(Boolean),
+      offers.map((o) => [o.city, o.locality, o.state].filter(Boolean).join(", ")).filter(Boolean),
     );
     return Array.from(set).map((v) => ({ value: v, label: v }));
   }, [offers]);
@@ -158,16 +151,13 @@ const ManagementListing = () => {
 
     // Filter: brand name matches listing name
     if (filters.brandName) {
-      list = list.filter(
-        (o) => o.name?.toLowerCase() === String(filters.brandName).toLowerCase(),
-      );
+      list = list.filter((o) => o.name?.toLowerCase() === String(filters.brandName).toLowerCase());
     }
 
     // Filter: service name = category
     if (filters.serviceName) {
       list = list.filter(
-        (o) =>
-          o.category?.toLowerCase() === String(filters.serviceName).toLowerCase(),
+        (o) => o.category?.toLowerCase() === String(filters.serviceName).toLowerCase(),
       );
     }
 
@@ -175,10 +165,7 @@ const ManagementListing = () => {
     if (filters.location) {
       const loc = String(filters.location).toLowerCase();
       list = list.filter((o) => {
-        const combined = [o.city, o.locality, o.state]
-          .filter(Boolean)
-          .join(", ")
-          .toLowerCase();
+        const combined = [o.city, o.locality, o.state].filter(Boolean).join(", ").toLowerCase();
         return combined.includes(loc);
       });
     }
@@ -203,8 +190,7 @@ const ManagementListing = () => {
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
-  const hasActiveQuery =
-    !!searchTerm.trim() || Object.keys(filters).length > 0;
+  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
   /* ── Handlers ── */
 
@@ -220,9 +206,7 @@ const ManagementListing = () => {
       setSelectedVendor(res?.data || res);
     } catch (e: any) {
       console.error("Failed to load vendor details", e);
-      setVendorError(
-        typeof e === "string" ? e : e.message || "Failed to load vendor details.",
-      );
+      setVendorError(typeof e === "string" ? e : e.message || "Failed to load vendor details.");
     } finally {
       setIsVendorLoading(false);
     }
@@ -284,10 +268,7 @@ const ManagementListing = () => {
   };
 
   // Direct status change (approve / mark pending)
-  const handleStatusChange = (
-    offer: Offer,
-    status: "pending" | "approved" | "cancelled",
-  ) => {
+  const handleStatusChange = (offer: Offer, status: "pending" | "approved" | "cancelled") => {
     if (status === "cancelled") {
       // Route through RejectReasonPopup (cancel flow)
       setRejectOffer(offer);
@@ -354,9 +335,7 @@ const ManagementListing = () => {
           ) : (
             <div className="w-10 h-10 rounded bg-tpl-gray-3 dark:bg-white/10 flex-shrink-0" />
           )}
-          <span className="font-medium text-tpl-dark dark:text-white text-sm">
-            {o.name}
-          </span>
+          <span className="font-medium text-tpl-dark dark:text-white text-sm">{o.name}</span>
         </div>
       ),
     },
@@ -455,7 +434,7 @@ const ManagementListing = () => {
             primaryAction={
               <Button
                 onClick={handleAddNew}
-                className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
+                className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
               >
                 <Plus size={16} /> Add Listing
               </Button>

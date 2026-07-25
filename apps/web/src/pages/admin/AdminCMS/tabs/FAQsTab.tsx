@@ -101,7 +101,7 @@ export function FAQsTab() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-5 py-3 rounded-full whitespace-nowrap max-sm:text-xs max-xs:px-2 max-sm:py-1 text-sm font-semibold transition-all ${
                     selectedCategory === cat
-                      ? "bg-dashboard-primary text-white"
+                      ? "bg-dashboard-primary text-black"
                       : "text-dashboard-primary hover:bg-gray-50"
                   }`}
                 >
@@ -115,7 +115,7 @@ export function FAQsTab() {
               setEditing(null);
               setShowModal(true);
             }}
-            className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
           >
             Add New Question
           </button>
@@ -131,9 +131,15 @@ export function FAQsTab() {
 
         <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
           <div className="bg-gray-50 border-b border-gray-200 flex">
-            <div className="w-30 px-4 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">SL</div>
-            <div className="flex-1 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">Questions</div>
-            <div className="w-40 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">Action</div>
+            <div className="w-30 px-4 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              SL
+            </div>
+            <div className="flex-1 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Questions
+            </div>
+            <div className="w-40 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Action
+            </div>
           </div>
 
           {filtered.map((faq, index) => (

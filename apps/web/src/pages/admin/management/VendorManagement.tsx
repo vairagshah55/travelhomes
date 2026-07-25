@@ -18,7 +18,11 @@ import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import {
+  AdminFilterBar,
+  type ActiveFilters,
+  type FilterDefinition,
+} from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { useVendors, type Vendor } from "@/hooks/admin/useVendors";
 import { vendorSchema, type VendorFormValues } from "./vendorSchema";
@@ -102,8 +106,12 @@ const VendorManagement = () => {
       );
     }
 
-    if (filters.status) list = list.filter((v) => v.status?.toLowerCase() === String(filters.status).toLowerCase());
-    if (filters.location) list = list.filter((v) => v.location?.toLowerCase() === String(filters.location).toLowerCase());
+    if (filters.status)
+      list = list.filter((v) => v.status?.toLowerCase() === String(filters.status).toLowerCase());
+    if (filters.location)
+      list = list.filter(
+        (v) => v.location?.toLowerCase() === String(filters.location).toLowerCase(),
+      );
     if (Array.isArray(filters.registered)) {
       const [from, to] = filters.registered;
       if (from) {
@@ -125,7 +133,10 @@ const VendorManagement = () => {
   }, [vendors, searchTerm, sortBy, filters]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
   const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
   const handleView = async (vendor: Vendor) => {
@@ -141,7 +152,8 @@ const VendorManagement = () => {
   const askBan = (vendor: Vendor) =>
     setConfirm({
       title: `Ban "${vendor.brandName}"?`,
-      description: "They will immediately lose platform access and all their listings will be suspended.",
+      description:
+        "They will immediately lose platform access and all their listings will be suspended.",
       variant: "warning",
       confirmLabel: "Ban vendor",
       onConfirm: () => {
@@ -165,7 +177,8 @@ const VendorManagement = () => {
   const askBulkDelete = () =>
     setConfirm({
       title: `Delete ${selectedIds.length} vendor${selectedIds.length > 1 ? "s" : ""}?`,
-      description: "The selected vendors and all associated data will be permanently removed. This cannot be undone.",
+      description:
+        "The selected vendors and all associated data will be permanently removed. This cannot be undone.",
       variant: "danger",
       confirmLabel: "Delete all",
       onConfirm: async () => {
@@ -199,16 +212,43 @@ const VendorManagement = () => {
         </Avatar>
       ),
     },
-    { key: "brandName", header: "Brand Name", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.brandName}</span> },
-    { key: "personName", header: "Person Name", hideBelow: "lg", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.personName}</span> },
-    { key: "listedServices", header: "Services", hideBelow: "lg", align: "center", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.listedServices ?? 0}</span> },
-    { key: "location", header: "Location", hideBelow: "md", cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.location}</span> },
+    {
+      key: "brandName",
+      header: "Brand Name",
+      cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.brandName}</span>,
+    },
+    {
+      key: "personName",
+      header: "Person Name",
+      hideBelow: "lg",
+      cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.personName}</span>,
+    },
+    {
+      key: "listedServices",
+      header: "Services",
+      hideBelow: "lg",
+      align: "center",
+      cell: (v) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.listedServices ?? 0}</span>
+      ),
+    },
+    {
+      key: "location",
+      header: "Location",
+      hideBelow: "md",
+      cell: (v) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{v.location}</span>,
+    },
     { key: "status", header: "Status", cell: (v) => <StatusBadge status={v.status} /> },
   ];
 
   const rowActions: RowAction<Vendor>[] = [
     { label: "View", icon: Eye, onClick: handleView },
-    { label: "Ban", icon: Ban, onClick: askBan, hidden: (v) => v.status?.toLowerCase() === "banned" },
+    {
+      label: "Ban",
+      icon: Ban,
+      onClick: askBan,
+      hidden: (v) => v.status?.toLowerCase() === "banned",
+    },
     { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
   ];
 
@@ -226,10 +266,15 @@ const VendorManagement = () => {
             sortValue={sortBy}
             onSortChange={setSortBy}
             selectedCount={selectedIds.length}
-            bulkActions={[{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]}
+            bulkActions={[
+              { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
+            ]}
             onClearSelection={() => setSelectedIds([])}
             primaryAction={
-              <Button onClick={() => setShowAddModal(true)} className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2">
+              <Button
+                onClick={() => setShowAddModal(true)}
+                className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+              >
                 <Plus size={16} /> Add Vendor
               </Button>
             }
@@ -256,12 +301,23 @@ const VendorManagement = () => {
               emptyDescription="Vendors appear here once they register and submit for verification."
               noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"}
               noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{ label: "Clear filters", onClick: () => { setSearchTerm(""); setFilters({}); } }}
+              noResultsAction={{
+                label: "Clear filters",
+                onClick: () => {
+                  setSearchTerm("");
+                  setFilters({});
+                },
+              }}
               selectable
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
               rowActions={rowActions}
-              pagination={{ currentPage, totalPages, totalItems: filtered.length, onPageChange: setCurrentPage }}
+              pagination={{
+                currentPage,
+                totalPages,
+                totalItems: filtered.length,
+                onPageChange: setCurrentPage,
+              }}
             />
           </div>
         </div>
@@ -326,7 +382,14 @@ function AddVendorDialog({
     formState: { errors },
   } = useForm<VendorFormValues>({
     resolver: zodResolver(vendorSchema),
-    defaultValues: { brandName: "", personName: "", location: "", vendorId: "", photo: "", listedServices: 0 },
+    defaultValues: {
+      brandName: "",
+      personName: "",
+      location: "",
+      vendorId: "",
+      photo: "",
+      listedServices: 0,
+    },
   });
 
   useEffect(() => {
@@ -377,7 +440,11 @@ function AddVendorDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving} className="bg-tpl-primary hover:bg-tpl-primary/90 text-white">
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="bg-tpl-primary hover:bg-tpl-primary/90 text-black"
+            >
               {isSaving ? "Saving…" : "Save Vendor"}
             </Button>
           </DialogFooter>

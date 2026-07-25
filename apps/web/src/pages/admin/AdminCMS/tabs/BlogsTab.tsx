@@ -93,7 +93,10 @@ const BlogRowActions: React.FC<{
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow z-20">
-          <button onClick={doEdit} className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50">
+          <button
+            onClick={doEdit}
+            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50"
+          >
             <Edit2 size={16} /> <span>Edit</span>
           </button>
           <div className="relative">
@@ -171,7 +174,7 @@ export function BlogsTab() {
           </h3>
           <button
             onClick={() => setShowModal(true)}
-            className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
           >
             + Add New Blog
           </button>
@@ -179,10 +182,18 @@ export function BlogsTab() {
 
         <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
           <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
-            <div className="col-span-5 text-dashboard-title font-plus-jakarta text-sm font-bold">Title</div>
-            <div className="col-span-3 text-dashboard-title font-plus-jakarta text-sm font-bold">Author</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Status</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Action</div>
+            <div className="col-span-5 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Title
+            </div>
+            <div className="col-span-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Author
+            </div>
+            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Status
+            </div>
+            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Action
+            </div>
           </div>
           {rows.map((b, index, arr) => (
             <div
@@ -192,7 +203,9 @@ export function BlogsTab() {
               }`}
             >
               <div className="col-span-5">
-                <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">{b.title}</div>
+                <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
+                  {b.title}
+                </div>
                 <div className="text-dashboard-body text-xs">
                   {new Date(b.createdAt || "").toLocaleString() || ""}
                 </div>
@@ -220,9 +233,7 @@ export function BlogsTab() {
                     )
                   }
                   onDelete={() =>
-                    setBlogs((prev) =>
-                      prev.filter((x) => (x._id || x.id) !== (b._id || b.id)),
-                    )
+                    setBlogs((prev) => prev.filter((x) => (x._id || x.id) !== (b._id || b.id)))
                   }
                 />
               </div>
@@ -313,7 +324,9 @@ export function BlogsTab() {
 
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <label className="block text-sm text-[#334054] font-plus-jakarta">Meta Keywords</label>
+                  <label className="block text-sm text-[#334054] font-plus-jakarta">
+                    Meta Keywords
+                  </label>
                   <input
                     type="text"
                     value={form.metablogkeyword}
@@ -323,7 +336,9 @@ export function BlogsTab() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="block text-sm text-[#334054] font-plus-jakarta">Meta Title</label>
+                  <label className="block text-sm text-[#334054] font-plus-jakarta">
+                    Meta Title
+                  </label>
                   <input
                     type="text"
                     value={form.metablogtitle}
@@ -332,7 +347,9 @@ export function BlogsTab() {
                   />
                 </div>
                 <div className="space-y-3">
-                  <label className="block text-sm text-[#334054] font-plus-jakarta">Meta Description</label>
+                  <label className="block text-sm text-[#334054] font-plus-jakarta">
+                    Meta Description
+                  </label>
                   <textarea
                     value={form.metablogdescription}
                     onChange={(e) => setForm({ ...form, metablogdescription: e.target.value })}
@@ -362,7 +379,7 @@ export function BlogsTab() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full"
+                  className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full"
                 >
                   Create
                 </button>

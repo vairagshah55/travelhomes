@@ -66,7 +66,7 @@ interface NavSection {
 const SECTIONS: NavSection[] = [
   {
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", color: "#30b8bf", path: "/admin/dashboard" },
+      { icon: LayoutDashboard, label: "Dashboard", color: "#3BD9D9", path: "/admin/dashboard" },
     ],
   },
   {
@@ -167,7 +167,7 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
         <button className="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-[var(--glass-bg-hover)]">
           <div className="relative shrink-0">
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-tpl-primary text-white text-[13px] font-bold">
+              <AvatarFallback className="bg-white/15 text-white text-[13px] font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -257,25 +257,24 @@ function NavRow({
     <button
       onClick={handleClick}
       title={item.label}
-      className={`relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium transition-colors duration-200 ${
-        isActive
-          ? "bg-[var(--teal-glass)] text-tpl-primary"
-          : "text-tpl-dark-6 hover:bg-[var(--glass-bg-hover)] hover:text-white"
+      className={`group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium transition-colors duration-200 ${
+        isActive ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
       }`}
     >
-      {/* Active indicator — teal bar on the pill's left edge. */}
+      {/* Active indicator — white bar on the pill's left edge. */}
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-tpl-primary" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-white" />
       )}
 
-      {/* Color-coded icon chip. Stays in a fixed position so it never shifts
-          between collapsed/expanded — only the label reveals to its right. */}
+      {/* Monochrome icon chip. Active = solid white tile with the brand-blue
+          icon (pops as "selected"); inactive = muted glass tile. Fixed
+          position so it never shifts between collapsed/expanded. */}
       <span
-        className="grid place-items-center w-9 h-9 rounded-xl shrink-0 transition-colors"
-        style={{
-          color: item.color,
-          backgroundColor: isActive ? `${item.color}29` : `${item.color}14`,
-        }}
+        className={`grid place-items-center w-9 h-9 rounded-xl shrink-0 transition-colors ${
+          isActive
+            ? "bg-white text-tpl-body-bg"
+            : "bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white"
+        }`}
       >
         <item.icon size={19} strokeWidth={isActive ? 2 : 1.7} />
       </span>
@@ -351,7 +350,7 @@ function SidebarBody({ collapsed, expanded, toggleExpanded, onNavigate }: Sideba
                               className={`relative block w-full text-left rounded-lg pl-3.5 pr-3 py-2 text-[13.5px] font-medium transition-colors duration-200 ${
                                 subActive
                                   ? "bg-[var(--teal-glass)] text-tpl-primary"
-                                  : "text-tpl-dark-6 hover:bg-[var(--glass-bg-hover)] hover:text-white"
+                                  : "text-tpl-dark-6 hover:bg-[var(--glass-bg-hover)] hover:text-tpl-dark"
                               }`}
                             >
                               {/* Active = teal-glass pill + teal left bar (mirrors
@@ -435,7 +434,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <Sheet open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
         <SheetContent
           side="left"
-          className="w-[290px] p-0 bg-white dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke sm:max-w-[290px]"
+          data-admin-skin="navy"
+          className="dark w-[290px] p-0 bg-tpl-card-bg dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke sm:max-w-[290px]"
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
           <div className="group flex flex-col h-full py-6 px-4">
@@ -450,13 +450,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 onNavigate={handleNavigate}
               />
             </nav>
-            <div className="mt-2 shrink-0">
-              <SidebarUserCard
-                collapsed={false}
-                onNavigate={handleNavigate}
-                onLogout={handleLogout}
-              />
-            </div>
           </div>
         </SheetContent>
       </Sheet>
@@ -470,7 +463,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <aside
         onMouseEnter={() => collapsed && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
-        className={`hidden lg:flex flex-col h-screen shrink-0 bg-white dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke overflow-hidden transition-[width] duration-300 ease-out ${
+        data-admin-skin="navy"
+        className={`dark hidden lg:flex flex-col h-screen shrink-0 bg-tpl-card-bg dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke overflow-hidden transition-[width] duration-300 ease-out ${
           railOpen ? "w-[290px]" : "w-[76px]"
         } ${className}`}
       >
@@ -486,7 +480,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               !railOpen,
             )}`}
           >
-            <span className="text-[#0A2B40] dark:text-white">Travel</span>
+            <span className="text-black dark:text-white">Travel</span>
             <span className="text-tpl-primary">Homes</span>
           </span>
         </button>
@@ -501,13 +495,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           />
         </nav>
 
-        {/* Footer — user card + collapse toggle */}
+        {/* Footer — collapse toggle */}
         <div className="shrink-0 px-3 py-3 border-t border-tpl-stroke dark:border-tpl-stroke">
-          <SidebarUserCard
-            collapsed={!railOpen}
-            onNavigate={(p) => navigate(p)}
-            onLogout={handleLogout}
-          />
           <button
             onClick={toggleCollapsed}
             className="mt-2 w-full flex items-center gap-2.5 h-9 px-2 rounded-xl text-[12.5px] font-medium text-tpl-dark-5 hover:text-tpl-primary hover:bg-[var(--glass-bg-hover)] transition-colors"

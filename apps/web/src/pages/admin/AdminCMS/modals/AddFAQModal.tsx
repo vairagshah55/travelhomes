@@ -102,7 +102,7 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full px-8 py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+              className="w-full px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
             >
               Add
             </button>

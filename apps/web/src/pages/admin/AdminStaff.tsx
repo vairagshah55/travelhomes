@@ -154,16 +154,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6 mt-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-base">
-                Staff Name
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-base">Staff Name</label>
               <input
                 type="text"
                 placeholder="Enter Your Name"
                 value={formData.staffName}
-                onChange={(e) =>
-                  setFormData({ ...formData, staffName: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, staffName: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
                 required
               />
@@ -176,24 +172,18 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 type="text"
                 placeholder="Enter Your Number"
                 value={formData.staffNumber}
-                onChange={(e) =>
-                  setFormData({ ...formData, staffNumber: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, staffNumber: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
                 required
               />
             </div>
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-base">
-                Email
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-base">Email</label>
               <input
                 type="email"
                 placeholder="Enter Your Email"
                 value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
                 required
               />
@@ -207,9 +197,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               </label>
               <select
                 value={formData.role}
-                onChange={(e) =>
-                  setFormData({ ...formData, role: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary appearance-none bg-white"
                 required
               >
@@ -222,16 +210,12 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-base">
-                Password
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-base">Password</label>
               <input
                 type="password"
                 placeholder="Set a Password"
                 value={formData.password}
-                onChange={(e) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
                 required
               />
@@ -242,7 +226,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-3 bg-tpl-primary text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors w-full md:w-auto disabled:opacity-60"
+              className="px-8 py-3 bg-tpl-primary text-black rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors w-full md:w-auto disabled:opacity-60"
             >
               {isSubmitting ? "Adding…" : "Add"}
             </button>
@@ -282,11 +266,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
     if (isOpen) setFormData({ roleName: "", features: { ...EMPTY_MATRIX } });
   }, [isOpen]);
 
-  const handleFeatureChange = (
-    feature: FeatureKey,
-    type: "view" | "full",
-    checked: boolean,
-  ) => {
+  const handleFeatureChange = (feature: FeatureKey, type: "view" | "full", checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
       features: {
@@ -316,16 +296,12 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-2">
           <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-base">
-              Role Name
-            </label>
+            <label className="text-dashboard-title font-plus-jakarta text-base">Role Name</label>
             <input
               type="text"
               placeholder="Accountant"
               value={formData.roleName}
-              onChange={(e) =>
-                setFormData({ ...formData, roleName: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, roleName: e.target.value })}
               className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
               required
             />
@@ -333,9 +309,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
 
           {/* Permission matrix — state shape preserved exactly */}
           <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-base">
-              Features
-            </label>
+            <label className="text-dashboard-title font-plus-jakarta text-base">Features</label>
             <div className="border border-dashboard-stroke rounded-xl overflow-hidden">
               <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-3 px-3 py-3">
                 <div className="text-dashboard-title font-plus-jakarta text-sm font-bold">
@@ -353,16 +327,12 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                   key={feature}
                   className="grid grid-cols-3 px-3 py-3.5 border-b border-gray-100 last:border-0"
                 >
-                  <div className="text-dashboard-body font-poppins text-base">
-                    {feature}
-                  </div>
+                  <div className="text-dashboard-body font-poppins text-base">{feature}</div>
                   <div className="flex justify-center">
                     <input
                       type="checkbox"
                       checked={formData.features[feature].view}
-                      onChange={(e) =>
-                        handleFeatureChange(feature, "view", e.target.checked)
-                      }
+                      onChange={(e) => handleFeatureChange(feature, "view", e.target.checked)}
                       className="w-5 h-5 border border-dashboard-gray-300 rounded text-dashboard-primary focus:ring-dashboard-primary"
                     />
                   </div>
@@ -370,9 +340,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
                     <input
                       type="checkbox"
                       checked={formData.features[feature].full}
-                      onChange={(e) =>
-                        handleFeatureChange(feature, "full", e.target.checked)
-                      }
+                      onChange={(e) => handleFeatureChange(feature, "full", e.target.checked)}
                       className="w-5 h-5 border border-dashboard-gray-300 rounded text-dashboard-primary focus:ring-dashboard-primary"
                     />
                   </div>
@@ -385,7 +353,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-8 py-3 bg-tpl-primary text-white rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors disabled:opacity-60"
+              className="px-8 py-3 bg-tpl-primary text-black rounded-full font-geist text-base font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors disabled:opacity-60"
             >
               {isSubmitting ? "Saving…" : "Submit"}
             </button>
@@ -430,9 +398,7 @@ const DropdownMenu = ({
             className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50 opacity-40 cursor-not-allowed"
           >
             <Edit2 size={18} className="text-dashboard-body" />
-            <span className="text-dashboard-body font-poppins text-sm">
-              Edit
-            </span>
+            <span className="text-dashboard-body font-poppins text-sm">Edit</span>
           </button>
           <button
             onClick={onDelete}
@@ -511,9 +477,7 @@ const StaffList: React.FC<StaffListProps> = ({
     sortOrder: "desc",
   });
 
-  const rawList: StaffMember[] = (
-    query.data?.staff ?? query.data?.data ?? []
-  ).map((s: any) => ({
+  const rawList: StaffMember[] = (query.data?.staff ?? query.data?.data ?? []).map((s: any) => ({
     id: s._id,
     name: s.name,
     email: s.email,
@@ -534,7 +498,7 @@ const StaffList: React.FC<StaffListProps> = ({
           </h3>
           <button
             onClick={() => setShowStaffModal(true)}
-            className="px-5 py-2.5 bg-tpl-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
+            className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
           >
             + Add New Account
           </button>
@@ -645,9 +609,7 @@ const RolesList: React.FC<RolesListProps> = ({
     sortOrder: "desc",
   });
 
-  const rawList: StaffRole[] = (
-    query.data?.roles ?? query.data?.data ?? []
-  ).map((r: any) => ({
+  const rawList: StaffRole[] = (query.data?.roles ?? query.data?.data ?? []).map((r: any) => ({
     id: r._id,
     name: r.name,
     features: r.features ?? [],
@@ -664,7 +626,7 @@ const RolesList: React.FC<RolesListProps> = ({
           </h3>
           <button
             onClick={() => setShowRoleModal(true)}
-            className="px-5 py-2.5 bg-tpl-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
+            className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
           >
             + Add New Role
           </button>
@@ -676,9 +638,7 @@ const RolesList: React.FC<RolesListProps> = ({
               <tr>
                 <th className="px-4 py-3 font-bold w-2/12">Role Name</th>
                 <th className="px-4 py-3 font-bold w-8/12">Features</th>
-                <th className="px-4 py-3 font-bold w-2/12 text-center">
-                  Action
-                </th>
+                <th className="px-4 py-3 font-bold w-2/12 text-center">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -697,9 +657,7 @@ const RolesList: React.FC<RolesListProps> = ({
               ) : (
                 rawList.map((role) => (
                   <tr key={role.id} className="border-t">
-                    <td className="px-4 py-3 font-plus-jakarta font-bold">
-                      {role.name}
-                    </td>
+                    <td className="px-4 py-3 font-plus-jakarta font-bold">{role.name}</td>
                     <td className="px-4 py-3 text-dashboard-body">
                       {role.features.map(formatFeatureName).join(", ")}
                     </td>
@@ -768,7 +726,9 @@ const AdminStaff = () => {
   const rolesHook = useRoles({ limit: 100, isActive: true, sortBy: "name", sortOrder: "asc" });
 
   const availableRoles: StaffRole[] = (
-    rolesHook.query.data?.roles ?? rolesHook.query.data?.data ?? []
+    rolesHook.query.data?.roles ??
+    rolesHook.query.data?.data ??
+    []
   ).map((r: any) => ({ id: r._id, name: r.name, features: r.features ?? [] }));
 
   // -------------------------------------------------------------------------
@@ -807,15 +767,11 @@ const AdminStaff = () => {
   // Handle add role — builds API payload from permission matrix; closes on success
   // -------------------------------------------------------------------------
 
-  const handleAddRole = (roleData: {
-    roleName: string;
-    features: PermissionMatrix;
-  }) => {
+  const handleAddRole = (roleData: { roleName: string; features: PermissionMatrix }) => {
     const permissions = (
       Object.entries(roleData.features) as [FeatureKey, { view: boolean; full: boolean }][]
     ).map(([key, perms]) => {
-      const feature =
-        FEATURE_MAPPING[key] ?? key.toLowerCase().replace(/ /g, "_");
+      const feature = FEATURE_MAPPING[key] ?? key.toLowerCase().replace(/ /g, "_");
       return {
         feature,
         canView: !!(perms.view || perms.full),
@@ -846,14 +802,11 @@ const AdminStaff = () => {
     setConfirmState({
       open: true,
       title: "Delete staff account?",
-      description:
-        "This staff member will lose access immediately. This cannot be undone.",
+      description: "This staff member will lose access immediately. This cannot be undone.",
       onConfirm: () => {
         staffHook.deleteStaff.mutate(id, {
-          onSuccess: () =>
-            setConfirmState((s) => ({ ...s, open: false })),
-          onError: () =>
-            setConfirmState((s) => ({ ...s, open: false })),
+          onSuccess: () => setConfirmState((s) => ({ ...s, open: false })),
+          onError: () => setConfirmState((s) => ({ ...s, open: false })),
         });
       },
     });
@@ -863,21 +816,17 @@ const AdminStaff = () => {
     setConfirmState({
       open: true,
       title: "Delete role?",
-      description:
-        "This role will be removed. Staff assigned to it may lose permissions.",
+      description: "This role will be removed. Staff assigned to it may lose permissions.",
       onConfirm: () => {
         rolesHook.deleteRole.mutate(id, {
-          onSuccess: () =>
-            setConfirmState((s) => ({ ...s, open: false })),
-          onError: () =>
-            setConfirmState((s) => ({ ...s, open: false })),
+          onSuccess: () => setConfirmState((s) => ({ ...s, open: false })),
+          onError: () => setConfirmState((s) => ({ ...s, open: false })),
         });
       },
     });
   };
 
-  const isDeleting =
-    staffHook.deleteStaff.isPending || rolesHook.deleteRole.isPending;
+  const isDeleting = staffHook.deleteStaff.isPending || rolesHook.deleteRole.isPending;
 
   return (
     <AdminLayout title="Staff">

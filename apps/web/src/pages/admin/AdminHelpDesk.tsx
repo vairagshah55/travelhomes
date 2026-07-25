@@ -118,7 +118,7 @@ const AdminHelpDesk: React.FC = () => {
 
   return (
     <AdminLayout title="Help Desk">
-        <div className="flex-1">
+      <div className="flex-1">
         <div className="p-5">
           <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 h-full flex flex-col">
             {/* Content Header */}
@@ -255,7 +255,7 @@ const AdminHelpDesk: React.FC = () => {
                         {/* <Button
                           variant="outline"
                           size="sm"
-                          className="h-8 px-4 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-white transition-colors font-poppins text-xs font-medium"
+                          className="h-8 px-4 border-dashboard-primary text-dashboard-primary hover:bg-dashboard-primary hover:text-black transition-colors font-poppins text-xs font-medium"
                           onClick={() => handleView(item)}
                         >
                           View
@@ -344,7 +344,7 @@ const AdminHelpDesk: React.FC = () => {
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
       {/* Help Desk Details Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>

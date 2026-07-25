@@ -1,14 +1,14 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AdminAuthContext";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 interface ProfileDropdownProps {
   userImage?: string;
@@ -31,21 +31,21 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   onBusinessDetailsClick,
   onPersonalDetailsClick,
   onChangePasswordClick,
-  onLogoutClick
+  onLogoutClick,
 }) => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
   const handleProfileClick = () => {
-    navigate('/admin/profile');
+    navigate("/admin/profile");
     if (onProfileClick) onProfileClick();
   };
 
   const handleLogout = () => {
     logout();
-    localStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminToken');
-    navigate('/admin/login');
+    localStorage.removeItem("adminToken");
+    sessionStorage.removeItem("adminToken");
+    navigate("/admin/login");
     if (onLogoutClick) onLogoutClick();
   };
 
@@ -61,11 +61,13 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
       <DropdownMenuTrigger asChild>
         <Avatar className="h-9 w-9 cursor-pointer hover:ring-2 hover:ring-dashboard-primary hover:ring-offset-2 transition-all">
           <AvatarImage src={userImage} />
-          <AvatarFallback className="bg-dashboard-primary text-white">{getUserInitials()}</AvatarFallback>
+          <AvatarFallback className="bg-dashboard-primary text-black">
+            {getUserInitials()}
+          </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      <DropdownMenuContent 
-        align="end" 
+      <DropdownMenuContent
+        align="end"
         className="w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg p-1.5"
         sideOffset={8}
       >
@@ -87,19 +89,19 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         >
           Switch to User
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="px-7 py-4 text-dashboard-heading dark:text-white font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded-md font-plus-jakarta"
           onClick={onBusinessDetailsClick}
         >
           Business Details
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="px-7 py-4 text-dashboard-heading dark:text-white font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded-md font-plus-jakarta"
           onClick={onPersonalDetailsClick}
         >
           Personal Details
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="px-7 py-4 text-dashboard-heading dark:text-white font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded-md font-plus-jakarta"
           onClick={onChangePasswordClick}
         >

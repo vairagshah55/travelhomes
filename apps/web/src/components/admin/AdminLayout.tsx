@@ -35,8 +35,7 @@ export default function AdminLayout({
   return (
     <div
       data-brand="admin"
-      data-admin-skin="sf"
-      className="dark flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
+      className="flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
     >
       <AdminSidebar
         showMobileSidebar={showMobileSidebar}

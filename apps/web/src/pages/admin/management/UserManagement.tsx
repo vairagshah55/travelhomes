@@ -24,7 +24,11 @@ import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import {
+  AdminFilterBar,
+  type ActiveFilters,
+  type FilterDefinition,
+} from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { formatDate } from "@/utils/formateTime";
 import { useUsers, type User } from "@/hooks/admin/useUsers";
@@ -130,7 +134,10 @@ const UserManagement = () => {
   }, [users, searchTerm, sortBy, filters]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
   const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
   const askDelete = (user: User) =>
@@ -157,12 +164,27 @@ const UserManagement = () => {
     });
 
   const subscriberColumns: ColumnDef<User>[] = [
-    { key: "email", header: "Email", cell: (u) => <span className="font-medium text-tpl-dark-4 dark:text-tpl-dark-6">{u.email}</span> },
-    { key: "userSince", header: "Subscribed", align: "right", cell: (u) => <span className="text-tpl-dark-5">{formatDate(u.userSince)}</span> },
+    {
+      key: "email",
+      header: "Email",
+      cell: (u) => (
+        <span className="font-medium text-tpl-dark-4 dark:text-tpl-dark-6">{u.email}</span>
+      ),
+    },
+    {
+      key: "userSince",
+      header: "Subscribed",
+      align: "right",
+      cell: (u) => <span className="text-tpl-dark-5">{formatDate(u.userSince)}</span>,
+    },
   ];
 
   const userColumns: ColumnDef<User>[] = [
-    { key: "userId", header: "User ID", cell: (u) => <span className="font-semibold text-tpl-dark dark:text-white">{u.userId}</span> },
+    {
+      key: "userId",
+      header: "User ID",
+      cell: (u) => <span className="font-semibold text-tpl-dark dark:text-white">{u.userId}</span>,
+    },
     {
       key: "photo",
       header: "Photo",
@@ -174,10 +196,34 @@ const UserManagement = () => {
         </Avatar>
       ),
     },
-    { key: "name", header: "Name", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.name}</span> },
-    { key: "userSince", header: "User Since", hideBelow: "lg", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(u.userSince)}</span> },
-    { key: "bookedServices", header: "Bookings", hideBelow: "lg", align: "center", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.bookedServices || "0"}</span> },
-    { key: "location", header: "Location", hideBelow: "md", cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.location}</span> },
+    {
+      key: "name",
+      header: "Name",
+      cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.name}</span>,
+    },
+    {
+      key: "userSince",
+      header: "User Since",
+      hideBelow: "lg",
+      cell: (u) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(u.userSince)}</span>
+      ),
+    },
+    {
+      key: "bookedServices",
+      header: "Bookings",
+      hideBelow: "lg",
+      align: "center",
+      cell: (u) => (
+        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.bookedServices || "0"}</span>
+      ),
+    },
+    {
+      key: "location",
+      header: "Location",
+      hideBelow: "md",
+      cell: (u) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{u.location}</span>,
+    },
     { key: "status", header: "Status", cell: (u) => <StatusBadge status={u.status} /> },
   ];
 
@@ -201,11 +247,16 @@ const UserManagement = () => {
             sortValue={sortBy}
             onSortChange={isSubscribers ? undefined : setSortBy}
             selectedCount={selectedIds.length}
-            bulkActions={[{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]}
+            bulkActions={[
+              { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
+            ]}
             onClearSelection={() => setSelectedIds([])}
             primaryAction={
               isSubscribers ? undefined : (
-                <Button onClick={() => setFormState({ mode: "add" })} className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2">
+                <Button
+                  onClick={() => setFormState({ mode: "add" })}
+                  className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                >
                   <Plus size={16} /> Add User
                 </Button>
               )
@@ -213,7 +264,12 @@ const UserManagement = () => {
           />
 
           {!isSubscribers && (
-            <AdminFilterBar filters={filterDefs} activeFilters={filters} onApply={setFilters} onClear={() => setFilters({})} />
+            <AdminFilterBar
+              filters={filterDefs}
+              activeFilters={filters}
+              onApply={setFilters}
+              onClear={() => setFilters({})}
+            />
           )}
 
           <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
@@ -227,15 +283,30 @@ const UserManagement = () => {
               hasActiveQuery={hasActiveQuery}
               emptyIcon={hasActiveQuery ? SearchX : Users2}
               emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
-              emptyDescription={isSubscribers ? "Newsletter subscribers will appear here." : "Users appear here once they register."}
+              emptyDescription={
+                isSubscribers
+                  ? "Newsletter subscribers will appear here."
+                  : "Users appear here once they register."
+              }
               noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
               noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{ label: "Clear filters", onClick: () => { setSearchTerm(""); setFilters({}); } }}
+              noResultsAction={{
+                label: "Clear filters",
+                onClick: () => {
+                  setSearchTerm("");
+                  setFilters({});
+                },
+              }}
               selectable={!isSubscribers}
               selectedIds={selectedIds}
               onSelectionChange={setSelectedIds}
               rowActions={isSubscribers ? undefined : rowActions}
-              pagination={{ currentPage, totalPages, totalItems: filtered.length, onPageChange: setCurrentPage }}
+              pagination={{
+                currentPage,
+                totalPages,
+                totalItems: filtered.length,
+                onPageChange: setCurrentPage,
+              }}
             />
           </div>
         </div>
@@ -249,9 +320,15 @@ const UserManagement = () => {
         onClose={() => setFormState(null)}
         onSubmit={(values) => {
           if (formState?.mode === "edit" && formState.user) {
-            updateUser.mutate({ id: formState.user._id, payload: values }, { onSuccess: () => setFormState(null) });
+            updateUser.mutate(
+              { id: formState.user._id, payload: values },
+              { onSuccess: () => setFormState(null) },
+            );
           } else {
-            createUser.mutate({ ...values, bookedServices: "0" }, { onSuccess: () => setFormState(null) });
+            createUser.mutate(
+              { ...values, bookedServices: "0" },
+              { onSuccess: () => setFormState(null) },
+            );
           }
         }}
       />
@@ -294,7 +371,9 @@ function UserDetailsDialog({ user, onClose }: { user: User | null; onClose: () =
         <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
           {rows.map(([label, value]) => (
             <div key={label} className="space-y-1 min-w-0">
-              <dt className="text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6">{label}</dt>
+              <dt className="text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6">
+                {label}
+              </dt>
               <dd className="text-[14px] text-tpl-dark dark:text-white truncate">{value}</dd>
             </div>
           ))}
@@ -326,7 +405,14 @@ function UserFormDialog({
     formState: { errors },
   } = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
-    defaultValues: { name: "", email: "", phone: "", location: "", userSince: String(new Date().getFullYear()), status: "active" },
+    defaultValues: {
+      name: "",
+      email: "",
+      phone: "",
+      location: "",
+      userSince: String(new Date().getFullYear()),
+      status: "active",
+    },
   });
 
   useEffect(() => {
@@ -341,7 +427,14 @@ function UserFormDialog({
         status: state.user.status,
       });
     } else {
-      reset({ name: "", email: "", phone: "", location: "", userSince: String(new Date().getFullYear()), status: "active" });
+      reset({
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        userSince: String(new Date().getFullYear()),
+        status: "active",
+      });
     }
   }, [state, reset]);
 
@@ -364,7 +457,12 @@ function UserFormDialog({
             </div>
             <div>
               <label className={field}>Email *</label>
-              <Input type="email" {...register("email")} placeholder="name@example.com" disabled={isSaving} />
+              <Input
+                type="email"
+                {...register("email")}
+                placeholder="name@example.com"
+                disabled={isSaving}
+              />
               {errors.email && <p className={err}>{errors.email.message}</p>}
             </div>
             <div>
@@ -401,7 +499,11 @@ function UserFormDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSaving} className="bg-tpl-primary hover:bg-tpl-primary/90 text-white">
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="bg-tpl-primary hover:bg-tpl-primary/90 text-black"
+            >
               {isSaving ? "Saving…" : state?.mode === "edit" ? "Update User" : "Add User"}
             </Button>
           </DialogFooter>

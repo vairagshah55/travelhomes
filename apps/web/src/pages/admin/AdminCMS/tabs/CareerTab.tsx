@@ -144,14 +144,30 @@ export function CareerTab() {
         <div className="border border-dashboard-stroke rounded-xl overflow-x-auto">
           <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 px-4 gap-3 py-3 min-w-[1200px]">
             <div className="text-dashboard-title font-plus-jakarta text-sm font-bold">Date</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Name</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Job Title</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Contact</div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Exp</div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Location</div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Resume</div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Status</div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Action</div>
+            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Name
+            </div>
+            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Job Title
+            </div>
+            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Contact
+            </div>
+            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Exp
+            </div>
+            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Location
+            </div>
+            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Resume
+            </div>
+            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Status
+            </div>
+            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+              Action
+            </div>
           </div>
 
           {applications.length === 0 ? (
@@ -251,7 +267,7 @@ export function CareerTab() {
           onClick={() => setSubTab("Positions")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             subTab === "Positions"
-              ? "bg-dashboard-primary text-white"
+              ? "bg-dashboard-primary text-black"
               : "text-gray-600 hover:bg-gray-100"
           }`}
         >
@@ -261,7 +277,7 @@ export function CareerTab() {
           onClick={() => setSubTab("Applications")}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             subTab === "Applications"
-              ? "bg-dashboard-primary text-white"
+              ? "bg-dashboard-primary text-black"
               : "text-gray-600 hover:bg-gray-100"
           }`}
         >
@@ -282,7 +298,7 @@ export function CareerTab() {
                 setEditing(null);
                 setShowJobModal(true);
               }}
-              className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+              className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
             >
               Add New Position
             </button>
@@ -298,12 +314,24 @@ export function CareerTab() {
 
           <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
             <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
-              <div className="col-span-3 text-dashboard-title font-plus-jakarta text-sm font-bold">Position</div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Experience Required</div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Location</div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">JD</div>
-              <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">Status</div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Action</div>
+              <div className="col-span-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Position
+              </div>
+              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Experience Required
+              </div>
+              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Location
+              </div>
+              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                JD
+              </div>
+              <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Status
+              </div>
+              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Action
+              </div>
             </div>
 
             {jobs.map((job, index) => (
@@ -314,7 +342,9 @@ export function CareerTab() {
                 }`}
               >
                 <div className="col-span-3">
-                  <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">{job.position}</div>
+                  <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
+                    {job.position}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <div className="text-dashboard-body font-poppins text-sm">{job.experience}</div>
@@ -323,7 +353,9 @@ export function CareerTab() {
                   <div className="text-dashboard-body font-poppins text-sm">{job.location}</div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-dashboard-heading font-plus-jakarta text-sm truncate">{job.jd}</div>
+                  <div className="text-dashboard-heading font-plus-jakarta text-sm truncate">
+                    {job.jd}
+                  </div>
                 </div>
                 <div className="col-span-1">
                   <span

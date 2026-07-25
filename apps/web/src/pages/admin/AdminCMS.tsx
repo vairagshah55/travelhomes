@@ -35,11 +35,14 @@ import { HomePageTab } from "./AdminCMS/tabs/HomePageTab";
 import { BlogsTab } from "./AdminCMS/tabs/BlogsTab";
 import { FeaturesTab } from "./AdminCMS/tabs/FeaturesTab";
 
-
 const AdminCMS = () => {
   const [activeTab, setActiveTab] = useState("Register/Login");
   const [openContactMenuId, setOpenContactMenuId] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   // Branding States
   const [faviconUrl, setFaviconUrl] = useState<string>("");
@@ -82,10 +85,7 @@ const AdminCMS = () => {
       console.error(err);
     }
   };
-  const onRegisterPhotoChange = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    which: 1 | 2,
-  ) => {
+  const onRegisterPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, which: 1 | 2) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -106,27 +106,34 @@ const AdminCMS = () => {
     }
   };
 
-  const authPages = ["Login", "Register", "ForgetPassword", "Verification", "EnterEmail", "ChangePassword"] as const;
+  const authPages = [
+    "Login",
+    "Register",
+    "ForgetPassword",
+    "Verification",
+    "EnterEmail",
+    "ChangePassword",
+  ] as const;
   const slotsPerPage = 5;
 
   const [previews, setPreviews] = useState<Record<string, (string | null)[]>>({
-    "Login": Array(slotsPerPage).fill(null),
-    "Register": Array(slotsPerPage).fill(null),
-    "ForgetPassword": Array(slotsPerPage).fill(null),
-    "Verification": Array(slotsPerPage).fill(null),
-    "EnterEmail": Array(slotsPerPage).fill(null),
-    "ChangePassword": Array(slotsPerPage).fill(null),
+    Login: Array(slotsPerPage).fill(null),
+    Register: Array(slotsPerPage).fill(null),
+    ForgetPassword: Array(slotsPerPage).fill(null),
+    Verification: Array(slotsPerPage).fill(null),
+    EnterEmail: Array(slotsPerPage).fill(null),
+    ChangePassword: Array(slotsPerPage).fill(null),
   });
 
   const makeRefs = () =>
     Array.from({ length: slotsPerPage }, () => React.createRef<HTMLInputElement>());
   const fileRefs = useRef<Record<string, React.RefObject<HTMLInputElement>[]>>({
-    "Login": makeRefs(),
-    "Register": makeRefs(),
-    "ForgetPassword": makeRefs(),
-    "Verification": makeRefs(),
-    "EnterEmail": makeRefs(),
-    "ChangePassword": makeRefs(),
+    Login: makeRefs(),
+    Register: makeRefs(),
+    ForgetPassword: makeRefs(),
+    Verification: makeRefs(),
+    EnterEmail: makeRefs(),
+    ChangePassword: makeRefs(),
   });
 
   const getDefaultImage = (page: string, index: number) => {
@@ -145,7 +152,7 @@ const AdminCMS = () => {
       "https://api.builder.io/api/v1/image/assets/TEMP/a5c3a1d5930c7d51d52f92c07949580819d89bfc?width=683",
     ];
     const generic = "https://via.placeholder.com/400x300?text=Add+Image";
-    
+
     if (page === "Login") return defaultsLogin[index] || generic;
     if (page === "Register") return defaultsRegister[index] || generic;
     return generic;
@@ -199,17 +206,7 @@ const AdminCMS = () => {
 
               canvas.width = slice.w;
               canvas.height = slice.h;
-              ctx.drawImage(
-                img,
-                slice.x,
-                slice.y,
-                slice.w,
-                slice.h,
-                0,
-                0,
-                slice.w,
-                slice.h
-              );
+              ctx.drawImage(img, slice.x, slice.y, slice.w, slice.h, 0, 0, slice.w, slice.h);
 
               canvas.toBlob(async (blob) => {
                 if (blob) {
@@ -246,9 +243,7 @@ const AdminCMS = () => {
     reader.onload = () => {
       setPreviews((prev) => ({
         ...prev,
-        [page]: prev[page].map((v, i) =>
-          i === index ? (reader.result as string) : v,
-        ),
+        [page]: prev[page].map((v, i) => (i === index ? (reader.result as string) : v)),
       }));
     };
     reader.readAsDataURL(file);
@@ -262,17 +257,13 @@ const AdminCMS = () => {
       if (result?.data?.url) {
         setPreviews((prev) => ({
           ...prev,
-          [page]: prev[page].map((v, i) =>
-            i === index ? result.data.url : v,
-          ),
+          [page]: prev[page].map((v, i) => (i === index ? result.data.url : v)),
         }));
       }
     } catch (err) {
       console.error("[AdminCMS] Upload failed:", err);
       toast.error(
-        `Failed to upload image: ${
-          err instanceof Error ? err.message : "Unknown error"
-        }`,
+        `Failed to upload image: ${err instanceof Error ? err.message : "Unknown error"}`,
       );
     }
   };
@@ -332,17 +323,18 @@ const AdminCMS = () => {
     (async () => {
       try {
         const next: Record<string, (string | null)[]> = {
-          "Login": Array(slotsPerPage).fill(null),
-          "Register": Array(slotsPerPage).fill(null),
-          "ForgetPassword": Array(slotsPerPage).fill(null),
-          "Verification": Array(slotsPerPage).fill(null),
-          "EnterEmail": Array(slotsPerPage).fill(null),
-          "ChangePassword": Array(slotsPerPage).fill(null),
+          Login: Array(slotsPerPage).fill(null),
+          Register: Array(slotsPerPage).fill(null),
+          ForgetPassword: Array(slotsPerPage).fill(null),
+          Verification: Array(slotsPerPage).fill(null),
+          EnterEmail: Array(slotsPerPage).fill(null),
+          ChangePassword: Array(slotsPerPage).fill(null),
         };
-        
+
         for (const page of authPages) {
           const res = await cmsService.getMedia({ page });
-          const items: Array<{ section: string; position: number; url: string } & any> = res?.data || res || [];
+          const items: Array<{ section: string; position: number; url: string } & any> =
+            res?.data || res || [];
           (items || []).forEach((m) => {
             const pos = Number(m.position || 0);
             const url = String(m.url || "").trim();
@@ -356,10 +348,8 @@ const AdminCMS = () => {
         console.warn("Failed to load CMS media", e);
       }
     })();
-
   }, []);
 
-  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -376,10 +366,10 @@ const AdminCMS = () => {
     if (activeTab !== "Branding") return;
     const loadBranding = async () => {
       try {
-        const faviconData = await settingsService.getSeo('favicon');
+        const faviconData = await settingsService.getSeo("favicon");
         setFaviconUrl(faviconData?.faviconUrl || "");
 
-        const logoData = await settingsService.getSeo('logo');
+        const logoData = await settingsService.getSeo("logo");
         setLogoUrl(logoData?.logoUrl || "");
         setLogoDarkUrl(logoData?.logoDarkUrl || "");
       } catch (e) {
@@ -389,44 +379,39 @@ const AdminCMS = () => {
     loadBranding();
   }, [activeTab]);
 
-
   const renderRegisterLoginContent = () => (
     <div className="space-y-4 overflow-x-hidden max-md:flex-wrap">
       {/* Login Page */}
       <CollapsibleSection title="Login Page" defaultExpanded>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {loadingContacts ? (
-              <UniqueStaysSkeleton/>
-            ) : (
-          [0].map((idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={getImageUrl(
-                    previews["Login"]?.[idx] ||
-                      getDefaultImage("Login", idx)
-                  )}
-                  alt={`Login Page Preview ${idx + 1}`}
-                  className="w-full h-full object-cover"
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {loadingContacts ? (
+            <UniqueStaysSkeleton />
+          ) : (
+            [0].map((idx) => (
+              <div key={idx} className="space-y-3">
+                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={getImageUrl(previews["Login"]?.[idx] || getDefaultImage("Login", idx))}
+                    alt={`Login Page Preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRefs.current["Login"][idx]}
+                  className="hidden"
+                  onChange={(e) => onChangePhoto("Login", idx, e)}
                 />
+                <button
+                  onClick={() => fileRefs.current["Login"][idx].current?.click()}
+                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+                >
+                  Change Photo
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileRefs.current["Login"][idx]}
-                className="hidden"
-                onChange={(e) => onChangePhoto("Login", idx, e)}
-              />
-              <button
-                onClick={() =>
-                  fileRefs.current["Login"][idx].current?.click()
-                }
-                className="w-[300px] py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-              >
-                Change Photo
-              </button>
-            </div>
-          )))}
+            ))
+          )}
         </div>
       </CollapsibleSection>
 
@@ -434,148 +419,140 @@ const AdminCMS = () => {
       <CollapsibleSection title="Registration Page" defaultExpanded>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {loadingContacts ? (
-              <UniqueStaysSkeleton/>
-            ) : (
-          [0].map((idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={getImageUrl(
-                    previews["Register"]?.[idx] ||
-                      getDefaultImage("Register", idx)
-                  )}
-                  alt={`Registration Page Preview ${idx + 1}`}
-                  className="w-full h-full object-cover"
+            <UniqueStaysSkeleton />
+          ) : (
+            [0].map((idx) => (
+              <div key={idx} className="space-y-3">
+                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={getImageUrl(
+                      previews["Register"]?.[idx] || getDefaultImage("Register", idx),
+                    )}
+                    alt={`Registration Page Preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRefs.current["Register"][idx]}
+                  className="hidden"
+                  onChange={(e) => onChangePhoto("Register", idx, e)}
                 />
+                <button
+                  onClick={() => fileRefs.current["Register"][idx].current?.click()}
+                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+                >
+                  Change Photo
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileRefs.current["Register"][idx]}
-                className="hidden"
-                onChange={(e) => onChangePhoto("Register", idx, e)}
-              />
-              <button
-                onClick={() =>
-                  fileRefs.current["Register"][idx].current?.click()
-                }
-                className="w-[300px] py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-              >
-                Change Photo
-              </button>
-            </div>
-          )))}
+            ))
+          )}
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Verification Code Page">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {loadingContacts ? (
-              <UniqueStaysSkeleton/>
-            ) : (
-          [0].map((idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={getImageUrl(
-                    previews["Verification"]?.[idx] ||
-                      getDefaultImage("Verification", idx)
-                  )}
-                  alt={`Verification Code Page Preview ${idx + 1}`}
-                  className="w-full h-full object-cover"
+            <UniqueStaysSkeleton />
+          ) : (
+            [0].map((idx) => (
+              <div key={idx} className="space-y-3">
+                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={getImageUrl(
+                      previews["Verification"]?.[idx] || getDefaultImage("Verification", idx),
+                    )}
+                    alt={`Verification Code Page Preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRefs.current["Verification"][idx]}
+                  className="hidden"
+                  onChange={(e) => onChangePhoto("Verification", idx, e)}
                 />
+                <button
+                  onClick={() => fileRefs.current["Verification"][idx].current?.click()}
+                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+                >
+                  Change Photo
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileRefs.current["Verification"][idx]}
-                className="hidden"
-                onChange={(e) => onChangePhoto("Verification", idx, e)}
-              />
-              <button
-                onClick={() =>
-                  fileRefs.current["Verification"][idx].current?.click()
-                }
-                className="w-[300px] py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-              >
-                Change Photo
-              </button>
-            </div>
-          )))}
+            ))
+          )}
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Enter Email Page">
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-3  ">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3  ">
           {loadingContacts ? (
-              <UniqueStaysSkeleton/>
-            ) : (
-          [0].map((idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={getImageUrl(
-                    previews["EnterEmail"]?.[idx] ||
-                      getDefaultImage("EnterEmail", idx)
-                  )}
-                  alt={`Enter Email Page Preview ${idx + 1}`}
-                  className="w-full h-full object-cover"
+            <UniqueStaysSkeleton />
+          ) : (
+            [0].map((idx) => (
+              <div key={idx} className="space-y-3">
+                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={getImageUrl(
+                      previews["EnterEmail"]?.[idx] || getDefaultImage("EnterEmail", idx),
+                    )}
+                    alt={`Enter Email Page Preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRefs.current["EnterEmail"][idx]}
+                  className="hidden"
+                  onChange={(e) => onChangePhoto("EnterEmail", idx, e)}
                 />
+                <button
+                  onClick={() => fileRefs.current["EnterEmail"][idx].current?.click()}
+                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+                >
+                  Change Photo
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileRefs.current["EnterEmail"][idx]}
-                className="hidden"
-                onChange={(e) => onChangePhoto("EnterEmail", idx, e)}
-              />
-              <button
-                onClick={() =>
-                  fileRefs.current["EnterEmail"][idx].current?.click()
-                }
-                className="w-[300px] py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-              >
-                Change Photo
-              </button>
-            </div>
-          )))}
+            ))
+          )}
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title="Change Password Page">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {loadingContacts ? (
-              <UniqueStaysSkeleton/>
-            ) : (
-          [0].map((idx) => (
-            <div key={idx} className="space-y-3">
-              <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={getImageUrl(
-                    previews["ChangePassword"]?.[idx] ||
-                      getDefaultImage("ChangePassword", idx)
-                  )}
-                  alt={`Change Password Page Preview ${idx + 1}`}
-                  className="w-full h-full object-cover"
+            <UniqueStaysSkeleton />
+          ) : (
+            [0].map((idx) => (
+              <div key={idx} className="space-y-3">
+                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={getImageUrl(
+                      previews["ChangePassword"]?.[idx] || getDefaultImage("ChangePassword", idx),
+                    )}
+                    alt={`Change Password Page Preview ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileRefs.current["ChangePassword"][idx]}
+                  className="hidden"
+                  onChange={(e) => onChangePhoto("ChangePassword", idx, e)}
                 />
+                <button
+                  onClick={() => fileRefs.current["ChangePassword"][idx].current?.click()}
+                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+                >
+                  Change Photo
+                </button>
               </div>
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileRefs.current["ChangePassword"][idx]}
-                className="hidden"
-                onChange={(e) => onChangePhoto("ChangePassword", idx, e)}
-              />
-              <button
-                onClick={() =>
-                  fileRefs.current["ChangePassword"][idx].current?.click()
-                }
-                className="w-[300px] py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-              >
-                Change Photo
-              </button>
-            </div>
-          )))}
+            ))
+          )}
         </div>
       </CollapsibleSection>
     </div>
@@ -587,7 +564,6 @@ const AdminCMS = () => {
   const renderFAQsContent = () => <FAQsTab />;
 
   const renderTestimonialsContent = () => <TestimonialsTab />;
-
 
   const renderfeaturesContent = () => <FeaturesTab />;
 
@@ -601,7 +577,6 @@ const AdminCMS = () => {
       loadingContacts={loadingContacts}
     />
   );
-
 
   const renderBrandingContent = () => (
     <BrandingTab

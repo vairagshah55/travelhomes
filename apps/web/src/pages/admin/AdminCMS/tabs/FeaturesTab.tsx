@@ -132,7 +132,11 @@ export function FeaturesTab() {
   };
 
   const addBtnLabel =
-    featureType === "category" ? "Category" : featureType === "selection" ? "Sub-Category" : "Feature";
+    featureType === "category"
+      ? "Category"
+      : featureType === "selection"
+        ? "Sub-Category"
+        : "Feature";
 
   return (
     <div className="space-y-4">
@@ -188,7 +192,7 @@ export function FeaturesTab() {
                   }}
                   className={`px-5 py-3 rounded-full whitespace-nowrap text-sm font-semibold transition-all ${
                     offeringCategory === cat
-                      ? "bg-dashboard-primary text-white"
+                      ? "bg-dashboard-primary text-black"
                       : "text-dashboard-primary hover:bg-gray-50"
                   }`}
                 >
@@ -210,7 +214,7 @@ export function FeaturesTab() {
                 setShowFeatureModal(true);
               }
             }}
-            className="px-5 py-2.5 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
           >
             + Add {addBtnLabel}
           </button>
@@ -227,8 +231,12 @@ export function FeaturesTab() {
         {featureType === "selection" ? (
           <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
             <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
-              <div className="col-span-8 text-dashboard-title font-plus-jakarta text-sm font-bold">Category Name</div>
-              <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">Action</div>
+              <div className="col-span-8 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Category Name
+              </div>
+              <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Action
+              </div>
             </div>
 
             {staySubCategories.length > 0 ? (
@@ -247,7 +255,9 @@ export function FeaturesTab() {
                         className="w-8 h-8 rounded object-cover bg-gray-100"
                       />
                     )}
-                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">{feature.name}</div>
+                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
+                      {feature.name}
+                    </div>
                   </div>
                   <div className="col-span-4">
                     <button
@@ -274,14 +284,18 @@ export function FeaturesTab() {
                 {featureType === "category" ? "Category Name" : "Feature Name"}
               </div>
               {featureType === "category" && (
-                <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">Description</div>
+                <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                  Description
+                </div>
               )}
               <div
                 className={`${featureType === "category" ? "col-span-2" : "col-span-3"} text-dashboard-title font-plus-jakarta text-sm font-bold`}
               >
                 Parent Category
               </div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">Status</div>
+              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                Status
+              </div>
               <div
                 className={`${featureType === "category" ? "col-span-1" : "col-span-2"} text-dashboard-title font-plus-jakarta text-sm font-bold`}
               >
@@ -307,7 +321,9 @@ export function FeaturesTab() {
                         className="w-8 h-8 rounded object-cover bg-gray-100"
                       />
                     )}
-                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">{feature.name}</div>
+                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
+                      {feature.name}
+                    </div>
                   </div>
                   {featureType === "category" && (
                     <div
@@ -318,7 +334,9 @@ export function FeaturesTab() {
                     </div>
                   )}
                   <div className={`${featureType === "category" ? "col-span-2" : "col-span-3"}`}>
-                    <div className="text-dashboard-body font-poppins text-sm">{feature.category}</div>
+                    <div className="text-dashboard-body font-poppins text-sm">
+                      {feature.category}
+                    </div>
                   </div>
                   <div className="col-span-2">
                     <button
@@ -364,7 +382,8 @@ export function FeaturesTab() {
               ))
             ) : (
               <div className="p-8 text-center text-gray-500">
-                No {featureType === "category" ? "categories" : "features"} found for {offeringCategory}
+                No {featureType === "category" ? "categories" : "features"} found for{" "}
+                {offeringCategory}
               </div>
             )}
           </div>

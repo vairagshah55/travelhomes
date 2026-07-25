@@ -52,8 +52,8 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
             {type === "category"
               ? "Add Category"
               : type === "subcategory"
-              ? "Add Sub-Category"
-              : "Add Feature"}
+                ? "Add Sub-Category"
+                : "Add Feature"}
           </h2>
           <button
             onClick={onClose}
@@ -66,17 +66,13 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label className="text-dashboard-title font-plus-jakarta text-sm">
-              {type === "category" || type === "subcategory"
-                ? "Category Name"
-                : "Name"}
+              {type === "category" || type === "subcategory" ? "Category Name" : "Name"}
             </label>
             <input
               type="text"
               placeholder="Type Here"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
               required
             />
@@ -84,15 +80,11 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
 
           {type === "category" && (
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">
-                Description
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-sm">Description</label>
               <textarea
                 placeholder="Type Description Here"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary resize-none"
               />
@@ -138,7 +130,7 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
           <div className="pt-4 border-t border-gray-200">
             <button
               type="submit"
-              className="px-8 py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+              className="px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
             >
               Add
             </button>

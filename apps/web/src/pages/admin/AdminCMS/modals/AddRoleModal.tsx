@@ -14,11 +14,7 @@ const INITIAL_FEATURES = {
   Staff: { view: false, full: false },
 };
 
-export const AddRoleModal: React.FC<AddRoleModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-}) => {
+export const AddRoleModal: React.FC<AddRoleModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     roleName: "",
     features: { ...INITIAL_FEATURES },
@@ -41,11 +37,7 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({
     onClose();
   };
 
-  const handleFeatureChange = (
-    feature: string,
-    type: "view" | "full",
-    checked: boolean,
-  ) => {
+  const handleFeatureChange = (feature: string, type: "view" | "full", checked: boolean) => {
     setFormData((prev) => ({
       ...prev,
       features: {
@@ -88,9 +80,15 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({
             <label className="text-dashboard-title font-plus-jakarta text-sm">Features</label>
             <div className="border border-dashboard-stroke rounded-xl overflow-hidden">
               <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-3 px-3 py-3">
-                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold">Features Name</div>
-                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold text-center">View Access</div>
-                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold text-center">Full Access</div>
+                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold">
+                  Features Name
+                </div>
+                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold text-center">
+                  View Access
+                </div>
+                <div className="text-dashboard-title font-plus-jakarta text-sm font-bold text-center">
+                  Full Access
+                </div>
               </div>
               {Object.keys(formData.features).map((feature) => (
                 <div
@@ -122,7 +120,7 @@ export const AddRoleModal: React.FC<AddRoleModalProps> = ({
           <div className="flex justify-end pt-4">
             <button
               type="submit"
-              className="px-8 py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+              className="px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
             >
               Submit
             </button>

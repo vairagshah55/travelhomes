@@ -25,11 +25,7 @@ interface ContactUsTabProps {
  * hero image. State stays in the parent because other tabs (HomePage etc.)
  * read the loading flag while initial data loads.
  */
-export function ContactUsTab({
-  contactInfo,
-  setContactInfo,
-  loadingContacts,
-}: ContactUsTabProps) {
+export function ContactUsTab({ contactInfo, setContactInfo, loadingContacts }: ContactUsTabProps) {
   const handleContactImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -63,7 +59,7 @@ export function ContactUsTab({
         <h3 className="text-lg font-bold">Contact Us</h3>
         <button
           onClick={handleSaveContactInfo}
-          className="px-5 py-2 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium hover:bg-dashboard-primary/90 transition-colors"
+          className="px-5 py-2 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium hover:bg-dashboard-primary/90 transition-colors"
         >
           Save Changes
         </button>
@@ -96,7 +92,7 @@ export function ContactUsTab({
               accept="image/*"
               onChange={handleContactImageChange}
             />
-            <div className="w-full bg-[#0F5C8A] text-white py-2 rounded-full text-sm text-center cursor-pointer hover:bg-[#14709F]">
+            <div className="w-full bg-dashboard-primary text-white py-2 rounded-full text-sm text-center cursor-pointer hover:bg-[#14709F]">
               Change Photo
             </div>
           </label>

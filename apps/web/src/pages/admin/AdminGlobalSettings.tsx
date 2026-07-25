@@ -4,7 +4,6 @@ import { Switch } from "@/components/ui/switch";
 import { settingsService } from "@/services/api";
 import { toast } from "sonner";
 
-
 const AdminGlobalSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState("SEO");
   const [activePage, setActivePage] = useState("About");
@@ -59,7 +58,7 @@ const AdminGlobalSettings: React.FC = () => {
         setOgImageUrl(data?.ogImageUrl || "");
         setSeoEditable(false);
       } catch (e: any) {
-        setError(typeof e === 'string' ? e : 'Failed to load SEO settings');
+        setError(typeof e === "string" ? e : "Failed to load SEO settings");
       } finally {
         setLoading(false);
       }
@@ -80,7 +79,7 @@ const AdminGlobalSettings: React.FC = () => {
         setEmailApproval(Boolean(data?.emailApproval));
         setPhoneApproval(Boolean(data?.phoneApproval));
       } catch (e: any) {
-        setError(typeof e === 'string' ? e : 'Failed to load system settings');
+        setError(typeof e === "string" ? e : "Failed to load system settings");
       } finally {
         setLoading(false);
       }
@@ -113,34 +112,39 @@ const AdminGlobalSettings: React.FC = () => {
   // Toggle a single approval flag. Persists the NEW value explicitly (the old
   // implementation read stale state after setState) and reverts the switch if
   // the save fails so the UI never lies about what the server has.
-  const toggleApproval = (
-    key: "vendorApproval" | "mobileApproval" | "emailApproval" | "phoneApproval",
-    setter: React.Dispatch<React.SetStateAction<boolean>>,
-  ) => async (checked: boolean) => {
-    setter(checked);
-    try {
-      await settingsService.updateSystem({
-        userType: activeUserType,
-        vendorApproval,
-        mobileApproval,
-        emailApproval,
-        phoneApproval,
-        [key]: checked,
-      });
-      toast.success("Settings saved.");
-    } catch {
-      setter(!checked);
-      toast.error("Failed to save settings.");
-    }
-  };
+  const toggleApproval =
+    (
+      key: "vendorApproval" | "mobileApproval" | "emailApproval" | "phoneApproval",
+      setter: React.Dispatch<React.SetStateAction<boolean>>,
+    ) =>
+    async (checked: boolean) => {
+      setter(checked);
+      try {
+        await settingsService.updateSystem({
+          userType: activeUserType,
+          vendorApproval,
+          mobileApproval,
+          emailApproval,
+          phoneApproval,
+          [key]: checked,
+        });
+        toast.success("Settings saved.");
+      } catch {
+        setter(!checked);
+        toast.error("Failed to save settings.");
+      }
+    };
 
   // Upload handlers for favicon/logo/og
-  const handleUpload = async (type: 'favicon' | 'logo' | 'og' | 'logo_dark', file?: File | null) => {
+  const handleUpload = async (
+    type: "favicon" | "logo" | "og" | "logo_dark",
+    file?: File | null,
+  ) => {
     if (!file) return;
     try {
       setLoading(true);
       const res = await settingsService.uploadSeoAsset(activePage, type, file);
-      if (type === 'og') setOgImageUrl(res?.ogImageUrl || "");
+      if (type === "og") setOgImageUrl(res?.ogImageUrl || "");
     } catch {
       toast.error("Upload failed.");
     } finally {
@@ -150,212 +154,251 @@ const AdminGlobalSettings: React.FC = () => {
 
   return (
     <AdminLayout title="Global Settings">
-        <div className="flex-1">
-          <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke h-[68px] px-6 flex items-center shadow-tpl-1">
-            <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
-              Settings
-            </h2>
-          </div>
-
-          <div className="bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 p-6 space-y-6">
-            {/* Tab Navigation */}
-            <div className="flex items-center max-md:flex-wrap">
-              {tabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-4 py-3 text-base font-bold transition-colors relative ${
-                    activeTab === tab ? "text-tpl-dark dark:text-white" : "text-tpl-dark-5 dark:text-tpl-dark-6"
-                  }`}
-                >
-                  {tab}
-                  {activeTab === tab && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {activeTab === "SEO" ? (
-              /* SEO Content */
-              <div className="space-y-4">
-                <div className="border border-dashboard-stroke rounded-xl p-4 space-y-3">
-                  {/* Page Selector */}
-                  <div className="flex flex-wrap items-center  p-0.5 border border-[#EAEAEA] max-sm:rounded-lg rounded-full bg-white shadow-sm">
-                    {pages.map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setActivePage(page)}
-                        className={`px-5 py-3 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
-                          activePage === page
-                            ? "bg-dashboard-primary text-white font-semibold"
-                            : "text-dashboard-primary"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="w-full h-px border-t border-dashed border-dashboard-stroke" />
-
-                  {/* SEO Form */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-6">
-                      {/* Meta Keywords */}
-                      <div className="space-y-3">
-                        <label className="block text-base text-[#334054] font-plus-jakarta">
-                          Meta Keywords
-                        </label>
-                        <input
-                          type="text"
-                          value={metaKeywords}
-                          onChange={(e) => setMetaKeywords(e.target.value)}
-                          placeholder="Select"
-                          className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
-                          disabled={!seoEditable}
-                        />
-                      </div>
-
-                      {/* Meta Title */}
-                      <div className="space-y-3">
-                        <label className="block text-base text-[#334054] font-plus-jakarta">
-                          Meta Title
-                        </label>
-                        <input
-                          type="text"
-                          value={metaTitle}
-                          onChange={(e) => setMetaTitle(e.target.value)}
-                          className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
-                          disabled={!seoEditable}
-                        />
-                      </div>
-
-                      {/* Meta Description */}
-                      <div className="space-y-3">
-                        <label className="block text-base text-[#334054] font-plus-jakarta">
-                          Meta Description
-                        </label>
-                        <textarea
-                          value={metaDescription}
-                          onChange={(e) => setMetaDescription(e.target.value)}
-                          placeholder="Write Message here..."
-                          rows={5}
-                          className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
-                          disabled={!seoEditable}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      {/* Social Title */}
-                      <div className="space-y-3">
-                        <label className="block text-base text-[#334054] font-plus-jakarta">
-                          Social Title
-                        </label>
-                        <input
-                          type="text"
-                          value={socialTitle}
-                          onChange={(e) => setSocialTitle(e.target.value)}
-                          className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
-                          disabled={!seoEditable}
-                        />
-                      </div>
-
-                      {/* Social Description */}
-                      <div className="space-y-3 flex-1">
-                        <label className="block text-base text-[#334054] font-plus-jakarta">
-                          Social Description
-                        </label>
-                        <textarea
-                          value={socialDescription}
-                          onChange={(e) => setSocialDescription(e.target.value)}
-                          placeholder="Write Message here..."
-                          rows={9}
-                          className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
-                          disabled={!seoEditable}
-                        />
-                      </div>
-    {/* Actions: Edit/Save */}
-                  <div className="flex gap-3">
-                    {!seoEditable ? (
-                      <button onClick={() => setSeoEditable(true)} className="px-4 py-2 bg-dashboard-primary text-white rounded-md">
-                        Edit
-                      </button>
-                    ) : (
-                      <button
-                        onClick={saveSeo}
-                        disabled={loading}
-                        className="px-4 py-2 bg-dashboard-primary text-white rounded-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 transition-opacity"
-                      >
-                        {loading && (
-                          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-                          </svg>
-                        )}
-                        {loading ? "Saving…" : "Save Details"}
-                      </button>
-                    )}
-                  </div>
-
-
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Other Settings Content */
-              <div className="space-y-4">
-                <div className="border border-dashboard-stroke rounded-xl p-4 space-y-4">
-                  {/* User Type Selector */}
-                  <div className="flex items-center p-0.5 border border-[#EAEAEA] rounded-full bg-white shadow-sm w-fit">
-                    {userTypes.map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setActiveUserType(type)}
-                        className={`px-6 py-3 text-sm font-medium rounded-full transition-all ${
-                          activeUserType === type
-                            ? "bg-dashboard-primary text-white font-semibold"
-                            : "text-dashboard-primary"
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Divider */}
-                  <div className="w-full h-px border-t border-dashed border-dashboard-stroke" />
-
-                  {/* Settings Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {([
-                      { label: "Vendor Approval", key: "vendorApproval", value: vendorApproval, setter: setVendorApproval },
-                      { label: "Mobile Approval", key: "mobileApproval", value: mobileApproval, setter: setMobileApproval },
-                      { label: "Email Approval", key: "emailApproval", value: emailApproval, setter: setEmailApproval },
-                      { label: "Phone Approval", key: "phoneApproval", value: phoneApproval, setter: setPhoneApproval },
-                    ] as const).map((item) => (
-                      <div key={item.key} className="flex items-center justify-between">
-                        <label htmlFor={item.key} className="text-base text-tpl-dark-4 dark:text-tpl-dark-6 font-medium font-plus-jakarta cursor-pointer">
-                          {item.label}
-                        </label>
-                        <Switch
-                          id={item.key}
-                          checked={item.value}
-                          onCheckedChange={toggleApproval(item.key, item.setter)}
-                          disabled={loading}
-                          aria-label={item.label}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+      <div className="flex-1">
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke h-[68px] px-6 flex items-center shadow-tpl-1">
+          <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
+            Settings
+          </h2>
         </div>
+
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 p-6 space-y-6">
+          {/* Tab Navigation */}
+          <div className="flex items-center max-md:flex-wrap">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-3 text-base font-bold transition-colors relative ${
+                  activeTab === tab
+                    ? "text-tpl-dark dark:text-white"
+                    : "text-tpl-dark-5 dark:text-tpl-dark-6"
+                }`}
+              >
+                {tab}
+                {activeTab === tab && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-dashboard-primary" />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "SEO" ? (
+            /* SEO Content */
+            <div className="space-y-4">
+              <div className="border border-dashboard-stroke rounded-xl p-4 space-y-3">
+                {/* Page Selector */}
+                <div className="flex flex-wrap items-center  p-0.5 border border-[#EAEAEA] max-sm:rounded-lg rounded-full bg-white shadow-sm">
+                  {pages.map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => setActivePage(page)}
+                      className={`px-5 py-3 text-sm font-medium rounded-full transition-all whitespace-nowrap ${
+                        activePage === page
+                          ? "bg-dashboard-primary text-black font-semibold"
+                          : "text-dashboard-primary"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="w-full h-px border-t border-dashed border-dashboard-stroke" />
+
+                {/* SEO Form */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="space-y-6">
+                    {/* Meta Keywords */}
+                    <div className="space-y-3">
+                      <label className="block text-base text-[#334054] font-plus-jakarta">
+                        Meta Keywords
+                      </label>
+                      <input
+                        type="text"
+                        value={metaKeywords}
+                        onChange={(e) => setMetaKeywords(e.target.value)}
+                        placeholder="Select"
+                        className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
+                        disabled={!seoEditable}
+                      />
+                    </div>
+
+                    {/* Meta Title */}
+                    <div className="space-y-3">
+                      <label className="block text-base text-[#334054] font-plus-jakarta">
+                        Meta Title
+                      </label>
+                      <input
+                        type="text"
+                        value={metaTitle}
+                        onChange={(e) => setMetaTitle(e.target.value)}
+                        className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
+                        disabled={!seoEditable}
+                      />
+                    </div>
+
+                    {/* Meta Description */}
+                    <div className="space-y-3">
+                      <label className="block text-base text-[#334054] font-plus-jakarta">
+                        Meta Description
+                      </label>
+                      <textarea
+                        value={metaDescription}
+                        onChange={(e) => setMetaDescription(e.target.value)}
+                        placeholder="Write Message here..."
+                        rows={5}
+                        className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
+                        disabled={!seoEditable}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Social Title */}
+                    <div className="space-y-3">
+                      <label className="block text-base text-[#334054] font-plus-jakarta">
+                        Social Title
+                      </label>
+                      <input
+                        type="text"
+                        value={socialTitle}
+                        onChange={(e) => setSocialTitle(e.target.value)}
+                        className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
+                        disabled={!seoEditable}
+                      />
+                    </div>
+
+                    {/* Social Description */}
+                    <div className="space-y-3 flex-1">
+                      <label className="block text-base text-[#334054] font-plus-jakarta">
+                        Social Description
+                      </label>
+                      <textarea
+                        value={socialDescription}
+                        onChange={(e) => setSocialDescription(e.target.value)}
+                        placeholder="Write Message here..."
+                        rows={9}
+                        className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
+                        disabled={!seoEditable}
+                      />
+                    </div>
+                    {/* Actions: Edit/Save */}
+                    <div className="flex gap-3">
+                      {!seoEditable ? (
+                        <button
+                          onClick={() => setSeoEditable(true)}
+                          className="px-4 py-2 bg-dashboard-primary text-black rounded-md"
+                        >
+                          Edit
+                        </button>
+                      ) : (
+                        <button
+                          onClick={saveSeo}
+                          disabled={loading}
+                          className="px-4 py-2 bg-dashboard-primary text-black rounded-md disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2 transition-opacity"
+                        >
+                          {loading && (
+                            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8H4z"
+                              />
+                            </svg>
+                          )}
+                          {loading ? "Saving…" : "Save Details"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Other Settings Content */
+            <div className="space-y-4">
+              <div className="border border-dashboard-stroke rounded-xl p-4 space-y-4">
+                {/* User Type Selector */}
+                <div className="flex items-center p-0.5 border border-[#EAEAEA] rounded-full bg-white shadow-sm w-fit">
+                  {userTypes.map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => setActiveUserType(type)}
+                      className={`px-6 py-3 text-sm font-medium rounded-full transition-all ${
+                        activeUserType === type
+                          ? "bg-dashboard-primary text-black font-semibold"
+                          : "text-dashboard-primary"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div className="w-full h-px border-t border-dashed border-dashboard-stroke" />
+
+                {/* Settings Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {(
+                    [
+                      {
+                        label: "Vendor Approval",
+                        key: "vendorApproval",
+                        value: vendorApproval,
+                        setter: setVendorApproval,
+                      },
+                      {
+                        label: "Mobile Approval",
+                        key: "mobileApproval",
+                        value: mobileApproval,
+                        setter: setMobileApproval,
+                      },
+                      {
+                        label: "Email Approval",
+                        key: "emailApproval",
+                        value: emailApproval,
+                        setter: setEmailApproval,
+                      },
+                      {
+                        label: "Phone Approval",
+                        key: "phoneApproval",
+                        value: phoneApproval,
+                        setter: setPhoneApproval,
+                      },
+                    ] as const
+                  ).map((item) => (
+                    <div key={item.key} className="flex items-center justify-between">
+                      <label
+                        htmlFor={item.key}
+                        className="text-base text-tpl-dark-4 dark:text-tpl-dark-6 font-medium font-plus-jakarta cursor-pointer"
+                      >
+                        {item.label}
+                      </label>
+                      <Switch
+                        id={item.key}
+                        checked={item.value}
+                        onCheckedChange={toggleApproval(item.key, item.setter)}
+                        disabled={loading}
+                        aria-label={item.label}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </AdminLayout>
   );
 };

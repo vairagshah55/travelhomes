@@ -442,8 +442,8 @@
       box-shadow 200ms ease;
   }
   .btn-brand:hover {
-    background: #14709f;
-    box-shadow: 0 4px 12px rgba(15, 92, 138, 0.3);
+    background: #5fe0e0;
+    box-shadow: 0 4px 12px rgba(59, 217, 217, 0.3);
   }
 
   /* Upload area */
@@ -1194,32 +1194,31 @@
    bg-dashboard-primary, text-booking-link, etc.) to the template's palette
    without rewriting every page's JSX. The public site keeps its ocean palette. */
 [data-brand="admin"] {
-  /* Background + primary CTA → template purple */
-  --dashboard-primary: 243 87% 63%; /* #5750F1 */
-  --dashboard-primary-hover: 244 65% 56%; /* #4A44D4 */
-  /* Text — template's near-black blue-gray (#111928 → #1F2A37) */
-  --dashboard-heading: 220 24% 12%; /* #111928 */
-  --dashboard-body: 221 22% 17%; /* #1F2A37 */
-  --dashboard-title: 221 22% 17%;
-  --dashboard-text: 220 24% 12%;
-  /* Surfaces */
-  --dashboard-bg: 220 14% 98%; /* #f9fafb */
-  --dashboard-stroke: 215 25% 92%; /* #e6ebf1 */
+  /* Primary CTA → navy #0F5C8A (dark, so fills carry WHITE text). */
+  --dashboard-primary: 202 80% 30%; /* #0F5C8A */
+  --dashboard-primary-hover: 199 78% 35%; /* #14709F */
+  /* Text — black on white */
+  --dashboard-heading: 0 0% 0%;
+  --dashboard-body: 220 9% 20%;
+  --dashboard-title: 220 9% 20%;
+  --dashboard-text: 0 0% 0%;
+  /* Surfaces — white / near-white */
+  --dashboard-bg: 220 20% 98%; /* #F7F8FA */
+  --dashboard-stroke: 216 13% 91%; /* #E4E7EB */
   --dashboard-neutral-06: 220 14% 71%; /* #9ca3af */
   --dashboard-neutral-07: 220 9% 46%; /* #6b7280 */
-  /* Booking ID link color → template purple */
-  --booking-link: 243 87% 63%;
-  /* Sidebar variables — already overridden via JSX, but for consistency */
-  --sidebar-primary: 243 87% 63%;
-  --sidebar-ring: 243 87% 63%;
+  /* Booking ID link → navy (dark, reads on white) */
+  --booking-link: 202 80% 30%;
+  --sidebar-primary: 202 80% 30%;
+  --sidebar-ring: 202 80% 30%;
 }
 
 [data-brand="admin"] {
-  /* Brand */
-  --tpl-primary: #5750f1;
-  --tpl-primary-hover: #4a44d4;
-  --tpl-primary-soft: rgba(87, 80, 241, 0.07);
-  --tpl-primary-soft-2: rgba(87, 80, 241, 0.14);
+  /* Brand → navy #0F5C8A (dark, so fills carry WHITE text) */
+  --tpl-primary: #0f5c8a;
+  --tpl-primary-hover: #14709f;
+  --tpl-primary-soft: rgba(15, 92, 138, 0.08);
+  --tpl-primary-soft-2: rgba(15, 92, 138, 0.14);
 
   /* Neutrals — light surface */
   --tpl-body-bg: #f9fafb; /* page bg */
@@ -1233,7 +1232,7 @@
   --tpl-gray-5: #9ca3af;
   --tpl-gray-6: #6b7280;
   --tpl-gray-7: #374151;
-  --tpl-dark: #111928;
+  --tpl-dark: #000000;
   --tpl-dark-2: #1f2a37;
   --tpl-dark-3: #374151;
   --tpl-dark-4: #4b5563;
@@ -1263,6 +1262,79 @@
 
   /* Radii */
   --tpl-radius-card: 10px;
+
+  /* ── Admin-scoped brand overrides → cyan #3BD9D9 · black · white ──
+     admin.css loads after global.css (via AdminApp), so these win over
+     global.css's blue [data-brand="admin"] tokens. */
+  /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
+  --primary: 202 80% 30%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 202 80% 30%;
+  /* shared primitives (bg-brand / text-brand / EmptyState / TabStrip) */
+  --brand: 202 80% 30%;
+  --brand-hover: 199 78% 35%;
+  --brand-fg: 0 0% 100%;
+  --brand-subtle: 202 50% 95%;
+  /* app/surface semantic layer (AdminStatCard, app-accent) */
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --surface-border: #e4e7eb;
+  --surface-fg: #000000;
+  --surface-fg-muted: #55585e;
+  --surface-fg-subtle: #6e7278;
+  --accent: #0f5c8a;
+  --accent-hover: #14709f;
+  --accent-soft: rgba(15, 92, 138, 0.1);
+  --accent-fg: #ffffff;
+
+  /* Glass / teal utility tokens — LIGHT content values (navy tints).
+     The navy chrome scope below redefines these for the sidebar/header. */
+  --glass-bg: rgba(0, 0, 0, 0.03);
+  --glass-bg-hover: rgba(15, 92, 138, 0.06);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-strong: rgba(0, 0, 0, 0.14);
+  --glass-header: rgba(255, 255, 255, 0.85);
+  --teal-glass: rgba(15, 92, 138, 0.1);
+  --teal-border: rgba(15, 92, 138, 0.3);
+  --teal-subtle: rgba(15, 92, 138, 0.07);
+  --shadow-teal: 0 0 0 1px rgba(15, 92, 138, 0.4);
+  --search-focus-ring: rgba(15, 92, 138, 0.2);
+}
+
+/* ── Navy CHROME (sidebar + header) — deep navy surfaces, white text ──
+   Applied by data-admin-skin="navy" (+ dark class) on the AdminSidebar and
+   AdminHeader roots. Self-defined tokens override the inherited light
+   [data-brand="admin"] ones for these two subtrees only; content stays light. */
+[data-admin-skin="navy"] {
+  --tpl-body-bg: #0f5c8a;
+  --tpl-card-bg: #0f5c8a;
+  --tpl-dark-2: #0f5c8a; /* dark:bg-tpl-dark-2 → brand-blue surface */
+  --tpl-stroke: rgba(255, 255, 255, 0.1);
+  --tpl-dark: #ffffff; /* primary text → white */
+  --tpl-dark-3: #e5e9f0;
+  --tpl-dark-4: #c7cdd9;
+  --tpl-dark-5: rgba(255, 255, 255, 0.6); /* muted text */
+  --tpl-dark-6: rgba(255, 255, 255, 0.72); /* secondary text */
+  --tpl-gray-2: rgba(255, 255, 255, 0.06);
+  --tpl-gray-3: rgba(255, 255, 255, 0.1);
+  --tpl-primary: #ffffff; /* active-nav text + accent bar → white on navy */
+  --glass-header: rgba(15, 92, 138, 0.85);
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --teal-glass: rgba(255, 255, 255, 0.12); /* active-nav highlight */
+  --teal-border: rgba(255, 255, 255, 0.25);
+  --sidebar-primary: 0 0% 100%;
+}
+
+/* Navy fills carry WHITE text. Force white on the primary/brand/accent FILLS
+   in admin content so leftover dark labels/icons don't sit black-on-navy.
+   (Accent-as-TEXT already resolves to navy, which reads fine on white.) */
+[data-brand="admin"] .bg-dashboard-primary,
+[data-brand="admin"] .bg-tpl-primary,
+[data-brand="admin"] .bg-primary,
+[data-brand="admin"] .bg-brand,
+[data-brand="admin"] .bg-app-accent {
+  color: #ffffff !important;
 }
 
 /* Vendor-dashboard dark mode also uses [data-brand="admin"] (see global.css).
@@ -1289,11 +1361,12 @@
    per-file edits.                                                            */
 [data-brand="admin"][data-admin-skin="sf"].dark,
 .dark [data-brand="admin"][data-admin-skin="sf"] {
-  /* Brand → teal */
-  --tpl-primary: #30b8bf;
-  --tpl-primary-hover: #2aa6ac;
-  --tpl-primary-soft: rgba(48, 184, 191, 0.14);
-  --tpl-primary-soft-2: rgba(48, 184, 191, 0.22);
+  /* Brand → cyan #3BD9D9 (leads on dark: cyan-on-black = 12:1).
+     Cyan fills carry BLACK text — see the *-foreground/*-fg tokens below. */
+  --tpl-primary: #3bd9d9;
+  --tpl-primary-hover: #5fe0e0;
+  --tpl-primary-soft: rgba(59, 217, 217, 0.16);
+  --tpl-primary-soft-2: rgba(59, 217, 217, 0.26);
 
   /* Layered dark surfaces (depth via color steps, not shadows) */
   --tpl-body-bg: #080a0d; /* page bg            */
@@ -1334,26 +1407,26 @@
   --glass-border: rgba(255, 255, 255, 0.07);
   --glass-border-strong: rgba(255, 255, 255, 0.12);
   --glass-header: rgba(13, 17, 24, 0.72);
-  --teal-glass: rgba(48, 184, 191, 0.18);
-  --teal-border: rgba(48, 184, 191, 0.25);
-  --teal-subtle: rgba(48, 184, 191, 0.1);
-  --shadow-teal: 0 0 0 1px rgba(48, 184, 191, 0.45);
-  --search-focus-ring: rgba(48, 184, 191, 0.18);
+  --teal-glass: rgba(59, 217, 217, 0.18);
+  --teal-border: rgba(59, 217, 217, 0.3);
+  --teal-subtle: rgba(59, 217, 217, 0.1);
+  --shadow-teal: 0 0 0 1px rgba(59, 217, 217, 0.5);
+  --search-focus-ring: rgba(59, 217, 217, 0.22);
 
   /* HSL --dashboard-* layer (~190 usages: text-dashboard-heading, etc.) */
   --dashboard-bg: 216 24% 4%;
   --dashboard-stroke: 218 31% 16%;
-  --dashboard-primary: 183 60% 47%;
-  --dashboard-primary-hover: 183 60% 42%;
+  --dashboard-primary: 180 68% 54%;
+  --dashboard-primary-hover: 180 62% 63%;
   --dashboard-heading: 0 0% 100%;
   --dashboard-body: 219 15% 70%;
   --dashboard-title: 219 15% 70%;
   --dashboard-text: 0 0% 100%;
   --dashboard-neutral-06: 217 10% 58%;
   --dashboard-neutral-07: 219 15% 70%;
-  --booking-link: 183 60% 47%;
-  --sidebar-primary: 183 60% 47%;
-  --sidebar-ring: 183 60% 47%;
+  --booking-link: 180 68% 54%;
+  --sidebar-primary: 180 68% 54%;
+  --sidebar-ring: 180 68% 54%;
 
   /* app-* / --surface-* semantic layer (AdminStatCard, app-accent, etc.) */
   --surface: #0d1118;
@@ -1362,16 +1435,16 @@
   --surface-fg: #ffffff;
   --surface-fg-muted: #8a929f;
   --surface-fg-subtle: #a8b0bf;
-  --accent: #30b8bf;
-  --accent-hover: #2aa6ac;
-  --accent-soft: rgba(48, 184, 191, 0.14);
-  --accent-fg: #ffffff;
+  --accent: #3bd9d9;
+  --accent-hover: #5fe0e0;
+  --accent-soft: rgba(59, 217, 217, 0.16);
+  --accent-fg: #000000;
 
-  /* brand-* (TabStrip text-brand, shared primitives) → teal */
-  --brand: 183 60% 47%;
-  --brand-hover: 183 60% 42%;
-  --brand-fg: 0 0% 100%;
-  --brand-subtle: 200 30% 14%;
+  /* brand-* (TabStrip text-brand, shared primitives) → cyan; black on fills */
+  --brand: 180 68% 54%;
+  --brand-hover: 180 62% 63%;
+  --brand-fg: 0 0% 0%;
+  --brand-subtle: 185 40% 13%;
 
   /* shadcn semantic tokens (in-tree Input, Select trigger, Checkbox, Table,
      Button) → near-black + teal. NOTE: portaled content (Dialog/Select
@@ -1384,15 +1457,15 @@
   --card-foreground: 0 0% 100%;
   --popover: 218 31% 16%;
   --popover-foreground: 0 0% 100%;
-  --primary: 183 60% 47%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 180 68% 54%;
+  --primary-foreground: 0 0% 0%;
   --secondary: 218 30% 11%;
   --secondary-foreground: 219 15% 70%;
   --muted: 218 30% 11%;
   --muted-foreground: 217 10% 58%;
   --border: 218 31% 16%;
   --input: 218 31% 16%;
-  --ring: 183 60% 47%;
+  --ring: 180 68% 54%;
 }
 
 /* Utility shortcuts for the template look — keeps the JSX legible */
@@ -1556,7 +1629,7 @@ main::-webkit-scrollbar-thumb:hover {
   background: #243049;
 }
 [data-admin-skin="sf"] main::-webkit-scrollbar-thumb:hover {
-  background: #30b8bf;
+  background: #3bd9d9;
 }
 
 /* Smooth focus outline on buttons and inputs — scoped to the admin shell.

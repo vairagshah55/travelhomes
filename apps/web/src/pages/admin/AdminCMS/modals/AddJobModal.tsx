@@ -58,16 +58,12 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">
-                Job Title
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-sm">Job Title</label>
               <input
                 type="text"
                 placeholder="Type Here"
                 value={formData.jobTitle}
-                onChange={(e) =>
-                  setFormData({ ...formData, jobTitle: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
                 className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
                 required
               />
@@ -99,14 +95,10 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">
-                Job Type
-              </label>
+              <label className="text-dashboard-title font-plus-jakarta text-sm">Job Type</label>
               <select
                 value={formData.jobType}
-                onChange={(e) =>
-                  setFormData({ ...formData, jobType: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
                 className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary appearance-none bg-white"
                 required
               >
@@ -125,9 +117,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
             <textarea
               placeholder="Type Here"
               value={formData.jobDescription}
-              onChange={(e) =>
-                setFormData({ ...formData, jobDescription: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
               rows={6}
               className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary resize-none"
               required
@@ -137,7 +127,7 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
           <div className="flex justify-end pt-4 border-t border-gray-200">
             <button
               type="submit"
-              className="px-8 py-3 bg-dashboard-primary text-white rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
+              className="px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
             >
               {initialData ? "Update Job" : "Add Job"}
             </button>

@@ -52,7 +52,9 @@ const Notifications = () => {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   // Confirm state: tracks which action is pending
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; bulk: false } | { bulk: true } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<
+    { id: string; bulk: false } | { bulk: true } | null
+  >(null);
 
   // ── Queries ──────────────────────────────────────────────────────────────
 
@@ -67,8 +69,7 @@ const Notifications = () => {
 
   const notifications: Notification[] = data ?? [];
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ["admin", "notifications"] });
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "notifications"] });
 
   // ── Mutations ─────────────────────────────────────────────────────────────
 
@@ -76,7 +77,7 @@ const Notifications = () => {
     mutationFn: (id: string) => notificationsService.markRead(id),
     onSuccess: (_d, id) => {
       queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
-        prev ? prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)) : prev
+        prev ? prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)) : prev,
       );
     },
   });
@@ -85,7 +86,7 @@ const Notifications = () => {
     mutationFn: () => notificationsService.markAllRead(),
     onSuccess: () => {
       queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
-        prev ? prev.map((n) => ({ ...n, isRead: true })) : prev
+        prev ? prev.map((n) => ({ ...n, isRead: true })) : prev,
       );
     },
     onError: () => toast.error("Failed to mark all as read."),
@@ -95,7 +96,7 @@ const Notifications = () => {
     mutationFn: (id: string) => notificationsService.remove(id),
     onSuccess: (_d, id) => {
       queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
-        prev ? prev.filter((n) => n._id !== id) : prev
+        prev ? prev.filter((n) => n._id !== id) : prev,
       );
       setSelectedIds((prev) => prev.filter((item) => item !== id));
       // Close detail modal only after a successful delete
@@ -108,11 +109,10 @@ const Notifications = () => {
   });
 
   const bulkDeleteMutation = useMutation({
-    mutationFn: (ids: string[]) =>
-      api.post("/admin/notifications/bulk-delete", { ids }),
+    mutationFn: (ids: string[]) => api.post("/admin/notifications/bulk-delete", { ids }),
     onSuccess: () => {
       queryClient.setQueryData<Notification[]>(QUERY_KEY(activeFilter), (prev) =>
-        prev ? prev.filter((n) => !selectedIds.includes(n._id)) : prev
+        prev ? prev.filter((n) => !selectedIds.includes(n._id)) : prev,
       );
       setSelectedIds([]);
     },
@@ -152,7 +152,7 @@ const Notifications = () => {
   const handleToggleSelect = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -196,8 +196,7 @@ const Notifications = () => {
     ? "These notifications will be permanently removed."
     : "This notification will be permanently removed.";
 
-  const isConfirmLoading =
-    deleteMutation.isPending || bulkDeleteMutation.isPending;
+  const isConfirmLoading = deleteMutation.isPending || bulkDeleteMutation.isPending;
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -212,7 +211,7 @@ const Notifications = () => {
                 onClick={() => setActiveFilter("all")}
                 className={`px-5 py-2 rounded-full text-sm font-bold font-geist transition-colors ${
                   activeFilter === "all"
-                    ? "bg-dashboard-primary dark:text-black text-white"
+                    ? "bg-dashboard-primary dark:text-black text-black"
                     : "text-dashboard-heading hover:text-dashboard-primary"
                 }`}
               >
@@ -222,7 +221,7 @@ const Notifications = () => {
                 onClick={() => setActiveFilter("unread")}
                 className={`px-4 py-2 rounded-full text-sm font-geist transition-colors ${
                   activeFilter === "unread"
-                    ? "bg-dashboard-primary dark:text-black text-white"
+                    ? "bg-dashboard-primary dark:text-black text-black"
                     : "text-dashboard-heading hover:text-dashboard-primary"
                 }`}
               >
@@ -270,7 +269,7 @@ const Notifications = () => {
                       onClick={(e) => handleToggleSelect(notification._id, e)}
                       className={`w-5 h-5 rounded border flex items-center justify-center mt-2 flex-shrink-0 transition-colors ${
                         selectedIds.includes(notification._id)
-                          ? "bg-dashboard-primary border-dashboard-primary text-white"
+                          ? "bg-dashboard-primary border-dashboard-primary text-black"
                           : "border-gray-300 bg-white"
                       }`}
                     >
@@ -410,7 +409,7 @@ const Notifications = () => {
                   setShowDetailModal(false);
                   setSelectedNotification(null);
                 }}
-                className="px-8 py-2.5 rounded-full text-sm font-bold bg-dashboard-primary text-white hover:opacity-90 transition-opacity shadow-lg shadow-dashboard-primary/20"
+                className="px-8 py-2.5 rounded-full text-sm font-bold bg-dashboard-primary text-black hover:opacity-90 transition-opacity shadow-lg shadow-dashboard-primary/20"
               >
                 Close
               </button>
