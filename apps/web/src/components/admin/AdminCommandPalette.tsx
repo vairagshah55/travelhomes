@@ -19,6 +19,7 @@ import {
   Sun,
   User,
   Users2,
+  type LucideIcon,
 } from "lucide-react";
 
 import {
@@ -37,6 +38,23 @@ import { useAuth } from "@/contexts/AdminAuthContext";
 interface AdminCommandPaletteProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+/**
+ * Color-coded icon chip — a soft, category-tinted tile with the icon in that
+ * same hue. Because the palette renders in a portal where the `--tpl-*` icon
+ * tokens don't resolve, the svg's color computes to `inherit`, so it picks up
+ * this tile's inline color.
+ */
+function PIcon({ icon: Icon, color }: { icon: LucideIcon; color: string }) {
+  return (
+    <span
+      className="grid place-items-center size-8 rounded-lg shrink-0"
+      style={{ color, backgroundColor: `${color}1a` }}
+    >
+      <Icon />
+    </span>
+  );
 }
 
 /**
@@ -83,25 +101,25 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         <CommandGroup heading="Navigate">
           <CommandItem onSelect={() => go("/admin/dashboard")}>
-            <LayoutDashboard /> <span>Dashboard</span>
+            <PIcon icon={LayoutDashboard} color="#0891B2" /> <span>Dashboard</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/management/listing")}>
-            <Layers /> <span>Management · Listings</span>
+            <PIcon icon={Layers} color="#7C3AED" /> <span>Management · Listings</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/management/user")}>
-            <Users2 /> <span>Management · Users</span>
+            <PIcon icon={Users2} color="#7C3AED" /> <span>Management · Users</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/management/vendor")}>
-            <Users2 /> <span>Management · Vendors</span>
+            <PIcon icon={Users2} color="#7C3AED" /> <span>Management · Vendors</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/management/booking")}>
-            <Layers /> <span>Management · Bookings</span>
+            <PIcon icon={Layers} color="#7C3AED" /> <span>Management · Bookings</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/payments")}>
-            <CreditCard /> <span>Payments</span>
+            <PIcon icon={CreditCard} color="#2563EB" /> <span>Payments</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/help-desk")}>
-            <LifeBuoy /> <span>Help Desk</span>
+            <PIcon icon={LifeBuoy} color="#16A34A" /> <span>Help Desk</span>
           </CommandItem>
         </CommandGroup>
 
@@ -109,13 +127,13 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         <CommandGroup heading="Insights">
           <CommandItem onSelect={() => go("/admin/analytics")}>
-            <BarChart3 /> <span>Analytics · Overview</span>
+            <PIcon icon={BarChart3} color="#DB2777" /> <span>Analytics · Overview</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/analytics/report")}>
-            <BarChart3 /> <span>Analytics · Reports</span>
+            <PIcon icon={BarChart3} color="#DB2777" /> <span>Analytics · Reports</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/marketing")}>
-            <Megaphone /> <span>Marketing</span>
+            <PIcon icon={Megaphone} color="#D97706" /> <span>Marketing</span>
           </CommandItem>
         </CommandGroup>
 
@@ -123,22 +141,22 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         <CommandGroup heading="Workspace">
           <CommandItem onSelect={() => go("/admin/cms")}>
-            <FileText /> <span>CMS</span>
+            <PIcon icon={FileText} color="#0D9488" /> <span>CMS</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/crm")}>
-            <Bell /> <span>CRM</span>
+            <PIcon icon={Bell} color="#0284C7" /> <span>CRM</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/plugins")}>
-            <Box /> <span>Plugins</span>
+            <PIcon icon={Box} color="#7C3AED" /> <span>Plugins</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/staff")}>
-            <Users2 /> <span>Staff · All</span>
+            <PIcon icon={Users2} color="#059669" /> <span>Staff · All</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/staff/roles")}>
-            <Users2 /> <span>Staff · Roles</span>
+            <PIcon icon={Users2} color="#059669" /> <span>Staff · Roles</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/global-settings")}>
-            <Settings /> <span>Settings</span>
+            <PIcon icon={Settings} color="#475569" /> <span>Settings</span>
           </CommandItem>
         </CommandGroup>
 
@@ -146,13 +164,13 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         <CommandGroup heading="Account">
           <CommandItem onSelect={() => go("/admin/profile")}>
-            <User /> <span>Profile</span>
+            <PIcon icon={User} color="#475569" /> <span>Profile</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/notifications")}>
-            <Bell /> <span>Notifications</span>
+            <PIcon icon={Bell} color="#D97706" /> <span>Notifications</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/help")}>
-            <HelpCircle /> <span>Help &amp; support</span>
+            <PIcon icon={HelpCircle} color="#0284C7" /> <span>Help &amp; support</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -160,10 +178,10 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               window.open("/", "_blank", "noopener,noreferrer");
             }}
           >
-            <ExternalLink /> <span>Open public site</span>
+            <PIcon icon={ExternalLink} color="#64748B" /> <span>Open public site</span>
           </CommandItem>
           <CommandItem onSelect={handleLogout}>
-            <LogOut /> <span>Sign out</span>
+            <PIcon icon={LogOut} color="#DC2626" /> <span>Sign out</span>
           </CommandItem>
         </CommandGroup>
 
@@ -176,7 +194,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <Sun /> <span>Light mode</span>
+            <PIcon icon={Sun} color="#D97706" /> <span>Light mode</span>
             <CommandShortcut>L</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -185,7 +203,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <Moon /> <span>Dark mode</span>
+            <PIcon icon={Moon} color="#4F46E5" /> <span>Dark mode</span>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -194,7 +212,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <Monitor /> <span>System theme</span>
+            <PIcon icon={Monitor} color="#64748B" /> <span>System theme</span>
             <CommandShortcut>S</CommandShortcut>
           </CommandItem>
         </CommandGroup>

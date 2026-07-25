@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
+import AdminPageTitle from "./AdminPageTitle";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 
 interface AdminLayoutProps {
@@ -43,12 +44,7 @@ export default function AdminLayout({
       />
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <AdminHeader
-          title={title}
-          subtitle={subtitle}
-          actions={headerActions}
-          onOpenMobileSidebar={() => setShowMobileSidebar(true)}
-        />
+        <AdminHeader title={title} onOpenMobileSidebar={() => setShowMobileSidebar(true)} />
 
         <motion.main
           key={title}
@@ -58,6 +54,7 @@ export default function AdminLayout({
           className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
         >
           <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 md:pb-8">
+            <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} />
             {children}
           </div>
         </motion.main>

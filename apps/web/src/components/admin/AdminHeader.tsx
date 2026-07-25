@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   ChevronUp,
   HelpCircle,
-  LayoutDashboard,
   LogOut,
   Menu,
   Search,
@@ -35,58 +34,12 @@ import { useNotificationCount } from "@/hooks/admin/useNotifications";
  * sits above the title for nested pages so users keep their bearings.
  */
 
-const ROUTE_LABELS: Record<string, string> = {
-  admin: "Admin",
-  dashboard: "Dashboard",
-  management: "Management",
-  listing: "Listings",
-  user: "Users",
-  vendor: "Vendors",
-  booking: "Bookings",
-  payments: "Payments",
-  "help-desk": "Help Desk",
-  analytics: "Analytics",
-  report: "Reports",
-  marketing: "Marketing",
-  cms: "CMS",
-  crm: "CRM",
-  plugins: "Plugins",
-  staff: "Staff",
-  roles: "Roles",
-  permissions: "Permissions",
-  "global-settings": "Settings",
-  notifications: "Notifications",
-  profile: "Profile",
-  help: "Help",
-};
-
-const isId = (s: string) =>
-  /^[a-f0-9]{24}$/i.test(s) || /^[0-9a-fA-F-]{36}$/.test(s) || /^\d+$/.test(s);
-
-function useBreadcrumbs() {
-  const location = useLocation();
-  const segments = location.pathname.split("/").filter(Boolean);
-  const trail = segments[0] === "admin" ? segments.slice(1) : segments;
-  return trail.map((seg, i) => ({
-    label: isId(seg) ? "Details" : (ROUTE_LABELS[seg] ?? seg),
-    href: "/admin/" + trail.slice(0, i + 1).join("/"),
-    isLast: i === trail.length - 1,
-  }));
-}
-
 interface AdminHeaderProps {
   title: string;
-  subtitle?: string;
-  actions?: React.ReactNode;
   onOpenMobileSidebar?: () => void;
 }
 
-export default function AdminHeader({
-  title,
-  subtitle,
-  actions,
-  onOpenMobileSidebar,
-}: AdminHeaderProps) {
+export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderProps) {
   const navigate = useNavigate();
   const { data: unreadCount = 0 } = useNotificationCount();
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -100,16 +53,14 @@ export default function AdminHeader({
     };
   }, [title]);
 
-  const crumbs = useBreadcrumbs();
-  const isNested = crumbs.length > 1;
-
   return (
     <header
       data-admin-skin="navy"
       className="dark sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 py-4 md:py-5 bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0 shadow-tpl-1"
     >
-      {/* Left — mobile menu + page title block. min-w-0 lets the title
-          truncate gracefully when the right cluster needs room. */}
+      {/* Left — mobile menu button only. The page title now lives in the
+          content area (AdminPageTitle); the empty flex-1 balances the right
+          cluster so the search stays centered. */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <button
           onClick={onOpenMobileSidebar}
@@ -119,53 +70,6 @@ export default function AdminHeader({
           <Menu size={20} />
           <span className="sr-only">Toggle Sidebar</span>
         </button>
-
-        <div className="min-w-0 flex flex-col justify-center">
-          {isNested && (
-            <nav
-              aria-label="Breadcrumb"
-              className="hidden md:flex items-center mb-1 text-[12px] font-medium text-tpl-dark-5 dark:text-tpl-dark-6"
-            >
-              <Link
-                to="/admin/dashboard"
-                className="flex items-center justify-center w-5 h-5 rounded text-tpl-dark-5 dark:text-tpl-dark-6 hover:text-tpl-primary transition-colors"
-                aria-label="Admin dashboard"
-              >
-                <LayoutDashboard size={13} strokeWidth={1.75} />
-              </Link>
-              {crumbs.slice(0, -1).map((crumb) => (
-                <React.Fragment key={crumb.href}>
-                  <span className="mx-1 text-tpl-dark-6 select-none">/</span>
-                  <Link
-                    to={crumb.href}
-                    className="px-1 rounded hover:text-tpl-primary transition-colors truncate max-w-[140px]"
-                  >
-                    {crumb.label}
-                  </Link>
-                </React.Fragment>
-              ))}
-            </nav>
-          )}
-
-          <AnimatePresence mode="wait">
-            <motion.h1
-              key={title}
-              initial={{ opacity: 0, x: -4 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -4 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
-              className="text-[28px] font-bold text-tpl-dark dark:text-white tracking-tight leading-tight mb-0.5 truncate"
-            >
-              {title}
-            </motion.h1>
-          </AnimatePresence>
-
-          {subtitle && (
-            <p className="text-[14px] text-tpl-dark-5 dark:text-tpl-dark-6 truncate leading-tight font-medium">
-              {subtitle}
-            </p>
-          )}
-        </div>
       </div>
 
       {/* Center — search, truly centered between the flex-1 title (left) and
@@ -197,8 +101,6 @@ export default function AdminHeader({
 
       {/* Right — notifications + account, pinned to the right edge. */}
       <div className="flex items-center gap-2 md:gap-3 shrink-0 flex-1 justify-end">
-        {actions && <div className="hidden md:flex items-center mr-1">{actions}</div>}
-
         {/* Notifications — circular button with red ping dot */}
         <motion.button
           whileTap={{ scale: 0.94 }}

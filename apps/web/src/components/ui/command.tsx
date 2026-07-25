@@ -74,11 +74,7 @@ const CommandEmpty = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Empty>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >((props, ref) => (
-  <CommandPrimitive.Empty
-    ref={ref}
-    className="py-6 text-center text-sm"
-    {...props}
-  />
+  <CommandPrimitive.Empty ref={ref} className="py-6 text-center text-sm" {...props} />
 ));
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName;
@@ -118,7 +114,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-3 rounded-md px-3 py-2 text-[14px] text-tpl-dark dark:text-white outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:bg-tpl-primary-soft data-[selected=true]:text-tpl-primary data-[selected=true]:[&_svg]:text-tpl-primary data-[disabled=true]:opacity-50",
+      "relative flex cursor-pointer select-none items-center gap-3 rounded-md px-3 py-2 text-[14px] text-gray-800 outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-[#0F5C8A]/[0.07] data-[selected=true]:text-gray-900 data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}
@@ -127,16 +123,10 @@ const CommandItem = React.forwardRef<
 
 CommandItem.displayName = CommandPrimitive.Item.displayName;
 
-const CommandShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
-      className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
-        className,
-      )}
+      className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}
       {...props}
     />
   );

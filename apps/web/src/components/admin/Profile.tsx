@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/admin/ThemeToggle";
 import ProfileDropdown from "@/components/admin/ProfileDropdown";
 import AdminHeader from "./AdminHeader";
+import AdminPageTitle from "./AdminPageTitle";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
@@ -101,8 +102,12 @@ const Profile = () => {
         {/* Top Header */}
         <AdminHeader title="Profile" onOpenMobileSidebar={() => setMobileOpen(true)} />
 
+        <div className="px-2 lg:px-5 pt-4 lg:pt-5">
+          <AdminPageTitle title="Profile" />
+        </div>
+
         {/* Profile Content */}
-        <main className="flex-1 p-4 lg:p-5 dark:bg-black dark:text-white bg-white m-2 lg:m-5 rounded-2xl lg:rounded-3xl overflow-auto">
+        <main className="flex-1 p-4 lg:p-5 dark:bg-black dark:text-white bg-white mx-2 lg:mx-5 mb-2 lg:mb-5 rounded-2xl lg:rounded-3xl overflow-auto">
           {/* Profile Tabs Header */}
           <div className="flex items-center justify-between gap-6 border-b border-dashboard-stroke pb-4 mb-5">
             <div className="flex items-center flex-1">

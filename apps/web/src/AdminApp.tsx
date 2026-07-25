@@ -11,6 +11,7 @@ import { AuthProvider } from "@/contexts/AdminAuthContext";
 
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import ManagementOverview from "@/pages/admin/management/ManagementOverview";
 import ManagementListing from "@/pages/admin/management/ManagementListing";
 import UserManagement from "@/pages/admin/management/UserManagement";
 import VendorManagement from "@/pages/admin/management/VendorManagement";
@@ -63,194 +64,203 @@ export const AdminApp = () => (
               second instance here would double-render every admin toast. */}
           <AdminSEOMeta />
           <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<AdminLogin />} />
-              <Route path="/login" element={<AdminLogin />} />
+            {/* Public Routes */}
+            <Route path="/" element={<AdminLogin />} />
+            <Route path="/login" element={<AdminLogin />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/dashboard"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminDashboard />
-                  </AdminProtectedRoute>
-                }
-              />
+            {/* Protected Routes */}
+            <Route
+              path="/dashboard"
+              element={
+                <AdminProtectedRoute>
+                  <AdminDashboard />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/management/listing"
-                element={
-                  <AdminProtectedRoute>
-                    <ManagementListing />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/management"
+              element={
+                <AdminProtectedRoute>
+                  <ManagementOverview />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/management/user"
-                element={
-                  <AdminProtectedRoute>
-                    <UserManagement />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/management/listing"
+              element={
+                <AdminProtectedRoute>
+                  <ManagementListing />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/management/vendor"
-                element={
-                  <AdminProtectedRoute>
-                    <VendorManagement />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/management/user"
+              element={
+                <AdminProtectedRoute>
+                  <UserManagement />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/management/booking"
-                element={
-                  <AdminProtectedRoute>
-                    <BookingManagement />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/management/vendor"
+              element={
+                <AdminProtectedRoute>
+                  <VendorManagement />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/payments"
-                element={
-                  <AdminProtectedRoute>
-                    <PaymentManagement />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/management/booking"
+              element={
+                <AdminProtectedRoute>
+                  <BookingManagement />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/analytics"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminAnalytics />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/payments"
+              element={
+                <AdminProtectedRoute>
+                  <PaymentManagement />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/analytics/report"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminAnalyticsReportPage />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/analytics"
+              element={
+                <AdminProtectedRoute>
+                  <AdminAnalytics />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/help-desk"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminHelpDesk />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/analytics/report"
+              element={
+                <AdminProtectedRoute>
+                  <AdminAnalyticsReportPage />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/plugins"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminPlugins />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/help-desk"
+              element={
+                <AdminProtectedRoute>
+                  <AdminHelpDesk />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/notifications"
-                element={
-                  <AdminProtectedRoute>
-                    <Notifications />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/plugins"
+              element={
+                <AdminProtectedRoute>
+                  <AdminPlugins />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/profile"
-                element={
-                  <AdminProtectedRoute>
-                    <Profile />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/notifications"
+              element={
+                <AdminProtectedRoute>
+                  <Notifications />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/help"
-                element={
-                  <AdminProtectedRoute>
-                    <Help />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/profile"
+              element={
+                <AdminProtectedRoute>
+                  <Profile />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/crm"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminCRM />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/help"
+              element={
+                <AdminProtectedRoute>
+                  <Help />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/global-settings"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminGlobalSettings />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/crm"
+              element={
+                <AdminProtectedRoute>
+                  <AdminCRM />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/cms"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminCMS />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/global-settings"
+              element={
+                <AdminProtectedRoute>
+                  <AdminGlobalSettings />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/staff"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminStaff />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/cms"
+              element={
+                <AdminProtectedRoute>
+                  <AdminCMS />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/staff/roles"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminStaff />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/staff"
+              element={
+                <AdminProtectedRoute>
+                  <AdminStaff />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/staff/permissions"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminStaff />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/staff/roles"
+              element={
+                <AdminProtectedRoute>
+                  <AdminStaff />
+                </AdminProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/marketing"
-                element={
-                  <AdminProtectedRoute>
-                    <AdminMarketing />
-                  </AdminProtectedRoute>
-                }
-              />
+            <Route
+              path="/staff/permissions"
+              element={
+                <AdminProtectedRoute>
+                  <AdminStaff />
+                </AdminProtectedRoute>
+              }
+            />
 
-              {/* Catch All */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Route
+              path="/marketing"
+              element={
+                <AdminProtectedRoute>
+                  <AdminMarketing />
+                </AdminProtectedRoute>
+              }
+            />
+
+            {/* Catch All */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>

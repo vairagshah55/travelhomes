@@ -72,17 +72,7 @@ const SECTIONS: NavSection[] = [
   {
     group: "Manage",
     items: [
-      {
-        icon: Layers,
-        label: "Management",
-        color: "#a855f7",
-        children: [
-          { label: "Listings", path: "/admin/management/listing" },
-          { label: "Users", path: "/admin/management/user" },
-          { label: "Vendors", path: "/admin/management/vendor" },
-          { label: "Bookings", path: "/admin/management/booking" },
-        ],
-      },
+      { icon: Layers, label: "Management", color: "#a855f7", path: "/admin/management" },
       { icon: CreditCard, label: "Payments", color: "#3b82f6", path: "/admin/payments" },
       { icon: LifeBuoy, label: "Help Desk", color: "#22c55e", path: "/admin/help-desk" },
     ],
