@@ -151,14 +151,6 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
 
       {/* ── Right ── */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Switch to User */}
-        <button
-          onClick={handleSwitchToUser}
-          className="hidden sm:flex items-center gap-1.5 rounded-full px-4 h-9 text-sm font-semibold bg-app-accent text-app-accent-fg hover:bg-app-accent-hover transition-all duration-200 shadow-sm hover:shadow-md"
-        >
-          Switch to User
-        </button>
-
         {/* Theme toggle */}
         <ThemeToggle />
 

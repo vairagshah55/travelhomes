@@ -871,25 +871,12 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      "bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                    }`}
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
                     List your offering
                   </button>
-                  {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
-                    <button
-                      className="max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold bg-ds-deep text-white hover:bg-ds-navy shadow-sm hover:shadow-md transition-all duration-200 ease-out"
-                      onClick={() => {
-                        updateUserType("vendor");
-                        navigate("/dashboard");
-                      }}
-                    >
-                      Switch to Vendor
-                    </button>
-                  )}
                   <UserDropdown
                     onSwitchToVendor={() => {
                       updateUserType("vendor");
@@ -904,9 +891,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${
-                      "bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"
-                    }`}
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
