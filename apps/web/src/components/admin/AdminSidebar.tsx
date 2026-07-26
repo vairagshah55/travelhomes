@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -157,11 +157,11 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
         <button className="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-[var(--glass-bg-hover)]">
           <div className="relative shrink-0">
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-[#0a2b40] text-white text-[13px] font-bold">
+              <AvatarFallback className="bg-[#0a0a0a] text-white text-[13px] font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-tpl-green-light rounded-full ring-2 ring-white dark:ring-tpl-dark-2" />
+            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-[#3bd9d9] rounded-full ring-2 ring-white" />
           </div>
 
           <div className={`flex-1 min-w-0 flex items-center ${reveal(collapsed)}`}>
@@ -247,36 +247,46 @@ function NavRow({
     <button
       onClick={handleClick}
       title={item.label}
-      className={`group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium transition-colors duration-200 ${
-        isActive
-          ? "bg-white text-[#0a2b40] shadow-[0_6px_16px_-6px_rgba(10,43,64,0.35)] ring-1 ring-black/[0.04]"
-          : "text-[#0a2b40] hover:bg-[#0a2b40]/[0.08] hover:text-[#0a2b40]"
-      }`}
+      className="group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium text-[#0a0a0a] cursor-pointer transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#0a0a0a]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3bd9d9]"
     >
-      {/* Active indicator — navy bar on the pill's left edge (reads on teal). */}
+      {/* Sliding active pill — a single shared element animates between rows
+          (framer layoutId). White pill on the teal rail = the selection. */}
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#0a2b40]" />
+        <motion.span
+          layoutId="adminNavActivePill"
+          className="absolute inset-0 rounded-xl bg-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.05]"
+          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+        />
+      )}
+      {/* Hover wash for inactive rows */}
+      {!isActive && (
+        <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[#0a0a0a]/[0.06] transition-colors duration-200" />
       )}
 
-      {/* Monochrome icon chip. Active = solid navy tile with a white icon
-          (pops as "selected" on the teal rail); inactive = muted navy-glass
-          tile. Fixed position so it never shifts between collapsed/expanded. */}
+      {/* Icon tile — inverts on active (black tile + white glyph). Fixed
+          position so it never shifts between collapsed/expanded. */}
       <span
-        className={`grid place-items-center w-9 h-9 rounded-xl shrink-0 transition-colors ${
+        className={`relative z-10 grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-colors duration-200 ${
           isActive
-            ? "bg-[#0a2b40] text-white shadow-[0_2px_6px_rgba(10,43,64,0.35)]"
-            : "bg-[#0a2b40]/[0.12] text-[#0a2b40] group-hover:bg-[#0a2b40]/[0.18] group-hover:text-[#0a2b40]"
+            ? "bg-[#0a0a0a] text-white"
+            : "bg-[#0a0a0a]/[0.08] text-[#0a0a0a] group-hover:bg-[#0a0a0a]/[0.14]"
         }`}
       >
-        <item.icon size={19} strokeWidth={isActive ? 2 : 1.7} />
+        <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
       </span>
 
-      <span className={`flex-1 truncate ${reveal(collapsed)}`}>{item.label}</span>
+      <span
+        className={`relative z-10 flex-1 truncate transition-transform duration-200 ${
+          !isActive ? "group-hover:translate-x-0.5" : ""
+        } ${reveal(collapsed)}`}
+      >
+        {item.label}
+      </span>
       {hasChildren && (
         <motion.span
           animate={{ rotate: expanded ? 0 : -180 }}
           transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-          className={`shrink-0 text-current opacity-70 ${reveal(collapsed)}`}
+          className={`relative z-10 shrink-0 text-current opacity-70 ${reveal(collapsed)}`}
         >
           <ChevronDown size={14} />
         </motion.span>
@@ -421,7 +431,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   };
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       {/* ── Mobile drawer via shadcn Sheet ──────────────────────────── */}
       <Sheet open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
         <SheetContent
@@ -472,8 +482,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               !railOpen,
             )}`}
           >
-            <span className="text-[#0a2b40] dark:text-[#0a2b40]">Travel</span>
-            <span className="text-[#0a2b40]/80 dark:text-[#0a2b40]/80">Homes</span>
+            <span className="text-[#0a0a0a] dark:text-[#0a0a0a]">Travel</span>
+            <span className="text-[#0a0a0a]/80 dark:text-[#0a0a0a]/80">Homes</span>
           </span>
         </button>
 
@@ -505,7 +515,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           </button>
         </div>
       </aside>
-    </>
+    </MotionConfig>
   );
 };
 

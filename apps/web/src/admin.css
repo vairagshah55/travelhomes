@@ -1323,35 +1323,30 @@
   --tpl-body-bg: #3bd9d9;
   --tpl-card-bg: #3bd9d9;
   --tpl-dark-2: #3bd9d9; /* dark:bg-tpl-dark-2 → teal surface */
-  --tpl-stroke: rgba(10, 43, 64, 0.14);
-  --tpl-dark: #0a2b40; /* primary text → dark navy ink */
-  --tpl-dark-3: #123a52;
-  --tpl-dark-4: #1c4a66;
-  --tpl-dark-5: rgba(10, 43, 64, 0.72); /* muted text (group labels, roles) */
-  --tpl-dark-6: rgba(10, 43, 64, 0.86); /* secondary text */
-  --tpl-gray-2: rgba(10, 43, 64, 0.06);
-  --tpl-gray-3: rgba(10, 43, 64, 0.1);
-  --tpl-primary: #0a2b40; /* active-nav text + accent bar → navy on teal */
-  --glass-header: rgba(59, 217, 217, 0.85);
-  --glass-bg: rgba(10, 43, 64, 0.05);
-  --glass-bg-hover: rgba(10, 43, 64, 0.09);
-  --teal-glass: rgba(255, 255, 255, 0.6); /* active-nav highlight → white pill */
-  --teal-border: rgba(10, 43, 64, 0.2);
-  --sidebar-primary: 202 80% 24%;
+  --tpl-stroke: rgba(0, 0, 0, 0.12);
+  --tpl-dark: #0a0a0a; /* primary text → black ink */
+  --tpl-dark-3: #171717;
+  --tpl-dark-4: #262626;
+  --tpl-dark-5: rgba(0, 0, 0, 0.55); /* muted text (group labels, roles) */
+  --tpl-dark-6: rgba(0, 0, 0, 0.72); /* secondary text */
+  --tpl-gray-2: rgba(0, 0, 0, 0.05);
+  --tpl-gray-3: rgba(0, 0, 0, 0.09);
+  --tpl-primary: #0a0a0a; /* active-nav text + accent → black on teal */
+  --glass-header: #3bd9d9;
+  --glass-bg: rgba(0, 0, 0, 0.04);
+  --glass-bg-hover: rgba(0, 0, 0, 0.07);
+  --teal-glass: rgba(255, 255, 255, 0.85); /* sub-item active → white pill */
+  --teal-border: rgba(0, 0, 0, 0.14);
+  --sidebar-primary: 0 0% 4%;
 }
 
-/* ── Premium elevation for the teal chrome ───────────────────────────────
-   Anchored on #3bd9d9. The RAIL gets a subtle top→bottom gradient for depth,
-   but the HEADER stays a SOLID #3bd9d9 that matches the rail's TOP colour.
-   (A gradient spans each element's own height, so the short header would
-   deepen far faster than the tall rail and the two would meet in different
-   shades — the seam you saw. Solid header == rail-top → the join is clean.) */
+/* ── Flat #3bd9d9 chrome — clean 3-colour system (teal / black / white) ──
+   A pro minimal surface: no gradient, no dividers. Depth/hierarchy comes from
+   the black↔white element treatment (active pills, icon tiles) and motion,
+   not from the surface. Rail and header are the exact same flat teal, so the
+   header↔sidebar join is seamless with nothing to align. */
 [data-admin-skin="teal"] {
-  background-image: linear-gradient(180deg, #3bd9d9 0%, #2eccce 100%);
-}
-header[data-admin-skin="teal"] {
   background-image: none;
-  background-color: #3bd9d9; /* == rail top → seamless header↔sidebar join */
 }
 
 /* Navy fills carry WHITE text. Force white on the primary/brand/accent FILLS

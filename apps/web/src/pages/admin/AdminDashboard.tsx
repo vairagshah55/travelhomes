@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { motion, MotionConfig } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Users,
@@ -83,7 +84,7 @@ const DashboardChart = ({
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 px-6 pt-6 pb-4">
+    <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 px-6 pt-6 pb-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-18px_rgba(0,0,0,0.22)] hover:border-[var(--teal-border)]">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[18px] font-bold text-tpl-dark dark:text-white">{title}</h3>
         <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">
@@ -108,11 +109,7 @@ const DashboardChart = ({
                     <stop offset="95%" stopColor={color} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="rgba(255,255,255,0.06)"
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -140,11 +137,7 @@ const DashboardChart = ({
               </AreaChart>
             ) : (
               <BarChart data={data} margin={{ top: 8, right: 16, left: -24, bottom: 0 }}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="rgba(255,255,255,0.06)"
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.06)" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
@@ -152,7 +145,7 @@ const DashboardChart = ({
                   tick={{ fontSize: 11, fill: "#9ca3af" }}
                 />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#9ca3af" }} />
-                <Tooltip cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+                <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} />
                 <Bar dataKey={dataKey} fill={color} radius={[4, 4, 0, 0]} />
               </BarChart>
             )}
@@ -164,6 +157,19 @@ const DashboardChart = ({
 };
 
 // ─── Main component ───────────────────────────────────────────────────────────
+// Scroll/entry reveal — fade + rise, staggerable via `delay`. Honors reduced
+// motion through the page-level MotionConfig wrapper.
+const MotionReveal = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 18 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: "-40px" }}
+    transition={{ duration: 0.45, delay, ease: [0.22, 1, 0.36, 1] }}
+  >
+    {children}
+  </motion.div>
+);
+
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -304,216 +310,234 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout title="Dashboard" subtitle="Overview of your TravelHomes business">
-      <div className="space-y-6 md:space-y-7">
-        {/* ── Stat Cards ───────────────────────────────────────────────────── */}
-        <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4 2xl:grid-cols-4 2xl:gap-7">
-          {isLoading
-            ? Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-app-border shadow-tpl-1 p-5 animate-pulse"
-                >
-                  <div className="size-11 rounded-xl bg-tpl-gray-2 dark:bg-white/5" />
-                  <div className="mt-5 space-y-2">
-                    <div className="h-7 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
-                    <div className="h-3 w-24 rounded bg-tpl-gray-2 dark:bg-white/5" />
+      <MotionConfig reducedMotion="user">
+        <div className="space-y-6 md:space-y-7">
+          {/* ── Stat Cards ───────────────────────────────────────────────────── */}
+          <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4 2xl:grid-cols-4 2xl:gap-7">
+            {isLoading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-app-border shadow-tpl-1 p-5 animate-pulse"
+                  >
+                    <div className="size-11 rounded-xl bg-tpl-gray-2 dark:bg-white/5" />
+                    <div className="mt-5 space-y-2">
+                      <div className="h-7 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
+                      <div className="h-3 w-24 rounded bg-tpl-gray-2 dark:bg-white/5" />
+                    </div>
                   </div>
-                </div>
-              ))
-            : statsCards.map((stat, i) => (
-                <AdminStatCard
-                  key={stat.title}
-                  title={stat.title}
-                  value={stat.value}
-                  icon={stat.icon}
-                  iconColor={stat.iconColor}
-                  onClick={() => navigate(stat.navigate)}
-                  delay={i * 0.05}
-                />
-              ))}
-        </div>
-
-        {isError && (
-          <div className="flex items-center justify-between gap-3 rounded-[10px] border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-4">
-            <div className="flex items-center gap-2.5 text-[13px] text-red-700 dark:text-red-400">
-              <AlertCircle size={18} />
-              Couldn’t load the latest dashboard data.
-            </div>
-            <button
-              onClick={() => refetch()}
-              className="rounded-full bg-red-600 hover:bg-red-700 px-4 h-9 text-[13px] font-semibold text-white transition-colors"
-            >
-              Try again
-            </button>
+                ))
+              : statsCards.map((stat, i) => (
+                  <AdminStatCard
+                    key={stat.title}
+                    title={stat.title}
+                    value={stat.value}
+                    icon={stat.icon}
+                    iconColor={stat.iconColor}
+                    onClick={() => navigate(stat.navigate)}
+                    delay={i * 0.05}
+                  />
+                ))}
           </div>
-        )}
 
-        {/* ── Charts ──────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
-          <DashboardChart
-            title="Revenue Generated"
-            data={graphs.revenue}
-            type="area"
-            color="#0F5C8A"
-            dataKey="total"
-            loading={isLoading}
-          />
-          <DashboardChart
-            title="Bookings"
-            data={graphs.bookings}
-            type="area"
-            color="#22AD5C"
-            dataKey="count"
-            loading={isLoading}
-          />
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
-          <DashboardChart
-            title="Active Users"
-            data={graphs.users}
-            type="bar"
-            color="#2660A0"
-            dataKey="count"
-            loading={isLoading}
-          />
-          <DashboardChart
-            title="Active Vendors"
-            data={graphs.vendors}
-            type="bar"
-            color="#F59460"
-            dataKey="count"
-            loading={isLoading}
-          />
-        </div>
-
-        {/* ── Tickets Table — template card style ──────────────────────────── */}
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
-          <div className="px-6 py-5 border-b border-tpl-stroke dark:border-tpl-stroke flex items-center justify-between flex-wrap gap-3">
-            <h3 className="text-[20px] font-bold text-tpl-dark dark:text-white">Tickets Raised</h3>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="relative">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-tpl-dark-5"
-                />
-                <Input
-                  type="search"
-                  placeholder="Search tickets…"
-                  value={ticketSearch}
-                  onChange={(e) => setTicketSearch(e.target.value)}
-                  className="w-52 h-10 text-sm pl-9"
-                />
+          {isError && (
+            <div className="flex items-center justify-between gap-3 rounded-[10px] border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-4">
+              <div className="flex items-center gap-2.5 text-[13px] text-red-700 dark:text-red-400">
+                <AlertCircle size={18} />
+                Couldn’t load the latest dashboard data.
               </div>
-              <Select value={ticketSort} onValueChange={setTicketSort}>
-                <SelectTrigger className="w-40 h-10 text-sm rounded-full border-tpl-stroke bg-tpl-gray-2 dark:bg-white/5">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date-desc">Newest First</SelectItem>
-                  <SelectItem value="date-asc">Oldest First</SelectItem>
-                  <SelectItem value="status">By Status</SelectItem>
-                  <SelectItem value="name">By Name</SelectItem>
-                </SelectContent>
-              </Select>
+              <button
+                onClick={() => refetch()}
+                className="rounded-full bg-red-600 hover:bg-red-700 px-4 h-9 text-[13px] font-semibold text-white transition-colors"
+              >
+                Try again
+              </button>
             </div>
+          )}
+
+          {/* ── Charts ──────────────────────────────────────────────────────── */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
+            <MotionReveal delay={0}>
+              <DashboardChart
+                title="Revenue Generated"
+                data={graphs.revenue}
+                type="area"
+                color="#0F5C8A"
+                dataKey="total"
+                loading={isLoading}
+              />
+            </MotionReveal>
+            <MotionReveal delay={0.08}>
+              <DashboardChart
+                title="Bookings"
+                data={graphs.bookings}
+                type="area"
+                color="#22AD5C"
+                dataKey="count"
+                loading={isLoading}
+              />
+            </MotionReveal>
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 2xl:gap-7">
+            <MotionReveal delay={0}>
+              <DashboardChart
+                title="Active Users"
+                data={graphs.users}
+                type="bar"
+                color="#2660A0"
+                dataKey="count"
+                loading={isLoading}
+              />
+            </MotionReveal>
+            <MotionReveal delay={0.08}>
+              <DashboardChart
+                title="Active Vendors"
+                data={graphs.vendors}
+                type="bar"
+                color="#F59460"
+                dataKey="count"
+                loading={isLoading}
+              />
+            </MotionReveal>
           </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="px-6">Name</TableHead>
-                <TableHead className="hidden md:table-cell">Email</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead className="hidden lg:table-cell">Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right pr-6">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={`sk-${i}`} className="animate-pulse">
-                    {Array.from({ length: 6 }).map((__, j) => (
-                      <TableCell key={j} className={j === 0 ? "px-6" : ""}>
-                        <div
-                          className={`h-3 rounded bg-tpl-gray-2 dark:bg-white/5 ${j === 5 ? "w-8 ml-auto" : j === 0 ? "w-28" : "w-20"}`}
-                        />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : filteredTickets.length === 0 ? (
+          {/* ── Tickets Table — template card style ──────────────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden"
+          >
+            <div className="px-6 py-5 border-b border-tpl-stroke dark:border-tpl-stroke flex items-center justify-between flex-wrap gap-3">
+              <h3 className="text-[20px] font-bold text-tpl-dark dark:text-white">
+                Tickets Raised
+              </h3>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="relative">
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-tpl-dark-5"
+                  />
+                  <Input
+                    type="search"
+                    placeholder="Search tickets…"
+                    value={ticketSearch}
+                    onChange={(e) => setTicketSearch(e.target.value)}
+                    className="w-52 h-10 text-sm pl-9"
+                  />
+                </div>
+                <Select value={ticketSort} onValueChange={setTicketSort}>
+                  <SelectTrigger className="w-40 h-10 text-sm rounded-full border-tpl-stroke bg-tpl-gray-2 dark:bg-white/5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="date-desc">Newest First</SelectItem>
+                    <SelectItem value="date-asc">Oldest First</SelectItem>
+                    <SelectItem value="status">By Status</SelectItem>
+                    <SelectItem value="name">By Name</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-10 text-sm text-tpl-dark-5">
-                    {ticketSearch ? "No tickets match your search." : "No tickets found."}
-                  </TableCell>
+                  <TableHead className="px-6">Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Email</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead className="hidden lg:table-cell">Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right pr-6">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredTickets.map((ticket) => (
-                  <TableRow key={ticket._id}>
-                    <TableCell className="font-medium text-tpl-dark dark:text-white px-6">
-                      {ticket.vendorName}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">{ticket.email}</TableCell>
-                    <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
-                    <TableCell className="hidden lg:table-cell">{ticket.dateDisplay}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={ticket.status} />
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="p-1.5 rounded-md text-tpl-dark-5 hover:text-tpl-primary hover:bg-tpl-primary-soft transition-colors focus:outline-none"
-                            aria-label="Ticket actions"
-                          >
-                            <MoreHorizontal size={16} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTicket(ticket);
-                              setShowHelpDeskPopup(true);
-                            }}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <Eye size={15} /> View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleUpdateStatus(ticket._id, "Read")}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <CheckCircle size={15} className="text-tpl-blue" /> Mark Read
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleUpdateStatus(ticket._id, "Pending")}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <Clock size={15} className="text-tpl-orange" /> Mark Pending
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleUpdateStatus(ticket._id, "Resolved")}
-                            className="gap-2 cursor-pointer"
-                          >
-                            <CheckCircle size={15} className="text-tpl-green" /> Resolve
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setConfirmDelete(ticket._id)}
-                            className="gap-2 cursor-pointer text-tpl-red focus:text-tpl-red focus:bg-tpl-red-soft"
-                          >
-                            <Trash2 size={15} /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={`sk-${i}`} className="animate-pulse">
+                      {Array.from({ length: 6 }).map((__, j) => (
+                        <TableCell key={j} className={j === 0 ? "px-6" : ""}>
+                          <div
+                            className={`h-3 rounded bg-tpl-gray-2 dark:bg-white/5 ${j === 5 ? "w-8 ml-auto" : j === 0 ? "w-28" : "w-20"}`}
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : filteredTickets.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-sm text-tpl-dark-5">
+                      {ticketSearch ? "No tickets match your search." : "No tickets found."}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                ) : (
+                  filteredTickets.map((ticket) => (
+                    <TableRow key={ticket._id}>
+                      <TableCell className="font-medium text-tpl-dark dark:text-white px-6">
+                        {ticket.vendorName}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">{ticket.email}</TableCell>
+                      <TableCell className="max-w-[240px] truncate">{ticket.subject}</TableCell>
+                      <TableCell className="hidden lg:table-cell">{ticket.dateDisplay}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={ticket.status} />
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="p-1.5 rounded-md text-tpl-dark-5 hover:text-tpl-primary hover:bg-tpl-primary-soft transition-colors focus:outline-none"
+                              aria-label="Ticket actions"
+                            >
+                              <MoreHorizontal size={16} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedTicket(ticket);
+                                setShowHelpDeskPopup(true);
+                              }}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <Eye size={15} /> View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(ticket._id, "Read")}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <CheckCircle size={15} className="text-tpl-blue" /> Mark Read
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(ticket._id, "Pending")}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <Clock size={15} className="text-tpl-orange" /> Mark Pending
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateStatus(ticket._id, "Resolved")}
+                              className="gap-2 cursor-pointer"
+                            >
+                              <CheckCircle size={15} className="text-tpl-green" /> Resolve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => setConfirmDelete(ticket._id)}
+                              className="gap-2 cursor-pointer text-tpl-red focus:text-tpl-red focus:bg-tpl-red-soft"
+                            >
+                              <Trash2 size={15} /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </motion.div>
         </div>
-      </div>
+      </MotionConfig>
 
       <HelpDeskPopup
         isOpen={showHelpDeskPopup}
