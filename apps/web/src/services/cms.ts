@@ -197,8 +197,13 @@ export const cmsService = {
     const res = await api.get("/admin/cms/roles");
     return res.data;
   },
+  // The server DTO is strict on `{ name, features }` — sending `roleName`
+  // was rejected with a 422 before it reached the controller.
   createRole: async (payload: { roleName: string; features: string[] }) => {
-    const res = await api.post("/admin/cms/roles", payload);
+    const res = await api.post("/admin/cms/roles", {
+      name: payload.roleName,
+      features: payload.features,
+    });
     return res.data;
   },
   deleteRole: async (id: string) => {

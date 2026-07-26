@@ -14,6 +14,9 @@
  * surface it as an explicit `isAdminContext` argument from the controller
  * so the policy is visible at the call site.
  */
+const fs = require("fs");
+const path = require("path");
+
 const Faq = require("../../models/FAQ");
 const Job = require("../../models/Job");
 const JobApplication = require("../../models/JobApplication");
@@ -26,6 +29,8 @@ const Notification = require("../../models/Notification");
 const logger = require("../../shared/logger");
 const { BadRequestError, ForbiddenError, NotFoundError } = require("../../shared/errors");
 const { sendJobApplicationStatusEmail } = require("../../services/mailer");
+
+const uploadsDir = path.join(process.cwd(), "uploads");
 
 // ─── Jobs ───────────────────────────────────────────────────────────────
 async function listJobs({ active }) {
@@ -119,6 +124,15 @@ async function setApplicationStatus(id, status) {
 async function removeApplication(id) {
   const removed = await JobApplication.findByIdAndDelete(id);
   if (!removed) throw new NotFoundError("Application", id);
+
+  // The CV is only ever reachable through this row, so it would otherwise sit
+  // in /uploads forever. Best-effort, same as CMSMedia.remove.
+  if (removed.cvUrl) {
+    const filePath = path.join(uploadsDir, path.basename(removed.cvUrl));
+    fs.promises.unlink(filePath).catch((err) => {
+      logger.warn({ err, filePath }, "[CMS] orphan CV unlink failed");
+    });
+  }
 }
 
 // ─── FAQ ────────────────────────────────────────────────────────────────

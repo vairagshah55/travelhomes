@@ -198,7 +198,21 @@ const AdminCMS = () => {
           cmsService.getContact().catch(() => null),
           cmsService.listContactMessages().catch(() => []),
         ]);
-        if (infoRes?.data) setContactInfo((prev) => ({ ...prev, ...infoRes.data }));
+        // Pick only the editable fields — spreading the whole document would
+        // echo _id / __v / timestamps straight back on the next save, the same
+        // trap BlogsTab's openEdit avoids.
+        if (infoRes?.data) {
+          const d = infoRes.data;
+          setContactInfo({
+            email: d.email || "",
+            phone: d.phone || "",
+            address: d.address || "",
+            city: d.city || "",
+            state: d.state || "",
+            pincode: d.pincode || "",
+            image: d.image || "",
+          });
+        }
         setContactMessages(messages as ContactMessage[]);
       } catch (e) {
         console.warn("Failed to load contact data", e);

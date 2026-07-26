@@ -440,7 +440,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
       {/* ─── Header ─── */}
       <div
         className={`
-        flex items-center h-[60px] shrink-0 px-3.5
+        flex items-center h-[84px] shrink-0 px-3.5
         shadow-[inset_0_-1px_0_#dce7e5] dark:shadow-[inset_0_-1px_0_#1c1f26]
         ${!isOpen ? "justify-center" : ""}
       `}

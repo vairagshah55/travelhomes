@@ -3,17 +3,8 @@ import { Edit2, Trash2, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import { AddFAQModal } from "../modals";
+import { FAQ_CATEGORIES, sameFaqCategory } from "../faqCategories";
 import type { FAQ } from "../types";
-
-const CATEGORIES = [
-  "Camper Van",
-  "Unique Stay",
-  "Activity",
-  "Guest",
-  "Booking",
-  "Common Questions",
-  "Locations",
-];
 
 /**
  * FAQ admin: category-filtered list with row-level Edit/Delete via portal-style
@@ -92,7 +83,8 @@ export function FAQsTab() {
   };
 
   const activeFAQ = openMenuId ? faqs.find((f) => f.id === openMenuId) : null;
-  const filtered = faqs.filter((faq) => faq.category === selectedCategory);
+  // Case-folded — stored categories are lowercase, these chips are Title Case.
+  const filtered = faqs.filter((faq) => sameFaqCategory(faq.category, selectedCategory));
 
   return (
     <div className="space-y-4">
@@ -100,7 +92,7 @@ export function FAQsTab() {
         <div className="flex items-center max-sm:flex-col justify-between mb-3">
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2 max-sm:gap-0 px-1 py-0.5 border border-gray-200 rounded-full bg-white shadow-sm overflow-x-auto">
-              {CATEGORIES.map((cat) => (
+              {FAQ_CATEGORIES.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}

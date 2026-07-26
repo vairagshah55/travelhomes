@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { X, ChevronDown } from "lucide-react";
+import { FAQ_CATEGORIES, canonicalFaqCategory } from "../faqCategories";
 import type { AddFAQModalProps } from "../types";
 
 export const AddFAQModal: React.FC<AddFAQModalProps> = ({
@@ -17,7 +18,9 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
   useEffect(() => {
     if (initialData) {
       setFormData({
-        category: initialData.category,
+        // Bind the matching label so the <select> resolves — stored categories
+        // are lowercase and would otherwise leave it blank.
+        category: canonicalFaqCategory(initialData.category) || initialData.category || "",
         question: initialData.question,
         answer: initialData.answer,
       });
@@ -25,6 +28,13 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
       setFormData({ category: "", question: "", answer: "" });
     }
   }, [initialData, isOpen]);
+
+  // An off-list stored category (API-created rows) still has to be selectable,
+  // otherwise saving would silently rewrite it to something else.
+  const categoryOptions = useMemo(() => {
+    const stored = formData.category.trim();
+    return stored && !canonicalFaqCategory(stored) ? [...FAQ_CATEGORIES, stored] : FAQ_CATEGORIES;
+  }, [formData.category]);
 
   if (!isOpen) return null;
 
@@ -60,13 +70,11 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
                 required
               >
                 <option value="">Select</option>
-                <option value="Camper Van">Camper Van</option>
-                <option value="Unique Stay">Unique Stay</option>
-                <option value="Activity">Activity</option>
-                <option value="Guest">Guest</option>
-                <option value="Booking">Booking</option>
-                <option value="Common Questions">Common Questions</option>
-                <option value="Locations">Locations</option>
+                {categoryOptions.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
               <ChevronDown
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dashboard-body"
