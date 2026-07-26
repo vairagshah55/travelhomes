@@ -250,8 +250,9 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Admin standard UI font — Inter (self-hosted; see AdminApp.tsx). */
     font-family:
-      "Plus Jakarta Sans",
+      "Inter",
       -apple-system,
       BlinkMacSystemFont,
       "Segoe UI",
@@ -293,9 +294,11 @@
       sans-serif;
   }
 
+  /* Legacy alias kept for the ~existing `font-plus-jakarta` usages. Unified to
+     Inter so every admin sans class resolves to the one standard font. */
   .font-plus-jakarta {
     font-family:
-      "Plus Jakarta Sans",
+      "Inter",
       -apple-system,
       BlinkMacSystemFont,
       "Segoe UI",
@@ -1194,6 +1197,16 @@
    bg-dashboard-primary, text-booking-link, etc.) to the template's palette
    without rewriting every page's JSX. The public site keeps its ocean palette. */
 [data-brand="admin"] {
+  /* ── Standard admin font: unify the th- design-system tokens on Inter ──
+     The public site keeps DM Sans (global.css); this override is admin-only
+     so th-styled headings/body all resolve to the one loaded UI font. */
+  --th-font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --th-font-heading:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --th-font-display:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
   /* Primary CTA → navy #0F5C8A (dark, so fills carry WHITE text). */
   --dashboard-primary: 202 80% 30%; /* #0F5C8A */
   --dashboard-primary-hover: 199 78% 35%; /* #14709F */

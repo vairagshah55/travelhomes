@@ -1,3 +1,12 @@
+// Self-hosted Inter — the admin UI's single standard font (bundled by Vite,
+// so it renders consistently offline instead of falling back to Segoe UI).
+// Loaded here (admin entry) so it stays scoped to the admin bundle.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/800.css";
+
 import "./admin.css";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
