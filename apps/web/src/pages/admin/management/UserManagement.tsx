@@ -30,6 +30,7 @@ import {
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 import { formatDate } from "@/utils/formateTime";
 import { useUsers, type User } from "@/hooks/admin/useUsers";
 import { userSchema, type UserFormValues, USER_STATUS_OPTIONS } from "./userSchema";
@@ -235,82 +236,84 @@ const UserManagement = () => {
 
   return (
     <AdminLayout title="User Management">
-      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
-        <div className="p-5 space-y-5">
-          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <MotionReveal delay={0}>
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+          <div className="p-5 space-y-5">
+            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <AdminToolbar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search users…"
-            sortOptions={isSubscribers ? undefined : SORT_OPTIONS}
-            sortValue={sortBy}
-            onSortChange={isSubscribers ? undefined : setSortBy}
-            selectedCount={selectedIds.length}
-            bulkActions={[
-              { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
-            ]}
-            onClearSelection={() => setSelectedIds([])}
-            primaryAction={
-              isSubscribers ? undefined : (
-                <Button
-                  onClick={() => setFormState({ mode: "add" })}
-                  className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
-                >
-                  <Plus size={16} /> Add User
-                </Button>
-              )
-            }
-          />
-
-          {!isSubscribers && (
-            <AdminFilterBar
-              filters={filterDefs}
-              activeFilters={filters}
-              onApply={setFilters}
-              onClear={() => setFilters({})}
-            />
-          )}
-
-          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-            <AdminDataTable<User>
-              columns={isSubscribers ? subscriberColumns : userColumns}
-              data={paginated}
-              isLoading={query.isLoading}
-              isError={query.isError}
-              errorMessage="Failed to load users."
-              onRetry={() => query.refetch()}
-              hasActiveQuery={hasActiveQuery}
-              emptyIcon={hasActiveQuery ? SearchX : Users2}
-              emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
-              emptyDescription={
-                isSubscribers
-                  ? "Newsletter subscribers will appear here."
-                  : "Users appear here once they register."
+            <AdminToolbar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Search users…"
+              sortOptions={isSubscribers ? undefined : SORT_OPTIONS}
+              sortValue={sortBy}
+              onSortChange={isSubscribers ? undefined : setSortBy}
+              selectedCount={selectedIds.length}
+              bulkActions={[
+                { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
+              ]}
+              onClearSelection={() => setSelectedIds([])}
+              primaryAction={
+                isSubscribers ? undefined : (
+                  <Button
+                    onClick={() => setFormState({ mode: "add" })}
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                  >
+                    <Plus size={16} /> Add User
+                  </Button>
+                )
               }
-              noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
-              noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{
-                label: "Clear filters",
-                onClick: () => {
-                  setSearchTerm("");
-                  setFilters({});
-                },
-              }}
-              selectable={!isSubscribers}
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-              rowActions={isSubscribers ? undefined : rowActions}
-              pagination={{
-                currentPage,
-                totalPages,
-                totalItems: filtered.length,
-                onPageChange: setCurrentPage,
-              }}
             />
+
+            {!isSubscribers && (
+              <AdminFilterBar
+                filters={filterDefs}
+                activeFilters={filters}
+                onApply={setFilters}
+                onClear={() => setFilters({})}
+              />
+            )}
+
+            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+              <AdminDataTable<User>
+                columns={isSubscribers ? subscriberColumns : userColumns}
+                data={paginated}
+                isLoading={query.isLoading}
+                isError={query.isError}
+                errorMessage="Failed to load users."
+                onRetry={() => query.refetch()}
+                hasActiveQuery={hasActiveQuery}
+                emptyIcon={hasActiveQuery ? SearchX : Users2}
+                emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
+                emptyDescription={
+                  isSubscribers
+                    ? "Newsletter subscribers will appear here."
+                    : "Users appear here once they register."
+                }
+                noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
+                noResultsDescription="Try different keywords or remove filters."
+                noResultsAction={{
+                  label: "Clear filters",
+                  onClick: () => {
+                    setSearchTerm("");
+                    setFilters({});
+                  },
+                }}
+                selectable={!isSubscribers}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                rowActions={isSubscribers ? undefined : rowActions}
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalItems: filtered.length,
+                  onPageChange: setCurrentPage,
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </MotionReveal>
 
       <UserDetailsDialog user={detailsUser} onClose={() => setDetailsUser(null)} />
 

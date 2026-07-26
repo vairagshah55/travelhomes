@@ -16,6 +16,7 @@ import {
   Eye,
 } from "lucide-react";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 import { cmsService } from "@/services/cms";
 import { settingsService } from "@/services/api";
 
@@ -623,11 +624,13 @@ const AdminCMS = () => {
   return (
     <AdminLayout title="CMS">
       <div className="flex-1">
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke min-h-[68px] flex items-center px-6 shadow-tpl-1">
-          <h2 className="text-tpl-dark dark:text-white text-[18px] font-bold tracking-tight leading-tight">
-            CMS
-          </h2>
-        </div>
+        <MotionReveal delay={0}>
+          <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke min-h-[68px] flex items-center px-6 shadow-tpl-1">
+            <h2 className="text-tpl-dark dark:text-white text-[18px] font-bold tracking-tight leading-tight">
+              CMS
+            </h2>
+          </div>
+        </MotionReveal>
 
         <div className="bg-white dark:bg-tpl-dark-2 px-6 py-6 rounded-b-[10px] shadow-tpl-1 min-h-[calc(100vh-8rem)]">
           {/* Tabs */}
@@ -648,7 +651,7 @@ const AdminCMS = () => {
           </div>
 
           {/* Content */}
-          {renderTabContent()}
+          <MotionReveal delay={0.06}>{renderTabContent()}</MotionReveal>
         </div>
       </div>
 

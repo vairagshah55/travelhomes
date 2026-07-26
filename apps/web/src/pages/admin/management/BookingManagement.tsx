@@ -6,8 +6,13 @@ import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import {
+  AdminFilterBar,
+  type ActiveFilters,
+  type FilterDefinition,
+} from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useBookings, type Booking } from "@/hooks/admin/useBookings";
 import { formatDate } from "@/utils/formateTime";
 
@@ -95,8 +100,7 @@ const BookingManagement: React.FC = () => {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const hasActiveQuery =
-    !!searchTerm.trim() || Object.keys(filters).length > 0;
+  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
   const handleView = (booking: Booking) => {
     setSelectedBooking(booking);
@@ -131,17 +135,13 @@ const BookingManagement: React.FC = () => {
     {
       key: "clientName",
       header: "Client Name",
-      cell: (b) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.clientName}</span>
-      ),
+      cell: (b) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.clientName}</span>,
     },
     {
       key: "serviceName",
       header: "Service Name",
       hideBelow: "md",
-      cell: (b) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.serviceName}</span>
-      ),
+      cell: (b) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.serviceName}</span>,
     },
     {
       key: "checkIn",
@@ -173,60 +173,62 @@ const BookingManagement: React.FC = () => {
 
   return (
     <AdminLayout title="Booking Management">
-      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
-        <div className="p-5 space-y-5">
-          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <MotionReveal delay={0}>
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+          <div className="p-5 space-y-5">
+            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <AdminToolbar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search bookings…"
-            sortOptions={SORT_OPTIONS}
-            sortValue={sortBy}
-            onSortChange={setSortBy}
-          />
-
-          <AdminFilterBar
-            filters={filterDefs}
-            activeFilters={filters}
-            onApply={setFilters}
-            onClear={() => setFilters({})}
-          />
-
-          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-            <AdminDataTable<Booking>
-              columns={columns}
-              data={paginated}
-              isLoading={query.isLoading}
-              isError={query.isError}
-              errorMessage="Failed to load bookings."
-              onRetry={() => query.refetch()}
-              hasActiveQuery={hasActiveQuery}
-              emptyIcon={hasActiveQuery ? SearchX : CalendarX}
-              emptyTitle="No bookings yet"
-              emptyDescription="Bookings will appear here once guests make reservations."
-              noResultsTitle={
-                searchTerm ? `No results for "${searchTerm}"` : "No matching bookings"
-              }
-              noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{
-                label: "Clear filters",
-                onClick: () => {
-                  setSearchTerm("");
-                  setFilters({});
-                },
-              }}
-              rowActions={rowActions}
-              pagination={{
-                currentPage,
-                totalPages,
-                totalItems: bookings.length,
-                onPageChange: setCurrentPage,
-              }}
+            <AdminToolbar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Search bookings…"
+              sortOptions={SORT_OPTIONS}
+              sortValue={sortBy}
+              onSortChange={setSortBy}
             />
+
+            <AdminFilterBar
+              filters={filterDefs}
+              activeFilters={filters}
+              onApply={setFilters}
+              onClear={() => setFilters({})}
+            />
+
+            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+              <AdminDataTable<Booking>
+                columns={columns}
+                data={paginated}
+                isLoading={query.isLoading}
+                isError={query.isError}
+                errorMessage="Failed to load bookings."
+                onRetry={() => query.refetch()}
+                hasActiveQuery={hasActiveQuery}
+                emptyIcon={hasActiveQuery ? SearchX : CalendarX}
+                emptyTitle="No bookings yet"
+                emptyDescription="Bookings will appear here once guests make reservations."
+                noResultsTitle={
+                  searchTerm ? `No results for "${searchTerm}"` : "No matching bookings"
+                }
+                noResultsDescription="Try different keywords or remove filters."
+                noResultsAction={{
+                  label: "Clear filters",
+                  onClick: () => {
+                    setSearchTerm("");
+                    setFilters({});
+                  },
+                }}
+                rowActions={rowActions}
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalItems: bookings.length,
+                  onPageChange: setCurrentPage,
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </MotionReveal>
 
       {showBookingDetails && selectedBooking && (
         <BookingDetailsPopup

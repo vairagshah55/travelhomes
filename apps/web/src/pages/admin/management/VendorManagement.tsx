@@ -24,6 +24,7 @@ import {
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useVendors, type Vendor } from "@/hooks/admin/useVendors";
 import { vendorSchema, type VendorFormValues } from "./vendorSchema";
 import { vendorService } from "@/services/api";
@@ -254,74 +255,78 @@ const VendorManagement = () => {
 
   return (
     <AdminLayout title="Vendor Management">
-      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
-        <div className="p-5 space-y-5">
-          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <MotionReveal delay={0}>
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+          <div className="p-5 space-y-5">
+            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <AdminToolbar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search vendors…"
-            sortOptions={SORT_OPTIONS}
-            sortValue={sortBy}
-            onSortChange={setSortBy}
-            selectedCount={selectedIds.length}
-            bulkActions={[
-              { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
-            ]}
-            onClearSelection={() => setSelectedIds([])}
-            primaryAction={
-              <Button
-                onClick={() => setShowAddModal(true)}
-                className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
-              >
-                <Plus size={16} /> Add Vendor
-              </Button>
-            }
-          />
-
-          <AdminFilterBar
-            filters={filterDefs}
-            activeFilters={filters}
-            onApply={setFilters}
-            onClear={() => setFilters({})}
-          />
-
-          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-            <AdminDataTable<Vendor>
-              columns={columns}
-              data={paginated}
-              isLoading={query.isLoading}
-              isError={query.isError}
-              errorMessage="Failed to load vendors."
-              onRetry={() => query.refetch()}
-              hasActiveQuery={hasActiveQuery}
-              emptyIcon={hasActiveQuery ? SearchX : Store}
-              emptyTitle="No vendors yet"
-              emptyDescription="Vendors appear here once they register and submit for verification."
-              noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"}
-              noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{
-                label: "Clear filters",
-                onClick: () => {
-                  setSearchTerm("");
-                  setFilters({});
-                },
-              }}
-              selectable
-              selectedIds={selectedIds}
-              onSelectionChange={setSelectedIds}
-              rowActions={rowActions}
-              pagination={{
-                currentPage,
-                totalPages,
-                totalItems: filtered.length,
-                onPageChange: setCurrentPage,
-              }}
+            <AdminToolbar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Search vendors…"
+              sortOptions={SORT_OPTIONS}
+              sortValue={sortBy}
+              onSortChange={setSortBy}
+              selectedCount={selectedIds.length}
+              bulkActions={[
+                { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
+              ]}
+              onClearSelection={() => setSelectedIds([])}
+              primaryAction={
+                <Button
+                  onClick={() => setShowAddModal(true)}
+                  className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                >
+                  <Plus size={16} /> Add Vendor
+                </Button>
+              }
             />
+
+            <AdminFilterBar
+              filters={filterDefs}
+              activeFilters={filters}
+              onApply={setFilters}
+              onClear={() => setFilters({})}
+            />
+
+            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+              <AdminDataTable<Vendor>
+                columns={columns}
+                data={paginated}
+                isLoading={query.isLoading}
+                isError={query.isError}
+                errorMessage="Failed to load vendors."
+                onRetry={() => query.refetch()}
+                hasActiveQuery={hasActiveQuery}
+                emptyIcon={hasActiveQuery ? SearchX : Store}
+                emptyTitle="No vendors yet"
+                emptyDescription="Vendors appear here once they register and submit for verification."
+                noResultsTitle={
+                  searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"
+                }
+                noResultsDescription="Try different keywords or remove filters."
+                noResultsAction={{
+                  label: "Clear filters",
+                  onClick: () => {
+                    setSearchTerm("");
+                    setFilters({});
+                  },
+                }}
+                selectable
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                rowActions={rowActions}
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalItems: filtered.length,
+                  onPageChange: setCurrentPage,
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </MotionReveal>
 
       <VendorDetailsPopup
         isOpen={showVendorDetails}

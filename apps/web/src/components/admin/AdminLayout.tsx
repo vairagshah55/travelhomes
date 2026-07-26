@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, MotionConfig } from "framer-motion";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminPageTitle from "./AdminPageTitle";
@@ -34,33 +34,35 @@ export default function AdminLayout({
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   return (
-    <div
-      data-brand="admin"
-      className="flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
-    >
-      <AdminSidebar
-        showMobileSidebar={showMobileSidebar}
-        setShowMobileSidebar={setShowMobileSidebar}
-      />
+    <MotionConfig reducedMotion="user">
+      <div
+        data-brand="admin"
+        className="flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
+      >
+        <AdminSidebar
+          showMobileSidebar={showMobileSidebar}
+          setShowMobileSidebar={setShowMobileSidebar}
+        />
 
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        <AdminHeader title={title} onOpenMobileSidebar={() => setShowMobileSidebar(true)} />
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+          <AdminHeader title={title} onOpenMobileSidebar={() => setShowMobileSidebar(true)} />
 
-        <motion.main
-          key={title}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
-        >
-          <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 md:pb-8">
-            <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} />
-            {children}
-          </div>
-        </motion.main>
+          <motion.main
+            key={title}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
+          >
+            <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 md:pb-8">
+              <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} />
+              {children}
+            </div>
+          </motion.main>
+        </div>
+
+        <MobileBottomNav />
       </div>
-
-      <MobileBottomNav />
-    </div>
+    </MotionConfig>
   );
 }

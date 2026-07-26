@@ -6,8 +6,13 @@ import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { AdminFilterBar, type ActiveFilters, type FilterDefinition } from "@/components/admin/AdminFilterBar";
+import {
+  AdminFilterBar,
+  type ActiveFilters,
+  type FilterDefinition,
+} from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 import { usePayments, type PaymentData } from "@/hooks/admin/usePayments";
 
 const TABS = [
@@ -113,33 +118,25 @@ const PaymentManagement: React.FC = () => {
     {
       key: "businessName",
       header: "Business Name",
-      cell: (p) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.businessName}</span>
-      ),
+      cell: (p) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.businessName}</span>,
     },
     {
       key: "personName",
       header: "Person Name",
       hideBelow: "md",
-      cell: (p) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.personName}</span>
-      ),
+      cell: (p) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.personName}</span>,
     },
     {
       key: "servicesId",
       header: "Services ID",
       hideBelow: "lg",
-      cell: (p) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.servicesId}</span>
-      ),
+      cell: (p) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.servicesId}</span>,
     },
     {
       key: "servicesNames",
       header: "Services Names",
       hideBelow: "lg",
-      cell: (p) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.servicesNames}</span>
-      ),
+      cell: (p) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{p.servicesNames}</span>,
     },
     {
       key: "status",
@@ -155,64 +152,75 @@ const PaymentManagement: React.FC = () => {
 
   return (
     <AdminLayout title="Payment Management">
-      <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
-        <div className="p-5 space-y-5">
-          <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+      <MotionReveal delay={0}>
+        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+          <div className="p-5 space-y-5">
+            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 
-          <AdminToolbar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search payments…"
-            sortOptions={SORT_OPTIONS}
-            sortValue={sortBy}
-            onSortChange={setSortBy}
-          />
-
-          <AdminFilterBar
-            filters={filterDefs}
-            activeFilters={filters}
-            onApply={setFilters}
-            onClear={() => setFilters({})}
-          />
-
-          <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-            <AdminDataTable<PaymentData>
-              columns={columns}
-              data={paginated}
-              isLoading={query.isLoading}
-              isError={query.isError}
-              errorMessage="Failed to load payments."
-              onRetry={() => query.refetch()}
-              hasActiveQuery={hasActiveQuery}
-              emptyIcon={hasActiveQuery ? SearchX : CreditCard}
-              emptyTitle="No payment records yet"
-              emptyDescription="Payment records appear here once transactions are processed."
-              noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching payments"}
-              noResultsDescription="Try different keywords or remove filters."
-              noResultsAction={{
-                label: "Clear filters",
-                onClick: () => {
-                  setSearchTerm("");
-                  setFilters({});
-                },
-              }}
-              rowActions={rowActions}
-              pagination={{ currentPage, totalPages, totalItems: payments.length, onPageChange: setCurrentPage }}
+            <AdminToolbar
+              searchValue={searchTerm}
+              onSearchChange={setSearchTerm}
+              searchPlaceholder="Search payments…"
+              sortOptions={SORT_OPTIONS}
+              sortValue={sortBy}
+              onSortChange={setSortBy}
             />
+
+            <AdminFilterBar
+              filters={filterDefs}
+              activeFilters={filters}
+              onApply={setFilters}
+              onClear={() => setFilters({})}
+            />
+
+            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
+              <AdminDataTable<PaymentData>
+                columns={columns}
+                data={paginated}
+                isLoading={query.isLoading}
+                isError={query.isError}
+                errorMessage="Failed to load payments."
+                onRetry={() => query.refetch()}
+                hasActiveQuery={hasActiveQuery}
+                emptyIcon={hasActiveQuery ? SearchX : CreditCard}
+                emptyTitle="No payment records yet"
+                emptyDescription="Payment records appear here once transactions are processed."
+                noResultsTitle={
+                  searchTerm ? `No results for "${searchTerm}"` : "No matching payments"
+                }
+                noResultsDescription="Try different keywords or remove filters."
+                noResultsAction={{
+                  label: "Clear filters",
+                  onClick: () => {
+                    setSearchTerm("");
+                    setFilters({});
+                  },
+                }}
+                rowActions={rowActions}
+                pagination={{
+                  currentPage,
+                  totalPages,
+                  totalItems: payments.length,
+                  onPageChange: setCurrentPage,
+                }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </MotionReveal>
 
       <PaymentDetailsPopup
         isOpen={showPaymentDetails}
         onClose={() => setShowPaymentDetails(false)}
-        payment={selectedPayment ?? {
-          paymentId: "",
-          businessName: "",
-          personName: "",
-          servicesId: "",
-          status: "",
-        }}
+        payment={
+          selectedPayment ?? {
+            paymentId: "",
+            businessName: "",
+            personName: "",
+            servicesId: "",
+            status: "",
+          }
+        }
       />
 
       <ConfirmModal

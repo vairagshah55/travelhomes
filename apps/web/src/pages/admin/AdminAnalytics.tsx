@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminAnalyticsOverview from "@/components/admin/AdminAnalyticsOverview";
 import AdminAnalyticsReport from "@/components/admin/AdminAnalyticsReport";
+import { MotionReveal } from "@/components/admin/MotionReveal";
 
 const AdminAnalytics = () => {
   const [activeTab, setActiveTab] = useState<"analytics" | "report">("analytics");
@@ -38,11 +39,15 @@ const AdminAnalytics = () => {
 
         {/* Content — overview cards sit on the page bg; report stays in a card */}
         {activeTab === "analytics" ? (
-          <AdminAnalyticsOverview />
+          <MotionReveal delay={0}>
+            <AdminAnalyticsOverview />
+          </MotionReveal>
         ) : (
-          <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
-            <AdminAnalyticsReport />
-          </div>
+          <MotionReveal delay={0}>
+            <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
+              <AdminAnalyticsReport />
+            </div>
+          </MotionReveal>
         )}
       </div>
     </AdminLayout>
