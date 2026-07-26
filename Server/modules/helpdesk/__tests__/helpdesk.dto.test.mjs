@@ -3,13 +3,35 @@ import dto from "../helpdesk.dto.js";
 
 describe("helpdesk.dto.ticketBody", () => {
   it("rejects a missing subject", () => {
-    expect(() => dto.ticketBody.parse({})).toThrowError();
+    expect(() => dto.ticketBody.parse({ description: "d" })).toThrowError();
+  });
+  it("rejects a missing description", () => {
+    // The model marks description required; dropping it here produced a
+    // mongoose failure instead of a 422.
+    expect(() => dto.ticketBody.parse({ subject: "Help" })).toThrowError();
   });
   it("accepts a minimal valid ticket", () => {
-    expect(dto.ticketBody.parse({ subject: "Help" }).subject).toBe("Help");
+    const parsed = dto.ticketBody.parse({ subject: "Help", description: "It broke" });
+    expect(parsed.subject).toBe("Help");
+    expect(parsed.description).toBe("It broke");
+  });
+  it("keeps the fields the raise-ticket forms send", () => {
+    const parsed = dto.ticketBody.parse({
+      name: "Alex",
+      phoneNumber: "9876543210",
+      email: "alex@example.com",
+      subject: "Help",
+      description: "It broke",
+    });
+    // Regression: these were silently stripped, so tickets lost the phone
+    // number and failed on the required description.
+    expect(parsed.phoneNumber).toBe("9876543210");
+    expect(parsed.description).toBe("It broke");
   });
   it("rejects an out-of-enum status", () => {
-    expect(() => dto.ticketBody.parse({ subject: "x", status: "weird" })).toThrowError();
+    expect(() =>
+      dto.ticketBody.parse({ subject: "x", description: "d", status: "weird" }),
+    ).toThrowError();
   });
 });
 

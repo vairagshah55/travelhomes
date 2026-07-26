@@ -636,12 +636,18 @@ export const vendorPublicApi = {
 };
 
 export const helpDeskApi = {
+  // Field names must match the server whitelist exactly — anything else is
+  // stripped by validation rather than rejected, so a typo loses data silently.
   create: (payload: {
-    name: string;
-    phoneNumber: string;
+    name?: string;
+    phoneNumber?: string;
     subject: string;
-    email: string;
+    email?: string;
     description: string;
+    vendorName?: string;
+    vendorEmail?: string;
+    category?: string;
+    userId?: string;
   }) =>
     request<{ success: boolean; data: any }>("/api/helpdesk", {
       method: "POST",

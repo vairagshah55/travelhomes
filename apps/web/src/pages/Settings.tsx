@@ -154,10 +154,12 @@ const Settings = () => {
         email: ticket.email,
         subject: ticket.subject,
         description: ticket.message,
-        vendorId: user?.id,
+        // `user.id` is the Register/User ObjectId — the model's `vendorId`
+        // refs Vendor, so this belongs in `userId`.
+        userId: user?.id,
         vendorName: user?.firstName ? `${user.firstName} ${user.lastName}` : ticket.name,
         vendorEmail: user?.email || ticket.email,
-      } as any);
+      });
       setShowSuccessModal(true);
       setTicket({
         name: user?.firstName ? `${user.firstName} ${user.lastName}` : "",

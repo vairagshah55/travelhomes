@@ -99,6 +99,15 @@ const Help = () => {
   };
 
   const handleSubmit = async () => {
+    // Subject and description are required server-side; catch it here so the
+    // user gets a pointed message instead of a generic failure toast.
+    if (!formData.subject.trim() || !formData.description.trim()) {
+      toast.error("Please enter a subject and describe your issue.", {
+        duration: 4000,
+        position: "top-right",
+      });
+      return;
+    }
     try {
       await helpDeskApi.create(formData);
       toast.success("Ticket raised successfully!", {

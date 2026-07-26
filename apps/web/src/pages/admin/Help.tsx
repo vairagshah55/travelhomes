@@ -27,23 +27,21 @@ const Help = () => {
       toast.error("Please enter a subject");
       return;
     }
-
-    // Phone is appended to the body since the helpdesk ticket DTO has no
-    // dedicated phone field.
-    const body = [
-      formData.message.trim(),
-      formData.phoneNumber.trim() && `Phone: ${formData.phoneNumber.trim()}`,
-    ]
-      .filter(Boolean)
-      .join("\n\n");
+    // The server requires a description — send the validation error up front
+    // instead of round-tripping for a 422.
+    if (!formData.message.trim()) {
+      toast.error("Please describe the issue");
+      return;
+    }
 
     setSubmitting(true);
     try {
       await helpDeskService.createItem({
         name: formData.name.trim() || undefined,
         email: formData.email.trim() || undefined,
+        phoneNumber: formData.phoneNumber.trim() || undefined,
         subject: formData.subject.trim(),
-        message: body || undefined,
+        description: formData.message.trim(),
         category: "vendor-help",
       });
       toast.success("Ticket submitted");
