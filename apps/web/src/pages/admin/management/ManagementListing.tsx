@@ -28,7 +28,8 @@ import {
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useListings, type Offer } from "@/hooks/admin/useListings";
-import { vendorService } from "@/services/api";
+import { vendorService, offersService } from "@/services/api";
+import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
 
@@ -67,6 +68,7 @@ const ManagementListing = () => {
 
   const [showViewDetails, setShowViewDetails] = useState(false);
   const [viewOffer, setViewOffer] = useState<Offer | null>(null);
+  const [isViewLoading, setIsViewLoading] = useState(false);
 
   // Reject / cancel reason flow
   const [showRejectPopup, setShowRejectPopup] = useState(false);
@@ -213,10 +215,24 @@ const ManagementListing = () => {
     }
   };
 
-  // View details popup
-  const handleView = (offer: Offer) => {
-    setViewOffer(offer);
+  // View details popup — the table rows are summaries that omit most detail
+  // fields, so fetch the FULL listing by id before rendering so every section
+  // (business/personal details, rules, includes/excludes, gallery, capacity…)
+  // is populated.
+  const handleView = async (offer: Offer) => {
+    setViewOffer(offer); // seed with the summary we already have
     setShowViewDetails(true);
+    try {
+      setIsViewLoading(true);
+      const res = await offersService.get(offer._id);
+      const full = res?.data ?? res;
+      if (full) setViewOffer((prev) => ({ ...(prev as Offer), ...full }));
+    } catch (e) {
+      console.error("Failed to load listing details", e);
+      toast.error("Couldn't load the full listing details.");
+    } finally {
+      setIsViewLoading(false);
+    }
   };
 
   // Open ManagementForm for add
@@ -226,27 +242,46 @@ const ManagementListing = () => {
     setShowManagementForm(true);
   };
 
-  // Open ManagementForm for edit — map to ManagementForm's Offer shape.
+  // Open ManagementForm for edit — map the FULL editable field set so nothing
+  // is dropped. (Cast to any: the list row carries every schema field at
+  // runtime even though the summary `Offer` type only enumerates a subset.)
   const handleEdit = (offer: Offer) => {
+    const o = offer as any;
     const formData: FormOffer = {
-      _id: offer._id,
-      name: offer.name || "",
-      category: offer.category || "",
-      regularPrice: offer.regularPrice ?? "",
-      finalPrice: offer.finalPrice ?? "",
-      locality: offer.locality || "",
-      city: offer.city || "",
-      state: offer.state || "",
-      pincode: offer.pincode || "",
-      description: offer.description || "",
-      features: offer.features || "",
-      rules: offer.rules || "",
-      priceIncludes: offer.priceIncludes || "",
-      priceExcludes: offer.priceExcludes || "",
-      seatingCapacity: offer.seatingCapacity ?? "",
-      sleepingCapacity: offer.sleepingCapacity ?? "",
-      timeDuration: offer.timeDuration || "",
-      status: offer.status,
+      _id: o._id,
+      name: o.name || "",
+      category: o.category || "",
+      status: o.status,
+      regularPrice: o.regularPrice ?? "",
+      finalPrice: o.finalPrice ?? o.discountPrice ?? "",
+      description: o.description || "",
+      features: o.features || "",
+      rules: o.rules || "",
+      priceIncludes: o.priceIncludes || "",
+      priceExcludes: o.priceExcludes || "",
+      seatingCapacity: o.seatingCapacity ?? "",
+      sleepingCapacity: o.sleepingCapacity ?? "",
+      guestCapacity: o.guestCapacity ?? "",
+      personCapacity: o.personCapacity ?? "",
+      numberOfBeds: o.numberOfBeds ?? "",
+      numberOfRooms: o.numberOfRooms ?? "",
+      numberOfBathrooms: o.numberOfBathrooms ?? "",
+      stayType: o.stayType || "",
+      timeDuration: o.timeDuration || "",
+      perDayCharge: o.perDayCharge ?? "",
+      perKmCharge: o.perKmCharge ?? "",
+      perDayIncludes: o.perDayIncludes || "",
+      perDayExcludes: o.perDayExcludes || "",
+      perKmIncludes: o.perKmIncludes || "",
+      perKmExcludes: o.perKmExcludes || "",
+      expectations: o.expectations || "",
+      locality: o.locality || "",
+      city: o.city || "",
+      state: o.state || "",
+      pincode: o.pincode || "",
+      address: o.address || "",
+      discounts: o.discounts || {},
+      photos: o.photos || { coverUrl: "", galleryUrls: [] },
     };
     setSelectedOffer(formData);
     setIsEditing(true);
@@ -492,6 +527,7 @@ const ManagementListing = () => {
         isOpen={showViewDetails}
         onClose={() => setShowViewDetails(false)}
         listingData={viewOffer}
+        isLoading={isViewLoading}
         onApprove={
           viewOffer?.status !== "approved"
             ? () => {
