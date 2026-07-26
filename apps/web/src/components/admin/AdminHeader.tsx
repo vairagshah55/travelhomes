@@ -56,7 +56,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
   return (
     <header
       data-admin-skin="teal"
-      className="dark sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 h-[84px] bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0 shadow-tpl-1"
+      className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 h-[84px] bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0 shadow-tpl-1"
     >
       {/* Left — mobile menu button only. The page title now lives in the
           content area (AdminPageTitle); the empty flex-1 balances the right
@@ -64,7 +64,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden rounded-lg border border-tpl-stroke dark:border-tpl-stroke px-1.5 py-1 text-tpl-dark dark:bg-tpl-body-bg dark:text-tpl-dark hover:bg-gray-50 dark:hover:bg-[#0a0a0a]/10 transition-colors shrink-0"
+          className="lg:hidden rounded-lg border border-tpl-stroke px-1.5 py-1 text-tpl-dark hover:bg-gray-100 transition-colors shrink-0"
           aria-label="Open sidebar"
         >
           <Menu size={20} />
@@ -76,16 +76,16 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
           the flex-1 account cluster (right). */}
       <button
         onClick={() => setPaletteOpen(true)}
-        className="group hidden xl:flex items-center gap-2.5 pl-4 pr-2 h-11 rounded-full bg-white text-gray-500 text-[14px] font-medium shadow-[0_2px_10px_rgba(0,0,0,0.10)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.16)] transition-shadow w-[340px] focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#3bd9d9] outline-none shrink-0"
+        className="group hidden xl:flex items-center gap-2.5 pl-4 pr-2 h-11 rounded-full bg-[#f3f4f6] text-[#667085] text-[14px] font-medium border border-[#eceff3] hover:bg-[#eef0f3] hover:border-[#e0e4ea] transition-colors w-[340px] focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white outline-none shrink-0"
         aria-label="Search (⌘K)"
       >
         <Search
           size={18}
           strokeWidth={2}
-          className="text-gray-400 group-hover:text-[#0F5C8A] transition-colors"
+          className="text-[#98a2b3] group-hover:text-[#0d9488] transition-colors"
         />
         <span className="flex-1 text-left">Search…</span>
-        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-gray-100 border border-gray-200 text-gray-500 leading-none">
+        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-white border border-[#e6ebf1] text-[#98a2b3] leading-none">
           ⌘K
         </span>
       </button>
@@ -93,7 +93,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
       {/* Compact search trigger — icon only, below xl. */}
       <button
         onClick={() => setPaletteOpen(true)}
-        className="xl:hidden grid place-items-center size-11 rounded-full border border-[#0a0a0a]/15 bg-[#0a0a0a]/[0.07] hover:bg-[#0a0a0a]/[0.13] text-[#0a0a0a]/80 hover:text-[#0a0a0a] transition-colors shrink-0"
+        className="xl:hidden grid place-items-center size-11 rounded-full border border-[#eceff3] bg-[#f3f4f6] hover:bg-[#eef0f3] text-[#475467] hover:text-[#101828] transition-colors shrink-0"
         aria-label="Search (⌘K)"
       >
         <Search size={18} />
@@ -105,7 +105,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/admin/notifications")}
-          className="relative grid place-items-center size-11 rounded-full border border-[#0a0a0a]/15 bg-[#0a0a0a]/[0.07] hover:bg-[#0a0a0a]/[0.13] text-[#0a0a0a]/80 hover:text-[#0a0a0a] transition-colors"
+          className="relative grid place-items-center size-11 rounded-full border border-[#eceff3] bg-[#f3f4f6] hover:bg-[#eef0f3] text-[#475467] hover:text-[#101828] transition-colors"
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
           <Bell size={18} strokeWidth={1.75} />
@@ -116,9 +116,9 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#0a0a0a] text-white text-[10px] font-bold leading-none ring-2 ring-[#3bd9d9]"
+                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#f23030] text-white text-[10px] font-bold leading-none ring-2 ring-white"
               >
-                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#0a0a0a] opacity-50" />
+                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#f23030] opacity-60" />
                 {unreadCount > 99 ? "99+" : unreadCount}
               </motion.span>
             )}
@@ -158,7 +158,7 @@ function HeaderUserInfo() {
         <span className="sr-only">My Account</span>
         <figure className="flex items-center gap-3">
           <Avatar className="size-11">
-            <AvatarFallback className="bg-[#0a0a0a] text-white text-[13px] font-bold">
+            <AvatarFallback className="bg-[#0d9488] text-white text-[13px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -189,7 +189,7 @@ function HeaderUserInfo() {
         {/* Identity row — solid brand avatar, name, muted email */}
         <div className="flex items-center gap-3 px-4 py-3.5">
           <Avatar className="size-11 shrink-0">
-            <AvatarFallback className="bg-[#0F5C8A] text-white text-[14px] font-bold">
+            <AvatarFallback className="bg-[#0d9488] text-white text-[14px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>

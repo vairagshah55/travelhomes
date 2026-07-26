@@ -66,9 +66,9 @@ export function AdminStatCard({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `${title}: ${displayValue}` : undefined}
-      className={`relative overflow-hidden bg-app-surface rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.4)] border border-app-border p-5 transition-all duration-200 group outline-none ${
+      className={`relative overflow-hidden bg-app-surface rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_6px_20px_-8px_rgba(16,24,40,0.1)] border border-app-border p-5 transition-all duration-200 group outline-none ${
         clickable
-          ? "cursor-pointer hover:border-[var(--teal-border)] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app-surface"
+          ? "cursor-pointer hover:border-[var(--teal-border)] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-14px_rgba(13,148,136,0.3)] focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app-surface"
           : ""
       } ${className}`}
     >

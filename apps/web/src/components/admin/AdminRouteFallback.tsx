@@ -8,7 +8,7 @@ import { Shield } from "lucide-react";
 const AdminRouteFallback = () => (
   <div className="min-h-screen bg-gradient-to-br from-[#F7F8FA] via-white to-[#F7F8FA] flex items-center justify-center">
     <div className="flex flex-col items-center gap-4">
-      <div className="p-4 bg-[#0F5C8A] rounded-full shadow-lg">
+      <div className="p-4 bg-[#0d9488] rounded-full shadow-lg">
         <Shield size={28} className="text-white" />
       </div>
       <div className="w-6 h-6 border-2 border-black/15 border-t-black rounded-full animate-spin" />

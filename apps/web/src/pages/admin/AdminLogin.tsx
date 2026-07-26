@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Eye, EyeOff, ArrowLeft, Shield } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 import { adminAuthService } from "@/services/api";
 
@@ -71,12 +71,10 @@ const AdminLogin = () => {
       <div className="w-full max-w-md">
         {/* Admin Panel Header */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-4 bg-[#0F5C8A] rounded-full shadow-lg">
-              <Shield size={32} className="text-white" />
-            </div>
+          <div className="flex justify-center mb-5">
+            <img src="/th-logo.png" alt="TravelHomes" className="h-20 w-auto object-contain" />
           </div>
-          <h1 className="text-3xl font-bold text-black mb-2">Admin Panel</h1>
+          <h1 className="text-2xl font-bold text-black mb-1">Admin Panel</h1>
           <p className="text-gray-700">Secure administrative access</p>
         </div>
 
@@ -94,7 +92,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0F5C8A] focus:ring-[#0F5C8A]"
+                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0d9488] focus:ring-[#0d9488]"
                   placeholder="Enter admin email"
                   required
                 />
@@ -110,7 +108,7 @@ const AdminLogin = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0F5C8A] focus:ring-[#0F5C8A] pr-12"
+                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0d9488] focus:ring-[#0d9488] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
@@ -132,7 +130,7 @@ const AdminLogin = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#0F5C8A] bg-white border-gray-300 rounded focus:ring-[#0F5C8A]"
+                  className="w-4 h-4 text-[#0d9488] bg-white border-gray-300 rounded focus:ring-[#0d9488]"
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-700">
                   Keep me signed in
@@ -143,7 +141,7 @@ const AdminLogin = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-[#0F5C8A] to-[#14709F] hover:from-[#14709F] hover:to-[#0F5C8A] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#0d9488] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">

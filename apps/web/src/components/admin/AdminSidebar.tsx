@@ -22,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { BrandLogo } from "@/components/BrandLogo";
+import { AdminBrandMark } from "@/components/admin/AdminBrand";
 import LogoWebsite from "@/components/admin/LogoWebsite";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { getInitials } from "@/utils/getInitials";
@@ -157,11 +157,11 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
         <button className="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-[var(--glass-bg-hover)]">
           <div className="relative shrink-0">
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-[#0a0a0a] text-white text-[13px] font-bold">
+              <AvatarFallback className="bg-[#0d9488] text-white text-[13px] font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-[#3bd9d9] rounded-full ring-2 ring-white" />
+            <span className="absolute -bottom-0.5 -right-0.5 block w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-2 ring-white" />
           </div>
 
           <div className={`flex-1 min-w-0 flex items-center ${reveal(collapsed)}`}>
@@ -247,37 +247,44 @@ function NavRow({
     <button
       onClick={handleClick}
       title={item.label}
-      className="group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium text-[#0a0a0a] cursor-pointer transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#0a0a0a]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#3bd9d9]"
+      className="group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium text-[#475467] cursor-pointer transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
     >
       {/* Sliding active pill — a single shared element animates between rows
           (framer layoutId). White pill on the teal rail = the selection. */}
       {isActive && (
         <motion.span
           layoutId="adminNavActivePill"
-          className="absolute inset-0 rounded-xl bg-white shadow-[0_8px_20px_-8px_rgba(0,0,0,0.35)] ring-1 ring-black/[0.05]"
+          className="absolute inset-0 rounded-xl bg-[rgba(13,148,136,0.09)] shadow-[inset_3px_0_0_0_#0d9488]"
           transition={{ type: "spring", stiffness: 520, damping: 42 }}
         />
       )}
       {/* Hover wash for inactive rows */}
       {!isActive && (
-        <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[#0a0a0a]/[0.06] transition-colors duration-200" />
+        <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[rgba(16,24,40,0.04)] transition-colors duration-200" />
       )}
 
       {/* Icon tile — inverts on active (black tile + white glyph). Fixed
           position so it never shifts between collapsed/expanded. */}
       <span
-        className={`relative z-10 grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-colors duration-200 ${
+        className="relative z-10 grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200 group-hover:scale-[1.06]"
+        style={
           isActive
-            ? "bg-[#0a0a0a] text-white"
-            : "bg-[#0a0a0a]/[0.08] text-[#0a0a0a] group-hover:bg-[#0a0a0a]/[0.14]"
-        }`}
+            ? {
+                backgroundColor: "#0d9488",
+                color: "#fff",
+                boxShadow: "0 5px 14px -3px rgba(13,148,136,0.5)",
+              }
+            : { backgroundColor: `${item.color}1f`, color: item.color }
+        }
       >
         <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
       </span>
 
       <span
         className={`relative z-10 flex-1 truncate transition-transform duration-200 ${
-          !isActive ? "group-hover:translate-x-0.5" : ""
+          isActive
+            ? "text-[#0d9488] font-semibold"
+            : "group-hover:translate-x-0.5 group-hover:text-[#101828]"
         } ${reveal(collapsed)}`}
       >
         {item.label}
@@ -437,7 +444,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <SheetContent
           side="left"
           data-admin-skin="teal"
-          className="dark w-[290px] p-0 bg-tpl-card-bg dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke sm:max-w-[290px]"
+          className="w-[290px] p-0 bg-tpl-card-bg border-r border-tpl-stroke sm:max-w-[290px]"
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
           <div className="group flex flex-col h-full py-6 px-4">
@@ -466,24 +473,24 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         onMouseEnter={() => collapsed && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
         data-admin-skin="teal"
-        className={`dark hidden lg:flex flex-col h-screen shrink-0 bg-tpl-card-bg dark:bg-tpl-dark-2 overflow-hidden transition-[width] duration-300 ease-out ${
+        className={`hidden lg:flex flex-col h-screen shrink-0 bg-tpl-card-bg border-r border-tpl-stroke overflow-hidden transition-[width] duration-300 ease-out ${
           railOpen ? "w-[290px]" : "w-[76px]"
         } ${className}`}
       >
         {/* Brand header — mark stays fixed, wordmark reveals on expand. */}
         <button
           onClick={() => navigate("/admin/dashboard")}
-          className="flex items-center gap-2.5 h-[84px] shrink-0 pl-[21px] pr-3"
+          className="flex items-center gap-2.5 h-[84px] shrink-0 pl-[18px] pr-3 border-b border-tpl-stroke"
           aria-label="TravelHomes admin home"
         >
-          <BrandLogo variant="mark" size={34} />
+          <AdminBrandMark size={34} />
           <span
-            className={`font-extrabold tracking-tight leading-none text-[20px] whitespace-nowrap ${reveal(
+            className={`font-extrabold tracking-tight leading-none text-[19px] whitespace-nowrap ${reveal(
               !railOpen,
             )}`}
           >
-            <span className="text-[#0a0a0a] dark:text-[#0a0a0a]">Travel</span>
-            <span className="text-[#0a0a0a]/80 dark:text-[#0a0a0a]/80">Homes</span>
+            <span className="text-[#101828]">Travel</span>
+            <span className="text-[#0d9488]">Homes</span>
           </span>
         </button>
 

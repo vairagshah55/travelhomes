@@ -1227,11 +1227,12 @@
 }
 
 [data-brand="admin"] {
-  /* Brand → navy #0F5C8A (dark, so fills carry WHITE text) */
-  --tpl-primary: #0f5c8a;
-  --tpl-primary-hover: #14709f;
-  --tpl-primary-soft: rgba(15, 92, 138, 0.08);
-  --tpl-primary-soft-2: rgba(15, 92, 138, 0.14);
+  /* Brand → deep teal #0d9488 (dark, so fills carry WHITE text). Harmonises
+     with the bright-teal graphite chrome — one teal family across the app. */
+  --tpl-primary: #0d9488;
+  --tpl-primary-hover: #0f766e;
+  --tpl-primary-soft: rgba(13, 148, 136, 0.08);
+  --tpl-primary-soft-2: rgba(13, 148, 136, 0.14);
 
   /* Neutrals — light surface */
   --tpl-body-bg: #f9fafb; /* page bg */
@@ -1245,7 +1246,7 @@
   --tpl-gray-5: #9ca3af;
   --tpl-gray-6: #6b7280;
   --tpl-gray-7: #374151;
-  --tpl-dark: #000000;
+  --tpl-dark: #101828;
   --tpl-dark-2: #1f2a37;
   --tpl-dark-3: #374151;
   --tpl-dark-4: #4b5563;
@@ -1268,10 +1269,10 @@
   --tpl-orange: #f59460;
 
   /* Shadows */
-  --tpl-shadow-1: 0px 1px 2px 0px rgba(84, 87, 118, 0.12);
-  --tpl-shadow-2: 0px 2px 3px 0px rgba(84, 87, 118, 0.15);
-  --tpl-shadow-card: 0px 1px 2px 0px rgba(0, 0, 0, 0.12);
-  --tpl-shadow-card-2: 0px 8px 13px -3px rgba(0, 0, 0, 0.07);
+  --tpl-shadow-1: 0 1px 2px 0 rgba(16, 24, 40, 0.04), 0 6px 20px -8px rgba(16, 24, 40, 0.1);
+  --tpl-shadow-2: 0 2px 4px 0 rgba(16, 24, 40, 0.05), 0 12px 28px -10px rgba(16, 24, 40, 0.14);
+  --tpl-shadow-card: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --tpl-shadow-card-2: 0 10px 24px -8px rgba(16, 24, 40, 0.12);
 
   /* Radii */
   --tpl-radius-card: 10px;
@@ -1280,78 +1281,78 @@
      admin.css loads after global.css (via AdminApp), so these win over
      global.css's blue [data-brand="admin"] tokens. */
   /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
-  --primary: 202 80% 30%;
+  --primary: 175 84% 32%;
   --primary-foreground: 0 0% 100%;
-  --ring: 202 80% 30%;
+  --ring: 175 84% 32%;
   /* shared primitives (bg-brand / text-brand / EmptyState / TabStrip) */
-  --brand: 202 80% 30%;
-  --brand-hover: 199 78% 35%;
+  --brand: 175 84% 32%;
+  --brand-hover: 175 78% 26%;
   --brand-fg: 0 0% 100%;
-  --brand-subtle: 202 50% 95%;
+  --brand-subtle: 174 45% 94%;
   /* app/surface semantic layer (AdminStatCard, app-accent) */
   --surface: #ffffff;
   --surface-2: #f1f3f5;
   --surface-border: #e4e7eb;
-  --surface-fg: #000000;
+  --surface-fg: #101828;
   --surface-fg-muted: #55585e;
   --surface-fg-subtle: #6e7278;
-  --accent: #0f5c8a;
-  --accent-hover: #14709f;
-  --accent-soft: rgba(15, 92, 138, 0.1);
+  --accent: #0d9488;
+  --accent-hover: #0f766e;
+  --accent-soft: rgba(13, 148, 136, 0.1);
   --accent-fg: #ffffff;
 
-  /* Glass / teal utility tokens — LIGHT content values (navy tints).
-     The navy chrome scope below redefines these for the sidebar/header. */
+  /* Glass / teal utility tokens — LIGHT content values (teal tints).
+     The graphite chrome scope below redefines these for the sidebar/header. */
   --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-bg-hover: rgba(15, 92, 138, 0.06);
+  --glass-bg-hover: rgba(13, 148, 136, 0.06);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-border-strong: rgba(0, 0, 0, 0.14);
   --glass-header: rgba(255, 255, 255, 0.85);
-  --teal-glass: rgba(15, 92, 138, 0.1);
-  --teal-border: rgba(15, 92, 138, 0.3);
-  --teal-subtle: rgba(15, 92, 138, 0.07);
-  --shadow-teal: 0 0 0 1px rgba(15, 92, 138, 0.4);
-  --search-focus-ring: rgba(15, 92, 138, 0.2);
+  --teal-glass: rgba(13, 148, 136, 0.1);
+  --teal-border: rgba(13, 148, 136, 0.3);
+  --teal-subtle: rgba(13, 148, 136, 0.07);
+  --shadow-teal: 0 0 0 1px rgba(13, 148, 136, 0.4);
+  --search-focus-ring: rgba(13, 148, 136, 0.2);
 }
 
-/* ── Teal CHROME (sidebar + header) — bright teal #3bd9d9 surfaces, navy ink ──
-   Applied by data-admin-skin="teal" (+ dark class) on the AdminSidebar and
-   AdminHeader roots. #3bd9d9 is a LIGHT surface, so the foreground flips to
-   dark-navy ink (the reverse of the old navy chrome) to stay legible. Scoped
-   to these two subtrees only; admin content stays light. */
+/* ── Clean LIGHT chrome (sidebar + header) — white rail + white header,
+   hairline #e6ebf1 borders, deep-teal #0d9488 accent. Applied by
+   data-admin-skin="teal" (marker name kept for continuity) on the AdminSidebar
+   and AdminHeader roots. The chrome shares the CONTENT's teal accent, so rail +
+   header + content read as one continuous light surface. Scoped to these two
+   subtrees only. NOTE: the chrome roots no longer carry a `dark` class. */
 [data-admin-skin="teal"] {
-  --tpl-body-bg: #3bd9d9;
-  --tpl-card-bg: #3bd9d9;
-  --tpl-dark-2: #3bd9d9; /* dark:bg-tpl-dark-2 → teal surface */
-  --tpl-stroke: rgba(0, 0, 0, 0.12);
-  --tpl-dark: #0a0a0a; /* primary text → black ink */
-  --tpl-dark-3: #171717;
-  --tpl-dark-4: #262626;
-  --tpl-dark-5: rgba(0, 0, 0, 0.55); /* muted text (group labels, roles) */
-  --tpl-dark-6: rgba(0, 0, 0, 0.72); /* secondary text */
-  --tpl-gray-2: rgba(0, 0, 0, 0.05);
-  --tpl-gray-3: rgba(0, 0, 0, 0.09);
-  --tpl-primary: #0a0a0a; /* active-nav text + accent → black on teal */
-  --glass-header: #3bd9d9;
-  --glass-bg: rgba(0, 0, 0, 0.04);
-  --glass-bg-hover: rgba(0, 0, 0, 0.07);
-  --teal-glass: rgba(255, 255, 255, 0.85); /* sub-item active → white pill */
-  --teal-border: rgba(0, 0, 0, 0.14);
-  --sidebar-primary: 0 0% 4%;
+  --tpl-body-bg: #f1f8f7; /* faint teal tint — softer than stark white */
+  --tpl-card-bg: #f1f8f7;
+  --tpl-dark-2: #f1f8f7;
+  --tpl-stroke: #dce7e5;
+  --tpl-dark: #101828; /* primary text */
+  --tpl-dark-3: #344054;
+  --tpl-dark-4: #475467;
+  --tpl-dark-5: #667085; /* muted text (group labels, roles) */
+  --tpl-dark-6: #475467; /* secondary text (sub-items) */
+  --tpl-gray-2: #f2f4f7;
+  --tpl-gray-3: #eceff3;
+  --tpl-primary: #0d9488; /* active-nav text + accent → deep teal */
+  --glass-header: #f1f8f7;
+  --glass-bg: rgba(16, 24, 40, 0.03);
+  --glass-bg-hover: rgba(16, 24, 40, 0.05);
+  --teal-glass: rgba(13, 148, 136, 0.1); /* active pill / sub-item active fill */
+  --teal-border: rgba(13, 148, 136, 0.3);
+  --sidebar-primary: 175 84% 32%;
 }
 
-/* ── Flat #3bd9d9 chrome — clean 3-colour system (teal / black / white) ──
-   A pro minimal surface: no gradient, no dividers. Depth/hierarchy comes from
-   the black↔white element treatment (active pills, icon tiles) and motion,
-   not from the surface. Rail and header are the exact same flat teal, so the
-   header↔sidebar join is seamless with nothing to align. */
+/* ── Flat light chrome — white rail + header separated from the content only by
+   hairline borders + a soft header shadow (no heavy dividers). Depth/hierarchy
+   comes from the teal active treatment (soft pill + left bar + solid teal icon
+   tile) and motion, not from the surface. */
 [data-admin-skin="teal"] {
   background-image: none;
 }
 
-/* Navy fills carry WHITE text. Force white on the primary/brand/accent FILLS
-   in admin content so leftover dark labels/icons don't sit black-on-navy.
-   (Accent-as-TEXT already resolves to navy, which reads fine on white.) */
+/* Teal fills carry WHITE text. Force white on the primary/brand/accent FILLS
+   in admin content so leftover dark labels/icons don't sit dark-on-teal.
+   (Accent-as-TEXT resolves to deep teal #0d9488, which reads fine on white.) */
 [data-brand="admin"] .bg-dashboard-primary,
 [data-brand="admin"] .bg-tpl-primary,
 [data-brand="admin"] .bg-primary,

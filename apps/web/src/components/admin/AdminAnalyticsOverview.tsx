@@ -95,7 +95,7 @@ const AdminAnalyticsOverview = () => {
     iconColor: string;
     nav?: string;
   }[] = [
-    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#0F5C8A" },
+    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#0d9488" },
     { title: "Total Clicks", value: totals.clicks, icon: MousePointerClick, iconColor: "#3b82f6" },
     { title: "Avg. CTR", value: `${ctr.toFixed(1)}%`, icon: TrendingUp, iconColor: "#22c55e" },
     {

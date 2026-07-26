@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { X } from "lucide-react";
@@ -58,7 +53,7 @@ const RejectReasonPopup: React.FC<RejectReasonPopupProps> = ({
           <Button
             onClick={handleSubmit}
             disabled={!reason.trim() || isLoading}
-            className="bg-[#0F5C8A] text-white hover:bg-[#14709F] rounded-full px-8"
+            className="bg-[#0d9488] text-white hover:bg-[#0f766e] rounded-full px-8"
           >
             {isLoading ? "Submitting..." : "Submit"}
           </Button>

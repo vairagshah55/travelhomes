@@ -71,7 +71,7 @@ const DashboardChart = ({
   title,
   data,
   type = "area",
-  color = "#0F5C8A",
+  color = "#0d9488",
   dataKey = "value",
   loading = false,
 }: {
@@ -199,7 +199,7 @@ const AdminDashboard = () => {
         title: "Active Vendors",
         value: String(d.stats?.vendors?.active ?? 0),
         icon: Wallet,
-        iconColor: "#0F5C8A",
+        iconColor: "#0d9488",
         navigate: "/management/vendor",
       },
       {
@@ -350,7 +350,7 @@ const AdminDashboard = () => {
                 title="Revenue Generated"
                 data={graphs.revenue}
                 type="area"
-                color="#0F5C8A"
+                color="#0d9488"
                 dataKey="total"
                 loading={isLoading}
               />

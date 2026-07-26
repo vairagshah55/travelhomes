@@ -74,14 +74,22 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
       setFormData({
         ...initialData,
         // Convert arrays to comma-separated strings if needed
-        features: Array.isArray(initialData.features) ? initialData.features.join(", ") : initialData.features || "",
-        rules: Array.isArray(initialData.rules) ? initialData.rules.join(", ") : initialData.rules || "",
-        priceIncludes: Array.isArray(initialData.priceIncludes) ? initialData.priceIncludes.join(", ") : initialData.priceIncludes || "",
-        priceExcludes: Array.isArray(initialData.priceExcludes) ? initialData.priceExcludes.join(", ") : initialData.priceExcludes || "",
+        features: Array.isArray(initialData.features)
+          ? initialData.features.join(", ")
+          : initialData.features || "",
+        rules: Array.isArray(initialData.rules)
+          ? initialData.rules.join(", ")
+          : initialData.rules || "",
+        priceIncludes: Array.isArray(initialData.priceIncludes)
+          ? initialData.priceIncludes.join(", ")
+          : initialData.priceIncludes || "",
+        priceExcludes: Array.isArray(initialData.priceExcludes)
+          ? initialData.priceExcludes.join(", ")
+          : initialData.priceExcludes || "",
       });
     } else {
-       // Reset form when opening for "Add New"
-       setFormData({
+      // Reset form when opening for "Add New"
+      setFormData({
         name: "",
         category: "",
         regularPrice: "",
@@ -103,9 +111,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
     }
   }, [initialData, isOpen]);
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -122,22 +128,38 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Process comma-separated strings into arrays for the backend
     const processedData = {
       ...formData,
-      features: typeof formData.features === 'string' 
-        ? formData.features.split(',').map(s => s.trim()).filter(Boolean) 
-        : formData.features,
-      rules: typeof formData.rules === 'string' 
-        ? formData.rules.split(',').map(s => s.trim()).filter(Boolean) 
-        : formData.rules,
-      priceIncludes: typeof formData.priceIncludes === 'string' 
-        ? formData.priceIncludes.split(',').map(s => s.trim()).filter(Boolean) 
-        : formData.priceIncludes,
-      priceExcludes: typeof formData.priceExcludes === 'string' 
-        ? formData.priceExcludes.split(',').map(s => s.trim()).filter(Boolean) 
-        : formData.priceExcludes,
+      features:
+        typeof formData.features === "string"
+          ? formData.features
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : formData.features,
+      rules:
+        typeof formData.rules === "string"
+          ? formData.rules
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : formData.rules,
+      priceIncludes:
+        typeof formData.priceIncludes === "string"
+          ? formData.priceIncludes
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : formData.priceIncludes,
+      priceExcludes:
+        typeof formData.priceExcludes === "string"
+          ? formData.priceExcludes
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : formData.priceExcludes,
     };
 
     onSubmit(processedData as any);
@@ -167,9 +189,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Name*
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Name*</label>
               <Input
                 name="name"
                 value={formData.name}
@@ -181,10 +201,8 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Category*
-              </label>
-               <Select
+              <label className="block text-sm font-medium text-gray-700">Category*</label>
+              <Select
                 value={formData.category}
                 onValueChange={(value) => handleSelectChange("category", value)}
               >
@@ -204,9 +222,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Regular Price
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Regular Price</label>
               <Input
                 name="regularPrice"
                 value={formData.regularPrice || ""}
@@ -218,9 +234,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Final Price
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Final Price</label>
               <Input
                 name="finalPrice"
                 value={formData.finalPrice || ""}
@@ -233,9 +247,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Description</label>
             <Textarea
               name="description"
               value={formData.description || ""}
@@ -244,8 +256,8 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
               className="w-full min-h-[100px]"
             />
           </div>
-          
-           <div className="space-y-2">
+
+          <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Features (comma separated)
             </label>
@@ -273,37 +285,35 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700">
                 Price Includes (comma separated)
-                </label>
-                <Input
+              </label>
+              <Input
                 name="priceIncludes"
                 value={formData.priceIncludes || ""}
                 onChange={handleChange}
                 placeholder="e.g. Breakfast, Lunch"
                 className="w-full"
-                />
+              />
             </div>
 
             <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700">
                 Price Excludes (comma separated)
-                </label>
-                <Input
+              </label>
+              <Input
                 name="priceExcludes"
                 value={formData.priceExcludes || ""}
                 onChange={handleChange}
                 placeholder="e.g. Flight, Insurance"
                 className="w-full"
-                />
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Seating Capacity
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Seating Capacity</label>
               <Input
                 name="seatingCapacity"
                 value={formData.seatingCapacity || ""}
@@ -315,9 +325,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Sleeping Capacity
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Sleeping Capacity</label>
               <Input
                 name="sleepingCapacity"
                 value={formData.sleepingCapacity || ""}
@@ -329,9 +337,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Duration
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Duration</label>
               <Input
                 name="timeDuration"
                 value={formData.timeDuration || ""}
@@ -344,9 +350,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Locality
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Locality</label>
               <Input
                 name="locality"
                 value={formData.locality || ""}
@@ -357,9 +361,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                City
-              </label>
+              <label className="block text-sm font-medium text-gray-700">City</label>
               <Input
                 name="city"
                 value={formData.city || ""}
@@ -372,9 +374,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                State
-              </label>
+              <label className="block text-sm font-medium text-gray-700">State</label>
               <Input
                 name="state"
                 value={formData.state || ""}
@@ -385,9 +385,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">
-                Pincode
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Pincode</label>
               <Input
                 name="pincode"
                 value={formData.pincode || ""}
@@ -399,18 +397,13 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           </div>
 
           <div className="flex justify-end space-x-4 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="px-6"
-            >
+            <Button type="button" variant="outline" onClick={onClose} className="px-6">
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isLoading}
-              className="px-6 bg-[#0F5C8A] text-white hover:bg-[#14709F]"
+              className="px-6 bg-[#0d9488] text-white hover:bg-[#0f766e]"
             >
               {isLoading ? "Saving..." : "Save"}
             </Button>

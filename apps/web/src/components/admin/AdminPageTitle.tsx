@@ -67,7 +67,7 @@ export default function AdminPageTitle({ title, subtitle, actions }: AdminPageTi
           >
             <Link
               to="/admin/dashboard"
-              className="flex items-center justify-center w-5 h-5 rounded hover:text-[#0F5C8A] transition-colors"
+              className="flex items-center justify-center w-5 h-5 rounded hover:text-[#0d9488] transition-colors"
               aria-label="Admin dashboard"
             >
               <LayoutDashboard size={13} strokeWidth={1.75} />
@@ -77,7 +77,7 @@ export default function AdminPageTitle({ title, subtitle, actions }: AdminPageTi
                 <span className="mx-1 select-none">/</span>
                 <Link
                   to={crumb.href}
-                  className="px-1 rounded hover:text-[#0F5C8A] transition-colors truncate max-w-[160px]"
+                  className="px-1 rounded hover:text-[#0d9488] transition-colors truncate max-w-[160px]"
                 >
                   {crumb.label}
                 </Link>

@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -30,21 +25,31 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
   currentFilters,
 }) => {
   // Initialize state with current filters if available
-  const [location, setLocation] = useState(currentFilters?.find(f => f.startsWith('location:'))?.split(':')[1] || "");
-  const [serviceType, setServiceType] = useState(currentFilters?.find(f => f.startsWith('service:'))?.split(':')[1] || "");
-  const [status, setStatus] = useState(currentFilters?.find(f => f.startsWith('status:'))?.split(':')[1] || "");
-  const [dateFrom, setDateFrom] = useState(currentFilters?.find(f => f.startsWith('dateFrom:'))?.split(':')[1] || "");
-  const [dateTo, setDateTo] = useState(currentFilters?.find(f => f.startsWith('dateTo:'))?.split(':')[1] || "");
+  const [location, setLocation] = useState(
+    currentFilters?.find((f) => f.startsWith("location:"))?.split(":")[1] || "",
+  );
+  const [serviceType, setServiceType] = useState(
+    currentFilters?.find((f) => f.startsWith("service:"))?.split(":")[1] || "",
+  );
+  const [status, setStatus] = useState(
+    currentFilters?.find((f) => f.startsWith("status:"))?.split(":")[1] || "",
+  );
+  const [dateFrom, setDateFrom] = useState(
+    currentFilters?.find((f) => f.startsWith("dateFrom:"))?.split(":")[1] || "",
+  );
+  const [dateTo, setDateTo] = useState(
+    currentFilters?.find((f) => f.startsWith("dateTo:"))?.split(":")[1] || "",
+  );
 
   const handleApplyFilters = () => {
     const filters: string[] = [];
-    
+
     if (location) filters.push(`location:${location}`);
     if (serviceType) filters.push(`service:${serviceType}`);
     if (status) filters.push(`status:${status}`);
     if (dateFrom) filters.push(`dateFrom:${dateFrom}`);
     if (dateTo) filters.push(`dateTo:${dateTo}`);
-    
+
     onApplyFilters(filters);
     onClose(); // Close the popup after applying filters
   };
@@ -65,14 +70,12 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
         {/* Header */}
         <DialogHeader className="px-6 py-7 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-2xl font-bold text-black font-geist">
-              Filters
-            </DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-black font-geist">Filters</DialogTitle>
             {/* <button
               onClick={onClose}
               className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
             > */}
-              {/* <X className="h-4 w-4 text-black" /> */}
+            {/* <X className="h-4 w-4 text-black" /> */}
             {/* </button> */}
           </div>
         </DialogHeader>
@@ -83,13 +86,10 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
           <div className="grid grid-cols-3 gap-6">
             {/* Location */}
             <div className="space-y-2">
-              <label className="block text-base font-normal text-gray-700">
-                Location
-              </label>
+              <label className="block text-base font-normal text-gray-700">Location</label>
               <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger className="w-full h-10 border-gray-300 text-gray-600">
                   <SelectValue placeholder="Select location" />
-                
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Locations</SelectItem>
@@ -106,13 +106,10 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
 
             {/* Service Type */}
             <div className="space-y-2">
-              <label className="block text-base font-normal text-gray-700">
-                Service Type
-              </label>
+              <label className="block text-base font-normal text-gray-700">Service Type</label>
               <Select value={serviceType} onValueChange={setServiceType}>
                 <SelectTrigger className="w-full h-10 border-gray-300 text-gray-600">
                   <SelectValue placeholder="Select service type" />
-                
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Services</SelectItem>
@@ -128,13 +125,10 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
 
             {/* Status */}
             <div className="space-y-2">
-              <label className="block text-base font-normal text-gray-700">
-                Status
-              </label>
+              <label className="block text-base font-normal text-gray-700">Status</label>
               <Select value={status} onValueChange={setStatus}>
                 <SelectTrigger className="w-full h-10 border-gray-300 text-gray-600">
                   <SelectValue placeholder="Select status" />
-                
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -151,9 +145,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
           <div className="grid grid-cols-2 gap-6">
             {/* Date From */}
             <div className="space-y-2">
-              <label className="block text-base font-normal text-gray-700">
-                Date From
-              </label>
+              <label className="block text-base font-normal text-gray-700">Date From</label>
               <Input
                 type="date"
                 value={dateFrom}
@@ -164,9 +156,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
 
             {/* Date To */}
             <div className="space-y-2">
-              <label className="block text-base font-normal text-gray-700">
-                Date To
-              </label>
+              <label className="block text-base font-normal text-gray-700">Date To</label>
               <Input
                 type="date"
                 value={dateTo}
@@ -189,7 +179,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
             </Button>
             <Button
               onClick={handleApplyFilters}
-              className="px-8 py-3 h-12 rounded-full bg-[#0F5C8A] text-white hover:bg-[#14709F]"
+              className="px-8 py-3 h-12 rounded-full bg-[#0d9488] text-white hover:bg-[#0f766e]"
             >
               Apply Filter
             </Button>
