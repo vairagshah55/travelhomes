@@ -247,12 +247,6 @@ export const bookingDetailsApi = {
     request<ApiItemResponse<BookingDetailDTO>>(`/api/bookingDetails/${code}`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }),
-  create: (payload: Partial<BookingDetailDTO>, token?: string) =>
-    request<ApiItemResponse<BookingDetailDTO>>("/api/bookingDetails", {
-      method: "POST",
-      body: JSON.stringify(payload),
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    }),
   update: (code: string, payload: Partial<BookingDetailDTO>, token?: string) =>
     request<ApiItemResponse<BookingDetailDTO>>(`/api/bookingDetails/${code}`, {
       method: "PUT",
@@ -319,8 +313,18 @@ export interface OfferDTO {
   // Discount offers — UI was already in place; this is the persisted shape
   // matching the server-side `discounts` sub-doc on the Offer model.
   discounts?: {
-    firstUser?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
-    festival?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
+    firstUser?: {
+      enabled: boolean;
+      type: "percentage" | "fixed";
+      value: string;
+      finalPrice: string;
+    };
+    festival?: {
+      enabled: boolean;
+      type: "percentage" | "fixed";
+      value: string;
+      finalPrice: string;
+    };
     weekly?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
     special?: { enabled: boolean; type: "percentage" | "fixed"; value: string; finalPrice: string };
   };
@@ -796,9 +800,7 @@ export const submitSelfieVerification = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: "Network error" }));
-      throw new Error(
-        extractApiErrorMessage(errorData) || "Failed to submit selfie verification",
-      );
+      throw new Error(extractApiErrorMessage(errorData) || "Failed to submit selfie verification");
     }
 
     const result = await response.json();

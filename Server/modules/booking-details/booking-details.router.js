@@ -13,10 +13,13 @@ const dto = require("./booking-details.dto");
 
 const router = express.Router();
 
+// Booking details are created server-side by the payment saga
+// (modules/payments), never by a client POST — the vendor-facing "New Booking"
+// form that used this endpoint was removed in favour of /bookings/new, which
+// writes CalendarBookings instead.
 router
   .route("/")
-  .get(requireJwt({ optional: true }), validate({ query: dto.listQuery }), controller.list)
-  .post(requireJwt({ optional: true }), validate({ body: dto.createBody }), controller.create);
+  .get(requireJwt({ optional: true }), validate({ query: dto.listQuery }), controller.list);
 
 router.post(
   "/:id/invoice",

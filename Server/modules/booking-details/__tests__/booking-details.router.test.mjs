@@ -26,20 +26,12 @@ describe("GET /api/bookingDetails/:id — validation", () => {
   });
 });
 
-describe("POST /api/bookingDetails — validation", () => {
-  it("rejects an empty body", async () => {
-    const res = await request(buildApp()).post("/api/bookingDetails").send({});
-    expect(res.status).toBe(422);
-  });
-  it("rejects a missing serviceName", async () => {
-    const res = await request(buildApp()).post("/api/bookingDetails").send({ clientName: "Alex" });
-    expect(res.status).toBe(422);
-  });
-  it("rejects an out-of-enum status", async () => {
+describe("POST /api/bookingDetails — removed", () => {
+  it("no longer exposes a client create route", async () => {
     const res = await request(buildApp())
       .post("/api/bookingDetails")
-      .send({ clientName: "Alex", serviceName: "Cabin", status: "weird" });
-    expect(res.status).toBe(422);
+      .send({ clientName: "Alex", serviceName: "Cabin" });
+    expect(res.status).toBe(404);
   });
 });
 

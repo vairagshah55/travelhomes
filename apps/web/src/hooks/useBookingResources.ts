@@ -14,6 +14,11 @@ export const NO_SERVICE_SENTINEL = "No Service Available";
  * The vendor's bookable services (offers + activities), shared by the bookings
  * calendar and the New Booking page. Both call this with the same query key, so
  * navigating between them reuses one cached fetch instead of re-requesting.
+ *
+ * Only *approved* offers and *published* activities are bookable. A service
+ * still awaiting admin review (or one that was cancelled/deactivated) must not
+ * be selectable, otherwise a vendor can take bookings against a listing that
+ * isn't live.
  */
 export function useBookingResources() {
   const { user, token: authToken } = useAuth();
@@ -28,12 +33,18 @@ export function useBookingResources() {
         params.vendorId = user!.id;
         params.mine = true;
       }
-      const resOffers = await offersApi.list(undefined, token, params);
+      // `mine=true` scopes to the caller's own offers; `status` narrows that to
+      // the approved ones (the server applies the status filter on top of the
+      // owner scope). Without it the dropdown also listed pending, cancelled
+      // and deactivated services.
+      const resOffers = await offersApi.list("approved", token, params);
 
       let activityData: any[] = [];
       if (token && user!.userType === "vendor") {
         const my = await activitiesApi.myList(token);
-        if (my.success) activityData = my.data;
+        // The vendor's own list returns every draft/archived activity too —
+        // there's no server-side status filter on this endpoint, so narrow here.
+        if (my.success) activityData = my.data.filter((a) => a.status === "published");
       } else {
         const all = await activitiesApi.list();
         if (all.success) activityData = all.data;

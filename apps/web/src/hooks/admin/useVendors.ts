@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { vendorService } from "@/services/api";
@@ -62,6 +63,46 @@ export function useVendors(tab: string) {
   });
 
   return { query, createVendor, setStatus, deleteVendor };
+}
+
+/** A vendor's display name, preferring the brand over the contact person. */
+export const vendorDisplayName = (v?: Pick<Vendor, "brandName" | "personName">) =>
+  v?.brandName?.trim() || v?.personName?.trim() || "";
+
+/**
+ * Every vendor, keyed by the `vendorId` code that listings/offers carry, so a
+ * table showing only `vendorId` ("VD8178") can display the vendor's name.
+ *
+ * Sits under the shared vendors key namespace, so renaming or deleting a vendor
+ * invalidates this lookup too. Read-only — no mutations attached.
+ */
+export function useVendorDirectory() {
+  const query = useQuery<Vendor[]>({
+    queryKey: adminKeys.vendors({ directory: true }),
+    queryFn: async () => {
+      // No status arg — the directory needs every vendor, not one tab's worth.
+      const list = await vendorService.getVendors();
+      return Array.isArray(list) ? list : [];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const byVendorId = useMemo(() => {
+    const map = new Map<string, Vendor>();
+    for (const v of query.data ?? []) {
+      if (v.vendorId) map.set(String(v.vendorId), v);
+    }
+    return map;
+  }, [query.data]);
+
+  // Stable identity — callers list this in useMemo deps, so a fresh closure on
+  // every render would recompute their filtering work each time.
+  const nameFor = useCallback(
+    (vendorId?: string) => (vendorId ? vendorDisplayName(byVendorId.get(String(vendorId))) : ""),
+    [byVendorId],
+  );
+
+  return { query, byVendorId, nameFor };
 }
 
 export default useVendors;

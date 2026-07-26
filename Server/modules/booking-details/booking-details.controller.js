@@ -11,11 +11,6 @@ const getById = asyncHandler(async (req, res) => {
   res.json({ success: true, item });
 });
 
-const create = asyncHandler(async (req, res) => {
-  const { created } = await service.create(req.validated.body, req.user);
-  res.status(201).json({ success: true, created });
-});
-
 const update = asyncHandler(async (req, res) => {
   const { updated } = await service.update(req.validated.params.id, req.validated.body);
   res.json({ success: true, updated });
@@ -31,4 +26,4 @@ const buildInvoice = asyncHandler(async (req, res) => {
   res.json({ success: true, invoice });
 });
 
-module.exports = { list, getById, create, update, remove, buildInvoice };
+module.exports = { list, getById, update, remove, buildInvoice };

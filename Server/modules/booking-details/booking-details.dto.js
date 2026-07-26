@@ -27,10 +27,10 @@ const getByIdQuery = z.object({
   vendorId: z.string().trim().max(60).optional(),
 });
 
-// ─── POST /api/bookingDetails ───────────────────────────────────────────────
-// Strict whitelist. Server auto-populates vendorId/statusColor from context
-// when missing — see the service.
-const createBody = z.object({
+// ─── Editable booking-detail fields ─────────────────────────────────────────
+// Strict whitelist, used to derive the PUT body below. There is no client
+// create route — booking details are written server-side by the payment saga.
+const detailFields = z.object({
   id: z.string().trim().max(60).optional(),
   clientName: z.string().trim().min(1).max(120),
   serviceName: z.string().trim().min(1).max(200),
@@ -51,11 +51,9 @@ const createBody = z.object({
 
 // ─── PUT /api/bookingDetails/:id ────────────────────────────────────────────
 const updateParams = z.object({ id: objectIdString });
-const updateBody = createBody
-  .partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided",
-  });
+const updateBody = detailFields.partial().refine((data) => Object.keys(data).length > 0, {
+  message: "At least one field must be provided",
+});
 
 // ─── DELETE /api/bookingDetails/:id ─────────────────────────────────────────
 const deleteParams = z.object({ id: objectIdString });
@@ -67,7 +65,6 @@ module.exports = {
   listQuery,
   getByIdParams,
   getByIdQuery,
-  createBody,
   updateParams,
   updateBody,
   deleteParams,

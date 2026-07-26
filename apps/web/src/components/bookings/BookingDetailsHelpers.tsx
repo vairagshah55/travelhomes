@@ -108,9 +108,7 @@ export const InfoRow = ({
   label: string;
   value: string;
 }) => (
-  <div
-    className="flex items-center gap-3 py-2.5 border-b border-[#EBEBEB]"
-  >
+  <div className="flex items-center gap-3 py-2.5 border-b border-[#EBEBEB]">
     <span className="text-th-brand flex-shrink-0">{icon}</span>
     <div className="flex-1">
       <p className="text-[11px] text-th-warm-text-muted font-semibold uppercase tracking-[0.03em]">
@@ -214,16 +212,3 @@ export const categorizeBooking = (b: BookingDetailDTO): "upcoming" | "past" | "c
   bd.setHours(0, 0, 0, 0);
   return bd >= today ? "upcoming" : "past";
 };
-
-export const LOCATIONS = [
-  "Jamshedpur",
-  "Delhi",
-  "Mumbai",
-  "Bangalore",
-  "Chennai",
-  "Kolkata",
-  "Hyderabad",
-  "Pune",
-  "Goa",
-  "Kerala",
-];

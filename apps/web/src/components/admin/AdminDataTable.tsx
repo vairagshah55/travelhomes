@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   ChevronUp,
   Inbox,
+  Loader2,
   MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
@@ -43,6 +44,10 @@ export interface RowAction<T> {
   icon?: LucideIcon;
   onClick: (row: T) => void;
   hidden?: (row: T) => boolean;
+  /** Greys the item out and swallows the click. */
+  disabled?: (row: T) => boolean;
+  /** This action is in flight for this row: shows a spinner and blocks re-clicks. */
+  loading?: (row: T) => boolean;
   variant?: "default" | "danger";
 }
 
@@ -89,6 +94,11 @@ interface AdminDataTableProps<T> {
   onSelectionChange?: (ids: string[]) => void;
 
   rowActions?: RowAction<T>[];
+  /**
+   * Row has a mutation in flight: dims it and swaps the actions trigger for a
+   * spinner, so a slow approve/delete reads as "working" rather than "ignored".
+   */
+  rowBusy?: (row: T) => boolean;
 
   pagination?: PaginationState;
   sortState?: SortState;
@@ -140,6 +150,7 @@ export function AdminDataTable<T>({
   selectedIds = [],
   onSelectionChange,
   rowActions,
+  rowBusy,
   pagination,
   sortState,
   onSortChange,
@@ -152,8 +163,8 @@ export function AdminDataTable<T>({
     getRowId
       ? getRowId(row, index)
       : ((row as { _id?: string; id?: string })._id ??
-          (row as { _id?: string; id?: string }).id ??
-          String(index));
+        (row as { _id?: string; id?: string }).id ??
+        String(index));
 
   const hasActions = !!rowActions?.length;
   const totalCols = columns.length + (selectable ? 1 : 0) + (hasActions ? 1 : 0);
@@ -164,11 +175,17 @@ export function AdminDataTable<T>({
 
   const toggleAll = () => {
     if (!onSelectionChange) return;
-    onSelectionChange(allSelected ? selectedIds.filter((id) => !pageIds.includes(id)) : Array.from(new Set([...selectedIds, ...pageIds])));
+    onSelectionChange(
+      allSelected
+        ? selectedIds.filter((id) => !pageIds.includes(id))
+        : Array.from(new Set([...selectedIds, ...pageIds])),
+    );
   };
   const toggleRow = (id: string) => {
     if (!onSelectionChange) return;
-    onSelectionChange(selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id]);
+    onSelectionChange(
+      selectedIds.includes(id) ? selectedIds.filter((x) => x !== id) : [...selectedIds, id],
+    );
   };
 
   const handleSort = (key: string) => {
@@ -293,12 +310,16 @@ export function AdminDataTable<T>({
               const id = rowId(row, index);
               const selected = selectedIds.includes(id);
               const visibleActions = rowActions?.filter((a) => !a.hidden?.(row)) ?? [];
+              const busy = rowBusy?.(row) ?? false;
               return (
                 <TableRow
                   key={id}
                   data-state={selected ? "selected" : undefined}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
-                  className={onRowClick ? "cursor-pointer" : undefined}
+                  aria-busy={busy || undefined}
+                  onClick={onRowClick && !busy ? () => onRowClick(row) : undefined}
+                  className={`${onRowClick && !busy ? "cursor-pointer" : ""} ${
+                    busy ? "opacity-60 transition-opacity" : ""
+                  }`}
                 >
                   {selectable && (
                     <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
@@ -316,7 +337,9 @@ export function AdminDataTable<T>({
                         col.hideBelow ? hideBelowClass[col.hideBelow] : ""
                       }`}
                     >
-                      {col.cell ? col.cell(row, index) : String((row as Record<string, unknown>)[col.key] ?? "—")}
+                      {col.cell
+                        ? col.cell(row, index)
+                        : String((row as Record<string, unknown>)[col.key] ?? "—")}
                     </TableCell>
                   ))}
                   {hasActions && (
@@ -325,27 +348,50 @@ export function AdminDataTable<T>({
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className="p-1.5 rounded-md text-app-fg-muted hover:text-app-accent hover:bg-app-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent"
-                              aria-label="Row actions"
+                              className="p-1.5 rounded-md text-app-fg-muted hover:text-app-accent hover:bg-app-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent disabled:pointer-events-none"
+                              aria-label={busy ? "Updating row" : "Row actions"}
+                              disabled={busy}
                             >
-                              <MoreHorizontal size={16} />
+                              {busy ? (
+                                <Loader2 size={16} className="animate-spin text-app-accent" />
+                              ) : (
+                                <MoreHorizontal size={16} />
+                              )}
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            {visibleActions.map((action) => (
-                              <DropdownMenuItem
-                                key={action.label}
-                                onSelect={() => action.onClick(row)}
-                                className={`gap-2 cursor-pointer ${
-                                  action.variant === "danger"
-                                    ? "text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
-                                    : ""
-                                }`}
-                              >
-                                {action.icon && <action.icon size={15} />}
-                                {action.label}
-                              </DropdownMenuItem>
-                            ))}
+                            {visibleActions.map((action) => {
+                              const actionLoading = action.loading?.(row) ?? false;
+                              const actionDisabled =
+                                actionLoading || busy || (action.disabled?.(row) ?? false);
+                              return (
+                                <DropdownMenuItem
+                                  key={action.label}
+                                  disabled={actionDisabled}
+                                  onSelect={(e) => {
+                                    // Radix still fires onSelect for a disabled
+                                    // item reached by keyboard — guard both ways.
+                                    if (actionDisabled) {
+                                      e.preventDefault();
+                                      return;
+                                    }
+                                    action.onClick(row);
+                                  }}
+                                  className={`gap-2 ${actionDisabled ? "cursor-not-allowed" : "cursor-pointer"} ${
+                                    action.variant === "danger"
+                                      ? "text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
+                                      : ""
+                                  }`}
+                                >
+                                  {actionLoading ? (
+                                    <Loader2 size={15} className="animate-spin" />
+                                  ) : (
+                                    action.icon && <action.icon size={15} />
+                                  )}
+                                  {action.label}
+                                </DropdownMenuItem>
+                              );
+                            })}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}

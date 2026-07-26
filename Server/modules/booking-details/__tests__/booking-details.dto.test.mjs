@@ -22,27 +22,25 @@ describe("booking-details.dto.getByIdParams + getByIdQuery", () => {
   });
 });
 
-describe("booking-details.dto.createBody", () => {
-  it("accepts a minimal valid create payload", () => {
+// There is no client create route any more; the same field whitelist now
+// reaches the API only through updateBody, so assert the constraints there.
+describe("booking-details.dto.updateBody — field constraints", () => {
+  it("accepts a valid patch", () => {
     expect(
-      dto.createBody.parse({ clientName: "Alex", serviceName: "Mountain Cabin" }).clientName,
+      dto.updateBody.parse({ clientName: "Alex", serviceName: "Mountain Cabin" }).clientName,
     ).toBe("Alex");
   });
-  it("rejects a missing clientName", () => {
-    expect(() => dto.createBody.parse({ serviceName: "x" })).toThrowError();
+  it("rejects an empty clientName", () => {
+    expect(() => dto.updateBody.parse({ clientName: "" })).toThrowError();
   });
-  it("rejects a missing serviceName", () => {
-    expect(() => dto.createBody.parse({ clientName: "x" })).toThrowError();
+  it("rejects an empty serviceName", () => {
+    expect(() => dto.updateBody.parse({ serviceName: "" })).toThrowError();
   });
   it("rejects an out-of-enum status", () => {
-    expect(() =>
-      dto.createBody.parse({ clientName: "x", serviceName: "y", status: "weird" }),
-    ).toThrowError();
+    expect(() => dto.updateBody.parse({ status: "weird" })).toThrowError();
   });
   it("rejects negative guests", () => {
-    expect(() =>
-      dto.createBody.parse({ clientName: "x", serviceName: "y", guests: -1 }),
-    ).toThrowError();
+    expect(() => dto.updateBody.parse({ guests: -1 })).toThrowError();
   });
 });
 

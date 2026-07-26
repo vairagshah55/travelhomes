@@ -14,6 +14,8 @@ interface ViewDetailsPopupProps {
   isLoading?: boolean;
   onApprove?: () => void;
   onReject?: () => void;
+  /** Approve request is in flight — spins the button and blocks both actions. */
+  isApproving?: boolean;
 }
 
 /* ── Small presentational helpers ─────────────────────────────────────────── */
@@ -93,6 +95,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   isLoading,
   onApprove,
   onReject,
+  isApproving = false,
 }) => {
   if (!isOpen) return null;
 
@@ -514,16 +517,23 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         {(onReject || onApprove) && (
           <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-white rounded-b-xl">
             {onReject && (
-              <Button variant="destructive" onClick={onReject} className="rounded-full px-6">
+              <Button
+                variant="destructive"
+                onClick={onReject}
+                disabled={isApproving}
+                className="rounded-full px-6"
+              >
                 Reject
               </Button>
             )}
             {onApprove && (
               <Button
-                className="bg-green-600 hover:bg-green-700 text-white rounded-full px-6"
+                className="bg-green-600 hover:bg-green-700 text-white rounded-full px-6 gap-2"
                 onClick={onApprove}
+                disabled={isApproving}
               >
-                Approve
+                {isApproving && <Loader2 size={16} className="animate-spin" />}
+                {isApproving ? "Approving…" : "Approve"}
               </Button>
             )}
           </div>

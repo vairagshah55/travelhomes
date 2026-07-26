@@ -3,10 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import {
-  Plus,
   Users,
-  Car,
-  Home,
   MapPin,
   Pencil,
   Trash2,
@@ -44,7 +41,6 @@ import {
   parseBookingDate,
   isDateInRange,
   categorizeBooking,
-  LOCATIONS,
 } from "@/components/bookings/BookingDetailsHelpers";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -124,7 +120,6 @@ const BookingDetails = () => {
 
   // Panel states
   const [detailOpen, setDetailOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -136,26 +131,6 @@ const BookingDetails = () => {
     onConfirm: () => void;
   } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
-
-  // Create form
-  const [createForm, setCreateForm] = useState({
-    serviceName: "",
-    customerName: "",
-    email: "",
-    phone: "",
-    checkInDate: "",
-    checkInTime: "",
-    checkOutDate: "",
-    checkOutTime: "",
-    locationFrom: "",
-    locationTo: "",
-    pickupLocation: "",
-    servicePrice: "",
-    guests: "",
-    status: "pending",
-    serviceType: "van",
-  });
-  const [createErrors, setCreateErrors] = useState<Record<string, string>>({});
 
   // Edit form
   const [editForm, setEditForm] = useState({
@@ -363,53 +338,6 @@ const BookingDetails = () => {
     });
     setSelectedBooking(b);
     setEditOpen(true);
-  };
-
-  const handleCreate = async () => {
-    const errs: Record<string, string> = {};
-    if (!createForm.serviceName) errs.serviceName = "Required";
-    if (!createForm.customerName) errs.customerName = "Required";
-    if (!createForm.email) errs.email = "Required";
-    if (!createForm.phone) errs.phone = "Required";
-    if (!createForm.checkInDate) errs.checkInDate = "Required";
-    if (!createForm.checkOutDate) errs.checkOutDate = "Required";
-    setCreateErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-
-    setSaving(true);
-    try {
-      const svc = availableServices.find((s) => s.name === createForm.serviceName);
-      const payload: any = {
-        clientName: createForm.customerName,
-        serviceName: createForm.serviceName,
-        servicePrice: createForm.servicePrice || "-",
-        checkIn: `${createForm.checkInDate} ${createForm.checkInTime}`.trim(),
-        checkOut: `${createForm.checkOutDate} ${createForm.checkOutTime}`.trim(),
-        guests: createForm.guests || 1,
-        status: createForm.status,
-        location: createForm.locationFrom,
-        contactEmail: createForm.email,
-        contactPhone: createForm.phone,
-        pickupLocation: createForm.pickupLocation,
-        serviceType: svc?.type || createForm.serviceType,
-        vendorId: svc?.vendorId,
-      };
-      const res = await bookingDetailsApi.create(payload, token);
-      if ((res as any)?.success) {
-        queryClient.setQueryData<BookingDetailDTO[]>(bookingsKey, (p) => [
-          (res as any).data,
-          ...(p ?? []),
-        ]);
-        toast.success("Booking created!");
-        setCreateOpen(false);
-      } else {
-        toast.error("Failed to create");
-      }
-    } catch (e: any) {
-      toast.error(e?.message || "Failed");
-    } finally {
-      setSaving(false);
-    }
   };
 
   const handleUpdate = async () => {
@@ -748,11 +676,6 @@ const BookingDetails = () => {
               </DropdownMenuItem>
             ))}
           </FilterPill>
-
-          {/* Spacer + New Booking */}
-          <div className="ml-auto">
-            {tealBtn(() => setCreateOpen(true), <Plus size={15} />, "New Booking")}
-          </div>
         </div>
 
         {/* Tabs with counts */}
@@ -889,162 +812,6 @@ const BookingDetails = () => {
             )}
           </div>
         )}
-      </SlidePanel>
-
-      {/* ── Create Panel ── */}
-      <SlidePanel
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="New Booking"
-        icon={<Plus size={16} className="text-th-brand" />}
-        width={560}
-        footer={
-          <>
-            {ghostBtn(() => setCreateOpen(false), "Cancel")}{" "}
-            {tealBtn(
-              handleCreate,
-              <Save size={14} />,
-              saving ? "Creating…" : "Create Booking",
-              saving,
-            )}
-          </>
-        }
-      >
-        <div className="flex flex-col gap-4">
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { v: "van", l: "Van", I: Car },
-              { v: "unique-stays", l: "Stays", I: Home },
-              { v: "activity", l: "Activity", I: MapPin },
-            ].map(({ v, l, I }) => {
-              const active = createForm.serviceType === v;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setCreateForm((p) => ({ ...p, serviceType: v }))}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-2 rounded-full border-[1.5px] text-[12px] font-bold cursor-pointer transition-all duration-150",
-                    active
-                      ? "border-th-brand bg-th-brand-soft text-th-brand"
-                      : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark",
-                  )}
-                >
-                  <I size={14} /> {l}
-                </button>
-              );
-            })}
-          </div>
-          <PanelSelect
-            label="Service Name"
-            required
-            value={createForm.serviceName}
-            onChange={(v) => {
-              setCreateForm((p) => ({ ...p, serviceName: v }));
-              if (createErrors.serviceName) setCreateErrors((p) => ({ ...p, serviceName: "" }));
-            }}
-            error={createErrors.serviceName}
-          >
-            <option value="">Select a service</option>
-            {availableServices.map((s) => (
-              <option key={s.name} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </PanelSelect>
-          <div className="grid grid-cols-2 gap-3">
-            <PanelInput
-              label="Customer Name"
-              required
-              value={createForm.customerName}
-              onChange={(v) => {
-                setCreateForm((p) => ({ ...p, customerName: v }));
-                if (createErrors.customerName) setCreateErrors((p) => ({ ...p, customerName: "" }));
-              }}
-              error={createErrors.customerName}
-              placeholder="Guest name"
-            />
-            <PanelInput
-              label="Email"
-              required
-              value={createForm.email}
-              onChange={(v) => {
-                setCreateForm((p) => ({ ...p, email: v }));
-                if (createErrors.email) setCreateErrors((p) => ({ ...p, email: "" }));
-              }}
-              error={createErrors.email}
-              type="email"
-              placeholder="email@example.com"
-            />
-          </div>
-          <PanelInput
-            label="Phone"
-            required
-            value={createForm.phone}
-            onChange={(v) => setCreateForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))}
-            error={createErrors.phone}
-            placeholder="+91 XXXXXXXXXX"
-            maxLength={12}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <PanelInput
-              label="Check-in Date"
-              required
-              value={createForm.checkInDate}
-              onChange={(v) => setCreateForm((p) => ({ ...p, checkInDate: v }))}
-              error={createErrors.checkInDate}
-              type="date"
-            />
-            <PanelInput
-              label="Check-in Time"
-              value={createForm.checkInTime}
-              onChange={(v) => setCreateForm((p) => ({ ...p, checkInTime: v }))}
-              type="time"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <PanelInput
-              label="Check-out Date"
-              required
-              value={createForm.checkOutDate}
-              onChange={(v) => setCreateForm((p) => ({ ...p, checkOutDate: v }))}
-              error={createErrors.checkOutDate}
-              type="date"
-            />
-            <PanelInput
-              label="Check-out Time"
-              value={createForm.checkOutTime}
-              onChange={(v) => setCreateForm((p) => ({ ...p, checkOutTime: v }))}
-              type="time"
-            />
-          </div>
-          <PanelSelect
-            label="Location"
-            value={createForm.locationFrom}
-            onChange={(v) => setCreateForm((p) => ({ ...p, locationFrom: v }))}
-          >
-            <option value="">Select location</option>
-            {LOCATIONS.map((l) => (
-              <option key={l} value={l}>
-                {l}
-              </option>
-            ))}
-          </PanelSelect>
-          <div className="grid grid-cols-2 gap-3">
-            <PanelInput
-              label="Price"
-              value={createForm.servicePrice}
-              onChange={(v) => setCreateForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))}
-              placeholder="₹ 0"
-            />
-            <PanelInput
-              label="Guests"
-              value={createForm.guests}
-              onChange={(v) => setCreateForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))}
-              placeholder="0"
-            />
-          </div>
-        </div>
       </SlidePanel>
 
       {/* ── Edit Panel ── */}

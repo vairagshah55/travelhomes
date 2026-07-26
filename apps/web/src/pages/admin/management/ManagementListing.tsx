@@ -9,6 +9,7 @@ import {
   PackageOpen,
   SearchX,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -28,6 +29,7 @@ import {
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useListings, type Offer } from "@/hooks/admin/useListings";
+import { useVendorDirectory } from "@/hooks/admin/useVendors";
 import { vendorService, offersService } from "@/services/api";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
@@ -94,6 +96,24 @@ const ManagementListing = () => {
   const { query, createListing, updateListing, setStatus, deleteListing } = useListings(activeTab);
   const offers = query.data ?? [];
 
+  /* Listings only carry the vendor's `vendorId` code, so resolve names through
+   * the vendor directory for the Vendor column, the Vendor filter and search. */
+  const { nameFor: vendorNameFor } = useVendorDirectory();
+
+  /* ── In-flight row mutations ──
+   * Approve / Mark Pending / Cancel / Delete all resolve over the network and
+   * only repaint once the invalidated query refetches. Derive the affected id
+   * straight from the mutation so the row can show that it's working and
+   * refuse a second click. `variables` survives after settling, so it's only
+   * meaningful while `isPending`. */
+  const statusPendingId = setStatus.isPending ? setStatus.variables?.id : undefined;
+  const statusPendingTo = setStatus.isPending ? setStatus.variables?.status : undefined;
+  const deletePendingId = deleteListing.isPending ? deleteListing.variables : undefined;
+
+  const isRowBusy = (o: Offer) => o._id === statusPendingId || o._id === deletePendingId;
+  const isStatusPending = (o: Offer, status: "pending" | "approved" | "cancelled") =>
+    o._id === statusPendingId && statusPendingTo === status;
+
   /* ── Reset page when tab / search / sort / filters change ── */
   useEffect(() => {
     setCurrentPage(1);
@@ -110,6 +130,19 @@ const ManagementListing = () => {
     return Array.from(set).map((v) => ({ value: v as string, label: v as string }));
   }, [offers]);
 
+  /* Only the vendors that actually own a listing in this tab — a dropdown of
+   * every vendor would mostly be dead options. Value stays the vendorId code
+   * (what the listing carries); the label is the resolved name. */
+  const vendorOptions = useMemo(() => {
+    const ids = Array.from(new Set(offers.map((o) => o.vendorId).filter(Boolean) as string[]));
+    return ids
+      .map((id) => {
+        const name = vendorNameFor(id);
+        return { value: id, label: name ? `${name} (${id})` : id };
+      })
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [offers, vendorNameFor]);
+
   const locationOptions = useMemo(() => {
     const set = new Set(
       offers.map((o) => [o.city, o.locality, o.state].filter(Boolean).join(", ")).filter(Boolean),
@@ -119,14 +152,22 @@ const ManagementListing = () => {
 
   const filterDefs: FilterDefinition[] = [
     {
+      key: "vendor",
+      label: "Vendor",
+      type: "select",
+      options: vendorOptions,
+    },
+    {
+      // Filters on the listing's own `name`. Labelled "Brand Name" before, which
+      // collided with the vendor's brandName now that Vendor is its own filter.
       key: "brandName",
-      label: "Brand Name",
+      label: "Listing Name",
       type: "select",
       options: brandNameOptions,
     },
     {
       key: "serviceName",
-      label: "Service Name",
+      label: "Category",
       type: "select",
       options: categoryOptions,
     },
@@ -143,13 +184,27 @@ const ManagementListing = () => {
     const term = searchTerm.trim().toLowerCase();
     let list = offers;
 
-    // Search across name, category, vendorId, city, locality
+    // Search across name, category, vendor (name + id), city, locality
     if (term) {
       list = list.filter((o) =>
-        [o.name, o.title, o.category, o.vendorId, o.city, o.locality, o.state]
+        [
+          o.name,
+          o.title,
+          o.category,
+          o.vendorId,
+          vendorNameFor(o.vendorId),
+          o.city,
+          o.locality,
+          o.state,
+        ]
           .filter(Boolean)
           .some((val) => String(val).toLowerCase().includes(term)),
       );
+    }
+
+    // Filter: vendor — matched on the vendorId code the listing stores
+    if (filters.vendor) {
+      list = list.filter((o) => String(o.vendorId || "") === String(filters.vendor));
     }
 
     // Filter: brand name matches listing name
@@ -186,7 +241,7 @@ const ManagementListing = () => {
       }
       return 0;
     });
-  }, [offers, searchTerm, sortBy, filters]);
+  }, [offers, searchTerm, sortBy, filters, vendorNameFor]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const paginated = filtered.slice(
@@ -304,7 +359,11 @@ const ManagementListing = () => {
   };
 
   // Direct status change (approve / mark pending)
-  const handleStatusChange = (offer: Offer, status: "pending" | "approved" | "cancelled") => {
+  const handleStatusChange = (
+    offer: Offer,
+    status: "pending" | "approved" | "cancelled",
+    options?: { onSuccess?: () => void },
+  ) => {
     if (status === "cancelled") {
       // Route through RejectReasonPopup (cancel flow)
       setRejectOffer(offer);
@@ -312,12 +371,15 @@ const ManagementListing = () => {
       setShowRejectPopup(true);
       return;
     }
-    setStatus.mutate({ id: offer._id, status });
+    // A second click while the first is still in flight would fire a duplicate
+    // request and double-toast.
+    if (setStatus.isPending) return;
+    setStatus.mutate({ id: offer._id, status }, { onSuccess: options?.onSuccess });
   };
 
   // RejectReasonPopup submit
   const handleRejectSubmit = (reason: string) => {
-    if (!rejectOffer) return;
+    if (!rejectOffer || setStatus.isPending) return;
     setStatus.mutate(
       { id: rejectOffer._id, status: rejectAction, reason },
       {
@@ -337,8 +399,8 @@ const ManagementListing = () => {
       variant: "danger",
       confirmLabel: "Delete",
       onConfirm: () => {
-        deleteListing.mutate(offer._id);
-        setConfirm(null);
+        if (deleteListing.isPending) return;
+        deleteListing.mutate(offer._id, { onSettled: () => setConfirm(null) });
       },
     });
   };
@@ -347,15 +409,27 @@ const ManagementListing = () => {
   const columns: ColumnDef<Offer>[] = [
     {
       key: "vendorId",
-      header: "Vendor ID",
-      cell: (o) => (
-        <button
-          onClick={() => handleVendorClick(o.vendorId || "")}
-          className="font-semibold text-tpl-primary hover:underline"
-        >
-          {o.vendorId || "-"}
-        </button>
-      ),
+      header: "Vendor",
+      cell: (o) => {
+        const name = vendorNameFor(o.vendorId);
+        if (!o.vendorId) {
+          return <span className="text-tpl-dark-4 dark:text-tpl-dark-6">—</span>;
+        }
+        return (
+          <button
+            onClick={() => handleVendorClick(o.vendorId || "")}
+            className="text-left hover:underline"
+            title={name ? `${name} · ${o.vendorId}` : o.vendorId}
+          >
+            <span className="block font-semibold text-tpl-primary">{name || o.vendorId}</span>
+            {name && (
+              <span className="block text-xs text-tpl-dark-4 dark:text-tpl-dark-6">
+                {o.vendorId}
+              </span>
+            )}
+          </button>
+        );
+      },
     },
     {
       key: "name",
@@ -406,7 +480,15 @@ const ManagementListing = () => {
     {
       key: "status",
       header: "Status",
-      cell: (o) => <StatusBadge status={o.status || "pending"} />,
+      cell: (o) =>
+        isRowBusy(o) ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-tpl-dark-4 dark:text-tpl-dark-6">
+            <Loader2 size={13} className="animate-spin" />
+            Updating…
+          </span>
+        ) : (
+          <StatusBadge status={o.status || "pending"} />
+        ),
     },
   ];
 
@@ -428,6 +510,9 @@ const ManagementListing = () => {
       onClick: (o) => handleStatusChange(o, "approved"),
       // Hidden when already approved
       hidden: (o) => o.status?.toLowerCase() === "approved",
+      loading: (o) => isStatusPending(o, "approved"),
+      // Any status change in flight blocks the others.
+      disabled: () => setStatus.isPending,
     },
     {
       label: "Mark Pending",
@@ -435,6 +520,8 @@ const ManagementListing = () => {
       onClick: (o) => handleStatusChange(o, "pending"),
       // Hidden when already pending
       hidden: (o) => o.status?.toLowerCase() === "pending",
+      loading: (o) => isStatusPending(o, "pending"),
+      disabled: () => setStatus.isPending,
     },
     {
       label: "Cancel",
@@ -442,6 +529,7 @@ const ManagementListing = () => {
       onClick: (o) => handleStatusChange(o, "cancelled"),
       // Hidden when already cancelled/deactivated
       hidden: (o) => o.status?.toLowerCase() === "cancelled",
+      disabled: () => setStatus.isPending,
     },
     {
       label: "Delete",
@@ -450,6 +538,8 @@ const ManagementListing = () => {
       variant: "danger",
       // Visible ONLY when status is cancelled (deactivated)
       hidden: (o) => o.status?.toLowerCase() !== "cancelled",
+      loading: (o) => o._id === deletePendingId,
+      disabled: () => deleteListing.isPending,
     },
   ];
 
@@ -509,6 +599,7 @@ const ManagementListing = () => {
                   },
                 }}
                 rowActions={rowActions}
+                rowBusy={isRowBusy}
                 pagination={{
                   currentPage,
                   totalPages,
@@ -528,12 +619,16 @@ const ManagementListing = () => {
         onClose={() => setShowViewDetails(false)}
         listingData={viewOffer}
         isLoading={isViewLoading}
+        isApproving={!!viewOffer && isStatusPending(viewOffer, "approved")}
         onApprove={
           viewOffer?.status !== "approved"
             ? () => {
+                // Stay open until the server confirms — closing first left the
+                // admin with no idea whether the approve landed.
                 if (viewOffer) {
-                  handleStatusChange(viewOffer, "approved");
-                  setShowViewDetails(false);
+                  handleStatusChange(viewOffer, "approved", {
+                    onSuccess: () => setShowViewDetails(false),
+                  });
                 }
               }
             : undefined

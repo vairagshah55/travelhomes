@@ -191,33 +191,6 @@ async function getById(id, vendorId) {
   return { item };
 }
 
-// ─── Create ─────────────────────────────────────────────────────────────────
-async function create(input, user) {
-  const payload = { ...input };
-
-  // Auto-populate vendorId from the authenticated vendor if missing.
-  if (!payload.vendorId && user && (user.userType === "vendor" || user.role === "vendor")) {
-    const vendor = await Vendor.findOne({ email: user.email });
-    if (vendor) {
-      payload.vendorId = vendor.vendorId || vendor._id.toString();
-    }
-  }
-
-  // Auto-derive statusColor from status (server-controlled).
-  if (payload.status) {
-    payload.statusColor = STATUS_COLOR[payload.status];
-  }
-
-  // Service-name fallback for vendorId.
-  if (!payload.vendorId && payload.serviceName) {
-    const offer = await Offer.findOne({ name: payload.serviceName });
-    if (offer?.vendorId) payload.vendorId = offer.vendorId;
-  }
-
-  const created = await BookingDetail.create(payload);
-  return { created };
-}
-
 // ─── Update ─────────────────────────────────────────────────────────────────
 async function update(id, patch) {
   // Re-derive statusColor if status was patched.
@@ -271,7 +244,6 @@ async function buildInvoice(id) {
 module.exports = {
   list,
   getById,
-  create,
   update,
   remove,
   buildInvoice,
