@@ -178,209 +178,217 @@ const Settings = () => {
   ];
 
   return (
-    <DashboardLayout title="Settings" contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6">
+    <DashboardLayout
+      title="Settings"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6"
+    >
       <div>
-          <div className="max-w-3xl mx-auto space-y-6">
-            {/* ── Settings nav tabs ── */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl w-fit">
-              {navLinks.map((link) => (
-                <button
-                  key={link.key}
-                  onClick={() => navigate(link.href)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
-                    activeSection === link.key
-                      ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                  }`}
-                >
-                  {link.label}
-                </button>
-              ))}
-            </div>
+        <div className="max-w-3xl mx-auto space-y-6">
+          {/* ── Settings nav tabs ── */}
+          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl w-fit">
+            {navLinks.map((link) => (
+              <button
+                key={link.key}
+                onClick={() => navigate(link.href)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 ${
+                  activeSection === link.key
+                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
 
-            {/* ── General Settings ── */}
-            <div className={"space-y-4 " + (activeSection === "general" ? "" : "hidden")}>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">
-                General Settings
-              </h2>
+          {/* ── General Settings ── */}
+          <div className={"space-y-4 " + (activeSection === "general" ? "" : "hidden")}>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">General Settings</h2>
 
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
-                <div className="flex items-center justify-between p-5">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                      Confirmation before accepting booking
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      When enabled, complete assessment is required
-                    </p>
-                  </div>
-                  <Switch
-                    checked={!!general.confirmBeforeBooking}
-                    onCheckedChange={(checked) =>
-                      setGeneral({ ...general, confirmBeforeBooking: checked })
-                    }
-                    aria-label="Confirmation before accepting booking"
-                  />
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl">
+              <div className="flex items-center justify-between p-5">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    Confirmation before accepting booking
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    When enabled, complete assessment is required
+                  </p>
                 </div>
+                <Switch
+                  checked={!!general.confirmBeforeBooking}
+                  onCheckedChange={(checked) =>
+                    setGeneral({ ...general, confirmBeforeBooking: checked })
+                  }
+                  aria-label="Confirmation before accepting booking"
+                />
               </div>
             </div>
+          </div>
 
-            {/* ── Raise Ticket ── */}
-            <div className={"space-y-4 " + (activeSection === "account" ? "" : "hidden")}>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">
-                Raise Issue Ticket
-              </h2>
+          {/* ── Raise Ticket ── */}
+          <div className={"space-y-4 " + (activeSection === "account" ? "" : "hidden")}>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">
+              Raise Issue Ticket
+            </h2>
 
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    { label: "Name", key: "name", type: "text", placeholder: "Your name" },
-                    {
-                      label: "Phone Number",
-                      key: "phone",
-                      type: "text",
-                      placeholder: "Enter 10 digit number",
-                    },
-                    {
-                      label: "Email",
-                      key: "email",
-                      type: "email",
-                      placeholder: "example@email.com",
-                    },
-                    { label: "Subject", key: "subject", type: "text", placeholder: "Subject" },
-                  ].map(({ label, key, type, placeholder }) => (
-                    <div key={key} className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                        {label}
-                      </label>
-                      <Input
-                        type={type}
-                        placeholder={placeholder}
-                        value={(ticket as any)[key]}
-                        onChange={(e) => {
-                          let val = e.target.value;
-                          if (key === "phone") val = val.replace(/\D/g, "").slice(0, 10);
-                          setTicket({ ...ticket, [key]: val });
-                        }}
-                        onKeyDown={
-                          key === "phone"
-                            ? (e) => {
-                                if (
-                                  !/[0-9]/.test(e.key) &&
-                                  ![
-                                    "Backspace",
-                                    "Delete",
-                                    "Tab",
-                                    "Escape",
-                                    "Enter",
-                                    "ArrowLeft",
-                                    "ArrowRight",
-                                  ].includes(e.key)
-                                )
-                                  e.preventDefault();
-                              }
-                            : undefined
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                    Message
-                  </label>
-                  <Textarea
-                    className="min-h-[120px] resize-none"
-                    placeholder="Describe your issue in detail…"
-                    value={ticket.message}
-                    onChange={(e) => setTicket({ ...ticket, message: e.target.value })}
-                  />
-                </div>
-
-                <div className="flex justify-end">
-                  <Button
-                    onClick={handleSubmitTicket}
-                    className="px-6 font-semibold text-white rounded-xl"
-                    style={{ background: "#0F5C8A" }}
-                  >
-                    Submit Ticket
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Preferences ── */}
-            <div className={"space-y-4 " + (activeSection === "preferences" ? "" : "hidden")}>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white">Preferences</h2>
-
-              <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[
+                  { label: "Name", key: "name", type: "text", placeholder: "Your name" },
+                  {
+                    label: "Phone Number",
+                    key: "phone",
+                    type: "text",
+                    placeholder: "Enter 10 digit number",
+                  },
+                  {
+                    label: "Email",
+                    key: "email",
+                    type: "email",
+                    placeholder: "example@email.com",
+                  },
+                  { label: "Subject", key: "subject", type: "text", placeholder: "Subject" },
+                ].map(({ label, key, type, placeholder }) => (
+                  <div key={key} className="space-y-1.5">
                     <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Language
-                    </label>
-                    <select
-                      value={preferences.language}
-                      onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
-                      className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-white"
-                    >
-                      <option value="en">English</option>
-                      <option value="hi">Hindi</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Timezone
+                      {label}
                     </label>
                     <Input
-                      value={preferences.timezone}
-                      onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
-                      placeholder="Asia/Kolkata"
+                      type={type}
+                      placeholder={placeholder}
+                      value={(ticket as any)[key]}
+                      onChange={(e) => {
+                        let val = e.target.value;
+                        if (key === "phone") val = val.replace(/\D/g, "").slice(0, 10);
+                        setTicket({ ...ticket, [key]: val });
+                      }}
+                      onKeyDown={
+                        key === "phone"
+                          ? (e) => {
+                              if (
+                                !/[0-9]/.test(e.key) &&
+                                ![
+                                  "Backspace",
+                                  "Delete",
+                                  "Tab",
+                                  "Escape",
+                                  "Enter",
+                                  "ArrowLeft",
+                                  "ArrowRight",
+                                ].includes(e.key)
+                              )
+                                e.preventDefault();
+                            }
+                          : undefined
+                      }
                     />
                   </div>
-                </div>
+                ))}
+              </div>
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">Notifications</p>
-                  {([
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Message
+                </label>
+                <Textarea
+                  className="min-h-[120px] resize-none"
+                  placeholder="Describe your issue in detail…"
+                  value={ticket.message}
+                  onChange={(e) => setTicket({ ...ticket, message: e.target.value })}
+                />
+              </div>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleSubmitTicket}
+                  className="px-6 font-semibold text-white rounded-xl"
+                  style={{ background: "#0d9488" }}
+                >
+                  Submit Ticket
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Preferences ── */}
+          <div className={"space-y-4 " + (activeSection === "preferences" ? "" : "hidden")}>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Preferences</h2>
+
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    Language
+                  </label>
+                  <select
+                    value={preferences.language}
+                    onChange={(e) => setPreferences({ ...preferences, language: e.target.value })}
+                    className="w-full h-10 px-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-white"
+                  >
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                    Timezone
+                  </label>
+                  <Input
+                    value={preferences.timezone}
+                    onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
+                    placeholder="Asia/Kolkata"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  Notifications
+                </p>
+                {(
+                  [
                     { key: "email", label: "Email notifications" },
                     { key: "sms", label: "SMS notifications" },
                     { key: "push", label: "Push notifications" },
-                  ] as const).map((n) => (
-                    <div key={n.key} className="flex items-center justify-between">
-                      <label htmlFor={`notif-${n.key}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                        {n.label}
-                      </label>
-                      <Switch
-                        id={`notif-${n.key}`}
-                        checked={!!preferences.notifications?.[n.key]}
-                        onCheckedChange={(checked) =>
-                          setPreferences({
-                            ...preferences,
-                            notifications: { ...preferences.notifications, [n.key]: checked },
-                          })
-                        }
-                        aria-label={n.label}
-                      />
-                    </div>
-                  ))}
-                </div>
+                  ] as const
+                ).map((n) => (
+                  <div key={n.key} className="flex items-center justify-between">
+                    <label
+                      htmlFor={`notif-${n.key}`}
+                      className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                    >
+                      {n.label}
+                    </label>
+                    <Switch
+                      id={`notif-${n.key}`}
+                      checked={!!preferences.notifications?.[n.key]}
+                      onCheckedChange={(checked) =>
+                        setPreferences({
+                          ...preferences,
+                          notifications: { ...preferences.notifications, [n.key]: checked },
+                        })
+                      }
+                      aria-label={n.label}
+                    />
+                  </div>
+                ))}
+              </div>
 
-                <div className="flex justify-end">
-                  <Button
-                    onClick={savePreferences}
-                    disabled={savingPrefs}
-                    className="px-6 font-semibold text-white rounded-xl"
-                    style={{ background: "#0F5C8A" }}
-                  >
-                    {savingPrefs ? "Saving…" : "Save Preferences"}
-                  </Button>
-                </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={savePreferences}
+                  disabled={savingPrefs}
+                  className="px-6 font-semibold text-white rounded-xl"
+                  style={{ background: "#0d9488" }}
+                >
+                  {savingPrefs ? "Saving…" : "Save Preferences"}
+                </Button>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
       {/* Success Modal */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
@@ -413,7 +421,7 @@ const Settings = () => {
             <Button
               onClick={() => setShowSuccessModal(false)}
               className="w-full max-w-sm h-12 rounded-full font-semibold text-white"
-              style={{ background: "#0F5C8A" }}
+              style={{ background: "#0d9488" }}
             >
               Back to Home
             </Button>

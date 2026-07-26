@@ -38,19 +38,24 @@ export function FeaturesTab() {
       .catch(console.error);
   }, [offeringCategory, featureType]);
 
+  // Property types are the Unique-Stay "category" features. Deliberately not
+  // keyed on selectedStayProperty — this effect *sets* it, and re-running on
+  // its own output would refetch the list on every selector change.
   useEffect(() => {
     if (featureType !== "selection") return;
     cmsService
       .getFeatures("Unique Stay", "category")
       .then((res: any) => {
         const list = Array.isArray(res) ? res : res.data || [];
-        setStayPropertyTypes(list.map((d: any) => ({ ...d, id: d.id || d._id })));
-        if (list.length > 0 && !selectedStayProperty) {
-          setSelectedStayProperty(list[0].id || list[0].name.toLowerCase());
-        }
+        const normalized = list.map((d: any) => ({ ...d, id: d.id || d._id }));
+        setStayPropertyTypes(normalized);
+        setSelectedStayProperty((current) => {
+          if (current && normalized.some((p: Feature) => p.id === current)) return current;
+          return normalized[0]?.id || "";
+        });
       })
       .catch(console.error);
-  }, [featureType, selectedStayProperty]);
+  }, [featureType]);
 
   useEffect(() => {
     if (featureType !== "selection" || !selectedStayProperty) return;
@@ -80,6 +85,7 @@ export function FeaturesTab() {
       setFeatures((prev) => prev.map((f) => (f.id === id ? normalized : f)));
     } catch (e) {
       console.error(e);
+      toast.error("Failed to change status");
     }
   };
 
@@ -92,8 +98,10 @@ export function FeaturesTab() {
       });
       const created = res.data || res;
       setFeatures((prev) => [...prev, { ...created, id: created.id || created._id }]);
-    } catch (e) {
+      toast.success(`${featureType === "category" ? "Category" : "Feature"} added`);
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.response?.data?.message || "Failed to add");
     }
   };
 
@@ -101,8 +109,10 @@ export function FeaturesTab() {
     try {
       await cmsService.deleteFeature(id);
       setFeatures((prev) => prev.filter((f) => f.id !== id));
+      toast.success("Deleted");
     } catch (e) {
       console.error(e);
+      toast.error("Failed to delete");
     }
   };
 
@@ -117,6 +127,7 @@ export function FeaturesTab() {
       const res = await cmsService.getFeatures(selectedStayProperty, "subcategory");
       const list = Array.isArray(res) ? res : res.data || [];
       setStaySubCategories(list.map((d: any) => ({ ...d, id: d.id || d._id })));
+      toast.success("Sub-category added");
     } catch (e: any) {
       console.error(e);
       toast.error(
@@ -127,8 +138,14 @@ export function FeaturesTab() {
 
   const deleteSubCategory = async (id: string) => {
     if (!confirm("Delete this category?")) return;
-    await cmsService.deleteFeature(id);
-    setStaySubCategories((prev) => prev.filter((f) => f.id !== id));
+    try {
+      await cmsService.deleteFeature(id);
+      setStaySubCategories((prev) => prev.filter((f) => f.id !== id));
+      toast.success("Sub-category deleted");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to delete sub-category");
+    }
   };
 
   const addBtnLabel =
@@ -229,52 +246,78 @@ export function FeaturesTab() {
         />
 
         {featureType === "selection" ? (
-          <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
-            <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
-              <div className="col-span-8 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Category Name
-              </div>
-              <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Action
-              </div>
+          <>
+            <div className="mb-4 flex items-center gap-3 max-sm:flex-col max-sm:items-start">
+              <label className="text-dashboard-title font-plus-jakarta text-sm font-medium whitespace-nowrap">
+                Property Type
+              </label>
+              {stayPropertyTypes.length > 0 ? (
+                <select
+                  value={selectedStayProperty}
+                  onChange={(e) => setSelectedStayProperty(e.target.value)}
+                  className="min-w-[240px] px-4 py-2.5 border border-dashboard-stroke rounded-lg text-sm text-dashboard-heading focus:outline-none focus:border-dashboard-primary bg-white"
+                >
+                  {stayPropertyTypes.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  No Unique Stay categories yet — add one under “Categories (Types)” first.
+                </span>
+              )}
             </div>
 
-            {staySubCategories.length > 0 ? (
-              staySubCategories.map((feature, index) => (
-                <div
-                  key={feature.id}
-                  className={`grid grid-cols-12 gap-3 px-4 py-3.5 items-center ${
-                    index !== staySubCategories.length - 1 ? "border-b border-gray-100" : ""
-                  }`}
-                >
-                  <div className="col-span-8 flex items-center gap-3">
-                    {feature.icon && (
-                      <img
-                        src={getImageUrl(feature.icon)}
-                        alt=""
-                        className="w-8 h-8 rounded object-cover bg-gray-100"
-                      />
-                    )}
-                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
-                      {feature.name}
+            <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
+              <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
+                <div className="col-span-8 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                  Category Name
+                </div>
+                <div className="col-span-4 text-dashboard-title font-plus-jakarta text-sm font-bold">
+                  Action
+                </div>
+              </div>
+
+              {staySubCategories.length > 0 ? (
+                staySubCategories.map((feature, index) => (
+                  <div
+                    key={feature.id}
+                    className={`grid grid-cols-12 gap-3 px-4 py-3.5 items-center ${
+                      index !== staySubCategories.length - 1 ? "border-b border-gray-100" : ""
+                    }`}
+                  >
+                    <div className="col-span-8 flex items-center gap-3">
+                      {feature.icon && (
+                        <img
+                          src={getImageUrl(feature.icon)}
+                          alt=""
+                          className="w-8 h-8 rounded object-cover bg-gray-100"
+                        />
+                      )}
+                      <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
+                        {feature.name}
+                      </div>
+                    </div>
+                    <div className="col-span-4">
+                      <button
+                        onClick={() => deleteSubCategory(feature.id)}
+                        className="text-red-600 hover:text-red-800"
+                        aria-label={`Delete ${feature.name}`}
+                      >
+                        <Trash2 size={18} />
+                      </button>
                     </div>
                   </div>
-                  <div className="col-span-4">
-                    <button
-                      onClick={() => deleteSubCategory(feature.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No categories found for this property type.
                 </div>
-              ))
-            ) : (
-              <div className="p-8 text-center text-gray-500">
-                No categories found for this property type.
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </>
         ) : (
           <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
             <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">

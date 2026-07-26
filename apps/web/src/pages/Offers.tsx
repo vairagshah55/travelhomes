@@ -4,14 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Plus,
-  Pencil,
-  X as CloseIcon,
-  Tag,
-  Trash2,
-  XCircle,
-} from "lucide-react";
+import { Plus, Pencil, X as CloseIcon, Tag, Trash2, XCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -19,11 +12,7 @@ import { offersApi, type OfferDTO, API_BASE_URL } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { TabStrip, ConfirmModal } from "@/components/shared";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import {
-  AdminDataTable,
-  type ColumnDef,
-  type RowAction,
-} from "@/components/admin/AdminDataTable";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 
 const Offers = () => {
   const navigate = useNavigate();
@@ -36,7 +25,12 @@ const Offers = () => {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const offersKey = ["offers", "tab", tab] as const;
-  const { data: items = [], isLoading, isError, refetch } = useQuery<OfferDTO[]>({
+  const {
+    data: items = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<OfferDTO[]>({
     queryKey: offersKey,
     queryFn: async () => {
       try {
@@ -134,9 +128,7 @@ const Offers = () => {
       header: "Category",
       hideBelow: "md",
       cell: (o) => (
-        <span className="text-[12.5px] text-gray-500 dark:text-gray-400">
-          {o.category || "—"}
-        </span>
+        <span className="text-[12.5px] text-gray-500 dark:text-gray-400">{o.category || "—"}</span>
       ),
     },
     {
@@ -316,10 +308,7 @@ const Offers = () => {
                 <Button variant="outline" onClick={() => setEditing(null)}>
                   Cancel
                 </Button>
-                <Button
-                  onClick={onSaveEdit}
-                  className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white"
-                >
+                <Button onClick={onSaveEdit} className="bg-[#0d9488] hover:bg-[#0f766e] text-white">
                   Save Changes
                 </Button>
               </div>

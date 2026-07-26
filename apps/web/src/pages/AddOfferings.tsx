@@ -437,16 +437,11 @@ const AddOfferings = () => {
   const catalog = useOfferingCatalog();
   const baseCategories = useMemo(
     () =>
-      activeTab === "camper-van"
-        ? CAMPER_VAN_CATEGORIES
-        : catalog.categories[activeTab] || [],
+      activeTab === "camper-van" ? CAMPER_VAN_CATEGORIES : catalog.categories[activeTab] || [],
     [activeTab, catalog.categories],
   );
   const baseFeatures = useMemo(
-    () =>
-      activeTab === "camper-van"
-        ? CAMPER_VAN_FEATURES
-        : catalog.features[activeTab] || [],
+    () => (activeTab === "camper-van" ? CAMPER_VAN_FEATURES : catalog.features[activeTab] || []),
     [activeTab, catalog.features],
   );
 
@@ -553,10 +548,7 @@ const AddOfferings = () => {
   const onAddRule = () => addArrayItem("rules");
   const onUpdateRule = (i: number, v: string) => handleArrayChange("rules", i, v);
   const onRemoveRule = (i: number) => removeArrayItem("rules", i);
-  const adjustCapacity = (
-    type: "seating" | "sleeping",
-    direction: "increase" | "decrease",
-  ) => {
+  const adjustCapacity = (type: "seating" | "sleeping", direction: "increase" | "decrease") => {
     const field = type === "seating" ? "seatingCapacity" : "sleepingCapacity";
     setFormData((p) => {
       const current = Number((p as any)[field] || 0);
@@ -633,7 +625,10 @@ const AddOfferings = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <DashboardLayout title="Add Offering" contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24">
+    <DashboardLayout
+      title="Add Offering"
+      contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24"
+    >
       <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-20">
         {/* ── Header: title + close + tab badge ── */}
         <div className="flex items-start justify-between gap-4">
@@ -765,7 +760,10 @@ const AddOfferings = () => {
                 >
                   Start here
                 </p>
-                <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
                   What kind of service are you adding?
                 </h2>
                 <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
@@ -816,7 +814,14 @@ const AddOfferings = () => {
                       >
                         {React.cloneElement(tab.icon as any, { size: 22 })}
                       </div>
-                      <p style={{ fontSize: 15, fontWeight: 800, color: BLACK, letterSpacing: "-0.01em" }}>
+                      <p
+                        style={{
+                          fontSize: 15,
+                          fontWeight: 800,
+                          color: BLACK,
+                          letterSpacing: "-0.01em",
+                        }}
+                      >
                         {tab.label}
                       </p>
                       <p style={{ fontSize: 12, color: GRAY_500, marginTop: 4, lineHeight: 1.5 }}>
@@ -856,7 +861,10 @@ const AddOfferings = () => {
                 >
                   {currentTab?.label}
                 </p>
-                <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
                   {activeTab === "activity" ? "Choose an activity type" : "Choose a category"}
                 </h2>
                 <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
@@ -928,9 +936,7 @@ const AddOfferings = () => {
               photos={formData.photos.gallery}
               coverImage={formData.photos.cover ? [formData.photos.cover] : []}
               errors={{ ...errors, coverImage: errors.cover, photos: errors.gallery }}
-              onNameChange={(v) =>
-                set(activeTab === "activity" ? "activityName" : "name", v)
-              }
+              onNameChange={(v) => set(activeTab === "activity" ? "activityName" : "name", v)}
               onDescriptionChange={(v) => set("description", v)}
               onAddRule={onAddRule}
               onRemoveRule={onRemoveRule}
@@ -947,10 +953,21 @@ const AddOfferings = () => {
           {step === 3 && (
             <div className="flex flex-col gap-4">
               <div>
-                <p style={{ fontSize: 11, fontWeight: 800, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   {currentTab?.label}
                 </p>
-                <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
                   What does it include?
                 </h2>
                 <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
@@ -1001,9 +1018,7 @@ const AddOfferings = () => {
                   onLocalityChange={(v) =>
                     setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
                   }
-                  onStateChange={(v) =>
-                    setFormData((p) => ({ ...p, state: v, city: "" }))
-                  }
+                  onStateChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
                   onCityChange={(v) => set("city", v)}
                   onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
                   clearError={clearError}
@@ -1011,10 +1026,21 @@ const AddOfferings = () => {
               ) : (
                 <>
                   <div>
-                    <p style={{ fontSize: 11, fontWeight: 800, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 800,
+                        color: GRAY_400,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
                       {currentTab?.label}
                     </p>
-                    <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                    <h2
+                      className="font-serif"
+                      style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                    >
                       Where is it located?
                     </h2>
                   </div>
@@ -1029,9 +1055,7 @@ const AddOfferings = () => {
                     <Field label="State" required error={errors.state}>
                       <SearchableSelect
                         value={formData.state}
-                        onChange={(v) =>
-                          setFormData((p) => ({ ...p, state: v, city: "" }))
-                        }
+                        onChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
                         options={stateOptions}
                         placeholder="Select State"
                         searchPlaceholder="Search states…"
@@ -1097,10 +1121,21 @@ const AddOfferings = () => {
           {step === 5 && (
             <div className="flex flex-col gap-6">
               <div>
-                <p style={{ fontSize: 11, fontWeight: 800, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   {currentTab?.label}
                 </p>
-                <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
                   Set your pricing
                 </h2>
                 <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
@@ -1160,10 +1195,21 @@ const AddOfferings = () => {
           {step === 6 && (
             <div className="flex flex-col gap-4">
               <div>
-                <p style={{ fontSize: 11, fontWeight: 800, color: GRAY_400, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <p
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: GRAY_400,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.08em",
+                  }}
+                >
                   Final check
                 </p>
-                <h2 className="font-serif" style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}>
+                <h2
+                  className="font-serif"
+                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
+                >
                   Review your listing
                 </h2>
                 <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
@@ -1186,15 +1232,13 @@ const AddOfferings = () => {
                   label: "Basics",
                   jumpTo: 2,
                   rows: [
+                    ["Name", activeTab === "activity" ? formData.activityName : formData.name],
                     [
-                      "Name",
-                      activeTab === "activity" ? formData.activityName : formData.name,
+                      "Description",
+                      (formData.description || "").slice(0, 120) +
+                        (formData.description.length > 120 ? "…" : ""),
                     ],
-                    ["Description", (formData.description || "").slice(0, 120) + (formData.description.length > 120 ? "…" : "")],
-                    [
-                      "Cover photo",
-                      formData.photos.cover ? "✓ Uploaded" : "Missing",
-                    ],
+                    ["Cover photo", formData.photos.cover ? "✓ Uploaded" : "Missing"],
                     ["Gallery", `${formData.photos.gallery.length} photos`],
                   ],
                 },
@@ -1204,9 +1248,7 @@ const AddOfferings = () => {
                   rows: [
                     [
                       "Selected",
-                      formData.features.length > 0
-                        ? formData.features.join(", ")
-                        : "None",
+                      formData.features.length > 0 ? formData.features.join(", ") : "None",
                     ],
                   ],
                 },
@@ -1245,7 +1287,9 @@ const AddOfferings = () => {
                         ["Per Day", formData.perDayCharge ? `₹${formData.perDayCharge}` : "—"],
                       ] as [string, string][];
                     }
-                    return [["Regular price", formData.regularPrice ? `₹${formData.regularPrice}` : "—"]] as [string, string][];
+                    return [
+                      ["Regular price", formData.regularPrice ? `₹${formData.regularPrice}` : "—"],
+                    ] as [string, string][];
                   })(),
                 },
               ].map((section) => (
@@ -1300,9 +1344,7 @@ const AddOfferings = () => {
                         >
                           {k}
                         </span>
-                        <span style={{ color: BLACK, fontWeight: 500 }}>
-                          {v || "—"}
-                        </span>
+                        <span style={{ color: BLACK, fontWeight: 500 }}>{v || "—"}</span>
                       </div>
                     ))}
                   </div>
@@ -1323,7 +1365,12 @@ const AddOfferings = () => {
                 >
                   <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
                     <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-                    <path d="M6 3.5v3M6 8.25v.25" stroke={ERROR} strokeWidth="1.5" strokeLinecap="round" />
+                    <path
+                      d="M6 3.5v3M6 8.25v.25"
+                      stroke={ERROR}
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   <p style={{ fontSize: 13, fontWeight: 600, color: ERROR }}>{errors.submit}</p>
                 </div>
@@ -1384,7 +1431,7 @@ const AddOfferings = () => {
               color: WHITE,
               cursor: !stepCanAdvance || isSubmitting ? "not-allowed" : "pointer",
               opacity: !stepCanAdvance || isSubmitting ? 0.5 : 1,
-              boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
+              boxShadow: "0 4px 16px rgba(13, 148, 136, 0.30)",
               transition: "all 0.15s",
             }}
           >
@@ -1428,7 +1475,6 @@ const AddOfferings = () => {
           <Check size={16} strokeWidth={3} /> Offering submitted successfully!
         </div>
       )}
-
     </DashboardLayout>
   );
 };

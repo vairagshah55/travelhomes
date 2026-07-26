@@ -1,24 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Plus,
-  Award,
-  Search,
-  ChevronDown,
-  CheckCircle2,
-  Clock,
-  IndianRupee,
-} from "lucide-react";
+import { Plus, Award, Search, ChevronDown, CheckCircle2, Clock, IndianRupee } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { offersApi, type OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { CustomPagination } from "@/components/CustomPagination";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
-import {
-  OfferingCard,
-  OfferPanel,
-} from "@/components/offering";
+import { OfferingCard, OfferPanel } from "@/components/offering";
 import { cn } from "@/lib/utils";
 import { EmptyState } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
@@ -38,7 +27,7 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+}> = ({ icon, label, value, hint, accent = "#0d9488" }) => (
   <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
       className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
@@ -85,8 +74,8 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
 const FILTER_ITEM_CLASS =
   "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
   "transition-colors " +
-  "focus:bg-[rgba(15,92,138,0.10)] focus:text-[#0F5C8A] " +
-  "data-[highlighted]:bg-[rgba(15,92,138,0.10)] data-[highlighted]:text-[#0F5C8A]";
+  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
+  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488]";
 
 const currencyINR = (n: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -165,7 +154,8 @@ const Offering = () => {
         if (st !== typeFilter) return false;
       }
       if (q) {
-        const hay = `${o.name ?? ""} ${o.category ?? ""} ${o.city ?? ""} ${o.state ?? ""}`.toLowerCase();
+        const hay =
+          `${o.name ?? ""} ${o.category ?? ""} ${o.city ?? ""} ${o.state ?? ""}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -177,10 +167,7 @@ const Offering = () => {
   }, [searchQuery, typeFilter]);
 
   const stats = useMemo(() => {
-    const revenue = approvedOffers.reduce(
-      (sum, o) => sum + Number(o.regularPrice || 0),
-      0,
-    );
+    const revenue = approvedOffers.reduce((sum, o) => sum + Number(o.regularPrice || 0), 0);
     return {
       approved: approvedOffers.length,
       pending: pendingOffers.length,
@@ -243,14 +230,12 @@ const Offering = () => {
               <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
                 Offerings
               </h1>
-              <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
-                Manage Properties
-              </p>
+              <p className="text-[13px] text-th-warm-text-muted mt-[3px]">Manage Properties</p>
             </div>
             <button
               type="button"
               onClick={() => navigate("/offering/add")}
-              className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150 w-fit"
+              className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(13,148,136,0.30)] transition-all duration-150 w-fit"
             >
               <Plus size={16} strokeWidth={2.5} /> Add Offering
             </button>
@@ -345,7 +330,9 @@ const Offering = () => {
                   <span
                     className={cn(
                       "text-[11px] font-bold px-[7px] py-[1px] rounded-full",
-                      active ? "bg-th-brand-soft text-th-brand" : "bg-[#EBEBEB] text-th-warm-text-dark",
+                      active
+                        ? "bg-th-brand-soft text-th-brand"
+                        : "bg-[#EBEBEB] text-th-warm-text-dark",
                     )}
                   >
                     {t.count}
@@ -378,13 +365,19 @@ const Offering = () => {
               ) : (
                 <EmptyState
                   icon={Award}
-                  title={activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"}
+                  title={
+                    activeTab === "approved" ? "No approved offerings yet" : "No pending offerings"
+                  }
                   description={
                     activeTab === "approved"
                       ? "Once the admin approves your submitted offerings, they'll appear here."
                       : "Offerings you create go into pending review first. Create one to get started."
                   }
-                  actionLabel={activeTab === "approved" ? "View pending offerings" : "Create your first offering"}
+                  actionLabel={
+                    activeTab === "approved"
+                      ? "View pending offerings"
+                      : "Create your first offering"
+                  }
                   onAction={() =>
                     activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
                   }

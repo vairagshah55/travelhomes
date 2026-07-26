@@ -59,7 +59,7 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+}> = ({ icon, label, value, hint, accent = "#0d9488" }) => (
   <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
       className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
@@ -106,8 +106,8 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
 const FILTER_ITEM_CLASS =
   "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
   "transition-colors " +
-  "focus:bg-[rgba(15,92,138,0.10)] focus:text-[#0F5C8A] " +
-  "data-[highlighted]:bg-[rgba(15,92,138,0.10)] data-[highlighted]:text-[#0F5C8A]";
+  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
+  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488]";
 
 const BookingDetails = () => {
   const { user, token: authToken } = useAuth();
@@ -174,11 +174,18 @@ const BookingDetails = () => {
   });
 
   // Reset to page 1 when tab or filter changes
-  React.useEffect(() => { setCurrentPage(1); }, [activeTab, timeFilter]);
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, timeFilter]);
 
   // ─── Data loading ──────────────────────────────────────────────────────────
   const bookingsKey = ["bookingDetails", "list", user?.id, token] as const;
-  const { data: bookings = [], isLoading, isError, refetch } = useQuery<BookingDetailDTO[]>({
+  const {
+    data: bookings = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery<BookingDetailDTO[]>({
     queryKey: bookingsKey,
     enabled: !!(user || token),
     queryFn: async () => {
@@ -272,8 +279,10 @@ const BookingDetails = () => {
       const ci = parseBookingDate(b.checkIn);
       const co = parseBookingDate(b.checkOut);
       if (ci && co) {
-        const ciD = new Date(ci); ciD.setHours(0, 0, 0, 0);
-        const coD = new Date(co); coD.setHours(0, 0, 0, 0);
+        const ciD = new Date(ci);
+        ciD.setHours(0, 0, 0, 0);
+        const coD = new Date(co);
+        coD.setHours(0, 0, 0, 0);
         if (today >= ciD && today <= coD && b.status !== "cancelled") todayCount += 1;
       }
       if (b.status === "active") activeCount += 1;
@@ -505,7 +514,7 @@ const BookingDetails = () => {
         const w = window.open("", "_blank");
         if (w) {
           w.document.write(
-            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#0F5C8A}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${d.servicePrice || ""}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
+            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#0d9488}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${d.servicePrice || ""}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
           );
           w.document.close();
         }
@@ -584,7 +593,12 @@ const BookingDetails = () => {
   const rowActions: RowAction<BookingDetailDTO>[] = [
     { label: "View", icon: Eye, onClick: (b) => handleView(b) },
     { label: "Edit", icon: Pencil, onClick: (b) => handleEdit(b) },
-    { label: "Cancel", icon: Ban, onClick: (b) => handleCancel(b), hidden: (b) => b.status === "cancelled" },
+    {
+      label: "Cancel",
+      icon: Ban,
+      onClick: (b) => handleCancel(b),
+      hidden: (b) => b.status === "cancelled",
+    },
     { label: "Print Invoice", icon: Printer, onClick: (b) => handlePrint(b.id) },
     { label: "Delete", icon: Trash2, onClick: (b) => handleDelete(b), variant: "danger" },
   ];
@@ -600,7 +614,7 @@ const BookingDetails = () => {
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex items-center gap-1.5 h-10 px-[18px] rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150",
+        "flex items-center gap-1.5 h-10 px-[18px] rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(13,148,136,0.30)] transition-all duration-150",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
       )}
     >
@@ -620,7 +634,11 @@ const BookingDetails = () => {
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
-    <DashboardLayout title="Booking Details" outerClassName="overflow-hidden" contentClassName="flex-1 overflow-auto p-3 lg:p-5">
+    <DashboardLayout
+      title="Booking Details"
+      outerClassName="overflow-hidden"
+      contentClassName="flex-1 overflow-auto p-3 lg:p-5"
+    >
       <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] min-h-full">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#EBEBEB]">
@@ -693,13 +711,15 @@ const BookingDetails = () => {
                 : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
             }
           >
-            {([
-              ["all", "All Statuses"],
-              ["pending", "Pending"],
-              ["confirmed", "Confirmed"],
-              ["active", "Active"],
-              ["cancelled", "Cancelled"],
-            ] as const).map(([key, label]) => (
+            {(
+              [
+                ["all", "All Statuses"],
+                ["pending", "Pending"],
+                ["confirmed", "Confirmed"],
+                ["active", "Active"],
+                ["cancelled", "Cancelled"],
+              ] as const
+            ).map(([key, label]) => (
               <DropdownMenuItem
                 key={key}
                 className={FILTER_ITEM_CLASS}
@@ -714,11 +734,7 @@ const BookingDetails = () => {
           </FilterPill>
 
           {/* Date / time filter */}
-          <FilterPill
-            label={
-              TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"
-            }
-          >
+          <FilterPill label={TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"}>
             {TIME_FILTERS.map((f) => (
               <DropdownMenuItem
                 key={f.key}
@@ -768,7 +784,9 @@ const BookingDetails = () => {
                 <span
                   className={cn(
                     "text-[11px] font-bold px-[7px] py-[1px] rounded-full",
-                    active ? "bg-th-brand-soft text-th-brand" : "bg-[#EBEBEB] text-th-warm-text-dark",
+                    active
+                      ? "bg-th-brand-soft text-th-brand"
+                      : "bg-[#EBEBEB] text-th-warm-text-dark",
                   )}
                 >
                   {count}
@@ -820,18 +838,54 @@ const BookingDetails = () => {
               </span>
               <StatusBadge status={selectedBooking.status} />
             </div>
-            <InfoRow icon={<User size={15} />} label="Client Name" value={selectedBooking.clientName} />
-            <InfoRow icon={<MapPin size={15} />} label="Service" value={selectedBooking.serviceName} />
-            <InfoRow icon={<Calendar size={15} />} label="Check In" value={selectedBooking.checkIn} />
-            <InfoRow icon={<Clock size={15} />} label="Check Out" value={selectedBooking.checkOut} />
-            <InfoRow icon={<Users size={15} />} label="Guests" value={String(selectedBooking.guests || "—")} />
-            <InfoRow icon={<IndianRupee size={15} />} label="Price" value={selectedBooking.servicePrice} />
-            <InfoRow icon={<MapPin size={15} />} label="Location" value={selectedBooking.location} />
+            <InfoRow
+              icon={<User size={15} />}
+              label="Client Name"
+              value={selectedBooking.clientName}
+            />
+            <InfoRow
+              icon={<MapPin size={15} />}
+              label="Service"
+              value={selectedBooking.serviceName}
+            />
+            <InfoRow
+              icon={<Calendar size={15} />}
+              label="Check In"
+              value={selectedBooking.checkIn}
+            />
+            <InfoRow
+              icon={<Clock size={15} />}
+              label="Check Out"
+              value={selectedBooking.checkOut}
+            />
+            <InfoRow
+              icon={<Users size={15} />}
+              label="Guests"
+              value={String(selectedBooking.guests || "—")}
+            />
+            <InfoRow
+              icon={<IndianRupee size={15} />}
+              label="Price"
+              value={selectedBooking.servicePrice}
+            />
+            <InfoRow
+              icon={<MapPin size={15} />}
+              label="Location"
+              value={selectedBooking.location}
+            />
             {selectedBooking.contactEmail && (
-              <InfoRow icon={<Mail size={15} />} label="Email" value={selectedBooking.contactEmail} />
+              <InfoRow
+                icon={<Mail size={15} />}
+                label="Email"
+                value={selectedBooking.contactEmail}
+              />
             )}
             {selectedBooking.contactPhone && (
-              <InfoRow icon={<Phone size={15} />} label="Phone" value={selectedBooking.contactPhone} />
+              <InfoRow
+                icon={<Phone size={15} />}
+                label="Phone"
+                value={selectedBooking.contactPhone}
+              />
             )}
           </div>
         )}
@@ -933,22 +987,62 @@ const BookingDetails = () => {
             maxLength={12}
           />
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Check-in Date" required value={createForm.checkInDate} onChange={(v) => setCreateForm((p) => ({ ...p, checkInDate: v }))} error={createErrors.checkInDate} type="date" />
-            <PanelInput label="Check-in Time" value={createForm.checkInTime} onChange={(v) => setCreateForm((p) => ({ ...p, checkInTime: v }))} type="time" />
+            <PanelInput
+              label="Check-in Date"
+              required
+              value={createForm.checkInDate}
+              onChange={(v) => setCreateForm((p) => ({ ...p, checkInDate: v }))}
+              error={createErrors.checkInDate}
+              type="date"
+            />
+            <PanelInput
+              label="Check-in Time"
+              value={createForm.checkInTime}
+              onChange={(v) => setCreateForm((p) => ({ ...p, checkInTime: v }))}
+              type="time"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Check-out Date" required value={createForm.checkOutDate} onChange={(v) => setCreateForm((p) => ({ ...p, checkOutDate: v }))} error={createErrors.checkOutDate} type="date" />
-            <PanelInput label="Check-out Time" value={createForm.checkOutTime} onChange={(v) => setCreateForm((p) => ({ ...p, checkOutTime: v }))} type="time" />
+            <PanelInput
+              label="Check-out Date"
+              required
+              value={createForm.checkOutDate}
+              onChange={(v) => setCreateForm((p) => ({ ...p, checkOutDate: v }))}
+              error={createErrors.checkOutDate}
+              type="date"
+            />
+            <PanelInput
+              label="Check-out Time"
+              value={createForm.checkOutTime}
+              onChange={(v) => setCreateForm((p) => ({ ...p, checkOutTime: v }))}
+              type="time"
+            />
           </div>
-          <PanelSelect label="Location" value={createForm.locationFrom} onChange={(v) => setCreateForm((p) => ({ ...p, locationFrom: v }))}>
+          <PanelSelect
+            label="Location"
+            value={createForm.locationFrom}
+            onChange={(v) => setCreateForm((p) => ({ ...p, locationFrom: v }))}
+          >
             <option value="">Select location</option>
             {LOCATIONS.map((l) => (
-              <option key={l} value={l}>{l}</option>
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
           </PanelSelect>
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Price" value={createForm.servicePrice} onChange={(v) => setCreateForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))} placeholder="₹ 0" />
-            <PanelInput label="Guests" value={createForm.guests} onChange={(v) => setCreateForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))} placeholder="0" />
+            <PanelInput
+              label="Price"
+              value={createForm.servicePrice}
+              onChange={(v) => setCreateForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))}
+              placeholder="₹ 0"
+            />
+            <PanelInput
+              label="Guests"
+              value={createForm.guests}
+              onChange={(v) => setCreateForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))}
+              placeholder="0"
+            />
           </div>
         </div>
       </SlidePanel>
@@ -969,28 +1063,80 @@ const BookingDetails = () => {
       >
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Customer Name" value={editForm.customerName} onChange={(v) => setEditForm((p) => ({ ...p, customerName: v }))} />
-            <PanelInput label="Phone" value={editForm.phone} onChange={(v) => setEditForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))} maxLength={12} />
+            <PanelInput
+              label="Customer Name"
+              value={editForm.customerName}
+              onChange={(v) => setEditForm((p) => ({ ...p, customerName: v }))}
+            />
+            <PanelInput
+              label="Phone"
+              value={editForm.phone}
+              onChange={(v) => setEditForm((p) => ({ ...p, phone: v.replace(/\D/g, "") }))}
+              maxLength={12}
+            />
           </div>
-          <PanelInput label="Email" value={editForm.email} onChange={(v) => setEditForm((p) => ({ ...p, email: v }))} type="email" />
-          <PanelSelect label="Status" value={editForm.status} onChange={(v) => setEditForm((p) => ({ ...p, status: v }))}>
+          <PanelInput
+            label="Email"
+            value={editForm.email}
+            onChange={(v) => setEditForm((p) => ({ ...p, email: v }))}
+            type="email"
+          />
+          <PanelSelect
+            label="Status"
+            value={editForm.status}
+            onChange={(v) => setEditForm((p) => ({ ...p, status: v }))}
+          >
             <option value="pending">Pending</option>
             <option value="confirmed">Confirmed</option>
             <option value="active">Active</option>
             <option value="cancelled">Cancelled</option>
           </PanelSelect>
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Check-in Date" value={editForm.checkInDate} onChange={(v) => setEditForm((p) => ({ ...p, checkInDate: v }))} type="date" />
-            <PanelInput label="Check-in Time" value={editForm.checkInTime} onChange={(v) => setEditForm((p) => ({ ...p, checkInTime: v }))} type="time" />
+            <PanelInput
+              label="Check-in Date"
+              value={editForm.checkInDate}
+              onChange={(v) => setEditForm((p) => ({ ...p, checkInDate: v }))}
+              type="date"
+            />
+            <PanelInput
+              label="Check-in Time"
+              value={editForm.checkInTime}
+              onChange={(v) => setEditForm((p) => ({ ...p, checkInTime: v }))}
+              type="time"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Check-out Date" value={editForm.checkOutDate} onChange={(v) => setEditForm((p) => ({ ...p, checkOutDate: v }))} type="date" />
-            <PanelInput label="Check-out Time" value={editForm.checkOutTime} onChange={(v) => setEditForm((p) => ({ ...p, checkOutTime: v }))} type="time" />
+            <PanelInput
+              label="Check-out Date"
+              value={editForm.checkOutDate}
+              onChange={(v) => setEditForm((p) => ({ ...p, checkOutDate: v }))}
+              type="date"
+            />
+            <PanelInput
+              label="Check-out Time"
+              value={editForm.checkOutTime}
+              onChange={(v) => setEditForm((p) => ({ ...p, checkOutTime: v }))}
+              type="time"
+            />
           </div>
-          <PanelInput label="Location" value={editForm.locationFrom} onChange={(v) => setEditForm((p) => ({ ...p, locationFrom: v }))} />
+          <PanelInput
+            label="Location"
+            value={editForm.locationFrom}
+            onChange={(v) => setEditForm((p) => ({ ...p, locationFrom: v }))}
+          />
           <div className="grid grid-cols-2 gap-3">
-            <PanelInput label="Price" value={editForm.servicePrice} onChange={(v) => setEditForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))} placeholder="₹ 0" />
-            <PanelInput label="Guests" value={editForm.guests} onChange={(v) => setEditForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))} placeholder="0" />
+            <PanelInput
+              label="Price"
+              value={editForm.servicePrice}
+              onChange={(v) => setEditForm((p) => ({ ...p, servicePrice: v.replace(/\D/g, "") }))}
+              placeholder="₹ 0"
+            />
+            <PanelInput
+              label="Guests"
+              value={editForm.guests}
+              onChange={(v) => setEditForm((p) => ({ ...p, guests: v.replace(/\D/g, "") }))}
+              placeholder="0"
+            />
           </div>
         </div>
       </SlidePanel>

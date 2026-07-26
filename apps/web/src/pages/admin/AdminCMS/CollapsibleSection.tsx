@@ -1,10 +1,10 @@
 import React, { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 interface CollapsibleSectionProps {
   title: string;
   children?: React.ReactNode;
   defaultExpanded?: boolean;
-  hasContent?: boolean;
   isActive?: boolean;
   showToggle?: boolean;
   onToggleStatus?: (e: React.MouseEvent) => void;
@@ -21,22 +21,21 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
   isSectionActive = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
-  const handleToggle = () => {
-    setIsExpanded((prev) => !prev);
-  };
+  // Sections used purely as a visibility switch have no body — don't offer
+  // (or hint at) an expand affordance that does nothing.
+  const expandable = Boolean(children);
 
   return (
     <div
-      className={`border border-dashboard-stroke rounded-xl bg-white ${isActive ? "border-dashboard-primary bg-dashboard-primary/[0.12]" : ""}`}
+      className={`border border-dashboard-stroke rounded-xl bg-white ${
+        isActive ? "border-dashboard-primary bg-dashboard-primary/[0.12]" : ""
+      }`}
     >
       <div
-        className="flex items-center justify-between p-4 cursor-pointer"
-        onClick={handleToggle}
+        className={`flex items-center justify-between p-4 ${expandable ? "cursor-pointer" : ""}`}
+        onClick={expandable ? () => setIsExpanded((prev) => !prev) : undefined}
       >
-        <h3 className="text-dashboard-title font-plus-jakarta text-sm font-bold">
-          {title}
-        </h3>
+        <h3 className="text-dashboard-title font-plus-jakarta text-sm font-bold">{title}</h3>
         <div className="flex items-center gap-3">
           {showToggle && (
             <button
@@ -44,6 +43,7 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
                 e.stopPropagation();
                 onToggleStatus?.(e);
               }}
+              aria-label={`${isSectionActive ? "Hide" : "Show"} ${title}`}
               className={`w-9 h-5 rounded-full transition-colors relative ${
                 isSectionActive ? "bg-dashboard-blue-600" : "bg-gray-300"
               }`}
@@ -55,10 +55,15 @@ export const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
               />
             </button>
           )}
-          <div className="flex flex-col items-center gap-0.5" />
+          {expandable &&
+            (isExpanded ? (
+              <ChevronUp size={18} className="text-dashboard-body" />
+            ) : (
+              <ChevronDown size={18} className="text-dashboard-body" />
+            ))}
         </div>
       </div>
-      {isExpanded && children && <div className="px-4 pb-4">{children}</div>}
+      {isExpanded && expandable && <div className="px-4 pb-4">{children}</div>}
     </div>
   );
 };

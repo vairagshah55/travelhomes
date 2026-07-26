@@ -75,6 +75,18 @@ const faqBody = z
   })
   .strict();
 
+// PUT /faqs/:id — partial patch; at least one field must be present so an
+// empty body doesn't silently no-op.
+const faqUpdateBody = z
+  .object({
+    category: z.string().trim().min(1).max(120).optional(),
+    question: z.string().trim().min(1).max(2000).optional(),
+    answer: z.string().trim().min(1).max(20_000).optional(),
+    isActive: z.boolean().optional(),
+  })
+  .strict()
+  .refine((d) => Object.keys(d).length > 0, { message: "At least one field must be provided" });
+
 // ─── Testimonials ──────────────────────────────────────────────────────
 const testimonialBody = z
   .object({
@@ -144,6 +156,7 @@ module.exports = {
   jobApplyBody,
   jobApplicationStatusBody,
   faqBody,
+  faqUpdateBody,
   testimonialBody,
   featuresListQuery,
   featureBody,

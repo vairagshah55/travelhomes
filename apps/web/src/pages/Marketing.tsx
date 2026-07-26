@@ -145,8 +145,8 @@ const Marketing = () => {
               <div
                 className={`relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-colors ${
                   dragActive
-                    ? "border-[#0F5C8A] bg-blue-50 dark:bg-blue-500/10"
-                    : "border-gray-200 dark:border-gray-700 hover:border-[#0F5C8A] hover:bg-blue-50/30 dark:hover:bg-blue-500/5"
+                    ? "border-[#0d9488] bg-teal-50 dark:bg-teal-500/10"
+                    : "border-gray-200 dark:border-gray-700 hover:border-[#0d9488] hover:bg-teal-50/30 dark:hover:bg-teal-500/5"
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -161,7 +161,7 @@ const Marketing = () => {
                   <div>
                     <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Drag & drop or{" "}
-                      <span className="text-[#0F5C8A] font-semibold">browse files</span>
+                      <span className="text-[#0d9488] font-semibold">browse files</span>
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       Images, PDF, DOC, CSV, XLSX supported
@@ -238,7 +238,7 @@ const Marketing = () => {
                       key={title}
                       onClick={action}
                       title={title}
-                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-lg transition-colors text-gray-500 dark:text-gray-400"
+                      className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#0f766e] rounded-lg transition-colors text-gray-500 dark:text-gray-400"
                     >
                       <Icon size={14} />
                     </button>
@@ -250,7 +250,10 @@ const Marketing = () => {
             {/* Actions */}
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => { setContentText(""); setUploadedImages([]); }}
+                onClick={() => {
+                  setContentText("");
+                  setUploadedImages([]);
+                }}
                 className="px-4 py-2 text-sm font-semibold text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
               >
                 Cancel
@@ -258,7 +261,7 @@ const Marketing = () => {
               <Button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-xl px-6"
+                className="bg-[#0d9488] hover:bg-[#0f766e] text-white rounded-xl px-6"
               >
                 {isSubmitting ? "Submitting…" : "Post Content"}
               </Button>
@@ -275,7 +278,11 @@ const Marketing = () => {
           {items.length === 0 ? (
             <div className="py-16 flex flex-col items-center gap-4 text-gray-400">
               <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center">
-                <ImageIcon size={22} className="text-gray-300 dark:text-gray-600" strokeWidth={1.5} />
+                <ImageIcon
+                  size={22}
+                  className="text-gray-300 dark:text-gray-600"
+                  strokeWidth={1.5}
+                />
               </div>
               <div className="text-center space-y-1">
                 <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">

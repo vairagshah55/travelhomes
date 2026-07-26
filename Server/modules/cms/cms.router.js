@@ -67,6 +67,11 @@ router.delete("/jobs/:id", validate({ params: dto.idParams }), controller.remove
 // ─── FAQ ───────────────────────────────────────────────────────────────
 router.get("/faqs", controller.listFaqs);
 router.post("/faqs", validate({ body: dto.faqBody }), controller.createFaq);
+router.put(
+  "/faqs/:id",
+  validate({ params: dto.idParams, body: dto.faqUpdateBody }),
+  controller.updateFaq,
+);
 router.delete("/faqs/:id", validate({ params: dto.idParams }), controller.removeFaq);
 
 // ─── Testimonials ──────────────────────────────────────────────────────

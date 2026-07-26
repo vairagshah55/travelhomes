@@ -353,9 +353,7 @@ const DashboardChat = () => {
   const ChatList = () => (
     <div className="w-full md:w-1/3 bg-white border-r flex flex-col">
       <div className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-2xl font-semibold text-black dark:text-white">
-          Chats
-        </h2>
+        <h2 className="text-2xl font-semibold text-black dark:text-white">Chats</h2>
         <div className="border rounded-full w-12 h-12 flex items-center justify-center">
           <MdEmail />
         </div>
@@ -364,8 +362,7 @@ const DashboardChat = () => {
         {chats
           .filter(
             (user) =>
-              user.type === filter &&
-              user.name.toLowerCase().includes(searchTerm.toLowerCase()),
+              user.type === filter && user.name.toLowerCase().includes(searchTerm.toLowerCase()),
           )
           .sort((a, b) => {
             const aPinned = pinnedUserIds.includes(a.id);
@@ -429,11 +426,7 @@ const DashboardChat = () => {
                   <MdExpandLess className="rotate-[-90deg] text-2xl" />
                 </button>
               )}
-              <img
-                src={selectedUser.avatar}
-                alt=""
-                className="rounded-full w-10 h-10"
-              />
+              <img src={selectedUser.avatar} alt="" className="rounded-full w-10 h-10" />
               <div>
                 <h3 className="font-semibold text-xl">{selectedUser.name}</h3>
                 <span className="text-sm text-gray-400">
@@ -442,24 +435,13 @@ const DashboardChat = () => {
               </div>
             </div>
             <div className="relative flex items-center space-x-3">
-              <button
-                onClick={() =>
-                  navigate("/videocall", { state: { user: selectedUser } })
-                }
-              >
+              <button onClick={() => navigate("/videocall", { state: { user: selectedUser } })}>
                 <FaPhoneAlt className="text-2xl" />
               </button>
-              <button
-                onClick={() =>
-                  navigate("/videocall", { state: { user: selectedUser } })
-                }
-              >
+              <button onClick={() => navigate("/videocall", { state: { user: selectedUser } })}>
                 <FaVideo className="text-2xl" />
               </button>
-              <button
-                onClick={() => setShowOptions(!showOptions)}
-                className="text-3xl"
-              >
+              <button onClick={() => setShowOptions(!showOptions)} className="text-3xl">
                 ⋮
               </button>
               {showOptions && (
@@ -502,11 +484,9 @@ const DashboardChat = () => {
                 className={`relative flex group ${msg.me ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-sm p-3 rounded-xl ${msg.me ? "bg-[#0F5C8A] text-white" : "bg-gray-100 text-gray-800 shadow"}`}
+                  className={`max-w-sm p-3 rounded-xl ${msg.me ? "bg-[#0d9488] text-white" : "bg-gray-100 text-gray-800 shadow"}`}
                 >
-                  {!msg.me && (
-                    <p className="text-xs text-gray-500 mb-1">{msg.sender}</p>
-                  )}
+                  {!msg.me && <p className="text-xs text-gray-500 mb-1">{msg.sender}</p>}
                   <p className="text-sm">{msg.text}</p>
                   <p className="text-xs mt-2 text-right">{msg.time}</p>
                 </div>
@@ -528,10 +508,7 @@ const DashboardChat = () => {
           {/* Input */}
           <div className="p-4 border-t bg-white flex items-center gap-3">
             <div className="relative">
-              <button
-                onClick={() => setShowEmojis(!showEmojis)}
-                className="text-xl"
-              >
+              <button onClick={() => setShowEmojis(!showEmojis)} className="text-xl">
                 😊
               </button>
               {showEmojis && (
@@ -612,9 +589,7 @@ const DashboardChat = () => {
                   />
                   <button
                     className="flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded"
-                    onClick={() =>
-                      document.getElementById("cameraInput")?.click()
-                    }
+                    onClick={() => document.getElementById("cameraInput")?.click()}
                   >
                     <span className="w-6 h-6 bg-blue-500 text-white flex items-center justify-center rounded">
                       <FaCamera />
@@ -636,9 +611,7 @@ const DashboardChat = () => {
                   />
                   <button
                     className="flex items-center gap-2 text-sm hover:bg-gray-100 p-2 rounded"
-                    onClick={() =>
-                      document.getElementById("galleryInput")?.click()
-                    }
+                    onClick={() => document.getElementById("galleryInput")?.click()}
                   >
                     <span className="w-6 h-6 bg-blue-500 text-white flex items-center justify-center rounded">
                       <GrGallery />
@@ -670,7 +643,7 @@ const DashboardChat = () => {
 
             <button
               onClick={handleSend}
-              className="bg-[#0F5C8A] text-white w-10 h-10 rounded-full flex items-center justify-center"
+              className="bg-[#0d9488] text-white w-10 h-10 rounded-full flex items-center justify-center"
             >
               <SendIcon />
             </button>
@@ -684,12 +657,8 @@ const DashboardChat = () => {
               alt="No Chat Selected"
               className="w-40 h-40 mx-auto mb-4 opacity-50"
             />
-            <h2 className="text-xl font-semibold text-gray-600 mb-2">
-              No conversation selected
-            </h2>
-            <p className="text-gray-500">
-              Select a chat from the sidebar to start messaging.
-            </p>
+            <h2 className="text-xl font-semibold text-gray-600 mb-2">No conversation selected</h2>
+            <p className="text-gray-500">Select a chat from the sidebar to start messaging.</p>
           </div>
         </div>
       )}
@@ -697,7 +666,10 @@ const DashboardChat = () => {
   );
 
   return (
-    <DashboardLayout title="Vendor Chat" contentClassName="flex-1 overflow-hidden flex flex-col pr-5 pb-5">
+    <DashboardLayout
+      title="Vendor Chat"
+      contentClassName="flex-1 overflow-hidden flex flex-col pr-5 pb-5"
+    >
       <div className="flex-1 flex">
         {isMobile ? (
           started ? (

@@ -1333,7 +1333,7 @@ const EditOfferings = () => {
               color: "#fff",
               cursor: !stepCanAdvance || isSubmitting ? "not-allowed" : "pointer",
               opacity: !stepCanAdvance || isSubmitting ? 0.5 : 1,
-              boxShadow: "0 4px 16px rgba(15, 92, 138, 0.30)",
+              boxShadow: "0 4px 16px rgba(13, 148, 136, 0.30)",
               transition: "all 0.15s",
             }}
           >

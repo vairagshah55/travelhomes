@@ -130,6 +130,12 @@ async function createFaq(body) {
   return Faq.create(body);
 }
 
+async function updateFaq(id, body) {
+  const updated = await Faq.findByIdAndUpdate(id, body, { new: true });
+  if (!updated) throw new NotFoundError("FAQ", id);
+  return updated;
+}
+
 async function removeFaq(id) {
   const removed = await Faq.findByIdAndDelete(id);
   if (!removed) throw new NotFoundError("FAQ", id);
@@ -286,6 +292,7 @@ module.exports = {
   // FAQ
   listFaqs,
   createFaq,
+  updateFaq,
   removeFaq,
   // Testimonials
   listTestimonials,

@@ -67,8 +67,8 @@ const FilterPill: React.FC<{
 const FILTER_ITEM_CLASS =
   "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
   "transition-colors " +
-  "focus:bg-[rgba(15,92,138,0.10)] focus:text-[#0F5C8A] " +
-  "data-[highlighted]:bg-[rgba(15,92,138,0.10)] data-[highlighted]:text-[#0F5C8A] " +
+  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
+  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488] " +
   "data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed";
 
 /* ── Stats card ─────────────────────────────────────────────────────────────── */
@@ -78,7 +78,7 @@ const StatCard: React.FC<{
   value: string;
   hint?: string;
   accent?: string;
-}> = ({ icon, label, value, hint, accent = "#0F5C8A" }) => (
+}> = ({ icon, label, value, hint, accent = "#0d9488" }) => (
   <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
     <div
       className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
@@ -96,9 +96,7 @@ const StatCard: React.FC<{
       <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
         {value}
       </p>
-      {hint && (
-        <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>
-      )}
+      {hint && <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>}
     </div>
   </div>
 );
@@ -169,7 +167,8 @@ const Bookings = () => {
           const t = (o.serviceType || "").toLowerCase();
           structured.push({
             name: o.name,
-            type: t === "unique-stay" ? "unique-stay" : t === "activity" ? "activity" : "camper-van",
+            type:
+              t === "unique-stay" ? "unique-stay" : t === "activity" ? "activity" : "camper-van",
           });
         }
       }
@@ -365,8 +364,10 @@ const Bookings = () => {
     for (const b of filteredBookings) {
       revenue += Number(b.totalAmount || 0);
       pending += Number(b.pendingAmount || 0);
-      const s = new Date(b.startDate); s.setHours(0, 0, 0, 0);
-      const e = new Date(b.endDate); e.setHours(0, 0, 0, 0);
+      const s = new Date(b.startDate);
+      s.setHours(0, 0, 0, 0);
+      const e = new Date(b.endDate);
+      e.setHours(0, 0, 0, 0);
       if (today >= s && today <= e && b.status !== "Cancelled") todayCount += 1;
     }
     return { total: filteredBookings.length, revenue, pending, today: todayCount };
@@ -400,7 +401,7 @@ const Bookings = () => {
           <button
             type="button"
             onClick={handleNewBooking}
-            className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(15,92,138,0.30)] w-fit"
+            className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(13,148,136,0.30)] w-fit"
           >
             <Plus size={16} strokeWidth={2.5} /> New Booking
           </button>
@@ -432,7 +433,11 @@ const Bookings = () => {
               All Services
             </DropdownMenuItem>
             {vehicleNames.map((name) => (
-              <DropdownMenuItem key={name} className={FILTER_ITEM_CLASS} onClick={() => setServiceFilter(name)}>
+              <DropdownMenuItem
+                key={name}
+                className={FILTER_ITEM_CLASS}
+                onClick={() => setServiceFilter(name)}
+              >
                 {name}
               </DropdownMenuItem>
             ))}
@@ -457,7 +462,11 @@ const Bookings = () => {
             <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("month")}>
               Month View
             </DropdownMenuItem>
-            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("week")} disabled>
+            <DropdownMenuItem
+              className={FILTER_ITEM_CLASS}
+              onClick={() => setViewMode("week")}
+              disabled
+            >
               Week View (soon)
             </DropdownMenuItem>
           </FilterPill>
@@ -544,7 +553,12 @@ const Bookings = () => {
       <ConfirmModal
         open={!!confirmDeleteId}
         onClose={() => setConfirmDeleteId(null)}
-        onConfirm={() => { if (confirmDeleteId) { doDeleteBooking(confirmDeleteId); setConfirmDeleteId(null); } }}
+        onConfirm={() => {
+          if (confirmDeleteId) {
+            doDeleteBooking(confirmDeleteId);
+            setConfirmDeleteId(null);
+          }
+        }}
         title="Delete booking?"
         description="This booking will be permanently removed and cannot be undone."
         confirmLabel="Delete"

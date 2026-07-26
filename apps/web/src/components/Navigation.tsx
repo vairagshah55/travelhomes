@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { BrandLogo } from "@/components/BrandLogo";
+import { AdminBrandMark } from "@/components/admin/AdminBrand";
 import {
   LayoutDashboard,
   Calendar,
@@ -26,6 +26,8 @@ interface MenuItem {
   label: string;
   icon: React.ElementType;
   path: string;
+  /** Per-item accent hue for the color-coded icon tile (mirrors admin nav). */
+  color?: string;
   children?: MenuItem[];
   badge?: number;
 }
@@ -46,12 +48,19 @@ interface SidebarProps {
 }
 
 const menuItems: MenuItem[] = [
-  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+  {
+    id: "dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    path: "/dashboard",
+    color: "#3BD9D9",
+  },
   {
     id: "bookings",
     label: "Bookings",
     icon: Calendar,
     path: "/bookings",
+    color: "#a855f7",
     children: [
       { id: "all-bookings", label: "All Bookings", icon: Calendar, path: "/bookings" },
       { id: "booking-details", label: "Details", icon: FileText, path: "/bookings/details" },
@@ -62,31 +71,45 @@ const menuItems: MenuItem[] = [
     label: "Offerings",
     icon: Package,
     path: "/offering",
+    color: "#3b82f6",
     children: [
       { id: "all-offerings", label: "All Offerings", icon: Package, path: "/offering" },
       { id: "add-offering", label: "Add New", icon: Package, path: "/offering/add" },
     ],
   },
-  { id: "revenue", label: "Revenue", icon: DollarSign, path: "/revenue" },
+  { id: "revenue", label: "Revenue", icon: DollarSign, path: "/revenue", color: "#22c55e" },
   {
     id: "marketing",
     label: "Marketing",
     icon: BarChart3,
     path: "/marketing",
+    color: "#ec4899",
     children: [
       { id: "marketing-home", label: "Overview", icon: BarChart3, path: "/marketing" },
       { id: "offers", label: "Offers", icon: Package, path: "/marketing/offers" },
     ],
   },
-  { id: "analytics", label: "Analytics", icon: BarChart3, path: "/analytics" },
-  { id: "messages", label: "Messages", icon: MessageSquare, path: "/vendor-chat" },
+  { id: "analytics", label: "Analytics", icon: BarChart3, path: "/analytics", color: "#f59e0b" },
+  {
+    id: "messages",
+    label: "Messages",
+    icon: MessageSquare,
+    path: "/vendor-chat",
+    color: "#14b8a6",
+  },
 ];
 
 const bottomMenuItems: MenuItem[] = [
-  { id: "notifications", label: "Notifications", icon: Bell, path: "/notifications" },
-  { id: "settings", label: "Settings", icon: Settings, path: "/settings" },
-  { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help" },
-  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/" },
+  {
+    id: "notifications",
+    label: "Notifications",
+    icon: Bell,
+    path: "/notifications",
+    color: "#3b82f6",
+  },
+  { id: "settings", label: "Settings", icon: Settings, path: "/settings", color: "#8a929f" },
+  { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help", color: "#22c55e" },
+  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/", color: "#0d9488" },
 ];
 
 /* ─── small reusable badge ─── */
@@ -240,20 +263,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
           <div className="group relative flex justify-center py-1 px-2">
             <button
               onClick={() => (hasChildren ? toggleExpand(item.id) : navigate(item.path))}
+              style={
+                !active && item.color
+                  ? { backgroundColor: `${item.color}1f`, color: item.color }
+                  : undefined
+              }
               className={`
                 relative flex items-center justify-center w-10 h-10 rounded-xl
                 transition-all duration-150
-                ${
-                  active
-                    ? "bg-app-accent text-app-accent-fg shadow-sm"
-                    : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.07] hover:text-gray-700 dark:hover:text-gray-200"
-                }
+                ${active ? "bg-app-accent text-app-accent-fg shadow-sm" : "hover:brightness-95"}
               `}
             >
               <item.icon size={18} />
               {/* notification dot */}
               {item.badge !== undefined && item.badge > 0 && !active && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-app-accent ring-2 ring-white dark:ring-[#0f1117]" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500 ring-2 ring-[#f1f8f7] dark:ring-[#0f1117]" />
               )}
             </button>
             <CollapsedTooltip label={item.label} badge={item.badge} />
@@ -282,12 +306,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             `}
             />
 
-            <item.icon
-              size={16}
-              className={`shrink-0 transition-all duration-150
-                ${active ? "text-app-accent" : "group-hover:scale-110"}
-              `}
-            />
+            <span
+              className="grid place-items-center w-8 h-8 rounded-lg shrink-0 transition-all duration-150 group-hover:scale-[1.05]"
+              style={
+                active
+                  ? { backgroundColor: "#0d9488", color: "#fff" }
+                  : item.color
+                    ? { backgroundColor: `${item.color}1f`, color: item.color }
+                    : undefined
+              }
+            >
+              <item.icon size={16} />
+            </span>
 
             <span className="flex-1 text-[13px] font-medium whitespace-nowrap tracking-[-0.01em]">
               {item.label}
@@ -402,8 +432,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
       style={{ width: isOpen ? 256 : 68 }}
       className="
         relative flex flex-col h-full overflow-hidden
-        bg-white dark:bg-[#0f1117]
-        shadow-[inset_-1px_0_0_#f0f0f0] dark:shadow-[inset_-1px_0_0_#1c1f26]
+        bg-[#f1f8f7] dark:bg-[#0f1117]
+        shadow-[inset_-1px_0_0_#dce7e5] dark:shadow-[inset_-1px_0_0_#1c1f26]
         transition-[width] duration-300 ease-in-out
       "
     >
@@ -411,13 +441,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
       <div
         className={`
         flex items-center h-[60px] shrink-0 px-3.5
-        shadow-[inset_0_-1px_0_#f0f0f0] dark:shadow-[inset_0_-1px_0_#1c1f26]
+        shadow-[inset_0_-1px_0_#dce7e5] dark:shadow-[inset_0_-1px_0_#1c1f26]
         ${!isOpen ? "justify-center" : ""}
       `}
       >
         {isOpen ? (
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
-            <BrandLogo size={30} className="min-w-0" />
+            <AdminBrandMark size={30} />
+            <span className="font-extrabold tracking-tight leading-none text-[16px] whitespace-nowrap min-w-0 truncate">
+              <span className="text-[#101828] dark:text-white">Travel</span>
+              <span className="text-[#0d9488]">Homes</span>
+            </span>
 
             <button
               onClick={handlePinToggle}
@@ -435,7 +469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ defaultCollapsed = false, onTo
             </button>
           </div>
         ) : (
-          <BrandLogo variant="mark" size={32} />
+          <AdminBrandMark size={32} />
         )}
       </div>
 

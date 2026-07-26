@@ -1,56 +1,120 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
-import {
-  Bell,
-  ChevronDown,
-  ChevronUp,
-  Edit2,
-  Trash2,
-  Search,
-  Filter,
-  X,
-  MoreHorizontal,
-  Upload,
-  User,
-  Eye,
-} from "lucide-react";
-import RichTextEditor from "@/components/admin/RichTextEditor";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { cmsService } from "@/services/cms";
 import { settingsService } from "@/services/api";
 
-import { getImageUrl } from "@/lib/adminUtils";
-import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
-import ConfirmModal from "@/components/shared/ConfirmModal";
-
 import { CollapsibleSection } from "./AdminCMS/CollapsibleSection";
-import { StarRating } from "./AdminCMS/StarRating";
+import { AuthPageMedia } from "./AdminCMS/AuthPageMedia";
 import { BrandingTab } from "./AdminCMS/tabs/BrandingTab";
 import { TestimonialsTab } from "./AdminCMS/tabs/TestimonialsTab";
 import { PolicyTab } from "./AdminCMS/tabs/PolicyTab";
-import { ContactUsTab } from "./AdminCMS/tabs/ContactUsTab";
+import { ContactUsTab, type ContactMessage } from "./AdminCMS/tabs/ContactUsTab";
 import { FAQsTab } from "./AdminCMS/tabs/FAQsTab";
 import { CareerTab } from "./AdminCMS/tabs/CareerTab";
 import { HomePageTab } from "./AdminCMS/tabs/HomePageTab";
 import { BlogsTab } from "./AdminCMS/tabs/BlogsTab";
 import { FeaturesTab } from "./AdminCMS/tabs/FeaturesTab";
 
+/**
+ * The auth pages whose hero collage is CMS-managed. Each one stores five
+ * media rows (position 0-4) that the public <Gallery /> renders as a
+ * 3-tile left column + 2-tile right column.
+ */
+const AUTH_PAGES = [
+  { page: "Login", title: "Login Page" },
+  { page: "Register", title: "Registration Page" },
+  { page: "ForgetPassword", title: "Forgot Password Page" },
+  { page: "Verification", title: "Verification Code Page" },
+  { page: "EnterEmail", title: "Enter Email Page" },
+  { page: "ChangePassword", title: "Change Password Page" },
+] as const;
+
+const SLOTS_PER_PAGE = 5;
+
+const emptySlots = () =>
+  AUTH_PAGES.reduce<Record<string, (string | null)[]>>((acc, { page }) => {
+    acc[page] = Array(SLOTS_PER_PAGE).fill(null);
+    return acc;
+  }, {});
+
+const TABS = [
+  "Register/Login",
+  "HomePage",
+  "features",
+  "Contact Us",
+  "Career",
+  "FAQs",
+  "Testimonials",
+  "Policy",
+  "Blogs",
+  "Branding",
+];
+
+/**
+ * Split an image into the five tiles the public gallery expects:
+ * left column thirds (0,1,2) then right column halves (3,4).
+ */
+function sliceIntoTiles(img: HTMLImageElement, mimeType: string) {
+  const halfW = img.width / 2;
+  const thirdH = img.height / 3;
+  const halfH = img.height / 2;
+
+  const regions = [
+    { x: 0, y: 0, w: halfW, h: thirdH }, // left top
+    { x: 0, y: thirdH, w: halfW, h: thirdH }, // left middle
+    { x: 0, y: 2 * thirdH, w: halfW, h: thirdH }, // left bottom
+    { x: halfW, y: 0, w: halfW, h: halfH }, // right top
+    { x: halfW, y: halfH, w: halfW, h: halfH }, // right bottom
+  ];
+
+  return Promise.all(
+    regions.map(
+      (r, i) =>
+        new Promise<{ blob: Blob | null; dataUrl: string }>((resolve) => {
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve({ blob: null, dataUrl: "" });
+            return;
+          }
+          canvas.width = Math.max(1, Math.round(r.w));
+          canvas.height = Math.max(1, Math.round(r.h));
+          ctx.drawImage(img, r.x, r.y, r.w, r.h, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL(mimeType);
+          canvas.toBlob((blob) => resolve({ blob, dataUrl }), mimeType);
+          void i;
+        }),
+    ),
+  );
+}
+
+const readFileAsDataURL = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not read that image"));
+    img.src = src;
+  });
+
 const AdminCMS = () => {
   const [activeTab, setActiveTab] = useState("Register/Login");
-  const [openContactMenuId, setOpenContactMenuId] = useState<string | null>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{
-    title: string;
-    message: string;
-    onConfirm: () => void;
-  } | null>(null);
 
-  // Branding States
+  // ── Branding ─────────────────────────────────────────────────────────
   const [faviconUrl, setFaviconUrl] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [logoDarkUrl, setLogoDarkUrl] = useState<string>("");
 
-  // Contact Info State
+  // ── Contact ──────────────────────────────────────────────────────────
   const [contactInfo, setContactInfo] = useState({
     email: "",
     phone: "",
@@ -60,312 +124,122 @@ const AdminCMS = () => {
     pincode: "",
     image: "",
   });
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
 
-  // Local preview and file inputs for Change Photo buttons
-  const [loginPreview, setLoginPreview] = useState<string>("");
-  const [registerPreview1, setRegisterPreview1] = useState<string>("");
-  const [registerPreview2, setRegisterPreview2] = useState<string>("");
-  const loginFileRef = useRef<HTMLInputElement>(null);
-  const registerFileRef1 = useRef<HTMLInputElement>(null);
-  const registerFileRef2 = useRef<HTMLInputElement>(null);
+  // ── Auth-page media ──────────────────────────────────────────────────
+  const [previews, setPreviews] = useState<Record<string, (string | null)[]>>(emptySlots);
+  const [loadingMedia, setLoadingMedia] = useState(true);
+  const [uploadingPage, setUploadingPage] = useState<string | null>(null);
+  const fileRefs = useRef<Record<string, React.RefObject<HTMLInputElement>>>(
+    AUTH_PAGES.reduce<Record<string, React.RefObject<HTMLInputElement>>>((acc, { page }) => {
+      acc[page] = React.createRef<HTMLInputElement>();
+      return acc;
+    }, {}),
+  );
 
-  const onLoginPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * One picked image becomes the whole collage: it is cut into the five
+   * tiles the public page renders and each tile is upserted at its position.
+   */
+  const onChangePhoto = async (page: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setLoginPreview(reader.result as string);
-    reader.readAsDataURL(file);
+
+    setUploadingPage(page);
     try {
-      await cmsService.uploadMedia({
-        page: "Register/Login",
-        section: "Login Page",
-        position: 0,
-        file,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  const onRegisterPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>, which: 1 | 2) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (which === 1) setRegisterPreview1(reader.result as string);
-      else setRegisterPreview2(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-    try {
-      await cmsService.uploadMedia({
-        page: "Register/Login",
-        section: "Registration Page",
-        position: which === 1 ? 1 : 2,
-        file,
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+      const dataUrl = await readFileAsDataURL(file);
+      const img = await loadImage(dataUrl);
+      const tiles = await sliceIntoTiles(img, file.type || "image/jpeg");
 
-  const authPages = [
-    "Login",
-    "Register",
-    "ForgetPassword",
-    "Verification",
-    "EnterEmail",
-    "ChangePassword",
-  ] as const;
-  const slotsPerPage = 5;
-
-  const [previews, setPreviews] = useState<Record<string, (string | null)[]>>({
-    Login: Array(slotsPerPage).fill(null),
-    Register: Array(slotsPerPage).fill(null),
-    ForgetPassword: Array(slotsPerPage).fill(null),
-    Verification: Array(slotsPerPage).fill(null),
-    EnterEmail: Array(slotsPerPage).fill(null),
-    ChangePassword: Array(slotsPerPage).fill(null),
-  });
-
-  const makeRefs = () =>
-    Array.from({ length: slotsPerPage }, () => React.createRef<HTMLInputElement>());
-  const fileRefs = useRef<Record<string, React.RefObject<HTMLInputElement>[]>>({
-    Login: makeRefs(),
-    Register: makeRefs(),
-    ForgetPassword: makeRefs(),
-    Verification: makeRefs(),
-    EnterEmail: makeRefs(),
-    ChangePassword: makeRefs(),
-  });
-
-  const getDefaultImage = (page: string, index: number) => {
-    const defaultsLogin = [
-      "https://api.builder.io/api/v1/image/assets/TEMP/189ec32850d222d53454645d326fb969a5128f86?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/189ec32850d222d53454645d326fb969a5128f86?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/189ec32850d222d53454645d326fb969a5128f86?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/189ec32850d222d53454645d326fb969a5128f86?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/189ec32850d222d53454645d326fb969a5128f86?width=683",
-    ];
-    const defaultsRegister = [
-      "https://api.builder.io/api/v1/image/assets/TEMP/efc35c1906a677c7aab6014678e553f772fbd27c?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/a5c3a1d5930c7d51d52f92c07949580819d89bfc?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/a5c3a1d5930c7d51d52f92c07949580819d89bfc?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/a5c3a1d5930c7d51d52f92c07949580819d89bfc?width=683",
-      "https://api.builder.io/api/v1/image/assets/TEMP/a5c3a1d5930c7d51d52f92c07949580819d89bfc?width=683",
-    ];
-    const generic = "https://via.placeholder.com/400x300?text=Add+Image";
-
-    if (page === "Login") return defaultsLogin[index] || generic;
-    if (page === "Register") return defaultsRegister[index] || generic;
-    return generic;
-  };
-
-  const onChangePhoto = async (
-    page: string,
-    index: number,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const slicePages = ["Login", "Register", "Verification", "EnterEmail", "ChangePassword"];
-
-    if (slicePages.includes(page)) {
-      const reader = new FileReader();
-      reader.onload = (readerEvent) => {
-        const fullImageSrc = readerEvent.target?.result as string;
-
-        // Set full image preview immediately
-        setPreviews((prev) => ({
-          ...prev,
-          [page]: prev[page].map((v, i) => (i === 0 ? fullImageSrc : v)),
-        }));
-
-        const img = new Image();
-        img.onload = async () => {
-          const w = img.width;
-          const h = img.height;
-          const halfW = w / 2;
-          const thirdH = h / 3;
-          const halfH = h / 2;
-
-          const slices = [
-            { x: 0, y: 0, w: halfW, h: thirdH }, // 0: Left Top
-            { x: 0, y: thirdH, w: halfW, h: thirdH }, // 1: Left Middle
-            { x: 0, y: 2 * thirdH, w: halfW, h: thirdH }, // 2: Left Bottom
-            { x: halfW, y: 0, w: halfW, h: halfH }, // 3: Right Top
-            { x: halfW, y: halfH, w: halfW, h: halfH }, // 4: Right Bottom
-          ];
-
-          const uploadPromises = slices.map(async (slice, i) => {
-            return new Promise<void>((resolve) => {
-              const canvas = document.createElement("canvas");
-              const ctx = canvas.getContext("2d");
-              if (!ctx) {
-                resolve();
-                return;
-              }
-
-              canvas.width = slice.w;
-              canvas.height = slice.h;
-              ctx.drawImage(img, slice.x, slice.y, slice.w, slice.h, 0, 0, slice.w, slice.h);
-
-              canvas.toBlob(async (blob) => {
-                if (blob) {
-                  const slicedFile = new File([blob], `slice_${i}_${file.name}`, {
-                    type: file.type,
-                  });
-
-                  try {
-                    await cmsService.uploadMedia({
-                      page,
-                      section: page,
-                      position: i,
-                      file: slicedFile,
-                    });
-                  } catch (err) {
-                    console.error(`Failed to upload slice ${i}`, err);
-                  }
-                }
-                resolve();
-              }, file.type);
-            });
-          });
-
-          await Promise.all(uploadPromises);
-          toast.success("Image sliced and uploaded successfully!");
-        };
-        img.src = fullImageSrc;
-      };
-      reader.readAsDataURL(file);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
+      // Show the cut tiles straight away, then swap in the stored URLs.
       setPreviews((prev) => ({
         ...prev,
-        [page]: prev[page].map((v, i) => (i === index ? (reader.result as string) : v)),
+        [page]: tiles.map((t, i) => t.dataUrl || prev[page][i]),
       }));
-    };
-    reader.readAsDataURL(file);
-    try {
-      const result = await cmsService.uploadMedia({
-        page,
-        section: page,
-        position: index,
-        file,
-      });
-      if (result?.data?.url) {
-        setPreviews((prev) => ({
-          ...prev,
-          [page]: prev[page].map((v, i) => (i === index ? result.data.url : v)),
-        }));
-      }
+
+      const uploaded = await Promise.all(
+        tiles.map(async (tile, i) => {
+          if (!tile.blob) return null;
+          const slicedFile = new File([tile.blob], `slice_${i}_${file.name}`, {
+            type: file.type || "image/jpeg",
+          });
+          const res = await cmsService.uploadMedia({
+            page,
+            section: page,
+            position: i,
+            file: slicedFile,
+          });
+          return res?.data?.url ?? null;
+        }),
+      );
+
+      setPreviews((prev) => ({
+        ...prev,
+        [page]: prev[page].map((v, i) => uploaded[i] || v),
+      }));
+      toast.success("Image updated on the live page");
     } catch (err) {
       console.error("[AdminCMS] Upload failed:", err);
       toast.error(
         `Failed to upload image: ${err instanceof Error ? err.message : "Unknown error"}`,
       );
+    } finally {
+      setUploadingPage(null);
     }
   };
 
-  const tabs = [
-    "Register/Login",
-    "HomePage",
-    "features",
-    "Contact Us",
-    "Career",
-    "FAQs",
-    "Testimonials",
-    "Policy",
-    "Blogs",
-    "Branding",
-  ];
-
-  // Contact messages state (for Contact Us tab)
-  const [contactMessages, setContactMessages] = useState<
-    Array<{
-      id: string;
-      firstName: string;
-      lastName?: string;
-      email: string;
-      phone?: string;
-      message: string;
-      status?: string;
-      createdAt?: string;
-    }>
-  >([]);
-  const [loadingContacts, setLoadingContacts] = useState(false);
-
-  // Load initial data from API
+  // Load contact info + inbox
   useEffect(() => {
-    cmsService
-      .getContact()
-      .then((res) => {
-        if (res?.data) {
-          setContactInfo((prev) => ({ ...prev, ...res.data }));
-        }
-      })
-      .catch(console.error);
-
-    // Load contact messages for Contact Us tab
     (async () => {
       try {
-        setLoadingContacts(true);
-        const list = await cmsService.listContactMessages();
-        setContactMessages(list);
+        const [infoRes, messages] = await Promise.all([
+          cmsService.getContact().catch(() => null),
+          cmsService.listContactMessages().catch(() => []),
+        ]);
+        if (infoRes?.data) setContactInfo((prev) => ({ ...prev, ...infoRes.data }));
+        setContactMessages(messages as ContactMessage[]);
       } catch (e) {
-        console.warn("Failed to load contact messages", e);
+        console.warn("Failed to load contact data", e);
       } finally {
         setLoadingContacts(false);
       }
     })();
+  }, []);
 
+  // Load the stored tiles for every auth page
+  useEffect(() => {
     (async () => {
       try {
-        const next: Record<string, (string | null)[]> = {
-          Login: Array(slotsPerPage).fill(null),
-          Register: Array(slotsPerPage).fill(null),
-          ForgetPassword: Array(slotsPerPage).fill(null),
-          Verification: Array(slotsPerPage).fill(null),
-          EnterEmail: Array(slotsPerPage).fill(null),
-          ChangePassword: Array(slotsPerPage).fill(null),
-        };
-
-        for (const page of authPages) {
-          const res = await cmsService.getMedia({ page });
-          const items: Array<{ section: string; position: number; url: string } & any> =
-            res?.data || res || [];
+        const next = emptySlots();
+        const results = await Promise.all(
+          AUTH_PAGES.map(async ({ page }) => ({
+            page,
+            res: await cmsService.getMedia({ page }),
+          })),
+        );
+        results.forEach(({ page, res }) => {
+          const items: Array<{ position?: number; url?: string }> = res?.data || res || [];
           (items || []).forEach((m) => {
             const pos = Number(m.position || 0);
             const url = String(m.url || "").trim();
-            if (next[page] && pos >= 0 && pos < slotsPerPage && url) {
-              next[page][pos] = url;
-            }
+            if (pos >= 0 && pos < SLOTS_PER_PAGE && url) next[page][pos] = url;
           });
-        }
+        });
         setPreviews(next);
       } catch (e) {
         console.warn("Failed to load CMS media", e);
+      } finally {
+        setLoadingMedia(false);
       }
     })();
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".action-menu-container")) {
-        setOpenContactMenuId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Fetch Branding Settings
+  // Branding is only fetched when its tab is opened
   useEffect(() => {
     if (activeTab !== "Branding") return;
-    const loadBranding = async () => {
+    (async () => {
       try {
         const faviconData = await settingsService.getSeo("favicon");
         setFaviconUrl(faviconData?.faviconUrl || "");
@@ -376,218 +250,28 @@ const AdminCMS = () => {
       } catch (e) {
         console.error("Failed to load branding settings", e);
       }
-    };
-    loadBranding();
+    })();
   }, [activeTab]);
 
   const renderRegisterLoginContent = () => (
     <div className="space-y-4 overflow-x-hidden max-md:flex-wrap">
-      {/* Login Page */}
-      <CollapsibleSection title="Login Page" defaultExpanded>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {loadingContacts ? (
-            <UniqueStaysSkeleton />
-          ) : (
-            [0].map((idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                  <img
-                    src={getImageUrl(previews["Login"]?.[idx] || getDefaultImage("Login", idx))}
-                    alt={`Login Page Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRefs.current["Login"][idx]}
-                  className="hidden"
-                  onChange={(e) => onChangePhoto("Login", idx, e)}
-                />
-                <button
-                  onClick={() => fileRefs.current["Login"][idx].current?.click()}
-                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CollapsibleSection>
-
-      {/* Registration Page */}
-      <CollapsibleSection title="Registration Page" defaultExpanded>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {loadingContacts ? (
-            <UniqueStaysSkeleton />
-          ) : (
-            [0].map((idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                  <img
-                    src={getImageUrl(
-                      previews["Register"]?.[idx] || getDefaultImage("Register", idx),
-                    )}
-                    alt={`Registration Page Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRefs.current["Register"][idx]}
-                  className="hidden"
-                  onChange={(e) => onChangePhoto("Register", idx, e)}
-                />
-                <button
-                  onClick={() => fileRefs.current["Register"][idx].current?.click()}
-                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Verification Code Page">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {loadingContacts ? (
-            <UniqueStaysSkeleton />
-          ) : (
-            [0].map((idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                  <img
-                    src={getImageUrl(
-                      previews["Verification"]?.[idx] || getDefaultImage("Verification", idx),
-                    )}
-                    alt={`Verification Code Page Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRefs.current["Verification"][idx]}
-                  className="hidden"
-                  onChange={(e) => onChangePhoto("Verification", idx, e)}
-                />
-                <button
-                  onClick={() => fileRefs.current["Verification"][idx].current?.click()}
-                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Enter Email Page">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3  ">
-          {loadingContacts ? (
-            <UniqueStaysSkeleton />
-          ) : (
-            [0].map((idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                  <img
-                    src={getImageUrl(
-                      previews["EnterEmail"]?.[idx] || getDefaultImage("EnterEmail", idx),
-                    )}
-                    alt={`Enter Email Page Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRefs.current["EnterEmail"][idx]}
-                  className="hidden"
-                  onChange={(e) => onChangePhoto("EnterEmail", idx, e)}
-                />
-                <button
-                  onClick={() => fileRefs.current["EnterEmail"][idx].current?.click()}
-                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CollapsibleSection>
-
-      <CollapsibleSection title="Change Password Page">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {loadingContacts ? (
-            <UniqueStaysSkeleton />
-          ) : (
-            [0].map((idx) => (
-              <div key={idx} className="space-y-3">
-                <div className="w-[300px] h-[300px] bg-gray-200 rounded-xl overflow-hidden">
-                  <img
-                    src={getImageUrl(
-                      previews["ChangePassword"]?.[idx] || getDefaultImage("ChangePassword", idx),
-                    )}
-                    alt={`Change Password Page Preview ${idx + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={fileRefs.current["ChangePassword"][idx]}
-                  className="hidden"
-                  onChange={(e) => onChangePhoto("ChangePassword", idx, e)}
-                />
-                <button
-                  onClick={() => fileRefs.current["ChangePassword"][idx].current?.click()}
-                  className="w-[300px] py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-                >
-                  Change Photo
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </CollapsibleSection>
+      <p className="text-sm text-dashboard-body">
+        The image you upload is split into the five tiles shown on the public page — the preview
+        below is exactly what visitors will see.
+      </p>
+      {AUTH_PAGES.map(({ page, title }, index) => (
+        <CollapsibleSection key={page} title={title} defaultExpanded={index < 2}>
+          <AuthPageMedia
+            page={page}
+            slices={previews[page]}
+            loading={loadingMedia}
+            uploading={uploadingPage === page}
+            inputRef={fileRefs.current[page]}
+            onFileChange={(e) => onChangePhoto(page, e)}
+          />
+        </CollapsibleSection>
+      ))}
     </div>
-  );
-
-  const renderHomePageContent = () => <HomePageTab />;
-  const renderCareerContent = () => <CareerTab />;
-
-  const renderFAQsContent = () => <FAQsTab />;
-
-  const renderTestimonialsContent = () => <TestimonialsTab />;
-
-  const renderfeaturesContent = () => <FeaturesTab />;
-
-  const renderBlogsContent = () => <BlogsTab />;
-
-  const renderPolicyContent = () => <PolicyTab />;
-  const renderContactContent = () => (
-    <ContactUsTab
-      contactInfo={contactInfo}
-      setContactInfo={setContactInfo}
-      loadingContacts={loadingContacts}
-    />
-  );
-
-  const renderBrandingContent = () => (
-    <BrandingTab
-      faviconUrl={faviconUrl}
-      logoUrl={logoUrl}
-      logoDarkUrl={logoDarkUrl}
-      setFaviconUrl={setFaviconUrl}
-      setLogoUrl={setLogoUrl}
-      setLogoDarkUrl={setLogoDarkUrl}
-    />
   );
 
   const renderTabContent = () => {
@@ -595,23 +279,40 @@ const AdminCMS = () => {
       case "Register/Login":
         return renderRegisterLoginContent();
       case "HomePage":
-        return renderHomePageContent();
+        return <HomePageTab />;
       case "features":
-        return renderfeaturesContent();
+        return <FeaturesTab />;
       case "Contact Us":
-        return renderContactContent();
+        return (
+          <ContactUsTab
+            contactInfo={contactInfo}
+            setContactInfo={setContactInfo}
+            loadingContacts={loadingContacts}
+            messages={contactMessages}
+            setMessages={setContactMessages}
+          />
+        );
       case "Career":
-        return renderCareerContent();
+        return <CareerTab />;
       case "FAQs":
-        return renderFAQsContent();
+        return <FAQsTab />;
       case "Testimonials":
-        return renderTestimonialsContent();
+        return <TestimonialsTab />;
       case "Policy":
-        return renderPolicyContent();
+        return <PolicyTab />;
       case "Blogs":
-        return renderBlogsContent();
+        return <BlogsTab />;
       case "Branding":
-        return renderBrandingContent();
+        return (
+          <BrandingTab
+            faviconUrl={faviconUrl}
+            logoUrl={logoUrl}
+            logoDarkUrl={logoDarkUrl}
+            setFaviconUrl={setFaviconUrl}
+            setLogoUrl={setLogoUrl}
+            setLogoDarkUrl={setLogoDarkUrl}
+          />
+        );
       default:
         return (
           <div className="text-center py-12 text-dashboard-neutral-07">
@@ -635,7 +336,7 @@ const AdminCMS = () => {
         <div className="bg-white dark:bg-tpl-dark-2 px-6 py-6 rounded-b-[10px] shadow-tpl-1 min-h-[calc(100vh-8rem)]">
           {/* Tabs */}
           <div className="flex items-center mb-6 overflow-x-auto scrollbar-hide">
-            {tabs.map((tab) => (
+            {TABS.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -654,16 +355,6 @@ const AdminCMS = () => {
           <MotionReveal delay={0.06}>{renderTabContent()}</MotionReveal>
         </div>
       </div>
-
-      <ConfirmModal
-        open={!!confirmDialog}
-        onClose={() => setConfirmDialog(null)}
-        onConfirm={confirmDialog?.onConfirm ?? (() => {})}
-        title={confirmDialog?.title ?? ""}
-        description={confirmDialog?.message ?? ""}
-        confirmLabel="Delete"
-        variant="danger"
-      />
     </AdminLayout>
   );
 };

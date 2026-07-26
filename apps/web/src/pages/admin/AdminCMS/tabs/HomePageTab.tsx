@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import { CollapsibleSection } from "../CollapsibleSection";
 
@@ -51,72 +52,32 @@ export function HomePageTab() {
   const toggle = async (sectionTitle: string) => {
     const key = SECTION_KEY_MAP[sectionTitle];
     if (!key) return;
-    setSections((prev) => ({ ...prev, [sectionTitle]: !prev[sectionTitle] }));
+    const nextVisible = !sections[sectionTitle];
+    setSections((prev) => ({ ...prev, [sectionTitle]: nextVisible }));
     try {
       await cmsService.toggleHomepageSection(key);
+      toast.success(`${sectionTitle} ${nextVisible ? "shown on" : "hidden from"} the homepage`);
     } catch (e) {
       console.error("Failed to toggle section", e);
-      setSections((prev) => ({ ...prev, [sectionTitle]: !prev[sectionTitle] }));
+      setSections((prev) => ({ ...prev, [sectionTitle]: !nextVisible }));
+      toast.error(`Could not update ${sectionTitle}`);
     }
   };
 
   return (
     <div className="space-y-3.5 max-md:flex-wrap overflow-x-hidden">
-      <CollapsibleSection
-        title="Camper Van"
-        showToggle
-        isSectionActive={sections["Camper Van"]}
-        onToggleStatus={() => toggle("Camper Van")}
-      />
-      <CollapsibleSection
-        title="Unique Stays"
-        defaultExpanded
-        hasContent
-        isActive
-        showToggle
-        isSectionActive={sections["Unique Stays"]}
-        onToggleStatus={() => toggle("Unique Stays")}
-      />
-      <CollapsibleSection
-        title="Best Activity"
-        hasContent
-        defaultExpanded
-        showToggle
-        isSectionActive={sections["Best Activity"]}
-        onToggleStatus={() => toggle("Best Activity")}
-      />
-      <CollapsibleSection
-        title="Trending destinations"
-        hasContent
-        defaultExpanded
-        showToggle
-        isSectionActive={sections["Trending destinations"]}
-        onToggleStatus={() => toggle("Trending destinations")}
-      />
-      <CollapsibleSection
-        title="Testimonials"
-        hasContent
-        defaultExpanded
-        showToggle
-        isSectionActive={sections["Testimonials"]}
-        onToggleStatus={() => toggle("Testimonials")}
-      />
-      <CollapsibleSection
-        title="Top Rated Stays"
-        hasContent
-        defaultExpanded
-        showToggle
-        isSectionActive={sections["Top Rated Stays"]}
-        onToggleStatus={() => toggle("Top Rated Stays")}
-      />
-      <CollapsibleSection
-        title="Frequently asked questions"
-        hasContent
-        defaultExpanded
-        showToggle
-        isSectionActive={sections["Frequently asked questions"]}
-        onToggleStatus={() => toggle("Frequently asked questions")}
-      />
+      <p className="text-sm text-dashboard-body">
+        Turn a section off to hide it from the public homepage. Changes apply immediately.
+      </p>
+      {Object.keys(SECTION_KEY_MAP).map((title) => (
+        <CollapsibleSection
+          key={title}
+          title={title}
+          showToggle
+          isSectionActive={sections[title] !== false}
+          onToggleStatus={() => toggle(title)}
+        />
+      ))}
     </div>
   );
 }

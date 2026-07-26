@@ -59,13 +59,18 @@ export function FAQsTab() {
       if (editing) {
         const updated = await cmsService.updateFAQ(editing.id, faqData);
         setFaqs((prev) => prev.map((f) => (f.id === editing.id ? updated : f)));
+        toast.success("FAQ updated");
       } else {
         const created = await cmsService.createFAQ(faqData);
         setFaqs((prev) => [...prev, created]);
+        toast.success("FAQ added");
+        // Jump to the category the new question landed in so it's visible.
+        if (faqData?.category) setSelectedCategory(faqData.category);
       }
       setEditing(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.response?.data?.message || "Failed to save FAQ");
     }
   };
 
@@ -141,6 +146,12 @@ export function FAQsTab() {
               Action
             </div>
           </div>
+
+          {filtered.length === 0 && (
+            <div className="p-8 text-center text-gray-500">
+              No questions in “{selectedCategory}” yet.
+            </div>
+          )}
 
           {filtered.map((faq, index) => (
             <div

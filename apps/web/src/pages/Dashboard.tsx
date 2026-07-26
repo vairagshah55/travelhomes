@@ -44,10 +44,9 @@ import {
   BookingDetailDTO,
   VendorAnalyticsCounts,
 } from "../lib/api";
-import { formatDate, format, isPast, isFuture } from "date-fns";
+import { formatDate, isPast, isFuture } from "date-fns";
 
-const BRAND = "#0F5C8A";
-const BRAND2 = "#0A4670";
+const BRAND = "#0d9488";
 
 // ─── count-up hook ─────────────────────────────────────────────────────────────
 function useCountUp(target: number, duration = 800) {
@@ -388,7 +387,9 @@ const AnimatedStatCard = ({
       transition={{ delay: index * 0.06, duration: 0.28, ease: "easeOut" }}
       className={`group bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border} hover:shadow-xl hover:shadow-gray-200/50 dark:hover:shadow-gray-950/50 hover:-translate-y-0.5 transition-all duration-200 cursor-default`}
     >
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110 ${iconCls}`}>
+      <div
+        className={`w-9 h-9 rounded-xl flex items-center justify-center mb-4 transition-transform duration-200 group-hover:scale-110 ${iconCls}`}
+      >
         <Icon size={16} />
       </div>
       <p className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight leading-none mb-1.5">
@@ -435,32 +436,6 @@ const Dashboard = () => {
   const stats = statsQuery.data ?? null;
   const bookings = bookingsQuery.data ?? [];
   const loading = statsQuery.isLoading || bookingsQuery.isLoading;
-
-  const greeting = (() => {
-    const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  })();
-  const firstName = ((user as any)?.name ?? user?.firstName ?? "there").split(" ")[0];
-  const today = format(new Date(), "EEEE, d MMMM yyyy");
-
-  // ── metrics for the hero strip ──
-  const heroMetrics = [
-    {
-      label: "Total Earnings",
-      value: loading ? null : `₹${stats?.payments?.received?.toLocaleString() ?? "0"}`,
-      color: "#1D9E75",
-    },
-    {
-      label: "Total Bookings",
-      value: loading ? null : (stats?.total?.toLocaleString() ?? "0"),
-      color: BRAND,
-    },
-    {
-      label: "Active Listings",
-      value: loading ? null : (stats?.properties?.approved?.toLocaleString() ?? "0"),
-      color: "#EF9F27",
-    },
-  ];
 
   // ── 5 stat cards ──
   const statCards = [
@@ -537,152 +512,67 @@ const Dashboard = () => {
   ];
 
   return (
-    <DashboardLayout title="Dashboard" contentClassName="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+    <DashboardLayout
+      title="Dashboard"
+      contentClassName="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide"
+    >
       <div className="p-5 lg:p-7 space-y-5">
-            {/* ── HERO CARD ─────────────────────────────────────────────────── */}
-            <div
-              className="relative overflow-hidden rounded-2xl border border-gray-200/60 dark:border-gray-800"
-              style={{ background: "linear-gradient(135deg,#E6F1FB 0%,#ffffff 55%,#F1EFE8 100%)" }}
-            >
-              {/* dark-mode override */}
-              <div className="absolute inset-0 bg-gray-900 opacity-0 dark:opacity-100 pointer-events-none" />
-
-              {/* decorative blobs */}
+        {/* ── STAT CARDS ──────────────────────────────────────────────── */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {statCards.map(({ icon: Icon, label, value, border, iconCls }, i) => {
+            const rawNum = parseInt(String(value).replace(/[^0-9]/g, ""), 10);
+            const isNum = !isNaN(rawNum) && !String(value).startsWith("₹");
+            return loading ? (
               <div
-                className="absolute -top-16 -right-16 w-64 h-64 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${BRAND}22 0%, transparent 70%)` }}
+                key={label}
+                className={`bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border}`}
+              >
+                <Sk className="w-9 h-9 rounded-xl mb-4" />
+                <Sk className="w-20 h-7 mb-2" />
+                <Sk className="w-24 h-3.5" />
+              </div>
+            ) : (
+              <AnimatedStatCard
+                key={label}
+                icon={Icon}
+                label={label}
+                value={value}
+                border={border}
+                iconCls={iconCls}
+                index={i}
               />
+            );
+          })}
+        </div>
+
+        {/* ── BOOKING STATUS STRIP ────────────────────────────────────── */}
+        {!loading && stats && (
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 divide-x divide-gray-100 dark:divide-gray-800 flex overflow-hidden">
+            {statusStrip.map(({ label, value, dot, text }) => (
               <div
-                className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full pointer-events-none"
-                style={{ background: "radial-gradient(circle, #EF9F2722 0%, transparent 70%)" }}
-              />
-
-              <div className="relative p-6 lg:p-8">
-                {/* top row */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* avatar */}
-                    <div
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-lg"
-                      style={{
-                        background: `linear-gradient(135deg, ${BRAND}, ${BRAND2})`,
-                        boxShadow: `0 8px 24px ${BRAND}44`,
-                      }}
-                    >
-                      {firstName[0]?.toUpperCase() ?? "H"}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
-                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
-                          Live
-                        </span>
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                          {today}
-                        </span>
-                      </div>
-                      <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                        {greeting}, {firstName} 👋
-                      </h1>
-                      <p className="text-[12.5px] text-gray-400 dark:text-gray-500 mt-0.5">
-                        Here's what's happening with your listings today.
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    onClick={() => navigate("/offering/add")}
-                    className="h-10 px-5 rounded-xl text-[13px] font-semibold gap-2 shadow-md self-start sm:self-auto shrink-0"
-                    style={{
-                      background: `linear-gradient(135deg, ${BRAND}, ${BRAND2})`,
-                      color: "#ffffff",
-                      boxShadow: `0 4px 16px ${BRAND}55`,
-                    }}
-                  >
-                    <Plus size={16} />
-                    New Listing
-                  </Button>
+                key={label}
+                className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${dot}`} />
+                  <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
+                    {label}
+                  </span>
                 </div>
-
-                {/* hero metrics strip */}
-                <div className="mt-6 pt-5 border-t border-gray-200/60 dark:border-gray-700/40 grid grid-cols-3 gap-4 sm:gap-8">
-                  {heroMetrics.map(({ label, value, color }) => (
-                    <div key={label}>
-                      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-gray-400 dark:text-gray-500 mb-1">
-                        {label}
-                      </p>
-                      {value === null ? (
-                        <Sk className="h-8 w-24" />
-                      ) : (
-                        <p
-                          className="text-2xl sm:text-3xl font-bold tracking-tight"
-                          style={{ color }}
-                        >
-                          {value}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <p className={`text-xl font-bold tracking-tight ${text}`}>{value ?? 0}</p>
               </div>
-            </div>
+            ))}
+          </div>
+        )}
 
-            {/* ── STAT CARDS ──────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              {statCards.map(({ icon: Icon, label, value, border, iconCls }, i) => {
-                const rawNum = parseInt(String(value).replace(/[^0-9]/g, ""), 10);
-                const isNum = !isNaN(rawNum) && !String(value).startsWith("₹");
-                return loading ? (
-                  <div
-                    key={label}
-                    className={`bg-white dark:bg-gray-900 rounded-2xl p-5 border-t-[3px] border border-gray-100 dark:border-gray-800 ${border}`}
-                  >
-                    <Sk className="w-9 h-9 rounded-xl mb-4" />
-                    <Sk className="w-20 h-7 mb-2" />
-                    <Sk className="w-24 h-3.5" />
-                  </div>
-                ) : (
-                  <AnimatedStatCard
-                    key={label}
-                    icon={Icon}
-                    label={label}
-                    value={value}
-                    border={border}
-                    iconCls={iconCls}
-                    index={i}
-                  />
-                );
-              })}
-            </div>
-
-            {/* ── BOOKING STATUS STRIP ────────────────────────────────────── */}
-            {!loading && stats && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 divide-x divide-gray-100 dark:divide-gray-800 flex overflow-hidden">
-                {statusStrip.map(({ label, value, dot, text }) => (
-                  <div
-                    key={label}
-                    className="flex-1 flex flex-col items-center justify-center gap-1.5 py-4 hover:bg-gray-50/70 dark:hover:bg-white/[0.02] transition-colors"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${dot}`} />
-                      <span className="text-[11px] font-semibold text-gray-400 dark:text-gray-500">
-                        {label}
-                      </span>
-                    </div>
-                    <p className={`text-xl font-bold tracking-tight ${text}`}>{value ?? 0}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Total Earnings / Total Visitors charts removed from the vendor
+        {/* Total Earnings / Total Visitors charts removed from the vendor
                 dashboard — the numbers were misleading until the graph data
                 feed was vendor-scoped, and the Revenue page already covers
                 earnings in more detail. */}
 
-            {/* ── BOOKINGS TABLE ──────────────────────────────────────────── */}
-            <BookingTable data={bookings} loading={loading} />
-          </div>
+        {/* ── BOOKINGS TABLE ──────────────────────────────────────────── */}
+        <BookingTable data={bookings} loading={loading} />
+      </div>
 
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
     </DashboardLayout>

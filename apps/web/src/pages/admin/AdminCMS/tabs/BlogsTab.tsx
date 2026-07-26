@@ -1,30 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { Edit2, Trash2, MoreHorizontal, ChevronDown } from "lucide-react";
-import { cmsService } from "@/services/cms";
+import React, { useEffect, useRef, useState } from "react";
+import { Edit2, Trash2, MoreHorizontal, ChevronDown, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { cmsService, type BlogPayload } from "@/services/cms";
+import { getImageUrl } from "@/lib/adminUtils";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import ConfirmModal from "@/components/shared/ConfirmModal";
 
-type BlogForm = {
-  title: string;
-  category: string;
-  description: string;
-  metablogkeyword: string;
-  metablogdescription: string;
-  metablogtitle: string;
-  content: string;
-  coverImage: string;
-  authorName: string;
-  authorImg: string;
-  authorRole: string;
-  status: "published" | "draft";
+type BlogForm = Required<Omit<BlogPayload, "status">> & { status: "published" | "draft" };
+
+type BlogRow = BlogPayload & {
+  _id?: string;
+  id?: string;
+  slug?: string;
+  createdAt?: string;
 };
 
 const EMPTY_FORM: BlogForm = {
   title: "",
   category: "",
   description: "",
-  metablogkeyword: "",
-  metablogdescription: "",
-  metablogtitle: "",
+  metaKeywords: "",
+  metaDescription: "",
+  metaTitle: "",
   content: "",
   coverImage: "",
   authorName: "",
@@ -33,99 +30,83 @@ const EMPTY_FORM: BlogForm = {
   status: "published",
 };
 
-const PLACEHOLDER_BLOGS = [
-  {
-    id: "1",
-    title: "Sample Blog Post",
-    authorName: "Admin",
-    status: "published",
-    createdAt: new Date().toISOString(),
-  },
-];
+const rowId = (b: BlogRow) => String(b._id || b.id || "");
 
 const BlogRowActions: React.FC<{
-  blog: any;
-  onEdit: (b: any) => void;
+  blog: BlogRow;
+  onEdit: () => void;
+  onStatusChange: (status: "published" | "draft") => void;
   onDelete: () => void;
-}> = ({ blog, onEdit, onDelete }) => {
+}> = ({ blog, onEdit, onStatusChange, onDelete }) => {
   const [open, setOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
-  const blogId = blog._id || blog.id;
 
-  const doDelete = async () => {
-    if (!confirm("Delete this blog?")) return;
-    try {
-      await cmsService.deleteBlog(blogId);
-      onDelete();
-      setOpen(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const doEdit = async () => {
-    const newTitle = prompt("Update title", blog.title || "")?.trim();
-    if (!newTitle || newTitle === blog.title) return;
-    try {
-      const res = await cmsService.updateBlog(blogId, { title: newTitle });
-      onEdit(res?.data || { ...blog, title: newTitle });
-      setOpen(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const changeStatus = async (status: "published" | "draft") => {
-    try {
-      const res = await cmsService.setBlogStatus(blogId, status);
-      onEdit(res?.data || { ...blog, status });
-      setStatusOpen(false);
-      setOpen(false);
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  useEffect(() => {
+    if (!open) return;
+    const handle = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest(".blog-row-actions")) {
+        setOpen(false);
+        setStatusOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
 
   return (
-    <div className="relative">
-      <button onClick={() => setOpen((v) => !v)} className="p-1 hover:bg-gray-100 rounded">
+    <div className="relative blog-row-actions">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="p-1 hover:bg-gray-100 rounded"
+        aria-label={`Actions for ${blog.title}`}
+      >
         <MoreHorizontal size={22} strokeWidth={2} />
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow z-20">
           <button
-            onClick={doEdit}
-            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50"
+            onClick={() => {
+              setOpen(false);
+              onEdit();
+            }}
+            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 text-sm"
           >
             <Edit2 size={16} /> <span>Edit</span>
           </button>
           <div className="relative">
             <button
               onClick={() => setStatusOpen((v) => !v)}
-              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50"
+              className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 text-sm"
             >
               <ChevronDown size={16} /> <span>Status</span>
             </button>
             {statusOpen && (
               <div className="absolute right-0 top-full mt-1 w-40 bg-white border rounded shadow z-30">
-                <button
-                  onClick={() => changeStatus("published")}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-50"
-                >
-                  Published
-                </button>
-                <button
-                  onClick={() => changeStatus("draft")}
-                  className="w-full text-left px-3 py-2 hover:bg-gray-50"
-                >
-                  Draft
-                </button>
+                {(["published", "draft"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      setStatusOpen(false);
+                      setOpen(false);
+                      onStatusChange(s);
+                    }}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-50 text-sm capitalize ${
+                      blog.status === s ? "font-semibold text-dashboard-heading" : ""
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             )}
           </div>
           <button
-            onClick={doDelete}
-            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 text-red-600"
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            className="flex items-center gap-2 w-full px-3 py-2 hover:bg-gray-50 text-red-600 text-sm"
           >
             <Trash2 size={16} /> <span>Delete</span>
           </button>
@@ -136,34 +117,151 @@ const BlogRowActions: React.FC<{
 };
 
 /**
- * Blogs admin: list + create modal + per-row Edit/Status/Delete.
- * Self-contained — owns blogs list, form state, and modal visibility.
+ * Blogs admin: list (drafts included) + create/edit modal + per-row
+ * status change and delete. Self-contained — owns list, form and modal state.
  */
 export function BlogsTab() {
-  const [blogs, setBlogs] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<BlogRow[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<BlogForm>(EMPTY_FORM);
+  const [pendingDelete, setPendingDelete] = useState<BlogRow | null>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+  const authorImgRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    cmsService
-      .listBlogs({ status: "published" })
-      .then((res: any) => setBlogs(res?.data || []))
-      .catch(console.error);
-  }, []);
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const load = async () => {
     try {
-      const res = await cmsService.createBlog({ ...form });
-      setBlogs((prev) => [res?.data, ...prev]);
-      setShowModal(false);
-      setForm(EMPTY_FORM);
-    } catch (err) {
-      console.error(err);
+      // No status filter — the admin table must show drafts as well.
+      const res: any = await cmsService.listBlogs();
+      setBlogs(res?.data || []);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to load blogs");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const rows = blogs.length ? blogs : PLACEHOLDER_BLOGS;
+  useEffect(() => {
+    load();
+  }, []);
+
+  const openCreate = () => {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setShowModal(true);
+  };
+
+  // Pick only the editable fields — spreading the whole row would send _id /
+  // slug / createdAt back on update.
+  const openEdit = (blog: BlogRow) => {
+    setEditingId(rowId(blog));
+    setForm({
+      title: blog.title || "",
+      category: blog.category || "",
+      description: blog.description || "",
+      content: blog.content || "",
+      coverImage: blog.coverImage || "",
+      authorName: blog.authorName || "",
+      authorImg: blog.authorImg || "",
+      authorRole: blog.authorRole || "",
+      metaTitle: blog.metaTitle || "",
+      metaKeywords: blog.metaKeywords || "",
+      metaDescription: blog.metaDescription || "",
+      status: blog.status === "draft" ? "draft" : "published",
+    });
+    setShowModal(true);
+  };
+
+  const uploadImage = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: "coverImage" | "authorImg",
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const res = await cmsService.uploadMedia({
+        page: "Blogs",
+        section: field === "coverImage" ? "Cover Image" : "Author Image",
+        file,
+      });
+      if (res?.data?.url) {
+        setForm((prev) => ({ ...prev, [field]: res.data.url }));
+        toast.success("Image uploaded");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Image upload failed");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    setSaving(true);
+    try {
+      if (editingId) {
+        const res: any = await cmsService.updateBlog(editingId, form);
+        const updated: BlogRow = res?.data || { ...form, _id: editingId };
+        setBlogs((prev) => prev.map((b) => (rowId(b) === editingId ? updated : b)));
+        toast.success("Blog updated");
+      } else {
+        const res: any = await cmsService.createBlog(form);
+        if (res?.data) setBlogs((prev) => [res.data, ...prev]);
+        toast.success("Blog created");
+      }
+      setShowModal(false);
+      setEditingId(null);
+      setForm(EMPTY_FORM);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || "Failed to save blog");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const changeStatus = async (blog: BlogRow, status: "published" | "draft") => {
+    const id = rowId(blog);
+    if (!id || blog.status === status) return;
+    try {
+      const res: any = await cmsService.setBlogStatus(id, status);
+      const updated: BlogRow = res?.data || { ...blog, status };
+      setBlogs((prev) => prev.map((b) => (rowId(b) === id ? updated : b)));
+      toast.success(`Blog moved to ${status}`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to change status");
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = rowId(pendingDelete);
+    try {
+      await cmsService.deleteBlog(id);
+      setBlogs((prev) => prev.filter((b) => rowId(b) !== id));
+      toast.success("Blog deleted");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to delete blog");
+    } finally {
+      setPendingDelete(null);
+    }
+  };
+
+  const formatDate = (value?: string) => {
+    if (!value) return "";
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? "" : d.toLocaleString();
+  };
 
   return (
     <div className="space-y-4">
@@ -173,7 +271,7 @@ export function BlogsTab() {
             Blogs
           </h3>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openCreate}
             className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
           >
             + Add New Blog
@@ -195,50 +293,59 @@ export function BlogsTab() {
               Action
             </div>
           </div>
-          {rows.map((b, index, arr) => (
-            <div
-              key={b.id || b._id || index}
-              className={`grid grid-cols-12 gap-3 px-4 py-3.5 items-center ${
-                index !== arr.length - 1 ? "border-b border-gray-100" : ""
-              }`}
-            >
-              <div className="col-span-5">
-                <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
-                  {b.title}
-                </div>
-                <div className="text-dashboard-body text-xs">
-                  {new Date(b.createdAt || "").toLocaleString() || ""}
-                </div>
-              </div>
-              <div className="col-span-3 text-dashboard-body">{b.authorName || "-"}</div>
-              <div className="col-span-2">
-                <span
-                  className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-medium ${
-                    b.status === "published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {b.status === "published" ? "Published" : "Draft"}
-                </span>
-              </div>
-              <div className="col-span-2 flex items-center justify-end relative">
-                <BlogRowActions
-                  blog={b}
-                  onEdit={(updated) =>
-                    setBlogs((prev) =>
-                      prev.map((x) =>
-                        x._id === updated._id || x.id === updated._id ? updated : x,
-                      ),
-                    )
-                  }
-                  onDelete={() =>
-                    setBlogs((prev) => prev.filter((x) => (x._id || x.id) !== (b._id || b.id)))
-                  }
-                />
-              </div>
+
+          {loading ? (
+            <div className="p-8 text-center text-gray-500">Loading blogs...</div>
+          ) : blogs.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No blogs yet — use “Add New Blog” to publish the first one.
             </div>
-          ))}
+          ) : (
+            blogs.map((b, index) => (
+              <div
+                key={rowId(b) || index}
+                className={`grid grid-cols-12 gap-3 px-4 py-3.5 items-center ${
+                  index !== blogs.length - 1 ? "border-b border-gray-100" : ""
+                }`}
+              >
+                <div className="col-span-5 flex items-center gap-3">
+                  {b.coverImage && (
+                    <img
+                      src={getImageUrl(b.coverImage)}
+                      alt=""
+                      className="w-12 h-12 rounded object-cover bg-gray-100 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0">
+                    <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold truncate">
+                      {b.title}
+                    </div>
+                    <div className="text-dashboard-body text-xs">{formatDate(b.createdAt)}</div>
+                  </div>
+                </div>
+                <div className="col-span-3 text-dashboard-body text-sm">{b.authorName || "-"}</div>
+                <div className="col-span-2">
+                  <span
+                    className={`inline-flex px-3 py-1.5 rounded-lg text-sm font-medium ${
+                      b.status === "published"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {b.status === "published" ? "Published" : "Draft"}
+                  </span>
+                </div>
+                <div className="col-span-2 flex items-center justify-end relative">
+                  <BlogRowActions
+                    blog={b}
+                    onEdit={() => openEdit(b)}
+                    onStatusChange={(s) => changeStatus(b, s)}
+                    onDelete={() => setPendingDelete(b)}
+                  />
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -247,7 +354,7 @@ export function BlogsTab() {
           <div className="bg-white rounded-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-dashboard-heading font-geist text-2xl font-bold tracking-tight">
-                Add New Blog
+                {editingId ? "Edit Blog" : "Add New Blog"}
               </h2>
               <button
                 onClick={() => setShowModal(false)}
@@ -256,7 +363,7 @@ export function BlogsTab() {
                 ×
               </button>
             </div>
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-dashboard-title text-sm">Title</label>
@@ -294,24 +401,87 @@ export function BlogsTab() {
                   />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-dashboard-title text-sm">Cover Image URL</label>
-                  <input
-                    value={form.coverImage}
-                    onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
-                    className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm focus:outline-none"
-                  />
+                  <label className="text-dashboard-title text-sm">Cover Image</label>
+                  <div className="flex items-center gap-3 mt-1">
+                    {form.coverImage ? (
+                      <img
+                        src={getImageUrl(form.coverImage)}
+                        alt="Cover"
+                        className="w-16 h-16 rounded object-cover bg-gray-100"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-400">
+                        <Upload size={20} />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={coverRef}
+                        className="hidden"
+                        onChange={(e) => uploadImage(e, "coverImage")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => coverRef.current?.click()}
+                        className="px-4 py-2 border border-dashboard-stroke rounded-full text-sm hover:bg-gray-50"
+                      >
+                        Upload
+                      </button>
+                      <input
+                        value={form.coverImage}
+                        onChange={(e) => setForm({ ...form, coverImage: e.target.value })}
+                        placeholder="…or paste an image URL"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="text-dashboard-title text-sm">Author Image URL</label>
-                  <input
-                    value={form.authorImg}
-                    onChange={(e) => setForm({ ...form, authorImg: e.target.value })}
-                    className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm focus:outline-none"
-                  />
+                  <label className="text-dashboard-title text-sm">Author Image</label>
+                  <div className="flex items-center gap-3 mt-1">
+                    {form.authorImg ? (
+                      <img
+                        src={getImageUrl(form.authorImg)}
+                        alt="Author"
+                        className="w-16 h-16 rounded-full object-cover bg-gray-100"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+                        <Upload size={20} />
+                      </div>
+                    )}
+                    <div className="flex-1 space-y-2">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={authorImgRef}
+                        className="hidden"
+                        onChange={(e) => uploadImage(e, "authorImg")}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => authorImgRef.current?.click()}
+                        className="px-4 py-2 border border-dashboard-stroke rounded-full text-sm hover:bg-gray-50"
+                      >
+                        Upload
+                      </button>
+                      <input
+                        value={form.authorImg}
+                        onChange={(e) => setForm({ ...form, authorImg: e.target.value })}
+                        placeholder="…or paste an image URL"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <div>
                 <label className="text-dashboard-title text-sm">Short Description</label>
                 <textarea
@@ -322,6 +492,20 @@ export function BlogsTab() {
                 />
               </div>
 
+              <div>
+                <label className="text-dashboard-title text-sm">Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) =>
+                    setForm({ ...form, status: e.target.value as "published" | "draft" })
+                  }
+                  className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm focus:outline-none bg-white"
+                >
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+
               <div className="space-y-6">
                 <div className="space-y-3">
                   <label className="block text-sm text-[#334054] font-plus-jakarta">
@@ -329,10 +513,10 @@ export function BlogsTab() {
                   </label>
                   <input
                     type="text"
-                    value={form.metablogkeyword}
-                    onChange={(e) => setForm({ ...form, metablogkeyword: e.target.value })}
-                    placeholder="Select"
-                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#98A2B3] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
+                    value={form.metaKeywords}
+                    onChange={(e) => setForm({ ...form, metaKeywords: e.target.value })}
+                    placeholder="camper van, road trip, india"
+                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
                   />
                 </div>
                 <div className="space-y-3">
@@ -341,9 +525,9 @@ export function BlogsTab() {
                   </label>
                   <input
                     type="text"
-                    value={form.metablogtitle}
-                    onChange={(e) => setForm({ ...form, metablogtitle: e.target.value })}
-                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
+                    value={form.metaTitle}
+                    onChange={(e) => setForm({ ...form, metaTitle: e.target.value })}
+                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent"
                   />
                 </div>
                 <div className="space-y-3">
@@ -351,11 +535,11 @@ export function BlogsTab() {
                     Meta Description
                   </label>
                   <textarea
-                    value={form.metablogdescription}
-                    onChange={(e) => setForm({ ...form, metablogdescription: e.target.value })}
+                    value={form.metaDescription}
+                    onChange={(e) => setForm({ ...form, metaDescription: e.target.value })}
                     placeholder="Write Message here..."
                     rows={5}
-                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm text-[#717171] font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
+                    className="w-full px-3 py-3.5 border border-[#B0B0B0] rounded-lg text-sm font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-dashboard-primary focus:border-transparent resize-none"
                   />
                 </div>
               </div>
@@ -379,15 +563,26 @@ export function BlogsTab() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full"
+                  disabled={saving}
+                  className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full disabled:opacity-60"
                 >
-                  Create
+                  {saving ? "Saving..." : editingId ? "Save Changes" : "Create"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        title="Delete blog"
+        description={pendingDelete ? `Delete “${pendingDelete.title}”? This cannot be undone.` : ""}
+        confirmLabel="Delete"
+        variant="danger"
+      />
     </div>
   );
 }

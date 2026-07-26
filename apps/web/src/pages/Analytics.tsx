@@ -96,28 +96,28 @@ const Analytics = () => {
     {
       title: "Impression",
       value: String(impressions),
-      icon: <Eye size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
     {
       title: "Clicked",
       value: String(clicks),
-      icon: <MousePointer size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <MousePointer size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
     {
       title: "No. of Payment Received",
       value: String(payments.received),
-      icon: <ClipboardCheck size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <ClipboardCheck size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
       iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
     },
     {
       title: "No. of Payment Pending",
       value: String(payments.pending),
-      icon: <ListChecks size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <ListChecks size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-red-50 dark:bg-red-900/20",
       iconBgColor: "bg-red-100 dark:bg-red-800/30",
     },
@@ -127,28 +127,28 @@ const Analytics = () => {
     {
       title: "Total Booking",
       value: String(counts.total),
-      icon: <Wallet size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <Wallet size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
     {
       title: "Upcoming Booking",
       value: String(counts.upcoming),
-      icon: <ClipboardCheck size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <ClipboardCheck size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
       iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
     },
     {
       title: "Past Booking",
       value: String(counts.past),
-      icon: <ListChecks size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <ListChecks size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-green-50 dark:bg-green-900/20",
       iconBgColor: "bg-green-100 dark:bg-green-800/30",
     },
     {
       title: "Cancelled Booking",
       value: String(counts.cancelled),
-      icon: <Wallet size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <Wallet size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
     },
@@ -158,14 +158,14 @@ const Analytics = () => {
     {
       title: "Approved Property Listing",
       value: String(properties.approved),
-      icon: <Eye size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
     {
       title: "Pending Property for Approval",
       value: String(properties.pending),
-      icon: <Eye size={20} style={{ color: "#0F5C8A" }} />,
+      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
     },
@@ -273,9 +273,7 @@ const Analytics = () => {
               tick={{ fontSize: 10, fill: "#6B7280" }}
               width={30}
             />
-            <Tooltip
-              content={<ChartTooltip valuePrefix={dataKey === "earnings" ? "₹" : ""} />}
-            />
+            <Tooltip content={<ChartTooltip valuePrefix={dataKey === "earnings" ? "₹" : ""} />} />
             <Area
               type="monotone"
               dataKey={dataKey}
@@ -340,7 +338,7 @@ const Analytics = () => {
                 onFilterChange={setMonthlyFilter}
                 data={monthlyGraphData}
                 dataKey="earnings"
-                color="#0F5C8A"
+                color="#0d9488"
               />
               <ChartComponent
                 title="Yearly Earnings"
@@ -370,7 +368,7 @@ const Analytics = () => {
             onFilterChange={setDailyFilter}
             data={dailyGraphData}
             dataKey="visitors"
-            color="#0F5C8A"
+            color="#0d9488"
           />
         )}
       </div>

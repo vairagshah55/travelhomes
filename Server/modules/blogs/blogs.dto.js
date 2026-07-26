@@ -27,6 +27,9 @@ const createBody = z.object({
   authorImg: z.string().trim().max(2000).optional(),
   authorRole: z.string().trim().max(80).optional(),
   status: blogStatus.optional(),
+  metaTitle: z.string().trim().max(200).optional(),
+  metaKeywords: z.string().trim().max(500).optional(),
+  metaDescription: z.string().trim().max(2000).optional(),
 });
 
 const idParams = z.object({ id: objectIdString });

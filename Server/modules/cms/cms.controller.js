@@ -72,6 +72,11 @@ const createFaq = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data });
 });
 
+const updateFaq = asyncHandler(async (req, res) => {
+  const data = await service.updateFaq(req.validated.params.id, req.validated.body);
+  res.json({ success: true, data });
+});
+
 const removeFaq = asyncHandler(async (req, res) => {
   await service.removeFaq(req.validated.params.id);
   res.status(204).send();
@@ -181,6 +186,7 @@ module.exports = {
   removeApplication,
   listFaqs,
   createFaq,
+  updateFaq,
   removeFaq,
   listTestimonials,
   createTestimonial,
