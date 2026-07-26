@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -22,22 +22,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { offersApi, activitiesApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { useBookingResources } from "@/hooks/useBookingResources";
 
 import {
   type BookingData,
-  type NewBookingForm,
-  EMPTY_BOOKING_FORM,
   fetchBookings,
-  createBooking,
   updateBooking,
   updateBookingDates,
   deleteBooking,
   printInvoice,
   CalendarGrid,
   DateNavigation,
-  NewBookingModal,
   EditBookingModal,
 } from "@/components/bookings";
 
@@ -110,15 +105,10 @@ const Bookings = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [vehicleNames, setVehicleNames] = useState<string[]>([]);
-  const [services, setServices] = useState<
-    { name: string; type: "camper-van" | "unique-stay" | "activity" }[]
-  >([]);
 
-  const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [selectedDate, setSelectedDate] = useState<{ date: number; resource: string } | null>(null);
-  const [newBookingForm, setNewBookingForm] = useState<NewBookingForm>(EMPTY_BOOKING_FORM);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,56 +125,13 @@ const Bookings = () => {
   };
 
   // ─── Resources ─────────────────────────────────────────────────────────────
-  useQuery({
-    queryKey: ["bookings", "resources", user?.id, token],
-    enabled: !!user,
-    queryFn: async () => {
-      const params: Record<string, any> = {};
-      if (user!.userType === "vendor" && user!.id) {
-        params.vendorId = user!.id;
-        params.mine = true;
-      }
-      const resOffers = await offersApi.list(undefined, token, params);
-
-      let activityData: any[] = [];
-      if (token && user!.userType === "vendor") {
-        const my = await activitiesApi.myList(token);
-        if (my.success) activityData = my.data;
-      } else {
-        const all = await activitiesApi.list();
-        if (all.success) activityData = all.data;
-      }
-
-      const names: string[] = [];
-      const structured: { name: string; type: "camper-van" | "unique-stay" | "activity" }[] = [];
-      if (resOffers.success) {
-        let offers = resOffers.data;
-        if (user!.userType === "vendor" && user!.id) {
-          offers = offers.filter((o) => o.vendorId === user!.id);
-        }
-        for (const o of offers) {
-          names.push(o.name);
-          const t = (o.serviceType || "").toLowerCase();
-          structured.push({
-            name: o.name,
-            type:
-              t === "unique-stay" ? "unique-stay" : t === "activity" ? "activity" : "camper-van",
-          });
-        }
-      }
-      if (activityData.length > 0) {
-        for (const a of activityData) {
-          names.push(a.title);
-          structured.push({ name: a.title, type: "activity" });
-        }
-      }
-
-      const next = names.length > 0 ? names : ["No Service Available"];
-      setVehicleNames(next);
-      setServices(structured);
-      return next;
-    },
-  });
+  // Shared with the New Booking page via the same query key, so navigating
+  // between the two reuses one fetch. Mirrored into local state because the
+  // bookings query below merges already-booked resource names in on top.
+  const { data: resources } = useBookingResources();
+  useEffect(() => {
+    if (resources) setVehicleNames(resources.names);
+  }, [resources]);
 
   // ─── Bookings list ─────────────────────────────────────────────────────────
   const bookingsKey = ["bookings", "calendar", currentMonth, currentYear, user?.id, token] as const;
@@ -220,18 +167,24 @@ const Bookings = () => {
   });
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
-  const handleNewBooking = () => {
-    if (selectedDate) {
-      const ds = `${currentYear}-${(currentMonth + 1).toString().padStart(2, "0")}-${selectedDate.date.toString().padStart(2, "0")}`;
-      setNewBookingForm((p) => ({
-        ...p,
-        resourceName: selectedDate.resource,
-        startDate: ds,
-        endDate: ds,
-      }));
+  /**
+   * New Booking is its own page (/bookings/new), not a side panel. A cell the
+   * user already picked is forwarded as query params so the page can prefill.
+   */
+  const goToNewBooking = (date?: number, resource?: string) => {
+    const params = new URLSearchParams();
+    if (date !== undefined) {
+      params.set(
+        "date",
+        `${currentYear}-${(currentMonth + 1).toString().padStart(2, "0")}-${date.toString().padStart(2, "0")}`,
+      );
     }
-    setIsNewModalOpen(true);
+    if (resource) params.set("resource", resource);
+    const qs = params.toString();
+    navigate(qs ? `/bookings/new?${qs}` : "/bookings/new");
   };
+
+  const handleNewBooking = () => goToNewBooking(selectedDate?.date, selectedDate?.resource);
 
   const handleBookingClick = (b: BookingData) => {
     setSelectedBooking(b);
@@ -239,10 +192,8 @@ const Bookings = () => {
   };
 
   const handleDateClick = (date: number, resource: string) => {
-    const ds = `${currentYear}-${(currentMonth + 1).toString().padStart(2, "0")}-${date.toString().padStart(2, "0")}`;
     setSelectedDate({ date, resource });
-    setNewBookingForm((p) => ({ ...p, resourceName: resource, startDate: ds, endDate: ds }));
-    setIsNewModalOpen(true);
+    goToNewBooking(date, resource);
   };
 
   const handleBookingDrag = async (id: string, start: Date, end: Date) => {
@@ -259,54 +210,12 @@ const Bookings = () => {
     }
   };
 
-  const handleCreateBooking = async () => {
-    if (
-      !newBookingForm.guestName ||
-      !newBookingForm.resourceName ||
-      !newBookingForm.startDate ||
-      !newBookingForm.endDate
-    ) {
-      notify("error", "Please fill all required fields");
-      return;
-    }
-    if (new Date(newBookingForm.startDate) > new Date(newBookingForm.endDate)) {
-      notify("error", "End date must be after start date");
-      return;
-    }
-    try {
-      const nb = await createBooking(newBookingForm, token, user?.email);
-      if (nb) {
-        queryClient.setQueryData<BookingData[]>(bookingsKey, (p) => [...(p ?? []), nb]);
-        setIsNewModalOpen(false);
-        setNewBookingForm(EMPTY_BOOKING_FORM);
-        setSelectedDate(null);
-        notify("success", "Booking created");
-        setTimeout(() => {
-          try {
-            printInvoice(nb, token);
-          } catch {}
-        }, 500);
-      }
-    } catch (e: any) {
-      notify("error", e.message || "Failed to create");
-    }
-  };
-
   const handleUpdateBooking = async () => {
     if (!selectedBooking) return;
     try {
-      const base = Number(selectedBooking.basePrice || 0),
-        extra = Number(selectedBooking.extraCharges || 0),
-        paid = Number(selectedBooking.paidAmount || 0);
-      const updated = await updateBooking(
-        selectedBooking._id,
-        {
-          ...selectedBooking,
-          totalAmount: String(base + extra),
-          pendingAmount: String(base + extra - paid),
-        },
-        token,
-      );
+      // Totals and the numeric coercion the server DTO needs are derived inside
+      // updateBooking, so the edited booking can go straight through.
+      const updated = await updateBooking(selectedBooking._id, selectedBooking, token);
       if (updated) {
         queryClient.setQueryData<BookingData[]>(bookingsKey, (p) =>
           (p ?? []).map((b) => (b._id === selectedBooking._id ? updated : b)),
@@ -525,16 +434,6 @@ const Bookings = () => {
         </div>
       </div>
 
-      <NewBookingModal
-        open={isNewModalOpen}
-        onOpenChange={setIsNewModalOpen}
-        form={newBookingForm}
-        setForm={setNewBookingForm}
-        vehicleNames={vehicleNames}
-        services={services}
-        onCreate={handleCreateBooking}
-        onAddService={() => navigate("/offering/add")}
-      />
       <EditBookingModal
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}

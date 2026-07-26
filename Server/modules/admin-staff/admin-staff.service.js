@@ -17,6 +17,27 @@ function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// `passwordHash` is `select: false`, so reads never carry it — but a document
+// we just built or re-hashed in memory does. Strip it before it reaches JSON.
+function sanitize(doc) {
+  const obj = typeof doc?.toObject === "function" ? doc.toObject() : { ...doc };
+  delete obj.passwordHash;
+  return obj;
+}
+
+// Clients page off `pagination.totalPages`; the flat fields above it are kept
+// for older callers.
+function buildPagination(page, limit, total) {
+  return {
+    currentPage: page,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    totalItems: total,
+    itemsPerPage: limit,
+    hasNextPage: page * limit < total,
+    hasPrevPage: page > 1,
+  };
+}
+
 async function list({
   search,
   status,
@@ -52,6 +73,7 @@ async function list({
     totalItems: total,
     itemsPerPage: limit,
     hasNextPage: page * limit < total,
+    pagination: buildPagination(page, limit, total),
     staff,
   };
 }
@@ -89,7 +111,7 @@ async function create(input) {
 
   const saved = await doc.save();
   await saved.populate("roleId", "name features permissions");
-  return { staff: saved };
+  return { staff: sanitize(saved) };
 }
 
 async function update(id, patch) {
@@ -125,7 +147,7 @@ async function update(id, patch) {
 
   const saved = await staff.save();
   await saved.populate("roleId", "name features permissions");
-  return { staff: saved };
+  return { staff: sanitize(saved) };
 }
 
 async function toggleStatus(id) {

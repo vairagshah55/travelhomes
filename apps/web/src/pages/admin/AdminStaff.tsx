@@ -69,13 +69,18 @@ const EMPTY_MATRIX: PermissionMatrix = {
 };
 
 // ---------------------------------------------------------------------------
-// FEATURE_MAPPING — used in handleAddRole to convert UI labels to API slugs
+// FEATURE_MAPPING — used in handleAddRole to convert UI labels to API slugs.
+// Every FeatureKey must appear here: the API only accepts slugs from
+// AdminRole.AVAILABLE_FEATURES, so an unmapped label fails validation.
 // ---------------------------------------------------------------------------
 
-const FEATURE_MAPPING: Record<string, string> = {
+const FEATURE_MAPPING: Record<FeatureKey, string> = {
   Dashboard: "view_dashboard",
   Management: "access_management",
   Payments: "manage_payments",
+  Listing: "manage_inventory",
+  Vendor: "manage_vendors",
+  User: "manage_users",
   Analytics: "view_analytics",
   "Help Desk": "support_tickets",
   CMS: "manage_cms",
@@ -84,17 +89,9 @@ const FEATURE_MAPPING: Record<string, string> = {
   Staff: "manage_staff",
 };
 
-const REVERSE_MAPPING: Record<string, string> = {
-  view_dashboard: "Dashboard",
-  access_management: "Management",
-  manage_payments: "Payments",
-  view_analytics: "Analytics",
-  support_tickets: "Help Desk",
-  manage_cms: "CMS",
-  manage_marketing: "Marketing",
-  manage_plugins: "Plugins",
-  manage_staff: "Staff",
-};
+const REVERSE_MAPPING: Record<string, string> = Object.fromEntries(
+  Object.entries(FEATURE_MAPPING).map(([label, slug]) => [slug, label]),
+);
 
 // ---------------------------------------------------------------------------
 // AddStaffModal — shadcn Dialog shell, form state kept local
@@ -217,8 +214,10 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
+                minLength={8}
                 required
               />
+              <p className="text-xs text-dashboard-neutral-07">At least 8 characters.</p>
             </div>
           </div>
 
@@ -462,6 +461,13 @@ interface StaffListProps {
   setStaffDropdownOpen: (id: string | null) => void;
 }
 
+// A missing or malformed joinDate would make toISOString() throw and take the
+// whole table down, so fall back to an empty cell instead.
+const formatJoinDate = (raw: unknown): string => {
+  const d = new Date(raw as string);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+};
+
 const StaffList: React.FC<StaffListProps> = ({
   setShowStaffModal,
   deleteStaff,
@@ -484,7 +490,7 @@ const StaffList: React.FC<StaffListProps> = ({
     phone: s.phone,
     role: s.role,
     status: s.status,
-    joinDate: new Date(s.joinDate).toISOString().split("T")[0],
+    joinDate: formatJoinDate(s.joinDate),
   }));
 
   const totalPages = query.data?.pagination?.totalPages ?? 1;
@@ -771,9 +777,8 @@ const AdminStaff = () => {
     const permissions = (
       Object.entries(roleData.features) as [FeatureKey, { view: boolean; full: boolean }][]
     ).map(([key, perms]) => {
-      const feature = FEATURE_MAPPING[key] ?? key.toLowerCase().replace(/ /g, "_");
       return {
-        feature,
+        feature: FEATURE_MAPPING[key],
         canView: !!(perms.view || perms.full),
         canEdit: !!perms.full,
         canDelete: !!perms.full,

@@ -50,6 +50,7 @@ const Congratulations = lazy(() => import("./pages/onboarding/Congratulations"))
 // ─── Vendor dashboard ──────────────────────────────────────────────────────
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Bookings = lazy(() => import("./pages/Bookings"));
+const NewBooking = lazy(() => import("./pages/NewBooking"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 const Offering = lazy(() => import("./pages/Offering"));
 const AddOfferings = lazy(() => import("./pages/AddOfferings"));
@@ -358,7 +359,13 @@ const App = () => {
                   {/* Dashboard routes — share a persistent layout shell so the
                       sidebar/header stay mounted while only the page content swaps.
                       Inner ProtectedRoute on each child enforces role-specific access. */}
-                  <Route element={<ProtectedRoute><DashboardLayoutShell /></ProtectedRoute>}>
+                  <Route
+                    element={
+                      <ProtectedRoute>
+                        <DashboardLayoutShell />
+                      </ProtectedRoute>
+                    }
+                  >
                     <Route
                       path="/dashboard"
                       element={
@@ -374,6 +381,14 @@ const App = () => {
                       element={
                         <ProtectedRoute allowedRoles={["vendor"]}>
                           <Bookings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings/new"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <NewBooking />
                         </ProtectedRoute>
                       }
                     />

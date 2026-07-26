@@ -8,6 +8,19 @@ function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Clients page off `pagination.totalPages`; the flat fields alongside it are
+// kept for older callers.
+function buildPagination(page, limit, total) {
+  return {
+    currentPage: page,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    totalItems: total,
+    itemsPerPage: limit,
+    hasNextPage: page * limit < total,
+    hasPrevPage: page > 1,
+  };
+}
+
 async function list({
   search,
   isActive,
@@ -31,7 +44,13 @@ async function list({
     AdminRole.countDocuments(query),
   ]);
 
-  return { roles, totalItems: total, currentPage: page, itemsPerPage: limit };
+  return {
+    roles,
+    totalItems: total,
+    currentPage: page,
+    itemsPerPage: limit,
+    pagination: buildPagination(page, limit, total),
+  };
 }
 
 async function getById(id) {

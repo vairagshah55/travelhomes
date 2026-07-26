@@ -49,10 +49,20 @@ export interface NewBookingForm {
 }
 
 export const EMPTY_BOOKING_FORM: NewBookingForm = {
-  guestName: "", resourceName: "", startDate: "", endDate: "",
-  phoneNumber: "", email: "", adults: "", children: "",
-  basePrice: "", extraCharges: "", totalAmount: "", paymentMethod: "cash",
-  notes: "", specialRequests: "",
+  guestName: "",
+  resourceName: "",
+  startDate: "",
+  endDate: "",
+  phoneNumber: "",
+  email: "",
+  adults: "",
+  children: "",
+  basePrice: "",
+  extraCharges: "",
+  totalAmount: "",
+  paymentMethod: "cash",
+  notes: "",
+  specialRequests: "",
 };
 
 // ─── API base ────────────────────────────────────────────────────────────────
@@ -73,70 +83,172 @@ const authHeaders = (token?: string): Record<string, string> => {
 };
 
 // ─── Fetch bookings ──────────────────────────────────────────────────────────
-export const fetchBookings = async (month: number, year: number, token?: string, vendorId?: string, vendorEmail?: string): Promise<BookingData[]> => {
+export const fetchBookings = async (
+  month: number,
+  year: number,
+  token?: string,
+  vendorId?: string,
+  vendorEmail?: string,
+): Promise<BookingData[]> => {
   try {
     const qs = new URLSearchParams();
     qs.append("month", (month + 1).toString());
     qs.append("year", year.toString());
     if (vendorId) qs.append("vendorId", vendorId);
     if (vendorEmail) qs.append("vendorEmail", vendorEmail);
-    const res = await fetch(`${API_BASE_URL}/calendarbooking?${qs}`, { headers: authHeaders(token) });
+    const res = await fetch(`${API_BASE_URL}/calendarbooking?${qs}`, {
+      headers: authHeaders(token),
+    });
     const data = await res.json();
     return data.success ? data.data.map(parseBooking) : [];
-  } catch (e) { console.error("Error fetching bookings:", e); return []; }
+  } catch (e) {
+    console.error("Error fetching bookings:", e);
+    return [];
+  }
+};
+
+/**
+ * The form holds every numeric field as a string (they come from text inputs),
+ * but the server DTO declares them as plain `z.number()` with no coercion — so
+ * posting the raw form is rejected with a 422 on every field below.
+ */
+const num = (v: unknown) => Number(v ?? 0) || 0;
+
+const numericBookingFields = (
+  src: {
+    adults?: unknown;
+    children?: unknown;
+    basePrice?: unknown;
+    extraCharges?: unknown;
+    totalAmount?: unknown;
+    paidAmount?: unknown;
+  },
+  /**
+   * The edit panel renders Total Amount as read-only "(auto)" = base + extra, so
+   * an update must always re-derive it — otherwise changing the base price saves
+   * the stale total. The create form has an editable total, so it wins there.
+   */
+  { recomputeTotal = false }: { recomputeTotal?: boolean } = {},
+) => {
+  const base = num(src.basePrice);
+  const extra = num(src.extraCharges);
+  const paid = num(src.paidAmount);
+  // `basePrice + extraCharges` on the raw strings concatenated them
+  // ("5000" + "500" → 5000500) instead of adding.
+  const total = !recomputeTotal && src.totalAmount ? num(src.totalAmount) : base + extra;
+  return {
+    adults: num(src.adults),
+    children: num(src.children),
+    basePrice: base,
+    extraCharges: extra,
+    totalAmount: total,
+    paidAmount: paid,
+    pendingAmount: Math.max(0, total - paid),
+  };
 };
 
 // ─── Create booking ──────────────────────────────────────────────────────────
-export const createBooking = async (form: NewBookingForm, token?: string, userEmail?: string): Promise<BookingData | null> => {
-  try {
-    const res = await fetch(`${API_BASE_URL}/calendarbooking`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders(token) },
-      body: JSON.stringify({ ...form, totalAmount: form.basePrice + form.extraCharges, createdBy: userEmail || "admin" }),
-    });
-    const data = await res.json();
-    return data.success ? parseBooking(data.data) : null;
-  } catch (e) { console.error("Error creating booking:", e); return null; }
+/**
+ * Throws with the server's message on rejection — a double-booking comes back
+ * as `409 Booking conflict: <dates>`, which the caller should show verbatim
+ * rather than a generic failure.
+ */
+export const createBooking = async (
+  form: NewBookingForm,
+  token?: string,
+  userEmail?: string,
+): Promise<BookingData | null> => {
+  const res = await fetch(`${API_BASE_URL}/calendarbooking`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeaders(token) },
+    body: JSON.stringify({
+      ...form,
+      ...numericBookingFields(form),
+      createdBy: userEmail || "admin",
+    }),
+  }).catch((e) => {
+    console.error("Error creating booking:", e);
+    throw new Error("Could not reach the server. Check your connection and try again.");
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!data?.success) {
+    throw new Error(data?.error?.message || data?.message || "Failed to create booking");
+  }
+  return parseBooking(data.data);
 };
 
 // ─── Update booking ──────────────────────────────────────────────────────────
-export const updateBooking = async (id: string, bookingData: Partial<BookingData>, token?: string): Promise<BookingData | null> => {
+export const updateBooking = async (
+  id: string,
+  bookingData: Partial<BookingData>,
+  token?: string,
+): Promise<BookingData | null> => {
   try {
     const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json", ...authHeaders(token) },
-      body: JSON.stringify(bookingData),
+      // Same string-vs-number mismatch as create — the edit panel keeps these
+      // as strings on the BookingData it edits in place.
+      body: JSON.stringify({
+        ...bookingData,
+        ...numericBookingFields(bookingData, { recomputeTotal: true }),
+      }),
     });
     const data = await res.json();
     return data.success ? parseBooking(data.data) : null;
-  } catch (e) { console.error("Error updating booking:", e); return null; }
+  } catch (e) {
+    console.error("Error updating booking:", e);
+    return null;
+  }
 };
 
 // ─── Update dates (drag) ─────────────────────────────────────────────────────
-export const updateBookingDates = async (id: string, startDate: Date, endDate: Date, action: string, token?: string): Promise<BookingData | null> => {
+export const updateBookingDates = async (
+  id: string,
+  startDate: Date,
+  endDate: Date,
+  action: string,
+  token?: string,
+): Promise<BookingData | null> => {
   try {
     const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}/dates`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...authHeaders(token) },
-      body: JSON.stringify({ startDate: startDate.toISOString(), endDate: endDate.toISOString(), action }),
+      body: JSON.stringify({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        action,
+      }),
     });
     const data = await res.json();
     return data.success ? parseBooking(data.data) : null;
-  } catch (e) { console.error("Error updating booking dates:", e); return null; }
+  } catch (e) {
+    console.error("Error updating booking dates:", e);
+    return null;
+  }
 };
 
 // ─── Delete booking ──────────────────────────────────────────────────────────
 export const deleteBooking = async (id: string, token?: string): Promise<boolean> => {
   try {
-    const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}`, { method: "DELETE", headers: authHeaders(token) });
+    const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}`, {
+      method: "DELETE",
+      headers: authHeaders(token),
+    });
     const data = await res.json();
     return data.success;
-  } catch (e) { console.error("Error deleting booking:", e); return false; }
+  } catch (e) {
+    console.error("Error deleting booking:", e);
+    return false;
+  }
 };
 
 // ─── Generate invoice ────────────────────────────────────────────────────────
 export const generateInvoiceData = async (id: string, token?: string): Promise<any> => {
-  const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}/invoice`, { headers: authHeaders(token) });
+  const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}/invoice`, {
+    headers: authHeaders(token),
+  });
   const data = await res.json();
   if (!data.success) throw new Error(data.error || "Failed to generate invoice");
   return data.data;
@@ -171,24 +283,57 @@ export const printInvoice = async (booking: BookingData, token?: string) => {
       <div style="text-align:center;margin-top:50px;font-size:12px;color:#666"><p>Thank you for choosing Travel Homes!</p></div>
     </div>`;
   const w = window.open("", "_blank");
-  if (w) { w.document.write(`<!DOCTYPE html><html><head><title>Invoice - ${inv.bookingId}</title></head><body>${html}</body></html>`); w.document.close(); w.print(); }
+  if (w) {
+    w.document.write(
+      `<!DOCTYPE html><html><head><title>Invoice - ${inv.bookingId}</title></head><body>${html}</body></html>`,
+    );
+    w.document.close();
+    w.print();
+  }
 };
 
 // ─── Utilities ───────────────────────────────────────────────────────────────
-export const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+export const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
-export const getDaysInMonth = (month: number, year: number) => new Date(year, month + 1, 0).getDate();
+export const getDaysInMonth = (month: number, year: number) =>
+  new Date(year, month + 1, 0).getDate();
 
-export const formatDateShort = (date: Date) => `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
+export const formatDateShort = (date: Date) =>
+  `${date.getDate().toString().padStart(2, "0")}/${(date.getMonth() + 1).toString().padStart(2, "0")}`;
 
-export const formatDateRange = (start: Date, end: Date) => start.getTime() === end.getTime() ? formatDateShort(start) : `${formatDateShort(start)} - ${formatDateShort(end)}`;
+export const formatDateRange = (start: Date, end: Date) =>
+  start.getTime() === end.getTime()
+    ? formatDateShort(start)
+    : `${formatDateShort(start)} - ${formatDateShort(end)}`;
 
-export const isDateBooked = (date: number, month: number, year: number, bookings: BookingData[], resource: string) => {
-  const check = new Date(year, month, date); check.setHours(0, 0, 0, 0);
+export const isDateBooked = (
+  date: number,
+  month: number,
+  year: number,
+  bookings: BookingData[],
+  resource: string,
+) => {
+  const check = new Date(year, month, date);
+  check.setHours(0, 0, 0, 0);
   return bookings.some((b) => {
     if (b.resourceName !== resource || b.status === "Cancelled") return false;
-    const s = new Date(b.startDate); s.setHours(0, 0, 0, 0);
-    const e = new Date(b.endDate); e.setHours(0, 0, 0, 0);
+    const s = new Date(b.startDate);
+    s.setHours(0, 0, 0, 0);
+    const e = new Date(b.endDate);
+    e.setHours(0, 0, 0, 0);
     return check >= s && check <= e;
   });
 };
