@@ -1314,29 +1314,44 @@
   --search-focus-ring: rgba(15, 92, 138, 0.2);
 }
 
-/* ── Navy CHROME (sidebar + header) — deep navy surfaces, white text ──
-   Applied by data-admin-skin="navy" (+ dark class) on the AdminSidebar and
-   AdminHeader roots. Self-defined tokens override the inherited light
-   [data-brand="admin"] ones for these two subtrees only; content stays light. */
-[data-admin-skin="navy"] {
-  --tpl-body-bg: #0f5c8a;
-  --tpl-card-bg: #0f5c8a;
-  --tpl-dark-2: #0f5c8a; /* dark:bg-tpl-dark-2 → brand-blue surface */
-  --tpl-stroke: rgba(255, 255, 255, 0.1);
-  --tpl-dark: #ffffff; /* primary text → white */
-  --tpl-dark-3: #e5e9f0;
-  --tpl-dark-4: #c7cdd9;
-  --tpl-dark-5: rgba(255, 255, 255, 0.6); /* muted text */
-  --tpl-dark-6: rgba(255, 255, 255, 0.72); /* secondary text */
-  --tpl-gray-2: rgba(255, 255, 255, 0.06);
-  --tpl-gray-3: rgba(255, 255, 255, 0.1);
-  --tpl-primary: #ffffff; /* active-nav text + accent bar → white on navy */
-  --glass-header: rgba(15, 92, 138, 0.85);
-  --glass-bg: rgba(255, 255, 255, 0.04);
-  --glass-bg-hover: rgba(255, 255, 255, 0.08);
-  --teal-glass: rgba(255, 255, 255, 0.12); /* active-nav highlight */
-  --teal-border: rgba(255, 255, 255, 0.25);
-  --sidebar-primary: 0 0% 100%;
+/* ── Teal CHROME (sidebar + header) — bright teal #3bd9d9 surfaces, navy ink ──
+   Applied by data-admin-skin="teal" (+ dark class) on the AdminSidebar and
+   AdminHeader roots. #3bd9d9 is a LIGHT surface, so the foreground flips to
+   dark-navy ink (the reverse of the old navy chrome) to stay legible. Scoped
+   to these two subtrees only; admin content stays light. */
+[data-admin-skin="teal"] {
+  --tpl-body-bg: #3bd9d9;
+  --tpl-card-bg: #3bd9d9;
+  --tpl-dark-2: #3bd9d9; /* dark:bg-tpl-dark-2 → teal surface */
+  --tpl-stroke: rgba(10, 43, 64, 0.14);
+  --tpl-dark: #0a2b40; /* primary text → dark navy ink */
+  --tpl-dark-3: #123a52;
+  --tpl-dark-4: #1c4a66;
+  --tpl-dark-5: rgba(10, 43, 64, 0.72); /* muted text (group labels, roles) */
+  --tpl-dark-6: rgba(10, 43, 64, 0.86); /* secondary text */
+  --tpl-gray-2: rgba(10, 43, 64, 0.06);
+  --tpl-gray-3: rgba(10, 43, 64, 0.1);
+  --tpl-primary: #0a2b40; /* active-nav text + accent bar → navy on teal */
+  --glass-header: rgba(59, 217, 217, 0.85);
+  --glass-bg: rgba(10, 43, 64, 0.05);
+  --glass-bg-hover: rgba(10, 43, 64, 0.09);
+  --teal-glass: rgba(255, 255, 255, 0.6); /* active-nav highlight → white pill */
+  --teal-border: rgba(10, 43, 64, 0.2);
+  --sidebar-primary: 202 80% 24%;
+}
+
+/* ── Premium elevation for the teal chrome ───────────────────────────────
+   Anchored on #3bd9d9. The RAIL gets a subtle top→bottom gradient for depth,
+   but the HEADER stays a SOLID #3bd9d9 that matches the rail's TOP colour.
+   (A gradient spans each element's own height, so the short header would
+   deepen far faster than the tall rail and the two would meet in different
+   shades — the seam you saw. Solid header == rail-top → the join is clean.) */
+[data-admin-skin="teal"] {
+  background-image: linear-gradient(180deg, #3bd9d9 0%, #2eccce 100%);
+}
+header[data-admin-skin="teal"] {
+  background-image: none;
+  background-color: #3bd9d9; /* == rail top → seamless header↔sidebar join */
 }
 
 /* Navy fills carry WHITE text. Force white on the primary/brand/accent FILLS

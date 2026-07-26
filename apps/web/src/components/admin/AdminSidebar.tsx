@@ -157,7 +157,7 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
         <button className="w-full flex items-center gap-3 p-2 rounded-xl transition-colors hover:bg-[var(--glass-bg-hover)]">
           <div className="relative shrink-0">
             <Avatar className="w-10 h-10">
-              <AvatarFallback className="bg-white/15 text-white text-[13px] font-bold">
+              <AvatarFallback className="bg-[#0a2b40] text-white text-[13px] font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -166,7 +166,7 @@ function SidebarUserCard({ collapsed, onNavigate, onLogout }: UserMenuProps) {
 
           <div className={`flex-1 min-w-0 flex items-center ${reveal(collapsed)}`}>
             <div className="flex-1 min-w-0 text-left">
-              <p className="text-[14px] font-semibold text-tpl-dark dark:text-white truncate leading-tight">
+              <p className="text-[14px] font-semibold text-tpl-dark dark:text-tpl-dark truncate leading-tight">
                 {name}
               </p>
               <p className="text-[12px] text-tpl-dark-5 dark:text-tpl-dark-6 truncate leading-tight mt-0.5 capitalize">
@@ -248,22 +248,24 @@ function NavRow({
       onClick={handleClick}
       title={item.label}
       className={`group relative w-full flex items-center gap-3 h-11 pl-2 pr-2 rounded-xl text-left text-[14px] font-medium transition-colors duration-200 ${
-        isActive ? "bg-white/12 text-white" : "text-white/70 hover:bg-white/10 hover:text-white"
+        isActive
+          ? "bg-white text-[#0a2b40] shadow-[0_6px_16px_-6px_rgba(10,43,64,0.35)] ring-1 ring-black/[0.04]"
+          : "text-[#0a2b40] hover:bg-[#0a2b40]/[0.08] hover:text-[#0a2b40]"
       }`}
     >
-      {/* Active indicator — white bar on the pill's left edge. */}
+      {/* Active indicator — navy bar on the pill's left edge (reads on teal). */}
       {isActive && (
-        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-white" />
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-[#0a2b40]" />
       )}
 
-      {/* Monochrome icon chip. Active = solid white tile with the brand-blue
-          icon (pops as "selected"); inactive = muted glass tile. Fixed
-          position so it never shifts between collapsed/expanded. */}
+      {/* Monochrome icon chip. Active = solid navy tile with a white icon
+          (pops as "selected" on the teal rail); inactive = muted navy-glass
+          tile. Fixed position so it never shifts between collapsed/expanded. */}
       <span
         className={`grid place-items-center w-9 h-9 rounded-xl shrink-0 transition-colors ${
           isActive
-            ? "bg-white text-tpl-body-bg"
-            : "bg-white/10 text-white/75 group-hover:bg-white/15 group-hover:text-white"
+            ? "bg-[#0a2b40] text-white shadow-[0_2px_6px_rgba(10,43,64,0.35)]"
+            : "bg-[#0a2b40]/[0.12] text-[#0a2b40] group-hover:bg-[#0a2b40]/[0.18] group-hover:text-[#0a2b40]"
         }`}
       >
         <item.icon size={19} strokeWidth={isActive ? 2 : 1.7} />
@@ -424,7 +426,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <Sheet open={showMobileSidebar} onOpenChange={setShowMobileSidebar}>
         <SheetContent
           side="left"
-          data-admin-skin="navy"
+          data-admin-skin="teal"
           className="dark w-[290px] p-0 bg-tpl-card-bg dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke sm:max-w-[290px]"
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
@@ -453,15 +455,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       <aside
         onMouseEnter={() => collapsed && setPeek(true)}
         onMouseLeave={() => setPeek(false)}
-        data-admin-skin="navy"
-        className={`dark hidden lg:flex flex-col h-screen shrink-0 bg-tpl-card-bg dark:bg-tpl-dark-2 border-r border-tpl-stroke dark:border-tpl-stroke overflow-hidden transition-[width] duration-300 ease-out ${
+        data-admin-skin="teal"
+        className={`dark hidden lg:flex flex-col h-screen shrink-0 bg-tpl-card-bg dark:bg-tpl-dark-2 overflow-hidden transition-[width] duration-300 ease-out ${
           railOpen ? "w-[290px]" : "w-[76px]"
         } ${className}`}
       >
         {/* Brand header — mark stays fixed, wordmark reveals on expand. */}
         <button
           onClick={() => navigate("/admin/dashboard")}
-          className="flex items-center gap-2.5 h-[78px] shrink-0 border-b border-tpl-stroke dark:border-tpl-stroke pl-[21px] pr-3"
+          className="flex items-center gap-2.5 h-[84px] shrink-0 pl-[21px] pr-3"
           aria-label="TravelHomes admin home"
         >
           <BrandLogo variant="mark" size={34} />
@@ -470,8 +472,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               !railOpen,
             )}`}
           >
-            <span className="text-black dark:text-white">Travel</span>
-            <span className="text-tpl-primary">Homes</span>
+            <span className="text-[#0a2b40] dark:text-[#0a2b40]">Travel</span>
+            <span className="text-[#0a2b40]/80 dark:text-[#0a2b40]/80">Homes</span>
           </span>
         </button>
 
