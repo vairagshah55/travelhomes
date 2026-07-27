@@ -30,6 +30,28 @@ interface AdminUser {
   lastLogin?: string;
 }
 
+/** Fine-grained permission row as stored on the role. */
+export interface AccessPermission {
+  feature: string;
+  canView?: boolean;
+  canEdit?: boolean;
+  canCreate?: boolean;
+  canDelete?: boolean;
+}
+
+/**
+ * What /me reports the signed-in admin may do. `features: "*"` marks a
+ * superadmin, who bypasses every check server-side too.
+ */
+export interface AdminAccess {
+  superadmin: boolean;
+  roleName: string | null;
+  features: string[] | "*";
+  permissions: AccessPermission[];
+}
+
+export type AccessAction = "view" | "edit" | "create" | "delete";
+
 interface AuthContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
@@ -39,6 +61,14 @@ interface AuthContextType {
   logout: () => void;
   /** Re-fetch the current admin from /me. Useful after profile updates. */
   refresh: () => Promise<void>;
+  /** The role's resolved feature grants, or null until /me has answered. */
+  access: AdminAccess | null;
+  /**
+   * Whether the admin may perform `action` on `feature`. Mirrors the server's
+   * requireFeature check so the UI hides what the API would refuse — it is a
+   * convenience, never the enforcement point.
+   */
+  can: (feature: string | string[], action?: AccessAction) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -80,25 +110,47 @@ function toUser(adminPayload: Record<string, unknown> | null | undefined): Admin
   };
 }
 
+const ACTION_FLAG: Record<AccessAction, keyof AccessPermission> = {
+  view: "canView",
+  edit: "canEdit",
+  create: "canCreate",
+  delete: "canDelete",
+};
+
+function toAccess(raw: unknown): AdminAccess | null {
+  if (!raw || typeof raw !== "object") return null;
+  const a = raw as Record<string, unknown>;
+  return {
+    superadmin: !!a.superadmin,
+    roleName: (a.roleName as string) ?? null,
+    features: a.features === "*" ? "*" : Array.isArray(a.features) ? (a.features as string[]) : [],
+    permissions: Array.isArray(a.permissions) ? (a.permissions as AccessPermission[]) : [],
+  };
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
+  const [access, setAccess] = useState<AdminAccess | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refresh = useCallback(async () => {
     if (!readAdminToken()) {
       setUser(null);
+      setAccess(null);
       setIsLoading(false);
       return;
     }
     try {
       const resp = await adminAuthService.getMe();
       setUser(toUser(resp?.admin));
+      setAccess(toAccess(resp?.access));
     } catch {
       // The api response interceptor already clears the token + redirects on
       // 401. For other failures (network / 5xx), we keep the existing user
       // (likely null) and stop loading; the next page-level fetch will
       // surface a clearer error.
       setUser(null);
+      setAccess(null);
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +163,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     clearAdminToken();
     setUser(null);
+    setAccess(null);
   }, []);
+
+  const can = useCallback(
+    (feature: string | string[], action: AccessAction = "view") => {
+      if (!access) return false;
+      if (access.superadmin || access.features === "*") return true;
+
+      const wanted = Array.isArray(feature) ? feature : [feature];
+      const flag = ACTION_FLAG[action];
+
+      return wanted.some((f) => {
+        const row = access.permissions.find((p) => p.feature === f);
+        // Same precedence as the server: a permissions row wins; a feature that
+        // only appears in `features` counts as full access to that area.
+        if (row) return row[flag] === true || (action === "view" && row.canView !== false);
+        return Array.isArray(access.features) && access.features.includes(f);
+      });
+    },
+    [access],
+  );
 
   return (
     <AuthContext.Provider
@@ -121,6 +193,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         logout,
         refresh,
+        access,
+        can,
       }}
     >
       {children}

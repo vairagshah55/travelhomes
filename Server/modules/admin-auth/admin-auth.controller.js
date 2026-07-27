@@ -10,6 +10,7 @@
  */
 const asyncHandler = require("../../shared/asyncHandler");
 const { UnauthorizedError } = require("../../shared/errors");
+const { describeActorPermissions } = require("../../middleware/permissions");
 const service = require("./admin-auth.service");
 
 const loginStaff = asyncHandler(async (req, res) => {
@@ -32,7 +33,11 @@ const getMe = asyncHandler(async (req, res) => {
     throw new UnauthorizedError("Admin authentication required");
   }
   const result = await service.getMe(req.user.sub);
-  res.json({ success: true, ...result });
+  // The SPA gates its nav and routes on this, so what it hides matches what
+  // requireFeature would refuse. Resolved from the DB, not the token, so a
+  // permission change applies on the next /me rather than the next login.
+  const access = await describeActorPermissions(req);
+  res.json({ success: true, ...result, access });
 });
 
 const changePassword = asyncHandler(async (req, res) => {

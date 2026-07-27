@@ -49,7 +49,9 @@ type FeatureKey =
   | "CMS"
   | "Marketing"
   | "Plugins"
-  | "Staff";
+  | "Staff"
+  | "CRM"
+  | "Settings";
 
 type PermissionMatrix = Record<FeatureKey, { view: boolean; full: boolean }>;
 
@@ -66,6 +68,8 @@ const EMPTY_MATRIX: PermissionMatrix = {
   Marketing: { view: false, full: false },
   Plugins: { view: false, full: false },
   Staff: { view: false, full: false },
+  CRM: { view: false, full: false },
+  Settings: { view: false, full: false },
 };
 
 // ---------------------------------------------------------------------------
@@ -87,6 +91,8 @@ const FEATURE_MAPPING: Record<FeatureKey, string> = {
   Marketing: "manage_marketing",
   Plugins: "manage_plugins",
   Staff: "manage_staff",
+  CRM: "manage_crm",
+  Settings: "manage_settings",
 };
 
 const REVERSE_MAPPING: Record<string, string> = Object.fromEntries(

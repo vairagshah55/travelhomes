@@ -10,6 +10,7 @@ const http = require("http");
 const pinoHttp = require("pino-http");
 const { connectDB, mongoStatus } = require("../config/db");
 const { requireJwt } = require("../middleware/auth");
+const { requireFeature } = require("../middleware/permissions");
 const { Server } = require("socket.io");
 const session = require("express-session");
 const passport = require("../config/passport");
@@ -256,29 +257,36 @@ app.use("/api/cms/media", cmsMediaRoutes);
 // Public CMS routes for testimonials (list + create)
 app.use("/api/cms", cmsRoutes);
 
-// Admin routes (using the same controllers — already protected above by /api/admin requireJwt mount)
-app.use("/api/admin/management", managementRoutes);
-app.use("/api/admin/users", usersRoutes);
-app.use("/api/admin/vendors", vendorsRoutes);
-app.use("/api/admin/bookings", bookingsRouter);
-app.use("/api/admin/payments", paymentsRouter);
-app.use("/api/admin/helpdesk", helpdeskRoutes);
-app.use("/api/admin/settings", settingsRoutes);
-app.use("/api/admin/crm", adminCrmRoutes);
-app.use("/api/admin/marketing", marketingRoutes);
-app.use("/api/admin/plugins", pluginsRoutes);
-app.use("/api/admin/staff", adminStaffRoutes);
-app.use("/api/admin/roles", adminRolesRoutes);
-app.use("/api/admin/blogs", blogsRoutes);
+// Admin routes. The /api/admin requireJwt mount above only proves the caller
+// holds an admin token — `requireFeature` is what enforces the role's features,
+// so a staff member limited to e.g. view_dashboard can't reach these. Read
+// requests need canView on the feature, writes need canCreate/canEdit/canDelete.
+// Superadmins bypass. See middleware/permissions.js.
+app.use("/api/admin/management", requireFeature("access_management"), managementRoutes);
+app.use("/api/admin/users", requireFeature("manage_users"), usersRoutes);
+app.use("/api/admin/vendors", requireFeature("manage_vendors"), vendorsRoutes);
+app.use("/api/admin/bookings", requireFeature("access_bookings"), bookingsRouter);
+app.use("/api/admin/payments", requireFeature("manage_payments"), paymentsRouter);
+app.use("/api/admin/helpdesk", requireFeature("support_tickets"), helpdeskRoutes);
+app.use("/api/admin/settings", requireFeature("manage_settings"), settingsRoutes);
+app.use("/api/admin/crm", requireFeature("manage_crm"), adminCrmRoutes);
+app.use("/api/admin/marketing", requireFeature("manage_marketing"), marketingRoutes);
+app.use("/api/admin/plugins", requireFeature("manage_plugins"), pluginsRoutes);
+app.use("/api/admin/staff", requireFeature("manage_staff"), adminStaffRoutes);
+app.use("/api/admin/roles", requireFeature("manage_roles"), adminRolesRoutes);
+app.use("/api/admin/blogs", requireFeature("manage_cms"), blogsRoutes);
+// Notifications are the acting admin's own inbox, not a managed area — any
+// authenticated admin may read and dismiss their own.
 app.use("/api/admin/notifications", notificationsRoutes);
 
 // Admin CMS Media routes (upload/list/delete images for pages) - MUST be before /cms to take priority
-app.use("/api/admin/cms/media", cmsMediaRoutes);
+app.use("/api/admin/cms/media", requireFeature("manage_cms"), cmsMediaRoutes);
 // Admin CMS routes — flag the request so the router's testimonials filter
 // and contact upsert can short-circuit the admin/public branch instead of
 // sniffing baseUrl.
 app.use(
   "/api/admin/cms",
+  requireFeature("manage_cms"),
   (req, _res, next) => {
     req.isAdminContext = true;
     next();
@@ -286,12 +294,27 @@ app.use(
   cmsRoutes,
 );
 
-// Admin Dashboard & Analytics endpoints
+// Admin Dashboard & Analytics endpoints.
+//
+// These two routers are mounted on broad prefixes ("/api" and "/api/admin"), so
+// the feature guards are attached to the exact paths the routers declare rather
+// than to the mount. Guarding the mount itself would run the admin permission
+// check on every public /api request (and turn unmatched /api/admin paths into
+// 403s instead of 404s).
+app.use("/api/admin/dashboard", requireFeature("view_dashboard"));
 app.use("/api", adminDashboardRoutes);
+
+app.use("/api/admin/adminAnalytics", requireFeature("view_analytics"));
+app.use("/api/admin/adminAnalyticsReport", requireFeature("view_analytics"));
 app.use("/api/admin", adminAnalyticsRoutes);
 
-// Admin contact routes (protected)
-app.use("/api/admin/contact", requireJwt({ adminOnly: true }), contactRoutes);
+// Admin contact routes (protected) — the CMS "Contact Us" inbox.
+app.use(
+  "/api/admin/contact",
+  requireJwt({ adminOnly: true }),
+  requireFeature("manage_cms"),
+  contactRoutes,
+);
 
 //root route
 app.get("/", (req, res) => {

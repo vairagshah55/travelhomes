@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,32 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { NotebookPen, Check } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { vendorSettingApi, VendorSettingDTO, helpDeskApi } from "@/lib/api";
+import { vendorSettingApi, VendorSettingDTO, helpDeskApi, type HelpDeskTicketDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
+/** Ticket status is stored with inconsistent casing across older rows. */
+const TICKET_STATUS_STYLES: Record<string, string> = {
+  pending: "bg-amber-50 text-amber-700 border-amber-200",
+  open: "bg-amber-50 text-amber-700 border-amber-200",
+  read: "bg-blue-50 text-blue-700 border-blue-200",
+  resolved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  closed: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+const formatTicketDate = (raw?: string) => {
+  if (!raw) return "—";
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime())
+    ? "—"
+    : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
 const Settings = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
+  const token = authToken ?? undefined;
+  const queryClient = useQueryClient();
   // Real vendor id only — empty string disables the settings query until the
   // user is loaded (no more hardcoded "1" demo fallback hitting the API).
   const vendorId = useMemo(() => user?.id ?? "", [user]);
@@ -86,6 +105,18 @@ const Settings = () => {
     }
   }, [user]);
 
+  // The vendor's own tickets. The server scopes this to the caller's token,
+  // so no client-side filtering is needed.
+  const ticketsKey = ["helpDesk", "myTickets", user?.id] as const;
+  const ticketsQuery = useQuery<HelpDeskTicketDTO[]>({
+    queryKey: ticketsKey,
+    enabled: !!token,
+    queryFn: async () => {
+      const res = await helpDeskApi.list(token);
+      return res.data ?? [];
+    },
+  });
+
   // Vendor settings — try to fetch, create defaults if not found.
   const settingsQuery = useQuery<VendorSettingDTO | null>({
     queryKey: ["vendorSettings", vendorId],
@@ -148,18 +179,20 @@ const Settings = () => {
     }
 
     try {
-      await helpDeskApi.create({
-        name: ticket.name,
-        phoneNumber: ticket.phone,
-        email: ticket.email,
-        subject: ticket.subject,
-        description: ticket.message,
-        // `user.id` is the Register/User ObjectId — the model's `vendorId`
-        // refs Vendor, so this belongs in `userId`.
-        userId: user?.id,
-        vendorName: user?.firstName ? `${user.firstName} ${user.lastName}` : ticket.name,
-        vendorEmail: user?.email || ticket.email,
-      });
+      await helpDeskApi.create(
+        {
+          name: ticket.name,
+          phoneNumber: ticket.phone,
+          email: ticket.email,
+          subject: ticket.subject,
+          description: ticket.message,
+          vendorName: user?.firstName ? `${user.firstName} ${user.lastName}` : ticket.name,
+          vendorEmail: user?.email || ticket.email,
+        },
+        token,
+      );
+      // Pull the new row into the table below the form.
+      queryClient.invalidateQueries({ queryKey: ticketsKey });
       setShowSuccessModal(true);
       setTicket({
         name: user?.firstName ? `${user.firstName} ${user.lastName}` : "",
@@ -310,6 +343,105 @@ const Settings = () => {
                   Submit Ticket
                 </Button>
               </div>
+            </div>
+
+            {/* ── My tickets ── */}
+            <div className="flex items-center justify-between pt-2">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">My Tickets</h2>
+              {!!ticketsQuery.data?.length && (
+                <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {ticketsQuery.data.length} {ticketsQuery.data.length === 1 ? "ticket" : "tickets"}
+                </span>
+              )}
+            </div>
+
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden">
+              {ticketsQuery.isLoading ? (
+                <div className="p-6 space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-4 rounded bg-gray-100 dark:bg-gray-800 animate-pulse"
+                      style={{ width: `${90 - i * 15}%` }}
+                    />
+                  ))}
+                </div>
+              ) : ticketsQuery.isError ? (
+                <div className="p-8 text-center space-y-3">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Couldn't load your tickets.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl"
+                    onClick={() => ticketsQuery.refetch()}
+                  >
+                    Try again
+                  </Button>
+                </div>
+              ) : !ticketsQuery.data?.length ? (
+                <div className="p-8 text-center">
+                  <NotebookPen size={26} className="mx-auto mb-2 text-gray-300" />
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                    No tickets yet
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Tickets you raise will appear here with their status.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-100 dark:border-gray-800 text-left">
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          Subject
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                          Message
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                          Raised On
+                        </th>
+                        <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ticketsQuery.data.map((t) => {
+                        const key = (t.status || "pending").toLowerCase();
+                        return (
+                          <tr
+                            key={t._id}
+                            className="border-b border-gray-50 dark:border-gray-800/60 last:border-0"
+                          >
+                            <td className="px-4 py-3 font-medium text-gray-900 dark:text-white align-top">
+                              {t.subject}
+                            </td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400 hidden md:table-cell align-top max-w-md">
+                              <span className="line-clamp-2">{t.description}</span>
+                            </td>
+                            <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap hidden sm:table-cell align-top">
+                              {formatTicketDate(t.createdAt)}
+                            </td>
+                            <td className="px-4 py-3 align-top">
+                              <span
+                                className={
+                                  "inline-block rounded-full border px-2.5 py-0.5 text-xs font-semibold capitalize " +
+                                  (TICKET_STATUS_STYLES[key] ?? TICKET_STATUS_STYLES.pending)
+                                }
+                              >
+                                {key}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
 

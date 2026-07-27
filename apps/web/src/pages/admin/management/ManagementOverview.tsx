@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, CalendarCheck, Layers, Store, Users2, type LucideIcon } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { MotionReveal } from "@/components/admin/MotionReveal";
+import { useAuth } from "@/contexts/AdminAuthContext";
+import { featureForPath } from "@/lib/adminPermissions";
 
 interface ManageCard {
   title: string;
@@ -51,12 +53,25 @@ const CARDS: ManageCard[] = [
  */
 const ManagementOverview = () => {
   const navigate = useNavigate();
+  const { can } = useAuth();
+
+  // Only offer areas this role can actually open — the routes are gated, so an
+  // ungated card would just bounce the user back here.
+  const cards = CARDS.filter((c) => {
+    const feature = featureForPath(c.path);
+    return !feature || can(feature);
+  });
 
   return (
     <AdminLayout title="Management" subtitle="Choose an area to manage">
       <MotionReveal delay={0}>
+        {cards.length === 0 && (
+          <p className="text-[13px] text-gray-500">
+            Your role doesn't include access to any management area yet.
+          </p>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-5">
-          {CARDS.map((c, i) => (
+          {cards.map((c, i) => (
             <motion.button
               key={c.title}
               type="button"

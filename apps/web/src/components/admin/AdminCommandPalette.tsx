@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/command";
 import { useTheme } from "@/components/admin/ThemeProvider";
 import { useAuth } from "@/contexts/AdminAuthContext";
+import { featureForPath } from "@/lib/adminPermissions";
 
 interface AdminCommandPaletteProps {
   open: boolean;
@@ -68,7 +69,7 @@ function PIcon({ icon: Icon, color }: { icon: LucideIcon; color: string }) {
 export default function AdminCommandPalette({ open, onOpenChange }: AdminCommandPaletteProps) {
   const navigate = useNavigate();
   const { setTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, can } = useAuth();
 
   // Global ⌘K / Ctrl+K listener — toggles the palette.
   useEffect(() => {
@@ -87,6 +88,20 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
     navigate(path);
   };
 
+  /**
+   * A navigate entry that vanishes when the role can't open the destination —
+   * the routes are gated, so offering them here would just bounce the user.
+   */
+  const navItem = (path: string, icon: typeof LayoutDashboard, color: string, label: string) => {
+    const feature = featureForPath(path);
+    if (feature && !can(feature)) return null;
+    return (
+      <CommandItem key={path} onSelect={() => go(path)}>
+        <PIcon icon={icon} color={color} /> <span>{label}</span>
+      </CommandItem>
+    );
+  };
+
   const handleLogout = () => {
     onOpenChange(false);
     logout();
@@ -99,66 +114,43 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
-        <CommandGroup heading="Navigate">
-          <CommandItem onSelect={() => go("/admin/dashboard")}>
-            <PIcon icon={LayoutDashboard} color="#0891B2" /> <span>Dashboard</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/management/listing")}>
-            <PIcon icon={Layers} color="#7C3AED" /> <span>Management · Listings</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/management/user")}>
-            <PIcon icon={Users2} color="#7C3AED" /> <span>Management · Users</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/management/vendor")}>
-            <PIcon icon={Users2} color="#7C3AED" /> <span>Management · Vendors</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/management/booking")}>
-            <PIcon icon={Layers} color="#7C3AED" /> <span>Management · Bookings</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/payments")}>
-            <PIcon icon={CreditCard} color="#2563EB" /> <span>Payments</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/help-desk")}>
-            <PIcon icon={LifeBuoy} color="#16A34A" /> <span>Help Desk</span>
-          </CommandItem>
-        </CommandGroup>
+        {(() => {
+          const items = [
+            navItem("/admin/dashboard", LayoutDashboard, "#0891B2", "Dashboard"),
+            navItem("/admin/management/listing", Layers, "#7C3AED", "Management · Listings"),
+            navItem("/admin/management/user", Users2, "#7C3AED", "Management · Users"),
+            navItem("/admin/management/vendor", Users2, "#7C3AED", "Management · Vendors"),
+            navItem("/admin/management/booking", Layers, "#7C3AED", "Management · Bookings"),
+            navItem("/admin/payments", CreditCard, "#2563EB", "Payments"),
+            navItem("/admin/help-desk", LifeBuoy, "#16A34A", "Help Desk"),
+          ].filter(Boolean);
+          return items.length ? <CommandGroup heading="Navigate">{items}</CommandGroup> : null;
+        })()}
 
         <CommandSeparator />
 
-        <CommandGroup heading="Insights">
-          <CommandItem onSelect={() => go("/admin/analytics")}>
-            <PIcon icon={BarChart3} color="#DB2777" /> <span>Analytics · Overview</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/analytics/report")}>
-            <PIcon icon={BarChart3} color="#DB2777" /> <span>Analytics · Reports</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/marketing")}>
-            <PIcon icon={Megaphone} color="#D97706" /> <span>Marketing</span>
-          </CommandItem>
-        </CommandGroup>
+        {(() => {
+          const items = [
+            navItem("/admin/analytics", BarChart3, "#DB2777", "Analytics · Overview"),
+            navItem("/admin/analytics/report", BarChart3, "#DB2777", "Analytics · Reports"),
+            navItem("/admin/marketing", Megaphone, "#D97706", "Marketing"),
+          ].filter(Boolean);
+          return items.length ? <CommandGroup heading="Insights">{items}</CommandGroup> : null;
+        })()}
 
         <CommandSeparator />
 
-        <CommandGroup heading="Workspace">
-          <CommandItem onSelect={() => go("/admin/cms")}>
-            <PIcon icon={FileText} color="#0D9488" /> <span>CMS</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/crm")}>
-            <PIcon icon={Bell} color="#0284C7" /> <span>CRM</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/plugins")}>
-            <PIcon icon={Box} color="#7C3AED" /> <span>Plugins</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/staff")}>
-            <PIcon icon={Users2} color="#059669" /> <span>Staff · All</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/staff/roles")}>
-            <PIcon icon={Users2} color="#059669" /> <span>Staff · Roles</span>
-          </CommandItem>
-          <CommandItem onSelect={() => go("/admin/global-settings")}>
-            <PIcon icon={Settings} color="#475569" /> <span>Settings</span>
-          </CommandItem>
-        </CommandGroup>
+        {(() => {
+          const items = [
+            navItem("/admin/cms", FileText, "#0D9488", "CMS"),
+            navItem("/admin/crm", Bell, "#0284C7", "CRM"),
+            navItem("/admin/plugins", Box, "#7C3AED", "Plugins"),
+            navItem("/admin/staff", Users2, "#059669", "Staff · All"),
+            navItem("/admin/staff/roles", Users2, "#059669", "Staff · Roles"),
+            navItem("/admin/global-settings", Settings, "#475569", "Settings"),
+          ].filter(Boolean);
+          return items.length ? <CommandGroup heading="Workspace">{items}</CommandGroup> : null;
+        })()}
 
         <CommandSeparator />
 

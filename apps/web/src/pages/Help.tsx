@@ -29,7 +29,7 @@ interface FAQItem {
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<string>("guest");
-  const { user } = useAuth();
+  const { user, token: authToken } = useAuth();
 
   const [formData, setFormData] = useState({
     name: [user?.firstName, user?.lastName].filter(Boolean).join(" "),
@@ -109,7 +109,7 @@ const Help = () => {
       return;
     }
     try {
-      await helpDeskApi.create(formData);
+      await helpDeskApi.create(formData, authToken ?? undefined);
       toast.success("Ticket raised successfully!", {
         duration: 4000,
         position: "top-right",

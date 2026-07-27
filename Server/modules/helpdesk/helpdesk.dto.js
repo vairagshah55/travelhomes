@@ -24,8 +24,8 @@ const ticketBody = z.object({
   status: ticketStatus.optional(),
   category: z.string().trim().max(80).optional(),
   priority: z.string().trim().max(40).optional(),
-  userId: objectIdString.optional(),
-  vendorId: objectIdString.optional(),
+  // userId/vendorId are deliberately absent: ownership is stamped from the
+  // JWT in the service, so a caller cannot file a ticket as someone else.
 });
 
 const listQuery = z.object({

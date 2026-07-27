@@ -635,23 +635,46 @@ export const vendorPublicApi = {
   get: (id: string) => request<ApiItemResponse<any>>(`/api/vendors/${id}`),
 };
 
+export interface HelpDeskTicketDTO {
+  _id: string;
+  name?: string;
+  email?: string;
+  phoneNumber?: string;
+  subject: string;
+  description: string;
+  /** Mixed casing is stored historically — normalise before display. */
+  status: string;
+  category?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export const helpDeskApi = {
   // Field names must match the server whitelist exactly — anything else is
   // stripped by validation rather than rejected, so a typo loses data silently.
-  create: (payload: {
-    name?: string;
-    phoneNumber?: string;
-    subject: string;
-    email?: string;
-    description: string;
-    vendorName?: string;
-    vendorEmail?: string;
-    category?: string;
-    userId?: string;
-  }) =>
-    request<{ success: boolean; data: any }>("/api/helpdesk", {
+  // Ownership (userId) is stamped server-side from the token, not sent here.
+  create: (
+    payload: {
+      name?: string;
+      phoneNumber?: string;
+      subject: string;
+      email?: string;
+      description: string;
+      vendorName?: string;
+      vendorEmail?: string;
+      category?: string;
+    },
+    token?: string,
+  ) =>
+    request<{ success: boolean; data: HelpDeskTicketDTO }>("/api/helpdesk", {
       method: "POST",
       body: JSON.stringify(payload),
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
+  /** The caller's own tickets — the server scopes the list to the token. */
+  list: (token?: string) =>
+    request<{ success: boolean; data: HelpDeskTicketDTO[] }>("/api/helpdesk", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     }),
 };
 

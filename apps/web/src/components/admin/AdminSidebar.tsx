@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, MotionConfig } from "framer-motion";
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ import {
 import { AdminBrandMark } from "@/components/admin/AdminBrand";
 import LogoWebsite from "@/components/admin/LogoWebsite";
 import { useAuth } from "@/contexts/AdminAuthContext";
+import { featureForPath } from "@/lib/adminPermissions";
 import { getInitials } from "@/utils/getInitials";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -312,11 +313,39 @@ interface SidebarBodyProps {
 
 function SidebarBody({ collapsed, expanded, toggleExpanded, onNavigate }: SidebarBodyProps) {
   const isActive = useActivePath();
+  const { can } = useAuth();
   const [animateRef] = useAutoAnimate<HTMLDivElement>({ duration: 180, easing: "ease-out" });
+
+  /**
+   * Drop anything the role can't open. A parent with children is kept only if at
+   * least one child survives, and a whole group disappears once it's empty — so
+   * a dashboard-only staff member sees just Dashboard instead of a nav full of
+   * links that would bounce them straight back.
+   */
+  const visibleSections = useMemo(() => {
+    const allowed = (path?: string) => {
+      if (!path) return true;
+      const feature = featureForPath(path);
+      return !feature || can(feature);
+    };
+
+    return SECTIONS.map((section) => ({
+      ...section,
+      items: section.items
+        .map((item) => {
+          if (item.children?.length) {
+            const children = item.children.filter((c) => allowed(c.path));
+            return children.length ? { ...item, children } : null;
+          }
+          return allowed(item.path) ? item : null;
+        })
+        .filter((i): i is NavItem => i !== null),
+    })).filter((section) => section.items.length > 0);
+  }, [can]);
 
   return (
     <div ref={animateRef}>
-      {SECTIONS.map((section, si) => (
+      {visibleSections.map((section, si) => (
         <div key={si} className="mb-5 last:mb-0">
           {section.group && (
             <p
