@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -6,9 +6,12 @@ import {
   AlertCircle,
   BadgeCheck,
   BellRing,
+  Building2,
   CalendarCheck,
   Check,
+  ChevronRight,
   Globe,
+  KeyRound,
   LifeBuoy,
   Loader2,
   Mail,
@@ -18,6 +21,7 @@ import {
   Send,
   SlidersHorizontal,
   UserRound,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DashboardLayout from "@/components/DashboardLayout";
-import { EmptyState, StatusBadge, TableSkeleton } from "@/components/shared";
+import { EmptyState, StatusBadge } from "@/components/shared";
 import { getInitials } from "@/utils/getInitials";
 import { cn } from "@/lib/utils";
 import {
@@ -45,16 +49,108 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-/* ── Constants ────────────────────────────────────────────────────────────── */
+/* ── Theme ────────────────────────────────────────────────────────────────────
+   The vendor console reads teal, but `--brand` is navy in global.css and the
+   teal override lives in admin.css — which only AdminApp imports. Rather than
+   sprinkle #0d9488 through the JSX (what the other vendor pages had to do),
+   re-point the token on this page's root so every `bg-brand` / `text-brand` /
+   `ring-brand/15` below resolves teal through Tailwind. Opacity modifiers keep
+   working because the token is hsl channels, not a hex string.               */
+const BRAND_VARS = {
+  "--brand": "175 84% 32%" /* #0d9488 */,
+  "--brand-hover": "175 78% 26%" /* #0f766e */,
+  "--brand-fg": "0 0% 100%",
+} as React.CSSProperties;
+
+/** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
+const PANEL =
+  "bg-card rounded-[18px] border border-border/70 " +
+  "shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] " +
+  "dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)]";
+
+/** Inset field that lifts to the card surface on focus — CONVENTIONS.md Rule 1/2. */
+const CONTROL =
+  "rounded-xl border-border bg-muted/50 dark:bg-white/5 text-[13.5px] " +
+  "placeholder:text-muted-foreground/60 focus-visible:bg-card focus-visible:border-brand " +
+  "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:ring-offset-0 " +
+  "transition-[background-color,border-color,box-shadow] duration-150";
+const CONTROL_ERROR = "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/15";
+
+/* ── Navigation ───────────────────────────────────────────────────────────── */
 
 type SectionKey = "general" | "account" | "preferences";
 
-/** The `account` key is historical — that route hosts the support desk. */
-const TABS: { key: SectionKey; label: string; href: string; icon: LucideIcon }[] = [
-  { key: "general", label: "General", href: "/settings", icon: SlidersHorizontal },
-  { key: "account", label: "Support", href: "/settings/account", icon: LifeBuoy },
-  { key: "preferences", label: "Preferences", href: "/settings/preferences", icon: BellRing },
+/** `account` is the historical route key — that URL hosts the support desk. */
+const SECTIONS: {
+  key: SectionKey;
+  label: string;
+  blurb: string;
+  href: string;
+  icon: LucideIcon;
+}[] = [
+  {
+    key: "general",
+    label: "General",
+    blurb: "Your account and booking flow",
+    href: "/settings",
+    icon: SlidersHorizontal,
+  },
+  {
+    key: "account",
+    label: "Support",
+    blurb: "Get help and track tickets",
+    href: "/settings/account",
+    icon: LifeBuoy,
+  },
+  {
+    key: "preferences",
+    label: "Preferences",
+    blurb: "Alerts, language and timezone",
+    href: "/settings/preferences",
+    icon: BellRing,
+  },
 ];
+
+/* ── Support triage ────────────────────────────────────────────────────────
+   The four things that actually break for a host. Picking one writes the
+   subject and drops focus into the message box, so the form is never a blank
+   wall. Tile colours are data-driven, which is the sanctioned use of inline
+   `style` (CONVENTIONS.md Rule 1) and matches the sidebar's tile convention. */
+
+const HELP_TOPICS: {
+  id: string;
+  label: string;
+  subject: string;
+  icon: LucideIcon;
+  color: string;
+}[] = [
+  {
+    id: "booking",
+    label: "Booking",
+    subject: "Booking issue",
+    icon: CalendarCheck,
+    color: "#0ea5e9",
+  },
+  { id: "payout", label: "Payout", subject: "Payout issue", icon: Wallet, color: "#22c55e" },
+  { id: "listing", label: "Listing", subject: "Listing issue", icon: Building2, color: "#a855f7" },
+  { id: "account", label: "Account", subject: "Account issue", icon: KeyRound, color: "#f59e0b" },
+];
+
+const TOPIC_SUBJECTS = new Set(HELP_TOPICS.map((t) => t.subject));
+
+/** Status drives each row's left accent bar — structure, not decoration. */
+const STATUS_ACCENT: Record<string, string> = {
+  pending: "bg-amber-400",
+  open: "bg-amber-400",
+  read: "bg-blue-400",
+  resolved: "bg-emerald-400",
+  closed: "bg-gray-300 dark:bg-gray-600",
+};
+
+const TICKET_FILTERS = ["all", "pending", "read", "resolved"] as const;
+type TicketFilter = (typeof TICKET_FILTERS)[number];
+
+/* ── Preferences ──────────────────────────────────────────────────────────── */
 
 const LANGUAGES = [
   { value: "en", label: "English" },
@@ -76,30 +172,30 @@ const TIMEZONES = [
 const NOTIFICATION_CHANNELS: {
   key: "email" | "sms" | "push";
   label: string;
-  description: string;
+  blurb: string;
   icon: LucideIcon;
 }[] = [
   {
     key: "email",
-    label: "Email notifications",
-    description: "Booking confirmations, payout updates and review alerts.",
+    label: "Email",
+    blurb: "Booking confirmations, payout updates and review alerts.",
     icon: Mail,
   },
   {
     key: "sms",
-    label: "SMS notifications",
-    description: "Time-critical booking updates sent as a text message.",
+    label: "SMS",
+    blurb: "Time-critical booking updates, sent as a text message.",
     icon: MessageSquare,
   },
   {
     key: "push",
-    label: "Push notifications",
-    description: "In-app and browser alerts while you're signed in.",
+    label: "Push",
+    blurb: "In-app and browser alerts while you're signed in.",
     icon: BellRing,
   },
 ];
 
-/** Server caps: subject 200 chars, description 5000 (helpdesk.dto.js). */
+/** Server caps — helpdesk.dto.js. */
 const SUBJECT_MAX = 200;
 const MESSAGE_MAX = 5000;
 
@@ -113,7 +209,6 @@ const formatTicketDate = (raw?: string) => {
     : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 };
 
-/** Compact secondary line under the absolute date — "3d ago". */
 const formatRelative = (raw?: string) => {
   if (!raw) return "";
   const t = new Date(raw).getTime();
@@ -123,10 +218,19 @@ const formatRelative = (raw?: string) => {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.round(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return `${Math.round(days / 30)}mo ago`;
+  return `${Math.round(hrs / 24)}d ago`;
 };
+
+/** Recent tickets read better relatively; older ones need the actual date. */
+const ticketWhen = (raw?: string) => {
+  const t = raw ? new Date(raw).getTime() : NaN;
+  if (Number.isNaN(t)) return "—";
+  return Date.now() - t < 7 * 86_400_000 ? formatRelative(raw) : formatTicketDate(raw);
+};
+
+/** Counters are noise until the field is nearly full. */
+const counterFor = (value: string, max: number) =>
+  value.length > max * 0.7 ? `${value.length}/${max}` : undefined;
 
 /**
  * Stable identity for the three preference fields the UI actually edits.
@@ -142,81 +246,53 @@ const prefsFingerprint = (p?: Partial<VendorSettingDTO["preferences"]> | null) =
     push: !!p?.notifications?.push,
   });
 
-/* ── Local presentational primitives ──────────────────────────────────────────
-   These encode this page's card/row rhythm. Tokens only, no hardcoded hex —
-   see CONVENTIONS.md Rule 1/3. `tpl-*` values are raw CSS strings, so they
-   never take an opacity modifier; `brand` is hsl-channel based and does.     */
+/* ── Local presentational primitives ──────────────────────────────────────── */
 
-const SectionHeading = ({
-  icon: Icon,
+const Panel = ({ className, children }: { className?: string; children: React.ReactNode }) => (
+  <section className={cn(PANEL, "overflow-hidden", className)}>{children}</section>
+);
+
+const PanelHead = ({
   title,
-  description,
+  blurb,
   aside,
 }: {
-  icon: LucideIcon;
   title: string;
-  description: string;
+  blurb?: string;
   aside?: React.ReactNode;
 }) => (
-  <div className="flex items-start justify-between gap-4">
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 grid place-items-center w-9 h-9 rounded-xl bg-brand/10 text-brand shrink-0">
-        <Icon size={17} strokeWidth={2.1} />
-      </span>
-      <div>
-        <h2 className="text-[15px] font-bold leading-6 text-tpl-dark dark:text-white">{title}</h2>
-        <p className="mt-0.5 text-[13px] text-tpl-dark-5 dark:text-gray-400">{description}</p>
-      </div>
+  <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3.5 border-b border-border/70">
+    <div>
+      <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-foreground">{title}</h3>
+      {blurb && <p className="mt-0.5 text-[12.5px] text-muted-foreground">{blurb}</p>}
     </div>
-    {aside}
-  </div>
+    {aside && <div className="shrink-0 pt-0.5">{aside}</div>}
+  </header>
 );
 
-const Card = ({ className, children }: { className?: string; children: React.ReactNode }) => (
-  <div
-    className={cn(
-      "bg-tpl-card-bg border border-tpl-stroke rounded-2xl shadow-tpl-1 overflow-hidden",
-      className,
-    )}
-  >
-    {children}
-  </div>
-);
-
-const CardHeader = ({ title, aside }: { title: string; aside?: React.ReactNode }) => (
-  <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-tpl-stroke">
-    <h3 className="text-[13px] font-bold uppercase tracking-wide text-tpl-dark-5 dark:text-gray-400">
-      {title}
-    </h3>
-    {aside}
-  </div>
-);
-
-/** Label + description on the left, control on the right. */
+/** Label + blurb on the left, control on the right. */
 const SettingRow = ({
   icon: Icon,
   title,
-  description,
+  blurb,
   children,
 }: {
   icon?: LucideIcon;
   title: string;
-  description?: string;
+  blurb?: string;
   children: React.ReactNode;
 }) => (
   <div className="flex items-center justify-between gap-6 px-5 py-4">
     <div className="flex items-start gap-3 min-w-0">
       {Icon && (
-        <span className="mt-px grid place-items-center w-8 h-8 rounded-lg bg-tpl-gray-2 dark:bg-white/5 text-tpl-dark-4 dark:text-gray-300 shrink-0">
+        <span className="mt-px grid place-items-center w-8 h-8 rounded-[10px] bg-muted text-muted-foreground shrink-0">
           <Icon size={15} strokeWidth={2} />
         </span>
       )}
       <div className="min-w-0">
-        <p className="text-[13.5px] font-semibold text-tpl-dark dark:text-gray-100">{title}</p>
-        {description && (
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-tpl-dark-5 dark:text-gray-400">
-            {description}
-          </p>
+        <p className="text-[13.5px] font-semibold text-foreground">{title}</p>
+        {blurb && (
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">{blurb}</p>
         )}
       </div>
     </div>
@@ -224,68 +300,38 @@ const SettingRow = ({
   </div>
 );
 
+/** Sentence-case labels, no asterisk clutter — the whole support form is required. */
 const Field = ({
   label,
   htmlFor,
-  required,
   error,
   hint,
+  className,
   children,
 }: {
   label: string;
   htmlFor: string;
-  required?: boolean;
   error?: string;
   hint?: React.ReactNode;
+  className?: string;
   children: React.ReactNode;
 }) => (
-  <div className="space-y-1.5">
-    <label
-      htmlFor={htmlFor}
-      className="flex items-center gap-1 text-[11.5px] font-bold uppercase tracking-wide text-tpl-dark-5 dark:text-gray-400"
-    >
-      {label}
-      {required && <span className="text-red-500">*</span>}
-    </label>
+  <div className={cn("space-y-1.5", className)}>
+    <div className="flex items-baseline justify-between gap-2">
+      <label htmlFor={htmlFor} className="text-[12.5px] font-semibold text-foreground/85">
+        {label}
+      </label>
+      {hint && !error && (
+        <span className="text-[11px] tabular-nums text-muted-foreground/70">{hint}</span>
+      )}
+    </div>
     {children}
-    {error ? (
+    {error && (
       <p className="flex items-center gap-1 text-[11.5px] font-medium text-red-600 dark:text-red-400">
         <AlertCircle size={12} strokeWidth={2.4} />
         {error}
       </p>
-    ) : hint ? (
-      <p className="text-[11.5px] text-tpl-dark-6 dark:text-gray-500">{hint}</p>
-    ) : null}
-  </div>
-);
-
-/** Shared control skin so inputs, textarea and selects sit on one grid. */
-const CONTROL_BASE =
-  "rounded-xl bg-tpl-gray-1 dark:bg-white/5 border-tpl-stroke text-[13.5px] " +
-  "placeholder:text-tpl-dark-6 focus-visible:border-brand focus-visible:ring-2 " +
-  "focus-visible:ring-brand/25 focus-visible:ring-offset-0 transition-colors duration-150";
-const CONTROL_ERROR = "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/20";
-
-/** One read-only identity cell in the account-overview strip. */
-const MetaCell = ({
-  label,
-  value,
-  verified,
-}: {
-  label: string;
-  value?: React.ReactNode;
-  verified?: boolean;
-}) => (
-  <div className="px-5 py-3.5">
-    <p className="text-[11px] font-bold uppercase tracking-wide text-tpl-dark-6 dark:text-gray-500">
-      {label}
-    </p>
-    <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-tpl-dark dark:text-gray-100">
-      <span className="truncate">{value || "—"}</span>
-      {verified && (
-        <BadgeCheck size={14} className="shrink-0 text-emerald-500" aria-label="Verified" />
-      )}
-    </div>
+    )}
   </div>
 );
 
@@ -301,10 +347,14 @@ const Settings = () => {
   // user is loaded (no more hardcoded "1" demo fallback hitting the API).
   const vendorId = useMemo(() => user?.id ?? "", [user]);
 
+  const messageRef = useRef<HTMLTextAreaElement>(null);
+
   const [savingPrefs, setSavingPrefs] = useState(false);
-  const [submittingTicket, setSubmittingTicket] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [sendingTicket, setSendingTicket] = useState(false);
+  const [showSentModal, setShowSentModal] = useState(false);
   const [openTicket, setOpenTicket] = useState<HelpDeskTicketDTO | null>(null);
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  const [ticketFilter, setTicketFilter] = useState<TicketFilter>("all");
 
   // Which section is active by URL
   const activeSection: SectionKey = location.pathname.endsWith("/account")
@@ -341,7 +391,6 @@ const Settings = () => {
   });
   const [ticketErrors, setTicketErrors] = useState<Record<string, string>>({});
 
-  /** Prefill the ticket form from the signed-in vendor. */
   const ticketDefaults = () => ({
     name: user?.firstName ? `${user.firstName} ${user.lastName}` : "",
     phone: user?.phoneNumber || user?.phone || "",
@@ -373,6 +422,34 @@ const Settings = () => {
     },
   });
   const tickets = ticketsQuery.data ?? [];
+
+  /** Counts per filter — drives the chip labels and the rail badge. */
+  const filterCounts = useMemo(() => {
+    const counts: Record<TicketFilter, number> = {
+      all: tickets.length,
+      pending: 0,
+      read: 0,
+      resolved: 0,
+    };
+    for (const t of tickets) {
+      const key = (t.status || "pending").toLowerCase();
+      // `open` is legacy for `pending`; `closed` folds into `resolved`.
+      if (key === "pending" || key === "open") counts.pending += 1;
+      else if (key === "read") counts.read += 1;
+      else if (key === "resolved" || key === "closed") counts.resolved += 1;
+    }
+    return counts;
+  }, [tickets]);
+
+  const visibleTickets = useMemo(() => {
+    if (ticketFilter === "all") return tickets;
+    return tickets.filter((t) => {
+      const key = (t.status || "pending").toLowerCase();
+      if (ticketFilter === "pending") return key === "pending" || key === "open";
+      if (ticketFilter === "resolved") return key === "resolved" || key === "closed";
+      return key === ticketFilter;
+    });
+  }, [tickets, ticketFilter]);
 
   // Vendor settings — try to fetch, create defaults if not found.
   const settingsQuery = useQuery<VendorSettingDTO | null>({
@@ -423,50 +500,61 @@ const Settings = () => {
       setSavingPrefs(true);
       await vendorSettingApi.updateSection(vendorId, "preferences", preferences);
       queryClient.invalidateQueries({ queryKey: ["vendorSettings", vendorId] });
-      toast.success("Preferences saved.");
+      toast.success("Preferences saved");
     } catch {
-      toast.error("Failed to save preferences.");
+      toast.error("We couldn't save your preferences. Try again.");
     } finally {
       setSavingPrefs(false);
     }
   };
 
-  /** Timezone list always contains whatever is currently stored. */
+  /** The stored timezone is always selectable, even if it's off our list. */
   const timezoneOptions = useMemo(() => {
     const current = preferences.timezone;
     return current && !TIMEZONES.includes(current) ? [current, ...TIMEZONES] : TIMEZONES;
   }, [preferences.timezone]);
 
-  const validateTicket = () => {
-    const errors: Record<string, string> = {};
-    if (!ticket.name.trim()) errors.name = "Name is required.";
-    if (!ticket.phone.trim()) errors.phone = "Phone number is required.";
-    else if (!/^\d{10}$/.test(ticket.phone.replace(/\D/g, "")))
-      errors.phone = "Enter a valid 10-digit number.";
-    if (!ticket.email.trim()) errors.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ticket.email))
-      errors.email = "Enter a valid email address.";
-    if (!ticket.subject.trim()) errors.subject = "Subject is required.";
-    if (!ticket.message.trim()) errors.message = "Tell us what went wrong.";
-    return errors;
-  };
-
   const setTicketField = (key: string, value: string) => {
     setTicket((prev) => ({ ...prev, [key]: value }));
-    // Clear the field's error as soon as the vendor edits it.
     setTicketErrors((prev) => (prev[key] ? { ...prev, [key]: "" } : prev));
   };
 
-  const handleSubmitTicket = async () => {
+  /**
+   * Picking a topic writes the subject and hands focus to the message box.
+   * A subject the host typed themselves is never overwritten — only an empty
+   * one, or one another topic put there.
+   */
+  const pickTopic = (topic: (typeof HELP_TOPICS)[number]) => {
+    setActiveTopic(topic.id);
+    const current = ticket.subject.trim();
+    if (!current || TOPIC_SUBJECTS.has(current)) setTicketField("subject", topic.subject);
+    requestAnimationFrame(() => messageRef.current?.focus());
+  };
+
+  const validateTicket = () => {
+    const errors: Record<string, string> = {};
+    if (!ticket.name.trim()) errors.name = "Add your name.";
+    if (!ticket.phone.trim()) errors.phone = "Add a phone number.";
+    else if (!/^\d{10}$/.test(ticket.phone.replace(/\D/g, "")))
+      errors.phone = "That's not a 10-digit number.";
+    if (!ticket.email.trim()) errors.email = "Add an email address.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ticket.email))
+      errors.email = "That email address isn't valid.";
+    if (!ticket.subject.trim()) errors.subject = "Add a subject.";
+    if (!ticket.message.trim()) errors.message = "Tell us what happened.";
+    return errors;
+  };
+
+  const sendTicket = async () => {
     const errors = validateTicket();
     setTicketErrors(errors);
     if (Object.keys(errors).length) {
-      toast.error("Please fix the highlighted fields.");
+      toast.error("Check the highlighted fields.");
       return;
     }
 
     try {
-      setSubmittingTicket(true);
+      setSendingTicket(true);
       await helpDeskApi.create(
         {
           name: ticket.name,
@@ -479,21 +567,24 @@ const Settings = () => {
         },
         token,
       );
-      // Pull the new row into the table below the form.
+      // Pull the new row into the list below the form.
       queryClient.invalidateQueries({ queryKey: ticketsKey });
-      setShowSuccessModal(true);
+      setShowSentModal(true);
       setTicket(ticketDefaults());
       setTicketErrors({});
+      setActiveTopic(null);
+      setTicketFilter("all");
     } catch {
-      toast.error("Failed to submit ticket. Please try again.");
+      toast.error("We couldn't send your ticket. Try again.");
     } finally {
-      setSubmittingTicket(false);
+      setSendingTicket(false);
     }
   };
 
   const displayName = user?.firstName ? `${user.firstName} ${user.lastName}` : user?.name;
+  const avatar = user?.photo || user?.avatar;
 
-  const ticketFields: {
+  const identityFields: {
     key: "name" | "phone" | "email" | "subject";
     label: string;
     type: string;
@@ -502,194 +593,311 @@ const Settings = () => {
     className?: string;
   }[] = [
     { key: "name", label: "Your name", type: "text", placeholder: "e.g. Priya Nair" },
-    { key: "phone", label: "Phone number", type: "tel", placeholder: "10-digit mobile number" },
-    { key: "email", label: "Email", type: "email", placeholder: "you@example.com" },
+    { key: "phone", label: "Phone", type: "tel", placeholder: "10-digit mobile number" },
+    {
+      key: "email",
+      label: "Email",
+      type: "email",
+      placeholder: "you@example.com",
+      className: "sm:col-span-2",
+    },
     {
       key: "subject",
       label: "Subject",
       type: "text",
-      placeholder: "Short summary of the issue",
+      placeholder: "One line on what's wrong",
       maxLength: SUBJECT_MAX,
-      className: "md:col-span-2",
+      className: "sm:col-span-2",
     },
   ];
 
   return (
     <DashboardLayout
       title="Settings"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="max-w-4xl mx-auto space-y-5 pb-10">
-        {/* ── Settings nav tabs ── */}
-        <div
-          role="tablist"
-          aria-label="Settings sections"
-          className="inline-flex items-center gap-1 p-1 rounded-2xl bg-tpl-gray-2 dark:bg-white/5 border border-tpl-stroke"
-        >
-          {TABS.map((tab) => {
-            const active = activeSection === tab.key;
-            return (
-              <button
-                key={tab.key}
-                role="tab"
-                aria-selected={active}
-                onClick={() => navigate(tab.href)}
-                className={cn(
-                  "relative flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold",
-                  "transition-colors duration-150 outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-brand/40",
-                  active
-                    ? "text-brand"
-                    : "text-tpl-dark-5 hover:text-tpl-dark dark:text-gray-400 dark:hover:text-gray-100",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="settingsTabPill"
-                    className="absolute inset-0 rounded-xl bg-tpl-card-bg shadow-tpl-1"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  />
-                )}
-                <span className="relative flex items-center gap-2">
-                  <tab.icon size={15} strokeWidth={2.2} />
-                  {tab.label}
-                  {tab.key === "account" && tickets.length > 0 && (
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-12">
+        <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
+          {/* ── Left rail: who you are, where you can go ── */}
+          <aside className="lg:sticky lg:top-2 self-start space-y-3">
+            <div className={cn(PANEL, "hidden lg:flex items-center gap-3 p-4")}>
+              {avatar ? (
+                <img src={avatar} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+              ) : (
+                <span className="grid place-items-center w-11 h-11 rounded-full bg-brand text-brand-fg text-[14px] font-bold shrink-0">
+                  {getInitials(displayName)}
+                </span>
+              )}
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-bold text-foreground truncate">
+                  {displayName || "Your account"}
+                </p>
+                <p className="text-[11.5px] text-muted-foreground">
+                  {user?.userType === "vendor" ? "Vendor account" : "Account"}
+                </p>
+              </div>
+            </div>
+
+            {/* Desktop rail */}
+            <nav
+              role="tablist"
+              aria-label="Settings sections"
+              className={cn(PANEL, "hidden lg:flex flex-col gap-1 p-2")}
+            >
+              {SECTIONS.map((section) => {
+                const active = activeSection === section.key;
+                return (
+                  <button
+                    key={section.key}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => navigate(section.href)}
+                    className={cn(
+                      "group relative w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left",
+                      "outline-none transition-colors duration-150",
+                      "focus-visible:ring-2 focus-visible:ring-brand/40",
+                      !active && "hover:bg-muted/70 dark:hover:bg-white/[0.04]",
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="settingsRailPill"
+                        className="absolute inset-0 rounded-xl bg-brand/[0.09] shadow-[inset_3px_0_0_0_hsl(var(--brand))]"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
+                    )}
                     <span
                       className={cn(
-                        "inline-flex items-center justify-center min-w-[18px] h-[18px] px-1",
-                        "rounded-full text-[10px] font-bold",
+                        "relative grid place-items-center w-8 h-8 rounded-[10px] shrink-0 transition-colors duration-150",
                         active
-                          ? "bg-brand/10 text-brand"
-                          : "bg-tpl-gray-3 text-tpl-dark-5 dark:bg-white/10 dark:text-gray-400",
+                          ? "bg-brand text-brand-fg"
+                          : "bg-muted text-muted-foreground group-hover:text-foreground/70",
                       )}
                     >
-                      {tickets.length}
+                      <section.icon size={15} strokeWidth={2.1} />
                     </span>
-                  )}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeSection}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="space-y-5"
-          >
-            {/* ── General ── */}
-            {activeSection === "general" && (
-              <>
-                <SectionHeading
-                  icon={SlidersHorizontal}
-                  title="General"
-                  description="Your account at a glance, plus how bookings reach you."
-                />
-
-                {/* Account overview — read-only, sourced from the signed-in user. */}
-                <Card>
-                  <div className="flex items-center gap-4 p-5">
-                    {user?.photo || user?.avatar ? (
-                      <img
-                        src={user.photo || user.avatar}
-                        alt=""
-                        className="w-12 h-12 rounded-full object-cover shrink-0"
-                      />
-                    ) : (
-                      <span className="grid place-items-center w-12 h-12 rounded-full bg-brand text-brand-fg text-[15px] font-bold shrink-0">
-                        {getInitials(displayName)}
+                    <span className="relative min-w-0">
+                      <span
+                        className={cn(
+                          "block text-[13.5px] font-semibold leading-5",
+                          active ? "text-brand" : "text-foreground",
+                        )}
+                      >
+                        {section.label}
+                      </span>
+                      <span className="block text-[11.5px] leading-4 mt-0.5 text-muted-foreground">
+                        {section.blurb}
+                      </span>
+                    </span>
+                    {section.key === "account" && filterCounts.pending > 0 && (
+                      <span className="relative ml-auto mt-1 shrink-0 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold tabular-nums dark:bg-amber-500/15 dark:text-amber-400">
+                        {filterCounts.pending}
                       </span>
                     )}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[15px] font-bold text-tpl-dark dark:text-white truncate">
-                        {displayName || "Your account"}
-                      </p>
-                      <p className="text-[12.5px] text-tpl-dark-5 dark:text-gray-400 capitalize">
-                        {user?.userType === "vendor" ? "Vendor account" : "Account"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate("/profile")}
-                      className="shrink-0 h-9 rounded-xl border-tpl-stroke text-[12.5px] font-semibold"
-                    >
-                      Edit profile
-                    </Button>
-                  </div>
+                  </button>
+                );
+              })}
+            </nav>
 
-                  <div className="grid sm:grid-cols-3 border-t border-tpl-stroke divide-y sm:divide-y-0 sm:divide-x divide-tpl-stroke">
-                    <MetaCell label="Email" value={user?.email} verified={user?.emailVerified} />
-                    <MetaCell
-                      label="Phone"
-                      value={user?.phoneNumber || user?.phone}
-                      verified={user?.mobileVerified}
-                    />
-                    <MetaCell
-                      label="Status"
-                      value={
-                        user?.vendorStatus ? (
-                          <StatusBadge status={user.vendorStatus} size="sm" />
-                        ) : (
-                          "—"
-                        )
-                      }
-                    />
-                  </div>
-                </Card>
-
-                <Card>
-                  <CardHeader title="Bookings" />
-                  <SettingRow
-                    icon={CalendarCheck}
-                    title="Confirmation before accepting booking"
-                    description="When enabled, a complete assessment is required before a booking is confirmed."
+            {/* Mobile strip — no sliding pill, so the two navs never share a layoutId */}
+            <div
+              role="tablist"
+              aria-label="Settings sections"
+              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border/70 rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+            >
+              {SECTIONS.map((section) => {
+                const active = activeSection === section.key;
+                return (
+                  <button
+                    key={section.key}
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => navigate(section.href)}
+                    className={cn(
+                      "flex items-center gap-2 h-10 px-3.5 rounded-xl whitespace-nowrap",
+                      "text-[13px] font-semibold transition-colors duration-150 outline-none",
+                      "focus-visible:ring-2 focus-visible:ring-brand/40",
+                      active ? "bg-brand/[0.09] text-brand" : "text-muted-foreground",
+                    )}
                   >
-                    <Switch
-                      checked={!!general.confirmBeforeBooking}
-                      onCheckedChange={(checked) =>
-                        setGeneral({ ...general, confirmBeforeBooking: checked })
-                      }
-                      aria-label="Confirmation before accepting booking"
+                    <section.icon size={15} strokeWidth={2.2} />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* ── Content ── */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeSection}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="min-w-0 space-y-5"
+            >
+              {/* ── General ── */}
+              {activeSection === "general" && (
+                <>
+                  <Panel>
+                    <PanelHead
+                      title="Booking flow"
+                      blurb="How much you check before a stay is locked in."
                     />
-                  </SettingRow>
-                </Card>
-              </>
-            )}
+                    <SettingRow
+                      icon={CalendarCheck}
+                      title="Confirm before accepting a booking"
+                      blurb="Leave this on to review the full assessment before a booking is confirmed."
+                    >
+                      <Switch
+                        checked={!!general.confirmBeforeBooking}
+                        onCheckedChange={(checked) =>
+                          setGeneral({ ...general, confirmBeforeBooking: checked })
+                        }
+                        aria-label="Confirm before accepting a booking"
+                      />
+                    </SettingRow>
+                  </Panel>
 
-            {/* ── Support (route: /settings/account) ── */}
-            {activeSection === "account" && (
-              <>
-                <SectionHeading
-                  icon={LifeBuoy}
-                  title="Support"
-                  description="Raise an issue with our team and track everything you've filed."
-                />
+                  <Panel>
+                    <PanelHead
+                      title="Contact details"
+                      blurb="Where guests and our team reach you."
+                      aside={
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate("/profile")}
+                          className="h-9 rounded-xl border-border text-[12.5px] font-semibold gap-1.5"
+                        >
+                          Edit profile
+                          <ChevronRight size={14} strokeWidth={2.4} />
+                        </Button>
+                      }
+                    />
+                    <div className="divide-y divide-border/70">
+                      <SettingRow icon={Mail} title="Email" blurb={user?.email || "Not added yet"}>
+                        {user?.emailVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            <BadgeCheck size={14} strokeWidth={2.3} />
+                            Verified
+                          </span>
+                        ) : (
+                          <StatusBadge status="unverified" size="sm" />
+                        )}
+                      </SettingRow>
+                      <SettingRow
+                        icon={Phone}
+                        title="Phone"
+                        blurb={user?.phoneNumber || user?.phone || "Not added yet"}
+                      >
+                        {user?.mobileVerified ? (
+                          <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            <BadgeCheck size={14} strokeWidth={2.3} />
+                            Verified
+                          </span>
+                        ) : (
+                          <StatusBadge status="unverified" size="sm" />
+                        )}
+                      </SettingRow>
+                      {user?.vendorStatus && (
+                        <SettingRow
+                          icon={UserRound}
+                          title="Account status"
+                          blurb="Set by our team as your listings are reviewed."
+                        >
+                          <StatusBadge status={user.vendorStatus} size="sm" />
+                        </SettingRow>
+                      )}
+                    </div>
+                  </Panel>
+                </>
+              )}
 
-                <Card>
-                  <CardHeader
-                    title="Raise an issue"
-                    aside={
-                      <span className="text-[11.5px] text-tpl-dark-6 dark:text-gray-500">
-                        Usually answered within 24 hours
-                      </span>
-                    }
-                  />
-                  <div className="p-5 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {ticketFields.map((f) => (
-                        <div key={f.key} className={f.className}>
+              {/* ── Support (route: /settings/account) ── */}
+              {activeSection === "account" && (
+                <>
+                  {/* Signature: triage strip. Pick what broke, land in the message box. */}
+                  <Panel className="relative">
+                    <div
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand/[0.08] via-brand/[0.02] to-transparent"
+                    />
+                    <div className="relative p-5">
+                      <h2 className="text-[19px] font-bold tracking-[-0.015em] text-foreground">
+                        What do you need help with?
+                      </h2>
+                      <p className="mt-1 text-[13px] text-muted-foreground">
+                        Pick the closest match, then tell us what happened. Most tickets get a reply
+                        within a day.
+                      </p>
+
+                      <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                        {HELP_TOPICS.map((topic) => {
+                          const selected = activeTopic === topic.id;
+                          return (
+                            <motion.button
+                              key={topic.id}
+                              type="button"
+                              onClick={() => pickTopic(topic)}
+                              aria-pressed={selected}
+                              whileTap={{ scale: 0.97 }}
+                              transition={{ type: "spring", stiffness: 520, damping: 30 }}
+                              className={cn(
+                                "flex items-center gap-2.5 p-2.5 pr-3.5 rounded-xl border bg-card text-left",
+                                "outline-none transition-[border-color,box-shadow] duration-150",
+                                "focus-visible:ring-4 focus-visible:ring-brand/15",
+                                selected
+                                  ? "border-brand ring-4 ring-brand/10"
+                                  : "border-border/70 hover:border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
+                              )}
+                            >
+                              <span
+                                className="grid place-items-center w-8 h-8 rounded-[10px] shrink-0"
+                                style={{ backgroundColor: `${topic.color}1f`, color: topic.color }}
+                              >
+                                <topic.icon size={16} strokeWidth={2.1} />
+                              </span>
+                              <span
+                                className={cn(
+                                  "text-[12.5px] font-semibold leading-4 truncate",
+                                  selected ? "text-brand" : "text-foreground",
+                                )}
+                              >
+                                {topic.label}
+                              </span>
+                              {selected && (
+                                <Check
+                                  size={14}
+                                  strokeWidth={3}
+                                  className="ml-auto shrink-0 text-brand"
+                                />
+                              )}
+                            </motion.button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </Panel>
+
+                  <Panel>
+                    <PanelHead
+                      title="Report the issue"
+                      blurb="Every field is needed to open a ticket."
+                    />
+                    <div className="p-5 space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4">
+                        {identityFields.map((f) => (
                           <Field
+                            key={f.key}
                             label={f.label}
                             htmlFor={`ticket-${f.key}`}
-                            required
                             error={ticketErrors[f.key]}
+                            className={f.className}
                             hint={
-                              f.key === "subject" && !ticketErrors.subject
-                                ? `${ticket.subject.length}/${SUBJECT_MAX}`
+                              f.key === "subject"
+                                ? counterFor(ticket.subject, SUBJECT_MAX)
                                 : undefined
                             }
                           >
@@ -708,352 +916,407 @@ const Settings = () => {
                                   f.key === "phone" ? raw.replace(/\D/g, "").slice(0, 10) : raw,
                                 );
                               }}
-                              className={cn(
-                                "h-11",
-                                CONTROL_BASE,
-                                ticketErrors[f.key] && CONTROL_ERROR,
-                              )}
+                              className={cn("h-11", CONTROL, ticketErrors[f.key] && CONTROL_ERROR)}
                             />
                           </Field>
-                        </div>
+                        ))}
+                      </div>
+
+                      <Field
+                        label="What happened"
+                        htmlFor="ticket-message"
+                        error={ticketErrors.message}
+                        hint={counterFor(ticket.message, MESSAGE_MAX)}
+                      >
+                        <Textarea
+                          id="ticket-message"
+                          ref={messageRef}
+                          maxLength={MESSAGE_MAX}
+                          aria-invalid={!!ticketErrors.message}
+                          placeholder="What you expected, what happened instead, and any booking or listing ID involved."
+                          value={ticket.message}
+                          onChange={(e) => setTicketField("message", e.target.value)}
+                          className={cn(
+                            "min-h-[132px] resize-none py-3 leading-relaxed",
+                            CONTROL,
+                            ticketErrors.message && CONTROL_ERROR,
+                          )}
+                        />
+                      </Field>
+                    </div>
+
+                    <footer className="flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+                      <p className="text-[11.5px] text-muted-foreground">
+                        We'll reply to{" "}
+                        <span className="font-semibold text-foreground/80">
+                          {ticket.email || "your email"}
+                        </span>
+                      </p>
+                      <Button
+                        onClick={sendTicket}
+                        disabled={sendingTicket}
+                        className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 disabled:opacity-60"
+                      >
+                        {sendingTicket ? (
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Sending…
+                          </>
+                        ) : (
+                          <>
+                            <Send size={15} strokeWidth={2.2} />
+                            Send ticket
+                          </>
+                        )}
+                      </Button>
+                    </footer>
+                  </Panel>
+
+                  {/* ── Your tickets ── */}
+                  <Panel>
+                    <PanelHead
+                      title="Your tickets"
+                      blurb="Every issue you've reported, newest first."
+                    />
+
+                    {tickets.length > 0 && (
+                      <div className="flex items-center gap-1.5 px-5 py-3 overflow-x-auto scrollbar-hide border-b border-border/70">
+                        {TICKET_FILTERS.map((f) => {
+                          const selected = ticketFilter === f;
+                          return (
+                            <button
+                              key={f}
+                              onClick={() => setTicketFilter(f)}
+                              aria-pressed={selected}
+                              className={cn(
+                                "flex items-center gap-1.5 h-7 px-2.5 rounded-full whitespace-nowrap",
+                                "text-[12px] font-semibold capitalize outline-none",
+                                "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand/40",
+                                selected
+                                  ? "bg-brand/[0.1] text-brand"
+                                  : "text-muted-foreground hover:bg-muted",
+                              )}
+                            >
+                              {f}
+                              <span className="tabular-nums opacity-70">{filterCounts[f]}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {ticketsQuery.isLoading ? (
+                      <div className="divide-y divide-border/70">
+                        {[0, 1, 2].map((i) => (
+                          <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3 w-1/3 rounded bg-muted" />
+                              <div className="h-2.5 w-3/4 rounded bg-muted/70" />
+                            </div>
+                            <div className="h-5 w-16 rounded-full bg-muted" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : ticketsQuery.isError ? (
+                      <EmptyState
+                        icon={AlertCircle}
+                        title="We couldn't load your tickets"
+                        description="The request didn't go through. Try again in a moment."
+                        actionLabel="Try again"
+                        onAction={() => ticketsQuery.refetch()}
+                      />
+                    ) : tickets.length === 0 ? (
+                      <EmptyState
+                        icon={NotebookPen}
+                        title="Nothing reported yet"
+                        description="Report an issue above and it lands here, so you can follow it without leaving the dashboard."
+                      />
+                    ) : visibleTickets.length === 0 ? (
+                      <div className="px-5 py-10 text-center">
+                        <p className="text-[13px] text-muted-foreground">
+                          No {ticketFilter} tickets.
+                        </p>
+                        <button
+                          onClick={() => setTicketFilter("all")}
+                          className="mt-2 text-[12.5px] font-semibold text-brand hover:underline"
+                        >
+                          Show all tickets
+                        </button>
+                      </div>
+                    ) : (
+                      <ul className="divide-y divide-border/70">
+                        {visibleTickets.map((t, i) => {
+                          const key = (t.status || "pending").toLowerCase();
+                          return (
+                            <motion.li
+                              key={t._id}
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.25, delay: Math.min(i, 6) * 0.035 }}
+                            >
+                              <button
+                                onClick={() => setOpenTicket(t)}
+                                className={cn(
+                                  "group relative w-full flex items-center gap-4 pl-5 pr-4 py-4 text-left",
+                                  "outline-none transition-colors duration-150",
+                                  "hover:bg-brand/[0.035] focus-visible:bg-brand/[0.05]",
+                                  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40",
+                                )}
+                              >
+                                <span
+                                  aria-hidden
+                                  className={cn(
+                                    "absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full",
+                                    STATUS_ACCENT[key] ?? "bg-gray-300 dark:bg-gray-600",
+                                  )}
+                                />
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-[13.5px] font-semibold text-foreground truncate">
+                                      {t.subject}
+                                    </span>
+                                    <StatusBadge status={key} size="sm" />
+                                  </span>
+                                  <span className="mt-1 block text-[12.5px] text-muted-foreground line-clamp-1">
+                                    {t.description}
+                                  </span>
+                                </span>
+                                <span className="hidden sm:block shrink-0 text-[12px] tabular-nums text-muted-foreground">
+                                  {ticketWhen(t.createdAt)}
+                                </span>
+                                <ChevronRight
+                                  size={16}
+                                  strokeWidth={2.2}
+                                  className="shrink-0 text-muted-foreground/60 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-brand"
+                                />
+                              </button>
+                            </motion.li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </Panel>
+                </>
+              )}
+
+              {/* ── Preferences ── */}
+              {activeSection === "preferences" && (
+                <>
+                  <Panel>
+                    <PanelHead
+                      title="Region"
+                      blurb="Sets the language of the dashboard and how times are shown."
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                      <Field label="Language" htmlFor="pref-language">
+                        <Select
+                          value={preferences.language}
+                          onValueChange={(value) =>
+                            setPreferences({ ...preferences, language: value })
+                          }
+                        >
+                          <SelectTrigger id="pref-language" className={cn("h-11", CONTROL)}>
+                            <SelectValue placeholder="Pick a language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {LANGUAGES.map((l) => (
+                              <SelectItem key={l.value} value={l.value}>
+                                {l.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+
+                      <Field
+                        label="Timezone"
+                        htmlFor="pref-timezone"
+                        hint={
+                          <span className="inline-flex items-center gap-1">
+                            <Globe size={11} strokeWidth={2.2} />
+                            Booking times
+                          </span>
+                        }
+                      >
+                        <Select
+                          value={preferences.timezone}
+                          onValueChange={(value) =>
+                            setPreferences({ ...preferences, timezone: value })
+                          }
+                        >
+                          <SelectTrigger id="pref-timezone" className={cn("h-11", CONTROL)}>
+                            <SelectValue placeholder="Pick a timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timezoneOptions.map((tz) => (
+                              <SelectItem key={tz} value={tz}>
+                                {tz}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </Field>
+                    </div>
+                  </Panel>
+
+                  <Panel>
+                    <PanelHead
+                      title="Notifications"
+                      blurb="Choose how we reach you. Booking alerts are worth keeping on."
+                    />
+                    <div className="divide-y divide-border/70">
+                      {NOTIFICATION_CHANNELS.map((channel) => (
+                        <SettingRow
+                          key={channel.key}
+                          icon={channel.icon}
+                          title={channel.label}
+                          blurb={channel.blurb}
+                        >
+                          <Switch
+                            checked={!!preferences.notifications?.[channel.key]}
+                            onCheckedChange={(checked) =>
+                              setPreferences({
+                                ...preferences,
+                                notifications: {
+                                  ...preferences.notifications,
+                                  [channel.key]: checked,
+                                },
+                              })
+                            }
+                            aria-label={`${channel.label} notifications`}
+                          />
+                        </SettingRow>
                       ))}
                     </div>
 
-                    <Field
-                      label="Message"
-                      htmlFor="ticket-message"
-                      required
-                      error={ticketErrors.message}
-                      hint={`${ticket.message.length}/${MESSAGE_MAX}`}
-                    >
-                      <Textarea
-                        id="ticket-message"
-                        maxLength={MESSAGE_MAX}
-                        aria-invalid={!!ticketErrors.message}
-                        placeholder="Describe the issue — what you expected, what happened, and any booking or listing IDs involved."
-                        value={ticket.message}
-                        onChange={(e) => setTicketField("message", e.target.value)}
-                        className={cn(
-                          "min-h-[130px] resize-none py-3",
-                          CONTROL_BASE,
-                          ticketErrors.message && CONTROL_ERROR,
+                    <footer className="flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+                      <AnimatePresence>
+                        {prefsDirty && (
+                          <motion.p
+                            initial={{ opacity: 0, x: -4 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0 }}
+                            className="flex items-center gap-1.5 text-[11.5px] font-medium text-amber-600 dark:text-amber-400"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Unsaved changes
+                          </motion.p>
                         )}
-                      />
-                    </Field>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 px-5 py-4 border-t border-tpl-stroke bg-tpl-gray-1 dark:bg-white/[0.02]">
-                    <p className="text-[11.5px] text-tpl-dark-5 dark:text-gray-500">
-                      We'll reply to <span className="font-semibold">{ticket.email || "—"}</span>
-                    </p>
-                    <Button
-                      onClick={handleSubmitTicket}
-                      disabled={submittingTicket}
-                      className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover font-semibold gap-2 disabled:opacity-60"
-                    >
-                      {submittingTicket ? (
-                        <>
-                          <Loader2 size={15} className="animate-spin" />
-                          Submitting…
-                        </>
-                      ) : (
-                        <>
-                          <Send size={15} strokeWidth={2.2} />
-                          Submit ticket
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </Card>
-
-                {/* ── My tickets ── */}
-                <Card>
-                  <CardHeader
-                    title="My tickets"
-                    aside={
-                      tickets.length > 0 ? (
-                        <span className="text-[11.5px] font-semibold text-tpl-dark-5 dark:text-gray-400">
-                          {tickets.length} {tickets.length === 1 ? "ticket" : "tickets"}
-                        </span>
-                      ) : undefined
-                    }
-                  />
-
-                  {ticketsQuery.isError ? (
-                    <EmptyState
-                      icon={AlertCircle}
-                      title="Couldn't load your tickets"
-                      description="Something went wrong while fetching them. Try again in a moment."
-                      actionLabel="Try again"
-                      onAction={() => ticketsQuery.refetch()}
-                    />
-                  ) : !ticketsQuery.isLoading && tickets.length === 0 ? (
-                    <EmptyState
-                      icon={NotebookPen}
-                      title="No tickets yet"
-                      description="Tickets you raise will appear here with their status, so you can follow them without leaving the dashboard."
-                    />
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        <thead>
-                          <tr>
-                            <th className="px-5">Subject</th>
-                            <th className="px-5 hidden md:table-cell">Message</th>
-                            <th className="px-5 hidden sm:table-cell">Raised on</th>
-                            <th className="px-5">Status</th>
-                          </tr>
-                        </thead>
-                        {ticketsQuery.isLoading ? (
-                          <TableSkeleton rows={3} columns={4} />
+                      </AnimatePresence>
+                      <Button
+                        onClick={savePreferences}
+                        disabled={savingPrefs || !prefsDirty}
+                        className="ml-auto h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 disabled:opacity-45"
+                      >
+                        {savingPrefs ? (
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Saving…
+                          </>
                         ) : (
-                          <tbody>
-                            {tickets.map((t) => (
-                              <tr
-                                key={t._id}
-                                tabIndex={0}
-                                role="button"
-                                aria-label={`Open ticket ${t.subject}`}
-                                onClick={() => setOpenTicket(t)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    setOpenTicket(t);
-                                  }
-                                }}
-                                className="cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40"
-                              >
-                                <td className="px-5 align-top">
-                                  <span className="font-semibold text-tpl-dark dark:text-white">
-                                    {t.subject}
-                                  </span>
-                                </td>
-                                <td className="px-5 align-top hidden md:table-cell max-w-md">
-                                  <span className="line-clamp-2 text-tpl-dark-4 dark:text-gray-400">
-                                    {t.description}
-                                  </span>
-                                </td>
-                                <td className="px-5 align-top whitespace-nowrap hidden sm:table-cell">
-                                  <span className="block">{formatTicketDate(t.createdAt)}</span>
-                                  <span className="block text-[11.5px] text-tpl-dark-6 dark:text-gray-500">
-                                    {formatRelative(t.createdAt)}
-                                  </span>
-                                </td>
-                                <td className="px-5 align-top">
-                                  <StatusBadge status={(t.status || "pending").toLowerCase()} />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
+                          "Save changes"
                         )}
-                      </table>
-                    </div>
-                  )}
-                </Card>
-              </>
-            )}
-
-            {/* ── Preferences ── */}
-            {activeSection === "preferences" && (
-              <>
-                <SectionHeading
-                  icon={BellRing}
-                  title="Preferences"
-                  description="Language, timezone, and how we should reach you."
-                />
-
-                <Card>
-                  <CardHeader title="Regional" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
-                    <Field label="Language" htmlFor="pref-language">
-                      <Select
-                        value={preferences.language}
-                        onValueChange={(value) =>
-                          setPreferences({ ...preferences, language: value })
-                        }
-                      >
-                        <SelectTrigger id="pref-language" className={cn("h-11", CONTROL_BASE)}>
-                          <SelectValue placeholder="Select a language" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LANGUAGES.map((l) => (
-                            <SelectItem key={l.value} value={l.value}>
-                              {l.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-
-                    <Field
-                      label="Timezone"
-                      htmlFor="pref-timezone"
-                      hint={
-                        <span className="inline-flex items-center gap-1">
-                          <Globe size={11} strokeWidth={2.2} />
-                          Used for booking times and reports
-                        </span>
-                      }
-                    >
-                      <Select
-                        value={preferences.timezone}
-                        onValueChange={(value) =>
-                          setPreferences({ ...preferences, timezone: value })
-                        }
-                      >
-                        <SelectTrigger id="pref-timezone" className={cn("h-11", CONTROL_BASE)}>
-                          <SelectValue placeholder="Select a timezone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {timezoneOptions.map((tz) => (
-                            <SelectItem key={tz} value={tz}>
-                              {tz}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                  </div>
-                </Card>
-
-                <Card>
-                  <CardHeader title="Notifications" />
-                  <div className="divide-y divide-tpl-stroke">
-                    {NOTIFICATION_CHANNELS.map((channel) => (
-                      <SettingRow
-                        key={channel.key}
-                        icon={channel.icon}
-                        title={channel.label}
-                        description={channel.description}
-                      >
-                        <Switch
-                          checked={!!preferences.notifications?.[channel.key]}
-                          onCheckedChange={(checked) =>
-                            setPreferences({
-                              ...preferences,
-                              notifications: {
-                                ...preferences.notifications,
-                                [channel.key]: checked,
-                              },
-                            })
-                          }
-                          aria-label={channel.label}
-                        />
-                      </SettingRow>
-                    ))}
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4 px-5 py-4 border-t border-tpl-stroke bg-tpl-gray-1 dark:bg-white/[0.02]">
-                    <p className="text-[11.5px] text-tpl-dark-5 dark:text-gray-500">
-                      {prefsDirty ? "You have unsaved changes." : "All changes saved."}
-                    </p>
-                    <Button
-                      onClick={savePreferences}
-                      disabled={savingPrefs || !prefsDirty}
-                      className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover font-semibold gap-2 disabled:opacity-50"
-                    >
-                      {savingPrefs ? (
-                        <>
-                          <Loader2 size={15} className="animate-spin" />
-                          Saving…
-                        </>
-                      ) : (
-                        "Save changes"
-                      )}
-                    </Button>
-                  </div>
-                </Card>
-              </>
-            )}
-          </motion.div>
-        </AnimatePresence>
+                      </Button>
+                    </footer>
+                  </Panel>
+                </>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* ── Ticket detail ── */}
       <Dialog open={!!openTicket} onOpenChange={(open) => !open && setOpenTicket(null)}>
-        <DialogContent className="sm:max-w-[560px] p-0 gap-0 overflow-hidden rounded-2xl bg-tpl-card-bg border-tpl-stroke">
+        <DialogContent
+          style={BRAND_VARS}
+          className="sm:max-w-[560px] p-0 gap-0 overflow-hidden rounded-[18px] bg-card border-border/70"
+        >
           {openTicket && (
             <>
-              <div className="px-6 pt-6 pb-4 border-b border-tpl-stroke">
+              <div className="px-6 pt-6 pb-4 border-b border-border/70">
                 <StatusBadge status={(openTicket.status || "pending").toLowerCase()} />
-                <h2 className="mt-3 pr-6 text-[17px] font-bold leading-6 text-tpl-dark dark:text-white">
+                <h2 className="mt-3 pr-8 text-[18px] font-bold leading-6 tracking-[-0.01em] text-foreground">
                   {openTicket.subject}
                 </h2>
-                <p className="mt-1 text-[12px] text-tpl-dark-5 dark:text-gray-400">
-                  Raised on {formatTicketDate(openTicket.createdAt)} ·{" "}
+                <p className="mt-1 text-[12px] tabular-nums text-muted-foreground">
+                  Reported {formatTicketDate(openTicket.createdAt)} ·{" "}
                   {formatRelative(openTicket.createdAt)}
                 </p>
               </div>
 
-              <div className="px-6 py-5 space-y-4 max-h-[52vh] overflow-y-auto">
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-tpl-dark-6 dark:text-gray-500">
-                    Message
-                  </p>
-                  <p className="mt-1.5 text-[13.5px] leading-relaxed whitespace-pre-wrap text-tpl-dark-3 dark:text-gray-300">
-                    {openTicket.description}
-                  </p>
-                </div>
+              <div className="px-6 py-5 space-y-5 max-h-[52vh] overflow-y-auto">
+                <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground/80">
+                  {openTicket.description}
+                </p>
 
-                <div className="grid sm:grid-cols-2 gap-3 pt-1">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-border/70">
                   {openTicket.name && (
-                    <div className="flex items-center gap-2 text-[12.5px] text-tpl-dark-4 dark:text-gray-400">
-                      <UserRound size={13} strokeWidth={2.1} className="shrink-0" />
-                      <span className="truncate">{openTicket.name}</span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                      <UserRound size={13} strokeWidth={2.1} />
+                      {openTicket.name}
+                    </span>
                   )}
                   {openTicket.email && (
-                    <div className="flex items-center gap-2 text-[12.5px] text-tpl-dark-4 dark:text-gray-400">
-                      <Mail size={13} strokeWidth={2.1} className="shrink-0" />
-                      <span className="truncate">{openTicket.email}</span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
+                      <Mail size={13} strokeWidth={2.1} />
+                      {openTicket.email}
+                    </span>
                   )}
                   {openTicket.phoneNumber && (
-                    <div className="flex items-center gap-2 text-[12.5px] text-tpl-dark-4 dark:text-gray-400">
-                      <Phone size={13} strokeWidth={2.1} className="shrink-0" />
-                      <span className="truncate">{openTicket.phoneNumber}</span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 text-[12.5px] tabular-nums text-muted-foreground">
+                      <Phone size={13} strokeWidth={2.1} />
+                      {openTicket.phoneNumber}
+                    </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex justify-end px-6 py-4 border-t border-tpl-stroke bg-tpl-gray-1 dark:bg-white/[0.02]">
+              <footer className="flex justify-end px-6 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
                 <Button
                   variant="outline"
                   onClick={() => setOpenTicket(null)}
-                  className="h-9 rounded-xl border-tpl-stroke text-[12.5px] font-semibold"
+                  className="h-9 rounded-xl border-border text-[12.5px] font-semibold"
                 >
                   Close
                 </Button>
-              </div>
+              </footer>
             </>
           )}
         </DialogContent>
       </Dialog>
 
-      {/* ── Ticket submitted ── */}
-      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="sm:max-w-[440px] p-8 text-center rounded-2xl bg-tpl-card-bg border-tpl-stroke">
+      {/* ── Ticket sent ── */}
+      <Dialog open={showSentModal} onOpenChange={setShowSentModal}>
+        <DialogContent
+          style={BRAND_VARS}
+          className="sm:max-w-[420px] p-8 text-center rounded-[18px] bg-card border-border/70"
+        >
           <div className="flex flex-col items-center">
-            <div className="relative grid place-items-center w-20 h-20">
+            <motion.span
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              className="relative grid place-items-center w-16 h-16"
+            >
               <span className="absolute inset-0 rounded-full bg-emerald-500/10" />
-              <span className="absolute inset-3 rounded-full bg-emerald-500/20" />
-              <span className="relative grid place-items-center w-11 h-11 rounded-full bg-emerald-500">
-                <Check size={22} className="text-white" strokeWidth={3} />
+              <span className="absolute inset-2.5 rounded-full bg-emerald-500/20" />
+              <span className="relative grid place-items-center w-10 h-10 rounded-full bg-emerald-500">
+                <Check size={20} className="text-white" strokeWidth={3} />
               </span>
-            </div>
+            </motion.span>
 
-            <h2 className="mt-5 text-[19px] font-bold text-tpl-dark dark:text-white">
-              Ticket submitted
+            <h2 className="mt-5 text-[18px] font-bold tracking-[-0.01em] text-foreground">
+              Ticket sent
             </h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-tpl-dark-5 dark:text-gray-400">
-              Our support team will review your issue and get back to you shortly. You can track its
-              status under <span className="font-semibold">My tickets</span>.
+            <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
+              Our support team picks it up from here. Follow its status any time under{" "}
+              <span className="font-semibold text-foreground/80">Your tickets</span>.
             </p>
 
             <Button
-              onClick={() => setShowSuccessModal(false)}
-              className="mt-6 w-full h-11 rounded-xl bg-brand hover:bg-brand-hover font-semibold"
+              onClick={() => setShowSentModal(false)}
+              className="mt-6 w-full h-11 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold"
             >
               Done
             </Button>
