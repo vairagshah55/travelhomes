@@ -1,19 +1,249 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  AtSign,
+  Building2,
+  Camera,
+  IdCard,
+  Link2,
+  Loader2,
+  Lock,
+  MapPin,
+  Pencil,
+  Plus,
+  ReceiptText,
+  Share2,
+  UserRound,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Edit } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
-import { userProfileApi, API_BASE_URL } from "@/lib/api";
+import {
+  BRAND_VARS,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  BTN_SOFT,
+  CONTROL,
+  EmptyState,
+  Field,
+  PANEL,
+  PANEL_FOOTER,
+  Panel,
+  PanelHead,
+  ReadValue,
+  StatusBadge,
+} from "@/components/shared";
+import { getInitials } from "@/utils/getInitials";
+import { cn } from "@/lib/utils";
+import { userProfileApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { SocialIcon } from "./Profile/SocialIcon";
 
+/* ── Field schema ─────────────────────────────────────────────────────────────
+   The old page rendered every field twice — once as a read-only <div>, once as
+   an <Input> — which is where ~600 of its 976 lines went, and why the two
+   halves had drifted (the edit form was missing fields the view showed). One
+   declaration per field now drives both states.                              */
+
+type Scope = "personal" | "business";
+
+interface FieldDef {
+  key: string;
+  label: string;
+  type?: string;
+  placeholder?: string;
+  /** Derived or managed elsewhere — rendered, never editable. */
+  readOnly?: boolean;
+  /** Shown under the label while editing. */
+  hint?: string;
+  /** Where to read a display value when the field itself is empty. */
+  fallback?: (p: any) => string;
+  /** Doubles as the fetch key for the whole profile — see `email` below. */
+  loadKey?: boolean;
+  span?: string;
+}
+
+interface GroupDef {
+  id: string;
+  scope: Scope;
+  title: string;
+  blurb?: string;
+  icon: LucideIcon;
+  cols?: string;
+  fields: FieldDef[];
+}
+
+const PERSONAL_GROUPS: GroupDef[] = [
+  {
+    id: "identity",
+    scope: "personal",
+    title: "Your details",
+    blurb: "The name guests see on bookings and messages.",
+    icon: UserRound,
+    fields: [
+      { key: "firstName", label: "First name", placeholder: "Priya" },
+      { key: "lastName", label: "Last name", placeholder: "Nair" },
+      { key: "dateOfBirth", label: "Date of birth", type: "date" },
+      { key: "maritalStatus", label: "Marital status", placeholder: "Single" },
+    ],
+  },
+  {
+    id: "contact",
+    scope: "personal",
+    title: "Contact",
+    blurb: "How we and your guests reach you.",
+    icon: AtSign,
+    cols: "grid-cols-1 sm:grid-cols-2",
+    fields: [
+      {
+        key: "email",
+        label: "Account email",
+        type: "email",
+        loadKey: true,
+        placeholder: "you@example.com",
+        hint: "Your profile loads from this address",
+      },
+      { key: "phoneNumber", label: "Phone", type: "tel", placeholder: "10-digit mobile number" },
+    ],
+  },
+  {
+    id: "address",
+    scope: "personal",
+    title: "Address",
+    blurb: "Used for payouts and tax paperwork.",
+    icon: MapPin,
+    fields: [
+      { key: "country", label: "Country", placeholder: "India" },
+      { key: "state", label: "State", placeholder: "Maharashtra" },
+      { key: "city", label: "City", placeholder: "Mumbai" },
+      { key: "personalLocality", label: "Locality", placeholder: "Bandra West" },
+      { key: "personalPincode", label: "Pincode", placeholder: "400050" },
+    ],
+  },
+  {
+    id: "kyc",
+    scope: "personal",
+    title: "Identity document",
+    blurb: "Verifies you're the person behind the listings.",
+    icon: IdCard,
+    cols: "grid-cols-1 sm:grid-cols-2",
+    fields: [
+      { key: "idProof", label: "ID type and number", placeholder: "Aadhaar · 1234 5678 9012" },
+    ],
+  },
+];
+
+const BUSINESS_GROUPS: GroupDef[] = [
+  {
+    id: "biz-identity",
+    scope: "business",
+    title: "Business identity",
+    blurb: "The trading name shown on invoices and receipts.",
+    icon: Building2,
+    fields: [
+      {
+        key: "brandName",
+        label: "Brand name",
+        placeholder: "Coorg Caravans",
+        fallback: (p) => p.vendorDetails?.brandName,
+      },
+      {
+        key: "legalCompanyName",
+        label: "Legal company name",
+        placeholder: "Registered entity name",
+      },
+      {
+        key: "businessType",
+        label: "Business type",
+        readOnly: true,
+        fallback: (p) => p.vendorDetails?.servicesOffered?.[0] || "Travel & Tourism",
+      },
+    ],
+  },
+  {
+    id: "biz-contact",
+    scope: "business",
+    title: "Business contact",
+    blurb: "Published on your listings for guest enquiries.",
+    icon: AtSign,
+    fields: [
+      {
+        key: "email",
+        label: "Business email",
+        type: "email",
+        placeholder: "hello@yourbrand.in",
+        fallback: (p) => p.vendorDetails?.email,
+      },
+      {
+        key: "phoneNumber",
+        label: "Business phone",
+        type: "tel",
+        placeholder: "10-digit number",
+        fallback: (p) => p.vendorDetails?.phone,
+      },
+      { key: "website", label: "Website", type: "url", placeholder: "yourbrand.in" },
+    ],
+  },
+  {
+    id: "biz-address",
+    scope: "business",
+    title: "Business address",
+    blurb: "Where the business is registered.",
+    icon: MapPin,
+    cols: "grid-cols-1 sm:grid-cols-2",
+    fields: [
+      {
+        key: "locality",
+        label: "Locality",
+        placeholder: "Street and area",
+        fallback: (p) => p.vendorDetails?.location,
+      },
+      { key: "city", label: "City", placeholder: "Mumbai" },
+      { key: "state", label: "State", placeholder: "Maharashtra" },
+      { key: "pincode", label: "Pincode", placeholder: "400050" },
+    ],
+  },
+  {
+    id: "biz-legal",
+    scope: "business",
+    title: "Legal and tax",
+    blurb: "Needed before payouts can be released.",
+    icon: ReceiptText,
+    cols: "grid-cols-1 sm:grid-cols-2",
+    fields: [{ key: "gstNumber", label: "GST number", placeholder: "22AAAAA0000A1Z5" }],
+  },
+];
+
+const TABS: { key: string; label: string; icon: LucideIcon }[] = [
+  { key: "personal", label: "Personal", icon: UserRound },
+  { key: "business", label: "Business", icon: Building2 },
+  { key: "social", label: "Social", icon: Share2 },
+];
+
+/* ── Helpers ──────────────────────────────────────────────────────────────── */
+
+/** Resolve a field's display value, honouring loadKey and vendorDetails fallbacks. */
+const readField = (group: GroupDef, field: FieldDef, profile: any, email: string): string => {
+  if (field.loadKey) return email;
+  const base = group.scope === "business" ? (profile?.business ?? {}) : (profile ?? {});
+  const own = base?.[field.key];
+  if (own !== undefined && own !== null && own !== "") return String(own);
+  return field.fallback?.(profile) ?? "";
+};
+
+/** Normalise a social URL so a bare "instagram.com/x" still opens externally. */
+const asHref = (url: string) => (/^https?:\/\//i.test(url) ? url : `https://${url}`);
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
 const Profile = () => {
   const navigate = useNavigate();
-  const { updateUser } = useAuth();
+  const { user, updateUser } = useAuth();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("personal");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
@@ -25,11 +255,8 @@ const Profile = () => {
     else setActiveTab("personal");
   }, [searchParams]);
 
-  const handleSwitchToUser = () => {
-    navigate("/user-profile"); // Navigate to user dashboard
-  };
-
-  // Load email from URL (?email=) or localStorage; user can also type it in the field below
+  // Load email from URL (?email=) or localStorage; falls back to the signed-in
+  // account below so the page isn't blank on a fresh session.
   const defaultEmail =
     new URLSearchParams(window.location.search).get("email") ??
     localStorage.getItem("profileEmail") ??
@@ -56,8 +283,16 @@ const Profile = () => {
   });
 
   const [isEditing, setIsEditing] = useState(false);
-
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  /** Taken when edit mode opens so Cancel can put everything back. */
+  const snapshot = useRef<{ profile: any; email: string } | null>(null);
+
+  /** Nothing to fetch from until an address is known — use the session's own. */
+  useEffect(() => {
+    if (!email && user?.email) setEmail(user.email);
+  }, [user, email]);
 
   // Fetch profile when email changes
   useEffect(() => {
@@ -79,26 +314,29 @@ const Profile = () => {
     })();
   }, [email]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prev) => ({ ...prev, [name]: value }));
+  const setPersonalField = (key: string, value: string) =>
+    setProfile((prev: any) => ({ ...prev, [key]: value }));
+
+  const setBusinessField = (key: string, value: string) =>
+    setProfile((prev: any) => ({ ...prev, business: { ...(prev.business || {}), [key]: value } }));
+
+  const startEdit = () => {
+    snapshot.current = { profile, email };
+    setIsEditing(true);
   };
 
-  const handleBusinessInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prev: any) => ({
-      ...prev,
-      business: {
-        ...(prev.business || {}),
-        [name]: value,
-      },
-    }));
+  const cancelEdit = () => {
+    if (snapshot.current) {
+      setProfile(snapshot.current.profile);
+      setEmail(snapshot.current.email);
+    }
+    setIsEditing(false);
   };
 
   const handleSaveProfile = async () => {
     try {
       if (!email) {
-        toast.error("Please enter an email first", { duration: 4000 });
+        toast.error("Add an email address first.");
         return;
       }
       setSaving(true);
@@ -110,26 +348,25 @@ const Profile = () => {
       setProfile((prev) => ({ ...prev, ...data }));
       updateUser(data);
       setIsEditing(false);
-      toast.success("Profile saved successfully!", { duration: 4000 });
+      toast.success("Profile saved");
     } catch (e: any) {
-      toast.error("Error: " + e.message, { duration: 4000 });
+      toast.error(
+        e?.message
+          ? `We couldn't save your profile — ${e.message}`
+          : "We couldn't save your profile.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // Photo upload
-  const [uploading, setUploading] = useState(false);
   const onPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!email) {
-      toast.error("Please enter an email first", { duration: 4000 });
+      toast.error("Add an email address first.");
       return;
     }
-    const fd = new FormData();
-    fd.append("photo", file);
-    fd.append("email", email);
     try {
       setUploading(true);
       const json = await userProfileApi.uploadPhoto(email, file);
@@ -138,833 +375,458 @@ const Profile = () => {
         setProfile((p) => ({ ...p, photo: newUrl }));
         updateUser({ photo: newUrl });
       }
-      toast.success("Photo uploaded", { duration: 4000 });
+      toast.success("Photo updated");
     } catch (err: any) {
-      toast.error("Upload error: " + err.message, { duration: 4000 });
+      toast.error(err?.message ? `Upload failed — ${err.message}` : "Upload failed.");
     } finally {
       setUploading(false);
       e.target.value = "";
     }
   };
 
+  /* ── Social links ── */
+  const [linkTitle, setLinkTitle] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const socialProfiles: any[] = profile.socialProfiles || [];
+
   const handleAddSocialLink = () => {
-    if (!linkTitle || !linkUrl) return;
-    const newLink = { platform: linkTitle, url: linkUrl };
+    if (!linkTitle.trim() || !linkUrl.trim()) {
+      toast.error("Add both a title and a URL.");
+      return;
+    }
     setProfile((prev: any) => ({
       ...prev,
-      socialProfiles: [...(prev.socialProfiles || []), newLink],
+      socialProfiles: [...(prev.socialProfiles || []), { platform: linkTitle, url: linkUrl }],
     }));
     setLinkTitle("");
     setLinkUrl("");
   };
 
-  const handleRemoveSocialLink = (index: number) => {
+  const handleRemoveSocialLink = (index: number) =>
     setProfile((prev: any) => ({
       ...prev,
       socialProfiles: (prev.socialProfiles || []).filter((_: any, i: number) => i !== index),
     }));
-  };
 
-  const [linkTitle, setLinkTitle] = useState("");
-  const [linkUrl, setLinkUrl] = useState("");
+  /* ── Derived ── */
 
-  return (
-    <DashboardLayout title="Profile" contentClassName="flex-1 overflow-y-auto p-4 lg:p-5">
-      <div className="bg-white dark:bg-gray-900 dark:text-white rounded-2xl lg:rounded-3xl min-h-full">
-        {/* Profile Tabs Header */}
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-3 mb-5">
-          <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800/60 p-1 rounded-xl">
-            {[
-              { key: "personal", label: "Personal Details" },
-              { key: "social", label: "Social Profile" },
-              { key: "business", label: "Business Details" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold font-plus-jakarta transition-all duration-150 ${
-                  activeTab === tab.key
-                    ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
+  const displayName =
+    [profile.firstName, profile.lastName].filter(Boolean).join(" ") || user?.name || "";
+
+  /**
+   * How much of the profile is filled in. Read-only/derived fields don't count —
+   * a host can't act on those, so including them would inflate the number.
+   */
+  const completeness = useMemo(() => {
+    const values = [...PERSONAL_GROUPS, ...BUSINESS_GROUPS].flatMap((g) =>
+      g.fields.filter((f) => !f.readOnly).map((f) => readField(g, f, profile, email)),
+    );
+    const filled = values.filter((v) => String(v ?? "").trim() !== "").length;
+    return { filled, total: values.length, pct: Math.round((filled / values.length) * 100) };
+  }, [profile, email]);
+
+  const groups = activeTab === "business" ? BUSINESS_GROUPS : PERSONAL_GROUPS;
+  /** Social links save immediately on Save; they aren't behind the edit toggle. */
+  const editable = activeTab !== "social";
+
+  const renderGroup = (group: GroupDef) => (
+    <Panel key={group.id}>
+      <PanelHead icon={group.icon} title={group.title} blurb={group.blurb} />
+      <div
+        className={cn(
+          "grid gap-x-5 gap-y-4 p-5",
+          group.cols ?? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3",
+        )}
+      >
+        {group.fields.map((field) => {
+          const id = `${group.id}-${field.key}`;
+          const value = readField(group, field, profile, email);
+          const canEdit = isEditing && !field.readOnly;
+          return (
+            <Field
+              key={field.key}
+              label={field.label}
+              htmlFor={id}
+              className={field.span}
+              hint={canEdit ? field.hint : undefined}
+            >
+              {canEdit ? (
+                <Input
+                  id={id}
+                  type={field.type}
+                  placeholder={field.placeholder}
+                  value={
+                    field.loadKey
+                      ? email
+                      : ((group.scope === "business"
+                          ? profile.business?.[field.key]
+                          : profile[field.key]) ?? "")
+                  }
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    if (field.loadKey) setEmail(next);
+                    else if (group.scope === "business") setBusinessField(field.key, next);
+                    else setPersonalField(field.key, next);
+                  }}
+                  className={cn("h-11", CONTROL)}
+                />
+              ) : (
+                <ReadValue value={value} />
+              )}
+            </Field>
+          );
+        })}
+      </div>
+
+      {/* ID photos are uploaded during onboarding — surfaced here, not editable. */}
+      {group.id === "kyc" && profile.idPhotos?.length > 0 && (
+        <div className="px-5 pb-5 -mt-1">
+          <p className="mb-2 text-[12.5px] font-semibold text-foreground/85">Uploaded documents</p>
+          <div className="flex flex-wrap gap-3">
+            {profile.idPhotos.map((url: string, idx: number) => (
+              <a
+                key={idx}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative w-28 h-28 rounded-xl overflow-hidden border border-border/70 outline-none focus-visible:ring-4 focus-visible:ring-brand/15"
               >
-                {tab.label}
-              </button>
+                <img
+                  src={url}
+                  alt={`Identity document ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-[1.04]"
+                />
+              </a>
             ))}
           </div>
-          <Button
-            onClick={() => setIsChangePasswordOpen(true)}
-            className="rounded-xl px-5 h-9 font-semibold text-sm text-white flex-shrink-0"
-            style={{ background: "#0d9488" }}
-          >
-            Change Password
-          </Button>
         </div>
+      )}
+    </Panel>
+  );
 
-        {/* Tab Content */}
-        {activeTab === "personal" && (
-          <div className="space-y-6">
-            {/* Personal Details Form */}
-            <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
-              <CardContent className="p-6">
-                {/* Photo + Email row */}
-                <div className="flex items-center gap-6 mb-6">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
-                    {profile.photo ? (
-                      <img
-                        src={profile.photo}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-sm text-gray-500">No photo</span>
-                    )}
-                  </div>
-                  {isEditing && (
-                    <div>
-                      <Input type="file" accept="image/*" onChange={onPhotoChange} />
-                    </div>
+  return (
+    <DashboardLayout
+      title="Profile"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
+    >
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-5xl mx-auto space-y-5 pb-24 lg:pb-12">
+        {/* ── Identity header ── */}
+        <section className={cn(PANEL, "relative overflow-hidden")}>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand/[0.1] via-brand/[0.03] to-transparent"
+          />
+          <div className="relative p-5 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              {/* Avatar + upload */}
+              <div className="relative shrink-0">
+                {profile.photo ? (
+                  <img
+                    src={profile.photo}
+                    alt=""
+                    className="w-20 h-20 rounded-2xl object-cover ring-1 ring-border/70"
+                  />
+                ) : (
+                  <span className="grid place-items-center w-20 h-20 rounded-2xl bg-brand text-brand-fg text-[24px] font-bold tracking-[-0.02em]">
+                    {getInitials(displayName)}
+                  </span>
+                )}
+
+                {isEditing && (
+                  <>
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={onPhotoChange}
+                      className="sr-only"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploading}
+                      aria-label="Change profile photo"
+                      className={cn(
+                        "absolute -bottom-1.5 -right-1.5 grid place-items-center w-8 h-8 rounded-full",
+                        "bg-brand text-brand-fg ring-2 ring-card outline-none",
+                        "hover:bg-brand-hover focus-visible:ring-4 focus-visible:ring-brand/30",
+                        "transition-colors duration-150 disabled:opacity-70",
+                      )}
+                    >
+                      {uploading ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Camera size={14} strokeWidth={2.3} />
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Name + meta */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-[22px] font-bold tracking-[-0.02em] text-foreground truncate">
+                    {displayName || "Your profile"}
+                  </h1>
+                  {user?.vendorStatus && <StatusBadge status={user.vendorStatus} size="sm" />}
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-muted-foreground">
+                  {email && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <AtSign size={12.5} strokeWidth={2.2} />
+                      {email}
+                    </span>
+                  )}
+                  {profile.phoneNumber && (
+                    <span className="inline-flex items-center gap-1.5 tabular-nums">
+                      <UserRound size={12.5} strokeWidth={2.2} />
+                      {profile.phoneNumber}
+                    </span>
+                  )}
+                  {(profile.city || profile.state) && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <MapPin size={12.5} strokeWidth={2.2} />
+                      {[profile.city, profile.state].filter(Boolean).join(", ")}
+                    </span>
                   )}
                 </div>
+              </div>
 
-                {!isEditing ? (
-                  // Read-only View
-                  <div className="space-y-7">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          First Name
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.firstName || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Last Name
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.lastName || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Email
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {email || "-"}
-                        </div>
-                      </div>
-                    </div>
+              {/* Actions */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsChangePasswordOpen(true)}
+                  className={BTN_SOFT}
+                >
+                  <Lock size={14} strokeWidth={2.3} />
+                  Change password
+                </Button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Phone Number
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.phoneNumber || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Date of Birth
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.dateOfBirth || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Marital Status
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.maritalStatus || "-"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Country
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.country || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          State
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.state || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          City
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.city || "-"}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Locality
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.personalLocality || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Pincode
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.personalPincode || "-"}
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Id Proof
-                        </label>
-                        <div className="text-base text-gray-600 dark:text-gray-300 font-plus-jakarta">
-                          {profile.idProof || "-"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {profile.idPhotos && profile.idPhotos.length > 0 && (
-                      <div className="space-y-4">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          ID Photos
-                        </label>
-                        <div className="flex gap-4 flex-wrap">
-                          {profile.idPhotos.map((url: string, idx: number) => (
-                            <div key={idx} className="relative group">
-                              <img
-                                src={url}
-                                alt={`ID Photo ${idx + 1}`}
-                                className="w-32 h-32 object-cover rounded-xl border border-dashboard-stroke shadow-sm transition-transform group-hover:scale-105"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Edit Form
-                  <div className="space-y-7">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          First Name
-                        </label>
-                        <Input
-                          name="firstName"
-                          value={profile.firstName}
-                          onChange={handleInputChange}
-                          placeholder="First Name"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Last Name
-                        </label>
-                        <Input
-                          name="lastName"
-                          value={profile.lastName}
-                          onChange={handleInputChange}
-                          placeholder="Last Name"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Email
-                        </label>
-                        <Input
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Enter email to load profile"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Phone Number
-                        </label>
-                        <Input
-                          name="phoneNumber"
-                          value={profile.phoneNumber}
-                          onChange={handleInputChange}
-                          placeholder="Phone Number"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Date of Birth
-                        </label>
-                        <Input
-                          type="date"
-                          name="dateOfBirth"
-                          value={profile.dateOfBirth}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Marital Status
-                        </label>
-                        <Input
-                          name="maritalStatus"
-                          value={profile.maritalStatus}
-                          onChange={handleInputChange}
-                          placeholder="Marital Status"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Country
-                        </label>
-                        <Input
-                          name="country"
-                          value={profile.country}
-                          onChange={handleInputChange}
-                          placeholder="Country"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          State
-                        </label>
-                        <Input
-                          name="state"
-                          value={profile.state}
-                          onChange={handleInputChange}
-                          placeholder="State"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          City
-                        </label>
-                        <Input
-                          name="city"
-                          value={profile.city}
-                          onChange={handleInputChange}
-                          placeholder="City"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Locality
-                        </label>
-                        <Input
-                          name="personalLocality"
-                          value={profile.personalLocality}
-                          onChange={handleInputChange}
-                          placeholder="Locality"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Pincode
-                        </label>
-                        <Input
-                          name="personalPincode"
-                          value={profile.personalPincode}
-                          onChange={handleInputChange}
-                          placeholder="Pincode"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                          Id Proof
-                        </label>
-                        <Input
-                          name="idProof"
-                          value={profile.idProof}
-                          onChange={handleInputChange}
-                          placeholder="Enter Id Proof"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
+                {editable &&
+                  (isEditing ? (
+                    <>
+                      <Button variant="ghost" onClick={cancelEdit} className={BTN_NEUTRAL}>
+                        Cancel
+                      </Button>
                       <Button
                         onClick={handleSaveProfile}
                         disabled={saving}
-                        className="text-white font-semibold"
-                        style={{ background: "#0d9488" }}
+                        className={cn(BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
                       >
-                        {saving ? "Saving..." : "Save Changes"}
+                        {saving ? (
+                          <>
+                            <Loader2 size={15} className="animate-spin" />
+                            Saving…
+                          </>
+                        ) : (
+                          "Save changes"
+                        )}
                       </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </>
+                  ) : (
+                    <Button onClick={startEdit} className={BTN_PRIMARY}>
+                      <Pencil size={14} strokeWidth={2.4} />
+                      Edit profile
+                    </Button>
+                  ))}
+              </div>
+            </div>
 
-            {/* Edit Button Toggle */}
-            {!isEditing && (
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  variant="outline"
-                  className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                  style={{ borderColor: "#0d9488", color: "#0d9488" }}
-                >
-                  <Edit size={18} />
-                  Edit
-                </Button>
+            {/* Completeness — a quiet nudge, not a dashboard tile. */}
+            {completeness.pct < 100 && (
+              <div className="mt-5 pt-4 border-t border-border/60">
+                <div className="flex items-baseline justify-between gap-3 mb-2">
+                  <p className="text-[12px] font-semibold text-foreground/85">
+                    Profile {completeness.pct}% complete
+                  </p>
+                  <p className="text-[11.5px] tabular-nums text-muted-foreground">
+                    {completeness.total - completeness.filled} field
+                    {completeness.total - completeness.filled === 1 ? "" : "s"} left
+                  </p>
+                </div>
+                <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full bg-brand"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${completeness.pct}%` }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
               </div>
             )}
           </div>
-        )}
+        </section>
 
-        {activeTab === "social" && (
-          <div className="space-y-6">
-            {/* Connected Accounts */}
-            <Card className="border border-dashboard-stroke">
-              <CardContent className="p-6">
-                <div className="space-y-8">
-                  {/* Header */}
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta">
-                      Connected Account
-                    </h3>
-                    <p className="text-base text-dashboard-title font-plus-jakarta">
-                      Build trust with your network by connecting your social profiles
-                    </p>
-                  </div>
+        {/* ── Tabs ── */}
+        <div
+          role="tablist"
+          aria-label="Profile sections"
+          className={cn(PANEL, "inline-flex items-center gap-1 p-1 rounded-2xl")}
+        >
+          {TABS.map((tab) => {
+            const active = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setActiveTab(tab.key)}
+                className={cn(
+                  "relative flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold",
+                  "outline-none transition-colors duration-150",
+                  "focus-visible:ring-2 focus-visible:ring-brand/40",
+                  active ? "text-brand" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="profileTabPill"
+                    className="absolute inset-0 rounded-xl bg-brand/[0.09]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative flex items-center gap-2">
+                  <tab.icon size={15} strokeWidth={2.2} />
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-                  {/* Social Platforms */}
-                  <div className="space-y-2">
-                    {(profile.socialProfiles || []).map((link: any, index: number) => (
-                      <div key={index}>
-                        <div className="flex items-center justify-between p-5">
-                          <div className="flex items-center gap-5">
-                            <div className="w-5 h-5">
+        {/* ── Content ── */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            className="space-y-5"
+          >
+            {activeTab === "social" ? (
+              <>
+                <Panel>
+                  <PanelHead
+                    icon={Share2}
+                    title="Connected accounts"
+                    blurb="Linking your socials helps guests trust the listing."
+                    aside={
+                      socialProfiles.length > 0 ? (
+                        <span className="text-[11.5px] font-semibold tabular-nums text-muted-foreground">
+                          {socialProfiles.length} linked
+                        </span>
+                      ) : undefined
+                    }
+                  />
+
+                  {socialProfiles.length === 0 ? (
+                    <EmptyState
+                      icon={Link2}
+                      title="No accounts linked yet"
+                      description="Add your Instagram, Facebook or website below — they show up on your public listings."
+                    />
+                  ) : (
+                    <ul className="divide-y divide-border/70">
+                      {socialProfiles.map((link: any, index: number) => (
+                        <li
+                          key={index}
+                          className="flex items-center gap-4 px-5 py-3.5 transition-colors duration-150 hover:bg-brand/[0.03]"
+                        >
+                          <span className="grid place-items-center w-9 h-9 rounded-[10px] bg-muted shrink-0">
+                            <span className="w-[18px] h-[18px]">
                               <SocialIcon platform={link.platform} />
-                            </div>
-                            <span className="text-lg text-dashboard-heading font-plus-jakarta">
-                              {link.platform}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-6">
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13.5px] font-semibold text-foreground capitalize truncate">
+                              {link.platform}
+                            </p>
                             <a
-                              href={link.url}
+                              href={asHref(link.url)}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-base text-gray-400 font-plus-jakarta hover:text-dashboard-primary truncate max-w-[200px]"
+                              className="text-[12.5px] text-muted-foreground hover:text-brand hover:underline truncate block"
                             >
                               {link.url}
                             </a>
-                            <button
-                              className="text-gray-400 hover:text-red-500"
-                              onClick={() => handleRemoveSocialLink(index)}
-                            >
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 12 12"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M0.75 0.75L11.4313 11.2813"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M11.4316 0.75L0.750294 11.2813"
-                                  stroke="currentColor"
-                                  strokeWidth="1.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
                           </div>
-                        </div>
-                        {index < (profile.socialProfiles || []).length - 1 && (
-                          <div className="h-px bg-dashboard-stroke mx-5"></div>
-                        )}
-                      </div>
-                    ))}
+                          <button
+                            onClick={() => handleRemoveSocialLink(index)}
+                            aria-label={`Remove ${link.platform}`}
+                            className={cn(
+                              "grid place-items-center w-8 h-8 rounded-lg shrink-0 outline-none",
+                              "text-muted-foreground/70 hover:bg-red-50 hover:text-red-600",
+                              "dark:hover:bg-red-500/10 dark:hover:text-red-400",
+                              "focus-visible:ring-2 focus-visible:ring-brand/40 transition-colors duration-150",
+                            )}
+                          >
+                            <X size={15} strokeWidth={2.4} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Panel>
+
+                <Panel>
+                  <PanelHead icon={Plus} title="Add a link" />
+                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-4 items-end p-5">
+                    <Field label="Platform" htmlFor="link-title">
+                      <Input
+                        id="link-title"
+                        value={linkTitle}
+                        placeholder="Instagram"
+                        onChange={(e) => setLinkTitle(e.target.value)}
+                        className={cn("h-11", CONTROL)}
+                      />
+                    </Field>
+                    <Field label="URL" htmlFor="link-url">
+                      <Input
+                        id="link-url"
+                        value={linkUrl}
+                        placeholder="instagram.com/yourbrand"
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddSocialLink()}
+                        className={cn("h-11", CONTROL)}
+                      />
+                    </Field>
+                    <Button
+                      variant="ghost"
+                      onClick={handleAddSocialLink}
+                      className={cn(BTN_SOFT, "h-11")}
+                    >
+                      <Plus size={15} strokeWidth={2.4} />
+                      Add
+                    </Button>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Add Link Form */}
-            <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
-              <CardContent className="p-5">
-                <div className="flex items-end gap-6">
-                  <div className="flex-1 space-y-3">
-                    <label className="text-base text-dashboard-title font-plus-jakarta">
-                      Link Title
-                    </label>
-                    <Input
-                      value={linkTitle}
-                      placeholder="Enter Link Title (e.g. Instagram)"
-                      onChange={(e) => setLinkTitle(e.target.value)}
-                      className="border-gray-300 bg-white text-sm text-dashboard-neutral-07 font-plus-jakarta"
-                    />
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <label className="text-base text-dashboard-title font-plus-jakarta">URL</label>
-                    <Input
-                      value={linkUrl}
-                      placeholder="Enter Url"
-                      onChange={(e) => setLinkUrl(e.target.value)}
-                      className="border-gray-300 bg-white text-sm text-dashboard-neutral-07 font-plus-jakarta"
-                    />
-                  </div>
-                  <Button
-                    onClick={handleAddSocialLink}
-                    className="rounded-xl px-5 font-semibold text-white"
-                    style={{ background: "#0d9488" }}
-                  >
-                    ADD
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-end">
-              <Button
-                onClick={handleSaveProfile}
-                disabled={saving}
-                className="text-white font-semibold"
-                style={{ background: "#0d9488" }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "business" && (
-          <div className="space-y-6">
-            {/* Business Information */}
-            <Card className="bg-gray-50 dark:bg-gray-900 dark:text-white border border-gray-100 dark:border-gray-800">
-              <CardContent className="p-6">
-                {!isEditing ? (
-                  <div className="space-y-7">
-                    {/* Business Identity Section */}
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Business Identity
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Brand Name
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.brandName || profile.vendorDetails?.brandName || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Legal Company Name
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.legalCompanyName || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Business Type
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.vendorDetails?.servicesOffered?.[0] || "Travel & Tourism"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Business Contact Section */}
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Business Email
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.email || profile.vendorDetails?.email || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Business Phone
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.phoneNumber || profile.vendorDetails?.phone || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Website
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.website || "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Business Address Section */}
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Business Address
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Locality
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.locality || profile.vendorDetails?.location || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            City
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.city || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            State
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.state || "-"}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Pincode
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.pincode || "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Legal & Tax Information */}
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Legal & Tax Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            GST Number
-                          </label>
-                          <div className="text-base text-dashboard-neutral-07 font-plus-jakarta">
-                            {profile.business?.gstNumber || "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-7">
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Business Identity
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Brand Name
-                          </label>
-                          <Input
-                            name="brandName"
-                            value={profile.business?.brandName || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Brand Name"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Legal Company Name
-                          </label>
-                          <Input
-                            name="legalCompanyName"
-                            value={profile.business?.legalCompanyName || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Legal Company Name"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Contact Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Business Email
-                          </label>
-                          <Input
-                            name="email"
-                            value={profile.business?.email || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Business Email"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Business Phone
-                          </label>
-                          <Input
-                            name="phoneNumber"
-                            value={profile.business?.phoneNumber || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Business Phone"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Website
-                          </label>
-                          <Input
-                            name="website"
-                            value={profile.business?.website || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Website"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Business Address
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Locality
-                          </label>
-                          <Input
-                            name="locality"
-                            value={profile.business?.locality || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Locality"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            City
-                          </label>
-                          <Input
-                            name="city"
-                            value={profile.business?.city || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="City"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            State
-                          </label>
-                          <Input
-                            name="state"
-                            value={profile.business?.state || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="State"
-                          />
-                        </div>
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            Pincode
-                          </label>
-                          <Input
-                            name="pincode"
-                            value={profile.business?.pincode || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="Pincode"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-5">
-                      <h3 className="text-lg font-bold text-dashboard-primary font-plus-jakarta mb-4">
-                        Legal & Tax Information
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-7">
-                        <div className="space-y-3">
-                          <label className="text-base font-semibold text-dashboard-title font-plus-jakarta">
-                            GST Number
-                          </label>
-                          <Input
-                            name="gstNumber"
-                            value={profile.business?.gstNumber || ""}
-                            onChange={handleBusinessInputChange}
-                            placeholder="GST Number"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleSaveProfile}
-                        disabled={saving}
-                        className="text-white font-semibold"
-                        style={{ background: "#0d9488" }}
-                      >
-                        {saving ? "Saving..." : "Save Changes"}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {!isEditing && (
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  variant="outline"
-                  className="rounded-xl px-5 font-semibold text-sm flex items-center gap-2 border"
-                  style={{ borderColor: "#0d9488", color: "#0d9488" }}
-                >
-                  <Edit size={18} />
-                  Edit
-                </Button>
-              </div>
+                  <footer className={cn(PANEL_FOOTER, "justify-end")}>
+                    <Button
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                      className={cn(BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 size={15} className="animate-spin" />
+                          Saving…
+                        </>
+                      ) : (
+                        "Save changes"
+                      )}
+                    </Button>
+                  </footer>
+                </Panel>
+              </>
+            ) : (
+              groups.map(renderGroup)
             )}
-          </div>
-        )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Change Password Modal */}

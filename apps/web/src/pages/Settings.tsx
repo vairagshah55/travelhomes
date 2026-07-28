@@ -10,7 +10,6 @@ import {
   CalendarCheck,
   Check,
   ChevronRight,
-  Globe,
   KeyRound,
   LifeBuoy,
   Loader2,
@@ -37,7 +36,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DashboardLayout from "@/components/DashboardLayout";
-import { EmptyState, StatusBadge } from "@/components/shared";
+import {
+  BRAND_VARS,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  BTN_SOFT,
+  CONTROL,
+  CONTROL_ERROR,
+  EmptyState,
+  Field,
+  PANEL,
+  PANEL_FOOTER,
+  Panel,
+  PanelHead,
+  SettingRow,
+  StatusBadge,
+} from "@/components/shared";
 import { getInitials } from "@/utils/getInitials";
 import { cn } from "@/lib/utils";
 import {
@@ -48,33 +62,6 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-/* ── Theme ────────────────────────────────────────────────────────────────────
-   The vendor console reads teal, but `--brand` is navy in global.css and the
-   teal override lives in admin.css — which only AdminApp imports. Rather than
-   sprinkle #0d9488 through the JSX (what the other vendor pages had to do),
-   re-point the token on this page's root so every `bg-brand` / `text-brand` /
-   `ring-brand/15` below resolves teal through Tailwind. Opacity modifiers keep
-   working because the token is hsl channels, not a hex string.               */
-const BRAND_VARS = {
-  "--brand": "175 84% 32%" /* #0d9488 */,
-  "--brand-hover": "175 78% 26%" /* #0f766e */,
-  "--brand-fg": "0 0% 100%",
-} as React.CSSProperties;
-
-/** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
-const PANEL =
-  "bg-card rounded-[18px] border border-border/70 " +
-  "shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] " +
-  "dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)]";
-
-/** Inset field that lifts to the card surface on focus — CONVENTIONS.md Rule 1/2. */
-const CONTROL =
-  "rounded-xl border-border bg-muted/50 dark:bg-white/5 text-[13.5px] " +
-  "placeholder:text-muted-foreground/60 focus-visible:bg-card focus-visible:border-brand " +
-  "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:ring-offset-0 " +
-  "transition-[background-color,border-color,box-shadow] duration-150";
-const CONTROL_ERROR = "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/15";
 
 /* ── Navigation ───────────────────────────────────────────────────────────── */
 
@@ -246,95 +233,6 @@ const prefsFingerprint = (p?: Partial<VendorSettingDTO["preferences"]> | null) =
     push: !!p?.notifications?.push,
   });
 
-/* ── Local presentational primitives ──────────────────────────────────────── */
-
-const Panel = ({ className, children }: { className?: string; children: React.ReactNode }) => (
-  <section className={cn(PANEL, "overflow-hidden", className)}>{children}</section>
-);
-
-const PanelHead = ({
-  title,
-  blurb,
-  aside,
-}: {
-  title: string;
-  blurb?: string;
-  aside?: React.ReactNode;
-}) => (
-  <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3.5 border-b border-border/70">
-    <div>
-      <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-foreground">{title}</h3>
-      {blurb && <p className="mt-0.5 text-[12.5px] text-muted-foreground">{blurb}</p>}
-    </div>
-    {aside && <div className="shrink-0 pt-0.5">{aside}</div>}
-  </header>
-);
-
-/** Label + blurb on the left, control on the right. */
-const SettingRow = ({
-  icon: Icon,
-  title,
-  blurb,
-  children,
-}: {
-  icon?: LucideIcon;
-  title: string;
-  blurb?: string;
-  children: React.ReactNode;
-}) => (
-  <div className="flex items-center justify-between gap-6 px-5 py-4">
-    <div className="flex items-start gap-3 min-w-0">
-      {Icon && (
-        <span className="mt-px grid place-items-center w-8 h-8 rounded-[10px] bg-muted text-muted-foreground shrink-0">
-          <Icon size={15} strokeWidth={2} />
-        </span>
-      )}
-      <div className="min-w-0">
-        <p className="text-[13.5px] font-semibold text-foreground">{title}</p>
-        {blurb && (
-          <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">{blurb}</p>
-        )}
-      </div>
-    </div>
-    <div className="shrink-0">{children}</div>
-  </div>
-);
-
-/** Sentence-case labels, no asterisk clutter — the whole support form is required. */
-const Field = ({
-  label,
-  htmlFor,
-  error,
-  hint,
-  className,
-  children,
-}: {
-  label: string;
-  htmlFor: string;
-  error?: string;
-  hint?: React.ReactNode;
-  className?: string;
-  children: React.ReactNode;
-}) => (
-  <div className={cn("space-y-1.5", className)}>
-    <div className="flex items-baseline justify-between gap-2">
-      <label htmlFor={htmlFor} className="text-[12.5px] font-semibold text-foreground/85">
-        {label}
-      </label>
-      {hint && !error && (
-        <span className="text-[11px] tabular-nums text-muted-foreground/70">{hint}</span>
-      )}
-    </div>
-    {children}
-    {error && (
-      <p className="flex items-center gap-1 text-[11.5px] font-medium text-red-600 dark:text-red-400">
-        <AlertCircle size={12} strokeWidth={2.4} />
-        {error}
-      </p>
-    )}
-  </div>
-);
-
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 
 const Settings = () => {
@@ -477,7 +375,10 @@ const Settings = () => {
   useEffect(() => {
     const data = settingsQuery.data;
     if (!data) return;
-    if (data.general) setGeneral(data.general);
+    // Merge, don't replace: the server document has no `general.confirmBeforeBooking`
+    // (it isn't in the VendorSetting schema), so assigning data.general wholesale
+    // dropped the flag and the toggle snapped back to off on every load.
+    if (data.general) setGeneral((prev) => ({ ...prev, ...data.general }));
     if (data.account) setAccount(data.account);
     if (data.preferences) setPreferences(data.preferences);
     // Update favicon and title when loaded
@@ -616,7 +517,8 @@ const Settings = () => {
       title="Settings"
       contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-12">
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Left rail: who you are, where you can go ── */}
           <aside className="lg:sticky lg:top-2 self-start space-y-3">
@@ -767,9 +669,9 @@ const Settings = () => {
                       blurb="Where guests and our team reach you."
                       aside={
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           onClick={() => navigate("/profile")}
-                          className="h-9 rounded-xl border-border text-[12.5px] font-semibold gap-1.5"
+                          className={BTN_SOFT}
                         >
                           Edit profile
                           <ChevronRight size={14} strokeWidth={2.4} />
@@ -945,7 +847,7 @@ const Settings = () => {
                       </Field>
                     </div>
 
-                    <footer className="flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+                    <footer className={PANEL_FOOTER}>
                       <p className="text-[11.5px] text-muted-foreground">
                         We'll reply to{" "}
                         <span className="font-semibold text-foreground/80">
@@ -955,7 +857,7 @@ const Settings = () => {
                       <Button
                         onClick={sendTicket}
                         disabled={sendingTicket}
-                        className="h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 disabled:opacity-60"
+                        className={cn(BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
                       >
                         {sendingTicket ? (
                           <>
@@ -1128,16 +1030,7 @@ const Settings = () => {
                         </Select>
                       </Field>
 
-                      <Field
-                        label="Timezone"
-                        htmlFor="pref-timezone"
-                        hint={
-                          <span className="inline-flex items-center gap-1">
-                            <Globe size={11} strokeWidth={2.2} />
-                            Booking times
-                          </span>
-                        }
-                      >
+                      <Field label="Timezone" htmlFor="pref-timezone">
                         <Select
                           value={preferences.timezone}
                           onValueChange={(value) =>
@@ -1189,7 +1082,7 @@ const Settings = () => {
                       ))}
                     </div>
 
-                    <footer className="flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+                    <footer className={PANEL_FOOTER}>
                       <AnimatePresence>
                         {prefsDirty && (
                           <motion.p
@@ -1206,7 +1099,10 @@ const Settings = () => {
                       <Button
                         onClick={savePreferences}
                         disabled={savingPrefs || !prefsDirty}
-                        className="ml-auto h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 disabled:opacity-45"
+                        className={cn(
+                          BTN_PRIMARY,
+                          "ml-auto disabled:opacity-45 disabled:shadow-none",
+                        )}
                       >
                         {savingPrefs ? (
                           <>
@@ -1272,12 +1168,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <footer className="flex justify-end px-6 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenTicket(null)}
-                  className="h-9 rounded-xl border-border text-[12.5px] font-semibold"
-                >
+              <footer className={cn(PANEL_FOOTER, "justify-end px-6")}>
+                <Button variant="ghost" onClick={() => setOpenTicket(null)} className={BTN_NEUTRAL}>
                   Close
                 </Button>
               </footer>
@@ -1316,7 +1208,7 @@ const Settings = () => {
 
             <Button
               onClick={() => setShowSentModal(false)}
-              className="mt-6 w-full h-11 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold"
+              className={cn(BTN_PRIMARY, "mt-6 w-full h-11")}
             >
               Done
             </Button>
