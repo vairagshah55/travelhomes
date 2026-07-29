@@ -50,6 +50,28 @@ export const CONTROL =
 export const CONTROL_ERROR =
   "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/15";
 
+/**
+ * Highlight styling for dropdown rows.
+ *
+ * shadcn's SelectItem highlights with `focus:bg-accent focus:text-accent-foreground`,
+ * but `--accent` is declared twice: an UNLAYERED hex (`#5750f1`, global.css:41) and
+ * the shadcn hsl-channel triplet inside `@layer base`. Unlayered wins over any
+ * layer, so Tailwind emits `hsl(#5750f1)` — invalid, background drops out — while
+ * `--accent-foreground` still resolves and paints the text white. Highlighted rows
+ * come out white-on-white and unreadable.
+ *
+ * Same root cause the bookings pages already worked around in
+ * `FormPrimitives.SELECT_ITEM_CLASS`; spelled out here in brand tokens instead of
+ * literal hex. The real fix is renaming the app-layer `--accent*` vars so they stop
+ * colliding — deliberately out of scope (see the note at admin.css:1476).
+ *
+ * SelectContent portals to <body>, outside any page root, so it needs its own
+ * `style={BRAND_VARS}` for `brand` to resolve.
+ */
+export const SELECT_ITEM =
+  "cursor-pointer focus:bg-brand/[0.1] focus:text-brand " +
+  "data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand";
+
 /* Secondary actions read as tinted fills, not hairline outlines — a 1px
    `border-border` pill on a white card is almost invisible and looks unfinished. */
 export const BTN_SOFT =

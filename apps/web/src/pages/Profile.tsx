@@ -43,6 +43,7 @@ import {
   Panel,
   PanelHead,
   ReadValue,
+  SELECT_ITEM,
   StatusBadge,
 } from "@/components/shared";
 import { getInitials } from "@/utils/getInitials";
@@ -854,9 +855,14 @@ const Profile = () => {
                         <SelectTrigger id="link-platform" className={cn("h-11", CONTROL)}>
                           <SelectValue placeholder="Pick one" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent style={BRAND_VARS}>
                           {PLATFORMS.map((p) => (
-                            <SelectItem key={p} value={p} disabled={linkedPlatforms.has(p)}>
+                            <SelectItem
+                              key={p}
+                              value={p}
+                              disabled={linkedPlatforms.has(p)}
+                              className={SELECT_ITEM}
+                            >
                               {PLATFORM_LABELS[p]}
                             </SelectItem>
                           ))}

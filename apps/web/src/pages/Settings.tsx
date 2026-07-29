@@ -49,6 +49,7 @@ import {
   PANEL_FOOTER,
   Panel,
   PanelHead,
+  SELECT_ITEM,
   SettingRow,
   StatusBadge,
 } from "@/components/shared";
@@ -1020,9 +1021,9 @@ const Settings = () => {
                           <SelectTrigger id="pref-language" className={cn("h-11", CONTROL)}>
                             <SelectValue placeholder="Pick a language" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent style={BRAND_VARS}>
                             {LANGUAGES.map((l) => (
-                              <SelectItem key={l.value} value={l.value}>
+                              <SelectItem key={l.value} value={l.value} className={SELECT_ITEM}>
                                 {l.label}
                               </SelectItem>
                             ))}
@@ -1040,9 +1041,9 @@ const Settings = () => {
                           <SelectTrigger id="pref-timezone" className={cn("h-11", CONTROL)}>
                             <SelectValue placeholder="Pick a timezone" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent style={BRAND_VARS}>
                             {timezoneOptions.map((tz) => (
-                              <SelectItem key={tz} value={tz}>
+                              <SelectItem key={tz} value={tz} className={SELECT_ITEM}>
                                 {tz}
                               </SelectItem>
                             ))}
