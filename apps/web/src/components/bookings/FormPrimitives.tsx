@@ -44,15 +44,15 @@ export const SectionHeader = ({
 }) => (
   <div className="flex items-center gap-2 mt-1 mb-1">
     {icon && (
-      <span className="inline-flex items-center justify-center w-[26px] h-[26px] rounded-lg bg-th-brand-soft border border-th-brand-border-soft">
+      <span className="inline-flex items-center justify-center w-[26px] h-[26px] rounded-lg bg-brand/[0.09] border border-brand/20">
         {icon}
       </span>
     )}
-    <p className="text-[11px] font-extrabold text-th-text-primary uppercase tracking-[0.06em]">
+    <p className="text-[11px] font-extrabold text-foreground uppercase tracking-[0.06em]">
       {title}
     </p>
-    {hint && <p className="text-[11px] text-th-warm-text-muted ml-1">{hint}</p>}
-    <div className="flex-1 h-px bg-th-warm-border ml-1.5" />
+    {hint && <p className="text-[11px] text-muted-foreground ml-1">{hint}</p>}
+    <div className="flex-1 h-px bg-border ml-1.5" />
   </div>
 );
 
@@ -69,9 +69,9 @@ export const PanelField = ({
   children: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
+    <label className="text-[11px] font-bold text-foreground/80 uppercase tracking-[0.03em]">
       {label}
-      {required && <span className="text-th-error-bright ml-[3px]">*</span>}
+      {required && <span className="text-red-600 ml-[3px]">*</span>}
     </label>
     {children}
     {error && (
@@ -80,7 +80,7 @@ export const PanelField = ({
           <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
           <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
-        <p className="text-[11px] text-th-error-bright">{error}</p>
+        <p className="text-[11px] text-red-600">{error}</p>
       </div>
     )}
   </div>
@@ -113,12 +113,12 @@ export const PanelInput = ({
     onBlur={onBlur}
     placeholder={placeholder}
     className={cn(
-      "w-full h-11 px-3.5 text-[13px] text-th-text-primary font-[450]",
+      "w-full h-11 px-3.5 text-[13px] text-foreground font-[450]",
       "rounded-[11px] outline-none transition-all duration-150 border-[1.5px]",
-      "bg-th-warm-surface focus:bg-th-surface-0",
+      "bg-muted/50 focus:bg-card",
       error
-        ? "border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-        : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+        ? "border-red-300 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+        : "border-transparent focus:border-brand focus:shadow-[0_0_0_4px_hsl(var(--brand)/0.15)]",
     )}
     {...rest}
   />
@@ -136,8 +136,12 @@ export const tealBtn = (
     onClick={onClick}
     disabled={disabled}
     className={cn(
-      "flex items-center gap-1.5 h-10 px-5 rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(15,92,138,0.30)] transition-all duration-150",
-      disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+      // Kit BTN_PRIMARY geometry + teal glow. The old shadow was still keyed to
+      // the navy public brand (rgba(15,92,138,…)) inside a teal console.
+      "inline-flex items-center gap-1.5 h-10 px-5 rounded-xl border-0 bg-brand hover:bg-brand-hover",
+      "text-[13px] font-semibold text-brand-fg transition-[background-color,box-shadow] duration-150",
+      "shadow-[0_1px_2px_rgba(13,148,136,0.24),0_6px_16px_-6px_rgba(13,148,136,0.45)]",
+      disabled ? "cursor-not-allowed opacity-45 shadow-none" : "cursor-pointer",
     )}
   >
     {icon} {label}
@@ -148,7 +152,7 @@ export const ghostBtn = (onClick: () => void, label: string) => (
   <button
     type="button"
     onClick={onClick}
-    className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
+    className="h-10 px-4 rounded-xl bg-muted text-[13px] font-semibold text-foreground/80 hover:bg-muted/70 transition-colors duration-150 cursor-pointer"
   >
     {label}
   </button>
@@ -187,16 +191,16 @@ export const DatePickerField = ({
           type="button"
           className={cn(
             "w-full h-11 px-3.5 flex items-center gap-2.5 text-[13px] font-[450] rounded-[11px] outline-none transition-all duration-150 border-[1.5px] cursor-pointer text-left",
-            hasValue ? "text-th-text-primary" : "text-th-warm-text-muted",
-            open ? "bg-th-surface-0" : "bg-th-warm-surface",
+            hasValue ? "text-foreground" : "text-muted-foreground",
+            open ? "bg-card" : "bg-muted/50",
             error
-              ? "border-th-error-bright-soft shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
+              ? "border-red-300 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
               : open
-                ? "border-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
+                ? "border-brand shadow-[0_0_0_4px_hsl(var(--brand)/0.15)]"
                 : "border-transparent",
           )}
         >
-          <CalendarIcon size={14} className={open ? "text-th-brand" : "text-th-warm-text-muted"} />
+          <CalendarIcon size={14} className={open ? "text-brand" : "text-muted-foreground"} />
           <span className="flex-1">
             {hasValue ? format(selected!, "EEE, MMM d, yyyy") : placeholder}
           </span>
@@ -204,7 +208,7 @@ export const DatePickerField = ({
       </PopoverTrigger>
       <PopoverContent align="start" className="w-auto p-0 z-[60]">
         {/* Quick-pick shortcuts */}
-        <div className="flex flex-wrap gap-1.5 p-2 border-b border-th-warm-border">
+        <div className="flex flex-wrap gap-1.5 p-2 border-b border-border">
           {[
             { label: "Today", offset: 0 },
             { label: "Tomorrow", offset: 1 },
@@ -226,10 +230,10 @@ export const DatePickerField = ({
                   setOpen(false);
                 }}
                 className={cn(
-                  "text-[11px] font-semibold px-2.5 py-[5px] rounded-full border border-th-warm-border transition-all duration-150",
+                  "text-[11px] font-semibold px-2.5 py-[5px] rounded-full border border-border transition-all duration-150",
                   disabled
-                    ? "bg-transparent text-th-warm-text-muted cursor-not-allowed opacity-50"
-                    : "bg-th-surface-0 text-th-text-primary cursor-pointer hover:bg-th-brand-soft hover:border-th-brand hover:text-th-brand",
+                    ? "bg-transparent text-muted-foreground cursor-not-allowed opacity-50"
+                    : "bg-card text-foreground cursor-pointer hover:bg-brand/[0.09] hover:border-brand hover:text-brand",
                 )}
               >
                 {label}

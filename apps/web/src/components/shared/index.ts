@@ -6,6 +6,7 @@ export { ConfirmModal } from "./ConfirmModal";
 export { ChartTooltip } from "./ChartTooltip";
 export { PageSkeleton } from "./PageSkeleton";
 export { Breadcrumb } from "./Breadcrumb";
+export { StatTile, StatTileSkeleton } from "./StatTile";
 export {
   ACTIVE_PILL,
   BRAND_VARS,

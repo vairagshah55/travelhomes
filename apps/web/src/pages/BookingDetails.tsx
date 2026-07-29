@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import {
+  X,
   Users,
   MapPin,
   Pencil,
@@ -30,6 +32,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  BRAND_VARS,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  CONTROL,
+  Panel,
+  PanelHead,
+  StatTile,
+  StatTileSkeleton,
+} from "@/components/shared";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
 import { SlidePanel } from "@/components/bookings";
@@ -48,36 +62,6 @@ import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/adm
 
 const ITEMS_PER_PAGE = 15;
 
-/* ── Stats card ─────────────────────────────────────────────────────────── */
-const StatCard: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  accent?: string;
-}> = ({ icon, label, value, hint, accent = "#0d9488" }) => (
-  <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
-    <div
-      className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
-      style={{
-        backgroundColor: `${accent}14`,
-        borderColor: `${accent}30`,
-      }}
-    >
-      {icon}
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.04em] mb-[2px]">
-        {label}
-      </p>
-      <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
-        {value}
-      </p>
-      {hint && <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>}
-    </div>
-  </div>
-);
-
 /* ── Filter dropdown pill ──────────────────────────────────────────────── */
 const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
@@ -87,23 +71,45 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
     <DropdownMenuTrigger asChild>
       <button
         type="button"
-        className="inline-flex items-center gap-2 h-[42px] px-3.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 text-[13px] font-semibold text-th-text-primary cursor-pointer whitespace-nowrap"
+        className={cn(
+          "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border whitespace-nowrap",
+          "text-[13px] font-semibold text-foreground/85 bg-muted/50 dark:bg-white/5 border-border",
+          "outline-none transition-colors duration-150 hover:bg-muted",
+          "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
+        )}
       >
         {label}
-        <ChevronDown size={14} className="text-th-warm-text-muted" />
+        <ChevronDown size={14} className="text-muted-foreground" />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" className="w-48 p-1.5">
+    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-48 p-1.5">
       {children}
     </DropdownMenuContent>
   </DropdownMenu>
 );
 
+/** Dismissible summary of one active filter. */
+const FilterChip = ({ label, onClear }: { label: string; onClear: () => void }) => (
+  <span className="inline-flex items-center gap-1 h-6 pl-2.5 pr-1 rounded-full bg-brand/[0.09] text-[11.5px] font-semibold text-brand capitalize">
+    {label}
+    <button
+      type="button"
+      onClick={onClear}
+      aria-label={`Clear ${label} filter`}
+      className="grid place-items-center w-4 h-4 rounded-full hover:bg-brand/20 transition-colors duration-150"
+    >
+      <X size={10} strokeWidth={3} />
+    </button>
+  </span>
+);
+
+/* Radix's own `focus:bg-accent` resolves to an invalid colour in this app —
+   see the SELECT_ITEM note in components/shared/Panel.tsx. */
 const FILTER_ITEM_CLASS =
-  "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
+  "cursor-pointer rounded-lg px-2.5 py-2 text-[13px] font-medium text-foreground " +
   "transition-colors " +
-  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
-  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488]";
+  "focus:bg-brand/[0.1] focus:text-brand " +
+  "data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand";
 
 const BookingDetails = () => {
   const { user, token: authToken } = useAuth();
@@ -472,33 +478,35 @@ const BookingDetails = () => {
       key: "id",
       header: "Booking ID",
       cell: (b) => (
-        <span className="flex items-center gap-1 font-bold text-th-brand whitespace-nowrap">
-          {b.id}
-        </span>
+        <span className="font-bold tabular-nums text-brand whitespace-nowrap">{b.id}</span>
       ),
     },
     {
       key: "clientName",
       header: "Client",
-      cell: (b) => <span className="font-medium text-th-text-primary">{b.clientName}</span>,
+      cell: (b) => <span className="font-semibold text-foreground">{b.clientName}</span>,
     },
     {
       key: "serviceName",
       header: "Service",
       hideBelow: "md",
-      cell: (b) => <span className="font-semibold text-th-warm-text-dark">{b.serviceName}</span>,
+      cell: (b) => (
+        <span className="block max-w-[200px] truncate text-muted-foreground">{b.serviceName}</span>
+      ),
     },
     {
       key: "checkIn",
       header: "Check In",
       hideBelow: "lg",
-      cell: (b) => <span className="text-th-warm-text-dark">{formatDate(b.checkIn)}</span>,
+      cell: (b) => <span className="tabular-nums text-foreground/80">{formatDate(b.checkIn)}</span>,
     },
     {
       key: "checkOut",
       header: "Check Out",
       hideBelow: "lg",
-      cell: (b) => <span className="text-th-warm-text-dark">{formatDate(b.checkOut)}</span>,
+      cell: (b) => (
+        <span className="tabular-nums text-muted-foreground">{formatDate(b.checkOut)}</span>
+      ),
     },
     {
       key: "guests",
@@ -506,8 +514,8 @@ const BookingDetails = () => {
       hideBelow: "md",
       align: "center",
       cell: (b) => (
-        <span className="flex items-center gap-1 justify-center text-th-warm-text-dark">
-          <Users size={14} /> {b.guests}
+        <span className="flex items-center gap-1.5 justify-center tabular-nums text-foreground/80">
+          <Users size={13} className="text-muted-foreground/60" /> {b.guests}
         </span>
       ),
     },
@@ -537,190 +545,239 @@ const BookingDetails = () => {
     label: string,
     disabled?: boolean,
   ) => (
-    <button
-      type="button"
+    <Button
       onClick={onClick}
       disabled={disabled}
-      className={cn(
-        "flex items-center gap-1.5 h-10 px-[18px] rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(13,148,136,0.30)] transition-all duration-150",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
-      )}
+      className={cn(BTN_PRIMARY, "h-9 disabled:opacity-45 disabled:shadow-none")}
     >
       {icon} {label}
-    </button>
+    </Button>
   );
 
   const ghostBtn = (onClick: () => void, label: string) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
-    >
+    <Button variant="ghost" onClick={onClick} className={BTN_NEUTRAL}>
       {label}
-    </button>
+    </Button>
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout
       title="Booking Details"
-      outerClassName="overflow-hidden"
-      contentClassName="flex-1 overflow-auto p-3 lg:p-5"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)] min-h-full">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 pb-4 border-b border-[#EBEBEB]">
-          <div>
-            <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
-              Bookings
-            </h1>
-            <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
-              Manage reservations and schedules
-            </p>
-          </div>
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
+        {/* ── Metrics ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {isLoading ? (
+            <>
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+            </>
+          ) : (
+            <>
+              <StatTile
+                icon={CalendarDays}
+                label="Total"
+                hint="All bookings"
+                value={stats.total}
+                color="#0d9488"
+                index={0}
+              />
+              <StatTile
+                icon={Calendar}
+                label="Today"
+                hint="Active stays"
+                value={stats.today}
+                color="#8b5cf6"
+                index={1}
+              />
+              <StatTile
+                icon={Activity}
+                label="Active"
+                hint="Currently active"
+                value={stats.active}
+                color="#22c55e"
+                index={2}
+              />
+              <StatTile
+                icon={IndianRupee}
+                label="Revenue"
+                hint="Excludes cancelled"
+                value={currencyINR(stats.revenue)}
+                color="#f59e0b"
+                index={3}
+              />
+            </>
+          )}
         </div>
 
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <StatCard
-            icon={<CalendarDays size={15} className="text-th-brand" strokeWidth={2.2} />}
-            label="Total"
-            value={String(stats.total)}
-            hint="All bookings"
-          />
-          <StatCard
-            icon={<Calendar size={15} color="#8b5cf6" strokeWidth={2.2} />}
-            label="Today"
-            value={String(stats.today)}
-            hint="Active stays"
-            accent="#8b5cf6"
-          />
-          <StatCard
-            icon={<Activity size={15} color="#22c55e" strokeWidth={2.2} />}
-            label="Active"
-            value={String(stats.active)}
-            hint="Currently active"
-            accent="#22c55e"
-          />
-          <StatCard
-            icon={<IndianRupee size={15} color="#f59e0b" strokeWidth={2.2} />}
-            label="Revenue"
-            value={currencyINR(stats.revenue)}
-            hint="Total billed"
-            accent="#f59e0b"
-          />
-        </div>
-
-        {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-2.5 mb-4">
-          {/* Search */}
-          <div
-            className="flex items-center gap-2 h-[42px] px-3 rounded-[12px] border border-th-warm-border bg-th-surface-0"
-            style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 320 }}
-          >
-            <Search size={15} className="text-th-warm-text-muted" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Search bookings, client, ID…"
-              className="flex-1 h-full border-none outline-none text-[13px] text-th-text-primary bg-transparent font-[450]"
-            />
-          </div>
-
-          {/* Status filter */}
-          <FilterPill
-            label={
-              statusFilter === "all"
-                ? "All Statuses"
-                : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+        {/* ── Bookings ── */}
+        <Panel>
+          <PanelHead
+            icon={CalendarDays}
+            title="Reservations"
+            blurb={
+              isLoading
+                ? "Loading your bookings…"
+                : `${filteredBookings.length} ${activeTab} booking${filteredBookings.length === 1 ? "" : "s"}`
             }
-          >
-            {(
-              [
-                ["all", "All Statuses"],
-                ["pending", "Pending"],
-                ["confirmed", "Confirmed"],
-                ["active", "Active"],
-                ["cancelled", "Cancelled"],
-              ] as const
-            ).map(([key, label]) => (
-              <DropdownMenuItem
-                key={key}
-                className={FILTER_ITEM_CLASS}
-                onClick={() => {
-                  setStatusFilter(key);
-                  setCurrentPage(1);
-                }}
-              >
-                {label}
-              </DropdownMenuItem>
-            ))}
-          </FilterPill>
+          />
 
-          {/* Date / time filter */}
-          <FilterPill label={TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All Time"}>
-            {TIME_FILTERS.map((f) => (
-              <DropdownMenuItem
-                key={f.key}
-                className={FILTER_ITEM_CLASS}
-                onClick={() => {
-                  setTimeFilter(f.key as any);
-                  setCurrentPage(1);
-                }}
-              >
-                {f.label}
-              </DropdownMenuItem>
-            ))}
-          </FilterPill>
-        </div>
+          {/* Tabs + filters */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 px-5 py-3 border-b border-border/70">
+            <div
+              role="tablist"
+              aria-label="Booking groups"
+              className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 dark:bg-white/[0.04] w-fit shrink-0"
+            >
+              {TABS.map((t) => {
+                const active = activeTab === t.key;
+                const count =
+                  t.key === "upcoming"
+                    ? tabCounts.upcoming
+                    : t.key === "past"
+                      ? tabCounts.past
+                      : tabCounts.cancelled;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => {
+                      setActiveTab(t.key);
+                      setCurrentPage(1);
+                    }}
+                    className={cn(
+                      "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg",
+                      "text-[12.5px] font-semibold outline-none transition-colors duration-150",
+                      "focus-visible:ring-2 focus-visible:ring-brand/40",
+                      active ? "text-brand" : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="bookingTabPill"
+                        className="absolute inset-0 rounded-lg bg-card shadow-[0_1px_2px_rgba(16,24,40,0.08)]"
+                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                      />
+                    )}
+                    <span className="relative">{t.label}</span>
+                    <span
+                      className={cn(
+                        "relative grid place-items-center min-w-[20px] h-[18px] px-1.5 rounded-full",
+                        "text-[10.5px] font-bold tabular-nums",
+                        active ? "bg-brand/15 text-brand" : "bg-muted-foreground/10",
+                      )}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-        {/* Tabs with counts */}
-        <div className="flex gap-1 mb-4 w-fit bg-th-warm-surface rounded-[12px] p-[3px]">
-          {TABS.map((t) => {
-            const active = activeTab === t.key;
-            const count =
-              t.key === "upcoming"
-                ? tabCounts.upcoming
-                : t.key === "past"
-                  ? tabCounts.past
-                  : tabCounts.cancelled;
-            return (
+            <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
+              <div className="relative flex-1 min-w-[190px] lg:max-w-[260px]">
+                <Search
+                  size={14}
+                  strokeWidth={2.2}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none"
+                />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  placeholder="Search client, ID or service"
+                  aria-label="Search bookings"
+                  className={cn("h-10 pl-9", CONTROL)}
+                />
+              </div>
+
+              <FilterPill
+                label={
+                  statusFilter === "all"
+                    ? "All statuses"
+                    : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+                }
+              >
+                {(
+                  [
+                    ["all", "All statuses"],
+                    ["pending", "Pending"],
+                    ["confirmed", "Confirmed"],
+                    ["active", "Active"],
+                    ["cancelled", "Cancelled"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    className={FILTER_ITEM_CLASS}
+                    onClick={() => {
+                      setStatusFilter(key);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {label}
+                  </DropdownMenuItem>
+                ))}
+              </FilterPill>
+
+              <FilterPill
+                label={TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? "All time"}
+              >
+                {TIME_FILTERS.map((f) => (
+                  <DropdownMenuItem
+                    key={f.key}
+                    className={FILTER_ITEM_CLASS}
+                    onClick={() => {
+                      setTimeFilter(f.key as any);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    {f.label}
+                  </DropdownMenuItem>
+                ))}
+              </FilterPill>
+            </div>
+          </div>
+
+          {/* Active-filter pills — otherwise an empty table looks like no data. */}
+          {hasActiveQuery && (
+            <div className="flex flex-wrap items-center gap-1.5 px-5 py-2.5 border-b border-border/70 bg-muted/30 dark:bg-white/[0.015]">
+              <span className="text-[11.5px] font-semibold text-muted-foreground">Filtered by</span>
+              {searchQuery.trim() && (
+                <FilterChip label={`“${searchQuery.trim()}”`} onClear={() => setSearchQuery("")} />
+              )}
+              {statusFilter !== "all" && (
+                <FilterChip label={statusFilter} onClear={() => setStatusFilter("all")} />
+              )}
+              {timeFilter !== "all" && (
+                <FilterChip
+                  label={TIME_FILTERS.find((f) => f.key === timeFilter)?.label ?? timeFilter}
+                  onClear={() => setTimeFilter("all")}
+                />
+              )}
               <button
-                key={t.key}
-                type="button"
                 onClick={() => {
-                  setActiveTab(t.key);
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setTimeFilter("all");
                   setCurrentPage(1);
                 }}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-4 py-2 rounded-[9px] border-[1.5px] text-[13px] font-bold cursor-pointer transition-all duration-150",
-                  active
-                    ? "border-th-brand-border-soft bg-th-surface-0 text-th-brand shadow-[0_1px_4px_rgba(0,0,0,0.06)]"
-                    : "border-transparent bg-transparent text-th-warm-text-muted",
-                )}
+                className="ml-1 text-[11.5px] font-semibold text-brand hover:underline"
               >
-                {t.label}
-                <span
-                  className={cn(
-                    "text-[11px] font-bold px-[7px] py-[1px] rounded-full",
-                    active
-                      ? "bg-th-brand-soft text-th-brand"
-                      : "bg-[#EBEBEB] text-th-warm-text-dark",
-                  )}
-                >
-                  {count}
-                </span>
+                Clear all
               </button>
-            );
-          })}
-        </div>
+            </div>
+          )}
 
-        {/* Table */}
-        <div className="border border-[#EBEBEB] rounded-[14px] overflow-hidden">
           <AdminDataTable<BookingDetailDTO>
             columns={columns}
             data={paginatedRows}
@@ -731,7 +788,7 @@ const BookingDetails = () => {
             hasActiveQuery={hasActiveQuery}
             emptyIcon={CalendarX}
             emptyTitle="No bookings yet"
-            emptyDescription="Create your first booking using the button above."
+            emptyDescription="Reservations appear here once guests book — or create one from Bookings › New Booking in the sidebar."
             noResultsTitle="No bookings found"
             noResultsDescription="Try adjusting your search, status, or time filter."
             onRowClick={(b) => handleView(b)}
@@ -743,7 +800,7 @@ const BookingDetails = () => {
               onPageChange: setCurrentPage,
             }}
           />
-        </div>
+        </Panel>
       </div>
 
       {/* ── Detail Panel ── */}
@@ -751,12 +808,12 @@ const BookingDetails = () => {
         open={detailOpen}
         onClose={() => setDetailOpen(false)}
         title="Booking Detail"
-        icon={<Eye size={16} className="text-th-brand" />}
+        icon={<Eye size={16} className="text-brand" />}
       >
         {selectedBooking && (
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-[13px] font-bold text-th-brand font-mono">
+              <span className="text-[13px] font-bold text-brand tabular-nums">
                 {selectedBooking.id}
               </span>
               <StatusBadge status={selectedBooking.status} />
@@ -819,7 +876,7 @@ const BookingDetails = () => {
         open={editOpen}
         onClose={() => setEditOpen(false)}
         title={`Edit — ${selectedBooking?.id || ""}`}
-        icon={<Pencil size={16} className="text-th-brand" />}
+        icon={<Pencil size={16} className="text-brand" />}
         width={560}
         footer={
           <>

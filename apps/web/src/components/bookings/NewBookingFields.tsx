@@ -118,10 +118,7 @@ export const NewBookingFields = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <SectionHeader
-        icon={<User size={13} className="text-th-brand" />}
-        title="Guest Information"
-      />
+      <SectionHeader icon={<User size={13} className="text-brand" />} title="Guest Information" />
       <div className={grid}>
         <PanelField label="Guest Name" required error={errFor("guestName")}>
           <PanelInput
@@ -172,7 +169,7 @@ export const NewBookingFields = ({
             <button
               type="button"
               onClick={() => onAddService?.()}
-              className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-th-brand bg-none border-none p-0 cursor-pointer text-left"
+              className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-brand bg-none border-none p-0 cursor-pointer text-left"
             >
               <Plus size={12} strokeWidth={2.5} />
               Add a service to get started
@@ -182,7 +179,7 @@ export const NewBookingFields = ({
       </div>
 
       <SectionHeader
-        icon={<CalendarIcon size={13} className="text-th-brand" />}
+        icon={<CalendarIcon size={13} className="text-brand" />}
         title="Booking Dates"
       />
       <div className={grid}>
@@ -214,7 +211,7 @@ export const NewBookingFields = ({
         </PanelField>
       </div>
 
-      <SectionHeader icon={<Phone size={13} className="text-th-brand" />} title="Contact" />
+      <SectionHeader icon={<Phone size={13} className="text-brand" />} title="Contact" />
       <div className={grid}>
         <PanelField label="Phone Number" required error={errFor("phoneNumber")}>
           <PanelInput
@@ -238,7 +235,7 @@ export const NewBookingFields = ({
         </PanelField>
       </div>
 
-      <SectionHeader icon={<Users size={13} className="text-th-brand" />} title="Guests" />
+      <SectionHeader icon={<Users size={13} className="text-brand" />} title="Guests" />
       <div className={grid}>
         <PanelField label="Adults" required error={errFor("adults")}>
           <PanelInput
@@ -260,7 +257,7 @@ export const NewBookingFields = ({
         </PanelField>
       </div>
 
-      <SectionHeader icon={<IndianRupee size={13} className="text-th-brand" />} title="Pricing" />
+      <SectionHeader icon={<IndianRupee size={13} className="text-brand" />} title="Pricing" />
       <div className={grid}>
         <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
           <PanelInput
@@ -282,7 +279,7 @@ export const NewBookingFields = ({
         </PanelField>
       </div>
 
-      <SectionHeader icon={<CreditCard size={13} className="text-th-brand" />} title="Payment" />
+      <SectionHeader icon={<CreditCard size={13} className="text-brand" />} title="Payment" />
       <div className={grid}>
         <PanelField label="Payment Method" required error={errFor("paymentMethod")}>
           <select
@@ -293,9 +290,9 @@ export const NewBookingFields = ({
             }}
             onBlur={() => markTouched("paymentMethod")}
             className={cn(
-              "w-full h-11 px-3.5 text-[13px] font-[450] rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px] bg-th-warm-surface",
-              form.paymentMethod ? "text-th-text-primary" : "text-th-warm-text-muted",
-              errFor("paymentMethod") ? "border-th-error-bright-soft" : "border-transparent",
+              "w-full h-11 px-3.5 text-[13px] font-[450] rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px] bg-muted/50",
+              form.paymentMethod ? "text-foreground" : "text-muted-foreground",
+              errFor("paymentMethod") ? "border-red-300" : "border-transparent",
             )}
           >
             <option value="" disabled>
@@ -326,7 +323,7 @@ export const NewBookingFields = ({
       </div>
 
       <SectionHeader
-        icon={<FileText size={13} className="text-th-brand" />}
+        icon={<FileText size={13} className="text-brand" />}
         title="Additional Information"
       />
       <div className={grid}>

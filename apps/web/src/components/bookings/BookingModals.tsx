@@ -99,21 +99,21 @@ export const EditBookingModal = ({
       open={open}
       onClose={() => onOpenChange(false)}
       title={`Edit — ${booking.bookingId}`}
-      icon={<Edit size={16} className="text-th-brand" />}
+      icon={<Edit size={16} className="text-brand" />}
       width={540}
       footer={
         <>
           <button
             type="button"
             onClick={() => onPrint(booking)}
-            className="h-10 px-4 rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer flex items-center gap-1.5 mr-auto"
+            className="h-10 px-4 rounded-[11px] border border-border bg-transparent text-[13px] font-semibold text-foreground/80 cursor-pointer flex items-center gap-1.5 mr-auto"
           >
             <Printer size={14} /> Print
           </button>
           <button
             type="button"
             onClick={() => onDelete(booking._id)}
-            className="h-10 px-4 rounded-[11px] border border-th-error-bright-soft bg-th-error-bright-bg text-[13px] font-bold text-th-error-bright cursor-pointer flex items-center gap-1.5"
+            className="h-10 px-4 rounded-[11px] border border-red-300 bg-red-50 text-[13px] font-bold text-red-600 cursor-pointer flex items-center gap-1.5"
           >
             <Trash2 size={14} /> Delete
           </button>
@@ -124,26 +124,26 @@ export const EditBookingModal = ({
     >
       <div className="flex flex-col gap-4">
         {/* ── Read-only summary banner ── */}
-        <div className="p-3.5 bg-th-brand-soft rounded-[12px] border border-th-brand-border-soft">
+        <div className="p-3.5 bg-brand/[0.09] rounded-[12px] border border-brand/20">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               {
-                icon: <User size={13} className="text-th-brand" />,
+                icon: <User size={13} className="text-brand" />,
                 label: "Guest",
                 value: booking.guestName,
               },
               {
-                icon: <MapPin size={13} className="text-th-brand" />,
+                icon: <MapPin size={13} className="text-brand" />,
                 label: "Service",
                 value: booking.resourceName,
               },
               {
-                icon: <CalendarIcon size={13} className="text-th-brand" />,
+                icon: <CalendarIcon size={13} className="text-brand" />,
                 label: "Duration",
                 value: `${booking.totalDays || "—"} days`,
               },
               {
-                icon: <Users size={13} className="text-th-brand" />,
+                icon: <Users size={13} className="text-brand" />,
                 label: "Guests",
                 value:
                   booking.totalGuests ||
@@ -153,10 +153,10 @@ export const EditBookingModal = ({
               <div key={item.label} className="flex items-center gap-2">
                 {item.icon}
                 <div className="min-w-0">
-                  <p className="text-[10px] text-th-warm-text-muted uppercase tracking-[0.04em] font-bold">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-[0.04em] font-bold">
                     {item.label}
                   </p>
-                  <p className="truncate text-[12px] font-bold text-th-text-primary">
+                  <p className="truncate text-[12px] font-bold text-foreground">
                     {item.value || "—"}
                   </p>
                 </div>
@@ -164,11 +164,11 @@ export const EditBookingModal = ({
             ))}
           </div>
           {(booking.createdAt || booking.createdBy) && (
-            <div className="mt-2 pt-2 flex items-center gap-2 border-t border-th-brand-border-soft text-[11px] text-th-warm-text-dark">
-              <Clock size={11} className="text-th-warm-text-muted" />
+            <div className="mt-2 pt-2 flex items-center gap-2 border-t border-brand/20 text-[11px] text-foreground/80">
+              <Clock size={11} className="text-muted-foreground" />
               Created
               {booking.createdAt && (
-                <span className="text-th-text-primary font-semibold">
+                <span className="text-foreground font-semibold">
                   {new Date(booking.createdAt).toLocaleString()}
                 </span>
               )}
@@ -178,10 +178,7 @@ export const EditBookingModal = ({
         </div>
 
         {/* ── Guest Information ── */}
-        <SectionHeader
-          icon={<User size={13} className="text-th-brand" />}
-          title="Guest Information"
-        />
+        <SectionHeader icon={<User size={13} className="text-brand" />} title="Guest Information" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Guest Name" required error={errors.guestName}>
             <PanelInput
@@ -210,7 +207,7 @@ export const EditBookingModal = ({
 
         {/* ── Booking Dates + Status ── */}
         <SectionHeader
-          icon={<CalendarIcon size={13} className="text-th-brand" />}
+          icon={<CalendarIcon size={13} className="text-brand" />}
           title="Booking Dates & Status"
         />
         <div className="grid grid-cols-2 gap-3">
@@ -255,7 +252,7 @@ export const EditBookingModal = ({
         </PanelField>
 
         {/* ── Guests count ── */}
-        <SectionHeader icon={<Users size={13} className="text-th-brand" />} title="Guests" />
+        <SectionHeader icon={<Users size={13} className="text-brand" />} title="Guests" />
         <div className="grid grid-cols-3 gap-3">
           <PanelField label="Adults">
             <PanelInput
@@ -272,14 +269,14 @@ export const EditBookingModal = ({
             />
           </PanelField>
           <PanelField label="Total (auto)">
-            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-semibold text-th-text-primary bg-th-warm-surface border border-dashed border-th-warm-border rounded-[11px]">
+            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-semibold text-foreground bg-muted/50 border border-dashed border-border rounded-[11px]">
               {Number(booking.adults || 0) + Number(booking.children || 0)}
             </div>
           </PanelField>
         </div>
 
         {/* ── Pricing ── */}
-        <SectionHeader icon={<IndianRupee size={13} className="text-th-brand" />} title="Pricing" />
+        <SectionHeader icon={<IndianRupee size={13} className="text-brand" />} title="Pricing" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Base Price (₹)" required error={errors.basePrice}>
             <PanelInput
@@ -299,13 +296,13 @@ export const EditBookingModal = ({
           </PanelField>
         </div>
         <PanelField label="Total Amount (auto)">
-          <div className="w-full h-11 px-3.5 flex items-center text-[14px] font-extrabold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-[11px] tracking-[-0.01em]">
+          <div className="w-full h-11 px-3.5 flex items-center text-[14px] font-extrabold text-brand bg-brand/[0.09] border border-brand/20 rounded-[11px] tracking-[-0.01em]">
             ₹ {Number(booking.basePrice || 0) + Number(booking.extraCharges || 0)}
           </div>
         </PanelField>
 
         {/* ── Payment ── */}
-        <SectionHeader icon={<CreditCard size={13} className="text-th-brand" />} title="Payment" />
+        <SectionHeader icon={<CreditCard size={13} className="text-brand" />} title="Payment" />
         <div className="grid grid-cols-2 gap-3">
           <PanelField label="Method">
             <Select
@@ -371,7 +368,7 @@ export const EditBookingModal = ({
             />
           </PanelField>
           <PanelField label="Pending (auto)">
-            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-bold text-th-text-primary bg-th-warm-surface border border-dashed border-th-warm-border rounded-[11px]">
+            <div className="w-full h-11 px-3.5 flex items-center text-[13px] font-bold text-foreground bg-muted/50 border border-dashed border-border rounded-[11px]">
               ₹{" "}
               {Math.max(
                 0,
@@ -385,7 +382,7 @@ export const EditBookingModal = ({
 
         {/* ── Additional Information ── */}
         <SectionHeader
-          icon={<FileText size={13} className="text-th-brand" />}
+          icon={<FileText size={13} className="text-brand" />}
           title="Additional Information"
         />
         <PanelField label="Notes">
@@ -408,10 +405,10 @@ export const EditBookingModal = ({
         </PanelField>
 
         {/* Read-only ID footer */}
-        <div className="flex items-center gap-2 mt-1 text-[11px] text-th-warm-text-muted">
+        <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
           <Info size={11} />
           Booking ID:
-          <span className="text-th-text-primary font-bold">{booking.bookingId}</span>
+          <span className="text-foreground font-bold">{booking.bookingId}</span>
         </div>
       </div>
     </SlidePanel>

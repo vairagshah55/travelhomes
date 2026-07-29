@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Calendar,
+  CalendarPlus,
   Package,
   DollarSign,
   BarChart3,
@@ -76,6 +77,9 @@ const menuItems: MenuItem[] = [
     children: [
       { id: "all-bookings", label: "All Bookings", icon: Calendar, path: "/bookings" },
       { id: "booking-details", label: "Details", icon: FileText, path: "/bookings/details" },
+      // Create lives in the nav (mirrors Offerings › Add New) rather than as a
+      // button on each bookings page.
+      { id: "new-booking", label: "New Booking", icon: CalendarPlus, path: "/bookings/new" },
     ],
   },
   {

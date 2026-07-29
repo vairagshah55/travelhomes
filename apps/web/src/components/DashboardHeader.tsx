@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Bell, Menu, LayoutDashboard } from "lucide-react";
+import { Bell, Menu, LayoutDashboard, Plus } from "lucide-react";
+import { BRAND_VARS, BTN_PRIMARY } from "@/components/shared";
+import { cn } from "@/lib/utils";
 import { Sidebar } from "./Navigation";
 import ProfileDropdown from "./ProfileDropdown";
 import ChangePasswordModal from "./ChangePasswordModal";
@@ -153,8 +155,29 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         </div>
       </div>
 
-      {/* ── Right — theme, notifications, account (all size-11, as in admin) ── */}
+      {/* ── Right — create, theme, notifications, account (all size-11) ── */}
       <div className="flex items-center gap-2 md:gap-3 shrink-0">
+        {/* Creating a booking is the vendor's most common write action, so it
+            lives in the chrome rather than on one page. Matches the 44px
+            control height of the bell/avatar; collapses to icon-only on
+            phones, where the label would crowd the 84px bar. */}
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => navigate("/bookings/new")}
+          style={BRAND_VARS}
+          aria-label="New booking"
+          className={cn(
+            BTN_PRIMARY,
+            // BTN_PRIMARY assumes shadcn <Button> for layout; this is a raw
+            // motion.button, so it brings its own flex.
+            "inline-flex items-center justify-center whitespace-nowrap",
+            "h-11 rounded-full px-0 w-11 sm:w-auto sm:px-5 text-[13px]",
+          )}
+        >
+          <Plus size={16} strokeWidth={2.6} />
+          <span className="hidden sm:inline">New booking</span>
+        </motion.button>
+
         <ThemeToggle />
 
         {/* Notifications — circular button with red ping dot */}

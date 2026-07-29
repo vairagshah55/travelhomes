@@ -1,10 +1,18 @@
 import React from "react";
+import { ChevronDown } from "lucide-react";
 import type { BookingDetailDTO } from "@/lib/api";
+import { CONTROL, CONTROL_ERROR } from "@/components/shared";
 import { cn } from "@/lib/utils";
 
 export const GREEN = "#16a34a";
 export const AMBER = "#d97706";
 export const BLUE = "#2563eb";
+
+/* These render inside SlidePanel, which carries `BRAND_VARS`, so the kit's
+   CONTROL token resolves teal here the same way it does inside a Panel. */
+
+const FIELD_LABEL = "text-[12.5px] font-semibold text-foreground/85";
+const FIELD_ERROR = "text-[11.5px] font-medium text-red-600 dark:text-red-400";
 
 /** Styled text input used in the slide-out edit panel. */
 export const PanelInput = ({
@@ -26,31 +34,24 @@ export const PanelInput = ({
   error?: string;
 } & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value" | "type">) => (
   <div className="flex flex-col gap-1.5">
-    <label
-      className={cn(
-        "text-[11px] font-bold uppercase tracking-[0.03em]",
-        error ? "text-th-error-bright" : "text-th-warm-text-dark",
-      )}
-    >
+    <label className={FIELD_LABEL}>
       {label}
-      {required && <span className="text-th-error-bright ml-[3px]">*</span>}
+      {required && <span className="ml-[3px] text-red-500">*</span>}
     </label>
     <input
       type={type}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
+      aria-invalid={!!error}
       className={cn(
-        "w-full h-11 px-3.5 text-[13px] text-th-text-primary font-[450]",
-        "rounded-[11px] outline-none transition-all duration-150 border-[1.5px]",
-        "bg-th-warm-surface focus:bg-th-surface-0",
-        error
-          ? "bg-th-error-bright-bg border-th-error-bright-soft focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-          : "border-transparent focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+        "w-full h-11 px-3.5 border text-foreground outline-none",
+        CONTROL,
+        error && CONTROL_ERROR,
       )}
       {...rest}
     />
-    {error && <p className="text-[11px] text-th-error-bright">{error}</p>}
+    {error && <p className={FIELD_ERROR}>{error}</p>}
   </div>
 );
 
@@ -71,30 +72,32 @@ export const PanelSelect = ({
   error?: string;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label
-      className={cn(
-        "text-[11px] font-bold uppercase tracking-[0.03em]",
-        error ? "text-th-error-bright" : "text-th-warm-text-dark",
-      )}
-    >
+    <label className={FIELD_LABEL}>
       {label}
-      {required && <span className="text-th-error-bright ml-[3px]">*</span>}
+      {required && <span className="ml-[3px] text-red-500">*</span>}
     </label>
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={cn(
-        "w-full h-11 px-3.5 text-[13px] font-[450]",
-        "rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px]",
-        value ? "text-th-text-primary" : "text-th-warm-text-muted",
-        error
-          ? "bg-th-error-bright-bg border-th-error-bright-soft"
-          : "bg-th-warm-surface border-transparent",
-      )}
-    >
-      {children}
-    </select>
-    {error && <p className="text-[11px] text-th-error-bright">{error}</p>}
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={!!error}
+        className={cn(
+          "w-full h-11 pl-3.5 pr-9 border outline-none appearance-none cursor-pointer",
+          CONTROL,
+          value ? "text-foreground" : "text-muted-foreground",
+          error && CONTROL_ERROR,
+        )}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={14}
+        strokeWidth={2.3}
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+      />
+    </div>
+    {error && <p className={FIELD_ERROR}>{error}</p>}
   </div>
 );
 
@@ -108,13 +111,20 @@ export const InfoRow = ({
   label: string;
   value: string;
 }) => (
-  <div className="flex items-center gap-3 py-2.5 border-b border-[#EBEBEB]">
-    <span className="text-th-brand flex-shrink-0">{icon}</span>
-    <div className="flex-1">
-      <p className="text-[11px] text-th-warm-text-muted font-semibold uppercase tracking-[0.03em]">
-        {label}
+  <div className="flex items-start gap-3 py-3 border-b border-border/70 last:border-b-0">
+    <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-muted text-muted-foreground shrink-0">
+      {icon}
+    </span>
+    <div className="min-w-0 flex-1">
+      <p className="text-[11.5px] font-semibold text-muted-foreground">{label}</p>
+      <p
+        className={cn(
+          "mt-0.5 text-[13.5px] font-medium break-words",
+          value ? "text-foreground" : "text-muted-foreground/60",
+        )}
+      >
+        {value || "Not provided"}
       </p>
-      <p className="text-[14px] font-semibold text-th-text-primary mt-[1px]">{value || "—"}</p>
     </div>
   </div>
 );

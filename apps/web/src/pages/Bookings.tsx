@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import {
-  Plus,
   Search,
   Package,
   Calendar as CalendarIcon,
@@ -15,7 +14,19 @@ import {
   ChevronDown,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { ConfirmModal } from "@/components/shared";
+import { Input } from "@/components/ui/input";
+import {
+  BRAND_VARS,
+  CONTROL,
+  ConfirmModal,
+  PANEL,
+  PANEL_FOOTER,
+  Panel,
+  PanelHead,
+  StatTile,
+  StatTileSkeleton,
+} from "@/components/shared";
+import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,55 +57,40 @@ const FilterPill: React.FC<{
     <DropdownMenuTrigger asChild>
       <button
         type="button"
-        className="inline-flex items-center gap-2 h-[42px] px-3.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 text-[13px] font-semibold text-th-text-primary cursor-pointer tracking-[-0.005em] whitespace-nowrap"
+        className={cn(
+          "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border whitespace-nowrap",
+          "text-[13px] font-semibold text-foreground/85 bg-muted/50 dark:bg-white/5 border-border",
+          "outline-none transition-colors duration-150 hover:bg-muted",
+          "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
+        )}
       >
         {icon}
         {label}
-        <ChevronDown size={14} className="text-th-warm-text-muted" />
+        <ChevronDown size={14} className="text-muted-foreground" />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" className="w-52 p-1.5">
+    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-52 p-1.5">
       {children}
     </DropdownMenuContent>
   </DropdownMenu>
 );
 
+/* Radix's own `focus:bg-accent` resolves to an invalid colour in this app —
+   see the SELECT_ITEM note in components/shared/Panel.tsx. */
 const FILTER_ITEM_CLASS =
-  "cursor-pointer rounded-md px-2.5 py-2 text-[13px] font-medium text-[#131313] " +
+  "cursor-pointer rounded-lg px-2.5 py-2 text-[13px] font-medium text-foreground " +
   "transition-colors " +
-  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
-  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488] " +
+  "focus:bg-brand/[0.1] focus:text-brand " +
+  "data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand " +
   "data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed";
 
-/* ── Stats card ─────────────────────────────────────────────────────────────── */
-const StatCard: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  accent?: string;
-}> = ({ icon, label, value, hint, accent = "#0d9488" }) => (
-  <div className="bg-th-surface-0 border border-th-warm-border rounded-[16px] px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.03)] flex items-center gap-3">
-    <div
-      className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center flex-shrink-0 border-[1.5px]"
-      style={{
-        backgroundColor: `${accent}14`,
-        borderColor: `${accent}30`,
-      }}
-    >
-      {icon}
-    </div>
-    <div className="min-w-0">
-      <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.04em] mb-[2px]">
-        {label}
-      </p>
-      <p className="text-[18px] font-extrabold text-th-text-primary tracking-[-0.02em] leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis">
-        {value}
-      </p>
-      {hint && <p className="text-[10.5px] text-th-warm-text-dark mt-[2px]">{hint}</p>}
-    </div>
-  </div>
-);
+/** Colour key for the booking bars — the calendar is unreadable without one. */
+const LEGEND = [
+  { label: "Confirmed", dot: "bg-blue-400" },
+  { label: "Checked-in", dot: "bg-emerald-400" },
+  { label: "Checked-out", dot: "bg-slate-300 dark:bg-slate-600" },
+  { label: "Cancelled", dot: "bg-red-400" },
+];
 
 const Bookings = () => {
   const navigate = useNavigate();
@@ -183,8 +179,6 @@ const Bookings = () => {
     const qs = params.toString();
     navigate(qs ? `/bookings/new?${qs}` : "/bookings/new");
   };
-
-  const handleNewBooking = () => goToNewBooking(selectedDate?.date, selectedDate?.resource);
 
   const handleBookingClick = (b: BookingData) => {
     setSelectedBooking(b);
@@ -289,149 +283,187 @@ const Bookings = () => {
       maximumFractionDigits: 0,
     }).format(n);
 
+  const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString("en-IN", {
+    month: "long",
+    year: "numeric",
+  });
+
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout
       title="Bookings"
-      outerClassName="overflow-hidden"
-      contentClassName="flex-1 overflow-auto p-3 lg:p-5"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] min-h-full">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4 border-b border-[#EBEBEB]">
-          <div>
-            <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
-              Calendar
-            </h1>
-            <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
-              Manage appointments and schedules
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleNewBooking}
-            className="flex items-center gap-2 h-[42px] px-5 rounded-[13px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse cursor-pointer shadow-[0_4px_16px_rgba(13,148,136,0.30)] w-fit"
-          >
-            <Plus size={16} strokeWidth={2.5} /> New Booking
-          </button>
-        </div>
-
-        {/* Filters row */}
-        <div className="flex flex-wrap items-center gap-2.5 mb-4">
-          {/* Search */}
-          <div
-            className="flex items-center gap-2 h-[42px] px-3 rounded-[12px] border border-th-warm-border bg-th-surface-0"
-            style={{ flex: "1 1 220px", minWidth: 200, maxWidth: 320 }}
-          >
-            <Search size={15} className="text-th-warm-text-muted" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search bookings, guest, ID…"
-              className="flex-1 h-full border-none outline-none text-[13px] text-th-text-primary bg-transparent font-[450]"
-            />
-          </div>
-
-          {/* Service filter */}
-          <FilterPill
-            icon={<Package size={14} className="text-th-warm-text-muted" />}
-            label={serviceFilter === "all" ? "All Services" : serviceFilter}
-          >
-            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setServiceFilter("all")}>
-              All Services
-            </DropdownMenuItem>
-            {vehicleNames.map((name) => (
-              <DropdownMenuItem
-                key={name}
-                className={FILTER_ITEM_CLASS}
-                onClick={() => setServiceFilter(name)}
-              >
-                {name}
-              </DropdownMenuItem>
-            ))}
-          </FilterPill>
-
-          {/* Month selector */}
-          <div className="flex items-center h-[42px] pl-3 pr-1.5 rounded-[12px] border border-th-warm-border bg-th-surface-0 gap-1.5">
-            <CalendarIcon size={14} className="text-th-warm-text-muted" />
-            <DateNavigation
-              currentMonth={currentMonth}
-              currentYear={currentYear}
-              onMonthChange={setCurrentMonth}
-              onYearChange={setCurrentYear}
-            />
-          </div>
-
-          {/* View mode */}
-          <FilterPill
-            icon={<LayoutGrid size={14} className="text-th-warm-text-muted" />}
-            label={viewMode === "month" ? "Month View" : "Week View"}
-          >
-            <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("month")}>
-              Month View
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className={FILTER_ITEM_CLASS}
-              onClick={() => setViewMode("week")}
-              disabled
-            >
-              Week View (soon)
-            </DropdownMenuItem>
-          </FilterPill>
-        </div>
-
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-          <StatCard
-            icon={<CalendarIcon size={15} className="text-th-brand" strokeWidth={2.2} />}
-            label="Bookings"
-            value={String(stats.total)}
-            hint="This month"
-          />
-          <StatCard
-            icon={<IndianRupee size={15} color="#22c55e" strokeWidth={2.2} />}
-            label="Revenue"
-            value={currencyINR(stats.revenue)}
-            hint="Total billed"
-            accent="#22c55e"
-          />
-          <StatCard
-            icon={<Clock size={15} color="#f59e0b" strokeWidth={2.2} />}
-            label="Pending"
-            value={currencyINR(stats.pending)}
-            hint="Yet to collect"
-            accent="#f59e0b"
-          />
-          <StatCard
-            icon={<Sun size={15} color="#8b5cf6" strokeWidth={2.2} />}
-            label="Today"
-            value={String(stats.today)}
-            hint="Active stays"
-            accent="#8b5cf6"
-          />
-        </div>
-
-        {/* Calendar */}
-        <div className="overflow-auto" key={`${currentYear}-${currentMonth}`}>
+      {/* Wider than the other console pages on purpose — this is a month ×
+          resource grid, and squeezing it to max-w-6xl only adds scrolling.
+          pb clears the fixed MobileVendorNav. */}
+      <div style={BRAND_VARS} className="max-w-[1400px] mx-auto pb-24 lg:pb-12 space-y-5">
+        {/* ── Metrics ── */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
           {loading ? (
-            <div className="flex items-center justify-center h-64 gap-2 text-th-warm-text-muted">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-              <span className="text-[13px]">Loading bookings…</span>
-            </div>
+            <>
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+              <StatTileSkeleton />
+            </>
           ) : (
-            <CalendarGrid
-              currentMonth={currentMonth}
-              currentYear={currentYear}
-              bookings={filteredBookings}
-              onBookingClick={handleBookingClick}
-              onBookingDrag={handleBookingDrag}
-              onDateClick={handleDateClick}
-              selectedDate={selectedDate}
-              vehicleNames={vehicleNames}
-            />
+            <>
+              <StatTile
+                icon={CalendarIcon}
+                label="Bookings"
+                hint="This month"
+                value={stats.total}
+                color="#0d9488"
+                index={0}
+              />
+              <StatTile
+                icon={IndianRupee}
+                label="Revenue"
+                hint="Total billed"
+                value={currencyINR(stats.revenue)}
+                color="#22c55e"
+                index={1}
+              />
+              <StatTile
+                icon={Clock}
+                label="Pending"
+                hint="Yet to collect"
+                value={currencyINR(stats.pending)}
+                color="#f59e0b"
+                index={2}
+              />
+              <StatTile
+                icon={Sun}
+                label="Today"
+                hint="Active stays"
+                value={stats.today}
+                color="#8b5cf6"
+                index={3}
+              />
+            </>
           )}
         </div>
+
+        {/* ── Toolbar ── */}
+        <div className={cn(PANEL, "p-3")}>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+              <Search
+                size={14}
+                strokeWidth={2.2}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none"
+              />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search guest, booking ID or service"
+                aria-label="Search bookings"
+                className={cn("h-10 pl-9", CONTROL)}
+              />
+            </div>
+
+            <FilterPill
+              icon={<Package size={14} className="text-muted-foreground" />}
+              label={serviceFilter === "all" ? "All services" : serviceFilter}
+            >
+              <DropdownMenuItem
+                className={FILTER_ITEM_CLASS}
+                onClick={() => setServiceFilter("all")}
+              >
+                All services
+              </DropdownMenuItem>
+              {vehicleNames.map((name) => (
+                <DropdownMenuItem
+                  key={name}
+                  className={FILTER_ITEM_CLASS}
+                  onClick={() => setServiceFilter(name)}
+                >
+                  {name}
+                </DropdownMenuItem>
+              ))}
+            </FilterPill>
+
+            {/* Month selector */}
+            <div className="flex items-center gap-1.5 h-10 pl-3 pr-1.5 rounded-xl border border-border bg-muted/50 dark:bg-white/5">
+              <CalendarIcon size={14} className="text-muted-foreground" />
+              <DateNavigation
+                currentMonth={currentMonth}
+                currentYear={currentYear}
+                onMonthChange={setCurrentMonth}
+                onYearChange={setCurrentYear}
+              />
+            </div>
+
+            <FilterPill
+              icon={<LayoutGrid size={14} className="text-muted-foreground" />}
+              label={viewMode === "month" ? "Month view" : "Week view"}
+            >
+              <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("month")}>
+                Month view
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className={FILTER_ITEM_CLASS}
+                onClick={() => setViewMode("week")}
+                disabled
+              >
+                Week view (soon)
+              </DropdownMenuItem>
+            </FilterPill>
+          </div>
+        </div>
+
+        {/* ── Calendar ── */}
+        <Panel>
+          <PanelHead
+            icon={CalendarIcon}
+            title={monthLabel}
+            blurb="Click an empty cell to book it · drag a booking to move it"
+            aside={
+              <span className="hidden md:inline-flex items-center text-[11.5px] tabular-nums text-muted-foreground">
+                {filteredBookings.length} shown
+              </span>
+            }
+          />
+
+          <div className="p-3" key={`${currentYear}-${currentMonth}`}>
+            {loading ? (
+              <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span className="text-[13px]">Loading bookings…</span>
+              </div>
+            ) : (
+              <CalendarGrid
+                currentMonth={currentMonth}
+                currentYear={currentYear}
+                bookings={filteredBookings}
+                onBookingClick={handleBookingClick}
+                onBookingDrag={handleBookingDrag}
+                onDateClick={handleDateClick}
+                onNewBooking={(resource) => goToNewBooking(undefined, resource)}
+                selectedDate={selectedDate}
+                vehicleNames={vehicleNames}
+              />
+            )}
+          </div>
+
+          <footer className={PANEL_FOOTER}>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              {LEGEND.map((l) => (
+                <span
+                  key={l.label}
+                  className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
+                >
+                  <span className={cn("w-2 h-2 rounded-full", l.dot)} />
+                  {l.label}
+                </span>
+              ))}
+            </div>
+            <p className="hidden sm:block text-[11.5px] text-muted-foreground">
+              {vehicleNames.length} service{vehicleNames.length === 1 ? "" : "s"}
+            </p>
+          </footer>
+        </Panel>
       </div>
 
       <EditBookingModal

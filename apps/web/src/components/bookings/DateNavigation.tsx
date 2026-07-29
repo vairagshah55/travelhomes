@@ -1,66 +1,114 @@
 import React from "react";
 import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BRAND_VARS } from "@/components/shared";
 import { MONTH_NAMES } from "./api";
 import { cn } from "@/lib/utils";
 
-export const DateNavigation = ({ currentMonth, currentYear, onMonthChange, onYearChange }: {
-  currentMonth: number; currentYear: number;
-  onMonthChange: (m: number) => void; onYearChange: (y: number) => void;
+/**
+ * Month/year stepper for the bookings calendar. Sized to sit inside the page
+ * toolbar (40px row), so the label is toolbar-scale rather than a page title —
+ * the month already reads as a heading on the calendar panel itself.
+ */
+export const DateNavigation = ({
+  currentMonth,
+  currentYear,
+  onMonthChange,
+  onYearChange,
+}: {
+  currentMonth: number;
+  currentYear: number;
+  onMonthChange: (m: number) => void;
+  onYearChange: (y: number) => void;
 }) => {
   const years = Array.from({ length: 10 }, (_, i) => currentYear - 5 + i);
 
-  const prev = () => { if (currentMonth === 0) { onMonthChange(11); onYearChange(currentYear - 1); } else onMonthChange(currentMonth - 1); };
-  const next = () => { if (currentMonth === 11) { onMonthChange(0); onYearChange(currentYear + 1); } else onMonthChange(currentMonth + 1); };
+  const prev = () => {
+    if (currentMonth === 0) {
+      onMonthChange(11);
+      onYearChange(currentYear - 1);
+    } else onMonthChange(currentMonth - 1);
+  };
+  const next = () => {
+    if (currentMonth === 11) {
+      onMonthChange(0);
+      onYearChange(currentYear + 1);
+    } else onMonthChange(currentMonth + 1);
+  };
 
-  const navBtn = (onClick: () => void, icon: React.ReactNode) => (
+  const navBtn = (onClick: () => void, label: string, icon: React.ReactNode) => (
     <button
       type="button"
       onClick={onClick}
-      className="w-[34px] h-[34px] rounded-[10px] border border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer transition-all hover:border-th-brand hover:bg-th-brand-soft"
+      aria-label={label}
+      className={cn(
+        "grid place-items-center w-7 h-7 rounded-lg shrink-0 text-muted-foreground outline-none",
+        "transition-colors duration-150 hover:bg-brand/[0.09] hover:text-brand",
+        "focus-visible:ring-2 focus-visible:ring-brand/40",
+      )}
     >
       {icon}
     </button>
   );
 
+  const gridBtn = (selected: boolean) =>
+    cn(
+      "py-1.5 rounded-lg text-[12px] outline-none transition-colors duration-150",
+      "focus-visible:ring-2 focus-visible:ring-brand/40",
+      selected
+        ? "font-bold bg-brand text-brand-fg"
+        : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground",
+    );
+
   return (
-    <div className="flex items-center gap-3">
-      {navBtn(prev, <ChevronLeft size={16} className="text-th-warm-text-muted" />)}
+    <div className="flex items-center gap-0.5">
+      {navBtn(prev, "Previous month", <ChevronLeft size={15} strokeWidth={2.3} />)}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button type="button" className="flex items-center gap-2 px-3.5 py-1.5 rounded-[12px] bg-transparent border-none cursor-pointer">
-            <span className="text-[20px] font-extrabold text-th-text-primary tracking-[-0.02em]">
-              {MONTH_NAMES[currentMonth]}, {currentYear}
-            </span>
-            <ChevronDown size={18} className="text-th-warm-text-muted" />
+          <button
+            type="button"
+            className={cn(
+              "flex items-center gap-1.5 px-2 h-8 rounded-lg outline-none whitespace-nowrap",
+              "text-[13px] font-semibold text-foreground tabular-nums",
+              "transition-colors duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand/40",
+            )}
+          >
+            {MONTH_NAMES[currentMonth]} {currentYear}
+            <ChevronDown size={14} className="text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 p-3">
-          <p className="text-[11px] font-bold text-th-warm-text-muted uppercase tracking-[0.03em] mb-1.5">Month</p>
+        <DropdownMenuContent align="start" style={BRAND_VARS} className="w-56 p-3">
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Month
+          </p>
           <div className="grid grid-cols-3 gap-1 mb-3">
             {MONTH_NAMES.map((m, i) => (
-              <button key={m} type="button" onClick={() => onMonthChange(i)}
-                className={cn(
-                  "py-1.5 rounded-lg border-none text-[12px] cursor-pointer transition-all",
-                  i === currentMonth
-                    ? "font-bold bg-th-brand text-th-text-primary"
-                    : "font-medium bg-transparent text-th-warm-text-muted"
-                )}>
+              <button
+                key={m}
+                type="button"
+                onClick={() => onMonthChange(i)}
+                className={gridBtn(i === currentMonth)}
+              >
                 {m.slice(0, 3)}
               </button>
             ))}
           </div>
-          <p className="text-[11px] font-bold text-th-warm-text-muted uppercase tracking-[0.03em] mb-1.5">Year</p>
+          <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Year
+          </p>
           <div className="grid grid-cols-2 gap-1">
             {years.map((y) => (
-              <button key={y} type="button" onClick={() => onYearChange(y)}
-                className={cn(
-                  "py-1.5 rounded-lg border-none text-[12px] cursor-pointer transition-all",
-                  y === currentYear
-                    ? "font-bold bg-th-brand text-th-text-primary"
-                    : "font-medium bg-transparent text-th-warm-text-muted"
-                )}>
+              <button
+                key={y}
+                type="button"
+                onClick={() => onYearChange(y)}
+                className={cn(gridBtn(y === currentYear), "tabular-nums")}
+              >
                 {y}
               </button>
             ))}
@@ -68,7 +116,7 @@ export const DateNavigation = ({ currentMonth, currentYear, onMonthChange, onYea
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {navBtn(next, <ChevronRight size={16} className="text-th-warm-text-muted" />)}
+      {navBtn(next, "Next month", <ChevronRight size={15} strokeWidth={2.3} />)}
     </div>
   );
 };
