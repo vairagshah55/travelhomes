@@ -1,19 +1,25 @@
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Clock3, IndianRupee, Wallet } from "lucide-react";
 import { vendorAnalyticsApi, bookingDetailsApi } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { StatCards, EarningsChart, PaymentTable } from "@/components/revenue";
-import type { PaymentRecord } from "@/components/revenue";
-import { TEAL, BLACK, GRAY_400 } from "@/components/revenue/tokens";
+import { BRAND_VARS, StatTile, StatTileSkeleton } from "@/components/shared";
+import { EarningsChart, PaymentTable, inr, toAmount } from "@/components/revenue";
+import type { ChartItem, PaymentRecord } from "@/components/revenue";
 
 const Revenue = () => {
   const { token: authToken } = useAuth();
   const token = authToken ?? undefined;
   const enabled = !!token;
 
-  // Three independent queries — counts (payments), monthly graphs, and
-  // bookings list. Each is cached so navigating away and back doesn't
-  // re-hit the API.
+  /** Chart period — the server accepts daily | monthly | yearly. */
+  const [period, setPeriod] = useState("monthly");
+
+  // Three independent queries — counts (payments), earnings graph, and the
+  // bookings list. Each is cached so navigating away and back doesn't re-hit
+  // the API, and each renders its own loading/error state rather than one
+  // page-wide flag that blocked everything on the slowest request.
   const countsQuery = useQuery({
     queryKey: ["revenue", "counts"],
     enabled,
@@ -23,10 +29,10 @@ const Revenue = () => {
     },
   });
   const graphsQuery = useQuery({
-    queryKey: ["revenue", "graphs", "monthly"],
+    queryKey: ["revenue", "graphs", period],
     enabled,
     queryFn: async () => {
-      const res = await vendorAnalyticsApi.getGraphs(token!, "monthly");
+      const res = await vendorAnalyticsApi.getGraphs(token!, period);
       return res.success ? res.data : [];
     },
   });
@@ -39,79 +45,105 @@ const Revenue = () => {
     },
   });
 
-  const revenueData = (() => {
+  const totals = useMemo(() => {
     const payments = countsQuery.data?.payments;
-    if (!payments) return { totalEarnings: "0", totalPaymentReceived: "0", pendingPayment: "0" };
-    const received = payments.received || 0;
-    const pending = payments.pending || 0;
-    return {
-      totalEarnings: (received + pending).toLocaleString("en-IN"),
-      totalPaymentReceived: received.toLocaleString("en-IN"),
-      pendingPayment: pending.toLocaleString("en-IN"),
-    };
-  })();
+    const received = payments?.received || 0;
+    const pending = payments?.pending || 0;
+    return { received, pending, total: received + pending };
+  }, [countsQuery.data]);
 
-  const chartData: { month: string; value: number }[] = (() => {
-    const data = graphsQuery.data;
-    if (data && data.length > 0) {
-      return data.map((g: any) => ({ month: g.name.substring(0, 3), value: g.earnings }));
-    }
-    return ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map(
-      (m) => ({ month: m, value: 0 }),
-    );
-  })();
+  /**
+   * No synthetic 12-month fallback. The old page padded a failed or empty
+   * response with twelve ₹0 months, which drew a flat line indistinguishable
+   * from a real quiet year — on a revenue page that reads as "you earned
+   * nothing" rather than "we couldn't load this".
+   */
+  const chartData: ChartItem[] = useMemo(
+    () =>
+      (graphsQuery.data ?? []).map((g: any) => ({
+        month: String(g.name ?? "").substring(0, 3),
+        value: g.earnings ?? 0,
+      })),
+    [graphsQuery.data],
+  );
 
-  const paymentHistory: PaymentRecord[] = (bookingsQuery.data ?? []).map((b: any) => ({
-    paymentMethod: "Razorpay",
-    paymentRefId: b.id,
-    bookingId: b.id,
-    amountPay: b.servicePrice || "0",
-    fullName: b.clientName,
-    receiptDate: b.checkIn
-      ? b.checkIn.includes(",")
-        ? b.checkIn.split(",")[0]
-        : b.checkIn
-      : "N/A",
-    status: b.status === "confirmed" || b.status === "active" ? "Paid" : "Pending",
-  }));
-
-  const loading = countsQuery.isLoading || graphsQuery.isLoading || bookingsQuery.isLoading;
+  /**
+   * The booking list has no payment method or payment reference — the old table
+   * hardcoded `paymentMethod: "Razorpay"` on every row and put the booking id in
+   * the "Payment Ref ID" column, so two columns showed the same value and one of
+   * them was invented. Dropped both in favour of fields the API actually returns.
+   */
+  const payments: PaymentRecord[] = useMemo(
+    () =>
+      (bookingsQuery.data ?? []).map((b: any) => ({
+        bookingId: b.id,
+        guest: b.clientName,
+        service: b.serviceName,
+        amount: toAmount(b.servicePrice),
+        date: b.checkIn,
+        status: b.status === "confirmed" || b.status === "active" ? "paid" : "pending",
+      })),
+    [bookingsQuery.data],
+  );
 
   return (
     <DashboardLayout
       title="Revenue"
-      outerClassName="w-full overflow-hidden"
-      contentClassName="flex-1 overflow-y-auto"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col gap-6">
-        {/* Page header */}
-        <div>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div style={{ width: 20, height: 3, borderRadius: 99, backgroundColor: TEAL }} />
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: GRAY_400,
-              }}
-            >
-              Dashboard
-            </span>
-          </div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: BLACK, letterSpacing: "-0.03em" }}>
-            Revenue Overview
-          </h1>
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {countsQuery.isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <StatTileSkeleton key={i} />)
+          ) : (
+            <>
+              <StatTile
+                index={0}
+                icon={IndianRupee}
+                label="Total earnings"
+                value={totals.total}
+                format={inr}
+                hint="Received plus pending"
+                color="#0d9488"
+              />
+              <StatTile
+                index={1}
+                icon={Wallet}
+                label="Payment received"
+                value={totals.received}
+                format={inr}
+                hint="Settled to your account"
+                color="#22c55e"
+              />
+              <StatTile
+                index={2}
+                icon={Clock3}
+                label="Pending payment"
+                value={totals.pending}
+                format={inr}
+                hint="Awaiting settlement"
+                color="#f59e0b"
+              />
+            </>
+          )}
         </div>
 
-        <StatCards loading={loading} data={revenueData} />
         <EarningsChart
-          loading={loading}
           chartData={chartData}
-          totalEarnings={revenueData.totalEarnings}
+          period={period}
+          onPeriodChange={setPeriod}
+          isLoading={graphsQuery.isLoading}
+          isError={graphsQuery.isError}
+          onRetry={() => graphsQuery.refetch()}
         />
-        <PaymentTable loading={loading} data={paymentHistory} />
+
+        <PaymentTable
+          loading={bookingsQuery.isLoading}
+          isError={bookingsQuery.isError}
+          onRetry={() => bookingsQuery.refetch()}
+          data={payments}
+        />
       </div>
     </DashboardLayout>
   );

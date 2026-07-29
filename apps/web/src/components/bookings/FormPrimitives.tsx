@@ -7,7 +7,7 @@
  */
 import React, { useState } from "react";
 import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -69,19 +69,16 @@ export const PanelField = ({
   children: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1.5">
-    <label className="text-[11px] font-bold text-foreground/80 uppercase tracking-[0.03em]">
+    <label className="text-[12.5px] font-semibold text-foreground/85">
       {label}
-      {required && <span className="text-red-600 ml-[3px]">*</span>}
+      {required && <span className="ml-[3px] text-red-500">*</span>}
     </label>
     {children}
     {error && (
-      <div className="flex items-center gap-1.5">
-        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-          <circle cx="6" cy="6" r="5.25" stroke="#ef4444" strokeWidth="1.5" />
-          <path d="M6 3.5v3M6 8.25v.25" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-        <p className="text-[11px] text-red-600">{error}</p>
-      </div>
+      <p className="flex items-center gap-1.5 text-[11.5px] font-medium text-red-600 dark:text-red-400">
+        <AlertCircle size={12} strokeWidth={2.4} className="shrink-0" />
+        {error}
+      </p>
     )}
   </div>
 );
@@ -113,12 +110,12 @@ export const PanelInput = ({
     onBlur={onBlur}
     placeholder={placeholder}
     className={cn(
-      "w-full h-11 px-3.5 text-[13px] text-foreground font-[450]",
-      "rounded-[11px] outline-none transition-all duration-150 border-[1.5px]",
-      "bg-muted/50 focus:bg-card",
+      "w-full h-11 px-3.5 text-[13.5px] text-foreground border rounded-xl outline-none",
+      "bg-muted/50 dark:bg-white/5 focus:bg-card placeholder:text-muted-foreground/60",
+      "transition-[background-color,border-color,box-shadow] duration-150",
       error
-        ? "border-red-300 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
-        : "border-transparent focus:border-brand focus:shadow-[0_0_0_4px_hsl(var(--brand)/0.15)]",
+        ? "border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/15"
+        : "border-border focus:border-brand focus:ring-4 focus:ring-brand/15",
     )}
     {...rest}
   />
@@ -190,14 +187,15 @@ export const DatePickerField = ({
         <button
           type="button"
           className={cn(
-            "w-full h-11 px-3.5 flex items-center gap-2.5 text-[13px] font-[450] rounded-[11px] outline-none transition-all duration-150 border-[1.5px] cursor-pointer text-left",
+            "w-full h-11 px-3.5 flex items-center gap-2.5 text-[13.5px] rounded-xl border outline-none cursor-pointer text-left",
+            "transition-[background-color,border-color,box-shadow] duration-150",
             hasValue ? "text-foreground" : "text-muted-foreground",
-            open ? "bg-card" : "bg-muted/50",
+            open ? "bg-card" : "bg-muted/50 dark:bg-white/5",
             error
-              ? "border-red-300 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
+              ? "border-red-400 ring-4 ring-red-500/15"
               : open
-                ? "border-brand shadow-[0_0_0_4px_hsl(var(--brand)/0.15)]"
-                : "border-transparent",
+                ? "border-brand ring-4 ring-brand/15"
+                : "border-border",
           )}
         >
           <CalendarIcon size={14} className={open ? "text-brand" : "text-muted-foreground"} />

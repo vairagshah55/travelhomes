@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, MotionConfig } from "framer-motion";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -32,7 +32,18 @@ import {
    Panel, and the active row is the same sliding `layoutId` pill the Settings
    and Notifications rails use. The surface stays faint teal (#f1f8f7 with a
    #dce7e5 hairline) because DashboardHeader uses those exact values — rail and
-   header are one piece of chrome. */
+   header are one piece of chrome.
+
+   LAYOUT CONTRACT — three bands, exactly one of which scrolls:
+     1. brand row      (84px, fixed — lines up with the header)
+     2. nav            (flex-1, the ONLY scroll container: Main Menu + Support
+                        live inside it and move together)
+     3. logout footer  (one row, fixed)
+   Support used to be a second `shrink-0` band pinned below the scroller, which
+   ate ~300px of fixed height and squeezed the main list into a short window —
+   so the menu clipped mid-row with a native scrollbar down the middle of the
+   rail. One scroller + hidden scrollbar + edge fades is the standard shape and
+   removes that entirely. */
 
 interface MenuItem {
   id: string;
@@ -130,7 +141,7 @@ const bottomMenuItems: MenuItem[] = [
 
 /** Section caption above a nav group — same type as the panel group headers. */
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <p className="px-5 pt-1 pb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground whitespace-nowrap">
+  <p className="px-4 pb-1.5 text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted-foreground/80 whitespace-nowrap">
     {children}
   </p>
 );
@@ -147,8 +158,8 @@ const Badge = ({
 }) => (
   <span
     className={cn(
-      "inline-flex items-center justify-center min-w-[20px] h-[20px] px-1.5 rounded-full",
-      "text-[10.5px] font-bold leading-none tabular-nums",
+      "inline-flex items-center justify-center min-w-[19px] h-[18px] px-1.5 rounded-full",
+      "text-[10px] font-bold leading-none tabular-nums",
       alert
         ? "bg-[#f23030]/10 text-[#f23030]"
         : active
@@ -197,6 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [hoverOpen, setHoverOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLElement>(null);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const navigate = useNavigate();
@@ -242,16 +254,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // Whenever the URL changes, fold the active parent(s) into expandedItems so
-  // the matching sub-menu is visible the moment the sidebar opens.
+  // Whenever the URL changes, the section owning the route becomes THE open
+  // one. Accordion (single open group) rather than additive: with every group
+  // expandable at once the list grew past the viewport, which is what made the
+  // rail feel like it was scrolling for no reason.
   useEffect(() => {
     if (activeParentIds.length === 0) return;
-    setExpandedItems((prev) => {
-      const next = new Set(prev);
-      activeParentIds.forEach((id) => next.add(id));
-      return next;
-    });
+    setExpandedItems(new Set(activeParentIds));
   }, [activeParentIds]);
+
+  /* ─── scroll affordance ───
+     Native scrollbars are hidden (the `scrollbar-thin` utilities this file used
+     to carry come from a tailwind plugin that isn't installed, so the browser
+     default was painting a grey gutter down the rail). Instead the scroller
+     fades its cut edges, which reads as "there's more" without a gutter. */
+  const [edges, setEdges] = useState({ top: false, bottom: false });
+  const syncEdges = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const { scrollTop, scrollHeight, clientHeight } = el;
+    setEdges({
+      top: scrollTop > 4,
+      bottom: scrollTop + clientHeight < scrollHeight - 4,
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    syncEdges();
+    el.addEventListener("scroll", syncEdges, { passive: true });
+    // Content height changes when a group expands/collapses and when the rail
+    // opens/closes — observe the inner wrapper, not just the viewport.
+    const ro = new ResizeObserver(syncEdges);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", syncEdges);
+      ro.disconnect();
+    };
+  }, [syncEdges]);
+
+  // Keep the current page visible when the rail opens on a route that sits
+  // below the fold. `block: "nearest"` scrolls the rail only — never the page.
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const row = scrollRef.current?.querySelector<HTMLElement>("[data-active-row]");
+    row?.scrollIntoView({ block: "nearest" });
+  }, [location.pathname, isOpen]);
 
   const handleLogout = () => {
     logout();
@@ -281,14 +331,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onToggle?.(!next);
   };
 
+  /** Accordion: opening a group closes the others; re-clicking closes it. */
   const toggleExpand = (id: string) => {
     if (!isOpen) return;
-    setExpandedItems((prev) => {
-      const s = new Set(prev);
-      if (s.has(id)) s.delete(id);
-      else s.add(id);
-      return s;
-    });
+    setExpandedItems((prev) => (prev.has(id) ? new Set() : new Set([id])));
   };
 
   const isActive = (path: string) =>
@@ -307,6 +353,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
+  /** Row navigates AND reveals its group — the chevron is the pure toggle. */
+  const openItem = (item: MenuItem) => {
+    navigate(item.path);
+    if (item.children?.length) setExpandedItems(new Set([item.id]));
+  };
+
   /* ─── single nav row (top-level) ─── */
   const renderItem = (item: MenuItem) => {
     const hasChildren = !!item.children?.length;
@@ -314,12 +366,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
     const active = isParentActive(item);
     const badge = badgeFor(item);
     const alertBadge = item.id === "notifications";
+    // Only the deepest active row is the scroll anchor: for a group, that's the
+    // child row rendered below, not the parent.
+    const isAnchor = active && (!hasChildren || !expanded);
 
     return (
       <div key={item.id}>
         {/* ── collapsed state ── */}
         {!isOpen ? (
-          <div className="group relative flex justify-center py-0.5 px-2">
+          <div className="group relative flex justify-center px-2 py-[1px]">
             {/* Collapsed rows navigate. `toggleExpand` is a no-op at 68px wide
                 (there's nowhere to draw the children), so the old collapsed
                 parent rows swallowed the click and went nowhere. */}
@@ -327,6 +382,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               onClick={() => navigate(item.path)}
               aria-current={active ? "page" : undefined}
               aria-label={item.label}
+              data-active-row={isAnchor ? "" : undefined}
               style={
                 !active && item.color
                   ? { backgroundColor: `${item.color}1f`, color: item.color }
@@ -350,16 +406,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <CollapsedTooltip label={item.label} badge={badge} />
           </div>
         ) : (
-          /* ── expanded state ── */
-          <button
-            onClick={() => (hasChildren ? toggleExpand(item.id) : navigate(item.path))}
-            aria-current={active && !hasChildren ? "page" : undefined}
-            aria-expanded={hasChildren ? expanded : undefined}
+          /* ── expanded state ──
+             Two hit targets in one visual row: the row navigates, the chevron
+             only folds. Nested <button>s are invalid HTML, so they're siblings
+             inside a positioned wrapper that carries the pill + hover wash. */
+          <div
             className={cn(
-              "group relative flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl",
-              "text-left select-none outline-none",
-              "w-[calc(100%-1rem)] transition-colors duration-150",
-              "focus-visible:ring-2 focus-visible:ring-brand/40",
+              "group relative mx-2 flex items-center rounded-xl",
+              "transition-colors duration-150",
               !active && "hover:bg-muted/70 dark:hover:bg-white/[0.04]",
             )}
           >
@@ -371,49 +425,68 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
             )}
 
-            <span
+            <button
+              onClick={() => openItem(item)}
+              aria-current={active ? "page" : undefined}
+              data-active-row={isAnchor ? "" : undefined}
               className={cn(
-                "relative grid place-items-center w-8 h-8 rounded-[10px] shrink-0",
-                "transition-transform duration-150 group-hover:scale-[1.04]",
-                active && "bg-brand text-brand-fg",
+                "relative flex-1 min-w-0 flex items-center gap-2.5 h-10 pl-2 pr-1",
+                "text-left select-none outline-none rounded-xl",
+                "focus-visible:ring-2 focus-visible:ring-brand/40",
               )}
-              style={
-                active
-                  ? undefined
-                  : item.color
-                    ? { backgroundColor: `${item.color}1f`, color: item.color }
-                    : undefined
-              }
             >
-              <item.icon size={16} strokeWidth={2.1} />
-            </span>
+              <span
+                className={cn(
+                  "grid place-items-center w-7 h-7 rounded-lg shrink-0",
+                  "transition-transform duration-150 group-hover:scale-[1.05]",
+                  active && "bg-brand text-brand-fg",
+                )}
+                style={
+                  active
+                    ? undefined
+                    : item.color
+                      ? { backgroundColor: `${item.color}1f`, color: item.color }
+                      : undefined
+                }
+              >
+                <item.icon size={15} strokeWidth={2.1} />
+              </span>
 
-            <span
-              className={cn(
-                "relative flex-1 text-[13.5px] font-semibold whitespace-nowrap tracking-[-0.01em] truncate",
-                active ? "text-brand" : "text-foreground/80 group-hover:text-foreground",
-              )}
-            >
-              {item.label}
-            </span>
+              <span
+                className={cn(
+                  "flex-1 text-[13.5px] whitespace-nowrap tracking-[-0.01em] truncate",
+                  active
+                    ? "text-brand font-semibold"
+                    : "text-foreground/80 font-medium group-hover:text-foreground",
+                )}
+              >
+                {item.label}
+              </span>
+            </button>
 
             {badge > 0 && (
-              <span className="relative shrink-0">
+              <span className="relative shrink-0 pr-1.5">
                 <Badge count={badge} active={active} alert={alertBadge} />
               </span>
             )}
 
             {hasChildren && (
-              <ChevronRight
-                size={13}
-                strokeWidth={2.4}
-                className={cn(
-                  "relative shrink-0 text-muted-foreground/60 transition-transform duration-200",
-                  expanded && "rotate-90",
-                )}
-              />
+              <button
+                onClick={() => toggleExpand(item.id)}
+                aria-expanded={expanded}
+                aria-label={`${expanded ? "Collapse" : "Expand"} ${item.label}`}
+                className="relative shrink-0 grid place-items-center w-6 h-10 mr-1 rounded-lg outline-none
+                  text-muted-foreground/60 hover:text-foreground
+                  focus-visible:ring-2 focus-visible:ring-brand/40"
+              >
+                <ChevronRight
+                  size={13}
+                  strokeWidth={2.4}
+                  className={cn("transition-transform duration-200", expanded && "rotate-90")}
+                />
+              </button>
             )}
-          </button>
+          </div>
         )}
 
         {/* ── children (animated) ── */}
@@ -426,7 +499,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <div className="mt-0.5 mb-1 mx-2 ml-[calc(0.5rem+1.5rem)] space-y-0.5 border-l border-border/70 pl-3 pr-0">
+              <div className="mt-0.5 mb-1 ml-[calc(0.5rem+0.875rem)] mr-2 space-y-px border-l border-border/70 pl-3">
                 {item.children!.map((child, subIndex) => {
                   const ca = isChildActive(child, item.children!);
                   return (
@@ -437,8 +510,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       transition={{ delay: subIndex * 0.04, duration: 0.15 }}
                       onClick={() => navigate(child.path)}
                       aria-current={ca ? "page" : undefined}
+                      data-active-row={ca ? "" : undefined}
                       className={cn(
-                        "group w-full flex items-center gap-2 py-2 px-2.5 rounded-lg",
+                        "group w-full flex items-center gap-2 h-8 px-2.5 rounded-lg",
                         "text-left select-none outline-none transition-colors duration-150",
                         "focus-visible:ring-2 focus-visible:ring-brand/40",
                         ca
@@ -454,7 +528,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             : "bg-muted-foreground/40 group-hover:bg-muted-foreground",
                         )}
                       />
-                      <span className="flex-1 text-[12.5px] font-semibold whitespace-nowrap truncate">
+                      <span
+                        className={cn(
+                          "flex-1 text-[12.5px] whitespace-nowrap truncate",
+                          ca ? "font-semibold" : "font-medium",
+                        )}
+                      >
                         {child.label}
                       </span>
                       {child.badge !== undefined && child.badge > 0 && (
@@ -471,11 +550,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     );
   };
 
-  /* ─── logout row ─── */
+  /* ─── logout row (pinned footer) ─── */
   const renderLogout = () => {
     if (!isOpen) {
       return (
-        <div className="group relative flex justify-center py-0.5 px-2">
+        <div className="group relative flex justify-center px-2">
           <button
             onClick={handleLogout}
             aria-label="Logout"
@@ -490,17 +569,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
       <button
         onClick={handleLogout}
-        className="group w-[calc(100%-1rem)] flex items-center gap-3 mx-2 px-3 py-2.5 rounded-xl
+        className="group w-[calc(100%-1rem)] flex items-center gap-2.5 mx-2 h-10 pl-2 pr-3 rounded-xl
           text-left select-none outline-none text-muted-foreground
           hover:bg-red-50 dark:hover:bg-red-500/10
           hover:text-red-600 dark:hover:text-red-400
           focus-visible:ring-2 focus-visible:ring-red-500/40
           transition-colors duration-150"
       >
-        <span className="grid place-items-center w-8 h-8 rounded-[10px] shrink-0 bg-red-500/[0.09] text-red-500 transition-transform duration-150 group-hover:scale-[1.04]">
-          <LogOut size={16} strokeWidth={2.1} />
+        <span className="grid place-items-center w-7 h-7 rounded-lg shrink-0 bg-red-500/[0.09] text-red-500 transition-transform duration-150 group-hover:scale-[1.05]">
+          <LogOut size={15} strokeWidth={2.1} />
         </span>
-        <span className="flex-1 text-[13.5px] font-semibold whitespace-nowrap">Logout</span>
+        <span className="flex-1 text-[13.5px] font-medium whitespace-nowrap">Logout</span>
       </button>
     );
   };
@@ -562,23 +641,54 @@ export const Sidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* ─── Main nav ─── */}
-        <nav
-          aria-label="Vendor navigation"
-          className="flex-1 overflow-y-auto overflow-x-hidden py-3
-          scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 scrollbar-track-transparent"
-        >
-          {isOpen && <SectionLabel>Main Menu</SectionLabel>}
-          <div className="space-y-0.5">{menuItems.map(renderItem)}</div>
-        </nav>
+        {/* ─── Nav — the single scroll region (Main Menu + Support) ─── */}
+        <div className="relative flex-1 min-h-0">
+          <nav
+            ref={scrollRef}
+            aria-label="Vendor navigation"
+            className="h-full overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-hide"
+          >
+            <div className="py-2.5">
+              {isOpen && <SectionLabel>Main Menu</SectionLabel>}
+              <div className="space-y-px">{menuItems.map(renderItem)}</div>
 
-        {/* ─── Bottom nav ─── */}
-        <div className="shrink-0 py-3 shadow-[inset_0_1px_0_#dce7e5] dark:shadow-[inset_0_1px_0_#1c1f26]">
-          {isOpen && <SectionLabel>Support</SectionLabel>}
-          <div className="space-y-0.5">
-            {bottomMenuItems.map(renderItem)}
-            {renderLogout()}
-          </div>
+              {/* Support reads as a second group, not a second panel — the
+                  hairline is a divider inside the same scroller. */}
+              <div
+                className={cn(
+                  "mt-3 pt-3 border-t border-[#dce7e5] dark:border-[#1c1f26]",
+                  isOpen ? "mx-4" : "mx-3",
+                )}
+              />
+              <div className={cn(isOpen ? "pt-0.5" : "pt-1")}>
+                {isOpen && <SectionLabel>Support</SectionLabel>}
+                <div className="space-y-px">{bottomMenuItems.map(renderItem)}</div>
+              </div>
+            </div>
+          </nav>
+
+          {/* Edge fades — the scroll cue, in place of a scrollbar gutter. */}
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-x-0 top-0 h-6 transition-opacity duration-200",
+              "bg-gradient-to-b from-[#f1f8f7] dark:from-[#0f1117] to-transparent",
+              edges.top ? "opacity-100" : "opacity-0",
+            )}
+          />
+          <div
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-x-0 bottom-0 h-8 transition-opacity duration-200",
+              "bg-gradient-to-t from-[#f1f8f7] dark:from-[#0f1117] to-transparent",
+              edges.bottom ? "opacity-100" : "opacity-0",
+            )}
+          />
+        </div>
+
+        {/* ─── Footer — logout only, so the scroller keeps the height ─── */}
+        <div className="shrink-0 py-2.5 shadow-[inset_0_1px_0_#dce7e5] dark:shadow-[inset_0_1px_0_#1c1f26]">
+          {renderLogout()}
         </div>
       </div>
     </MotionConfig>

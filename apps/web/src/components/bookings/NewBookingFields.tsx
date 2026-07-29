@@ -26,16 +26,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BRAND_VARS, CONTROL, CONTROL_ERROR, SELECT_ITEM, SubPanel } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import { type NewBookingForm } from "./api";
-import {
-  NO_SERVICE_SENTINEL,
-  SELECT_ITEM_CLASS,
-  SectionHeader,
-  PanelField,
-  PanelInput,
-  DatePickerField,
-} from "./FormPrimitives";
+import { NO_SERVICE_SENTINEL, PanelField, PanelInput, DatePickerField } from "./FormPrimitives";
+
+const PAYMENT_METHODS = [
+  { value: "cash", label: "Cash" },
+  { value: "card", label: "Card" },
+  { value: "upi", label: "UPI" },
+  { value: "bank_transfer", label: "Bank transfer" },
+  { value: "cheque", label: "Cheque" },
+  { value: "online", label: "Online payment" },
+];
 
 export type ServiceOption = {
   name: string;
@@ -114,238 +117,251 @@ export const NewBookingFields = ({
     return groups.filter((g) => g.items.length > 0);
   }, [services]);
 
-  const grid = cn("grid gap-3", columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2");
+  const derivedTotal = Number(form.basePrice || 0) + Number(form.extraCharges || 0);
+  const overridden = !!form.totalAmount && Number(form.totalAmount) !== derivedTotal;
+
+  const grid = cn("grid gap-4", columns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2");
 
   return (
-    <div className="flex flex-col gap-4">
-      <SectionHeader icon={<User size={13} className="text-brand" />} title="Guest Information" />
-      <div className={grid}>
-        <PanelField label="Guest Name" required error={errFor("guestName")}>
-          <PanelInput
-            value={form.guestName}
-            onChange={(v) => set("guestName", v)}
-            onBlur={() => markTouched("guestName")}
-            placeholder="Enter guest name"
-            error={!!errFor("guestName")}
-          />
-        </PanelField>
-        <PanelField label="Service Name" required error={errFor("resourceName")}>
-          <Select
-            value={form.resourceName === NO_SERVICE_SENTINEL ? "" : form.resourceName}
-            onValueChange={(v) => {
-              set("resourceName", v);
-              markTouched("resourceName");
-            }}
-            disabled={!hasServices}
-          >
-            <SelectTrigger
-              onBlur={() => markTouched("resourceName")}
-              className={`figma-input h-[44px] ${errFor("resourceName") ? "border-red-400" : ""}`}
+    <div className="space-y-4">
+      <SubPanel icon={User} title="Guest and service" blurb="Who's booking, and what for">
+        <div className={grid}>
+          <PanelField label="Guest Name" required error={errFor("guestName")}>
+            <PanelInput
+              value={form.guestName}
+              onChange={(v) => set("guestName", v)}
+              onBlur={() => markTouched("guestName")}
+              placeholder="Enter guest name"
+              error={!!errFor("guestName")}
+            />
+          </PanelField>
+          <PanelField label="Service Name" required error={errFor("resourceName")}>
+            <Select
+              value={form.resourceName === NO_SERVICE_SENTINEL ? "" : form.resourceName}
+              onValueChange={(v) => {
+                set("resourceName", v);
+                markTouched("resourceName");
+              }}
+              disabled={!hasServices}
             >
-              <SelectValue placeholder={hasServices ? "Select service" : "No services yet"} />
-            </SelectTrigger>
-            <SelectContent className="z-[60]">
-              {groupedServices
-                ? groupedServices.map((g) => (
-                    <SelectGroup key={g.type}>
-                      <SelectLabel className="text-[10px] font-bold uppercase tracking-[0.06em] text-gray-400 px-2 py-1.5">
-                        {g.label}
-                      </SelectLabel>
-                      {g.items.map((name) => (
-                        <SelectItem key={name} value={name} className={SELECT_ITEM_CLASS}>
-                          {name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))
-                : realServices.map((v) => (
-                    <SelectItem key={v} value={v} className={SELECT_ITEM_CLASS}>
-                      {v}
-                    </SelectItem>
-                  ))}
-            </SelectContent>
-          </Select>
-          {!hasServices && (
-            <button
-              type="button"
-              onClick={() => onAddService?.()}
-              className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-brand bg-none border-none p-0 cursor-pointer text-left"
-            >
-              <Plus size={12} strokeWidth={2.5} />
-              Add a service to get started
-            </button>
-          )}
-        </PanelField>
-      </div>
-
-      <SectionHeader
-        icon={<CalendarIcon size={13} className="text-brand" />}
-        title="Booking Dates"
-      />
-      <div className={grid}>
-        <PanelField label="Start Date" required error={errFor("startDate")}>
-          <DatePickerField
-            value={form.startDate}
-            onChange={(v) => {
-              set("startDate", v);
-              markTouched("startDate");
-              if (form.endDate && new Date(v) > new Date(form.endDate)) set("endDate", v);
-            }}
-            onBlur={() => markTouched("startDate")}
-            error={!!errFor("startDate")}
-            placeholder="Select start date"
-          />
-        </PanelField>
-        <PanelField label="End Date" required error={errFor("endDate")}>
-          <DatePickerField
-            value={form.endDate}
-            onChange={(v) => {
-              set("endDate", v);
-              markTouched("endDate");
-            }}
-            onBlur={() => markTouched("endDate")}
-            error={!!errFor("endDate")}
-            placeholder="Select end date"
-            minDate={form.startDate ? new Date(`${form.startDate}T00:00:00`) : undefined}
-          />
-        </PanelField>
-      </div>
-
-      <SectionHeader icon={<Phone size={13} className="text-brand" />} title="Contact" />
-      <div className={grid}>
-        <PanelField label="Phone Number" required error={errFor("phoneNumber")}>
-          <PanelInput
-            value={form.phoneNumber}
-            onChange={(v) => setNumeric("phoneNumber", v)}
-            onBlur={() => markTouched("phoneNumber")}
-            placeholder="Enter phone"
-            maxLength={12}
-            error={!!errFor("phoneNumber")}
-          />
-        </PanelField>
-        <PanelField label="Email" required error={errFor("email")}>
-          <PanelInput
-            type="email"
-            value={form.email}
-            onChange={(v) => set("email", v)}
-            onBlur={() => markTouched("email")}
-            placeholder="Enter email"
-            error={!!errFor("email")}
-          />
-        </PanelField>
-      </div>
-
-      <SectionHeader icon={<Users size={13} className="text-brand" />} title="Guests" />
-      <div className={grid}>
-        <PanelField label="Adults" required error={errFor("adults")}>
-          <PanelInput
-            value={form.adults}
-            onChange={(v) => setNumeric("adults", v)}
-            onBlur={() => markTouched("adults")}
-            placeholder="0"
-            error={!!errFor("adults")}
-          />
-        </PanelField>
-        <PanelField label="Children" required error={errFor("children")}>
-          <PanelInput
-            value={form.children}
-            onChange={(v) => setNumeric("children", v)}
-            onBlur={() => markTouched("children")}
-            placeholder="0"
-            error={!!errFor("children")}
-          />
-        </PanelField>
-      </div>
-
-      <SectionHeader icon={<IndianRupee size={13} className="text-brand" />} title="Pricing" />
-      <div className={grid}>
-        <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
-          <PanelInput
-            value={form.basePrice}
-            onChange={(v) => setNumeric("basePrice", v)}
-            onBlur={() => markTouched("basePrice")}
-            placeholder="₹ 0"
-            error={!!errFor("basePrice")}
-          />
-        </PanelField>
-        <PanelField label="Extra Charges (₹)" required error={errFor("extraCharges")}>
-          <PanelInput
-            value={form.extraCharges}
-            onChange={(v) => setNumeric("extraCharges", v)}
-            onBlur={() => markTouched("extraCharges")}
-            placeholder="₹ 0"
-            error={!!errFor("extraCharges")}
-          />
-        </PanelField>
-      </div>
-
-      <SectionHeader icon={<CreditCard size={13} className="text-brand" />} title="Payment" />
-      <div className={grid}>
-        <PanelField label="Payment Method" required error={errFor("paymentMethod")}>
-          <select
-            value={form.paymentMethod}
-            onChange={(e) => {
-              set("paymentMethod", e.target.value);
-              markTouched("paymentMethod");
-            }}
-            onBlur={() => markTouched("paymentMethod")}
-            className={cn(
-              "w-full h-11 px-3.5 text-[13px] font-[450] rounded-[11px] outline-none appearance-none cursor-pointer transition-all duration-150 border-[1.5px] bg-muted/50",
-              form.paymentMethod ? "text-foreground" : "text-muted-foreground",
-              errFor("paymentMethod") ? "border-red-300" : "border-transparent",
+              <SelectTrigger
+                onBlur={() => markTouched("resourceName")}
+                className={cn("h-11 border", CONTROL, errFor("resourceName") && CONTROL_ERROR)}
+              >
+                <SelectValue placeholder={hasServices ? "Select service" : "No services yet"} />
+              </SelectTrigger>
+              <SelectContent style={BRAND_VARS} className="z-[60]">
+                {groupedServices
+                  ? groupedServices.map((g) => (
+                      <SelectGroup key={g.type}>
+                        <SelectLabel className="px-2 py-1.5 text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+                          {g.label}
+                        </SelectLabel>
+                        {g.items.map((name) => (
+                          <SelectItem key={name} value={name} className={SELECT_ITEM}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))
+                  : realServices.map((v) => (
+                      <SelectItem key={v} value={v} className={SELECT_ITEM}>
+                        {v}
+                      </SelectItem>
+                    ))}
+              </SelectContent>
+            </Select>
+            {!hasServices && (
+              <button
+                type="button"
+                onClick={() => onAddService?.()}
+                className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-bold text-brand bg-none border-none p-0 cursor-pointer text-left"
+              >
+                <Plus size={12} strokeWidth={2.5} />
+                Add a service to get started
+              </button>
             )}
-          >
-            <option value="" disabled>
-              Select method
-            </option>
-            <option value="cash">Cash</option>
-            <option value="card">Card</option>
-            <option value="upi">UPI</option>
-            <option value="bank_transfer">Bank Transfer</option>
-            <option value="cheque">Cheque</option>
-            <option value="online">Online Payment</option>
-          </select>
-        </PanelField>
-        <PanelField label="Total Amount" required error={errFor("totalAmount")}>
-          <PanelInput
-            value={
-              form.totalAmount ||
-              (form.basePrice || form.extraCharges
-                ? String(Number(form.basePrice || 0) + Number(form.extraCharges || 0))
-                : "")
-            }
-            onChange={(v) => set("totalAmount", v.replace(/\D/g, ""))}
-            onBlur={() => markTouched("totalAmount")}
-            placeholder="₹ 0"
-            error={!!errFor("totalAmount")}
-          />
-        </PanelField>
-      </div>
+          </PanelField>
+        </div>
+      </SubPanel>
 
-      <SectionHeader
-        icon={<FileText size={13} className="text-brand" />}
-        title="Additional Information"
-      />
-      <div className={grid}>
-        <PanelField label="Notes">
-          <Textarea
-            value={form.notes}
-            onChange={(e) => set("notes", e.target.value)}
-            placeholder="Internal notes about this booking…"
-            rows={3}
-            className="figma-input"
-          />
-        </PanelField>
-        <PanelField label="Special Requests">
-          <Textarea
-            value={form.specialRequests}
-            onChange={(e) => set("specialRequests", e.target.value)}
-            placeholder="Anything the guest has requested…"
-            rows={3}
-            className="figma-input"
-          />
-        </PanelField>
-      </div>
+      <SubPanel icon={CalendarIcon} title="Dates" blurb="When the booking starts and ends">
+        <div className={grid}>
+          <PanelField label="Start Date" required error={errFor("startDate")}>
+            <DatePickerField
+              value={form.startDate}
+              onChange={(v) => {
+                set("startDate", v);
+                markTouched("startDate");
+                if (form.endDate && new Date(v) > new Date(form.endDate)) set("endDate", v);
+              }}
+              onBlur={() => markTouched("startDate")}
+              error={!!errFor("startDate")}
+              placeholder="Select start date"
+            />
+          </PanelField>
+          <PanelField label="End Date" required error={errFor("endDate")}>
+            <DatePickerField
+              value={form.endDate}
+              onChange={(v) => {
+                set("endDate", v);
+                markTouched("endDate");
+              }}
+              onBlur={() => markTouched("endDate")}
+              error={!!errFor("endDate")}
+              placeholder="Select end date"
+              minDate={form.startDate ? new Date(`${form.startDate}T00:00:00`) : undefined}
+            />
+          </PanelField>
+        </div>
+      </SubPanel>
+
+      <SubPanel icon={Phone} title="Contact" blurb="Where we reach the guest">
+        <div className={grid}>
+          <PanelField label="Phone Number" required error={errFor("phoneNumber")}>
+            <PanelInput
+              value={form.phoneNumber}
+              onChange={(v) => setNumeric("phoneNumber", v)}
+              onBlur={() => markTouched("phoneNumber")}
+              placeholder="Enter phone"
+              maxLength={12}
+              error={!!errFor("phoneNumber")}
+            />
+          </PanelField>
+          <PanelField label="Email" required error={errFor("email")}>
+            <PanelInput
+              type="email"
+              value={form.email}
+              onChange={(v) => set("email", v)}
+              onBlur={() => markTouched("email")}
+              placeholder="Enter email"
+              error={!!errFor("email")}
+            />
+          </PanelField>
+        </div>
+      </SubPanel>
+
+      <SubPanel icon={Users} title="Party size">
+        <div className={grid}>
+          <PanelField label="Adults" required error={errFor("adults")}>
+            <PanelInput
+              value={form.adults}
+              onChange={(v) => setNumeric("adults", v)}
+              onBlur={() => markTouched("adults")}
+              placeholder="0"
+              error={!!errFor("adults")}
+            />
+          </PanelField>
+          <PanelField label="Children" required error={errFor("children")}>
+            <PanelInput
+              value={form.children}
+              onChange={(v) => setNumeric("children", v)}
+              onBlur={() => markTouched("children")}
+              placeholder="0"
+              error={!!errFor("children")}
+            />
+          </PanelField>
+        </div>
+      </SubPanel>
+
+      <SubPanel icon={IndianRupee} title="Pricing">
+        <div className={grid}>
+          <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
+            <PanelInput
+              value={form.basePrice}
+              onChange={(v) => setNumeric("basePrice", v)}
+              onBlur={() => markTouched("basePrice")}
+              placeholder="₹ 0"
+              error={!!errFor("basePrice")}
+            />
+          </PanelField>
+          <PanelField label="Extra Charges (₹)" required error={errFor("extraCharges")}>
+            <PanelInput
+              value={form.extraCharges}
+              onChange={(v) => setNumeric("extraCharges", v)}
+              onBlur={() => markTouched("extraCharges")}
+              placeholder="₹ 0"
+              error={!!errFor("extraCharges")}
+            />
+          </PanelField>
+        </div>
+      </SubPanel>
+
+      <SubPanel icon={CreditCard} title="Payment">
+        <div className={grid}>
+          <PanelField label="Payment Method" required error={errFor("paymentMethod")}>
+            <Select
+              value={form.paymentMethod}
+              onValueChange={(v) => {
+                set("paymentMethod", v);
+                markTouched("paymentMethod");
+              }}
+            >
+              <SelectTrigger
+                onBlur={() => markTouched("paymentMethod")}
+                className={cn("h-11 border", CONTROL, errFor("paymentMethod") && CONTROL_ERROR)}
+              >
+                <SelectValue placeholder="Select method" />
+              </SelectTrigger>
+              <SelectContent style={BRAND_VARS} className="z-[60]">
+                {PAYMENT_METHODS.map((m) => (
+                  <SelectItem key={m.value} value={m.value} className={SELECT_ITEM}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </PanelField>
+          <PanelField label="Total Amount" required error={errFor("totalAmount")}>
+            <PanelInput
+              value={
+                form.totalAmount ||
+                (form.basePrice || form.extraCharges ? String(derivedTotal) : "")
+              }
+              onChange={(v) => set("totalAmount", v.replace(/\D/g, ""))}
+              onBlur={() => markTouched("totalAmount")}
+              placeholder="₹ 0"
+              error={!!errFor("totalAmount")}
+            />
+            {overridden ? (
+              <button
+                type="button"
+                onClick={() => set("totalAmount", "")}
+                className="mt-1.5 inline-flex items-center gap-1 text-[11.5px] font-semibold text-brand hover:underline"
+              >
+                Overridden · reset to ₹{derivedTotal.toLocaleString("en-IN")}
+              </button>
+            ) : (
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                Base + extras. Type to override.
+              </p>
+            )}
+          </PanelField>
+        </div>
+      </SubPanel>
+
+      <SubPanel icon={FileText} title="Notes" blurb="Only your team sees these">
+        <div className={grid}>
+          <PanelField label="Notes">
+            <Textarea
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Internal notes about this booking…"
+              rows={3}
+              className={cn("resize-none py-2.5", CONTROL)}
+            />
+          </PanelField>
+          <PanelField label="Special Requests">
+            <Textarea
+              value={form.specialRequests}
+              onChange={(e) => set("specialRequests", e.target.value)}
+              placeholder="Anything the guest has requested…"
+              rows={3}
+              className={cn("resize-none py-2.5", CONTROL)}
+            />
+          </PanelField>
+        </div>
+      </SubPanel>
     </div>
   );
 };

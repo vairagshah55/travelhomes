@@ -21,6 +21,7 @@ export const StatTile = ({
   hint,
   color = "#0d9488",
   index = 0,
+  format,
 }: {
   icon: LucideIcon;
   label: string;
@@ -29,6 +30,11 @@ export const StatTile = ({
   hint?: string;
   color?: string;
   index?: number;
+  /**
+   * Applied to the animating number. Needed for currency, where the default
+   * `toLocaleString()` groups as 1,234,567 instead of the Indian 12,34,567.
+   */
+  format?: (v: number) => string;
 }) => {
   const numeric = typeof value === "number";
   const animated = useCountUp(numeric ? value : 0);
@@ -52,7 +58,7 @@ export const StatTile = ({
       </span>
       <p className="mt-3.5 text-[22px] font-bold tracking-[-0.02em] leading-none tabular-nums text-foreground truncate">
         {prefix}
-        {numeric ? animated.toLocaleString() : value}
+        {numeric ? (format ? format(animated) : animated.toLocaleString()) : value}
       </p>
       <p className="mt-1.5 text-[11.5px] font-semibold text-muted-foreground">{label}</p>
       {hint && <p className="mt-0.5 text-[11px] text-muted-foreground/70">{hint}</p>}

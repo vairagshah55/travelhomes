@@ -1,9 +1,28 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowLeft, Save } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarPlus,
+  Check,
+  ChevronLeft,
+  Loader2,
+  Package,
+  Save,
+} from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import {
+  BRAND_VARS,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  PANEL,
+  PANEL_FOOTER,
+  Panel,
+  PanelHead,
+} from "@/components/shared";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBookingResources } from "@/hooks/useBookingResources";
 import {
@@ -16,16 +35,55 @@ import {
   useNewBookingErrors,
 } from "@/components/bookings";
 
+const currencyINR = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
+
+const prettyDate = (raw: string) => {
+  if (!raw) return null;
+  const d = new Date(`${raw}T00:00:00`);
+  return Number.isNaN(d.getTime())
+    ? null
+    : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+};
+
+/** One line in the summary rail. */
+const SummaryRow = ({
+  label,
+  value,
+  muted,
+}: {
+  label: string;
+  value: React.ReactNode;
+  muted?: boolean;
+}) => (
+  <div className="flex items-baseline justify-between gap-3 py-2">
+    <span className="text-[12px] text-muted-foreground shrink-0">{label}</span>
+    <span
+      className={cn(
+        "text-[12.5px] font-semibold text-right break-words",
+        muted ? "text-muted-foreground/60" : "text-foreground",
+      )}
+    >
+      {value}
+    </span>
+  </div>
+);
+
 /**
  * New Booking — a full page at /bookings/new.
  *
  * This used to be a 540px right-side SlidePanel over the calendar. The form is
  * long enough (seven sections) that the narrow column meant constant scrolling,
- * so it now gets the whole content area and lays out two columns per section.
+ * so it now gets the whole content area: sectioned sub-panels in the middle and
+ * a sticky live summary in the rail, matching the rest of the console.
  *
  * `?date=` and `?resource=` prefill the form when the user arrives by clicking
- * an empty calendar cell, which keeps that shortcut working and makes the page
- * reloadable/shareable.
+ * an empty calendar cell or a service row's + action, which keeps that shortcut
+ * working and makes the page reloadable/shareable.
  */
 const NewBooking = () => {
   const navigate = useNavigate();
@@ -57,11 +115,31 @@ const NewBooking = () => {
   const errFor = (field: string) => (attempted || touched[field] ? errors[field] : undefined);
   const markTouched = (field: string) => setTouched((p) => ({ ...p, [field]: true }));
 
+  const errorCount = Object.keys(errors).length;
+
+  /** Live recap for the rail — the form is long, and the totals matter. */
+  const summary = useMemo(() => {
+    const base = Number(form.basePrice || 0);
+    const extra = Number(form.extraCharges || 0);
+    const total = form.totalAmount ? Number(form.totalAmount) : base + extra;
+    const start = prettyDate(form.startDate);
+    const end = prettyDate(form.endDate);
+    let nights: number | null = null;
+    if (form.startDate && form.endDate) {
+      const ms =
+        new Date(`${form.endDate}T00:00:00`).getTime() -
+        new Date(`${form.startDate}T00:00:00`).getTime();
+      if (!Number.isNaN(ms) && ms >= 0) nights = Math.round(ms / 86_400_000);
+    }
+    const guests = Number(form.adults || 0) + Number(form.children || 0);
+    return { base, extra, total, start, end, nights, guests };
+  }, [form]);
+
   const backToCalendar = () => navigate("/bookings");
 
   const handleCreate = async () => {
     setAttempted(true);
-    if (Object.keys(errors).length > 0) {
+    if (errorCount > 0) {
       toast.error("Please fix the highlighted fields");
       return;
     }
@@ -91,69 +169,192 @@ const NewBooking = () => {
   };
 
   return (
-    <DashboardLayout title="New Booking" contentClassName="flex-1 overflow-y-auto p-3 lg:p-5 pb-24">
-      <div className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] px-[22px] py-5 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-5 pb-4 gap-4 border-b border-[#EBEBEB]">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={backToCalendar}
-              aria-label="Back to calendar"
-              className="w-9 h-9 rounded-[11px] border border-th-warm-border bg-th-surface-0 flex items-center justify-center cursor-pointer flex-shrink-0 hover:bg-th-warm-surface transition-colors"
-            >
-              <ArrowLeft size={16} className="text-th-warm-text-dark" />
-            </button>
-            <div>
-              <h1 className="text-[22px] font-extrabold text-th-text-primary tracking-[-0.025em] leading-[1.2]">
-                New Booking
-              </h1>
-              <p className="text-[13px] text-th-warm-text-muted mt-[3px]">
-                Add a booking to your calendar
-              </p>
+    <DashboardLayout
+      title="New Booking"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
+    >
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+        <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
+          {/* ── Rail: live recap of what's being booked ── */}
+          <aside className="lg:sticky lg:top-2 self-start space-y-3">
+            <div className={cn(PANEL, "p-4")}>
+              <div className="flex items-center gap-3">
+                <span className="grid place-items-center w-11 h-11 rounded-full bg-brand/[0.1] text-brand shrink-0">
+                  <CalendarPlus size={18} strokeWidth={2.1} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[13.5px] font-bold text-foreground truncate">
+                    {form.guestName || "New booking"}
+                  </p>
+                  <p className="mt-0.5 text-[11.5px] text-muted-foreground truncate">
+                    {form.resourceName || "No service picked yet"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 divide-y divide-border/70">
+                <SummaryRow
+                  label="Dates"
+                  muted={!summary.start}
+                  value={
+                    summary.start
+                      ? `${summary.start}${summary.end && summary.end !== summary.start ? ` → ${summary.end}` : ""}`
+                      : "Not set"
+                  }
+                />
+                {summary.nights !== null && (
+                  <SummaryRow
+                    label="Nights"
+                    value={<span className="tabular-nums">{summary.nights}</span>}
+                  />
+                )}
+                <SummaryRow
+                  label="Guests"
+                  muted={summary.guests === 0}
+                  value={<span className="tabular-nums">{summary.guests || "—"}</span>}
+                />
+                <SummaryRow
+                  label="Base"
+                  muted={!summary.base}
+                  value={<span className="tabular-nums">{currencyINR(summary.base)}</span>}
+                />
+                {summary.extra > 0 && (
+                  <SummaryRow
+                    label="Extras"
+                    value={<span className="tabular-nums">{currencyINR(summary.extra)}</span>}
+                  />
+                )}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-border/70 flex items-baseline justify-between gap-3">
+                <span className="text-[12px] font-semibold text-muted-foreground">Total</span>
+                <span className="text-[18px] font-bold tabular-nums tracking-[-0.02em] text-brand">
+                  {currencyINR(summary.total)}
+                </span>
+              </div>
             </div>
+
+            {/* Progress hint — the form has seven groups, so say what's left. */}
+            <div className={cn(PANEL, "p-4")}>
+              {errorCount === 0 ? (
+                <p className="flex items-center gap-2 text-[12.5px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  <Check size={14} strokeWidth={2.6} />
+                  Ready to create
+                </p>
+              ) : (
+                <p className="flex items-start gap-2 text-[12.5px] font-medium text-amber-600 dark:text-amber-400">
+                  <AlertCircle size={14} strokeWidth={2.4} className="mt-px shrink-0" />
+                  {errorCount} field{errorCount === 1 ? "" : "s"} still{" "}
+                  {errorCount === 1 ? "needs" : "need"} filling in
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={backToCalendar}
+                className="mt-3 inline-flex items-center gap-1.5 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors duration-150"
+              >
+                <ChevronLeft size={13} strokeWidth={2.4} />
+                Back to calendar
+              </button>
+            </div>
+          </aside>
+
+          {/* ── The form ── */}
+          <div className="min-w-0">
+            <Panel>
+              <PanelHead
+                icon={CalendarPlus}
+                title="Booking details"
+                blurb={
+                  loadingResources
+                    ? "Loading your services…"
+                    : "Everything marked with * is needed to create the booking."
+                }
+              />
+
+              <div className="p-5">
+                {loadingResources ? (
+                  <div className="space-y-4">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="rounded-[14px] border border-border/70 overflow-hidden"
+                      >
+                        <div className="h-[58px] bg-muted/50 animate-pulse" />
+                        <div className="p-4 grid sm:grid-cols-2 gap-4">
+                          <div className="h-[68px] rounded-xl bg-muted animate-pulse" />
+                          <div className="h-[68px] rounded-xl bg-muted animate-pulse" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : vehicleNames.length === 0 ? (
+                  <div className="px-4 py-10 text-center">
+                    <span className="mx-auto grid place-items-center w-12 h-12 rounded-full bg-brand/[0.1] text-brand">
+                      <Package size={22} strokeWidth={2} />
+                    </span>
+                    <p className="mt-3 text-[14.5px] font-bold text-foreground">
+                      No services to book yet
+                    </p>
+                    <p className="mt-1 text-[12.5px] text-muted-foreground">
+                      A booking needs something to book. Add a listing first, then come back.
+                    </p>
+                    <Button
+                      onClick={() => navigate("/offering/add")}
+                      className={cn(BTN_PRIMARY, "mt-4")}
+                    >
+                      Add a listing
+                    </Button>
+                  </div>
+                ) : (
+                  <NewBookingFields
+                    form={form}
+                    setForm={setForm}
+                    vehicleNames={vehicleNames}
+                    services={services}
+                    onAddService={() => navigate("/offering/add")}
+                    errFor={errFor}
+                    markTouched={markTouched}
+                  />
+                )}
+              </div>
+
+              {!loadingResources && vehicleNames.length > 0 && (
+                <footer className={PANEL_FOOTER}>
+                  <Button variant="ghost" onClick={backToCalendar} className={BTN_NEUTRAL}>
+                    Cancel
+                  </Button>
+
+                  {attempted && errorCount > 0 && (
+                    <p className="hidden sm:flex items-center gap-1.5 text-[11.5px] font-medium text-amber-600 dark:text-amber-400">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                      {errorCount} field{errorCount === 1 ? "" : "s"} to fix
+                    </p>
+                  )}
+
+                  <Button
+                    onClick={handleCreate}
+                    disabled={saving}
+                    className={cn(BTN_PRIMARY, "disabled:opacity-45 disabled:shadow-none")}
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin" />
+                        Creating…
+                      </>
+                    ) : (
+                      <>
+                        <Save size={15} strokeWidth={2.4} />
+                        Create booking
+                      </>
+                    )}
+                  </Button>
+                </footer>
+              )}
+            </Panel>
           </div>
         </div>
-
-        {loadingResources ? (
-          <div className="flex items-center justify-center h-64 gap-2 text-th-warm-text-muted">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            <span className="text-[13px]">Loading services…</span>
-          </div>
-        ) : (
-          <NewBookingFields
-            form={form}
-            setForm={setForm}
-            vehicleNames={vehicleNames}
-            services={services}
-            onAddService={() => navigate("/offering/add")}
-            errFor={errFor}
-            markTouched={markTouched}
-          />
-        )}
-
-        {/* The form's only actions — the header keeps just the back arrow. */}
-        {!loadingResources && (
-          <div className="flex justify-end gap-2.5 mt-6 pt-4 border-t border-[#EBEBEB]">
-            <button
-              type="button"
-              onClick={backToCalendar}
-              className="h-10 px-[18px] rounded-[11px] border border-th-warm-border bg-transparent text-[13px] font-semibold text-th-warm-text-dark cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleCreate}
-              disabled={saving}
-              className={`flex items-center gap-1.5 h-10 px-5 rounded-[11px] border-none bg-th-brand text-[13px] font-bold text-th-text-inverse shadow-[0_4px_16px_rgba(13,148,136,0.30)] transition-all duration-150 ${
-                saving ? "cursor-not-allowed opacity-50" : "cursor-pointer"
-              }`}
-            >
-              <Save size={14} /> {saving ? "Creating…" : "Create Booking"}
-            </button>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

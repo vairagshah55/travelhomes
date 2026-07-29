@@ -107,6 +107,18 @@ export const fetchBookings = async (
   }
 };
 
+/** Single booking by id — used by the edit page, which can be deep-linked. */
+export const fetchBooking = async (id: string, token?: string): Promise<BookingData | null> => {
+  const res = await fetch(`${API_BASE_URL}/calendarbooking/${id}`, {
+    headers: authHeaders(token),
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok || !data?.success || !data?.data) {
+    throw new Error(data?.message || "Booking not found");
+  }
+  return parseBooking(data.data);
+};
+
 /**
  * The form holds every numeric field as a string (they come from text inputs),
  * but the server DTO declares them as plain `z.number()` with no coercion — so

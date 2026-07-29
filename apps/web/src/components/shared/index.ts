@@ -20,6 +20,7 @@ export {
   BTN_PRIMARY,
   Panel,
   PanelHead,
+  SubPanel,
   SettingRow,
   Field,
   ReadValue,

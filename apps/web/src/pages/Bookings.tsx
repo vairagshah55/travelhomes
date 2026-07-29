@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import {
   BRAND_VARS,
   CONTROL,
-  ConfirmModal,
   PANEL,
   PANEL_FOOTER,
   Panel,
@@ -38,13 +37,9 @@ import { useBookingResources } from "@/hooks/useBookingResources";
 import {
   type BookingData,
   fetchBookings,
-  updateBooking,
   updateBookingDates,
-  deleteBooking,
-  printInvoice,
   CalendarGrid,
   DateNavigation,
-  EditBookingModal,
 } from "@/components/bookings";
 
 /* ── Filter dropdown trigger ─────────────────────────────────────────────── */
@@ -102,10 +97,7 @@ const Bookings = () => {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [vehicleNames, setVehicleNames] = useState<string[]>([]);
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<BookingData | null>(null);
   const [selectedDate, setSelectedDate] = useState<{ date: number; resource: string } | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [serviceFilter, setServiceFilter] = useState<string>("all");
@@ -180,10 +172,9 @@ const Bookings = () => {
     navigate(qs ? `/bookings/new?${qs}` : "/bookings/new");
   };
 
-  const handleBookingClick = (b: BookingData) => {
-    setSelectedBooking(b);
-    setIsEditModalOpen(true);
-  };
+  /* Editing is its own page (/bookings/:id/edit) — the old right-side panel put
+     a six-group form in a 540px column. */
+  const handleBookingClick = (b: BookingData) => navigate(`/bookings/${b._id}/edit`);
 
   const handleDateClick = (date: number, resource: string) => {
     setSelectedDate({ date, resource });
@@ -201,44 +192,6 @@ const Bookings = () => {
       }
     } catch (e: any) {
       notify("error", e.message || "Failed to move");
-    }
-  };
-
-  const handleUpdateBooking = async () => {
-    if (!selectedBooking) return;
-    try {
-      // Totals and the numeric coercion the server DTO needs are derived inside
-      // updateBooking, so the edited booking can go straight through.
-      const updated = await updateBooking(selectedBooking._id, selectedBooking, token);
-      if (updated) {
-        queryClient.setQueryData<BookingData[]>(bookingsKey, (p) =>
-          (p ?? []).map((b) => (b._id === selectedBooking._id ? updated : b)),
-        );
-        setIsEditModalOpen(false);
-        setSelectedBooking(null);
-        notify("success", "Booking updated");
-      }
-    } catch (e: any) {
-      notify("error", e.message || "Failed to update");
-    }
-  };
-
-  const handleDeleteBooking = (id: string) => {
-    setConfirmDeleteId(id);
-  };
-
-  const doDeleteBooking = async (id: string) => {
-    try {
-      if (await deleteBooking(id, token)) {
-        queryClient.setQueryData<BookingData[]>(bookingsKey, (p) =>
-          (p ?? []).filter((b) => b._id !== id),
-        );
-        setIsEditModalOpen(false);
-        setSelectedBooking(null);
-        notify("success", "Booking deleted");
-      }
-    } catch (e: any) {
-      notify("error", e.message || "Failed to delete");
     }
   };
 
@@ -465,36 +418,6 @@ const Bookings = () => {
           </footer>
         </Panel>
       </div>
-
-      <EditBookingModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        booking={selectedBooking}
-        setBooking={setSelectedBooking}
-        onUpdate={handleUpdateBooking}
-        onDelete={handleDeleteBooking}
-        onPrint={(b) => {
-          try {
-            printInvoice(b, token);
-          } catch {
-            notify("error", "Failed to print invoice");
-          }
-        }}
-      />
-      <ConfirmModal
-        open={!!confirmDeleteId}
-        onClose={() => setConfirmDeleteId(null)}
-        onConfirm={() => {
-          if (confirmDeleteId) {
-            doDeleteBooking(confirmDeleteId);
-            setConfirmDeleteId(null);
-          }
-        }}
-        title="Delete booking?"
-        description="This booking will be permanently removed and cannot be undone."
-        confirmLabel="Delete"
-        variant="danger"
-      />
     </DashboardLayout>
   );
 };

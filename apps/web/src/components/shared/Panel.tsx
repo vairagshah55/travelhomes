@@ -121,6 +121,37 @@ export const PanelHead = ({
   </header>
 );
 
+/** A titled block nested inside a Panel — groups fields without nesting cards. */
+export const SubPanel = ({
+  icon: Icon,
+  title,
+  blurb,
+  aside,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  blurb?: string;
+  aside?: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <section className="rounded-[14px] border border-border/70 overflow-hidden">
+    <header className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+      <div className="flex items-start gap-3 min-w-0">
+        <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-brand/10 text-brand shrink-0">
+          <Icon size={15} strokeWidth={2.1} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-[13.5px] font-bold text-foreground">{title}</p>
+          {blurb && <p className="mt-0.5 text-[12px] text-muted-foreground">{blurb}</p>}
+        </div>
+      </div>
+      {aside && <div className="shrink-0">{aside}</div>}
+    </header>
+    <div className="p-4">{children}</div>
+  </section>
+);
+
 /** Label + blurb on the left, control on the right. */
 export const SettingRow = ({
   icon: Icon,

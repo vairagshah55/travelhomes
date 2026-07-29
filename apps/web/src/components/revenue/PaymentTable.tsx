@@ -1,18 +1,19 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { ArrowUpRight, Wallet } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { formatDate } from "@/utils/formateTime";
 import { AdminDataTable, type ColumnDef } from "@/components/admin/AdminDataTable";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
-import { StatusBadge } from "@/components/shared";
+import { Panel, PanelHead, StatusBadge } from "@/components/shared";
+import { formatDMY, inr, parseDMY } from "./format";
 
 export interface PaymentRecord {
-  paymentMethod: string;
-  paymentRefId: string;
   bookingId: string;
-  amountPay: string;
-  fullName: string;
-  receiptDate: string;
+  guest: string;
+  service: string;
+  /** Numeric — the API's pre-formatted "₹ 5000" is unwrapped upstream. */
+  amount: number;
+  /** Raw "DD/MM/YYYY" as the API sends it. */
+  date: string;
   status: string;
 }
 
@@ -24,114 +25,104 @@ const PERIOD_OPTIONS = [
   { value: "monthly", label: "This Month" },
 ];
 
-/** Returns midnight (UTC) of the Monday that starts the current ISO week. */
+/** Midnight of the Monday starting the current ISO week, in local time. */
 function startOfCurrentWeek(): Date {
   const now = new Date();
-  const day = now.getUTCDay(); // 0=Sun … 6=Sat
-  const diff = (day === 0 ? -6 : 1 - day); // shift to Monday
-  const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + diff));
+  const day = now.getDay(); // 0=Sun … 6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diff);
   return monday;
 }
 
-/** Returns midnight UTC of the 1st of the current calendar month. */
 function startOfCurrentMonth(): Date {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  return new Date(now.getFullYear(), now.getMonth(), 1);
 }
 
+/**
+ * Period filter. Previously used `new Date(dateStr)` on a "DD/MM/YYYY" string,
+ * which is an Invalid Date — every row fell through the `isNaN` guard and was
+ * kept, so This Week / This Month silently did nothing. `parseDMY` reads the
+ * parts explicitly. Rows with a genuinely unparseable date are still kept.
+ */
 function isInPeriod(dateStr: string, period: string): boolean {
   if (period === "all") return true;
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return true; // keep rows with unparseable dates
+  const d = parseDMY(dateStr);
+  if (!d) return true;
   if (period === "weekly") return d >= startOfCurrentWeek();
   if (period === "monthly") return d >= startOfCurrentMonth();
   return true;
 }
 
-export const PaymentTable: React.FC<{ loading: boolean; data: PaymentRecord[] }> = ({
-  loading,
-  data,
-}) => {
+export const PaymentTable: React.FC<{
+  loading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
+  data: PaymentRecord[];
+}> = ({ loading, isError, onRetry, data }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filtered = data.filter((p) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      p.paymentMethod?.toLowerCase().includes(q) ||
-      p.paymentRefId?.toLowerCase().includes(q) ||
-      p.bookingId?.toLowerCase().includes(q) ||
-      p.fullName?.toLowerCase().includes(q);
-    const matchesPeriod = isInPeriod(p.receiptDate, filterPeriod);
-    return matchesSearch && matchesPeriod;
-  });
+  const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return data.filter((p) => {
+      const matchesSearch =
+        !q ||
+        p.bookingId?.toLowerCase().includes(q) ||
+        p.guest?.toLowerCase().includes(q) ||
+        p.service?.toLowerCase().includes(q);
+      return matchesSearch && isInPeriod(p.date, filterPeriod);
+    });
+  }, [data, searchQuery, filterPeriod]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const safePage = Math.min(currentPage, totalPages);
   const pagedRows = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
-
   const hasActiveQuery = searchQuery.trim().length > 0 || filterPeriod !== "all";
 
-  const handleSearchChange = (v: string) => {
-    setSearchQuery(v);
-    setCurrentPage(1);
-  };
-
-  const handlePeriodChange = (v: string) => {
-    setFilterPeriod(v);
-    setCurrentPage(1);
-  };
-
+  /** Only the columns the API actually supplies — see the note in Revenue.tsx. */
   const columns: ColumnDef<PaymentRecord>[] = [
     {
-      key: "paymentMethod",
-      header: "Payment Method",
-      cell: (row) => (
-        <span className="font-medium text-app-fg-muted whitespace-nowrap">
-          {row.paymentMethod}
-        </span>
-      ),
-    },
-    {
-      key: "paymentRefId",
-      header: "Payment Ref ID",
-      cell: (row) => (
-        <span className="font-mono text-[12px] text-app-fg-muted whitespace-nowrap">
-          {row.paymentRefId?.substring(0, 12)}…
-        </span>
-      ),
-    },
-    {
       key: "bookingId",
-      header: "Booking ID",
+      header: "Booking",
       cell: (row) => (
-        <span className="font-bold text-app-accent inline-flex items-center gap-1 whitespace-nowrap">
-          {row.bookingId?.substring(0, 10)}… <ArrowUpRight size={12} />
+        <span className="font-semibold text-brand inline-flex items-center gap-1 whitespace-nowrap">
+          {row.bookingId}
+          <ArrowUpRight size={12} strokeWidth={2.4} />
         </span>
       ),
     },
     {
-      key: "amountPay",
+      key: "guest",
+      header: "Guest",
+      cell: (row) => (
+        <span className="font-medium text-app-fg whitespace-nowrap">{row.guest || "—"}</span>
+      ),
+    },
+    {
+      key: "service",
+      header: "Service",
+      cell: (row) => (
+        <span className="text-app-fg-muted whitespace-nowrap">{row.service || "—"}</span>
+      ),
+    },
+    {
+      key: "amount",
       header: "Amount",
       cell: (row) => (
-        <span className="font-bold text-app-fg whitespace-nowrap">₹ {row.amountPay}</span>
+        <span className="font-bold tabular-nums text-app-fg whitespace-nowrap">
+          {inr(row.amount)}
+        </span>
       ),
     },
     {
-      key: "fullName",
-      header: "Full Name",
+      key: "date",
+      header: "Check-in",
       cell: (row) => (
-        <span className="font-medium text-app-fg-muted whitespace-nowrap">{row.fullName}</span>
-      ),
-    },
-    {
-      key: "receiptDate",
-      header: "Date",
-      cell: (row) => (
-        <span className="font-medium text-app-fg-muted whitespace-nowrap">
-          {formatDate(row.receiptDate)}
+        <span className="tabular-nums text-app-fg-muted whitespace-nowrap">
+          {formatDMY(row.date)}
         </span>
       ),
     },
@@ -143,47 +134,53 @@ export const PaymentTable: React.FC<{ loading: boolean; data: PaymentRecord[] }>
   ];
 
   return (
-    <div
-      style={{
-        backgroundColor: "var(--color-app-surface, #fff)",
-        border: "1.5px solid #EBEBEB",
-        borderRadius: 20,
-        overflow: "hidden",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "18px 22px",
-          borderBottom: "1.5px solid #EBEBEB",
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <p className="text-[14px] font-bold text-app-fg">Payment History</p>
-        </div>
+    <Panel>
+      <PanelHead
+        icon={Wallet}
+        title="Payment history"
+        blurb="Every booking that has produced revenue."
+        aside={
+          !loading && !isError && data.length > 0 ? (
+            <span className="text-[11.5px] font-semibold tabular-nums text-muted-foreground">
+              {filtered.length === data.length
+                ? `${data.length} ${data.length === 1 ? "payment" : "payments"}`
+                : `${filtered.length} of ${data.length}`}
+            </span>
+          ) : undefined
+        }
+      />
+
+      <div className="px-5 py-3.5 border-b border-border/70">
         <AdminToolbar
           searchValue={searchQuery}
-          onSearchChange={handleSearchChange}
-          searchPlaceholder="Search by name, method, ref…"
+          onSearchChange={(v) => {
+            setSearchQuery(v);
+            setCurrentPage(1);
+          }}
+          searchPlaceholder="Search bookings or guests…"
           sortOptions={PERIOD_OPTIONS}
           sortValue={filterPeriod}
-          onSortChange={handlePeriodChange}
+          onSortChange={(v) => {
+            setFilterPeriod(v);
+            setCurrentPage(1);
+          }}
         />
       </div>
 
-      {/* Table */}
       <AdminDataTable<PaymentRecord>
         columns={columns}
         data={pagedRows}
         isLoading={loading}
+        isError={isError}
+        errorMessage="We couldn't load your payments."
+        onRetry={onRetry}
         hasActiveQuery={hasActiveQuery}
         emptyIcon={Wallet}
-        emptyTitle="No payment history yet"
-        emptyDescription="Payments will appear here once bookings are completed."
+        emptyTitle="No payments yet"
+        emptyDescription="Once a booking is confirmed, its payment shows up here."
         noResultsTitle="No matching payments"
-        noResultsDescription="Try adjusting your search or changing the period filter."
-        getRowId={(row, index) => row.paymentRefId ?? String(index)}
+        noResultsDescription="Try a different search, or widen the period filter."
+        getRowId={(row, index) => row.bookingId ?? String(index)}
         onRowClick={(row) => navigate(`/bookings/details?id=${row.bookingId}`)}
         pagination={
           filtered.length > ITEMS_PER_PAGE
@@ -197,6 +194,6 @@ export const PaymentTable: React.FC<{ loading: boolean; data: PaymentRecord[] }>
         }
         skeletonRows={6}
       />
-    </div>
+    </Panel>
   );
 };

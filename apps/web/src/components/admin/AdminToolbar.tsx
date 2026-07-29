@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BRAND_VARS, SELECT_ITEM } from "@/components/shared/Panel";
 import { motion, AnimatePresence } from "framer-motion";
 
 export interface ToolbarBulkAction {
@@ -133,9 +134,13 @@ export function AdminToolbar({
               <SelectTrigger className="h-10 w-44 text-sm rounded-full border-app-border bg-app-surface-2">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
-              <SelectContent>
+              {/* Radix portals this to <body>, outside any page root, so it needs
+                  its own BRAND_VARS; SELECT_ITEM works around the duplicated
+                  `--accent` token that renders highlighted rows white-on-white.
+                  See the note on SELECT_ITEM in components/shared/Panel.tsx. */}
+              <SelectContent style={BRAND_VARS}>
                 {sortOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
+                  <SelectItem key={opt.value} value={opt.value} className={SELECT_ITEM}>
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -148,7 +153,9 @@ export function AdminToolbar({
             <button
               onClick={onFilterOpen}
               className="relative inline-flex items-center gap-2 h-10 px-4 rounded-full border border-app-border bg-app-surface-2 text-[13px] font-medium text-app-fg hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2"
-              aria-label={filterActiveCount > 0 ? `Filters, ${filterActiveCount} active` : "Filters"}
+              aria-label={
+                filterActiveCount > 0 ? `Filters, ${filterActiveCount} active` : "Filters"
+              }
             >
               <SlidersHorizontal size={15} />
               Filters

@@ -51,6 +51,7 @@ const Congratulations = lazy(() => import("./pages/onboarding/Congratulations"))
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Bookings = lazy(() => import("./pages/Bookings"));
 const NewBooking = lazy(() => import("./pages/NewBooking"));
+const EditBooking = lazy(() => import("./pages/EditBooking"));
 const BookingDetails = lazy(() => import("./pages/BookingDetails"));
 const Offering = lazy(() => import("./pages/Offering"));
 const AddOfferings = lazy(() => import("./pages/AddOfferings"));
@@ -389,6 +390,14 @@ const App = () => {
                       element={
                         <ProtectedRoute allowedRoles={["vendor"]}>
                           <NewBooking />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/bookings/:id/edit"
+                      element={
+                        <ProtectedRoute allowedRoles={["vendor"]}>
+                          <EditBooking />
                         </ProtectedRoute>
                       }
                     />

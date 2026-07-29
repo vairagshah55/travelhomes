@@ -3,6 +3,9 @@ import { motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Edit2, Loader2, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ACTIVE_PILL, BTN_NEUTRAL, BTN_PRIMARY, PANEL, PANEL_FOOTER } from "@/components/shared";
+
+/** Re-exported so the wizard pages keep one import surface. */
+export { SubPanel } from "@/components/shared";
 import { cn } from "@/lib/utils";
 
 /* ── Shared shell for the offering wizards ────────────────────────────────────
@@ -271,32 +274,6 @@ export const WizardFooter = ({
 );
 
 /* ── Step-body primitives ─────────────────────────────────────────────────── */
-
-/** A titled block nested inside a Panel — one step, two or more groupings. */
-export const SubPanel = ({
-  icon: Icon,
-  title,
-  blurb,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  blurb?: string;
-  children: React.ReactNode;
-}) => (
-  <section className="rounded-[14px] border border-border/70 overflow-hidden">
-    <header className="flex items-start gap-3 px-4 py-3 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
-      <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-brand/10 text-brand shrink-0">
-        <Icon size={15} strokeWidth={2.1} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[13.5px] font-bold text-foreground">{title}</p>
-        {blurb && <p className="mt-0.5 text-[12px] text-muted-foreground">{blurb}</p>}
-      </div>
-    </header>
-    <div className="p-4">{children}</div>
-  </section>
-);
 
 /** Selectable pill — features. Teal fill when on, hairline when off. */
 export const FeatureChip = ({
