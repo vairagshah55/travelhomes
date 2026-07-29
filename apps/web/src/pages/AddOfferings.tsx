@@ -4,17 +4,12 @@ import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  AlertCircle,
   Check,
-  ChevronLeft,
-  ChevronRight,
   ClipboardCheck,
-  Edit2,
   Images,
   IndianRupee,
   Layers,
   ListChecks,
-  Loader2,
   MapPin,
   Sparkles,
   Tag,
@@ -25,18 +20,13 @@ import { useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  ACTIVE_PILL,
   BRAND_VARS,
-  BTN_NEUTRAL,
-  BTN_PRIMARY,
   CONTROL,
   CONTROL_ERROR,
   Field,
   PANEL,
-  PANEL_FOOTER,
   Panel,
   PanelHead,
 } from "@/components/shared";
@@ -46,7 +36,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
 
-import { CamperVanPricing, UniqueStayPricing, ActivityPricing } from "@/components/offering";
+import {
+  CamperVanPricing,
+  UniqueStayPricing,
+  ActivityPricing,
+  ChoiceTile,
+  FeatureChip,
+  ReviewSection,
+  SubPanel,
+  WizardError,
+  WizardFooter,
+  WizardRail,
+  type WizardStep,
+} from "@/components/offering";
 import {
   DescriptionStep as CaravanDescriptionStep,
   CategoryStep as CaravanCategoryStep,
@@ -108,14 +110,7 @@ const CAMPER_VAN_FEATURES = [
 // Each entry carries its rail label, the panel heading it renders, and the icon
 // that fronts both — so the rail and the card can never describe a step
 // differently.
-const STEPS: {
-  key: string;
-  label: string;
-  short: string;
-  icon: LucideIcon;
-  title: string;
-  blurb: string;
-}[] = [
+const STEPS: WizardStep[] = [
   {
     key: "type",
     label: "Service type",
@@ -180,90 +175,6 @@ const STEPS: {
    the navy site brand — restyling those to console teal would repaint the
    public pages too. The embedded onboarding steps below are left alone for the
    same reason.                                                               */
-
-/** A titled block nested inside a Panel — one step, two or more groupings. */
-const SubPanel = ({
-  icon: Icon,
-  title,
-  blurb,
-  children,
-}: {
-  icon: LucideIcon;
-  title: string;
-  blurb?: string;
-  children: React.ReactNode;
-}) => (
-  <section className="rounded-[14px] border border-border/70 overflow-hidden">
-    <header className="flex items-start gap-3 px-4 py-3 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
-      <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-brand/10 text-brand shrink-0">
-        <Icon size={15} strokeWidth={2.1} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-[13.5px] font-bold text-foreground">{title}</p>
-        {blurb && <p className="mt-0.5 text-[12px] text-muted-foreground">{blurb}</p>}
-      </div>
-    </header>
-    <div className="p-4">{children}</div>
-  </section>
-);
-
-/** Selectable pill — features. Teal fill when on, hairline when off. */
-const FeatureChip = ({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-pressed={selected}
-    className={cn(
-      "inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full border text-[12.5px] font-semibold",
-      "outline-none transition-[background-color,border-color,box-shadow,color] duration-150",
-      "focus-visible:ring-4 focus-visible:ring-brand/15",
-      selected
-        ? "border-brand bg-brand/[0.09] text-brand"
-        : "border-border/70 bg-card text-foreground/80 hover:border-border hover:bg-muted/60",
-    )}
-  >
-    {label}
-    {selected && <Check size={12} strokeWidth={3} />}
-  </button>
-);
-
-/** Rectangular choice tile — categories. */
-const ChoiceTile = ({
-  label,
-  selected,
-  disabled,
-  onClick,
-}: {
-  label: string;
-  selected: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-pressed={selected}
-    className={cn(
-      "px-3.5 py-2.5 rounded-xl border text-left text-[13px] font-semibold",
-      "outline-none transition-[background-color,border-color,box-shadow,color] duration-150",
-      "focus-visible:ring-4 focus-visible:ring-brand/15 disabled:opacity-50",
-      selected
-        ? "border-brand bg-brand/[0.07] text-brand"
-        : "border-border/70 bg-card text-foreground/80 hover:border-border hover:bg-muted/60",
-    )}
-  >
-    {label}
-  </button>
-);
 
 const AddOfferings = () => {
   const navigate = useNavigate();
@@ -837,153 +748,15 @@ const AddOfferings = () => {
       <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Left rail: where you are, and how far there is to go ── */}
-          <aside className="lg:sticky lg:top-2 self-start space-y-3">
-            <div className={cn(PANEL, "p-4")}>
-              <div className="flex items-center gap-3">
-                <span className="grid place-items-center w-11 h-11 rounded-full bg-brand/[0.1] text-brand shrink-0">
-                  <StepIcon size={18} strokeWidth={2.1} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13.5px] font-bold text-foreground truncate">
-                    {step === 0 ? "New listing" : currentTab?.label}
-                  </p>
-                  <p className="mt-0.5 text-[11.5px] tabular-nums text-muted-foreground">
-                    Step {step + 1} of {STEPS.length}
-                  </p>
-                </div>
-              </div>
-
-              <div
-                className="mt-3.5 h-1.5 rounded-full bg-muted overflow-hidden"
-                role="progressbar"
-                aria-valuemin={1}
-                aria-valuemax={STEPS.length}
-                aria-valuenow={step + 1}
-              >
-                <motion.span
-                  className="block h-full rounded-full bg-brand"
-                  initial={false}
-                  animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-                  transition={{ type: "spring", stiffness: 220, damping: 30 }}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate("/offering")}
-                className="mt-3 text-[12px] font-semibold text-muted-foreground hover:text-foreground transition-colors duration-150"
-              >
-                Discard and exit
-              </button>
-            </div>
-
-            {/* Desktop step rail */}
-            <nav
-              role="tablist"
-              aria-label="Listing steps"
-              className={cn(PANEL, "hidden lg:flex flex-col gap-0.5 p-2")}
-            >
-              {STEPS.map((s, i) => {
-                const done = i < step;
-                const active = i === step;
-                // Jumping back is safe; jumping forward would skip validation.
-                const reachable = i <= step;
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    disabled={!reachable}
-                    onClick={() => reachable && setStep(i)}
-                    className={cn(
-                      "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left",
-                      "outline-none transition-colors duration-150",
-                      "focus-visible:ring-2 focus-visible:ring-brand/40",
-                      !active && reachable && "hover:bg-muted/70 dark:hover:bg-white/[0.04]",
-                      !reachable && "cursor-default",
-                    )}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="offeringStepPill"
-                        className={ACTIVE_PILL}
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                      />
-                    )}
-                    <span
-                      className={cn(
-                        "relative grid place-items-center w-7 h-7 rounded-full shrink-0",
-                        "text-[11px] font-bold tabular-nums transition-colors duration-150",
-                        active
-                          ? "bg-brand text-brand-fg"
-                          : done
-                            ? "bg-brand/15 text-brand"
-                            : "bg-muted text-muted-foreground/70",
-                      )}
-                    >
-                      {done ? <Check size={13} strokeWidth={3} /> : i + 1}
-                    </span>
-                    <span
-                      className={cn(
-                        "relative min-w-0 text-[13.5px] font-semibold leading-5 truncate",
-                        active ? "text-brand" : done ? "text-foreground" : "text-muted-foreground",
-                      )}
-                    >
-                      {s.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </nav>
-
-            {/* Mobile strip — no sliding pill, so the two rails never share a layoutId */}
-            <div
-              role="tablist"
-              aria-label="Listing steps"
-              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border/70 rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
-            >
-              {STEPS.map((s, i) => {
-                const done = i < step;
-                const active = i === step;
-                const reachable = i <= step;
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    disabled={!reachable}
-                    onClick={() => reachable && setStep(i)}
-                    className={cn(
-                      "flex items-center gap-1.5 h-10 px-3 rounded-xl whitespace-nowrap shrink-0",
-                      "text-[12.5px] font-semibold transition-colors duration-150 outline-none",
-                      "focus-visible:ring-2 focus-visible:ring-brand/40",
-                      active
-                        ? "bg-brand/[0.09] text-brand"
-                        : done
-                          ? "text-foreground"
-                          : "text-muted-foreground/70",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "grid place-items-center w-5 h-5 rounded-full text-[10px] font-bold tabular-nums",
-                        active
-                          ? "bg-brand text-brand-fg"
-                          : done
-                            ? "bg-brand/15 text-brand"
-                            : "bg-muted text-muted-foreground/70",
-                      )}
-                    >
-                      {done ? <Check size={11} strokeWidth={3} /> : i + 1}
-                    </span>
-                    {s.short}
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
+          <WizardRail
+            steps={STEPS}
+            current={step}
+            onJump={setStep}
+            title={step === 0 ? "New listing" : (currentTab?.label ?? "New listing")}
+            exitLabel="Discard and exit"
+            onExit={() => navigate("/offering")}
+            pillId="addOfferingStepPill"
+          />
 
           {/* ── The step ── */}
           <AnimatePresence mode="wait">
@@ -1326,115 +1099,31 @@ const AddOfferings = () => {
                   {step === 6 && (
                     <div className="space-y-3">
                       {reviewSections.map((section) => (
-                        <div
+                        <ReviewSection
                           key={section.label}
-                          className="rounded-[14px] border border-border/70 overflow-hidden"
-                        >
-                          <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-                              {section.label}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => setStep(section.jumpTo)}
-                              className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[12px] font-semibold text-brand hover:bg-brand/[0.09] transition-colors duration-150"
-                            >
-                              <Edit2 size={11} strokeWidth={2.5} />
-                              Edit
-                            </button>
-                          </header>
-                          <dl className="divide-y divide-border/70">
-                            {section.rows.map(([k, v]) => {
-                              const empty = !v || v === "—" || v === "None";
-                              const missing = v === "Missing";
-                              return (
-                                <div key={k} className="flex gap-3 px-4 py-2.5">
-                                  <dt className="w-[110px] shrink-0 text-[12.5px] text-muted-foreground">
-                                    {k}
-                                  </dt>
-                                  <dd
-                                    className={cn(
-                                      "min-w-0 text-[13px] font-medium break-words",
-                                      missing
-                                        ? "text-red-600 dark:text-red-400 font-semibold"
-                                        : empty
-                                          ? "text-muted-foreground/60"
-                                          : "text-foreground",
-                                    )}
-                                  >
-                                    {v || "—"}
-                                  </dd>
-                                </div>
-                              );
-                            })}
-                          </dl>
-                        </div>
+                          label={section.label}
+                          rows={section.rows}
+                          onEdit={() => setStep(section.jumpTo)}
+                        />
                       ))}
 
-                      {errors.submit && (
-                        <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-red-300/70 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10">
-                          <AlertCircle
-                            size={15}
-                            strokeWidth={2.3}
-                            className="mt-px shrink-0 text-red-600 dark:text-red-400"
-                          />
-                          <p className="text-[12.5px] font-semibold text-red-700 dark:text-red-300">
-                            {errors.submit}
-                          </p>
-                        </div>
-                      )}
+                      {errors.submit && <WizardError message={errors.submit} />}
                     </div>
                   )}
                 </div>
 
-                {/* ── Step navigation ── */}
-                <footer className={PANEL_FOOTER}>
-                  <Button
-                    variant="ghost"
-                    onClick={step === 0 ? () => navigate("/offering") : onPrev}
-                    className={BTN_NEUTRAL}
-                  >
-                    <ChevronLeft size={15} strokeWidth={2.4} />
-                    {step === 0 ? "Cancel" : "Back"}
-                  </Button>
-
-                  {/* Says WHY Continue is dead rather than just greying it out. */}
-                  {!stepCanAdvance && !isSubmitting ? (
-                    <p className="hidden sm:flex items-center gap-1.5 text-[11.5px] font-medium text-amber-600 dark:text-amber-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                      Finish this step to continue
-                    </p>
-                  ) : (
-                    <p className="hidden sm:block text-[11.5px] tabular-nums text-muted-foreground">
-                      Step {step + 1} of {STEPS.length}
-                    </p>
-                  )}
-
-                  <Button
-                    onClick={onNext}
-                    disabled={!stepCanAdvance || isSubmitting}
-                    className={cn(BTN_PRIMARY, "disabled:opacity-45 disabled:shadow-none")}
-                  >
-                    {isLastStep ? (
-                      isSubmitting ? (
-                        <>
-                          <Loader2 size={15} className="animate-spin" />
-                          Submitting…
-                        </>
-                      ) : (
-                        <>
-                          <Check size={15} strokeWidth={3} />
-                          Submit offering
-                        </>
-                      )
-                    ) : (
-                      <>
-                        Continue
-                        <ChevronRight size={15} strokeWidth={2.4} />
-                      </>
-                    )}
-                  </Button>
-                </footer>
+                <WizardFooter
+                  step={step}
+                  total={STEPS.length}
+                  canAdvance={stepCanAdvance}
+                  busy={isSubmitting}
+                  isLastStep={isLastStep}
+                  onBack={step === 0 ? () => navigate("/offering") : onPrev}
+                  onNext={onNext}
+                  backLabel={step === 0 ? "Cancel" : "Back"}
+                  submitLabel="Submit offering"
+                  busyLabel="Submitting…"
+                />
               </Panel>
             </motion.div>
           </AnimatePresence>

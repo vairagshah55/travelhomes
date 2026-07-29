@@ -1,21 +1,45 @@
 import React from "react";
-import { MoreHorizontal, Edit2, Eye, Trash2, MapPin, Users, Moon, Image as ImageIcon, IndianRupee } from "lucide-react";
-import { type OfferDTO, offersApi } from "@/lib/api";
-import { getImageUrl } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import {
+  Edit2,
+  Eye,
+  Image as ImageIcon,
+  MapPin,
+  MoreHorizontal,
+  Moon,
+  Trash2,
+  Users,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { BRAND_VARS, PANEL, StatusBadge } from "@/components/shared";
+import { type OfferDTO } from "@/lib/api";
+import { cn, getImageUrl } from "@/lib/utils";
 
-// Status colors kept as data objects since they come from non-token palette
-// (semantic green/amber/red for approved/pending/cancelled — not th-brand).
-const STATUS: Record<string, { bg: string; color: string; border: string }> = {
-  approved:  { bg: "#f0fdf4", color: "#16a34a", border: "#16a34a25" },
-  pending:   { bg: "#fffbeb", color: "#d97706", border: "#d9770625" },
-  cancelled: { bg: "#fef2f2", color: "#ef4444", border: "#ef444425" },
-};
+const MENU_ITEM =
+  "cursor-pointer gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold " +
+  "focus:bg-brand/[0.1] focus:text-brand data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand";
 
-export const OfferingCard = ({ listing, showDropdown, onToggleDropdown, onDelete, onEdit, onCardClick }: {
+const MENU_ITEM_DANGER =
+  "cursor-pointer gap-2.5 rounded-lg px-2.5 py-2 text-[13px] font-semibold text-red-600 " +
+  "focus:bg-red-50 focus:text-red-700 data-[highlighted]:bg-red-50 data-[highlighted]:text-red-700 " +
+  "dark:focus:bg-red-500/10 dark:data-[highlighted]:bg-red-500/10";
+
+/**
+ * Listing card for the vendor Offerings grid. Built on the kit's PANEL surface
+ * so a card reads as a panel that happens to hold a photo, and on the shared
+ * StatusBadge so "approved / pending" looks the same here as in every table.
+ */
+export const OfferingCard = ({
+  listing,
+  onDelete,
+  onEdit,
+  onCardClick,
+}: {
   listing: OfferDTO;
-  showDropdown: string | null;
-  onToggleDropdown: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (offer: OfferDTO) => void;
   onCardClick: (id: string) => void;
@@ -28,99 +52,126 @@ export const OfferingCard = ({ listing, showDropdown, onToggleDropdown, onDelete
   const price = Number(listing.regularPrice || 0);
   const status = (listing.status || "pending") as string;
   const location = [listing.city, listing.state].filter(Boolean).join(", ");
-  const s = STATUS[status] || STATUS.pending;
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={() => onCardClick(id)}
-      className="bg-th-surface-0 border border-[#EBEBEB] rounded-[20px] overflow-hidden cursor-pointer transition-all duration-200 shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)] hover:-translate-y-[3px] hover:shadow-[0_12px_32px_rgba(0,0,0,0.1)]"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onCardClick(id);
+        }
+      }}
+      className={cn(
+        PANEL,
+        "group flex flex-col overflow-hidden cursor-pointer outline-none",
+        "transition-[transform,box-shadow] duration-200",
+        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(13,148,136,0.14),0_18px_40px_-20px_rgba(13,148,136,0.45)]",
+        "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
+      )}
     >
-      {/* Image */}
-      <div className="relative h-[200px] overflow-hidden bg-th-warm-surface">
+      {/* Cover */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         {cover ? (
-          <img src={getImageUrl(cover)} alt={listing.name} className="w-full h-full object-cover transition-transform duration-500" />
+          <img
+            src={getImageUrl(cover)}
+            alt={listing.name}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <ImageIcon size={36} className="text-th-warm-border" />
+          <div className="w-full h-full grid place-items-center">
+            <ImageIcon size={32} className="text-muted-foreground/40" strokeWidth={1.6} />
           </div>
         )}
 
-        {/* Status + menu overlay */}
-        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          <span
-            className="text-[11px] font-bold px-2.5 py-[3px] rounded-full capitalize backdrop-blur-sm"
-            style={{ backgroundColor: s.bg, color: s.color, border: `1px solid ${s.border}` }}
-          >
-            {status}
-          </span>
+        {/* Scrim so the category chip stays legible on light photos. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/45 to-transparent"
+        />
 
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => onToggleDropdown(id)}
-              className="w-8 h-8 rounded-full bg-white/90 border-none flex items-center justify-center cursor-pointer backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.1)]"
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
+          <StatusBadge status={status} size="sm" className="shadow-sm" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                aria-label={`Actions for ${listing.name}`}
+                className="grid place-items-center w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 text-[#475467] dark:text-gray-200 shadow-[0_2px_8px_rgba(16,24,40,0.14)] backdrop-blur-sm outline-none transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-brand/50"
+              >
+                <MoreHorizontal size={15} />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              style={BRAND_VARS}
+              className="w-[168px] p-1.5"
+              onClick={(e) => e.stopPropagation()}
             >
-              <MoreHorizontal size={14} className="text-th-warm-text-dark" />
-            </button>
-            {showDropdown === id && (
-              <div className="absolute right-0 top-[38px] w-[160px] bg-th-surface-0 border border-[#EBEBEB] rounded-[14px] shadow-[0_8px_30px_rgba(0,0,0,0.12)] overflow-hidden z-20">
-                {[
-                  { icon: <Edit2 size={13} />, label: "Edit", action: () => onEdit(listing), danger: false },
-                  { icon: <Eye size={13} />, label: "View Details", action: () => onCardClick(id), danger: false },
-                  ...(status !== "approved" ? [{ icon: <Trash2 size={13} />, label: "Delete", action: () => onDelete(id), danger: true }] : []),
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={item.action}
-                    className={cn(
-                      "w-full flex items-center gap-2.5 px-3.5 py-2.5 bg-transparent border-none cursor-pointer text-[13px] font-semibold transition-colors hover:bg-th-warm-surface",
-                      item.danger ? "text-th-error-bright" : "text-th-warm-text-dark",
-                    )}
-                  >
-                    {item.icon} {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+              <DropdownMenuItem className={MENU_ITEM} onClick={() => onEdit(listing)}>
+                <Edit2 size={13} /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem className={MENU_ITEM} onClick={() => onCardClick(id)}>
+                <Eye size={13} /> View details
+              </DropdownMenuItem>
+              {/* Approved listings are live — deletion goes through support. */}
+              {status !== "approved" && (
+                <DropdownMenuItem className={MENU_ITEM_DANGER} onClick={() => onDelete(id)}>
+                  <Trash2 size={13} /> Delete
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Category */}
-        <div className="absolute bottom-3 left-3">
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-black/50 text-th-text-inverse backdrop-blur-sm">
-            {category}
-          </span>
-        </div>
+        <span className="absolute bottom-3 left-3 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm">
+          {category}
+        </span>
       </div>
 
-      {/* Content */}
-      <div className="px-4 pb-4 pt-3.5">
-        <h3 className="text-[14px] font-bold text-th-text-primary mb-[2px] whitespace-nowrap overflow-hidden text-ellipsis">
+      {/* Body */}
+      <div className="flex flex-col flex-1 p-4">
+        <h3 className="text-[14px] font-bold tracking-[-0.01em] text-foreground truncate">
           {listing.name}
         </h3>
+
         {location && (
-          <p className="text-[12px] text-th-warm-text-muted mb-2.5 flex items-center gap-1">
-            <MapPin size={11} /> {location}
+          <p className="mt-1 flex items-center gap-1 text-[12px] text-muted-foreground truncate">
+            <MapPin size={11} className="shrink-0" />
+            {location}
           </p>
         )}
-        <div className="flex items-center gap-2 text-[12px] text-th-warm-text-muted mb-3">
-          {seats > 0 && <span className="flex items-center gap-[3px]"><Users size={12} /> {seats} seats</span>}
-          {seats > 0 && sleeps > 0 && <span className="text-th-warm-border">·</span>}
-          {sleeps > 0 && <span className="flex items-center gap-[3px]"><Moon size={12} /> {sleeps} sleeps</span>}
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[18px] font-extrabold text-th-text-primary">₹{price.toLocaleString("en-IN")}</span>
-            <span className="text-[11px] text-th-warm-text-muted ml-1">/ day</span>
+
+        {(seats > 0 || sleeps > 0) && (
+          <div className="mt-2.5 flex items-center gap-2 text-[12px] text-muted-foreground">
+            {seats > 0 && (
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Users size={12} /> {seats} seats
+              </span>
+            )}
+            {seats > 0 && sleeps > 0 && <span className="text-border">·</span>}
+            {sleeps > 0 && (
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                <Moon size={12} /> {sleeps} sleeps
+              </span>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onCardClick(id); }}
-            className="text-[12px] font-bold px-3.5 py-1.5 rounded-full border border-th-brand bg-th-brand-soft text-th-brand cursor-pointer transition-all"
-          >
+        )}
+
+        <div className="mt-auto pt-3.5 flex items-end justify-between gap-2">
+          <p className="min-w-0">
+            <span className="text-[18px] font-bold tracking-[-0.02em] tabular-nums text-foreground">
+              ₹{price.toLocaleString("en-IN")}
+            </span>
+            <span className="ml-1 text-[11px] text-muted-foreground">/ day</span>
+          </p>
+          <span className="shrink-0 rounded-full bg-brand/[0.09] px-3 py-1.5 text-[12px] font-semibold text-brand transition-colors duration-150 group-hover:bg-brand group-hover:text-brand-fg">
             View
-          </button>
+          </span>
         </div>
       </div>
     </div>

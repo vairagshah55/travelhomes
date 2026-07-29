@@ -1,46 +1,56 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Images,
+  IndianRupee,
+  ListChecks,
+  Lock,
+  MapPin,
+  ClipboardCheck,
+  Sparkles,
   Tag,
   Tent,
-  Loader2,
-  X,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Edit2,
-  Sparkles,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Input } from "@/components/ui/input";
+import {
+  BRAND_VARS,
+  CONTROL,
+  CONTROL_ERROR,
+  Field,
+  PANEL,
+  Panel,
+  PanelHead,
+} from "@/components/shared";
+import { cn } from "@/lib/utils";
 import { offersApi, OfferDTO } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
-import {
-  TEAL,
-  BLACK,
-  GRAY_500,
-  GRAY_400,
-  GRAY_200,
-  ERROR,
-  ERROR_BG,
-  SectionCard,
-  Field,
-  StyledInput,
-  FeaturePill,
-} from "@/components/offering";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
 import type { DiscountOffer } from "@/components/onboarding/shared";
 import { SearchableSelect } from "@/components/onboarding/shared/primitives";
-import { CamperVanPricing, UniqueStayPricing, ActivityPricing } from "@/components/offering";
+import {
+  CamperVanPricing,
+  UniqueStayPricing,
+  ActivityPricing,
+  ChoiceTile,
+  FeatureChip,
+  ReviewSection,
+  SubPanel,
+  WizardError,
+  WizardFooter,
+  WizardRail,
+  type WizardStep,
+} from "@/components/offering";
 import {
   DescriptionStep as CaravanDescriptionStep,
   CategoryStep as CaravanCategoryStep,
-  FeaturesStep as CaravanFeaturesStep,
   CapacityAddressStep as CaravanCapacityAddressStep,
   PricingStep as CaravanPricingStep,
 } from "@/components/onboarding/caravan";
@@ -61,14 +71,56 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 // Wizard step definitions for the edit page. No "Type" step because the
 // service type is fixed at create time and can't be changed via edit. Mirrors
 // the AddOfferings wizard so vendors get the same flow on both surfaces.
-const STEPS = [
-  { key: "category", label: "Category", short: "Category" },
-  { key: "basics", label: "Basics & Photos", short: "Basics" },
-  { key: "features", label: "Features", short: "Features" },
-  { key: "location", label: "Location & Capacity", short: "Location" },
-  { key: "pricing", label: "Pricing & Discounts", short: "Pricing" },
-  { key: "review", label: "Review & Save", short: "Review" },
-] as const;
+const STEPS: WizardStep[] = [
+  {
+    key: "category",
+    label: "Category",
+    short: "Category",
+    icon: Tag,
+    title: "Category",
+    blurb: "Pick the type that best describes this listing.",
+  },
+  {
+    key: "basics",
+    label: "Basics & photos",
+    short: "Basics",
+    icon: Images,
+    title: "Basics and photos",
+    blurb: "The name, description and photos guests see first.",
+  },
+  {
+    key: "features",
+    label: "Features",
+    short: "Features",
+    icon: ListChecks,
+    title: "What does it include?",
+    blurb: "Tick everything that applies — guests use these as filters.",
+  },
+  {
+    key: "location",
+    label: "Location & capacity",
+    short: "Location",
+    icon: MapPin,
+    title: "Where is it, and how many fit?",
+    blurb: "Guests see the city and state before they book.",
+  },
+  {
+    key: "pricing",
+    label: "Pricing & discounts",
+    short: "Pricing",
+    icon: IndianRupee,
+    title: "Pricing and discounts",
+    blurb: "Discounts are optional — toggle any to enable.",
+  },
+  {
+    key: "review",
+    label: "Review & save",
+    short: "Review",
+    icon: ClipboardCheck,
+    title: "Review changes",
+    blurb: "Confirm the details below, then save.",
+  },
+];
 
 // ═════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -628,12 +680,97 @@ const EditOfferings = () => {
   const onPrev = () => setStep((s) => Math.max(0, s - 1));
 
   const currentTab = TABS.find((t) => t.key === activeTab);
+  const stepMeta = STEPS[step];
+  const StepIcon = stepMeta.icon;
+  const stepTitle = step === 0 && activeTab === "activity" ? "Activity type" : stepMeta.title;
 
+  const listingName = activeTab === "activity" ? formData.activityName : formData.name;
+
+  const reviewSections: { label: string; jumpTo: number; rows: [string, string | undefined][] }[] =
+    [
+      { label: "Category", jumpTo: 0, rows: [["Category", formData.category || "—"]] },
+      {
+        label: "Basics",
+        jumpTo: 1,
+        rows: [
+          ["Name", listingName],
+          [
+            "Description",
+            (formData.description || "").slice(0, 120) +
+              (formData.description.length > 120 ? "…" : ""),
+          ],
+          ["Cover photo", coverUrl ? "Set" : "Missing"],
+          ["Gallery", `${galleryUrls.length} photos`],
+        ],
+      },
+      {
+        label: "Features",
+        jumpTo: 2,
+        rows: [["Selected", formData.features.length > 0 ? formData.features.join(", ") : "None"]],
+      },
+      {
+        label: "Location & capacity",
+        jumpTo: 3,
+        rows: [
+          [
+            "Where",
+            [formData.address, formData.city, formData.state, formData.pincode]
+              .filter(Boolean)
+              .join(", ") || "—",
+          ],
+          ...((activeTab === "camper-van"
+            ? [
+                [
+                  "Capacity",
+                  `${formData.seatingCapacity} seating · ${formData.sleepingCapacity} sleeping`,
+                ],
+              ]
+            : activeTab === "unique-stay"
+              ? [["Guests", String(formData.guestCapacity)]]
+              : [
+                  ["Persons", String(formData.personCapacity)],
+                  ["Duration", formData.timeDuration || "—"],
+                ]) as [string, string][]),
+        ],
+      },
+      {
+        label: "Pricing",
+        jumpTo: 4,
+        rows:
+          activeTab === "camper-van"
+            ? [
+                ["Per km", formData.perKmCharge ? `₹${formData.perKmCharge}` : "—"],
+                ["Per day", formData.perDayCharge ? `₹${formData.perDayCharge}` : "—"],
+              ]
+            : [["Regular price", formData.regularPrice ? `₹${formData.regularPrice}` : "—"]],
+      },
+    ];
+
+  /** Keeps the console chrome up while the offer loads, instead of a bare spinner page. */
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Loader2 size={32} className="animate-spin text-teal-400" />
-      </div>
+      <DashboardLayout
+        title="Edit Offering"
+        contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
+      >
+        <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+          <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
+            <div className="space-y-3">
+              <div className={cn(PANEL, "h-[132px] animate-pulse")} />
+              <div className={cn(PANEL, "hidden lg:block h-[280px] animate-pulse")} />
+            </div>
+            <div className={cn(PANEL, "min-h-[420px] p-5 space-y-4")}>
+              <div className="h-4 w-40 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-64 rounded bg-muted/70 animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="h-[42px] rounded-xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -641,716 +778,357 @@ const EditOfferings = () => {
   return (
     <DashboardLayout
       title="Edit Offering"
-      contentClassName="flex-1 overflow-y-auto p-4 lg:p-6 pb-24"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="max-w-3xl mx-auto flex flex-col gap-5 pb-20">
-        {/* ── Header: title + locked type badge + close ── */}
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 6,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: "0.04em",
-                  textTransform: "uppercase",
-                  backgroundColor: `${TEAL}14`,
-                  border: `1.5px solid ${TEAL}30`,
-                  color: TEAL,
-                }}
-              >
-                {currentTab?.icon}
-                {currentTab?.label}
-              </span>
-            </div>
-            <h1
-              style={{
-                fontSize: "clamp(22px, 3.4vw, 28px)",
-                fontWeight: 800,
-                color: BLACK,
-                letterSpacing: "-0.025em",
-                lineHeight: 1.2,
-              }}
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+        <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
+          <WizardRail
+            steps={STEPS}
+            current={step}
+            onJump={setStep}
+            title={listingName || "Edit listing"}
+            subtitle={currentTab?.label}
+            exitLabel="Leave without saving"
+            onExit={() => navigate(`/offering/${id}`)}
+            pillId="editOfferingStepPill"
+          />
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="min-w-0"
             >
-              Edit Offering
-            </h1>
-            <p style={{ fontSize: 13.5, color: GRAY_500, marginTop: 4 }}>
-              {STEPS[step].label} · Step {step + 1} of {STEPS.length}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate(`/offering/${id}`)}
-            aria-label="Close"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 99,
-              backgroundColor: "#F7F8FA",
-              border: `1.5px solid ${GRAY_200}`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              flexShrink: 0,
-            }}
-          >
-            <X size={16} color={GRAY_500} />
-          </button>
-        </div>
-
-        {/* ── Progress chips ── */}
-        <div className="flex items-center gap-2">
-          {STEPS.map((s, i) => {
-            const done = i < step;
-            const active = i === step;
-            return (
-              <React.Fragment key={s.key}>
-                <button
-                  type="button"
-                  onClick={() => i < step && setStep(i)}
-                  disabled={i > step}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 6,
-                    padding: "6px 10px",
-                    borderRadius: 999,
-                    border: `1.5px solid ${active ? TEAL : done ? `${TEAL}50` : GRAY_200}`,
-                    backgroundColor: active ? `${TEAL}14` : done ? `${TEAL}08` : "#fff",
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: active ? TEAL : done ? TEAL : GRAY_400,
-                    cursor: i < step ? "pointer" : "default",
-                    whiteSpace: "nowrap",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      backgroundColor: active ? TEAL : done ? TEAL : GRAY_200,
-                      color: active || done ? "#fff" : GRAY_400,
-                      fontSize: 9.5,
-                      fontWeight: 800,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {done ? <Check size={10} strokeWidth={3} /> : i + 1}
-                  </span>
-                  <span className="hidden sm:inline">{s.short}</span>
-                </button>
-                {i < STEPS.length - 1 && (
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flex: 1,
-                      height: 2,
-                      borderRadius: 99,
-                      backgroundColor: done ? TEAL : GRAY_200,
-                      minWidth: 8,
-                      opacity: 0.6,
-                    }}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-
-        {/* ── Step content card ── */}
-        <div
-          style={{
-            backgroundColor: "#fff",
-            border: `1.5px solid ${GRAY_200}`,
-            borderRadius: 20,
-            padding: "24px 22px",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
-            minHeight: 360,
-          }}
-        >
-          {/* STEP 0 — Category */}
-          {step === 0 && (
-            <div className="flex flex-col gap-4">
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    color: GRAY_400,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  {currentTab?.label}
-                </p>
-                <h2
-                  className="font-serif"
-                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
-                >
-                  {activeTab === "activity" ? "Activity type" : "Category"}
-                </h2>
-                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
-                  Pick the type that best describes this offering.
-                </p>
-              </div>
-              {activeTab === "camper-van" ? (
-                <CaravanCategoryStep
-                  embedded
-                  category={formData.category || null}
-                  onSelect={(name) => set("category", name)}
-                />
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {(categories.length > 0 ? categories : ["Loading…"]).map((c) => {
-                    const active = formData.category === c;
-                    const disabled = c === "Loading…";
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        disabled={disabled}
-                        onClick={() => set("category", c)}
-                        style={{
-                          padding: "12px 14px",
-                          borderRadius: 13,
-                          border: `1.5px solid ${active ? TEAL : GRAY_200}`,
-                          backgroundColor: active ? `${TEAL}08` : "#fff",
-                          color: active ? TEAL : disabled ? GRAY_400 : BLACK,
-                          fontSize: 13,
-                          fontWeight: active ? 700 : 500,
-                          cursor: disabled ? "not-allowed" : "pointer",
-                          textAlign: "left",
-                          transition: "all 0.15s",
-                          boxShadow: active ? `0 0 0 3px ${TEAL}1a` : "none",
-                        }}
-                      >
-                        {c}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* STEP 1 — Basics + Photos */}
-          {step === 1 && (
-            <CaravanDescriptionStep
-              embedded
-              nameLabel={
-                activeTab === "activity"
-                  ? "Activity Name"
-                  : activeTab === "unique-stay"
-                    ? "Property Name"
-                    : "Caravan Name"
-              }
-              namePlaceholder={
-                activeTab === "activity"
-                  ? "e.g. River Rafting Day Trip"
-                  : activeTab === "unique-stay"
-                    ? "e.g. Sunset Villa"
-                    : "e.g. Cozy Mountain Camper"
-              }
-              name={activeTab === "activity" ? formData.activityName : formData.name}
-              description={formData.description}
-              rules={formData.rules}
-              photos={galleryUrls}
-              coverImage={coverUrl ? [coverUrl] : []}
-              errors={{ ...errors, coverImage: errors.cover, photos: errors.gallery }}
-              onNameChange={(v) => set(activeTab === "activity" ? "activityName" : "name", v)}
-              onDescriptionChange={(v) => set("description", v)}
-              onAddRule={handleAddRule}
-              onRemoveRule={handleRemoveRule}
-              onUpdateRule={handleUpdateRule}
-              onPhotoUpload={handleBridgePhotoUpload}
-              onCoverUpload={handleBridgeCoverUpload}
-              onRemovePhoto={(i) => setGalleryUrls((p) => p.filter((_, idx) => idx !== i))}
-              onRemoveCover={() => setCoverUrl("")}
-              clearError={clearError}
-            />
-          )}
-
-          {/* STEP 2 — Features */}
-          {step === 2 && (
-            <div className="flex flex-col gap-4">
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    color: GRAY_400,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  {currentTab?.label}
-                </p>
-                <h2
-                  className="font-serif"
-                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
-                >
-                  What does it include?
-                </h2>
-                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
-                  Tick everything that applies.
-                </p>
-              </div>
-              {features.length === 0 ? (
-                <p style={{ fontSize: 13, color: GRAY_400 }}>Loading features…</p>
-              ) : (
-                <div className="flex flex-wrap gap-2.5">
-                  {features.map((f) => (
-                    <FeaturePill
-                      key={f}
-                      label={f}
-                      selected={formData.features.includes(f)}
-                      onClick={() => toggleFeature(f)}
-                    />
-                  ))}
-                </div>
-              )}
-              {formData.features.length > 0 && (
-                <p style={{ fontSize: 11.5, color: GRAY_400, marginTop: 4 }}>
-                  <Sparkles size={11} className="inline" /> {formData.features.length} feature
-                  {formData.features.length === 1 ? "" : "s"} selected
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* STEP 3 — Location & Capacity */}
-          {step === 3 && (
-            <div className="flex flex-col gap-5">
-              {activeTab === "camper-van" ? (
-                <CaravanCapacityAddressStep
-                  embedded
-                  seatingCapacity={Number(formData.seatingCapacity) || 1}
-                  sleepingCapacity={Number(formData.sleepingCapacity) || 0}
-                  address={formData.address}
-                  locality={formData.locality || "India"}
-                  state={formData.state}
-                  city={formData.city}
-                  pincode={formData.pincode}
-                  locationData={locationData}
-                  mapSrc={mapSrc}
-                  errors={errors}
-                  onAdjustCapacity={adjustCapacity}
-                  onAddressChange={(v) => set("address", v)}
-                  onLocalityChange={(v) =>
-                    setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
-                  }
-                  onStateChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
-                  onCityChange={(v) => set("city", v)}
-                  onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
-                  clearError={clearError}
-                />
-              ) : (
-                <>
-                  <div>
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: GRAY_400,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                      }}
-                    >
+              <Panel>
+                <PanelHead
+                  icon={StepIcon}
+                  title={stepTitle}
+                  blurb={stepMeta.blurb}
+                  aside={
+                    /* The service type is fixed at create time — say so rather
+                       than letting a vendor hunt for a type switcher. */
+                    <span className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-muted text-[11.5px] font-semibold text-muted-foreground">
+                      <Lock size={11} strokeWidth={2.4} />
                       {currentTab?.label}
-                    </p>
-                    <h2
-                      className="font-serif"
-                      style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
-                    >
-                      Where is it located?
-                    </h2>
-                  </div>
-                  <Field label="Street Address">
-                    <StyledInput
-                      value={formData.address}
-                      onChange={(v) => set("address", v)}
-                      placeholder="Street address"
-                    />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-3">
-                    <Field label="State" required error={errors.state}>
-                      <SearchableSelect
-                        value={formData.state}
-                        onChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
-                        options={stateOptions}
-                        placeholder="Select State"
-                        searchPlaceholder="Search states…"
-                        error={!!errors.state}
-                      />
-                    </Field>
-                    <Field label="City" required error={errors.city}>
-                      <SearchableSelect
-                        value={formData.city}
-                        onChange={(v) => set("city", v)}
-                        options={cityOptions}
-                        placeholder={formData.state ? "Select City" : "Pick a state first"}
-                        searchPlaceholder="Search cities…"
-                        disabled={!formData.state}
-                        error={!!errors.city}
-                      />
-                    </Field>
-                  </div>
-                  <Field label="Pincode">
-                    <StyledInput
-                      value={formData.pincode}
-                      onChange={(v) => set("pincode", v.replace(/\D/g, ""))}
-                      placeholder="6-digit code"
-                      maxLength={6}
-                    />
-                  </Field>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* STEP 4 — Pricing + Discount */}
-          {step === 4 && (
-            <div className="flex flex-col gap-6">
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    color: GRAY_400,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  {currentTab?.label}
-                </p>
-                <h2
-                  className="font-serif"
-                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
-                >
-                  Pricing & discounts
-                </h2>
-                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
-                  Discounts are optional — toggle any to enable.
-                </p>
-              </div>
-
-              <SectionCard
-                icon={<Tag size={16} color={TEAL} strokeWidth={2.5} />}
-                title="Pricing"
-                subtitle="What you'll charge"
-              >
-                {activeTab === "camper-van" && (
-                  <CaravanPricingStep
-                    embedded
-                    perKmCharge={formData.perKmCharge}
-                    perDayCharge={formData.perDayCharge}
-                    perKmIncludes={formData.perKmIncludes}
-                    perKmExcludes={formData.perKmExcludes}
-                    perDayIncludes={formData.perDayIncludes}
-                    perDayExcludes={formData.perDayExcludes}
-                    errors={errors}
-                    onPerKmChargeChange={(v) => set("perKmCharge", v)}
-                    onPerDayChargeChange={(v) => set("perDayCharge", v)}
-                    onAddPriceItem={(field) => addArrayItem(field)}
-                    onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
-                    onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
-                    clearError={clearError}
-                  />
-                )}
-                {activeTab === "unique-stay" && (
-                  <UniqueStayPricing
-                    formData={formData}
-                    set={set}
-                    errors={errors}
-                    {...arrayHelpers}
-                  />
-                )}
-                {activeTab === "activity" && (
-                  <ActivityPricing
-                    formData={formData}
-                    set={set}
-                    errors={errors}
-                    {...arrayHelpers}
-                  />
-                )}
-              </SectionCard>
-
-              <SectionCard
-                icon={<Sparkles size={16} color={TEAL} strokeWidth={2.5} />}
-                title="Discounts"
-                subtitle="Optional — toggle any offer to enable"
-              >
-                <DiscountOffersStep
-                  embedded
-                  offers={discountOffers}
-                  onToggle={handleDiscountToggle}
-                  onOfferChange={handleDiscountOfferChange}
-                  errors={errors}
-                  weeklyLabel="Weekly / Monthly Offers"
+                    </span>
+                  }
                 />
-              </SectionCard>
-            </div>
-          )}
 
-          {/* STEP 5 — Review */}
-          {step === 5 && (
-            <div className="flex flex-col gap-4">
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 800,
-                    color: GRAY_400,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.08em",
-                  }}
-                >
-                  Final check
-                </p>
-                <h2
-                  className="font-serif"
-                  style={{ fontSize: 22, fontWeight: 600, color: BLACK, marginTop: 4 }}
-                >
-                  Review changes
-                </h2>
-                <p style={{ fontSize: 13, color: GRAY_500, marginTop: 4 }}>
-                  Confirm the details below, then save.
-                </p>
-              </div>
-
-              {[
-                {
-                  label: "Category",
-                  jumpTo: 0,
-                  rows: [["Category", formData.category || "—"]] as [string, string][],
-                },
-                {
-                  label: "Basics",
-                  jumpTo: 1,
-                  rows: [
-                    ["Name", activeTab === "activity" ? formData.activityName : formData.name],
-                    [
-                      "Description",
-                      (formData.description || "").slice(0, 120) +
-                        (formData.description.length > 120 ? "…" : ""),
-                    ],
-                    ["Cover photo", coverUrl ? "✓ Set" : "Missing"],
-                    ["Gallery", `${galleryUrls.length} photos`],
-                  ] as [string, string][],
-                },
-                {
-                  label: "Features",
-                  jumpTo: 2,
-                  rows: [
-                    [
-                      "Selected",
-                      formData.features.length > 0 ? formData.features.join(", ") : "None",
-                    ],
-                  ] as [string, string][],
-                },
-                {
-                  label: "Location & Capacity",
-                  jumpTo: 3,
-                  rows: [
-                    [
-                      "Where",
-                      [formData.address, formData.city, formData.state, formData.pincode]
-                        .filter(Boolean)
-                        .join(", ") || "—",
-                    ],
-                    ...(activeTab === "camper-van"
-                      ? ([
-                          [
-                            "Capacity",
-                            `${formData.seatingCapacity} seating · ${formData.sleepingCapacity} sleeping`,
-                          ],
-                        ] as [string, string][])
-                      : activeTab === "unique-stay"
-                        ? ([["Guests", String(formData.guestCapacity)]] as [string, string][])
-                        : ([
-                            ["Persons", String(formData.personCapacity)],
-                            ["Duration", formData.timeDuration || "—"],
-                          ] as [string, string][])),
-                  ] as [string, string][],
-                },
-                {
-                  label: "Pricing",
-                  jumpTo: 4,
-                  rows: (() => {
-                    if (activeTab === "camper-van") {
-                      return [
-                        ["Per Km", formData.perKmCharge ? `₹${formData.perKmCharge}` : "—"],
-                        ["Per Day", formData.perDayCharge ? `₹${formData.perDayCharge}` : "—"],
-                      ] as [string, string][];
-                    }
-                    return [
-                      ["Regular price", formData.regularPrice ? `₹${formData.regularPrice}` : "—"],
-                    ] as [string, string][];
-                  })(),
-                },
-              ].map((section) => (
-                <div
-                  key={section.label}
-                  style={{
-                    border: `1.5px solid ${GRAY_200}`,
-                    borderRadius: 14,
-                    padding: "14px 16px",
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 800,
-                        color: GRAY_400,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                      }}
-                    >
-                      {section.label}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setStep(section.jumpTo)}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4,
-                        fontSize: 11.5,
-                        fontWeight: 700,
-                        color: TEAL,
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
-                    >
-                      <Edit2 size={11} /> Edit
-                    </button>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    {section.rows.map(([k, v]) => (
-                      <div key={k} className="flex gap-3" style={{ fontSize: 13 }}>
-                        <span
-                          style={{
-                            color: GRAY_400,
-                            minWidth: 110,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {k}
-                        </span>
-                        <span style={{ color: BLACK, fontWeight: 500 }}>{v || "—"}</span>
+                <div className="p-5">
+                  {/* ============ STEP 0 — Category =============== */}
+                  {step === 0 &&
+                    (activeTab === "camper-van" ? (
+                      <CaravanCategoryStep
+                        embedded
+                        category={formData.category || null}
+                        onSelect={(name) => set("category", name)}
+                      />
+                    ) : categories.length === 0 ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {[0, 1, 2, 3, 4, 5].map((i) => (
+                          <div key={i} className="h-[42px] rounded-xl bg-muted animate-pulse" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                        {categories.map((c) => (
+                          <ChoiceTile
+                            key={c}
+                            label={c}
+                            selected={formData.category === c}
+                            onClick={() => set("category", c)}
+                          />
+                        ))}
                       </div>
                     ))}
-                  </div>
-                </div>
-              ))}
 
-              {errors.submit && (
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    borderRadius: 12,
-                    backgroundColor: ERROR_BG,
-                    border: "1.5px solid #fca5a5",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 12 12" fill="none">
-                    <circle cx="6" cy="6" r="5.25" stroke={ERROR} strokeWidth="1.5" />
-                    <path
-                      d="M6 3.5v3M6 8.25v.25"
-                      stroke={ERROR}
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
+                  {/* ============ STEP 1 — Basics + photos =============== */}
+                  {step === 1 && (
+                    <CaravanDescriptionStep
+                      embedded
+                      nameLabel={
+                        activeTab === "activity"
+                          ? "Activity Name"
+                          : activeTab === "unique-stay"
+                            ? "Property Name"
+                            : "Caravan Name"
+                      }
+                      namePlaceholder={
+                        activeTab === "activity"
+                          ? "e.g. River Rafting Day Trip"
+                          : activeTab === "unique-stay"
+                            ? "e.g. Sunset Villa"
+                            : "e.g. Cozy Mountain Camper"
+                      }
+                      name={listingName}
+                      description={formData.description}
+                      rules={formData.rules}
+                      photos={galleryUrls}
+                      coverImage={coverUrl ? [coverUrl] : []}
+                      errors={{ ...errors, coverImage: errors.cover, photos: errors.gallery }}
+                      onNameChange={(v) =>
+                        set(activeTab === "activity" ? "activityName" : "name", v)
+                      }
+                      onDescriptionChange={(v) => set("description", v)}
+                      onAddRule={handleAddRule}
+                      onRemoveRule={handleRemoveRule}
+                      onUpdateRule={handleUpdateRule}
+                      onPhotoUpload={handleBridgePhotoUpload}
+                      onCoverUpload={handleBridgeCoverUpload}
+                      onRemovePhoto={(i) => setGalleryUrls((p) => p.filter((_, idx) => idx !== i))}
+                      onRemoveCover={() => setCoverUrl("")}
+                      clearError={clearError}
                     />
-                  </svg>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: ERROR }}>{errors.submit}</p>
+                  )}
+
+                  {/* ============ STEP 2 — Features =============== */}
+                  {step === 2 && (
+                    <div className="space-y-4">
+                      {features.length === 0 ? (
+                        <div className="flex flex-wrap gap-2.5">
+                          {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                            <div key={i} className="h-9 w-24 rounded-full bg-muted animate-pulse" />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2.5">
+                          {features.map((f) => (
+                            <FeatureChip
+                              key={f}
+                              label={f}
+                              selected={formData.features.includes(f)}
+                              onClick={() => toggleFeature(f)}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {formData.features.length > 0 && (
+                        <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-brand">
+                          <Sparkles size={12} strokeWidth={2.3} />
+                          {formData.features.length} feature
+                          {formData.features.length === 1 ? "" : "s"} selected
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* ============ STEP 3 — Location & capacity =============== */}
+                  {step === 3 &&
+                    (activeTab === "camper-van" ? (
+                      <CaravanCapacityAddressStep
+                        embedded
+                        seatingCapacity={Number(formData.seatingCapacity) || 1}
+                        sleepingCapacity={Number(formData.sleepingCapacity) || 0}
+                        address={formData.address}
+                        locality={formData.locality || "India"}
+                        state={formData.state}
+                        city={formData.city}
+                        pincode={formData.pincode}
+                        locationData={locationData}
+                        mapSrc={mapSrc}
+                        errors={errors}
+                        onAdjustCapacity={adjustCapacity}
+                        onAddressChange={(v) => set("address", v)}
+                        onLocalityChange={(v) =>
+                          setFormData((p) => ({ ...p, locality: v, state: "", city: "" }))
+                        }
+                        onStateChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
+                        onCityChange={(v) => set("city", v)}
+                        onPincodeChange={(v) => set("pincode", v.replace(/\D/g, ""))}
+                        clearError={clearError}
+                      />
+                    ) : (
+                      <div className="space-y-4">
+                        <Field label="Street address" htmlFor="edit-address">
+                          <Input
+                            id="edit-address"
+                            value={formData.address}
+                            onChange={(e) => set("address", e.target.value)}
+                            placeholder="Street address"
+                            className={cn("h-11", CONTROL)}
+                          />
+                        </Field>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <Field label="State" error={errors.state}>
+                            <SearchableSelect
+                              value={formData.state}
+                              onChange={(v) => setFormData((p) => ({ ...p, state: v, city: "" }))}
+                              options={stateOptions}
+                              placeholder="Select state"
+                              searchPlaceholder="Search states…"
+                              error={!!errors.state}
+                            />
+                          </Field>
+                          <Field label="City" error={errors.city}>
+                            <SearchableSelect
+                              value={formData.city}
+                              onChange={(v) => set("city", v)}
+                              options={cityOptions}
+                              placeholder={formData.state ? "Select city" : "Pick a state first"}
+                              searchPlaceholder="Search cities…"
+                              disabled={!formData.state}
+                              error={!!errors.city}
+                            />
+                          </Field>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <Field label="Pincode" htmlFor="edit-pincode">
+                            <Input
+                              id="edit-pincode"
+                              value={formData.pincode}
+                              onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))}
+                              placeholder="6-digit code"
+                              maxLength={6}
+                              inputMode="numeric"
+                              className={cn("h-11", CONTROL)}
+                            />
+                          </Field>
+
+                          {/* Parity with /offering/add — these were loaded and
+                              saved but had no input on the edit page. */}
+                          {activeTab === "unique-stay" && (
+                            <Field label="Guest capacity" htmlFor="edit-guests">
+                              <Input
+                                id="edit-guests"
+                                type="number"
+                                min={1}
+                                value={String(formData.guestCapacity)}
+                                onChange={(e) => set("guestCapacity", Number(e.target.value) || 1)}
+                                placeholder="1"
+                                className={cn("h-11", CONTROL)}
+                              />
+                            </Field>
+                          )}
+
+                          {activeTab === "activity" && (
+                            <Field label="Persons (max)" htmlFor="edit-persons">
+                              <Input
+                                id="edit-persons"
+                                type="number"
+                                min={1}
+                                value={String(formData.personCapacity)}
+                                onChange={(e) => set("personCapacity", Number(e.target.value) || 1)}
+                                placeholder="1"
+                                className={cn("h-11", CONTROL)}
+                              />
+                            </Field>
+                          )}
+                        </div>
+
+                        {activeTab === "activity" && (
+                          <Field
+                            label="Duration"
+                            htmlFor="edit-duration"
+                            error={errors.timeDuration}
+                          >
+                            <Input
+                              id="edit-duration"
+                              value={formData.timeDuration}
+                              onChange={(e) => set("timeDuration", e.target.value)}
+                              placeholder="e.g. 2 Hours"
+                              aria-invalid={!!errors.timeDuration}
+                              className={cn("h-11", CONTROL, errors.timeDuration && CONTROL_ERROR)}
+                            />
+                          </Field>
+                        )}
+                      </div>
+                    ))}
+
+                  {/* ============ STEP 4 — Pricing + discounts =============== */}
+                  {step === 4 && (
+                    <div className="space-y-4">
+                      <SubPanel icon={Tag} title="Pricing" blurb="What you'll charge">
+                        {activeTab === "camper-van" && (
+                          <CaravanPricingStep
+                            embedded
+                            perKmCharge={formData.perKmCharge}
+                            perDayCharge={formData.perDayCharge}
+                            perKmIncludes={formData.perKmIncludes}
+                            perKmExcludes={formData.perKmExcludes}
+                            perDayIncludes={formData.perDayIncludes}
+                            perDayExcludes={formData.perDayExcludes}
+                            errors={errors}
+                            onPerKmChargeChange={(v) => set("perKmCharge", v)}
+                            onPerDayChargeChange={(v) => set("perDayCharge", v)}
+                            onAddPriceItem={(field) => addArrayItem(field)}
+                            onUpdatePriceItem={(field, i, v) => handleArrayChange(field, i, v)}
+                            onRemovePriceItem={(field, i) => removeArrayItem(field, i)}
+                            clearError={clearError}
+                          />
+                        )}
+                        {activeTab === "unique-stay" && (
+                          <UniqueStayPricing
+                            formData={formData}
+                            set={set}
+                            errors={errors}
+                            {...arrayHelpers}
+                          />
+                        )}
+                        {activeTab === "activity" && (
+                          <ActivityPricing
+                            formData={formData}
+                            set={set}
+                            errors={errors}
+                            {...arrayHelpers}
+                          />
+                        )}
+                      </SubPanel>
+
+                      <SubPanel
+                        icon={Sparkles}
+                        title="Discounts"
+                        blurb="Optional — toggle any offer to enable it"
+                      >
+                        <DiscountOffersStep
+                          embedded
+                          offers={discountOffers}
+                          onToggle={handleDiscountToggle}
+                          onOfferChange={handleDiscountOfferChange}
+                          errors={errors}
+                          weeklyLabel="Weekly / Monthly Offers"
+                        />
+                      </SubPanel>
+                    </div>
+                  )}
+
+                  {/* ============ STEP 5 — Review =============== */}
+                  {step === 5 && (
+                    <div className="space-y-3">
+                      {reviewSections.map((section) => (
+                        <ReviewSection
+                          key={section.label}
+                          label={section.label}
+                          rows={section.rows}
+                          onEdit={() => setStep(section.jumpTo)}
+                        />
+                      ))}
+
+                      {errors.submit && <WizardError message={errors.submit} />}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
-        </div>
 
-        {/* ── Footer / nav ── */}
-        <div
-          className="flex items-center justify-between gap-3"
-          style={{ position: "sticky", bottom: 0, padding: "12px 0" }}
-        >
-          <button
-            type="button"
-            onClick={step === 0 ? () => navigate(`/offering/${id}`) : onPrev}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              height: 44,
-              padding: "0 18px",
-              borderRadius: 13,
-              border: `1.5px solid ${GRAY_200}`,
-              backgroundColor: "#fff",
-              fontSize: 13,
-              fontWeight: 700,
-              color: GRAY_500,
-              cursor: "pointer",
-            }}
-          >
-            <ChevronLeft size={16} /> {step === 0 ? "Cancel" : "Back"}
-          </button>
-
-          <p style={{ fontSize: 12, color: GRAY_400, fontWeight: 600 }}>
-            Step {step + 1} of {STEPS.length}
-          </p>
-
-          <button
-            type="button"
-            onClick={onNext}
-            disabled={!stepCanAdvance || isSubmitting}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              height: 44,
-              padding: "0 24px",
-              borderRadius: 13,
-              border: "none",
-              backgroundColor: TEAL,
-              fontSize: 13.5,
-              fontWeight: 800,
-              color: "#fff",
-              cursor: !stepCanAdvance || isSubmitting ? "not-allowed" : "pointer",
-              opacity: !stepCanAdvance || isSubmitting ? 0.5 : 1,
-              boxShadow: "0 4px 16px rgba(13, 148, 136, 0.30)",
-              transition: "all 0.15s",
-            }}
-          >
-            {isLastStep ? (
-              isSubmitting ? (
-                "Saving…"
-              ) : (
-                <>
-                  <Check size={16} strokeWidth={3} /> Save Changes
-                </>
-              )
-            ) : (
-              <>
-                Continue <ChevronRight size={16} />
-              </>
-            )}
-          </button>
+                <WizardFooter
+                  step={step}
+                  total={STEPS.length}
+                  canAdvance={stepCanAdvance}
+                  busy={isSubmitting}
+                  isLastStep={isLastStep}
+                  onBack={step === 0 ? () => navigate(`/offering/${id}`) : onPrev}
+                  onNext={onNext}
+                  backLabel={step === 0 ? "Cancel" : "Back"}
+                  submitLabel="Save changes"
+                  busyLabel="Saving…"
+                />
+              </Panel>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </DashboardLayout>
