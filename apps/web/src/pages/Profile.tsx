@@ -12,6 +12,7 @@ import {
   Lock,
   MapPin,
   Pencil,
+  Phone,
   Plus,
   ReceiptText,
   Share2,
@@ -21,6 +22,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import DashboardLayout from "@/components/DashboardLayout";
 import ChangePasswordModal from "@/components/ChangePasswordModal";
 import {
@@ -32,7 +40,6 @@ import {
   EmptyState,
   Field,
   PANEL,
-  PANEL_FOOTER,
   Panel,
   PanelHead,
   ReadValue,
@@ -43,6 +50,15 @@ import { cn } from "@/lib/utils";
 import { userProfileApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { SocialIcon } from "./Profile/SocialIcon";
+
+/** `yyyy-mm-dd` is what the date input needs; nobody wants to read it. Declared
+ *  above the schema below because the field definitions reference it directly. */
+const readableDate = (v: string) => {
+  const d = new Date(v);
+  return Number.isNaN(d.getTime())
+    ? v
+    : d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
 
 /* ── Field schema ─────────────────────────────────────────────────────────────
    The old page rendered every field twice — once as a read-only <div>, once as
@@ -61,6 +77,8 @@ interface FieldDef {
   readOnly?: boolean;
   /** Shown under the label while editing. */
   hint?: string;
+  /** Presentation applied in read mode only — the input keeps the raw value. */
+  format?: (v: string) => string;
   /** Where to read a display value when the field itself is empty. */
   fallback?: (p: any) => string;
   /** Doubles as the fetch key for the whole profile — see `email` below. */
@@ -85,10 +103,11 @@ const PERSONAL_GROUPS: GroupDef[] = [
     title: "Your details",
     blurb: "The name guests see on bookings and messages.",
     icon: UserRound,
+    cols: "grid-cols-1 sm:grid-cols-2",
     fields: [
       { key: "firstName", label: "First name", placeholder: "Priya" },
       { key: "lastName", label: "Last name", placeholder: "Nair" },
-      { key: "dateOfBirth", label: "Date of birth", type: "date" },
+      { key: "dateOfBirth", label: "Date of birth", type: "date", format: readableDate },
       { key: "maritalStatus", label: "Marital status", placeholder: "Single" },
     ],
   },
@@ -219,6 +238,22 @@ const BUSINESS_GROUPS: GroupDef[] = [
   },
 ];
 
+/**
+ * `SocialProfileSchema.platform` is an enum of exactly these five, lowercase
+ * (Server/models/Profile.js). The old free-text input let you type anything —
+ * it only persisted because this update path runs without `runValidators`, so
+ * any value outside the list is a validation error waiting to surface. Offer
+ * the schema's own options instead.
+ */
+const PLATFORMS = ["facebook", "instagram", "twitter", "linkedin", "youtube"] as const;
+const PLATFORM_LABELS: Record<string, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  twitter: "Twitter",
+  linkedin: "LinkedIn",
+  youtube: "YouTube",
+};
+
 const TABS: { key: string; label: string; icon: LucideIcon }[] = [
   { key: "personal", label: "Personal", icon: UserRound },
   { key: "business", label: "Business", icon: Building2 },
@@ -340,7 +375,12 @@ const Profile = () => {
         return;
       }
       setSaving(true);
-      const json = await userProfileApi.upsert({ ...profile, email });
+      // GET augments the document with derived/server-managed keys. Echoing
+      // them back means PUTting a whole embedded Vendor doc on every save;
+      // strict mode drops them today, but don't rely on that.
+      const { vendorDetails, vendorStatus, userType, _id, __v, createdAt, updatedAt, ...payload } =
+        profile;
+      const json = await userProfileApi.upsert({ ...payload, email });
       const data: Record<string, any> = json.data || {};
       if (data.dateOfBirth) {
         data.dateOfBirth = new Date(data.dateOfBirth).toISOString().split("T")[0];
@@ -384,29 +424,63 @@ const Profile = () => {
     }
   };
 
-  /* ── Social links ── */
-  const [linkTitle, setLinkTitle] = useState("");
+  /* ── Social links ────────────────────────────────────────────────────────
+     Add and Remove commit straight away. They used to only mutate local state
+     behind a separate "Save changes" button, so adding a link and then
+     reloading silently lost it — an Add button next to a list has to stick.
+     The payload is just {email, socialProfiles}: the upsert `$set`s only those
+     paths, so a stale `profile` in state can't clobber anything else.        */
+  const [linkPlatform, setLinkPlatform] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
+  const [savingSocial, setSavingSocial] = useState(false);
   const socialProfiles: any[] = profile.socialProfiles || [];
+  /** One row per platform — the schema keys on it, and two Instagrams is noise. */
+  const linkedPlatforms = useMemo(
+    () => new Set(socialProfiles.map((l: any) => (l.platform || "").toLowerCase())),
+    [socialProfiles],
+  );
+
+  const persistSocial = async (next: any[], message: string) => {
+    const previous = socialProfiles;
+    setProfile((prev: any) => ({ ...prev, socialProfiles: next })); // optimistic
+    try {
+      setSavingSocial(true);
+      await userProfileApi.upsert({ email, socialProfiles: next } as any);
+      toast.success(message);
+    } catch (e: any) {
+      setProfile((prev: any) => ({ ...prev, socialProfiles: previous })); // roll back
+      toast.error(e?.message ? `We couldn't save that — ${e.message}` : "We couldn't save that.");
+    } finally {
+      setSavingSocial(false);
+    }
+  };
 
   const handleAddSocialLink = () => {
-    if (!linkTitle.trim() || !linkUrl.trim()) {
-      toast.error("Add both a title and a URL.");
+    if (!linkPlatform || !linkUrl.trim()) {
+      toast.error("Pick a platform and add a URL.");
       return;
     }
-    setProfile((prev: any) => ({
-      ...prev,
-      socialProfiles: [...(prev.socialProfiles || []), { platform: linkTitle, url: linkUrl }],
-    }));
-    setLinkTitle("");
+    if (!email) {
+      toast.error("Add an email address first.");
+      return;
+    }
+    if (socialProfiles.some((l) => (l.platform || "").toLowerCase() === linkPlatform)) {
+      toast.error(`${PLATFORM_LABELS[linkPlatform] ?? linkPlatform} is already linked.`);
+      return;
+    }
+    persistSocial(
+      [...socialProfiles, { platform: linkPlatform, url: linkUrl.trim() }],
+      "Link added",
+    );
+    setLinkPlatform("");
     setLinkUrl("");
   };
 
   const handleRemoveSocialLink = (index: number) =>
-    setProfile((prev: any) => ({
-      ...prev,
-      socialProfiles: (prev.socialProfiles || []).filter((_: any, i: number) => i !== index),
-    }));
+    persistSocial(
+      socialProfiles.filter((_: any, i: number) => i !== index),
+      "Link removed",
+    );
 
   /* ── Derived ── */
 
@@ -471,7 +545,7 @@ const Profile = () => {
                   className={cn("h-11", CONTROL)}
                 />
               ) : (
-                <ReadValue value={value} />
+                <ReadValue value={value && field.format ? field.format(value) : value} />
               )}
             </Field>
           );
@@ -581,7 +655,7 @@ const Profile = () => {
                   )}
                   {profile.phoneNumber && (
                     <span className="inline-flex items-center gap-1.5 tabular-nums">
-                      <UserRound size={12.5} strokeWidth={2.2} />
+                      <Phone size={12.5} strokeWidth={2.2} />
                       {profile.phoneNumber}
                     </span>
                   )}
@@ -773,16 +847,21 @@ const Profile = () => {
                 </Panel>
 
                 <Panel>
-                  <PanelHead icon={Plus} title="Add a link" />
-                  <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.4fr_auto] gap-4 items-end p-5">
-                    <Field label="Platform" htmlFor="link-title">
-                      <Input
-                        id="link-title"
-                        value={linkTitle}
-                        placeholder="Instagram"
-                        onChange={(e) => setLinkTitle(e.target.value)}
-                        className={cn("h-11", CONTROL)}
-                      />
+                  <PanelHead icon={Plus} title="Add a link" blurb="Saved as soon as you add it." />
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto] gap-4 items-end p-5">
+                    <Field label="Platform" htmlFor="link-platform">
+                      <Select value={linkPlatform} onValueChange={setLinkPlatform}>
+                        <SelectTrigger id="link-platform" className={cn("h-11", CONTROL)}>
+                          <SelectValue placeholder="Pick one" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PLATFORMS.map((p) => (
+                            <SelectItem key={p} value={p} disabled={linkedPlatforms.has(p)}>
+                              {PLATFORM_LABELS[p]}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </Field>
                     <Field label="URL" htmlFor="link-url">
                       <Input
@@ -795,31 +874,18 @@ const Profile = () => {
                       />
                     </Field>
                     <Button
-                      variant="ghost"
                       onClick={handleAddSocialLink}
-                      className={cn(BTN_SOFT, "h-11")}
+                      disabled={savingSocial}
+                      className={cn(BTN_PRIMARY, "h-11 disabled:opacity-60 disabled:shadow-none")}
                     >
-                      <Plus size={15} strokeWidth={2.4} />
+                      {savingSocial ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : (
+                        <Plus size={15} strokeWidth={2.4} />
+                      )}
                       Add
                     </Button>
                   </div>
-
-                  <footer className={cn(PANEL_FOOTER, "justify-end")}>
-                    <Button
-                      onClick={handleSaveProfile}
-                      disabled={saving}
-                      className={cn(BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
-                    >
-                      {saving ? (
-                        <>
-                          <Loader2 size={15} className="animate-spin" />
-                          Saving…
-                        </>
-                      ) : (
-                        "Save changes"
-                      )}
-                    </Button>
-                  </footer>
                 </Panel>
               </>
             ) : (

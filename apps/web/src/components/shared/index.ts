@@ -7,6 +7,7 @@ export { ChartTooltip } from "./ChartTooltip";
 export { PageSkeleton } from "./PageSkeleton";
 export { Breadcrumb } from "./Breadcrumb";
 export {
+  ACTIVE_PILL,
   BRAND_VARS,
   PANEL,
   PANEL_FOOTER,

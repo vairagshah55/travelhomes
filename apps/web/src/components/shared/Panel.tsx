@@ -35,6 +35,11 @@ export const PANEL_FOOTER =
   "flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 " +
   "bg-muted/40 dark:bg-white/[0.02]";
 
+/** Active-row highlight for a vertical rail. Give the `motion.span` a `layoutId`
+    so one pill slides between rows; siblings need `relative` to paint above it. */
+export const ACTIVE_PILL =
+  "absolute inset-0 rounded-xl bg-brand/[0.09] shadow-[inset_3px_0_0_0_hsl(var(--brand))]";
+
 /** Inset field that lifts to the card surface on focus — CONVENTIONS.md Rule 1/2. */
 export const CONTROL =
   "rounded-xl border-border bg-muted/50 dark:bg-white/5 text-[13.5px] " +
