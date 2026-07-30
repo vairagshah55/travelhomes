@@ -35,8 +35,21 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     cache: options?.cache || "default",
   });
   if (!res.ok) {
+    // The API answers failures with { success:false, error:{ code, message } }.
+    // Surfacing that message (instead of `HTTP 403: {"success":false,...}`) is
+    // what lets a page tell "your account isn't linked to a vendor" apart from
+    // "the server broke" — both used to render the same generic copy.
     const text = await res.text();
-    throw new Error(`HTTP ${res.status}: ${text}`);
+    let message = `HTTP ${res.status}`;
+    let code: string | undefined;
+    try {
+      const body = JSON.parse(text);
+      message = body?.error?.message || body?.message || message;
+      code = body?.error?.code;
+    } catch {
+      if (text) message = `${message}: ${text.slice(0, 200)}`;
+    }
+    throw Object.assign(new Error(message), { status: res.status, code });
   }
   return res.json() as Promise<T>;
 }

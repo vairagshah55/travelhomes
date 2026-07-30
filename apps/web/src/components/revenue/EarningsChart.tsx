@@ -46,8 +46,9 @@ export const EarningsChart: React.FC<{
   onPeriodChange: (p: string) => void;
   isLoading?: boolean;
   isError?: boolean;
+  errorMessage?: string;
   onRetry?: () => void;
-}> = ({ chartData, period, onPeriodChange, isLoading, isError, onRetry }) => {
+}> = ({ chartData, period, onPeriodChange, isLoading, isError, errorMessage, onRetry }) => {
   // useId keeps the gradient def unique if this chart is ever mounted twice.
   const gradientId = `revenueEarnings${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
   const hasEarnings = chartData.some((d) => d.value > 0);
@@ -82,7 +83,7 @@ export const EarningsChart: React.FC<{
         <EmptyState
           icon={AlertCircle}
           title="We couldn't load your earnings"
-          description="The request didn't go through. Try again in a moment."
+          description={errorMessage || "The request didn't go through. Try again in a moment."}
           actionLabel={onRetry ? "Try again" : undefined}
           onAction={onRetry}
         />

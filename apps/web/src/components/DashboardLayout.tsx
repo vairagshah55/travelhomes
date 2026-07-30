@@ -42,8 +42,17 @@ interface LayoutContextValue {
 const LayoutContext = createContext<LayoutContextValue | null>(null);
 
 /* ── Route-level shell ────────────────────────────────────────────────────── */
-/** Renders the persistent sidebar + header + mobile nav. Pages render via <Outlet />. */
-export const DashboardLayoutShell: React.FC = () => {
+/**
+ * Renders the persistent sidebar + header + mobile nav. Pages render via
+ * <Outlet /> when used as a route element.
+ *
+ * `children` is the standalone escape hatch: a page that lives OUTSIDE the
+ * dashboard route group but still needs the vendor chrome (e.g. /help, which
+ * shows the sidebar for vendors and public header/footer for everyone else)
+ * can mount the shell directly around its own content. Same shell either way,
+ * so the two can't drift.
+ */
+export const DashboardLayoutShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [title, setTitle] = useState("Dashboard");
 
   return (
@@ -51,7 +60,10 @@ export const DashboardLayoutShell: React.FC = () => {
       {/* data-brand="admin" → the vendor dashboard inherits the admin/console
           design system (tpl tokens, table styling, surfaces) with no duplicate
           theme. */}
-      <div data-brand="admin" className="flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg font-plus-jakarta overflow-hidden">
+      <div
+        data-brand="admin"
+        className="flex h-screen bg-tpl-body-bg dark:bg-tpl-body-bg font-plus-jakarta overflow-hidden"
+      >
         <div className="hidden lg:block">
           <Sidebar />
         </div>
@@ -62,9 +74,7 @@ export const DashboardLayoutShell: React.FC = () => {
               shell stays mounted. Without this, the outer App-level Suspense
               fallback (RouteFallback) replaces the entire UI including the
               sidebar while a chunk downloads. */}
-          <Suspense fallback={<ContentLoader />}>
-            <Outlet />
-          </Suspense>
+          <Suspense fallback={<ContentLoader />}>{children ?? <Outlet />}</Suspense>
         </div>
 
         <div className="lg:hidden fixed bottom-0 w-full z-50">

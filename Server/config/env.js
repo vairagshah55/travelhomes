@@ -11,10 +11,20 @@
 const path = require("path");
 const { z } = require("zod");
 
-// Resolve the right .env file based on NODE_ENV before zod parses anything.
-// Server/.env (this file lives in Server/config/, so '..' resolves to Server/).
-const envFile = process.env.NODE_ENV === "production" ? ".env.production" : ".env";
-require("dotenv").config({ path: path.join(__dirname, "..", envFile) });
+// Resolve env files before zod parses anything. This file lives in
+// Server/config/, so '..' resolves to Server/.
+//
+// Cascade, highest priority first: `.env.<NODE_ENV>` then plain `.env`.
+// dotenv never overwrites a key that is already set, so the env-specific file
+// wins and `.env` fills the gaps (shared secrets, ports, SMTP…).
+//
+// Before this, only `.env` (dev) or `.env.production` was read — which made
+// `Server/.env.development` dead weight: editing it changed nothing, and dev
+// silently fell back to whatever `.env` said (a localhost Mongo URI).
+const NODE_ENV = process.env.NODE_ENV || "development";
+for (const file of [`.env.${NODE_ENV}`, ".env"]) {
+  require("dotenv").config({ path: path.join(__dirname, "..", file) });
+}
 
 const booleanish = z
   .union([z.boolean(), z.enum(["true", "false", "1", "0", ""])])

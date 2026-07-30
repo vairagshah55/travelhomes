@@ -65,7 +65,6 @@ const Analytics = lazy(() => import("./pages/Analytics"));
 // ─── Chat / settings / profile ─────────────────────────────────────────────
 const Chat = lazy(() => import("./pages/Chat"));
 const VendorChat = lazy(() => import("./pages/VendorChat"));
-const DashboardChat = lazy(() => import("./pages/DashboardChat"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Notifications = lazy(() => import("./pages/Notifications"));

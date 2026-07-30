@@ -57,9 +57,11 @@ function isInPeriod(dateStr: string, period: string): boolean {
 export const PaymentTable: React.FC<{
   loading: boolean;
   isError?: boolean;
+  /** Server's reason, when it gave one — beats a generic "couldn't load". */
+  errorMessage?: string;
   onRetry?: () => void;
   data: PaymentRecord[];
-}> = ({ loading, isError, onRetry, data }) => {
+}> = ({ loading, isError, errorMessage, onRetry, data }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("all");
@@ -172,7 +174,7 @@ export const PaymentTable: React.FC<{
         data={pagedRows}
         isLoading={loading}
         isError={isError}
-        errorMessage="We couldn't load your payments."
+        errorMessage={errorMessage || "We couldn't load your payments."}
         onRetry={onRetry}
         hasActiveQuery={hasActiveQuery}
         emptyIcon={Wallet}

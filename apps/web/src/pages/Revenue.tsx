@@ -8,6 +8,26 @@ import { BRAND_VARS, StatTile, StatTileSkeleton } from "@/components/shared";
 import { EarningsChart, PaymentTable, inr, toAmount } from "@/components/revenue";
 import type { ChartItem, PaymentRecord } from "@/components/revenue";
 
+/**
+ * Turn a failed request into something a vendor can act on.
+ *
+ * `/api/bookingDetails` answers 403 "Vendor not found" when the signed-in
+ * account has no Vendor record — a JWT stays valid across a database switch,
+ * so a stale session looks exactly like a server fault otherwise.
+ */
+const reasonFor = (error: unknown): string | undefined => {
+  if (!error) return undefined;
+  const status = (error as { status?: number }).status;
+  const message = (error as Error).message;
+  if (status === 401) return "Your session has expired. Sign in again to see this.";
+  if (status === 403) {
+    return message?.toLowerCase().includes("vendor not found")
+      ? "This account isn't linked to a vendor profile, so there's nothing to show. Sign in with your vendor account."
+      : message || "You don't have access to this.";
+  }
+  return message || undefined;
+};
+
 const Revenue = () => {
   const { token: authToken } = useAuth();
   const token = authToken ?? undefined;
@@ -135,12 +155,14 @@ const Revenue = () => {
           onPeriodChange={setPeriod}
           isLoading={graphsQuery.isLoading}
           isError={graphsQuery.isError}
+          errorMessage={reasonFor(graphsQuery.error)}
           onRetry={() => graphsQuery.refetch()}
         />
 
         <PaymentTable
           loading={bookingsQuery.isLoading}
           isError={bookingsQuery.isError}
+          errorMessage={reasonFor(bookingsQuery.error)}
           onRetry={() => bookingsQuery.refetch()}
           data={payments}
         />

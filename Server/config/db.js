@@ -70,6 +70,21 @@ const connectDB = async () => {
     };
     console.error(`Error connecting to MongoDB: ${error.message}`);
 
+    // Without this, a dev whose Mongo is unreachable just sees every request
+    // 500 with a MongoServerSelectionError stack and no hint about the cause.
+    if (/localhost|127\.0\.0\.1/.test(String(MONGO_URI))) {
+      console.error(
+        "[db] MONGO_URI points at a LOCAL MongoDB that isn't accepting connections.\n" +
+          "     Either start it (Windows: `net start MongoDB` from an elevated prompt)\n" +
+          "     or point MONGO_URI at the Atlas cluster in Server/.env.development.",
+      );
+    } else {
+      console.error(
+        "[db] Check MONGO_URI credentials and that this machine's IP is on the\n" +
+          "     Atlas Network Access allow-list.",
+      );
+    }
+
     // In production, exit; in dev, keep server running
     if (env.NODE_ENV === "production") {
       process.exit(1);

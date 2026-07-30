@@ -1,6 +1,5 @@
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -8,11 +7,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Eye, MousePointer, ClipboardCheck, ListChecks, Wallet, TrendingUp } from "lucide-react";
+import {
+  BadgeCheck,
+  CalendarCheck,
+  CalendarClock,
+  CalendarX,
+  Clock,
+  Eye,
+  IndianRupee,
+  LineChart,
+  MousePointer,
+  Package,
+  Target,
+  Users,
+} from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { vendorAnalyticsApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { ChartTooltip } from "@/components/shared";
+import {
+  BRAND_VARS,
+  CONTROL,
+  ChartTooltip,
+  PANEL,
+  Panel,
+  PanelHead,
+  SELECT_ITEM,
+  StatTile,
+  StatTileSkeleton,
+} from "@/components/shared";
+import { cn } from "@/lib/utils";
 import {
   AreaChart,
   Area,
@@ -23,20 +46,150 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface MetricCard {
-  title: string;
-  value: string;
-  icon: React.ReactNode;
-  bgColor: string;
-  iconBgColor: string;
-}
+const currencyINR = (n: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(n);
 
-const Analytics = () => {
-  const Sk = ({ className = "" }: { className?: string }) => (
-    <div className={`animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800 ${className}`} />
+const PERIODS = [
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "yearly", label: "Yearly" },
+];
+
+const periodLabel = (v: string) => PERIODS.find((p) => p.value === v)?.label ?? v;
+
+/* ── Chart panel ──────────────────────────────────────────────────────────── */
+
+const ChartPanel = ({
+  icon,
+  title,
+  filter,
+  onFilterChange,
+  data,
+  dataKey,
+  color,
+  loading,
+  currency,
+}: {
+  icon: typeof LineChart;
+  title: string;
+  filter: string;
+  onFilterChange: (v: string) => void;
+  data: any[];
+  dataKey: string;
+  color: string;
+  loading: boolean;
+  currency?: boolean;
+}) => {
+  const gradientId = `grad-${dataKey}-${title.replace(/\s/g, "")}`;
+  const total = useMemo(
+    () => data.reduce((sum, row) => sum + Number(row?.[dataKey] || 0), 0),
+    [data, dataKey],
   );
 
-  // Filters
+  return (
+    <Panel>
+      <PanelHead
+        icon={icon}
+        title={title}
+        // The period is part of what the chart IS — the old titles said
+        // "Monthly Earnings" no matter which period was selected.
+        blurb={
+          loading
+            ? "Loading…"
+            : `${periodLabel(filter)} · ${currency ? currencyINR(total) : total.toLocaleString("en-IN")} total`
+        }
+        aside={
+          <Select value={filter} onValueChange={onFilterChange}>
+            <SelectTrigger className={cn("h-9 w-[112px]", CONTROL)} aria-label={`${title} period`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent style={BRAND_VARS}>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.value} value={p.value} className={SELECT_ITEM}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        }
+      />
+
+      <div className="p-4 pt-5">
+        {loading ? (
+          <div className="h-[200px] rounded-xl bg-muted animate-pulse" />
+        ) : data.length === 0 ? (
+          <div className="h-[200px] grid place-items-center text-center">
+            <div>
+              <span className="mx-auto grid place-items-center w-11 h-11 rounded-full bg-muted text-muted-foreground">
+                <LineChart size={20} strokeWidth={1.9} />
+              </span>
+              <p className="mt-2.5 text-[13px] font-semibold text-foreground">Nothing to plot</p>
+              <p className="mt-0.5 text-[12px] text-muted-foreground">
+                No {periodLabel(filter).toLowerCase()} data for this period yet.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={color} stopOpacity={0.28} />
+                    <stop offset="95%" stopColor={color} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                {/* Horizontal rules only — vertical ones fight the area fill. */}
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="currentColor"
+                  className="text-border"
+                />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11 }}
+                  stroke="currentColor"
+                  className="text-muted-foreground"
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 11 }}
+                  stroke="currentColor"
+                  className="text-muted-foreground"
+                  width={38}
+                />
+                <Tooltip content={<ChartTooltip valuePrefix={currency ? "₹" : ""} />} />
+                <Area
+                  type="monotone"
+                  dataKey={dataKey}
+                  stroke={color}
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill={`url(#${gradientId})`}
+                  activeDot={{ r: 4, strokeWidth: 2 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+    </Panel>
+  );
+};
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
+const Analytics = () => {
   const [monthlyFilter, setMonthlyFilter] = useState("monthly");
   const [yearlyFilter, setYearlyFilter] = useState("yearly");
   const [dailyFilter, setDailyFilter] = useState("daily");
@@ -77,300 +230,213 @@ const Analytics = () => {
     },
   });
 
-  const counts = {
-    total: countsQuery.data?.total ?? 0,
-    upcoming: countsQuery.data?.upcoming ?? 0,
-    past: countsQuery.data?.past ?? 0,
-    cancelled: countsQuery.data?.cancelled ?? 0,
-  };
-  const impressions = countsQuery.data?.metrics?.impressions ?? 0;
-  const clicks = countsQuery.data?.metrics?.clicks ?? 0;
-  const payments = countsQuery.data?.payments ?? { received: 0, pending: 0 };
-  const properties = countsQuery.data?.properties ?? { approved: 0, pending: 0 };
-  const monthlyGraphData = monthlyQuery.data ?? [];
-  const yearlyGraphData = yearlyQuery.data ?? [];
-  const dailyGraphData = dailyQuery.data ?? [];
+  const data = countsQuery.data;
   const loading = countsQuery.isLoading;
 
-  const topRowMetrics: MetricCard[] = [
-    {
-      title: "Impression",
-      value: String(impressions),
-      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-orange-50 dark:bg-orange-900/20",
-      iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
-    },
-    {
-      title: "Clicked",
-      value: String(clicks),
-      icon: <MousePointer size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-purple-50 dark:bg-purple-900/20",
-      iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
-    },
-    {
-      title: "No. of Payment Received",
-      value: String(payments.received),
-      icon: <ClipboardCheck size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
-      iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
-    },
-    {
-      title: "No. of Payment Pending",
-      value: String(payments.pending),
-      icon: <ListChecks size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-red-50 dark:bg-red-900/20",
-      iconBgColor: "bg-red-100 dark:bg-red-800/30",
-    },
+  const impressions = data?.metrics?.impressions ?? 0;
+  const clicks = data?.metrics?.clicks ?? 0;
+  const visitors = data?.metrics?.visitors ?? 0;
+  const payments = data?.payments ?? { received: 0, pending: 0 };
+  const properties = data?.properties ?? { approved: 0, pending: 0 };
+
+  /** Clicks per impression — the number that says whether reach is working. */
+  const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+
+  const bookingSegments = [
+    { label: "Total", value: data?.total ?? 0, dot: "bg-brand", icon: CalendarCheck },
+    { label: "Upcoming", value: data?.upcoming ?? 0, dot: "bg-blue-400", icon: CalendarClock },
+    { label: "Past", value: data?.past ?? 0, dot: "bg-emerald-400", icon: CalendarCheck },
+    { label: "Cancelled", value: data?.cancelled ?? 0, dot: "bg-red-400", icon: CalendarX },
   ];
-
-  const bottomRowMetrics: MetricCard[] = [
-    {
-      title: "Total Booking",
-      value: String(counts.total),
-      icon: <Wallet size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-purple-50 dark:bg-purple-900/20",
-      iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
-    },
-    {
-      title: "Upcoming Booking",
-      value: String(counts.upcoming),
-      icon: <ClipboardCheck size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-cyan-50 dark:bg-cyan-900/20",
-      iconBgColor: "bg-cyan-100 dark:bg-cyan-800/30",
-    },
-    {
-      title: "Past Booking",
-      value: String(counts.past),
-      icon: <ListChecks size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-green-50 dark:bg-green-900/20",
-      iconBgColor: "bg-green-100 dark:bg-green-800/30",
-    },
-    {
-      title: "Cancelled Booking",
-      value: String(counts.cancelled),
-      icon: <Wallet size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-purple-50 dark:bg-purple-900/20",
-      iconBgColor: "bg-purple-100 dark:bg-purple-800/30",
-    },
-  ];
-
-  const secondBottomRowMetrics: MetricCard[] = [
-    {
-      title: "Approved Property Listing",
-      value: String(properties.approved),
-      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-orange-50 dark:bg-orange-900/20",
-      iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
-    },
-    {
-      title: "Pending Property for Approval",
-      value: String(properties.pending),
-      icon: <Eye size={20} style={{ color: "#0d9488" }} />,
-      bgColor: "bg-orange-50 dark:bg-orange-900/20",
-      iconBgColor: "bg-orange-100 dark:bg-orange-800/30",
-    },
-  ];
-
-  const MetricCardComponent = ({ metric }: { metric: MetricCard }) => (
-    <div
-      data-animate="kpi-card"
-      data-animate-item
-      className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group motion-kpi-card"
-    >
-      <div className="flex items-start gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 motion-kpi-icon"
-          style={{ background: "#E8FAFA" }}
-        >
-          {metric.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 truncate">
-            {metric.title}
-          </p>
-          <p
-            data-countup
-            data-countup-duration="1200"
-            className="text-xl font-bold text-gray-900 dark:text-white mt-0.5 tracking-tight font-geist"
-          >
-            {metric.value}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const ChartComponent = ({
-    title,
-    filter,
-    onFilterChange,
-    data,
-    dataKey,
-    color = "#334054",
-  }: {
-    title: string;
-    filter: string;
-    onFilterChange: (value: string) => void;
-    data: any[];
-    dataKey: string;
-    color?: string;
-  }) => (
-    <div
-      data-animate="chart-card"
-      data-animate-item
-      className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5 hover:shadow-md transition-all duration-200 motion-surface-card"
-    >
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 font-plus-jakarta">
-          {title}
-        </h3>
-        <Select value={filter} onValueChange={onFilterChange}>
-          <SelectTrigger className="w-24 h-7 text-xs bg-gray-100 dark:bg-gray-700 border-none">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">Daily</SelectItem>
-            <SelectItem value="weekly">Weekly</SelectItem>
-            <SelectItem value="monthly">Monthly</SelectItem>
-            <SelectItem value="yearly">Yearly</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="h-48 relative">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={data}
-            margin={{
-              top: 10,
-              right: 10,
-              left: 0,
-              bottom: 0,
-            }}
-          >
-            <defs>
-              <linearGradient
-                id={`color${dataKey}${title.replace(/\s/g, "")}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                <stop offset="95%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "#6B7280" }}
-              interval="preserveStartEnd"
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fill: "#6B7280" }}
-              width={30}
-            />
-            <Tooltip content={<ChartTooltip valuePrefix={dataKey === "earnings" ? "₹" : ""} />} />
-            <Area
-              type="monotone"
-              dataKey={dataKey}
-              stroke={color}
-              strokeWidth={2}
-              fillOpacity={1}
-              fill={`url(#color${dataKey}${title.replace(/\s/g, "")})`}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
 
   return (
     <DashboardLayout
       title="Analytics"
-      outerClassName="motion-page-shell"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6"
+      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* All Metrics — single unified grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-          {loading
-            ? Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 flex items-start gap-3"
-                >
-                  <Sk className="w-10 h-10 rounded-xl shrink-0" />
-                  <div className="flex-1 space-y-2 pt-1">
-                    <Sk className="h-3 w-20" />
-                    <Sk className="h-6 w-14" />
-                  </div>
-                </div>
-              ))
-            : [...topRowMetrics, ...bottomRowMetrics, ...secondBottomRowMetrics].map(
-                (metric, index) => <MetricCardComponent key={index} metric={metric} />,
-              )}
-        </div>
-
-        {/* Charts row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {loading ? (
-            Array.from({ length: 2 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <Sk className="h-5 w-36" />
-                  <Sk className="h-7 w-24 rounded-lg" />
-                </div>
-                <Sk className="h-48 w-full" />
-              </div>
-            ))
-          ) : (
-            <>
-              <ChartComponent
-                title="Monthly Earnings"
-                filter={monthlyFilter}
-                onFilterChange={setMonthlyFilter}
-                data={monthlyGraphData}
-                dataKey="earnings"
-                color="#0d9488"
-              />
-              <ChartComponent
-                title="Yearly Earnings"
-                filter={yearlyFilter}
-                onFilterChange={setYearlyFilter}
-                data={yearlyGraphData}
-                dataKey="earnings"
-                color="#8B5CF6"
-              />
-            </>
-          )}
-        </div>
-
-        {/* Visitors chart full width */}
-        {loading ? (
-          <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <Sk className="h-5 w-36" />
-              <Sk className="h-7 w-24 rounded-lg" />
-            </div>
-            <Sk className="h-48 w-full" />
+      {/* pb clears the fixed MobileVendorNav on small screens. */}
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
+        {/* ── Reach ── */}
+        <section className="space-y-2.5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Reach
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {loading ? (
+              <>
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+              </>
+            ) : (
+              <>
+                <StatTile
+                  icon={Eye}
+                  label="Impressions"
+                  hint="Times your listings were shown"
+                  value={impressions}
+                  color="#06b6d4"
+                  index={0}
+                />
+                <StatTile
+                  icon={MousePointer}
+                  label="Clicks"
+                  hint="Opened from search"
+                  value={clicks}
+                  color="#f59e0b"
+                  index={1}
+                />
+                <StatTile
+                  icon={Target}
+                  label="Click-through rate"
+                  hint="Clicks ÷ impressions"
+                  value={`${ctr.toFixed(1)}%`}
+                  color="#a855f7"
+                  index={2}
+                />
+                <StatTile
+                  icon={Users}
+                  label="Visitors"
+                  hint="People who viewed your offers"
+                  value={visitors}
+                  color="#ec4899"
+                  index={3}
+                />
+              </>
+            )}
           </div>
-        ) : (
-          <ChartComponent
-            title="Daily Visitors"
+        </section>
+
+        {/* ── Bookings ── */}
+        <section className="space-y-2.5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Bookings
+          </h2>
+          {loading ? (
+            <div className={cn(PANEL, "h-[92px] animate-pulse")} />
+          ) : (
+            <Panel>
+              <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border/70">
+                {bookingSegments.map((s) => (
+                  <div
+                    key={s.label}
+                    className="flex flex-col items-center justify-center gap-1.5 py-4 transition-colors duration-150 hover:bg-muted/50 dark:hover:bg-white/[0.02]"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span className={cn("w-2 h-2 rounded-full", s.dot)} />
+                      <span className="text-[11.5px] font-semibold text-muted-foreground">
+                        {s.label}
+                      </span>
+                    </span>
+                    <p className="text-[20px] font-bold tracking-[-0.02em] tabular-nums text-foreground">
+                      {s.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+          )}
+        </section>
+
+        {/* ── Money and catalog ── */}
+        <section className="space-y-2.5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Payments and listings
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {loading ? (
+              <>
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+                <StatTileSkeleton />
+              </>
+            ) : (
+              <>
+                {/* These are SUMS of payment amounts, not counts — the old
+                    labels ("No. of Payment Received") read a rupee total as a
+                    quantity. */}
+                <StatTile
+                  icon={IndianRupee}
+                  label="Payments received"
+                  hint="Completed and paid"
+                  value={payments.received}
+                  format={currencyINR}
+                  color="#10b981"
+                  index={0}
+                />
+                <StatTile
+                  icon={Clock}
+                  label="Payments pending"
+                  hint="Awaiting settlement"
+                  value={payments.pending}
+                  format={currencyINR}
+                  color="#f43f5e"
+                  index={1}
+                />
+                <StatTile
+                  icon={BadgeCheck}
+                  label="Approved listings"
+                  hint="Live on the site"
+                  value={properties.approved}
+                  color="#22c55e"
+                  index={2}
+                />
+                <StatTile
+                  icon={Package}
+                  label="Pending approval"
+                  hint="With our review team"
+                  value={properties.pending}
+                  color="#f59e0b"
+                  index={3}
+                />
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* ── Trends ── */}
+        <section className="space-y-2.5">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+            Trends
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <ChartPanel
+              icon={IndianRupee}
+              title="Earnings"
+              filter={monthlyFilter}
+              onFilterChange={setMonthlyFilter}
+              data={monthlyQuery.data ?? []}
+              dataKey="earnings"
+              color="#0d9488"
+              loading={monthlyQuery.isLoading}
+              currency
+            />
+            <ChartPanel
+              icon={LineChart}
+              title="Earnings trend"
+              filter={yearlyFilter}
+              onFilterChange={setYearlyFilter}
+              data={yearlyQuery.data ?? []}
+              dataKey="earnings"
+              color="#8b5cf6"
+              loading={yearlyQuery.isLoading}
+              currency
+            />
+          </div>
+
+          <ChartPanel
+            icon={Users}
+            title="Visitors"
             filter={dailyFilter}
             onFilterChange={setDailyFilter}
-            data={dailyGraphData}
+            data={dailyQuery.data ?? []}
             dataKey="visitors"
-            color="#0d9488"
+            color="#0ea5e9"
+            loading={dailyQuery.isLoading}
           />
-        )}
+        </section>
       </div>
     </DashboardLayout>
   );
