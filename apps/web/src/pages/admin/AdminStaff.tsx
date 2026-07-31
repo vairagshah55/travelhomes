@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { Edit2, Trash2, MoreHorizontal } from "lucide-react";
 import { useStaff, useRoles } from "@/hooks/admin/useStaff";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 
 // ---------------------------------------------------------------------------
 // Local types
@@ -44,17 +46,24 @@ type FeatureKey =
   | "Listing"
   | "Vendor"
   | "User"
+  | "Bookings"
   | "Analytics"
   | "Help Desk"
   | "CMS"
   | "Marketing"
   | "Plugins"
   | "Staff"
+  | "Roles"
   | "CRM"
   | "Settings";
 
 type PermissionMatrix = Record<FeatureKey, { view: boolean; full: boolean }>;
 
+// Every row the admin SPA gates on must appear here — `lib/adminPermissions.ts`
+// is the list of features routes ask for, and a feature with no row is one no
+// role can ever be granted. Bookings (/admin/management/booking) and Roles
+// (/admin/staff/roles) were missing, so those two areas were unreachable for
+// every staff account regardless of what was ticked.
 const EMPTY_MATRIX: PermissionMatrix = {
   Dashboard: { view: false, full: false },
   Management: { view: false, full: false },
@@ -62,12 +71,14 @@ const EMPTY_MATRIX: PermissionMatrix = {
   Listing: { view: false, full: false },
   Vendor: { view: false, full: false },
   User: { view: false, full: false },
+  Bookings: { view: false, full: false },
   Analytics: { view: false, full: false },
   "Help Desk": { view: false, full: false },
   CMS: { view: false, full: false },
   Marketing: { view: false, full: false },
   Plugins: { view: false, full: false },
   Staff: { view: false, full: false },
+  Roles: { view: false, full: false },
   CRM: { view: false, full: false },
   Settings: { view: false, full: false },
 };
@@ -85,12 +96,14 @@ const FEATURE_MAPPING: Record<FeatureKey, string> = {
   Listing: "manage_inventory",
   Vendor: "manage_vendors",
   User: "manage_users",
+  Bookings: "access_bookings",
   Analytics: "view_analytics",
   "Help Desk": "support_tickets",
   CMS: "manage_cms",
   Marketing: "manage_marketing",
   Plugins: "manage_plugins",
   Staff: "manage_staff",
+  Roles: "manage_roles",
   CRM: "manage_crm",
   Settings: "manage_settings",
 };
@@ -381,42 +394,47 @@ const DropdownMenu = ({
   openId,
   setOpenId,
   onDelete,
+  canDelete,
 }: {
   id: string;
   openId: string | null;
   setOpenId: (id: string | null) => void;
   onDelete: () => void;
-}) => (
-  <div className="relative">
-    <button
-      onClick={() => setOpenId(openId === id ? null : id)}
-      className="text-dashboard-body hover:text-dashboard-primary transition-colors"
-    >
-      <MoreHorizontal size={24} />
-    </button>
-    {openId === id && (
-      <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
-        <div className="py-1">
-          {/* Edit — no edit flow implemented yet; button is present but inert */}
-          <button
-            disabled
-            className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50 opacity-40 cursor-not-allowed"
-          >
-            <Edit2 size={18} className="text-dashboard-body" />
-            <span className="text-dashboard-body font-poppins text-sm">Edit</span>
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50"
-          >
-            <Trash2 size={18} className="text-red-600" />
-            <span className="text-red-600 font-poppins text-sm">Delete</span>
-          </button>
+  canDelete: boolean;
+}) =>
+  // Edit is inert and Delete is the only live item, so a role without delete
+  // rights would open an empty menu.
+  !canDelete ? null : (
+    <div className="relative">
+      <button
+        onClick={() => setOpenId(openId === id ? null : id)}
+        className="text-dashboard-body hover:text-dashboard-primary transition-colors"
+      >
+        <MoreHorizontal size={24} />
+      </button>
+      {openId === id && (
+        <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
+          <div className="py-1">
+            {/* Edit — no edit flow implemented yet; button is present but inert */}
+            <button
+              disabled
+              className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50 opacity-40 cursor-not-allowed"
+            >
+              <Edit2 size={18} className="text-dashboard-body" />
+              <span className="text-dashboard-body font-poppins text-sm">Edit</span>
+            </button>
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50"
+            >
+              <Trash2 size={18} className="text-red-600" />
+              <span className="text-red-600 font-poppins text-sm">Delete</span>
+            </button>
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 
 // ---------------------------------------------------------------------------
 // DropdownRoleMenu — View removed (no handler); only Delete remains.
@@ -427,34 +445,37 @@ const DropdownRoleMenu = ({
   openId,
   setOpenId,
   onDelete,
+  canDelete,
 }: {
   id: string;
   openId: string | null;
   setOpenId: (id: string | null) => void;
   onDelete: () => void;
-}) => (
-  <div className="relative inline-block">
-    <button
-      onClick={() => setOpenId(openId === id ? null : id)}
-      className="text-dashboard-body hover:text-dashboard-primary transition-colors"
-    >
-      <MoreHorizontal size={24} />
-    </button>
-    {openId === id && (
-      <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
-        <div className="py-1">
-          <button
-            onClick={onDelete}
-            className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50"
-          >
-            <Trash2 size={18} className="text-red-600" />
-            <span className="text-red-600 font-poppins text-sm">Delete</span>
-          </button>
+  canDelete: boolean;
+}) =>
+  !canDelete ? null : (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setOpenId(openId === id ? null : id)}
+        className="text-dashboard-body hover:text-dashboard-primary transition-colors"
+      >
+        <MoreHorizontal size={24} />
+      </button>
+      {openId === id && (
+        <div className="absolute top-8 right-0 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-10 w-48">
+          <div className="py-1">
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-3 w-full px-3 py-3 hover:bg-gray-50"
+            >
+              <Trash2 size={18} className="text-red-600" />
+              <span className="text-red-600 font-poppins text-sm">Delete</span>
+            </button>
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 
 // ---------------------------------------------------------------------------
 // StaffList — uses useStaff hook; pagination controls page param
@@ -481,6 +502,7 @@ const StaffList: React.FC<StaffListProps> = ({
   setStaffDropdownOpen,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const access = useFeatureAccess(ADMIN_FEATURES.staff);
 
   const { query } = useStaff({
     page: currentPage,
@@ -508,12 +530,14 @@ const StaffList: React.FC<StaffListProps> = ({
           <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
             List of Staff
           </h3>
-          <button
-            onClick={() => setShowStaffModal(true)}
-            className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
-          >
-            + Add New Account
-          </button>
+          {access.canCreate && (
+            <button
+              onClick={() => setShowStaffModal(true)}
+              className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
+            >
+              + Add New Account
+            </button>
+          )}
         </div>
 
         <div className="border border-dashboard-stroke flex flex-col gap-2 rounded-xl overflow-scroll">
@@ -554,6 +578,7 @@ const StaffList: React.FC<StaffListProps> = ({
                           openId={staffDropdownOpen}
                           setOpenId={setStaffDropdownOpen}
                           onDelete={() => deleteStaff(staff.id)}
+                          canDelete={access.canDelete}
                         />
                       </td>
                     </tr>
@@ -613,6 +638,7 @@ const RolesList: React.FC<RolesListProps> = ({
   setRoleDropdownOpen,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const access = useFeatureAccess(ADMIN_FEATURES.roles);
 
   const { query } = useRoles({
     page: currentPage,
@@ -636,12 +662,14 @@ const RolesList: React.FC<RolesListProps> = ({
           <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
             Roles
           </h3>
-          <button
-            onClick={() => setShowRoleModal(true)}
-            className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
-          >
-            + Add New Role
-          </button>
+          {access.canCreate && (
+            <button
+              onClick={() => setShowRoleModal(true)}
+              className="px-5 py-2.5 bg-tpl-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-tpl-primary-hover transition-colors"
+            >
+              + Add New Role
+            </button>
+          )}
         </div>
 
         <div className="overflow-auto">
@@ -679,6 +707,7 @@ const RolesList: React.FC<RolesListProps> = ({
                         openId={roleDropdownOpen}
                         setOpenId={setRoleDropdownOpen}
                         onDelete={() => deleteRole(role.id)}
+                        canDelete={access.canDelete}
                       />
                     </td>
                   </tr>

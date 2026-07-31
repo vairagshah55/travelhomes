@@ -14,6 +14,8 @@ import {
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useBookings, type Booking } from "@/hooks/admin/useBookings";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { formatDate } from "@/utils/formateTime";
 
 const TABS = [
@@ -49,6 +51,7 @@ function mapSortValue(val: string): string {
 }
 
 const BookingManagement: React.FC = () => {
+  const access = useFeatureAccess(ADMIN_FEATURES.bookings);
   const [activeTab, setActiveTab] = useState("all-bookings");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("bookingId");
@@ -168,7 +171,9 @@ const BookingManagement: React.FC = () => {
 
   const rowActions: RowAction<Booking>[] = [
     { label: "View", icon: Eye, onClick: handleView },
-    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+    ...(access.canDelete
+      ? [{ label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" as const }]
+      : []),
   ];
 
   return (

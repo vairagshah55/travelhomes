@@ -26,6 +26,8 @@ import {
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useVendors, type Vendor } from "@/hooks/admin/useVendors";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { vendorSchema, type VendorFormValues } from "./vendorSchema";
 import { vendorService } from "@/services/api";
 
@@ -56,6 +58,9 @@ const STATUS_OPTIONS = [
 const ITEMS_PER_PAGE = 10;
 
 const VendorManagement = () => {
+  // View on manage_vendors opens the page; create/edit/delete are separate
+  // grants, so the write affordances are gated on their own flags.
+  const access = useFeatureAccess(ADMIN_FEATURES.vendors);
   const [activeTab, setActiveTab] = useState("all-vendors");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("brandName");
@@ -244,13 +249,19 @@ const VendorManagement = () => {
 
   const rowActions: RowAction<Vendor>[] = [
     { label: "View", icon: Eye, onClick: handleView },
-    {
-      label: "Ban",
-      icon: Ban,
-      onClick: askBan,
-      hidden: (v) => v.status?.toLowerCase() === "banned",
-    },
-    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+    ...(access.canEdit
+      ? [
+          {
+            label: "Ban",
+            icon: Ban,
+            onClick: askBan,
+            hidden: (v: Vendor) => v.status?.toLowerCase() === "banned",
+          },
+        ]
+      : []),
+    ...(access.canDelete
+      ? [{ label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" as const }]
+      : []),
   ];
 
   return (
@@ -268,17 +279,21 @@ const VendorManagement = () => {
               sortValue={sortBy}
               onSortChange={setSortBy}
               selectedCount={selectedIds.length}
-              bulkActions={[
-                { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
-              ]}
+              bulkActions={
+                access.canDelete
+                  ? [{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]
+                  : []
+              }
               onClearSelection={() => setSelectedIds([])}
               primaryAction={
-                <Button
-                  onClick={() => setShowAddModal(true)}
-                  className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
-                >
-                  <Plus size={16} /> Add Vendor
-                </Button>
+                access.canCreate ? (
+                  <Button
+                    onClick={() => setShowAddModal(true)}
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                  >
+                    <Plus size={16} /> Add Vendor
+                  </Button>
+                ) : undefined
               }
             />
 
@@ -312,7 +327,7 @@ const VendorManagement = () => {
                     setFilters({});
                   },
                 }}
-                selectable
+                selectable={access.canDelete}
                 selectedIds={selectedIds}
                 onSelectionChange={setSelectedIds}
                 rowActions={rowActions}

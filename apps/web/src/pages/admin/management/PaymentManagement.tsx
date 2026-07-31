@@ -14,6 +14,8 @@ import {
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { usePayments, type PaymentData } from "@/hooks/admin/usePayments";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 
 const TABS = [
   { key: "payment-received", label: "Payment Received" },
@@ -36,6 +38,7 @@ const SERVICE_TYPE_OPTIONS = [
 const ITEMS_PER_PAGE = 15;
 
 const PaymentManagement: React.FC = () => {
+  const access = useFeatureAccess(ADMIN_FEATURES.payments);
   const [activeTab, setActiveTab] = useState("payment-received");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("paymentId");
@@ -147,7 +150,9 @@ const PaymentManagement: React.FC = () => {
 
   const rowActions: RowAction<PaymentData>[] = [
     { label: "View", icon: Eye, onClick: handleView },
-    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+    ...(access.canDelete
+      ? [{ label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" as const }]
+      : []),
   ];
 
   return (

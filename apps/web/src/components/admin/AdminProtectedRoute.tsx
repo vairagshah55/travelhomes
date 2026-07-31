@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { featureForPath, LANDING_CANDIDATES } from "@/lib/adminPermissions";
@@ -22,9 +22,19 @@ interface AdminProtectedRouteProps {
  */
 const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children, feature }) => {
   const { pathname } = useLocation();
-  const { isLoading, access, can } = useAuth();
+  const { isLoading, access, can, refresh } = useAuth();
 
   const adminToken = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+
+  /**
+   * Self-heal: a token exists but we hold no permission set and nothing is in
+   * flight. AuthProvider only fetches /me on mount, so any path that plants a
+   * token afterwards (login, a second tab, a manual token) would otherwise
+   * leave the guard spinning on `!access` with no fetch to resolve it.
+   */
+  useEffect(() => {
+    if (adminToken && !isLoading && !access) void refresh();
+  }, [adminToken, isLoading, access, refresh]);
 
   if (!adminToken) {
     // Redirect to admin login if not authenticated.

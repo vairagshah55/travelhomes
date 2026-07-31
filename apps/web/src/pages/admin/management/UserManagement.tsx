@@ -33,6 +33,8 @@ import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/adm
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { formatDate } from "@/utils/formateTime";
 import { useUsers, type User } from "@/hooks/admin/useUsers";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { userSchema, type UserFormValues, USER_STATUS_OPTIONS } from "./userSchema";
 
 const TABS = [
@@ -54,6 +56,9 @@ const SORT_OPTIONS = [
 const ITEMS_PER_PAGE = 10;
 
 const UserManagement = () => {
+  // The route only checks *view* on manage_users; a role can hold view without
+  // create/edit/delete, so the write affordances are gated separately.
+  const access = useFeatureAccess(ADMIN_FEATURES.users);
   const [activeTab, setActiveTab] = useState("all-users");
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("userSince");
@@ -230,8 +235,18 @@ const UserManagement = () => {
 
   const rowActions: RowAction<User>[] = [
     { label: "View", icon: Eye, onClick: (u) => setDetailsUser(u) },
-    { label: "Edit", icon: Edit, onClick: (u) => setFormState({ mode: "edit", user: u }) },
-    { label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" },
+    ...(access.canEdit
+      ? [
+          {
+            label: "Edit",
+            icon: Edit,
+            onClick: (u: User) => setFormState({ mode: "edit", user: u }),
+          },
+        ]
+      : []),
+    ...(access.canDelete
+      ? [{ label: "Delete", icon: Trash2, onClick: askDelete, variant: "danger" as const }]
+      : []),
   ];
 
   return (
@@ -249,12 +264,14 @@ const UserManagement = () => {
               sortValue={sortBy}
               onSortChange={isSubscribers ? undefined : setSortBy}
               selectedCount={selectedIds.length}
-              bulkActions={[
-                { label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete },
-              ]}
+              bulkActions={
+                access.canDelete
+                  ? [{ label: "Delete", icon: Trash2, variant: "danger", onClick: askBulkDelete }]
+                  : []
+              }
               onClearSelection={() => setSelectedIds([])}
               primaryAction={
-                isSubscribers ? undefined : (
+                isSubscribers || !access.canCreate ? undefined : (
                   <Button
                     onClick={() => setFormState({ mode: "add" })}
                     className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
@@ -299,7 +316,7 @@ const UserManagement = () => {
                     setFilters({});
                   },
                 }}
-                selectable={!isSubscribers}
+                selectable={!isSubscribers && access.canDelete}
                 selectedIds={selectedIds}
                 onSelectionChange={setSelectedIds}
                 rowActions={isSubscribers ? undefined : rowActions}

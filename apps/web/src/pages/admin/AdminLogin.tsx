@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 import { adminAuthService } from "@/services/api";
+import { useAuth } from "@/contexts/AdminAuthContext";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const { refresh } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -57,7 +59,16 @@ const AdminLogin = () => {
         sessionStorage.setItem("adminToken", token);
       }
 
+      // Pull the role's permissions BEFORE navigating. AuthProvider sits above
+      // the router and only fetches /me once on mount — which, on the login
+      // page, happened while there was no token, leaving `access` null. Every
+      // protected route then sat on its loading spinner forever, because the
+      // guard waits for `access` and nothing else would ever fetch it.
+      await refresh();
+
       toast.success("Admin login successful!");
+      // A staff member without view_dashboard gets bounced from here to the
+      // first area their role does hold (see AdminProtectedRoute).
       navigate("/admin/dashboard");
     } catch (error: any) {
       toast.error(error?.message || "Admin login failed. Please try again.");

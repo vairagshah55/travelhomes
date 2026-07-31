@@ -30,6 +30,8 @@ import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/adm
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { useListings, type Offer } from "@/hooks/admin/useListings";
 import { useVendorDirectory } from "@/hooks/admin/useVendors";
+import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
+import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { vendorService, offersService } from "@/services/api";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
@@ -55,6 +57,10 @@ const ITEMS_PER_PAGE = 10;
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 const ManagementListing = () => {
+  /* Approve / Mark Pending / Cancel are all PUTs on the listing, so they ride
+     on canEdit; only Delete needs canDelete. */
+  const access = useFeatureAccess(ADMIN_FEATURES.inventory);
+
   /* ── Tab / search / sort / filter / page state ── */
   const [activeTab, setActiveTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
@@ -493,12 +499,7 @@ const ManagementListing = () => {
   ];
 
   /* ── Row actions — conditions mirror the original dropdown exactly ── */
-  const rowActions: RowAction<Offer>[] = [
-    {
-      label: "View",
-      icon: Eye,
-      onClick: handleView,
-    },
+  const editActions: RowAction<Offer>[] = [
     {
       label: "Edit",
       icon: Edit,
@@ -531,16 +532,29 @@ const ManagementListing = () => {
       hidden: (o) => o.status?.toLowerCase() === "cancelled",
       disabled: () => setStatus.isPending,
     },
+  ];
+
+  const rowActions: RowAction<Offer>[] = [
     {
-      label: "Delete",
-      icon: Trash2,
-      onClick: askDelete,
-      variant: "danger",
-      // Visible ONLY when status is cancelled (deactivated)
-      hidden: (o) => o.status?.toLowerCase() !== "cancelled",
-      loading: (o) => o._id === deletePendingId,
-      disabled: () => deleteListing.isPending,
+      label: "View",
+      icon: Eye,
+      onClick: handleView,
     },
+    ...(access.canEdit ? editActions : []),
+    ...(access.canDelete
+      ? [
+          {
+            label: "Delete",
+            icon: Trash2,
+            onClick: askDelete,
+            variant: "danger" as const,
+            // Visible ONLY when status is cancelled (deactivated)
+            hidden: (o: Offer) => o.status?.toLowerCase() !== "cancelled",
+            loading: (o: Offer) => o._id === deletePendingId,
+            disabled: () => deleteListing.isPending,
+          },
+        ]
+      : []),
   ];
 
   /* ── Render ── */
@@ -559,12 +573,14 @@ const ManagementListing = () => {
               sortValue={sortBy}
               onSortChange={setSortBy}
               primaryAction={
-                <Button
-                  onClick={handleAddNew}
-                  className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
-                >
-                  <Plus size={16} /> Add Listing
-                </Button>
+                access.canCreate ? (
+                  <Button
+                    onClick={handleAddNew}
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                  >
+                    <Plus size={16} /> Add Listing
+                  </Button>
+                ) : undefined
               }
             />
 
