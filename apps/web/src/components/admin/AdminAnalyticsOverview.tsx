@@ -212,7 +212,7 @@ function ServiceCard({
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.25, ease: "easeOut" }}
-      className="flex flex-col gap-5 rounded-2xl border border-tpl-stroke bg-white dark:bg-tpl-dark-2 p-5 shadow-tpl-1"
+      className="flex flex-col gap-5 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] p-5"
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">

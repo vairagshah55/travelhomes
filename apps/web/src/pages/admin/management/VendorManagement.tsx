@@ -256,7 +256,7 @@ const VendorManagement = () => {
   return (
     <AdminLayout title="Vendor Management">
       <MotionReveal delay={0}>
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1 overflow-hidden">
+        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
           <div className="p-5 space-y-5">
             <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
 

@@ -73,7 +73,7 @@ const PillCTA: React.FC<{
     "hover:bg-[rgba(15,92,138,0.14)]",
     padY,
     padX,
-    fontSize
+    fontSize,
   );
 
   if (as === "label") {
@@ -117,109 +117,109 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   const sections = (
     <>
       <SectionCard
-          icon={<Type size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Identity"
-          subtitle="How your listing appears to guests"
-        >
-          <div className="flex flex-col gap-5">
-            <Field
-              label={nameLabel}
-              required
-              error={errors.name || errors.activityName}
-              right={<CharCount value={name.length} max={50} />}
-            >
-              <StyledInput
-                value={name}
-                onChange={(v) => {
-                  onNameChange(v);
-                  if (errors.name) clearError("name");
-                  if (errors.activityName) clearError("activityName");
-                }}
-                placeholder={namePlaceholder}
-                maxLength={50}
-                error={!!(errors.name || errors.activityName)}
-                hardErrorBorder
-              />
-            </Field>
-
-            <Field
-              label="Description"
-              required
-              error={errors.description}
-              right={<CharCount value={description.length} max={200} />}
-              help="What makes your caravan unique? Mention the vibe, standout features, and ideal guests."
-            >
-              <StyledTextarea
-                value={description}
-                onChange={(v) => {
-                  onDescriptionChange(v);
-                  if (errors.description) clearError("description");
-                }}
-                placeholder="Describe the vibe, features, and what makes it special for travellers…"
-                maxLength={200}
-                rows={4}
-                error={!!errors.description}
-              />
-            </Field>
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Rules & Regulations"
-          subtitle="Guidelines guests must follow"
-          action={
-            <PillCTA
-              icon={<Plus size={12} strokeWidth={2.5} />}
-              label="Add Rule"
-              onClick={onAddRule}
-            />
-          }
-        >
-          <div className="flex flex-col gap-2">
-            {rules.map((rule, index) => (
-              <RuleRow
-                key={index}
-                index={index}
-                value={rule}
-                onChange={(v) => onUpdateRule(index, v)}
-                onRemove={() => onRemoveRule(index)}
-              />
-            ))}
-
-            {rules.length === 0 && <RulesEmptyState onAdd={onAddRule} />}
-          </div>
-        </SectionCard>
-
-        <SectionCard
-          icon={<Camera size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Photos"
-          subtitle="High quality photos get more bookings"
-        >
-          <div className="flex flex-col gap-7">
-            <CoverPhotoBlock
-              file={coverImage?.[0]}
-              error={errors.coverImage}
-              onUpload={(files) => {
-                onCoverUpload(files);
-                if (errors.coverImage) clearError("coverImage");
+        icon={<Type size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Identity"
+        subtitle="How your listing appears to guests"
+      >
+        <div className="flex flex-col gap-5">
+          <Field
+            label={nameLabel}
+            required
+            error={errors.name || errors.activityName}
+            right={<CharCount value={name.length} max={50} />}
+          >
+            <StyledInput
+              value={name}
+              onChange={(v) => {
+                onNameChange(v);
+                if (errors.name) clearError("name");
+                if (errors.activityName) clearError("activityName");
               }}
-              onRemove={() => onRemoveCover(0)}
+              placeholder={namePlaceholder}
+              maxLength={50}
+              error={!!(errors.name || errors.activityName)}
+              hardErrorBorder
             />
+          </Field>
 
-            <div className="h-px bg-[#F0F0F0]" />
-
-            <GalleryBlock
-              photos={photos}
-              error={errors.photos}
-              onUpload={(files) => {
-                onPhotoUpload(files);
-                if (errors.photos) clearError("photos");
+          <Field
+            label="Description"
+            required
+            error={errors.description}
+            right={<CharCount value={description.length} max={200} />}
+            help="What makes your caravan unique? Mention the vibe, standout features, and ideal guests."
+          >
+            <StyledTextarea
+              value={description}
+              onChange={(v) => {
+                onDescriptionChange(v);
+                if (errors.description) clearError("description");
               }}
-              onRemove={onRemovePhoto}
+              placeholder="Describe the vibe, features, and what makes it special for travellers…"
+              maxLength={200}
+              rows={4}
+              error={!!errors.description}
             />
-          </div>
-        </SectionCard>
+          </Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Rules & Regulations"
+        subtitle="Guidelines guests must follow"
+        action={
+          <PillCTA
+            icon={<Plus size={12} strokeWidth={2.5} />}
+            label="Add Rule"
+            onClick={onAddRule}
+          />
+        }
+      >
+        <div className="flex flex-col gap-2">
+          {rules.map((rule, index) => (
+            <RuleRow
+              key={index}
+              index={index}
+              value={rule}
+              onChange={(v) => onUpdateRule(index, v)}
+              onRemove={() => onRemoveRule(index)}
+            />
+          ))}
+
+          {rules.length === 0 && <RulesEmptyState onAdd={onAddRule} />}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        icon={<Camera size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Photos"
+        subtitle="High quality photos get more bookings"
+      >
+        <div className="flex flex-col gap-7">
+          <CoverPhotoBlock
+            file={coverImage?.[0]}
+            error={errors.coverImage}
+            onUpload={(files) => {
+              onCoverUpload(files);
+              if (errors.coverImage) clearError("coverImage");
+            }}
+            onRemove={() => onRemoveCover(0)}
+          />
+
+          <div className="h-px bg-[#F0F0F0]" />
+
+          <GalleryBlock
+            photos={photos}
+            error={errors.photos}
+            onUpload={(files) => {
+              onPhotoUpload(files);
+              if (errors.photos) clearError("photos");
+            }}
+            onRemove={onRemovePhoto}
+          />
+        </div>
+      </SectionCard>
     </>
   );
 
@@ -249,7 +249,7 @@ const RulesEmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
       "px-5 py-[26px] border-[1.5px] border-dashed border-th-brand-border-soft rounded-[14px]",
       // Subtle teal-tinted background so the empty state feels intentional /
       // inviting rather than a "you forgot something" grey panel.
-      "bg-th-brand-soft"
+      "bg-th-brand-soft",
     )}
   >
     <div className="w-[42px] h-[42px] rounded-[13px] bg-th-surface-0 border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_2px_8px_rgba(15,92,138,0.08)]">
@@ -286,14 +286,14 @@ const RuleRow = ({
     className={cn(
       "flex items-center gap-2.5 rounded-[13px] px-[10px] py-[6px] transition-all duration-150",
       "bg-th-warm-surface border-[1.5px] border-transparent",
-      "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring)]"
+      "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring)]",
     )}
   >
     <span
       className={cn(
         "w-6 h-6 rounded-full border-[1.5px] text-[10.5px] font-extrabold flex items-center justify-center shrink-0 transition-all duration-150",
         "bg-th-warm-border border-transparent text-th-warm-text-muted",
-        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand"
+        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand",
       )}
     >
       {index + 1}
@@ -360,21 +360,15 @@ const CoverPreview: React.FC<{
 }> = ({ file, onUpload, onRemove }) => {
   const src = useObjectURL(file);
   return (
-    <div
-      className="group relative w-full h-[260px] overflow-hidden bg-gray-100 rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.10)]"
-    >
+    <div className="group relative w-full h-[260px] overflow-hidden bg-gray-100 rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
       <img
         src={src}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover opacity-[0.55] blur-[28px] scale-[1.15]"
       />
-      <img
-        src={src}
-        alt="Cover"
-        className="absolute inset-0 w-full h-full object-contain"
-      />
-      <div className="absolute inset-0 flex items-center justify-center transition-all duration-[250ms] bg-[linear-gradient(to_top,rgba(0,0,0,0.12),transparent_55%)] group-hover:bg-[linear-gradient(to_top,rgba(0,0,0,0.42),transparent_55%)]">
+      <img src={src} alt="Cover" className="absolute inset-0 w-full h-full object-contain" />
+      <div className="absolute inset-0 flex items-center justify-center transition-all [transition-duration:250ms] bg-[linear-gradient(to_top,rgba(0,0,0,0.12),transparent_55%)] group-hover:bg-[linear-gradient(to_top,rgba(0,0,0,0.42),transparent_55%)]">
         <label className="opacity-0 translate-y-[6px] group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200 inline-flex items-center gap-1.5 bg-[rgba(255,255,255,0.96)] backdrop-blur-[8px] text-th-text-primary text-[12.5px] font-bold px-[18px] py-[9px] rounded-full cursor-pointer shadow-[0_4px_16px_rgba(0,0,0,0.18)] tracking-[0.01em]">
           <ImagePlus size={13} strokeWidth={2.5} />
           Change Photo
@@ -412,19 +406,25 @@ const CoverDropzone: React.FC<{
         "bg-th-warm-surface [background-image:radial-gradient(circle_at_50%_30%,rgba(15,92,138,0.05),transparent_60%)]",
         error
           ? "border-th-error-bright-soft"
-          : "border-th-warm-border hover:border-th-brand hover:bg-th-brand-soft"
+          : "border-th-warm-border hover:border-th-brand hover:bg-th-brand-soft",
       )}
     >
       <div
         className={cn(
           "w-14 h-14 rounded-[17px] bg-th-surface-0 border-[1.5px] flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all duration-200",
-          error ? "border-th-warm-border" : "border-th-warm-border group-hover:border-th-brand-border-soft"
+          error
+            ? "border-th-warm-border"
+            : "border-th-warm-border group-hover:border-th-brand-border-soft",
         )}
       >
         <UploadCloud
           size={24}
           strokeWidth={2}
-          className={cn(error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand")}
+          className={cn(
+            error
+              ? "text-th-warm-text-muted"
+              : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
+          )}
         />
       </div>
       <div className="text-center">
@@ -472,16 +472,14 @@ const GalleryBlock: React.FC<{
           <p
             className={cn(
               "text-[11.5px] mt-0.5",
-              complete ? "text-th-success-bright font-semibold" : "text-th-warm-text-muted font-normal"
+              complete
+                ? "text-th-success-bright font-semibold"
+                : "text-th-warm-text-muted font-normal",
             )}
           >
             {complete ? (
               <>
-                <Sparkles
-                  size={11}
-                  strokeWidth={2.5}
-                  className="inline align-[-1px] mr-1"
-                />
+                <Sparkles size={11} strokeWidth={2.5} className="inline align-[-1px] mr-1" />
                 Minimum reached — add more for a richer listing
               </>
             ) : (
@@ -495,11 +493,7 @@ const GalleryBlock: React.FC<{
           </p>
         </div>
         {photos.length > 0 && canAddBonus && (
-          <PillCTA
-            as="label"
-            icon={<Plus size={12} strokeWidth={2.5} />}
-            label="Add More"
-          >
+          <PillCTA as="label" icon={<Plus size={12} strokeWidth={2.5} />} label="Add More">
             <input
               type="file"
               multiple
@@ -525,14 +519,7 @@ const GalleryBlock: React.FC<{
               />
             );
           }
-          return (
-            <EmptySlot
-              key={`slot-${idx}`}
-              index={idx}
-              error={!!error}
-              onUpload={onUpload}
-            />
-          );
+          return <EmptySlot key={`slot-${idx}`} index={idx} error={!!error} onUpload={onUpload} />;
         })}
       </div>
 
@@ -574,7 +561,7 @@ const EmptySlot: React.FC<{
       "border-[1.5px] border-dashed rounded-[12px] transition-all duration-150",
       error
         ? "border-th-error-bright-soft bg-th-warm-surface"
-        : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft"
+        : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
     )}
   >
     <span className="absolute top-1.5 left-1.5 w-[17px] h-[17px] rounded-full bg-th-surface-0 border border-th-warm-border text-th-warm-text-muted text-[9.5px] font-extrabold flex items-center justify-center">
@@ -583,12 +570,14 @@ const EmptySlot: React.FC<{
     <Plus
       size={16}
       strokeWidth={2.5}
-      className={cn(error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand")}
+      className={cn(
+        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
+      )}
     />
     <span
       className={cn(
         "text-[9.5px] font-bold tracking-[0.06em]",
-        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand"
+        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
       )}
     >
       ADD
@@ -604,9 +593,7 @@ const EmptySlot: React.FC<{
 );
 
 const BonusAddTile: React.FC<{ onUpload: (files: FileList | null) => void }> = ({ onUpload }) => (
-  <label
-    className="aspect-square flex items-center justify-center cursor-pointer border-[1.5px] border-dashed border-th-warm-border bg-th-warm-surface rounded-[12px] transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft"
-  >
+  <label className="aspect-square flex items-center justify-center cursor-pointer border-[1.5px] border-dashed border-th-warm-border bg-th-warm-surface rounded-[12px] transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft">
     <Plus size={18} strokeWidth={2.5} className="text-th-warm-text-muted" />
     <input
       type="file"
@@ -626,14 +613,8 @@ const GalleryThumb: React.FC<{
 }> = ({ photo, index, showIndex, onRemove }) => {
   const src = useObjectURL(photo);
   return (
-    <div
-      className="group relative aspect-square overflow-hidden rounded-[12px] transition-[box-shadow,transform] duration-150 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.16)] hover:scale-[1.02]"
-    >
-      <img
-        src={src}
-        alt={`Photo ${index + 1}`}
-        className="w-full h-full object-cover"
-      />
+    <div className="group relative aspect-square overflow-hidden rounded-[12px] transition-[box-shadow,transform] duration-150 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.16)] hover:scale-[1.02]">
+      <img src={src} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
 
       {showIndex && (
         <span className="absolute top-1.5 left-1.5 min-w-[19px] h-[19px] px-[5px] rounded-full bg-[rgba(0,0,0,0.62)] backdrop-blur-[4px] text-th-text-inverse text-[10px] font-extrabold flex items-center justify-center tracking-[0.02em]">

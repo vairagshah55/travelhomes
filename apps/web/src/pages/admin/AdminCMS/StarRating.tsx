@@ -18,7 +18,7 @@ export const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
       ))}
       {hasHalfStar && (
         <div className="relative w-3 h-3">
-          <div className="absolute inset-0 text-gray-300">
+          <div className="absolute inset-0 text-app-border">
             <svg viewBox="0 0 12 11" fill="currentColor" className="w-full h-full">
               <path d={STAR_PATH} />
             </svg>
@@ -32,10 +32,7 @@ export const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
       )}
       {rating < 5 &&
         [...Array(5 - Math.ceil(rating))].map((_, i) => (
-          <div
-            key={i + fullStars + (hasHalfStar ? 1 : 0)}
-            className="w-3 h-3 text-gray-300"
-          >
+          <div key={i + fullStars + (hasHalfStar ? 1 : 0)} className="w-3 h-3 text-app-border">
             <svg viewBox="0 0 12 11" fill="currentColor" className="w-full h-full">
               <path d={STAR_PATH} />
             </svg>

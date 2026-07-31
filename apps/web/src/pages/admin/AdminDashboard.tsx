@@ -85,9 +85,9 @@ const DashboardChart = ({
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 px-6 pt-6 pb-4 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_-18px_rgba(0,0,0,0.22)] hover:border-[var(--teal-border)]">
+    <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 pt-5 pb-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(13,148,136,0.14),0_14px_32px_-16px_rgba(13,148,136,0.45)]">
       <div className="flex items-center justify-between mb-5">
-        <h3 className="text-[18px] font-bold text-tpl-dark dark:text-white">{title}</h3>
+        <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">{title}</h3>
         <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">
           Last 6 Months
         </span>
@@ -306,9 +306,9 @@ const AdminDashboard = () => {
               ? Array.from({ length: 8 }).map((_, i) => (
                   <div
                     key={i}
-                    className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-app-border shadow-tpl-1 p-5 animate-pulse"
+                    className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] p-4 animate-pulse"
                   >
-                    <div className="size-11 rounded-xl bg-tpl-gray-2 dark:bg-white/5" />
+                    <div className="w-9 h-9 rounded-[10px] bg-tpl-gray-2 dark:bg-white/5" />
                     <div className="mt-5 space-y-2">
                       <div className="h-7 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
                       <div className="h-3 w-24 rounded bg-tpl-gray-2 dark:bg-white/5" />
@@ -329,7 +329,7 @@ const AdminDashboard = () => {
           </div>
 
           {isError && (
-            <div className="flex items-center justify-between gap-3 rounded-[10px] border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-4">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-5 py-4">
               <div className="flex items-center gap-2.5 text-[13px] text-red-700 dark:text-red-400">
                 <AlertCircle size={18} />
                 Couldn’t load the latest dashboard data.
@@ -395,10 +395,10 @@ const AdminDashboard = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden"
+            className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden"
           >
-            <div className="px-6 py-5 border-b border-tpl-stroke dark:border-tpl-stroke flex items-center justify-between flex-wrap gap-3">
-              <h3 className="text-[20px] font-bold text-tpl-dark dark:text-white">
+            <div className="px-5 pt-4 pb-3.5 border-b border-app-border flex items-center justify-between flex-wrap gap-3">
+              <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">
                 Tickets Raised
               </h3>
               <div className="flex items-center gap-3 flex-wrap">
@@ -416,7 +416,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <Select value={ticketSort} onValueChange={setTicketSort}>
-                  <SelectTrigger className="w-40 h-10 text-sm rounded-full border-tpl-stroke bg-tpl-gray-2 dark:bg-white/5">
+                  <SelectTrigger className="w-40 h-10 text-[13px] rounded-xl border-app-border bg-app-surface-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

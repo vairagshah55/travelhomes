@@ -76,9 +76,9 @@ export function AdminToolbar({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="flex flex-wrap items-center gap-2 rounded-lg bg-app-accent-soft px-3 py-2"
+            className="flex flex-wrap items-center gap-2 rounded-xl bg-app-accent-soft px-3 py-2"
           >
-            <span className="text-[13px] font-semibold text-app-accent">
+            <span className="text-[12.5px] font-semibold text-app-accent">
               {selectedCount} selected
             </span>
             <div className="flex flex-wrap items-center gap-1.5">
@@ -123,7 +123,7 @@ export function AdminToolbar({
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={searchPlaceholder}
-              className="h-10 w-full sm:w-64 pl-9 text-sm"
+              className="h-10 w-full sm:w-64 pl-9 rounded-xl text-[13px]"
               aria-label={searchPlaceholder}
             />
           </div>
@@ -131,7 +131,7 @@ export function AdminToolbar({
           {/* Sort */}
           {sortOptions?.length && onSortChange ? (
             <Select value={sortValue} onValueChange={onSortChange}>
-              <SelectTrigger className="h-10 w-44 text-sm rounded-full border-app-border bg-app-surface-2">
+              <SelectTrigger className="h-10 w-44 text-[13px] rounded-xl border-app-border bg-app-surface-2">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               {/* Radix portals this to <body>, outside any page root, so it needs
@@ -152,7 +152,7 @@ export function AdminToolbar({
           {onFilterOpen && (
             <button
               onClick={onFilterOpen}
-              className="relative inline-flex items-center gap-2 h-10 px-4 rounded-full border border-app-border bg-app-surface-2 text-[13px] font-medium text-app-fg hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2"
+              className="relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border border-app-border bg-app-surface-2 text-[13px] font-semibold text-app-fg transition-colors hover:bg-app-surface focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20"
               aria-label={
                 filterActiveCount > 0 ? `Filters, ${filterActiveCount} active` : "Filters"
               }

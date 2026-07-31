@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { settingsService } from "@/services/api";
-import { getImageUrl } from "@/lib/adminUtils";
+import { CmsField, MediaPicker } from "../ui";
+
+type Asset = "favicon" | "logo" | "logo_dark";
 
 interface BrandingTabProps {
   faviconUrl: string;
@@ -13,9 +15,9 @@ interface BrandingTabProps {
 }
 
 /**
- * Branding settings: favicon + light/dark logo upload.
- * Self-contained — upload handler lives here, only the resulting URL state
- * lives in the parent so it can be shared with other CMS sections if needed.
+ * Branding settings: favicon + light/dark logo upload. Self-contained — the
+ * upload handler lives here and only the resulting URLs live in the parent, so
+ * other CMS sections can read them.
  */
 export function BrandingTab({
   faviconUrl,
@@ -25,11 +27,10 @@ export function BrandingTab({
   setLogoUrl,
   setLogoDarkUrl,
 }: BrandingTabProps) {
-  const handleBrandingUpload = async (
-    type: "favicon" | "logo" | "logo_dark",
-    file?: File | null,
-  ) => {
-    if (!file) return;
+  const [uploading, setUploading] = useState<Asset | null>(null);
+
+  const upload = async (type: Asset, file: File) => {
+    setUploading(type);
     try {
       const page = type === "favicon" ? "favicon" : "logo";
       const res = await settingsService.uploadSeoAsset(page, type, file);
@@ -38,57 +39,48 @@ export function BrandingTab({
       if (type === "logo") setLogoUrl(res?.logoUrl || "");
       if (type === "logo_dark") setLogoDarkUrl(res?.logoDarkUrl || "");
 
-      toast.success("Uploaded successfully");
+      toast.success("Uploaded — live on the site straight away");
     } catch (e) {
       console.error("Branding upload failed", e);
       toast.error("Upload failed");
+    } finally {
+      setUploading(null);
     }
   };
 
   return (
-    <div className="space-y-6 bg-white p-6 rounded-2xl border border-dashboard-stroke">
-      <div className="space-y-2">
-        <label className="block text-base text-[#334054] font-plus-jakarta">Favicon</label>
-        {faviconUrl && (
-          <img src={getImageUrl(faviconUrl)} alt="Favicon" className="w-10 h-10 object-contain" />
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleBrandingUpload("favicon", e.target.files?.[0])}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-base text-[#334054] font-plus-jakarta">
-          Light Theme Logo (for White Background)
-        </label>
-        {logoUrl && (
-          <img src={getImageUrl(logoUrl)} alt="Light Logo" className="w-20 h-10 object-contain" />
-        )}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleBrandingUpload("logo", e.target.files?.[0])}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <label className="block text-base text-[#334054] font-plus-jakarta">
-          Dark Theme Logo (for Black Background)
-        </label>
-        {logoDarkUrl ? (
-          <img
-            src={getImageUrl(logoDarkUrl)}
-            alt="Dark Theme Logo"
-            className="w-20 h-10 object-contain bg-black"
+    <div className="rounded-[14px] border border-app-border p-4">
+      <div className="grid gap-6 lg:grid-cols-3">
+        <CmsField label="Favicon">
+          <MediaPicker
+            value={faviconUrl}
+            busy={uploading === "favicon"}
+            onFile={(file) => upload("favicon", file)}
+            accept="image/png,image/x-icon,image/svg+xml"
+            hint="Square PNG, ICO or SVG — shown in the browser tab."
           />
-        ) : null}
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => handleBrandingUpload("logo_dark", e.target.files?.[0])}
-        />
+        </CmsField>
+
+        <CmsField label="Logo — light background">
+          <MediaPicker
+            value={logoUrl}
+            shape="wide"
+            busy={uploading === "logo"}
+            onFile={(file) => upload("logo", file)}
+            hint="Used on white headers and the footer."
+          />
+        </CmsField>
+
+        <CmsField label="Logo — dark background">
+          <MediaPicker
+            value={logoDarkUrl}
+            shape="wide"
+            busy={uploading === "logo_dark"}
+            onFile={(file) => upload("logo_dark", file)}
+            previewClassName="bg-[#101828] border-[#101828]"
+            hint="Shown over dark or photographic sections."
+          />
+        </CmsField>
       </div>
     </div>
   );

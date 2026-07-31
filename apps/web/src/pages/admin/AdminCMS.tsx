@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
+import {
+  Award,
+  Briefcase,
+  FileText,
+  Home,
+  Image as ImageIcon,
+  LayoutGrid,
+  Mail,
+  MessageSquareQuote,
+  Palette,
+  ScrollText,
+  type LucideIcon,
+} from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { MotionReveal } from "@/components/admin/MotionReveal";
+import { cn } from "@/lib/utils";
 import { cmsService } from "@/services/cms";
 import { settingsService } from "@/services/api";
 
@@ -39,17 +54,41 @@ const emptySlots = () =>
     return acc;
   }, {});
 
-const TABS = [
-  "Register/Login",
-  "HomePage",
-  "features",
-  "Contact Us",
-  "Career",
-  "FAQs",
-  "Testimonials",
-  "Policy",
-  "Blogs",
-  "Branding",
+/**
+ * Tab metadata. The icon + blurb drive the panel header, so the page always
+ * says which surface you're editing instead of just repeating "CMS".
+ */
+const TABS: { key: string; label: string; icon: LucideIcon; blurb: string }[] = [
+  {
+    key: "Register/Login",
+    label: "Auth pages",
+    icon: ImageIcon,
+    blurb: "Hero collages shown on sign-in, register and password screens.",
+  },
+  { key: "HomePage", label: "Home page", icon: Home, blurb: "Sections visitors see first." },
+  {
+    key: "features",
+    label: "Features",
+    icon: LayoutGrid,
+    blurb: "Feature lists used across listings.",
+  },
+  {
+    key: "Contact Us",
+    label: "Contact",
+    icon: Mail,
+    blurb: "Contact details and the enquiry inbox.",
+  },
+  { key: "Career", label: "Careers", icon: Briefcase, blurb: "Open roles on the careers page." },
+  { key: "FAQs", label: "FAQs", icon: MessageSquareQuote, blurb: "Questions grouped by category." },
+  {
+    key: "Testimonials",
+    label: "Testimonials",
+    icon: Award,
+    blurb: "Guest quotes shown on the marketing pages.",
+  },
+  { key: "Policy", label: "Policies", icon: ScrollText, blurb: "Terms, privacy and refund copy." },
+  { key: "Blogs", label: "Blogs", icon: FileText, blurb: "Articles and their cover images." },
+  { key: "Branding", label: "Branding", icon: Palette, blurb: "Logo and favicon used site-wide." },
 ];
 
 /**
@@ -268,13 +307,9 @@ const AdminCMS = () => {
   }, [activeTab]);
 
   const renderRegisterLoginContent = () => (
-    <div className="space-y-4 overflow-x-hidden max-md:flex-wrap">
-      <p className="text-sm text-dashboard-body">
-        The image you upload is split into the five tiles shown on the public page — the preview
-        below is exactly what visitors will see.
-      </p>
+    <div className="space-y-3 overflow-x-hidden">
       {AUTH_PAGES.map(({ page, title }, index) => (
-        <CollapsibleSection key={page} title={title} defaultExpanded={index < 2}>
+        <CollapsibleSection key={page} title={title} icon={ImageIcon} defaultExpanded={index === 0}>
           <AuthPageMedia
             page={page}
             slices={previews[page]}
@@ -329,46 +364,77 @@ const AdminCMS = () => {
         );
       default:
         return (
-          <div className="text-center py-12 text-dashboard-neutral-07">
+          <div className="text-center py-12 text-[13px] text-app-fg-muted">
             Content for {activeTab} tab will be implemented here.
           </div>
         );
     }
   };
 
+  const current = TABS.find((t) => t.key === activeTab) ?? TABS[0];
+  const TabIcon = current.icon;
+
   return (
     <AdminLayout title="CMS">
-      <div className="flex-1">
-        <MotionReveal delay={0}>
-          <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke min-h-[68px] flex items-center px-6 shadow-tpl-1">
-            <h2 className="text-tpl-dark dark:text-white text-[18px] font-bold tracking-tight leading-tight">
-              CMS
-            </h2>
-          </div>
-        </MotionReveal>
+      <MotionReveal delay={0}>
+        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
+          {/* Panel head — mirrors PanelHead in the shared kit. */}
+          <header className="flex items-start gap-3 px-5 pt-4 pb-3.5 border-b border-app-border">
+            <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-app-accent-soft text-app-accent shrink-0">
+              <TabIcon size={15} strokeWidth={2.1} />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">
+                {current.label}
+              </h2>
+              <p className="mt-0.5 text-[12.5px] text-app-fg-muted">{current.blurb}</p>
+            </div>
+          </header>
 
-        <div className="bg-white dark:bg-tpl-dark-2 px-6 py-6 rounded-b-[10px] shadow-tpl-1 min-h-[calc(100vh-8rem)]">
-          {/* Tabs */}
-          <div className="flex items-center mb-6 overflow-x-auto scrollbar-hide">
-            {TABS.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-3 whitespace-nowrap border-b-2 transition-colors font-plus-jakarta text-sm font-bold ${
-                  activeTab === tab
-                    ? "border-dashboard-primary text-dashboard-heading"
-                    : "border-transparent text-dashboard-neutral-06 hover:text-dashboard-heading"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+          {/* Segmented tab rail — same sliding pill as the vendor consoles'
+              tabs, replacing the underline bar on legacy dashboard-* tokens. */}
+          <div
+            role="tablist"
+            aria-label="CMS sections"
+            className="flex items-center gap-1 px-3 py-2.5 border-b border-app-border overflow-x-auto scrollbar-hide"
+          >
+            {TABS.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    "relative inline-flex items-center gap-1.5 h-9 px-3 rounded-xl whitespace-nowrap shrink-0",
+                    "text-[12.5px] font-semibold outline-none transition-colors duration-150",
+                    "focus-visible:ring-2 focus-visible:ring-app-accent/40",
+                    active
+                      ? "text-app-accent"
+                      : "text-app-fg-muted hover:text-app-fg hover:bg-app-surface-2",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="cmsTabPill"
+                      className="absolute inset-0 rounded-xl bg-app-accent-soft"
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    />
+                  )}
+                  <tab.icon size={14} strokeWidth={2.1} className="relative shrink-0" />
+                  <span className="relative">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Content */}
-          <MotionReveal delay={0.06}>{renderTabContent()}</MotionReveal>
+          <div className="px-5 py-5 min-h-[calc(100vh-16rem)]">
+            <MotionReveal delay={0.06}>{renderTabContent()}</MotionReveal>
+          </div>
         </div>
-      </div>
+      </MotionReveal>
     </AdminLayout>
   );
 };

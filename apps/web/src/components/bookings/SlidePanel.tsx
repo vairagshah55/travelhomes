@@ -55,7 +55,7 @@ export const SlidePanel = ({
         aria-hidden={!open}
         className={cn(
           "fixed inset-0 z-50 bg-[#101828]/35 backdrop-blur-[2px]",
-          "transition-opacity duration-[250ms] ease-linear",
+          "transition-opacity [transition-duration:250ms] ease-linear",
           open ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
       />
@@ -69,7 +69,7 @@ export const SlidePanel = ({
         className={cn(
           "fixed top-0 right-0 bottom-0 z-[51] flex flex-col overflow-hidden",
           "bg-card border-l border-border/70",
-          "transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
+          "transition-transform duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
           open
             ? "translate-x-0 shadow-[-12px_0_48px_-16px_rgba(16,24,40,0.28)]"
             : "translate-x-full shadow-none",

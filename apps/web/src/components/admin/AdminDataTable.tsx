@@ -275,7 +275,7 @@ export function AdminDataTable<T>({
                   {onRetry && (
                     <button
                       onClick={onRetry}
-                      className="rounded-full bg-app-accent px-4 h-9 text-[13px] font-semibold text-app-accent-fg hover:bg-app-accent-hover transition-colors"
+                      className="rounded-xl bg-app-accent px-4 h-9 text-[12.5px] font-semibold text-app-accent-fg hover:bg-app-accent-hover transition-colors"
                     >
                       Try again
                     </button>
@@ -415,7 +415,7 @@ export function AdminDataTable<T>({
 function TablePagination({ currentPage, totalPages, totalItems, onPageChange }: PaginationState) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-4 border-t border-app-border">
-      <span className="text-[13px] text-app-fg-muted">
+      <span className="text-[12.5px] text-app-fg-muted">
         {typeof totalItems === "number"
           ? `${totalItems.toLocaleString("en-IN")} total`
           : `Page ${currentPage} of ${totalPages}`}
@@ -424,18 +424,18 @@ function TablePagination({ currentPage, totalPages, totalItems, onPageChange }: 
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-lg border border-app-border text-[13px] font-medium text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-app-border text-[12.5px] font-semibold text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           aria-label="Previous page"
         >
           <ChevronLeft size={15} /> Prev
         </button>
-        <span className="text-[13px] font-semibold text-app-fg px-2">
+        <span className="text-[12.5px] font-semibold text-app-fg px-2 tabular-nums">
           {currentPage} / {totalPages}
         </span>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-lg border border-app-border text-[13px] font-medium text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-app-border text-[12.5px] font-semibold text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
           aria-label="Next page"
         >
           Next <ChevronRight size={15} />

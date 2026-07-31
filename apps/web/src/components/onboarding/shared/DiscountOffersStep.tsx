@@ -2,10 +2,7 @@ import React from "react";
 import { IndianRupee, Percent, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type DiscountOffer } from "./types";
-import {
-  ErrorMsg,
-  StepHeader,
-} from "./primitives";
+import { ErrorMsg, StepHeader } from "./primitives";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
@@ -78,7 +75,7 @@ const Toggle = ({
       boxShadow: enabled ? `0 0 0 3px ${color}22` : "none",
     }}
     className={cn(
-      "relative w-[44px] h-[24px] rounded-full border-none cursor-pointer flex-shrink-0 transition-colors duration-[250ms]",
+      "relative w-[44px] h-[24px] rounded-full border-none cursor-pointer flex-shrink-0 transition-colors [transition-duration:250ms]",
       !enabled && "bg-th-warm-border",
     )}
   >
@@ -158,9 +155,7 @@ const AmountInput = ({
           : {
               border: `1.5px solid ${focused ? color : "transparent"}`,
               backgroundColor: focused ? "#ffffff" : undefined,
-              boxShadow: focused
-                ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)`
-                : undefined,
+              boxShadow: focused ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)` : undefined,
             }
       }
       className={cn(
@@ -174,9 +169,7 @@ const AmountInput = ({
     >
       <div
         style={
-          focused
-            ? { borderRight: `1.5px solid ${color}30`, backgroundColor: `${color}12` }
-            : {}
+          focused ? { borderRight: `1.5px solid ${color}30`, backgroundColor: `${color}12` } : {}
         }
         className={cn(
           "flex items-center px-[10px] h-[46px] flex-shrink-0 transition-all duration-150",
@@ -319,14 +312,8 @@ const OfferCard = ({
       </div>
 
       {offer.enabled && (
-        <div
-          style={{ backgroundColor: cfg.bg }}
-          className="px-5 pb-5"
-        >
-          <div
-            style={{ backgroundColor: `${cfg.color}25` }}
-            className="h-px mb-[18px]"
-          />
+        <div style={{ backgroundColor: cfg.bg }} className="px-5 pb-5">
+          <div style={{ backgroundColor: `${cfg.color}25` }} className="h-px mb-[18px]" />
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
@@ -383,10 +370,7 @@ const OfferCard = ({
                 className="flex items-center gap-2 px-[14px] py-[10px] rounded-[11px]"
               >
                 <span className="text-[16px]">✓</span>
-                <span
-                  style={{ color: cfg.color }}
-                  className="text-[12.5px] font-semibold"
-                >
+                <span style={{ color: cfg.color }} className="text-[12.5px] font-semibold">
                   {savingsHint} · Final price ₹{offer.finalPrice}
                 </span>
               </div>

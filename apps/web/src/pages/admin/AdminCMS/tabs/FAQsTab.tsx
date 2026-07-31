@@ -1,31 +1,40 @@
-import React, { useEffect, useState } from "react";
-import { Edit2, Trash2, MoreHorizontal } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Edit2, MessageSquareQuote, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
+import ConfirmModal from "@/components/shared/ConfirmModal";
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { AddFAQModal } from "../modals";
 import { FAQ_CATEGORIES, sameFaqCategory } from "../faqCategories";
+import { BTN_PRIMARY, CmsSegmented, TableFrame } from "../ui";
 import type { FAQ } from "../types";
 
 /**
- * FAQ admin: category-filtered list with row-level Edit/Delete via portal-style
- * dropdown. Self-contained — owns its own state, modal, and click-outside
- * handler. Uses native confirm() for deletion to avoid coupling to parent's
- * ConfirmDialog state.
+ * FAQ admin: one category at a time, with add / edit / delete. Self-contained —
+ * owns its list, its modal and its delete confirmation.
  */
 export function FAQsTab() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState("Unique Stay");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [category, setCategory] = useState(FAQ_CATEGORIES[0]);
+  const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<FAQ | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<FAQ | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
+    setLoading(true);
+    setError(false);
     try {
-      const list = await cmsService.getFAQs();
-      setFaqs(list);
+      setFaqs(await cmsService.getFAQs());
     } catch (e) {
       console.error(e);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -33,19 +42,29 @@ export function FAQsTab() {
     load();
   }, []);
 
-  useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest(".action-menu-container")) {
-        setOpenMenuId(null);
-        setMenuPos(null);
-      }
-    };
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
+  // Stored categories are lowercase while the rail labels are Title Case, so
+  // every comparison folds case first.
+  const inCategory = useMemo(
+    () => faqs.filter((faq) => sameFaqCategory(faq.category, category)),
+    [faqs, category],
+  );
 
-  const handleSave = async (faqData: any) => {
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return inCategory;
+    return inCategory.filter(
+      (f) =>
+        (f.question || "").toLowerCase().includes(q) || (f.answer || "").toLowerCase().includes(q),
+    );
+  }, [inCategory, search]);
+
+  const categoryItems = FAQ_CATEGORIES.map((cat) => ({
+    value: cat,
+    label: cat,
+    count: faqs.filter((f) => sameFaqCategory(f.category, cat)).length,
+  }));
+
+  const handleSave = async (faqData: { category: string; question: string; answer: string }) => {
     try {
       if (editing) {
         const updated = await cmsService.updateFAQ(editing.id, faqData);
@@ -56,7 +75,7 @@ export function FAQsTab() {
         setFaqs((prev) => [...prev, created]);
         toast.success("FAQ added");
         // Jump to the category the new question landed in so it's visible.
-        if (faqData?.category) setSelectedCategory(faqData.category);
+        if (faqData?.category) setCategory(faqData.category);
       }
       setEditing(null);
     } catch (e: any) {
@@ -65,141 +84,100 @@ export function FAQsTab() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!id) {
-      toast.error("Invalid FAQ ID");
-      return;
-    }
-    if (!confirm("Delete this FAQ?")) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete?.id) return;
+    setDeleting(true);
     try {
-      await cmsService.deleteFAQ(id);
-      setFaqs((prev) => prev.filter((faq) => String(faq.id) !== String(id)));
-      setOpenMenuId(null);
-      setMenuPos(null);
-      toast.success("FAQ deleted successfully");
+      await cmsService.deleteFAQ(pendingDelete.id);
+      setFaqs((prev) => prev.filter((faq) => String(faq.id) !== String(pendingDelete.id)));
+      toast.success("FAQ deleted");
+      setPendingDelete(null);
     } catch {
       toast.error("Failed to delete FAQ");
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const activeFAQ = openMenuId ? faqs.find((f) => f.id === openMenuId) : null;
-  // Case-folded — stored categories are lowercase, these chips are Title Case.
-  const filtered = faqs.filter((faq) => sameFaqCategory(faq.category, selectedCategory));
+  const openCreate = () => {
+    setEditing(null);
+    setShowModal(true);
+  };
+
+  const columns: ColumnDef<FAQ>[] = [
+    {
+      key: "sl",
+      header: "#",
+      className: "w-14",
+      cell: (_f, index) => <span className="tabular-nums text-app-fg-muted">{index + 1}</span>,
+    },
+    {
+      key: "question",
+      header: "Question",
+      cell: (f) => <span className="font-semibold text-app-fg">{f.question}</span>,
+    },
+    {
+      key: "answer",
+      header: "Answer",
+      hideBelow: "lg",
+      cell: (f) => (
+        <p className="max-w-[420px] text-app-fg-muted line-clamp-2 leading-relaxed">{f.answer}</p>
+      ),
+    },
+  ];
+
+  const rowActions: RowAction<FAQ>[] = [
+    {
+      label: "Edit",
+      icon: Edit2,
+      onClick: (f) => {
+        setEditing(f);
+        setShowModal(true);
+      },
+    },
+    { label: "Delete", icon: Trash2, variant: "danger", onClick: (f) => setPendingDelete(f) },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-        <div className="flex items-center max-sm:flex-col justify-between mb-3">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2 max-sm:gap-0 px-1 py-0.5 border border-gray-200 rounded-full bg-white shadow-sm overflow-x-auto">
-              {FAQ_CATEGORIES.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-5 py-3 rounded-full whitespace-nowrap max-sm:text-xs max-xs:px-2 max-sm:py-1 text-sm font-semibold transition-all ${
-                    selectedCategory === cat
-                      ? "bg-dashboard-primary text-black"
-                      : "text-dashboard-primary hover:bg-gray-50"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setEditing(null);
-              setShowModal(true);
-            }}
-            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-          >
-            Add New Question
-          </button>
-        </div>
+      <CmsSegmented
+        items={categoryItems}
+        value={category}
+        onChange={setCategory}
+        layoutId="cmsFaqCategoryPill"
+        ariaLabel="FAQ category"
+      />
 
-        <div
-          className="h-px bg-dashboard-stroke mb-3"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to right, #EAECF0 0, #EAECF0 2px, transparent 2px, transparent 4px)",
-          }}
+      <AdminToolbar
+        searchValue={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search questions…"
+        primaryAction={
+          <button onClick={openCreate} className={BTN_PRIMARY}>
+            <Plus size={15} strokeWidth={2.4} />
+            Add question
+          </button>
+        }
+      />
+
+      <TableFrame>
+        <AdminDataTable<FAQ>
+          columns={columns}
+          data={visible}
+          isLoading={loading}
+          isError={error}
+          errorMessage="Could not load the FAQ list."
+          onRetry={load}
+          hasActiveQuery={!!search.trim()}
+          emptyIcon={MessageSquareQuote}
+          emptyTitle={`No questions in “${category}”`}
+          emptyDescription="Add the first question for this category."
+          emptyAction={{ label: "Add question", onClick: openCreate }}
+          noResultsDescription="No question in this category matches your search."
+          noResultsAction={{ label: "Clear search", onClick: () => setSearch("") }}
+          rowActions={rowActions}
         />
-
-        <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
-          <div className="bg-gray-50 border-b border-gray-200 flex">
-            <div className="w-30 px-4 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              SL
-            </div>
-            <div className="flex-1 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Questions
-            </div>
-            <div className="w-40 px-3 py-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Action
-            </div>
-          </div>
-
-          {filtered.length === 0 && (
-            <div className="p-8 text-center text-gray-500">
-              No questions in “{selectedCategory}” yet.
-            </div>
-          )}
-
-          {filtered.map((faq, index) => (
-            <div
-              key={faq.id}
-              className={`flex items-start ${index !== filtered.length - 1 ? "border-b border-gray-100" : ""}`}
-            >
-              <div className="w-30 px-4 py-3.5">
-                <div className="text-dashboard-heading font-plus-jakarta text-sm">{index + 1}</div>
-              </div>
-              <div className="flex-1 px-4 py-3.5">
-                <div className="text-dashboard-heading font-plus-jakarta text-sm leading-6">
-                  {faq.question}
-                </div>
-              </div>
-              <div className="w-40 px-3 py-1.5 flex items-center justify-center relative action-menu-container">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setMenuPos({ top: rect.bottom, left: rect.right - 160 });
-                    setOpenMenuId(openMenuId === faq.id ? null : faq.id);
-                  }}
-                  className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <MoreHorizontal size={20} className="text-dashboard-body" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {openMenuId && activeFAQ && menuPos && (
-        <div
-          className="fixed bg-white border border-dashboard-stroke rounded-lg shadow-lg z-[9999] py-1 w-40"
-          style={{ top: menuPos.top, left: menuPos.left }}
-        >
-          <button
-            onClick={() => {
-              setEditing(activeFAQ);
-              setShowModal(true);
-              setOpenMenuId(null);
-              setMenuPos(null);
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-dashboard-primary/10 flex items-center gap-2"
-          >
-            <Edit2 size={16} /> Edit
-          </button>
-          <button
-            onClick={() => handleDelete(activeFAQ.id)}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-          >
-            <Trash2 size={16} /> Delete
-          </button>
-        </div>
-      )}
+      </TableFrame>
 
       <AddFAQModal
         isOpen={showModal}
@@ -209,6 +187,19 @@ export function FAQsTab() {
         }}
         onSubmit={handleSave}
         initialData={editing}
+      />
+
+      <ConfirmModal
+        open={!!pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={confirmDelete}
+        isLoading={deleting}
+        title="Delete question"
+        description={
+          pendingDelete ? `Delete “${pendingDelete.question}”? This cannot be undone.` : ""
+        }
+        confirmLabel="Delete"
+        variant="danger"
       />
     </div>
   );

@@ -1,5 +1,38 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  CmsField,
+  CONTROL,
+  DIALOG_VARS,
+  SELECT_ITEM,
+  TEXTAREA,
+} from "../ui";
 import type { AddJobModalProps } from "../types";
+
+const EXPERIENCE_OPTIONS = ["Fresher", "1 Year", "2 Years", "3 Years", "4 Years", "5+ Years"];
+const JOB_TYPES = ["Full Time", "Part Time", "Contract", "Internship"];
+
+const EMPTY = {
+  jobTitle: "",
+  experienceRequired: "",
+  jobType: "Full Time",
+  jobDescription: "",
+};
 
 export const AddJobModal: React.FC<AddJobModalProps> = ({
   isOpen,
@@ -7,32 +40,21 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   onSubmit,
   initialData,
 }) => {
-  const [formData, setFormData] = useState({
-    jobTitle: "",
-    experienceRequired: "",
-    jobType: "Full Time",
-    jobDescription: "",
-  });
+  const [formData, setFormData] = useState(EMPTY);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         jobTitle: initialData.position,
         experienceRequired: initialData.experience,
+        // The API stores the job type in `location`.
         jobType: initialData.location || "Full Time",
         jobDescription: initialData.jd,
       });
     } else {
-      setFormData({
-        jobTitle: "",
-        experienceRequired: "",
-        jobType: "Full Time",
-        jobDescription: "",
-      });
+      setFormData(EMPTY);
     }
   }, [initialData, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,100 +63,101 @@ export const AddJobModal: React.FC<AddJobModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-      <div className="bg-white rounded-xl p-6 w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-dashboard-heading font-geist text-2xl font-bold tracking-tight">
-            {initialData ? "Edit Position" : "Add New Position"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300 transition-colors"
-          >
-            ×
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        style={DIALOG_VARS}
+        className="max-w-2xl w-[calc(100vw-2rem)] p-0 gap-0 rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
+      >
+        <DialogHeader className="px-5 py-4 border-b border-app-border text-left">
+          <DialogTitle className="text-[15px] font-bold text-app-fg">
+            {initialData ? "Edit position" : "New position"}
+          </DialogTitle>
+          <DialogDescription className="text-[12.5px] text-app-fg-muted">
+            Published positions accept applications on the public careers page.
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">Job Title</label>
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+            <CmsField label="Job title" htmlFor="job-title">
               <input
-                type="text"
-                placeholder="Type Here"
+                id="job-title"
                 value={formData.jobTitle}
                 onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
-                className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary"
+                placeholder="Operations executive"
+                className={CONTROL}
                 required
               />
+            </CmsField>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <CmsField label="Experience required" htmlFor="job-experience">
+                <Select
+                  value={formData.experienceRequired}
+                  onValueChange={(v) => setFormData({ ...formData, experienceRequired: v })}
+                >
+                  <SelectTrigger
+                    id="job-experience"
+                    className="h-11 rounded-xl border-app-border bg-app-surface-2 text-[13.5px]"
+                  >
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent style={DIALOG_VARS}>
+                    {EXPERIENCE_OPTIONS.map((exp) => (
+                      <SelectItem key={exp} value={exp} className={SELECT_ITEM}>
+                        {exp}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CmsField>
+
+              <CmsField label="Job type" htmlFor="job-type">
+                <Select
+                  value={formData.jobType}
+                  onValueChange={(v) => setFormData({ ...formData, jobType: v })}
+                >
+                  <SelectTrigger
+                    id="job-type"
+                    className="h-11 rounded-xl border-app-border bg-app-surface-2 text-[13.5px]"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent style={DIALOG_VARS}>
+                    {JOB_TYPES.map((type) => (
+                      <SelectItem key={type} value={type} className={SELECT_ITEM}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CmsField>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">
-                Experience Required
-              </label>
-              <select
-                value={formData.experienceRequired}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    experienceRequired: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary appearance-none bg-white"
+            <CmsField label="Job description" htmlFor="job-description">
+              <textarea
+                id="job-description"
+                rows={7}
+                value={formData.jobDescription}
+                onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                placeholder="Responsibilities, requirements and what the team works on…"
+                className={TEXTAREA}
                 required
-              >
-                <option value="">select</option>
-                <option value="Fresher">Fresher</option>
-                <option value="1 Year">1 Year</option>
-                <option value="2 Years">2 Years</option>
-                <option value="3 Years">3 Years</option>
-                <option value="4 Years">4 Years</option>
-                <option value="5+ Years">5+ Years</option>
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-dashboard-title font-plus-jakarta text-sm">Job Type</label>
-              <select
-                value={formData.jobType}
-                onChange={(e) => setFormData({ ...formData, jobType: e.target.value })}
-                className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary appearance-none bg-white"
-                required
-              >
-                <option value="Full Time">Full Time</option>
-                <option value="Part Time">Part Time</option>
-                <option value="Contract">Contract</option>
-                <option value="Internship">Internship</option>
-              </select>
-            </div>
+              />
+            </CmsField>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-dashboard-title font-plus-jakarta text-sm">
-              Job Description
-            </label>
-            <textarea
-              placeholder="Type Here"
-              value={formData.jobDescription}
-              onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
-              rows={6}
-              className="w-full px-3 py-3.5 border border-gray-400 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary resize-none"
-              required
-            />
-          </div>
-
-          <div className="flex justify-end pt-4 border-t border-gray-200">
-            <button
-              type="submit"
-              className="px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-            >
-              {initialData ? "Update Job" : "Add Job"}
+          <footer className="flex items-center justify-end gap-2 px-5 py-4 border-t border-app-border bg-app-surface-2">
+            <button type="button" onClick={onClose} className={BTN_NEUTRAL}>
+              Cancel
             </button>
-          </div>
+            <button type="submit" disabled={!formData.experienceRequired} className={BTN_PRIMARY}>
+              {initialData ? "Save changes" : "Add position"}
+            </button>
+          </footer>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

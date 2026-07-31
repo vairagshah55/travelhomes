@@ -1,9 +1,28 @@
-import React, { useEffect, useState } from "react";
-import { Edit2, Trash2, MoreHorizontal, Upload } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Ban,
+  Briefcase,
+  CheckCircle2,
+  Edit2,
+  ExternalLink,
+  Inbox,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import { getImageUrl } from "@/lib/adminUtils";
+import ConfirmModal from "@/components/shared/ConfirmModal";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import {
+  AdminFilterBar,
+  type ActiveFilters,
+  type FilterDefinition,
+} from "@/components/admin/AdminFilterBar";
+import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { AddJobModal } from "../modals";
+import { BTN_PRIMARY, CmsSegmented, TableFrame } from "../ui";
 import type { JobPosition } from "../types";
 
 const STATUS_OPTIONS = [
@@ -14,69 +33,133 @@ const STATUS_OPTIONS = [
   "Rejected",
 ];
 
+interface Application {
+  _id?: string;
+  id?: string;
+  fullName?: string;
+  jobTitle?: string;
+  email?: string;
+  mobile?: string;
+  experience?: string;
+  city?: string;
+  cvUrl?: string;
+  status?: string;
+  createdAt?: string;
+}
+
+const appId = (a: Application) => String(a._id || a.id || "");
+
+const APPLICATION_FILTERS: FilterDefinition[] = [
+  {
+    key: "status",
+    label: "Status",
+    type: "select",
+    options: STATUS_OPTIONS.map((s) => ({ value: s, label: s })),
+  },
+];
+
+const formatDate = (value?: string) => {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString();
+};
+
 /**
- * Career admin: two sub-tabs (Positions list + Applications list). Owns all
- * job + application state, modals, and click-outside menu handling.
- * Self-contained — parent renders `<CareerTab />` with no props.
+ * Career admin: the open positions on the public careers page plus the inbox of
+ * applications against them. Self-contained — the parent renders `<CareerTab />`
+ * with no props.
  */
 export function CareerTab() {
-  const [subTab, setSubTab] = useState<"Positions" | "Applications">("Positions");
+  const [subTab, setSubTab] = useState<"positions" | "applications">("positions");
+
   const [jobs, setJobs] = useState<JobPosition[]>([]);
-  const [applications, setApplications] = useState<any[]>([]);
-  const [openJobMenu, setOpenJobMenu] = useState<string | null>(null);
-  const [openAppMenu, setOpenAppMenu] = useState<string | null>(null);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [jobsError, setJobsError] = useState(false);
+  const [jobSearch, setJobSearch] = useState("");
+  const [busyJobId, setBusyJobId] = useState<string | null>(null);
   const [showJobModal, setShowJobModal] = useState(false);
   const [editing, setEditing] = useState<JobPosition | null>(null);
+  const [pendingJobDelete, setPendingJobDelete] = useState<JobPosition | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await cmsService.getJobs();
-        setJobs(res.data);
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-    (async () => {
-      try {
-        const res = await cmsService.getJobApplications();
-        setApplications(res.data);
-      } catch (e) {
-        console.warn("Failed to load job applications", e);
-      }
-    })();
-  }, []);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loadingApps, setLoadingApps] = useState(true);
+  const [appsError, setAppsError] = useState(false);
+  const [appSearch, setAppSearch] = useState("");
+  const [appFilters, setAppFilters] = useState<ActiveFilters>({});
+  const [busyAppId, setBusyAppId] = useState<string | null>(null);
+  const [pendingAppDelete, setPendingAppDelete] = useState<Application | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    const handle = (e: MouseEvent) => {
-      const t = e.target as HTMLElement;
-      if (!t.closest(".action-menu-container")) {
-        setOpenJobMenu(null);
-        setOpenAppMenu(null);
-      }
-    };
-    document.addEventListener("mousedown", handle);
-    return () => document.removeEventListener("mousedown", handle);
-  }, []);
-
-  const toggleJobStatus = async (id: string) => {
+  const loadJobs = async () => {
+    setLoadingJobs(true);
+    setJobsError(false);
     try {
-      const updated = await cmsService.toggleJobStatus(id);
-      setJobs((prev) => prev.map((j) => (j.id === id ? updated : j)));
-      setOpenJobMenu(null);
+      const res = await cmsService.getJobs();
+      setJobs(res.data);
     } catch (e) {
       console.error(e);
+      setJobsError(true);
+    } finally {
+      setLoadingJobs(false);
     }
   };
 
-  const handleDeleteJob = async (id: string) => {
-    if (!confirm("Delete this position?")) return;
+  const loadApplications = async () => {
+    setLoadingApps(true);
+    setAppsError(false);
+    try {
+      const res = await cmsService.getJobApplications();
+      setApplications(res.data);
+    } catch (e) {
+      console.warn("Failed to load job applications", e);
+      setAppsError(true);
+    } finally {
+      setLoadingApps(false);
+    }
+  };
+
+  useEffect(() => {
+    loadJobs();
+    loadApplications();
+  }, []);
+
+  /* ── Positions ─────────────────────────────────────────────────────────── */
+
+  const visibleJobs = useMemo(() => {
+    const q = jobSearch.trim().toLowerCase();
+    if (!q) return jobs;
+    return jobs.filter((j) =>
+      [j.position, j.experience, j.location, j.jd].some((v) => (v || "").toLowerCase().includes(q)),
+    );
+  }, [jobs, jobSearch]);
+
+  const toggleJobStatus = async (job: JobPosition) => {
+    setBusyJobId(job.id);
+    try {
+      const updated = await cmsService.toggleJobStatus(job.id);
+      setJobs((prev) => prev.map((j) => (j.id === job.id ? updated : j)));
+      toast.success(job.isActive === false ? "Position published" : "Position hidden");
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to change status");
+    } finally {
+      setBusyJobId(null);
+    }
+  };
+
+  const confirmJobDelete = async () => {
+    if (!pendingJobDelete) return;
+    const id = pendingJobDelete.id;
+    setDeleting(true);
     try {
       await cmsService.deleteJob(id);
       setJobs((prev) => prev.filter((j) => j.id !== id));
-      setOpenJobMenu(null);
+      toast.success("Position deleted");
+      setPendingJobDelete(null);
     } catch {
-      toast.error("Failed to delete position.");
+      toast.error("Failed to delete position");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -85,343 +168,347 @@ export function CareerTab() {
       if (editing) {
         const updated = await cmsService.updateJob(editing.id, jobData);
         setJobs((prev) => prev.map((j) => (j.id === editing.id ? updated : j)));
-        toast.success("Job updated successfully");
+        toast.success("Position updated");
       } else {
         const created = await cmsService.createJob(jobData);
         setJobs((prev) => [...prev, created]);
-        toast.success("Job added successfully");
+        toast.success("Position added");
       }
+      setEditing(null);
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || "Failed to save job");
+      toast.error(e?.message || "Failed to save position");
     }
   };
 
-  const updateAppStatus = async (id: string, status: string) => {
+  const openCreateJob = () => {
+    setEditing(null);
+    setShowJobModal(true);
+  };
+
+  const jobColumns: ColumnDef<JobPosition>[] = [
+    {
+      key: "position",
+      header: "Position",
+      cell: (j) => <span className="font-semibold text-app-fg">{j.position}</span>,
+    },
+    {
+      key: "experience",
+      header: "Experience",
+      className: "w-36",
+      cell: (j) => <span className="text-app-fg-muted">{j.experience || "—"}</span>,
+    },
+    {
+      key: "location",
+      header: "Type",
+      className: "w-32",
+      hideBelow: "md",
+      cell: (j) => <span className="text-app-fg-muted">{j.location || "—"}</span>,
+    },
+    {
+      key: "jd",
+      header: "Description",
+      hideBelow: "lg",
+      cell: (j) => (
+        <p className="max-w-[360px] text-app-fg-muted line-clamp-2 leading-relaxed">
+          {j.jd || "—"}
+        </p>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      className: "w-28",
+      cell: (j) => <StatusBadge status={j.isActive !== false ? "active" : "inactive"} />,
+    },
+  ];
+
+  const jobActions: RowAction<JobPosition>[] = [
+    {
+      label: "Edit",
+      icon: Edit2,
+      onClick: (j) => {
+        setEditing(j);
+        setShowJobModal(true);
+      },
+    },
+    {
+      label: "Publish",
+      icon: CheckCircle2,
+      hidden: (j) => j.isActive !== false,
+      onClick: toggleJobStatus,
+    },
+    {
+      label: "Hide",
+      icon: Ban,
+      hidden: (j) => j.isActive === false,
+      onClick: toggleJobStatus,
+    },
+    { label: "Delete", icon: Trash2, variant: "danger", onClick: (j) => setPendingJobDelete(j) },
+  ];
+
+  /* ── Applications ──────────────────────────────────────────────────────── */
+
+  const visibleApplications = useMemo(() => {
+    const q = appSearch.trim().toLowerCase();
+    const status = appFilters.status as string | undefined;
+    return applications.filter((a) => {
+      if (status && (a.status || "Under Review") !== status) return false;
+      if (!q) return true;
+      return [a.fullName, a.jobTitle, a.email, a.mobile, a.city].some((v) =>
+        (v || "").toLowerCase().includes(q),
+      );
+    });
+  }, [applications, appSearch, appFilters]);
+
+  const updateAppStatus = async (app: Application, status: string) => {
+    const id = appId(app);
+    setBusyAppId(id);
     try {
       const updated = await cmsService.updateJobApplicationStatus(id, status);
       const updatedApp = updated.data || updated;
-      setApplications((prev) =>
-        prev.map((app) => (app._id === id || app.id === id ? updatedApp : app)),
-      );
-      setOpenAppMenu(null);
-      toast.success(`Application status updated to ${status}`);
+      setApplications((prev) => prev.map((a) => (appId(a) === id ? updatedApp : a)));
+      toast.success(`Application marked “${status}”`);
     } catch (e) {
       console.error(e);
       toast.error("Failed to update status");
+    } finally {
+      setBusyAppId(null);
     }
   };
 
-  const handleDeleteApplication = async (id: string) => {
-    if (!confirm("Delete this application?")) return;
+  const confirmAppDelete = async () => {
+    if (!pendingAppDelete) return;
+    const id = appId(pendingAppDelete);
+    setDeleting(true);
     try {
       await cmsService.deleteJobApplication(id);
-      setApplications((prev) => prev.filter((app) => (app._id || app.id) !== id));
-      setOpenAppMenu(null);
-      toast.success("Application deleted successfully");
+      setApplications((prev) => prev.filter((a) => appId(a) !== id));
+      toast.success("Application deleted");
+      setPendingAppDelete(null);
     } catch {
       toast.error("Failed to delete application");
+    } finally {
+      setDeleting(false);
     }
   };
 
-  const renderApplications = () => (
-    <div className="space-y-4">
-      <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-dashboard-title font-plus-jakarta text-sm font-bold">
-            Job Applications
-          </h3>
+  const applicationColumns: ColumnDef<Application>[] = [
+    {
+      key: "createdAt",
+      header: "Received",
+      className: "w-28",
+      cell: (a) => (
+        <span className="text-app-fg-muted tabular-nums">{formatDate(a.createdAt)}</span>
+      ),
+    },
+    {
+      key: "fullName",
+      header: "Applicant",
+      cell: (a) => (
+        <div className="min-w-0">
+          <p className="font-semibold text-app-fg truncate">{a.fullName || "—"}</p>
+          <p className="text-[12px] text-app-fg-muted truncate">{a.jobTitle || "—"}</p>
         </div>
-
-        <div
-          className="h-px bg-dashboard-stroke mb-3"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to right, #EAECF0 0, #EAECF0 2px, transparent 2px, transparent 4px)",
-          }}
-        />
-
-        <div className="border border-dashboard-stroke rounded-xl overflow-x-auto">
-          <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 px-4 gap-3 py-3 min-w-[1200px]">
-            <div className="text-dashboard-title font-plus-jakarta text-sm font-bold">Date</div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Name
-            </div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Job Title
-            </div>
-            <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Contact
-            </div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Exp
-            </div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Location
-            </div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Resume
-            </div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Status
-            </div>
-            <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Action
-            </div>
-          </div>
-
-          {applications.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">No applications found.</div>
-          ) : (
-            applications.map((app, index) => {
-              const id = app._id || app.id;
-              return (
-                <div
-                  key={id || index}
-                  className={`grid grid-cols-12 gap-3 px-4 py-3.5 min-w-[1200px] ${
-                    index !== applications.length - 1 ? "border-b border-gray-100" : ""
-                  }`}
-                >
-                  <div className="col-span-1 text-sm text-gray-600">
-                    {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "-"}
-                  </div>
-                  <div className="col-span-2 text-sm font-medium text-gray-900">{app.fullName}</div>
-                  <div className="col-span-2 text-sm text-gray-700">{app.jobTitle}</div>
-                  <div className="col-span-2 text-sm text-gray-600 flex flex-col">
-                    <span>{app.email}</span>
-                    <span className="text-xs text-gray-500">{app.mobile}</span>
-                  </div>
-                  <div className="col-span-1 text-sm text-gray-600">{app.experience}</div>
-                  <div className="col-span-1 text-sm text-gray-600">{app.city}</div>
-                  <div className="col-span-1">
-                    {app.cvUrl ? (
-                      <a
-                        href={getImageUrl(app.cvUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-600 hover:underline text-sm flex items-center gap-1"
-                      >
-                        <Upload size={14} /> View
-                      </a>
-                    ) : (
-                      <span className="text-gray-400 text-sm">-</span>
-                    )}
-                  </div>
-                  <div className="col-span-1">
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        app.status === "Accepted"
-                          ? "bg-green-100 text-green-700"
-                          : app.status === "Rejected"
-                            ? "bg-red-100 text-red-700"
-                            : app.status === "Interview Scheduled"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {app.status || "Pending"}
-                    </span>
-                  </div>
-                  <div className="col-span-1 relative action-menu-container flex justify-center">
-                    <button
-                      onClick={() => setOpenAppMenu(openAppMenu === id ? null : id)}
-                      className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <MoreHorizontal size={20} className="text-dashboard-body" />
-                    </button>
-
-                    {openAppMenu === id && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-50 py-1">
-                        {STATUS_OPTIONS.map((status) => (
-                          <button
-                            key={status}
-                            onClick={() => updateAppStatus(id, status)}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-dashboard-primary/10 block text-gray-700"
-                          >
-                            {status}
-                          </button>
-                        ))}
-                        <div className="h-px bg-gray-100 my-1" />
-                        <button
-                          onClick={() => handleDeleteApplication(id)}
-                          className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                        >
-                          <Trash2 size={16} /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          )}
+      ),
+    },
+    {
+      key: "email",
+      header: "Contact",
+      hideBelow: "md",
+      cell: (a) => (
+        <div className="min-w-0">
+          <p className="text-app-fg-muted truncate">{a.email || "—"}</p>
+          {a.mobile && <p className="text-[12px] text-app-fg-subtle">{a.mobile}</p>}
         </div>
-      </div>
-    </div>
-  );
+      ),
+    },
+    {
+      key: "experience",
+      header: "Exp",
+      className: "w-24",
+      hideBelow: "lg",
+      cell: (a) => <span className="text-app-fg-muted">{a.experience || "—"}</span>,
+    },
+    {
+      key: "city",
+      header: "City",
+      className: "w-28",
+      hideBelow: "lg",
+      cell: (a) => <span className="text-app-fg-muted">{a.city || "—"}</span>,
+    },
+    {
+      key: "cvUrl",
+      header: "Resume",
+      className: "w-24",
+      cell: (a) =>
+        a.cvUrl ? (
+          <a
+            href={getImageUrl(a.cvUrl)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-app-accent hover:underline"
+          >
+            <ExternalLink size={13} /> Open
+          </a>
+        ) : (
+          <span className="text-app-fg-subtle">—</span>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      className: "w-36",
+      cell: (a) => <StatusBadge status={a.status || "Under Review"} />,
+    },
+  ];
+
+  const applicationActions: RowAction<Application>[] = [
+    ...STATUS_OPTIONS.map<RowAction<Application>>((status) => ({
+      label: status,
+      icon: CheckCircle2,
+      hidden: (a) => (a.status || "Under Review") === status,
+      onClick: (a) => updateAppStatus(a, status),
+    })),
+    { label: "Delete", icon: Trash2, variant: "danger", onClick: (a) => setPendingAppDelete(a) },
+  ];
+
+  const subTabs = [
+    { value: "positions" as const, label: "Open positions", icon: Briefcase, count: jobs.length },
+    {
+      value: "applications" as const,
+      label: "Applications",
+      icon: Inbox,
+      count: applications.length,
+    },
+  ];
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-4 bg-white p-2 rounded-xl w-fit border border-dashboard-stroke">
-        <button
-          onClick={() => setSubTab("Positions")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            subTab === "Positions"
-              ? "bg-dashboard-primary text-black"
-              : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          Open Positions
-        </button>
-        <button
-          onClick={() => setSubTab("Applications")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            subTab === "Applications"
-              ? "bg-dashboard-primary text-black"
-              : "text-gray-600 hover:bg-gray-100"
-          }`}
-        >
-          Applications
-        </button>
-      </div>
+      <CmsSegmented
+        items={subTabs}
+        value={subTab}
+        onChange={setSubTab}
+        layoutId="cmsCareerSubTabPill"
+        ariaLabel="Career section"
+      />
 
-      {subTab === "Applications" ? (
-        renderApplications()
-      ) : (
-        <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-dashboard-title font-plus-jakarta text-sm font-bold">
-              Career Positions
-            </h3>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setShowJobModal(true);
-              }}
-              className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-            >
-              Add New Position
-            </button>
-          </div>
-
-          <div
-            className="h-px bg-dashboard-stroke mb-3"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(to right, #EAECF0 0, #EAECF0 2px, transparent 2px, transparent 4px)",
-            }}
+      {subTab === "positions" ? (
+        <>
+          <AdminToolbar
+            searchValue={jobSearch}
+            onSearchChange={setJobSearch}
+            searchPlaceholder="Search positions…"
+            primaryAction={
+              <button onClick={openCreateJob} className={BTN_PRIMARY}>
+                <Plus size={15} strokeWidth={2.4} />
+                Add position
+              </button>
+            }
           />
 
-          <div className="border border-dashboard-stroke rounded-xl overflow-scroll">
-            <div className="bg-gray-50 border-b border-gray-200 grid grid-cols-12 gap-3 px-4 py-3">
-              <div className="col-span-3 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Position
-              </div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Experience Required
-              </div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Location
-              </div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                JD
-              </div>
-              <div className="col-span-1 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Status
-              </div>
-              <div className="col-span-2 text-dashboard-title font-plus-jakarta text-sm font-bold">
-                Action
-              </div>
-            </div>
+          <TableFrame>
+            <AdminDataTable<JobPosition>
+              columns={jobColumns}
+              data={visibleJobs}
+              isLoading={loadingJobs}
+              isError={jobsError}
+              errorMessage="Could not load the positions list."
+              onRetry={loadJobs}
+              hasActiveQuery={!!jobSearch.trim()}
+              emptyIcon={Briefcase}
+              emptyTitle="No open positions"
+              emptyDescription="Add a role and it appears on the careers page straight away."
+              emptyAction={{ label: "Add position", onClick: openCreateJob }}
+              noResultsDescription="No position matches your search."
+              noResultsAction={{ label: "Clear search", onClick: () => setJobSearch("") }}
+              rowActions={jobActions}
+              rowBusy={(j) => busyJobId === j.id}
+            />
+          </TableFrame>
+        </>
+      ) : (
+        <>
+          <AdminToolbar
+            searchValue={appSearch}
+            onSearchChange={setAppSearch}
+            searchPlaceholder="Search applicants…"
+          />
 
-            {jobs.map((job, index) => (
-              <div
-                key={job.id}
-                className={`grid grid-cols-12 gap-3 px-4 py-3.5 ${
-                  index !== jobs.length - 1 ? "border-b border-gray-100" : ""
-                }`}
-              >
-                <div className="col-span-3">
-                  <div className="text-dashboard-heading font-plus-jakarta text-sm font-bold">
-                    {job.position}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-dashboard-body font-poppins text-sm">{job.experience}</div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-dashboard-body font-poppins text-sm">{job.location}</div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-dashboard-heading font-plus-jakarta text-sm truncate">
-                    {job.jd}
-                  </div>
-                </div>
-                <div className="col-span-1">
-                  <span
-                    className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                      job.isActive !== false
-                        ? "bg-green-100 text-green-700"
-                        : "bg-red-100 text-red-700"
-                    }`}
-                  >
-                    {job.isActive !== false ? "Active" : "Inactive"}
-                  </span>
-                </div>
-                <div className="col-span-2 flex items-center justify-center gap-3 relative action-menu-container">
-                  <button
-                    onClick={() => toggleJobStatus(job.id)}
-                    className={`w-9 h-5 rounded-full transition-colors relative ${
-                      job.isActive ? "bg-dashboard-blue-600" : "bg-gray-300"
-                    }`}
-                    title={job.isActive ? "Deactivate" : "Activate"}
-                  >
-                    <div
-                      className={`w-4 h-4 bg-white rounded-full shadow transition-transform absolute top-0.5 ${
-                        job.isActive ? "translate-x-4" : "translate-x-0.5"
-                      }`}
-                    />
-                  </button>
+          <AdminFilterBar
+            filters={APPLICATION_FILTERS}
+            activeFilters={appFilters}
+            onApply={setAppFilters}
+            onClear={() => setAppFilters({})}
+          />
 
-                  <button
-                    onClick={() => setOpenJobMenu(openJobMenu === job.id ? null : job.id)}
-                    className="p-1.5 hover:bg-gray-100 rounded-full transition-colors"
-                  >
-                    <MoreHorizontal size={20} className="text-dashboard-body" />
-                  </button>
-
-                  {openJobMenu === job.id && (
-                    <div className="absolute right-0 top-full mt-1 w-40 bg-white border border-dashboard-stroke rounded-lg shadow-lg z-50 py-1">
-                      <button
-                        onClick={() => {
-                          setEditing(job);
-                          setShowJobModal(true);
-                          setOpenJobMenu(null);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-dashboard-primary/10 flex items-center gap-2"
-                      >
-                        <Edit2 size={16} /> Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteJob(job.id)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
-                      >
-                        <Trash2 size={16} /> Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          <TableFrame>
+            <AdminDataTable<Application>
+              columns={applicationColumns}
+              data={visibleApplications}
+              isLoading={loadingApps}
+              isError={appsError}
+              errorMessage="Could not load applications."
+              onRetry={loadApplications}
+              hasActiveQuery={!!appSearch.trim() || Object.keys(appFilters).length > 0}
+              emptyIcon={Inbox}
+              emptyTitle="No applications yet"
+              emptyDescription="Applications submitted from the careers page land here."
+              noResultsDescription="No application matches the current search or filters."
+              noResultsAction={{
+                label: "Clear filters",
+                onClick: () => {
+                  setAppSearch("");
+                  setAppFilters({});
+                },
+              }}
+              rowActions={applicationActions}
+              rowBusy={(a) => busyAppId === appId(a)}
+              getRowId={appId}
+            />
+          </TableFrame>
+        </>
       )}
 
       <AddJobModal
         isOpen={showJobModal}
-        onClose={() => setShowJobModal(false)}
+        onClose={() => {
+          setShowJobModal(false);
+          setEditing(null);
+        }}
         onSubmit={handleSaveJob}
         initialData={editing}
+      />
+
+      <ConfirmModal
+        open={!!pendingJobDelete}
+        onClose={() => setPendingJobDelete(null)}
+        onConfirm={confirmJobDelete}
+        isLoading={deleting}
+        title="Delete position"
+        description={
+          pendingJobDelete
+            ? `Delete “${pendingJobDelete.position}”? Applications already received are kept.`
+            : ""
+        }
+        confirmLabel="Delete"
+        variant="danger"
+      />
+
+      <ConfirmModal
+        open={!!pendingAppDelete}
+        onClose={() => setPendingAppDelete(null)}
+        onConfirm={confirmAppDelete}
+        isLoading={deleting}
+        title="Delete application"
+        description={
+          pendingAppDelete
+            ? `Delete the application from ${pendingAppDelete.fullName || "this applicant"}? This cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete"
+        variant="danger"
       />
     </div>
   );

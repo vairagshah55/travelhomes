@@ -24,6 +24,28 @@ export const BRAND_VARS = {
   "--ring": "175 84% 32%",
 } as React.CSSProperties;
 
+/**
+ * The `app-*` surface/accent layer for the ADMIN area, for the same reason as
+ * BRAND_VARS: those vars are declared on `[data-brand="admin"]` (AdminLayout's
+ * root), and Radix portals dialogs / select popovers to <body> — outside it. In
+ * a portal `app-accent` would otherwise fall back to global.css's `:root`, which
+ * is purple. Spread this onto any portalled content that uses `app-*` classes.
+ * Values mirror the admin block in admin.css.
+ */
+export const ADMIN_APP_VARS = {
+  ...BRAND_VARS,
+  "--surface": "#ffffff",
+  "--surface-2": "#f1f3f5",
+  "--surface-border": "#e4e7eb",
+  "--surface-fg": "#101828",
+  "--surface-fg-muted": "#55585e",
+  "--surface-fg-subtle": "#6e7278",
+  "--accent": "#0d9488",
+  "--accent-hover": "#0f766e",
+  "--accent-soft": "rgba(13, 148, 136, 0.1)",
+  "--accent-fg": "#ffffff",
+} as React.CSSProperties;
+
 /** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
 export const PANEL =
   "bg-card rounded-[18px] border border-border/70 " +

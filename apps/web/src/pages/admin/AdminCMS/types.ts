@@ -60,12 +60,6 @@ export interface AddFeatureModalProps {
   type?: "feature" | "category" | "subcategory";
 }
 
-export interface AddRoleModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (roleData: any) => void;
-}
-
 export interface AddJobModalProps {
   isOpen: boolean;
   onClose: () => void;

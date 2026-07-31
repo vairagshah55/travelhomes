@@ -94,7 +94,12 @@ const ErrorMsg = ({ message }: { message?: string }) =>
     <div className="flex items-center gap-1.5 mt-0.5">
       <svg width="11" height="11" viewBox="0 0 12 12" fill="none" className="text-th-error-bright">
         <circle cx="6" cy="6" r="5.25" stroke="currentColor" strokeWidth="1.5" />
-        <path d="M6 3.5v3M6 8.25v.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <path
+          d="M6 3.5v3M6 8.25v.25"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+        />
       </svg>
       <p className="text-[11.5px] text-th-error-bright">{message}</p>
     </div>
@@ -154,7 +159,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
             </p>
           </div>
           {errors.coverImage && (
-            <span className="text-[11px] font-semibold text-th-error-bright">{errors.coverImage}</span>
+            <span className="text-[11px] font-semibold text-th-error-bright">
+              {errors.coverImage}
+            </span>
           )}
         </div>
 
@@ -325,7 +332,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <label
                       className={cn(
                         "text-[12px] font-semibold uppercase tracking-[0.03em]",
-                        errors[`room_${index}_name`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                        errors[`room_${index}_name`]
+                          ? "text-th-error-bright"
+                          : "text-th-warm-text-dark",
                       )}
                     >
                       Room Name <span className="text-th-error-bright">*</span>
@@ -353,7 +362,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <label
                       className={cn(
                         "text-[12px] font-semibold uppercase tracking-[0.03em]",
-                        errors[`room_${index}_description`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                        errors[`room_${index}_description`]
+                          ? "text-th-error-bright"
+                          : "text-th-warm-text-dark",
                       )}
                     >
                       Description <span className="text-th-error-bright">*</span>
@@ -389,10 +400,18 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       label="Guest Capacity"
                       value={room.guestCapacity}
                       onDecrement={() =>
-                        updateRoom(room.id, "guestCapacity", Math.max(1, (isFinite(room.guestCapacity) ? room.guestCapacity : 1) - 1))
+                        updateRoom(
+                          room.id,
+                          "guestCapacity",
+                          Math.max(1, (isFinite(room.guestCapacity) ? room.guestCapacity : 1) - 1),
+                        )
                       }
                       onIncrement={() =>
-                        updateRoom(room.id, "guestCapacity", (isFinite(room.guestCapacity) ? room.guestCapacity : 0) + 1)
+                        updateRoom(
+                          room.id,
+                          "guestCapacity",
+                          (isFinite(room.guestCapacity) ? room.guestCapacity : 0) + 1,
+                        )
                       }
                     />
                     <div className="h-px bg-th-warm-border" />
@@ -400,8 +419,16 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       icon={<BedDouble size={14} />}
                       label="Beds"
                       value={room.beds}
-                      onDecrement={() => updateRoom(room.id, "beds", Math.max(1, (isFinite(room.beds) ? room.beds : 1) - 1))}
-                      onIncrement={() => updateRoom(room.id, "beds", (isFinite(room.beds) ? room.beds : 0) + 1)}
+                      onDecrement={() =>
+                        updateRoom(
+                          room.id,
+                          "beds",
+                          Math.max(1, (isFinite(room.beds) ? room.beds : 1) - 1),
+                        )
+                      }
+                      onIncrement={() =>
+                        updateRoom(room.id, "beds", (isFinite(room.beds) ? room.beds : 0) + 1)
+                      }
                     />
                     <div className="h-px bg-th-warm-border" />
                     <RoomCounter
@@ -409,9 +436,19 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       label="Bathrooms"
                       value={room.bathrooms}
                       onDecrement={() =>
-                        updateRoom(room.id, "bathrooms", Math.max(1, (isFinite(room.bathrooms) ? room.bathrooms : 1) - 1))
+                        updateRoom(
+                          room.id,
+                          "bathrooms",
+                          Math.max(1, (isFinite(room.bathrooms) ? room.bathrooms : 1) - 1),
+                        )
                       }
-                      onIncrement={() => updateRoom(room.id, "bathrooms", (isFinite(room.bathrooms) ? room.bathrooms : 0) + 1)}
+                      onIncrement={() =>
+                        updateRoom(
+                          room.id,
+                          "bathrooms",
+                          (isFinite(room.bathrooms) ? room.bathrooms : 0) + 1,
+                        )
+                      }
                     />
                   </div>
 
@@ -420,7 +457,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <label
                       className={cn(
                         "text-[12px] font-semibold uppercase tracking-[0.03em]",
-                        errors[`room_${index}_price`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                        errors[`room_${index}_price`]
+                          ? "text-th-error-bright"
+                          : "text-th-warm-text-dark",
                       )}
                     >
                       Price per Night <span className="text-th-error-bright">*</span>
@@ -456,7 +495,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       <label
                         className={cn(
                           "text-[12px] font-semibold uppercase tracking-[0.03em]",
-                          errors[`room_${index}_photos`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                          errors[`room_${index}_photos`]
+                            ? "text-th-error-bright"
+                            : "text-th-warm-text-dark",
                         )}
                       >
                         Photos <span className="text-th-error-bright">*</span>
@@ -479,10 +520,12 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <div className="w-full h-[3px] bg-th-warm-surface rounded-full overflow-hidden">
                       <div
                         className={cn(
-                          "h-full rounded-full transition-[width] duration-[400ms] ease-out",
+                          "h-full rounded-full transition-[width] [transition-duration:400ms] ease-out",
                           photoCount >= MIN_PHOTOS ? "bg-th-success-bright" : "bg-th-brand",
                         )}
-                        style={{ width: `${(Math.min(photoCount, MIN_PHOTOS) / MIN_PHOTOS) * 100}%` }}
+                        style={{
+                          width: `${(Math.min(photoCount, MIN_PHOTOS) / MIN_PHOTOS) * 100}%`,
+                        }}
                       />
                     </div>
 
@@ -505,7 +548,9 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                       <span
                         className={cn(
                           "text-[13px] font-semibold",
-                          errors[`room_${index}_photos`] ? "text-th-error-bright" : "text-th-warm-text-dark",
+                          errors[`room_${index}_photos`]
+                            ? "text-th-error-bright"
+                            : "text-th-warm-text-dark",
                         )}
                       >
                         {errors[`room_${index}_photos`] || "Add room photos"}

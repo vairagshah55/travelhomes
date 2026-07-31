@@ -11,7 +11,7 @@ const AdminAnalytics = () => {
     <AdminLayout title="Analytics">
       <div className="space-y-6">
         {/* Toolbar — title + Overview/Report segmented control */}
-        <div className="flex items-center justify-between gap-4 bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke px-6 py-4 shadow-tpl-1">
+        <div className="flex items-center justify-between gap-4 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 py-4">
           <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
             {activeTab === "analytics" ? "Analytics Overview" : "Analytics Report"}
           </h2>
@@ -27,7 +27,7 @@ const AdminAnalytics = () => {
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
                   activeTab === tab
-                    ? "bg-white dark:bg-white/10 text-tpl-primary shadow-tpl-1"
+                    ? "bg-app-surface text-app-accent shadow-[0_1px_2px_rgba(16,24,40,0.08)]"
                     : "text-tpl-dark-5 hover:text-tpl-dark dark:hover:text-white"
                 }`}
               >
@@ -44,7 +44,7 @@ const AdminAnalytics = () => {
           </MotionReveal>
         ) : (
           <MotionReveal delay={0}>
-            <div className="bg-white dark:bg-tpl-dark-2 rounded-2xl border border-tpl-stroke shadow-tpl-1 overflow-hidden">
+            <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
               <AdminAnalyticsReport />
             </div>
           </MotionReveal>

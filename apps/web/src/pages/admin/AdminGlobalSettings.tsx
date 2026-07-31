@@ -155,13 +155,13 @@ const AdminGlobalSettings: React.FC = () => {
   return (
     <AdminLayout title="Global Settings">
       <div className="flex-1">
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-t-[10px] border-b border-tpl-stroke h-[68px] px-6 flex items-center shadow-tpl-1">
+        <div className="bg-app-surface rounded-t-[18px] border border-b-0 border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] border-b border-app-border h-[60px] px-5 flex items-center">
           <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
             Settings
           </h2>
         </div>
 
-        <div className="bg-white dark:bg-tpl-dark-2 rounded-b-[10px] shadow-tpl-1 p-6 space-y-6">
+        <div className="bg-app-surface rounded-b-[18px] border border-t-0 border-app-border shadow-[0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.55)] p-6 space-y-6">
           {/* Tab Navigation */}
           <div className="flex items-center max-md:flex-wrap">
             {tabs.map((tab) => (

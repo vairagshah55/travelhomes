@@ -19,8 +19,10 @@ interface AdminStatCardProps {
 }
 
 /**
- * Canonical admin stat card — NextAdmin template style. White card, large solid
- * circular icon badge, big bold value, small label, optional growth delta.
+ * Canonical admin stat card. Same geometry as the vendor console's StatTile
+ * (`components/shared/StatTile.tsx`) — panel surface, tinted 9x9 icon tile,
+ * 22px count-up value, 11.5px label — so a metric row reads identically in
+ * both consoles. Adds the growth delta, which only admin reports.
  *
  * Consolidates the StatCard previously defined inline in AdminDashboard. Unlike
  * that version, `onClick` is optional: cards without a clear navigation target
@@ -66,41 +68,32 @@ export function AdminStatCard({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       aria-label={clickable ? `${title}: ${displayValue}` : undefined}
-      className={`relative overflow-hidden bg-app-surface rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04),0_6px_20px_-8px_rgba(16,24,40,0.1)] border border-app-border p-5 transition-all duration-200 group outline-none ${
+      className={`group relative overflow-hidden bg-app-surface rounded-[18px] border border-app-border p-4 outline-none shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] transition-[transform,box-shadow] duration-200 ${
         clickable
-          ? "cursor-pointer hover:border-[var(--teal-border)] hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-14px_rgba(13,148,136,0.3)] focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2 focus-visible:ring-offset-app-surface"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(13,148,136,0.14),0_14px_32px_-16px_rgba(13,148,136,0.45)] focus-visible:ring-4 focus-visible:ring-app-accent/20"
           : ""
       } ${className}`}
     >
-      {/* Top accent stripe — thin hue gradient bleeding from the icon corner */}
-      <span
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-0.5"
-        style={{ background: `linear-gradient(90deg, ${iconColor}, transparent)` }}
-      />
-
       <div
-        className={`size-11 rounded-xl grid place-items-center shrink-0 transition-transform duration-200 ${
+        className={`grid place-items-center w-9 h-9 rounded-[10px] shrink-0 transition-transform duration-200 ${
           clickable ? "group-hover:scale-105" : ""
         }`}
         style={{ backgroundColor: `${iconColor}1f`, color: iconColor }}
       >
-        <Icon size={22} strokeWidth={2} />
+        <Icon size={16} strokeWidth={2.1} />
       </div>
 
-      <div className="mt-5 flex items-end justify-between gap-3">
+      <div className="mt-3.5 flex items-end justify-between gap-3">
         <dl className="min-w-0">
-          <dt className="mb-1 text-2xl font-bold text-app-fg tracking-tight leading-tight tabular-nums truncate">
+          <dt className="text-[22px] font-bold text-app-fg tracking-[-0.02em] leading-none tabular-nums truncate">
             {displayValue}
           </dt>
-          <dd className="text-[11px] font-medium uppercase tracking-wide text-app-fg-muted truncate">
-            {title}
-          </dd>
+          <dd className="mt-1.5 text-[11.5px] font-semibold text-app-fg-muted truncate">{title}</dd>
         </dl>
 
         {hasDelta && (
           <dl
-            className={`text-[13px] font-medium shrink-0 ${isDecreasing ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}
+            className={`text-[12px] font-semibold shrink-0 tabular-nums ${isDecreasing ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}`}
           >
             <dt className="flex items-center gap-1">
               {Math.abs(growthRate!)}%

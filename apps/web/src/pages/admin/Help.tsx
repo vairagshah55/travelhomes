@@ -57,7 +57,7 @@ const Help = () => {
 
   return (
     <AdminLayout title="Help">
-      <main className="px-4 sm:px-6 lg:px-10 py-6 bg-white dark:bg-tpl-dark-2 rounded-[10px] shadow-tpl-1">
+      <main className="px-4 sm:px-6 lg:px-10 py-6 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)]">
         <div className="flex w-full justify-center items-center my-5">
           <LogoWebsite />
         </div>

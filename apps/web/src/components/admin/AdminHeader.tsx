@@ -25,14 +25,25 @@ import { getInitials } from "@/utils/getInitials";
 import { useNotificationCount } from "@/hooks/admin/useNotifications";
 
 /**
- * Admin top bar — NextAdmin template style.
+ * Admin top bar.
  *
- * Layout: hamburger (mobile) → page title + subtitle → expandable search pill,
- * theme toggle, circular notification button, user info dropdown on the right.
+ * Layout: hamburger (mobile) → centered command-palette search → notifications
+ * + account on the right. The page title lives in the content area
+ * (AdminPageTitle), so the bar stays slim at the sidebar's 84px brand height.
  *
- * Title comes from the layout prop; breadcrumb still auto-derives from URL but
- * sits above the title for nested pages so users keep their bearings.
+ * Controls are white pills on the faint-teal bar rather than grey-on-grey: the
+ * chrome surface is #f1f8f7, so a grey control reads as a smudge. White + a
+ * #dce7e5 hairline gives every control the same silhouette, and hover/focus
+ * moves that hairline to teal instead of swapping fills.
  */
+
+/** Shared silhouette for the 44px circular controls (search, bell). */
+const CTRL =
+  "border border-[#dce7e5] bg-white text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] " +
+  "hover:border-[#0d9488]/35 hover:text-[#0d9488] hover:shadow-[0_2px_8px_-2px_rgba(13,148,136,0.25)] " +
+  "focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 " +
+  "focus-visible:ring-offset-[#f1f8f7] outline-none " +
+  "transition-[color,border-color,box-shadow] duration-200";
 
 interface AdminHeaderProps {
   title: string;
@@ -64,7 +75,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <button
           onClick={onOpenMobileSidebar}
-          className="lg:hidden rounded-lg border border-tpl-stroke px-1.5 py-1 text-tpl-dark hover:bg-gray-100 transition-colors shrink-0"
+          className={`lg:hidden grid place-items-center size-11 rounded-full shrink-0 ${CTRL}`}
           aria-label="Open sidebar"
         >
           <Menu size={20} />
@@ -72,11 +83,12 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         </button>
       </div>
 
-      {/* Center — search, truly centered between the flex-1 title (left) and
+      {/* Center — search, truly centered between the flex-1 spacer (left) and
           the flex-1 account cluster (right). */}
-      <button
+      <motion.button
+        whileTap={{ scale: 0.99 }}
         onClick={() => setPaletteOpen(true)}
-        className="group hidden xl:flex items-center gap-2.5 pl-4 pr-2 h-11 rounded-full bg-[#f3f4f6] text-[#667085] text-[14px] font-medium border border-[#eceff3] hover:bg-[#eef0f3] hover:border-[#e0e4ea] transition-colors w-[340px] focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white outline-none shrink-0"
+        className={`group hidden xl:flex items-center gap-2.5 pl-4 pr-2 h-11 rounded-full w-[340px] shrink-0 text-[14px] font-medium ${CTRL}`}
         aria-label="Search (⌘K)"
       >
         <Search
@@ -84,16 +96,18 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
           strokeWidth={2}
           className="text-[#98a2b3] group-hover:text-[#0d9488] transition-colors"
         />
-        <span className="flex-1 text-left">Search…</span>
-        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-white border border-[#e6ebf1] text-[#98a2b3] leading-none">
+        <span className="flex-1 text-left text-[#667085] group-hover:text-[#475467] transition-colors">
+          Search…
+        </span>
+        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#0d9488]/25 group-hover:text-[#0d9488] transition-colors">
           ⌘K
         </span>
-      </button>
+      </motion.button>
 
       {/* Compact search trigger — icon only, below xl. */}
       <button
         onClick={() => setPaletteOpen(true)}
-        className="xl:hidden grid place-items-center size-11 rounded-full border border-[#eceff3] bg-[#f3f4f6] hover:bg-[#eef0f3] text-[#475467] hover:text-[#101828] transition-colors shrink-0"
+        className={`xl:hidden grid place-items-center size-11 rounded-full shrink-0 ${CTRL}`}
         aria-label="Search (⌘K)"
       >
         <Search size={18} />
@@ -105,7 +119,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/admin/notifications")}
-          className="relative grid place-items-center size-11 rounded-full border border-[#eceff3] bg-[#f3f4f6] hover:bg-[#eef0f3] text-[#475467] hover:text-[#101828] transition-colors"
+          className={`relative grid place-items-center size-11 rounded-full ${CTRL}`}
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
           <Bell size={18} strokeWidth={1.75} />
@@ -116,7 +130,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#f23030] text-white text-[10px] font-bold leading-none ring-2 ring-white"
+                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#f23030] text-white text-[10px] font-bold leading-none ring-2 ring-[#f1f8f7]"
               >
                 <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#f23030] opacity-60" />
                 {unreadCount > 99 ? "99+" : unreadCount}
@@ -125,7 +139,11 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
           </AnimatePresence>
         </motion.button>
 
-        {/* User info — template UserInfo dropdown: avatar + truncated name + chevron */}
+        {/* Hairline between the utility controls and identity — the two are
+            different kinds of thing and the bar has no other structure. */}
+        <span aria-hidden className="hidden md:block w-px h-7 bg-tpl-stroke mx-0.5" />
+
+        {/* User info — avatar + truncated name + chevron */}
         <HeaderUserInfo />
       </div>
 
@@ -154,27 +172,38 @@ function HeaderUserInfo() {
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className="cursor-pointer rounded outline-none focus-visible:ring-1 focus-visible:ring-tpl-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-tpl-dark-2 shrink-0">
+      {/* The account control is a pill, not a bare avatar: it sits next to two
+          44px circular buttons, so it needs the same hit area and hover
+          feedback or it reads as decoration. */}
+      <DropdownMenuTrigger
+        className={`group cursor-pointer shrink-0 flex items-center gap-2.5 h-11 pl-1 pr-1 lg:pr-3 rounded-full
+          border transition-[background-color,border-color,box-shadow] duration-200 outline-none
+          focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
+          ${
+            isOpen
+              ? "bg-white border-[#0d9488]/35 shadow-[0_2px_8px_-2px_rgba(13,148,136,0.25)]"
+              : "bg-transparent border-transparent hover:bg-white hover:border-[#dce7e5]"
+          }`}
+      >
         <span className="sr-only">My Account</span>
-        <figure className="flex items-center gap-3">
-          <Avatar className="size-11">
+        <figure className="flex items-center gap-2.5">
+          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(13,148,136,0.45)]">
             <AvatarFallback className="bg-[#0d9488] text-white text-[13px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
-          {/* Name + chevron hidden below lg (1024px) — matches template's
-              max-[1024px]:sr-only behavior so the header doesn't overflow
-              on mid-size viewports. */}
-          <figcaption className="hidden lg:flex items-center gap-1 font-medium text-tpl-dark dark:text-tpl-dark">
+          {/* Name + chevron hidden below lg (1024px) so the 84px bar never
+              overflows on mid-size viewports. */}
+          <figcaption className="hidden lg:flex items-center gap-1 font-medium text-tpl-dark">
             {isLoading ? (
-              <span className="w-20 h-3 rounded bg-tpl-gray-3 dark:bg-white/10 animate-pulse" />
+              <span className="w-20 h-3 rounded bg-tpl-gray-3 animate-pulse" />
             ) : (
               <span className="max-w-24 truncate text-[14px]">{name}</span>
             )}
             <ChevronUp
               size={16}
-              strokeWidth={1.5}
-              className={`transition-transform ${isOpen ? "rotate-0" : "rotate-180"}`}
+              strokeWidth={1.75}
+              className={`text-[#98a2b3] transition-transform duration-200 ${isOpen ? "rotate-0" : "rotate-180"}`}
               aria-hidden
             />
           </figcaption>

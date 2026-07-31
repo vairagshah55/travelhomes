@@ -31,6 +31,9 @@ const COLOR_MAP: Record<string, string> = {
   paid: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
   success:
     "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
+  // job applications
+  accepted:
+    "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
 
   // warning / in-progress
   pending:
@@ -48,6 +51,8 @@ const COLOR_MAP: Record<string, string> = {
   open: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
   upcoming:
     "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
+  under_review:
+    "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
 
   // info
   verified:
@@ -55,9 +60,13 @@ const COLOR_MAP: Record<string, string> = {
   info: "bg-blue-50 text-blue-700 ring-1 ring-blue-200/60 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30",
   // helpdesk tickets move Pending → Read → Resolved
   read: "bg-blue-50 text-blue-700 ring-1 ring-blue-200/60 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30",
+  interview_scheduled:
+    "bg-blue-50 text-blue-700 ring-1 ring-blue-200/60 dark:bg-blue-500/10 dark:text-blue-400 dark:ring-blue-500/30",
 
   // accent
   refunded:
+    "bg-purple-50 text-purple-700 ring-1 ring-purple-200/60 dark:bg-purple-500/10 dark:text-purple-400 dark:ring-purple-500/30",
+  interviewed:
     "bg-purple-50 text-purple-700 ring-1 ring-purple-200/60 dark:bg-purple-500/10 dark:text-purple-400 dark:ring-purple-500/30",
 
   // neutral
@@ -91,6 +100,10 @@ const DOT_MAP: Record<string, string> = {
   resolved: "bg-emerald-500",
   paid: "bg-emerald-500",
   success: "bg-emerald-500",
+  accepted: "bg-emerald-500",
+  under_review: "bg-amber-500",
+  interview_scheduled: "bg-blue-500",
+  interviewed: "bg-purple-500",
   pending: "bg-amber-500",
   in_progress: "bg-amber-500",
   "in-progress": "bg-amber-500",

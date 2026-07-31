@@ -1,7 +1,31 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { X, ChevronDown } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  CmsField,
+  CONTROL,
+  DIALOG_VARS,
+  SELECT_ITEM,
+  TEXTAREA,
+} from "../ui";
 import { FAQ_CATEGORIES, canonicalFaqCategory } from "../faqCategories";
 import type { AddFAQModalProps } from "../types";
+
+const EMPTY = { category: "", question: "", answer: "" };
 
 export const AddFAQModal: React.FC<AddFAQModalProps> = ({
   isOpen,
@@ -9,23 +33,19 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
   onSubmit,
   initialData,
 }) => {
-  const [formData, setFormData] = useState({
-    category: "",
-    question: "",
-    answer: "",
-  });
+  const [formData, setFormData] = useState(EMPTY);
 
   useEffect(() => {
     if (initialData) {
       setFormData({
-        // Bind the matching label so the <select> resolves — stored categories
-        // are lowercase and would otherwise leave it blank.
+        // Bind the matching label so the select resolves — stored categories are
+        // lowercase and would otherwise leave it blank.
         category: canonicalFaqCategory(initialData.category) || initialData.category || "",
         question: initialData.question,
         answer: initialData.answer,
       });
     } else {
-      setFormData({ category: "", question: "", answer: "" });
+      setFormData(EMPTY);
     }
   }, [initialData, isOpen]);
 
@@ -36,8 +56,6 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
     return stored && !canonicalFaqCategory(stored) ? [...FAQ_CATEGORIES, stored] : FAQ_CATEGORIES;
   }, [formData.category]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -45,79 +63,78 @@ export const AddFAQModal: React.FC<AddFAQModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40">
-      <div className="bg-white rounded-xl p-8 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-black font-geist text-2xl font-bold">
-            {initialData ? "Edit Question" : "Add New Question"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-black hover:bg-gray-300 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        style={DIALOG_VARS}
+        className="max-w-xl w-[calc(100vw-2rem)] p-0 gap-0 rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
+      >
+        <DialogHeader className="px-5 py-4 border-b border-app-border text-left">
+          <DialogTitle className="text-[15px] font-bold text-app-fg">
+            {initialData ? "Edit question" : "New question"}
+          </DialogTitle>
+          <DialogDescription className="text-[12.5px] text-app-fg-muted">
+            Questions appear on the public Help page, grouped by category.
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-sm">Category</label>
-            <div className="relative">
-              <select
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
+            <CmsField label="Category" htmlFor="faq-category">
+              <Select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-gray-500 focus:outline-none focus:border-dashboard-primary appearance-none bg-white"
-                required
+                onValueChange={(v) => setFormData({ ...formData, category: v })}
               >
-                <option value="">Select</option>
-                {categoryOptions.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-dashboard-body"
-                size={24}
+                <SelectTrigger
+                  id="faq-category"
+                  className="h-11 rounded-xl border-app-border bg-app-surface-2 text-[13.5px]"
+                >
+                  <SelectValue placeholder="Pick a category" />
+                </SelectTrigger>
+                <SelectContent style={DIALOG_VARS}>
+                  {categoryOptions.map((cat) => (
+                    <SelectItem key={cat} value={cat} className={SELECT_ITEM}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CmsField>
+
+            <CmsField label="Question" htmlFor="faq-question">
+              <input
+                id="faq-question"
+                value={formData.question}
+                onChange={(e) => setFormData({ ...formData, question: e.target.value })}
+                placeholder="Do I need a licence to drive a camper van?"
+                className={CONTROL}
+                required
               />
-            </div>
+            </CmsField>
+
+            <CmsField label="Answer" htmlFor="faq-answer">
+              <textarea
+                id="faq-answer"
+                rows={6}
+                value={formData.answer}
+                onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
+                placeholder="Write the answer guests will read…"
+                className={TEXTAREA}
+                required
+              />
+            </CmsField>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-sm">Questions</label>
-            <input
-              type="text"
-              placeholder="Are this tool are safe and should verify by government with all the rights?"
-              value={formData.question}
-              onChange={(e) => setFormData({ ...formData, question: e.target.value })}
-              className="w-full px-3 py-3.5 border border-dashboard-neutral-06 rounded-lg text-sm text-gray-500 placeholder:text-gray-400 focus:outline-none focus:border-dashboard-primary"
-              required
-            />
-          </div>
-
-          <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-sm">Answer</label>
-            <textarea
-              placeholder="For booking platforms, government verification is not always mandatory, but platforms should follow legal and safety regulations. Always check reviews, licenses, and safety policies before booking."
-              value={formData.answer}
-              onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-4 border border-dashboard-neutral-06 rounded-lg text-sm text-dashboard-neutral-07 placeholder:text-dashboard-neutral-07 focus:outline-none focus:border-dashboard-primary resize-none"
-              required
-            />
-          </div>
-
-          <div className="pt-4">
-            <button
-              type="submit"
-              className="w-full px-8 py-3 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-            >
-              {initialData ? "Save Changes" : "Add"}
+          <footer className="flex items-center justify-end gap-2 px-5 py-4 border-t border-app-border bg-app-surface-2">
+            <button type="button" onClick={onClose} className={BTN_NEUTRAL}>
+              Cancel
             </button>
-          </div>
+            <button type="submit" disabled={!formData.category} className={BTN_PRIMARY}>
+              {initialData ? "Save changes" : "Add question"}
+            </button>
+          </footer>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

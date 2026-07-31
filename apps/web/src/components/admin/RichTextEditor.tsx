@@ -11,6 +11,11 @@ import {
   ListOrdered,
 } from "lucide-react";
 
+/* Toolbar buttons must be type="button" — the editor is used inside <form>s
+   (BlogsTab), where a bare <button> submits the form instead of styling text. */
+const TOOLBAR_BTN =
+  "p-1.5 rounded-md text-app-fg-muted transition-colors hover:bg-app-accent-soft hover:text-app-accent";
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -67,11 +72,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const handleUpperCase = () => {
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
-      document.execCommand(
-        "insertText",
-        false,
-        selection.toString().toUpperCase()
-      );
+      document.execCommand("insertText", false, selection.toString().toUpperCase());
     }
   };
 
@@ -96,12 +97,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
   return (
     <div
-      className={`border border-gray-400 rounded-lg overflow-hidden bg-white ${className}`}
+      className={`border border-app-border rounded-xl overflow-hidden bg-app-surface ${className}`}
       style={style}
     >
       <style>{`
         .rich-text-content a {
-          color: #1f2937 !important;
+          color: inherit !important;
           text-decoration: underline !important;
           cursor: pointer !important;
         }
@@ -113,38 +114,67 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           list-style-type: decimal;
           padding-left: 1.5rem;
         }
+        /* The editor is a contentEditable div, so the placeholder has to be drawn
+           from data-placeholder rather than the (invalid here) attribute. */
+        .rich-text-content:empty::before {
+          content: attr(data-placeholder);
+          color: var(--surface-fg-muted);
+          opacity: 0.7;
+          pointer-events: none;
+        }
       `}</style>
 
       {/* TOOLBAR */}
-      <div className="flex items-center gap-1 p-2 bg-gray-50 border-b border-gray-200 flex-wrap">
-        <button onClick={() => exec("bold")} className="p-1.5 hover:bg-gray-200 rounded" title="Bold">
+      <div className="flex items-center gap-1 p-2 bg-app-surface-2 border-b border-app-border flex-wrap">
+        <button onClick={() => exec("bold")} type="button" className={TOOLBAR_BTN} title="Bold">
           <Bold size={16} />
         </button>
-        <button onClick={() => exec("italic")} className="p-1.5 hover:bg-gray-200 rounded" title="Italic">
+        <button onClick={() => exec("italic")} type="button" className={TOOLBAR_BTN} title="Italic">
           <Italic size={16} />
         </button>
-        <button onClick={() => exec("underline")} className="p-1.5 hover:bg-gray-200 rounded" title="Underline">
+        <button
+          onClick={() => exec("underline")}
+          type="button"
+          className={TOOLBAR_BTN}
+          title="Underline"
+        >
           <Underline size={16} />
         </button>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-app-border mx-1" />
 
-        <button onClick={() => exec("justifyLeft")} className="p-1.5 hover:bg-gray-200 rounded" title="Align Left">
+        <button
+          onClick={() => exec("justifyLeft")}
+          type="button"
+          className={TOOLBAR_BTN}
+          title="Align Left"
+        >
           <AlignLeft size={16} />
         </button>
-        <button onClick={() => exec("justifyCenter")} className="p-1.5 hover:bg-gray-200 rounded" title="Align Center">
+        <button
+          onClick={() => exec("justifyCenter")}
+          type="button"
+          className={TOOLBAR_BTN}
+          title="Align Center"
+        >
           <AlignCenter size={16} />
         </button>
-        <button onClick={() => exec("justifyRight")} className="p-1.5 hover:bg-gray-200 rounded" title="Align Right">
+        <button
+          onClick={() => exec("justifyRight")}
+          type="button"
+          className={TOOLBAR_BTN}
+          title="Align Right"
+        >
           <AlignRight size={16} />
         </button>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-app-border mx-1" />
 
         {/* BULLET & NUMBER LIST */}
         <button
           onClick={() => exec("insertUnorderedList")}
-          className="p-1.5 hover:bg-gray-200 rounded"
+          type="button"
+          className={TOOLBAR_BTN}
           title="Bullet List"
         >
           <List size={16} />
@@ -152,23 +182,25 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <button
           onClick={() => exec("insertOrderedList")}
-          className="p-1.5 hover:bg-gray-200 rounded"
+          type="button"
+          className={TOOLBAR_BTN}
           title="Numbered List"
         >
           <ListOrdered size={16} />
         </button>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-app-border mx-1" />
 
-        <button onClick={handleLink} className="p-1.5 hover:bg-gray-200 rounded" title="Insert Link">
+        <button onClick={handleLink} type="button" className={TOOLBAR_BTN} title="Insert Link">
           <LinkIcon size={16} />
         </button>
 
-        <div className="w-px h-5 bg-gray-300 mx-1" />
+        <div className="w-px h-5 bg-app-border mx-1" />
 
         <button
           onClick={handleUpperCase}
-          className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold border border-gray-300"
+          type="button"
+          className={`${TOOLBAR_BTN} text-xs font-bold border border-app-border`}
           title="Uppercase"
         >
           AA
@@ -176,7 +208,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
         <button
           onClick={handleCapitalize}
-          className="p-1.5 hover:bg-gray-200 rounded text-xs font-bold border border-gray-300"
+          type="button"
+          className={`${TOOLBAR_BTN} text-xs font-bold border border-app-border`}
           title="Capitalize"
         >
           Aa
@@ -189,7 +222,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         contentEditable
         onClick={handleContentClick}
         onInput={(e) => onChange(e.currentTarget.innerHTML)}
-        className="rich-text-content p-3 min-h-[150px] outline-none text-sm text-gray-800"
+        className="rich-text-content p-3.5 min-h-[150px] outline-none text-[13.5px] leading-6 text-app-fg"
         // `placeholder` isn't a valid HTML attribute on contentEditable divs;
         // use data-placeholder + CSS (`[data-placeholder]:empty::before`).
         data-placeholder={placeholder}

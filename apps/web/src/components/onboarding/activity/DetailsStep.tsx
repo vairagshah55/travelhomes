@@ -45,11 +45,7 @@ const CoverPreview = ({
   const src = useObjectURL(file);
   return (
     <>
-      <img
-        src={src}
-        alt="Cover"
-        className="w-full h-full object-cover"
-      />
+      <img src={src} alt="Cover" className="w-full h-full object-cover" />
       {/* Rule 2: hover overlay via CSS group-hover instead of onMouseEnter/Leave */}
       <div className="absolute inset-0 bg-black/0 hover:bg-black/[0.28] transition-colors duration-200 flex items-center justify-center group/overlay">
         <label className="cursor-pointer bg-white/[0.92] text-th-text-primary text-[12px] font-bold px-[18px] py-[6px] rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.15)] opacity-0 group-hover/overlay:opacity-100 transition-opacity duration-200">
@@ -84,14 +80,8 @@ const PhotoThumb = ({
 }) => {
   const src = useObjectURL(photo);
   return (
-    <div
-      className="relative aspect-square rounded-[11px] overflow-hidden border-[1.5px] border-th-warm-border group"
-    >
-      <img
-        src={src}
-        alt={`Photo ${index + 1}`}
-        className="w-full h-full object-cover"
-      />
+    <div className="relative aspect-square rounded-[11px] overflow-hidden border-[1.5px] border-th-warm-border group">
+      <img src={src} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
       {index < GALLERY_TARGET && (
         <div className="absolute top-[6px] left-[6px] w-[18px] h-[18px] rounded-full bg-th-success-bright flex items-center justify-center shadow-[0_1px_3px_rgba(0,0,0,0.2)]">
           <Check size={9} strokeWidth={2.5} className="text-th-text-inverse" />
@@ -275,7 +265,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
                 <div className="flex-1 h-[5px] rounded-full bg-th-warm-border overflow-hidden">
                   <div
                     className={cn(
-                      "h-full rounded-full transition-[width] duration-[400ms] ease-out",
+                      "h-full rounded-full transition-[width] [transition-duration:400ms] ease-out",
                       galleryFilled >= GALLERY_TARGET ? "bg-th-success-bright" : "bg-th-brand",
                     )}
                     style={{ width: `${galleryPct}%` }}

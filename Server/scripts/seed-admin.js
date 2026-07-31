@@ -6,25 +6,29 @@
  *
  * If the email already exists, the password is reset (not duplicated).
  */
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+// Use the same resolution the server does (config/env cascades
+// .env.<NODE_ENV> over .env) — reading .env directly seeded into whatever
+// that file happened to point at, which is not necessarily the DB the API
+// is talking to.
+const env = require("../config/env");
 
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const AdminStaff = require('../models/AdminStaff');
-const AdminRole = require('../models/AdminRole');
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const AdminStaff = require("../models/AdminStaff");
+const AdminRole = require("../models/AdminRole");
 
 const BCRYPT_ROUNDS = 10;
 
 async function main() {
-  const email = (process.argv[2] || 'admin@travelhomes.com').toLowerCase();
-  const password = process.argv[3] || 'Admin@123';
-  const roleName = 'SuperAdmin';
+  const email = (process.argv[2] || "admin@travelhomes.com").toLowerCase();
+  const password = process.argv[3] || "Admin@123";
+  const roleName = "SuperAdmin";
 
-  const uri = process.env.MONGO_URI || process.env.MONGODB_URI;
-  if (!uri) throw new Error('MONGO_URI / MONGODB_URI not set in .env');
+  const uri = env.MONGO_URI || process.env.MONGODB_URI;
+  if (!uri) throw new Error("MONGO_URI / MONGODB_URI not set in .env");
 
   await mongoose.connect(uri);
-  console.log('Connected to MongoDB');
+  console.log("Connected to MongoDB");
 
   const roleDoc = await AdminRole.findOne({ name: roleName });
   if (!roleDoc) {
@@ -36,35 +40,35 @@ async function main() {
   const existing = await AdminStaff.findOne({ email });
   if (existing) {
     existing.passwordHash = passwordHash;
-    existing.status = 'Active';
+    existing.status = "Active";
     existing.role = roleName;
     if (roleDoc) existing.roleId = roleDoc._id;
     await existing.save();
     console.log(`Updated existing admin: ${email}`);
   } else {
     await AdminStaff.create({
-      firstName: 'Super',
-      lastName: 'Admin',
-      name: 'Super Admin',
+      firstName: "Super",
+      lastName: "Admin",
+      name: "Super Admin",
       email,
       passwordHash,
       role: roleName,
       roleId: roleDoc?._id,
-      status: 'Active',
+      status: "Active",
       joinDate: new Date(),
     });
     console.log(`Created new admin: ${email}`);
   }
 
-  console.log('---');
+  console.log("---");
   console.log(`Email:    ${email}`);
   console.log(`Password: ${password}`);
-  console.log('---');
+  console.log("---");
 
   await mongoose.disconnect();
 }
 
 main().catch((err) => {
-  console.error('Seed failed:', err);
+  console.error("Seed failed:", err);
   process.exit(1);
 });

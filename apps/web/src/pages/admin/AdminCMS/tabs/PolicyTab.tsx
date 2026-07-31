@@ -1,189 +1,197 @@
-import React, { useState, useEffect } from "react";
-import { Trash2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Loader2, Plus, ScrollText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import RichTextEditor from "@/components/admin/RichTextEditor";
+import ConfirmModal from "@/components/shared/ConfirmModal";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { BTN_PRIMARY, BTN_SOFT, CmsField, CmsSegmented, CONTROL } from "../ui";
 
-type PolicyTabId = "T&C" | "Privacy Policy" | "Vendor Policy";
+type PolicyTabId = "terms-and-conditions" | "privacy-policy" | "vendor-policy";
 
-const TAB_TO_KEY: Record<PolicyTabId, string> = {
-  "T&C": "terms-and-conditions",
-  "Privacy Policy": "privacy-policy",
-  "Vendor Policy": "vendor-policy",
-};
+const POLICIES: { value: PolicyTabId; label: string; title: string }[] = [
+  { value: "terms-and-conditions", label: "Terms & conditions", title: "Terms & Conditions" },
+  { value: "privacy-policy", label: "Privacy policy", title: "Privacy Policy" },
+  { value: "vendor-policy", label: "Vendor policy", title: "Vendor Policy" },
+];
+
+interface PolicySection {
+  heading: string;
+  content: string;
+}
 
 /**
- * Policy editor — T&C / Privacy / Vendor policies, each with a name + ordered
- * sections (heading + rich-text content). Self-contained: loads from API on
- * tab change, saves on button click. No state lives in the parent.
+ * Policy editor — T&C / Privacy / Vendor policies, each a page title plus
+ * ordered sections (heading + rich text). Self-contained: loads on policy
+ * change, saves on demand.
  */
 export function PolicyTab() {
-  const [activeTab, setActiveTab] = useState<PolicyTabId>("Privacy Policy");
+  const [activePolicy, setActivePolicy] = useState<PolicyTabId>("privacy-policy");
   const [policyName, setPolicyName] = useState("");
-  const [policySections, setPolicySections] = useState<{ heading: string; content: string }[]>([]);
+  const [sections, setSections] = useState<PolicySection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pendingRemove, setPendingRemove] = useState<number | null>(null);
+
+  const current = POLICIES.find((p) => p.value === activePolicy) ?? POLICIES[0];
 
   useEffect(() => {
-    const fetchPage = async () => {
-      const key = TAB_TO_KEY[activeTab];
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
       try {
-        const data = await cmsService.getPage(key);
-        if (data) {
-          setPolicyName(data.title || "");
-          setPolicySections(data.sections || []);
-        } else {
-          setPolicyName("");
-          setPolicySections([]);
-        }
+        const data = await cmsService.getPage(activePolicy);
+        if (cancelled) return;
+        setPolicyName(data?.title || "");
+        setSections(data?.sections || []);
       } catch (e) {
-        console.error("Failed to fetch page", e);
+        console.error("Failed to fetch policy page", e);
+        if (!cancelled) toast.error("Could not load this policy");
+      } finally {
+        if (!cancelled) setLoading(false);
       }
+    })();
+    return () => {
+      cancelled = true;
     };
-    fetchPage();
-  }, [activeTab]);
+  }, [activePolicy]);
 
-  const handleAddSection = () => {
-    setPolicySections([...policySections, { heading: "", content: "" }]);
-  };
+  const addSection = () => setSections((prev) => [...prev, { heading: "", content: "" }]);
 
-  const handleRemoveSection = (index: number) => {
-    const newSections = [...policySections];
-    newSections.splice(index, 1);
-    setPolicySections(newSections);
-  };
+  const removeSection = (index: number) =>
+    setSections((prev) => prev.filter((_, i) => i !== index));
 
-  const handleSectionChange = (index: number, field: "heading" | "content", value: string) => {
-    const newSections = [...policySections];
-    newSections[index][field] = value;
-    setPolicySections(newSections);
-  };
+  const updateSection = (index: number, field: keyof PolicySection, value: string) =>
+    setSections((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
 
   const handleSave = async () => {
+    setSaving(true);
     try {
-      const key = TAB_TO_KEY[activeTab];
-      if (key) {
-        await cmsService.updatePage(key, {
-          title: policyName,
-          sections: policySections,
-        });
-        toast.success("Policy saved successfully");
-      }
+      await cmsService.updatePage(activePolicy, { title: policyName, sections });
+      toast.success(`${current.title} saved`);
     } catch (e) {
       console.error(e);
       toast.error("Failed to save policy");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const fullTitle =
-    activeTab === "T&C"
-      ? "Terms & Conditions"
-      : activeTab === "Privacy Policy"
-        ? "Privacy Policy"
-        : "Vendor Policy";
-
   return (
-    <div className="space-y-4 flex-1">
-      <div className="border border-dashboard-stroke rounded-xl bg-white p-4 flex-1 flex flex-col">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center max-sm:gap-0 gap-2">
-            <div className="flex items-center gap-0.5 px-0.5 py-0.5 border border-gray-200 rounded-full bg-white shadow-sm">
-              {(["T&C", "Privacy Policy", "Vendor Policy"] as PolicyTabId[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setActiveTab(t)}
-                  className={`px-6 py-3 rounded-full max-sm:text-xs max-xs:px-2 max-sm:py-1 text-sm font-semibold transition-all ${
-                    activeTab === t
-                      ? "bg-dashboard-primary text-black"
-                      : "text-dashboard-primary hover:bg-gray-50"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button
-            onClick={handleSave}
-            className="px-5 py-2.5 bg-dashboard-primary text-black rounded-full font-geist text-sm font-medium tracking-tight hover:bg-dashboard-primary/90 transition-colors"
-          >
-            Save Policy
-          </button>
-        </div>
+    <div className="space-y-4">
+      <CmsSegmented
+        items={POLICIES}
+        value={activePolicy}
+        onChange={setActivePolicy}
+        layoutId="cmsPolicyPill"
+        ariaLabel="Policy"
+      />
 
-        <div
-          className="h-px bg-dashboard-stroke mb-3"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to right, #EAECF0 0, #EAECF0 2px, transparent 2px, transparent 4px)",
-          }}
-        />
-
-        <div className="flex-1 flex flex-col space-y-4">
-          <div className="space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-sm pl-1">
-              {fullTitle} Name
-            </label>
-            <input
-              type="text"
-              placeholder={fullTitle}
-              value={policyName}
-              onChange={(e) => setPolicyName(e.target.value)}
-              className="w-full px-3 py-4 border border-dashboard-stroke rounded-lg text-sm text-gray-500 placeholder:text-gray-400 focus:outline-none focus:border-dashboard-primary"
-            />
-          </div>
-
-          <div className="flex-1 flex flex-col space-y-3">
-            <label className="text-dashboard-title font-plus-jakarta text-sm font-medium pl-1">
-              {fullTitle} Sections
-            </label>
-
-            {policySections.map((section, index) => (
-              <div
-                key={index}
-                className="border border-dashboard-stroke rounded-lg bg-dashboard-bg p-4 space-y-3"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm">Section {index + 1}</span>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveSection(index)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-                <div className="pl-6 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="text"
-                      placeholder="Section Heading"
-                      value={section.heading}
-                      onChange={(e) => handleSectionChange(index, "heading", e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-dashboard-primary"
-                    />
-                  </div>
-                  <div className="flex gap-3">
-                    <RichTextEditor
-                      value={section.content}
-                      onChange={(val) => handleSectionChange(index, "content", val)}
-                      className="w-full bg-white border-gray-300"
-                      placeholder="Section Content..."
-                      style={{ minHeight: "200px" }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-
-            <button
-              onClick={handleAddSection}
-              className="mt-2 px-4 py-2 border border-dashed border-dashboard-primary text-dashboard-primary rounded-lg hover:bg-dashboard-primary/5 transition-colors text-sm"
-            >
-              + Add Section
-            </button>
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[12.5px] text-app-fg-muted">
+          Sections render in this order on the public {current.label.toLowerCase()} page.
+        </p>
+        <button onClick={handleSave} disabled={saving || loading} className={BTN_PRIMARY}>
+          {saving ? (
+            <>
+              <Loader2 size={15} className="animate-spin" /> Saving…
+            </>
+          ) : (
+            "Save policy"
+          )}
+        </button>
       </div>
+
+      <div>
+        {loading ? (
+          <div className="space-y-3">
+            <div className="h-11 rounded-xl bg-app-surface-2 animate-pulse" />
+            <div className="h-40 rounded-xl bg-app-surface-2 animate-pulse" />
+          </div>
+        ) : (
+          <div className="space-y-5">
+            <CmsField label="Page title" htmlFor="policy-title" className="max-w-xl">
+              <input
+                id="policy-title"
+                value={policyName}
+                onChange={(e) => setPolicyName(e.target.value)}
+                placeholder={current.title}
+                className={CONTROL}
+              />
+            </CmsField>
+
+            {sections.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-app-border">
+                <EmptyState
+                  icon={ScrollText}
+                  title="No sections yet"
+                  description="Add a section for each heading in this policy."
+                  actionLabel="Add section"
+                  onAction={addSection}
+                />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sections.map((section, index) => (
+                  <section
+                    key={index}
+                    className="rounded-xl border border-app-border overflow-hidden"
+                  >
+                    <header className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-b border-app-border bg-app-surface-2">
+                      <p className="text-[12.5px] font-bold text-app-fg">Section {index + 1}</p>
+                      <button
+                        type="button"
+                        onClick={() => setPendingRemove(index)}
+                        aria-label={`Remove section ${index + 1}`}
+                        className="p-1.5 rounded-md text-app-fg-muted transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </header>
+                    <div className="p-3.5 space-y-3">
+                      <CmsField label="Heading" htmlFor={`policy-heading-${index}`}>
+                        <input
+                          id={`policy-heading-${index}`}
+                          value={section.heading}
+                          onChange={(e) => updateSection(index, "heading", e.target.value)}
+                          placeholder="e.g. Cancellations and refunds"
+                          className={CONTROL}
+                        />
+                      </CmsField>
+                      <CmsField label="Content">
+                        <RichTextEditor
+                          value={section.content}
+                          onChange={(val) => updateSection(index, "content", val)}
+                          placeholder="Write this section…"
+                          className="w-full"
+                          style={{ minHeight: "200px" }}
+                        />
+                      </CmsField>
+                    </div>
+                  </section>
+                ))}
+
+                <button type="button" onClick={addSection} className={BTN_SOFT}>
+                  <Plus size={14} strokeWidth={2.4} /> Add section
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <ConfirmModal
+        open={pendingRemove !== null}
+        onClose={() => setPendingRemove(null)}
+        onConfirm={() => {
+          if (pendingRemove !== null) removeSection(pendingRemove);
+          setPendingRemove(null);
+        }}
+        title="Remove section"
+        description="The section is removed from the editor — save the policy to apply it to the live page."
+        confirmLabel="Remove"
+        variant="warning"
+      />
     </div>
   );
 }
