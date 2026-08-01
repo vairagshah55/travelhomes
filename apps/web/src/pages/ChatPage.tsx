@@ -663,7 +663,7 @@ const ChatPage = () => {
                   />
                 )}
                 <div
-                  className={`max-w-[350px] h-full p-3 px-5 rounded-[10px] ${msg.me ? "bg-[#0F5C8A] text-white" : "bg-[#f3f4f6] text-black"}`}
+                  className={`max-w-[350px] h-full p-3 px-5 rounded-[10px] ${msg.me ? "bg-[#117479] text-white" : "bg-[#f3f4f6] text-black"}`}
                 >
                   {msg.attachments && msg.attachments.length > 0 && (
                     <div
@@ -796,7 +796,7 @@ const ChatPage = () => {
                 disabled={!messageText.trim() && selectedFiles.length === 0}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                   messageText.trim() || selectedFiles.length > 0
-                    ? "bg-[#0F5C8A] text-white hover:bg-[#14709F] shadow-lg transform active:scale-95"
+                    ? "bg-[#117479] text-white hover:bg-[#128086] shadow-lg transform active:scale-95"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >

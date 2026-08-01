@@ -116,7 +116,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         <figure className="flex items-center gap-3">
           <Avatar className="size-11">
             {photoUrl && <AvatarImage src={getImageUrl(photoUrl)} />}
-            <AvatarFallback className="bg-[#0d9488] text-white text-[13px] font-bold">
+            <AvatarFallback className="bg-[#117479] text-white text-[13px] font-bold">
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>
@@ -143,7 +143,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
         <div className="flex items-center gap-3 px-4 py-3.5">
           <Avatar className="size-11 shrink-0">
             {photoUrl && <AvatarImage src={getImageUrl(photoUrl)} />}
-            <AvatarFallback className="bg-[#0d9488] text-white text-[14px] font-bold">
+            <AvatarFallback className="bg-[#117479] text-white text-[14px] font-bold">
               {getUserInitials()}
             </AvatarFallback>
           </Avatar>

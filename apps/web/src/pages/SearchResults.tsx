@@ -338,7 +338,6 @@ export default function SearchResults() {
     setSelectedFacilities,
   };
 
-
   const SearchbarRef = useRef(null);
 
   // Handle scroll action when child requests it
@@ -568,7 +567,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -791,7 +790,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -962,7 +961,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -994,10 +993,7 @@ export default function SearchResults() {
             <div className="fixed inset-0 overflow-y-auto">
               <div className="flex min-h-full items-center justify-center p-4">
                 <DialogPanel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-0 shadow-2xl transition-all animate-zoom-in">
-                  <FilterSidebar
-                    {...filterSidebarProps}
-                    onClose={() => setMobileFilter(false)}
-                  />
+                  <FilterSidebar {...filterSidebarProps} onClose={() => setMobileFilter(false)} />
                 </DialogPanel>
               </div>
             </div>

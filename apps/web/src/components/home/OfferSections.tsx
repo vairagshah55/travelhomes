@@ -9,8 +9,14 @@ import { ScrollReveal } from "./ScrollReveal";
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
 interface CardItem {
-  id: string; title: string; details: string; price: string;
-  Maxprice?: string | number; unit: string; image: string; images?: string[];
+  id: string;
+  title: string;
+  details: string;
+  price: string;
+  Maxprice?: string | number;
+  unit: string;
+  image: string;
+  images?: string[];
 }
 
 interface OfferSectionsProps {
@@ -28,7 +34,7 @@ const MAX_SECONDARY = 5;
 const ViewAllLink = ({ href }: { href: string }) => (
   <Link
     to={href}
-    className="inline-flex items-center gap-1 text-sm font-semibold text-[#0A2B40] underline underline-offset-2 hover:text-[#717171] transition-colors"
+    className="inline-flex items-center gap-1 text-sm font-semibold text-[#0a1c1c] underline underline-offset-2 hover:text-[#717171] transition-colors"
   >
     View all <ChevronRight className="w-4 h-4" />
   </Link>
@@ -40,11 +46,21 @@ const ErrorMsg = () => (
 
 /* ── Wraps a Section with scroll-reveal and its own skeleton ───────────────── */
 function OfferSection({
-  title, subtitle, sectionId, loading, error, children, viewAllHref,
+  title,
+  subtitle,
+  sectionId,
+  loading,
+  error,
+  children,
+  viewAllHref,
 }: {
-  title: string; subtitle: string; sectionId?: string;
-  loading: boolean; error: string | null;
-  children: React.ReactNode; viewAllHref?: string;
+  title: string;
+  subtitle: string;
+  sectionId?: string;
+  loading: boolean;
+  error: string | null;
+  children: React.ReactNode;
+  viewAllHref?: string;
 }) {
   return (
     <ScrollReveal>
@@ -55,8 +71,8 @@ function OfferSection({
         sectionId={sectionId}
         rightContent={viewAllHref ? <ViewAllLink href={viewAllHref} /> : undefined}
       >
-        {loading  ? <CardGridSkeleton count={4} />  : null}
-        {error    ? <ErrorMsg />                     : null}
+        {loading ? <CardGridSkeleton count={4} /> : null}
+        {error ? <ErrorMsg /> : null}
         {!loading && !error ? children : null}
       </Section>
     </ScrollReveal>
@@ -64,31 +80,72 @@ function OfferSection({
 }
 
 export function OfferSections({
-  activeFilter, homepageSections, loadingOffers, offerError,
-  caravanShown, stayShown, activityShown,
+  activeFilter,
+  homepageSections,
+  loadingOffers,
+  offerError,
+  caravanShown,
+  stayShown,
+  activityShown,
 }: OfferSectionsProps) {
-  const caravanPreview  = caravanShown.slice(0,  MAX_SECONDARY);
-  const stayPreview     = stayShown.slice(0,     MAX_SECONDARY);
+  const caravanPreview = caravanShown.slice(0, MAX_SECONDARY);
+  const stayPreview = stayShown.slice(0, MAX_SECONDARY);
   const activityPreview = activityShown.slice(0, MAX_SECONDARY);
 
   return (
     <>
       {/* ── Primary section (matches active filter) ── */}
       {activeFilter === "camper-van" && homepageSections["camper-van"] && (
-        <OfferSection title="Top Camper Vans" subtitle="Roam free — handpicked vans for every kind of journey" sectionId="camper-van" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=camper-van">
-          <ResultCard activeFilter={activeFilter} ResultactivityShown={activityShown} ResultstayShown={stayShown} ResultcaravanShown={caravanShown} />
+        <OfferSection
+          title="Top Camper Vans"
+          subtitle="Roam free — handpicked vans for every kind of journey"
+          sectionId="camper-van"
+          loading={loadingOffers}
+          error={offerError}
+          viewAllHref="/search?filter=camper-van"
+        >
+          <ResultCard
+            activeFilter={activeFilter}
+            ResultactivityShown={activityShown}
+            ResultstayShown={stayShown}
+            ResultcaravanShown={caravanShown}
+          />
         </OfferSection>
       )}
 
       {activeFilter === "unique-stays" && homepageSections["unique-stays"] && (
-        <OfferSection title="Unique Stays" subtitle="One-of-a-kind places you won't find anywhere else" sectionId="unique-stays" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=unique-stays">
-          <ResultCard activeFilter={activeFilter} ResultactivityShown={activityShown} ResultstayShown={stayShown} ResultcaravanShown={caravanShown} />
+        <OfferSection
+          title="Unique Stays"
+          subtitle="One-of-a-kind places you won't find anywhere else"
+          sectionId="unique-stays"
+          loading={loadingOffers}
+          error={offerError}
+          viewAllHref="/search?filter=unique-stays"
+        >
+          <ResultCard
+            activeFilter={activeFilter}
+            ResultactivityShown={activityShown}
+            ResultstayShown={stayShown}
+            ResultcaravanShown={caravanShown}
+          />
         </OfferSection>
       )}
 
       {activeFilter === "activity" && homepageSections["best-activity"] && (
-        <OfferSection title="Best Activities" subtitle="Adventures worth taking, experiences worth having" sectionId="activity" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=activity">
-          <ResultCard activeFilter={activeFilter} ResultactivityShown={activityShown} ResultstayShown={stayShown} ResultcaravanShown={caravanShown} />
+        <OfferSection
+          title="Best Activities"
+          subtitle="Adventures worth taking, experiences worth having"
+          sectionId="activity"
+          loading={loadingOffers}
+          error={offerError}
+          viewAllHref="/search?filter=activity"
+        >
+          <ResultCard
+            activeFilter={activeFilter}
+            ResultactivityShown={activityShown}
+            ResultstayShown={stayShown}
+            ResultcaravanShown={caravanShown}
+          />
         </OfferSection>
       )}
 
@@ -102,13 +159,37 @@ export function OfferSections({
       {activeFilter === "camper-van" && (
         <>
           {homepageSections["unique-stays"] && (
-            <OfferSection title="Unique Stays" subtitle="Handpicked for every kind of traveler" sectionId="unique-stays" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=unique-stays">
-              <ResultCard activeFilter="unique-stays" ResultstayShown={stayPreview} ResultcaravanShown={[]} ResultactivityShown={[]} />
+            <OfferSection
+              title="Unique Stays"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="unique-stays"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=unique-stays"
+            >
+              <ResultCard
+                activeFilter="unique-stays"
+                ResultstayShown={stayPreview}
+                ResultcaravanShown={[]}
+                ResultactivityShown={[]}
+              />
             </OfferSection>
           )}
           {homepageSections["best-activity"] && (
-            <OfferSection title="Best Activity" subtitle="Handpicked for every kind of traveler" sectionId="activity" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=activity">
-              <ResultCard activeFilter="activity" ResultactivityShown={activityPreview} ResultcaravanShown={[]} ResultstayShown={[]} />
+            <OfferSection
+              title="Best Activity"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="activity"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=activity"
+            >
+              <ResultCard
+                activeFilter="activity"
+                ResultactivityShown={activityPreview}
+                ResultcaravanShown={[]}
+                ResultstayShown={[]}
+              />
             </OfferSection>
           )}
         </>
@@ -117,13 +198,37 @@ export function OfferSections({
       {activeFilter === "unique-stays" && (
         <>
           {homepageSections["camper-van"] && (
-            <OfferSection title="Stay at our top Camper Van" subtitle="Handpicked for every kind of traveler" sectionId="camper-van" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=camper-van">
-              <ResultCard activeFilter="camper-van" ResultcaravanShown={caravanPreview} ResultstayShown={[]} ResultactivityShown={[]} />
+            <OfferSection
+              title="Stay at our top Camper Van"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="camper-van"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=camper-van"
+            >
+              <ResultCard
+                activeFilter="camper-van"
+                ResultcaravanShown={caravanPreview}
+                ResultstayShown={[]}
+                ResultactivityShown={[]}
+              />
             </OfferSection>
           )}
           {homepageSections["best-activity"] && (
-            <OfferSection title="Best Activity" subtitle="Handpicked for every kind of traveler" sectionId="activity" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=activity">
-              <ResultCard activeFilter="activity" ResultactivityShown={activityPreview} ResultcaravanShown={[]} ResultstayShown={[]} />
+            <OfferSection
+              title="Best Activity"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="activity"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=activity"
+            >
+              <ResultCard
+                activeFilter="activity"
+                ResultactivityShown={activityPreview}
+                ResultcaravanShown={[]}
+                ResultstayShown={[]}
+              />
             </OfferSection>
           )}
         </>
@@ -132,13 +237,37 @@ export function OfferSections({
       {activeFilter === "activity" && (
         <>
           {homepageSections["camper-van"] && (
-            <OfferSection title="Stay at our top Camper Van" subtitle="Handpicked for every kind of traveler" sectionId="camper-van" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=camper-van">
-              <ResultCard activeFilter="camper-van" ResultcaravanShown={caravanPreview} ResultstayShown={[]} ResultactivityShown={[]} />
+            <OfferSection
+              title="Stay at our top Camper Van"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="camper-van"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=camper-van"
+            >
+              <ResultCard
+                activeFilter="camper-van"
+                ResultcaravanShown={caravanPreview}
+                ResultstayShown={[]}
+                ResultactivityShown={[]}
+              />
             </OfferSection>
           )}
           {homepageSections["unique-stays"] && (
-            <OfferSection title="Unique Stays" subtitle="Handpicked for every kind of traveler" sectionId="unique-stays" loading={loadingOffers} error={offerError} viewAllHref="/search?filter=unique-stays">
-              <ResultCard activeFilter="unique-stays" ResultstayShown={stayPreview} ResultcaravanShown={[]} ResultactivityShown={[]} />
+            <OfferSection
+              title="Unique Stays"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="unique-stays"
+              loading={loadingOffers}
+              error={offerError}
+              viewAllHref="/search?filter=unique-stays"
+            >
+              <ResultCard
+                activeFilter="unique-stays"
+                ResultstayShown={stayPreview}
+                ResultcaravanShown={[]}
+                ResultactivityShown={[]}
+              />
             </OfferSection>
           )}
         </>

@@ -28,7 +28,7 @@ export function ShareSaveButtons({
     <div className="flex items-center gap-2 flex-shrink-0">
       <button
         onClick={onShareClick}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#14709F] transition-colors text-sm text-gray-700 dark:text-gray-300"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#128086] transition-colors text-sm text-gray-700 dark:text-gray-300"
       >
         <RiShareCircleFill className="w-4 h-4 -rotate-45" />
         <span className="hidden sm:inline">Share</span>
@@ -45,7 +45,7 @@ export function ShareSaveButtons({
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-300 text-sm ${
           isFavorite
             ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400"
-            : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#14709F] text-gray-700 dark:text-gray-300"
+            : "border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#128086] text-gray-700 dark:text-gray-300"
         }`}
       >
         <Heart

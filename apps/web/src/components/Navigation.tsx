@@ -136,7 +136,7 @@ const bottomMenuItems: MenuItem[] = [
   },
   { id: "settings", label: "Settings", icon: Settings, path: "/settings", color: "#8a929f" },
   { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help", color: "#22c55e" },
-  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/", color: "#0d9488" },
+  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/", color: "#117479" },
 ];
 
 /** Section caption above a nav group — same type as the panel group headers. */
@@ -393,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 "transition-[background-color,color,box-shadow] duration-150",
                 "focus-visible:ring-2 focus-visible:ring-brand/40",
                 active
-                  ? "bg-brand text-brand-fg shadow-[0_1px_2px_rgba(13,148,136,0.24),0_6px_16px_-8px_rgba(13,148,136,0.45)]"
+                  ? "bg-brand text-brand-fg shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-8px_rgba(17, 116, 121,0.45)]"
                   : "hover:brightness-95",
               )}
             >

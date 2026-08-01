@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 /* ── Theme ────────────────────────────────────────────────────────────────────
    The vendor console reads teal, but `--brand` is navy in global.css and the
    teal override lives in admin.css — which only AdminApp imports. Rather than
-   sprinkle #0d9488 through the JSX (what the older vendor pages had to do),
+   sprinkle #117479 through the JSX (what the older vendor pages had to do),
    re-point the token on a page's root so every `bg-brand` / `text-brand` /
    `ring-brand/15` beneath it resolves teal through Tailwind. Opacity modifiers
    keep working because the token is hsl channels, not a hex string.
@@ -13,15 +13,15 @@ import { cn } from "@/lib/utils";
    Radix portals its overlays to <body>, outside any page root — so a Dialog
    that uses brand classes needs `style={BRAND_VARS}` on its own content too. */
 export const BRAND_VARS = {
-  "--brand": "175 84% 32%" /* #0d9488 */,
-  "--brand-hover": "175 78% 26%" /* #0f766e */,
+  "--brand": "183 76% 27%" /* #117479 */,
+  "--brand-hover": "183 76% 22%" /* #0d5c60 */,
   "--brand-fg": "0 0% 100%",
   // shadcn primitives (Switch fill, Checkbox tick, Select/Input focus ring) key
   // off --primary and --ring, not --brand, so re-point those too or the
   // controls stay navy.
-  "--primary": "175 84% 32%",
+  "--primary": "183 76% 27%",
   "--primary-foreground": "0 0% 100%",
-  "--ring": "175 84% 32%",
+  "--ring": "183 76% 27%",
 } as React.CSSProperties;
 
 /**
@@ -40,9 +40,9 @@ export const ADMIN_APP_VARS = {
   "--surface-fg": "#101828",
   "--surface-fg-muted": "#55585e",
   "--surface-fg-subtle": "#6e7278",
-  "--accent": "#0d9488",
-  "--accent-hover": "#0f766e",
-  "--accent-soft": "rgba(13, 148, 136, 0.1)",
+  "--accent": "#117479",
+  "--accent-hover": "#0d5c60",
+  "--accent-soft": "rgba(17, 116, 121, 0.1)",
   "--accent-fg": "#ffffff",
 } as React.CSSProperties;
 
@@ -104,8 +104,8 @@ export const BTN_NEUTRAL =
   "hover:bg-muted/70 text-[12.5px] font-semibold gap-1.5";
 export const BTN_PRIMARY =
   "h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 " +
-  "shadow-[0_1px_2px_rgba(13,148,136,0.24),0_6px_16px_-6px_rgba(13,148,136,0.45)] " +
-  "hover:shadow-[0_1px_2px_rgba(13,148,136,0.28),0_8px_20px_-6px_rgba(13,148,136,0.55)] " +
+  "shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-6px_rgba(17, 116, 121,0.45)] " +
+  "hover:shadow-[0_1px_2px_rgba(17, 116, 121,0.28),0_8px_20px_-6px_rgba(17, 116, 121,0.55)] " +
   "transition-shadow duration-150";
 
 export const Panel = ({

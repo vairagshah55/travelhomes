@@ -267,7 +267,7 @@ const Bookings = () => {
                 label="Bookings"
                 hint="This month"
                 value={stats.total}
-                color="#0d9488"
+                color="#117479"
                 index={0}
               />
               <StatTile

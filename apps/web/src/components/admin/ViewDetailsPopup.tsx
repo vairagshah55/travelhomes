@@ -103,7 +103,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl w-full max-w-5xl mx-4 relative max-h-[90vh] flex flex-col items-center justify-center p-20">
-          <Loader2 className="h-12 w-12 animate-spin text-[#0d9488] mb-4" />
+          <Loader2 className="h-12 w-12 animate-spin text-[#117479] mb-4" />
           <p className="text-gray-600">Loading listing details…</p>
         </div>
       </div>
@@ -181,7 +181,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
           {/* Header */}
           <div className="border-b border-gray-200 pb-4 mb-6 pr-10">
             <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-2xl font-bold text-[#0d9488]">Listing Details</h2>
+              <h2 className="text-2xl font-bold text-[#117479]">Listing Details</h2>
               {has(d.status) && <StatusBadge status={d.status} />}
             </div>
             <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
@@ -292,7 +292,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
                           href={getImageUrl(d.personalDetails?.idProof || d.idProof)}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-[#0d9488] hover:underline"
+                          className="text-[#117479] hover:underline"
                         >
                           View Document
                         </a>
@@ -472,7 +472,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
                     Final Price
                   </h3>
-                  <p className="text-lg font-bold text-[#0d9488]">{formatINR(Number(finPrice))}</p>
+                  <p className="text-lg font-bold text-[#117479]">{formatINR(Number(finPrice))}</p>
                 </div>
               )}
             </div>
@@ -485,7 +485,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
                     <div key={disc.key} className="rounded-lg border border-gray-200 p-4 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-bold text-gray-900">{disc.label}</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-[#0d9488] bg-[#0d94881f] px-2 py-0.5 rounded-full">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-[#117479] bg-[#1174791f] px-2 py-0.5 rounded-full">
                           {disc.type || "percentage"}
                         </span>
                       </div>

@@ -1,14 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/button';
-import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { Button } from "../components/ui/button";
+import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 const VerifyOTP = () => {
   const navigate = useNavigate();
   const { verifyOTP } = useAuth();
-  const [otp, setOtp] = useState(['', '', '', '', '','']);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -22,7 +22,7 @@ const VerifyOTP = () => {
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return; // Prevent multiple characters
-    
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -34,7 +34,7 @@ const VerifyOTP = () => {
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
       // Focus previous input on backspace if current is empty
       inputRefs.current[index - 1]?.focus();
     }
@@ -42,9 +42,9 @@ const VerifyOTP = () => {
 
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData('text');
-    const pasteOtp = pasteData.slice(0, 5).split('');
-    
+    const pasteData = e.clipboardData.getData("text");
+    const pasteOtp = pasteData.slice(0, 5).split("");
+
     const newOtp = [...otp];
     pasteOtp.forEach((char, index) => {
       if (index < 5 && /^\d$/.test(char)) {
@@ -52,19 +52,19 @@ const VerifyOTP = () => {
       }
     });
     setOtp(newOtp);
-    
+
     // Focus the next empty input or last input
-    const nextEmptyIndex = newOtp.findIndex(val => val === '');
+    const nextEmptyIndex = newOtp.findIndex((val) => val === "");
     const focusIndex = nextEmptyIndex === -1 ? 4 : nextEmptyIndex;
     inputRefs.current[focusIndex]?.focus();
   };
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    const otpCode = otp.join('');
-    
+    const otpCode = otp.join("");
+
     if (otpCode.length !== 5) {
-      toast.error('Please enter complete OTP');
+      toast.error("Please enter complete OTP");
       return;
     }
 
@@ -72,17 +72,17 @@ const VerifyOTP = () => {
     try {
       const success = await verifyOTP(otpCode);
       if (success) {
-        toast.success('OTP verified successfully!');
-        navigate('/onboarding/service-selection');
+        toast.success("OTP verified successfully!");
+        navigate("/onboarding/service-selection");
       } else {
-        toast.error('Invalid OTP. Please try again.');
+        toast.error("Invalid OTP. Please try again.");
         // Clear OTP on error
-        setOtp(['', '', '', '', '']);
+        setOtp(["", "", "", "", ""]);
         inputRefs.current[0]?.focus();
       }
     } catch (error) {
-      toast.error('Verification failed. Please try again.');
-      setOtp(['', '', '', '', '']);
+      toast.error("Verification failed. Please try again.");
+      setOtp(["", "", "", "", ""]);
       inputRefs.current[0]?.focus();
     } finally {
       setIsLoading(false);
@@ -92,13 +92,13 @@ const VerifyOTP = () => {
   const handleResend = async () => {
     setResendLoading(true);
     // Simulate resend API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setResendLoading(false);
-    toast.success('OTP resent successfully!');
+    toast.success("OTP resent successfully!");
   };
 
   const handleBack = () => {
-    navigate('/register');
+    navigate("/register");
   };
 
   return (
@@ -106,31 +106,31 @@ const VerifyOTP = () => {
       {/* Left side - Image gallery */}
       <div className="auth-image-gallery">
         <div className="flex flex-col gap-5 flex-1">
-          <img 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641" 
-            alt="Travel destination" 
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641"
+            alt="Travel destination"
             className="flex-1 rounded-[20px] object-cover"
           />
-          <img 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/c3d61f456ed7d675a05311cbee859a54922fae15?width=641" 
-            alt="Travel destination" 
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/c3d61f456ed7d675a05311cbee859a54922fae15?width=641"
+            alt="Travel destination"
             className="flex-1 rounded-[20px] object-cover"
           />
-          <img 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/35e201b656cfa241c03e3280e3bf67ec0b0f6d87?width=641" 
-            alt="Travel destination" 
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/35e201b656cfa241c03e3280e3bf67ec0b0f6d87?width=641"
+            alt="Travel destination"
             className="flex-1 rounded-[20px] object-cover"
           />
         </div>
         <div className="flex flex-col justify-center gap-5 flex-1">
-          <img 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/b9c3c4635b522e51c991a0b4dc045218d6d9168a?width=641" 
-            alt="Travel destination" 
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/b9c3c4635b522e51c991a0b4dc045218d6d9168a?width=641"
+            alt="Travel destination"
             className="flex-1 rounded-[20px] object-cover"
           />
-          <img 
-            src="https://api.builder.io/api/v1/image/assets/TEMP/76e92c1f16f6a4fc58280175233debd228ea6fb4?width=641" 
-            alt="Travel destination" 
+          <img
+            src="https://api.builder.io/api/v1/image/assets/TEMP/76e92c1f16f6a4fc58280175233debd228ea6fb4?width=641"
+            alt="Travel destination"
             className="flex-1 rounded-[20px] object-cover"
           />
         </div>
@@ -146,9 +146,7 @@ const VerifyOTP = () => {
               className="flex items-center gap-1 text-[#131313] dark:text-white hover:opacity-80 transition-opacity"
             >
               <ArrowLeft size={24} />
-              <span className="text-sm font-medium font-['Plus_Jakarta_Sans']">
-                Back to login
-              </span>
+              <span className="text-sm font-medium font-['Plus_Jakarta_Sans']">Back to login</span>
             </button>
 
             <div className="space-y-3">
@@ -164,7 +162,9 @@ const VerifyOTP = () => {
           {/* Demo OTP notice */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Demo OTP</h3>
-            <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">Use this OTP to test verification:</p>
+            <p className="text-sm text-blue-800 dark:text-blue-200 mb-2">
+              Use this OTP to test verification:
+            </p>
             <div className="text-sm font-mono">
               {/* <div><strong>OTP:</strong> {DEMO_CREDENTIALS.otp}</div> */}
             </div>
@@ -177,7 +177,7 @@ const VerifyOTP = () => {
                 <label className="text-base text-[#222] dark:text-gray-300 font-['Plus_Jakarta_Sans']">
                   Enter Code
                 </label>
-                
+
                 <div className="flex gap-2 sm:gap-3 justify-center">
                   {otp.map((digit, index) => (
                     <input
@@ -209,7 +209,7 @@ const VerifyOTP = () => {
                     disabled={resendLoading}
                     className="text-sm text-[#121] dark:text-white font-bold hover:underline disabled:opacity-50 font-['Plus_Jakarta_Sans']"
                   >
-                    {resendLoading ? 'Sending...' : 'Resend'}
+                    {resendLoading ? "Sending..." : "Resend"}
                   </button>
                 </div>
               </div>
@@ -217,10 +217,10 @@ const VerifyOTP = () => {
 
             <Button
               type="submit"
-              disabled={isLoading || otp.join('').length !== 5}
-              className="w-full h-12 bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
+              disabled={isLoading || otp.join("").length !== 5}
+              className="w-full h-12 bg-[#117479] hover:bg-[#128086] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
             >
-              {isLoading ? 'Verifying...' : 'Verify'}
+              {isLoading ? "Verifying..." : "Verify"}
             </Button>
           </form>
         </div>

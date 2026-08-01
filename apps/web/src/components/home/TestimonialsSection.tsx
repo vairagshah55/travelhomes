@@ -20,10 +20,15 @@ interface TestimonialsSectionProps {
   user: any;
 }
 
-export function TestimonialsSection({ homepageSections, testimonials, refetchTestimonials, user }: TestimonialsSectionProps) {
+export function TestimonialsSection({
+  homepageSections,
+  testimonials,
+  refetchTestimonials,
+  user,
+}: TestimonialsSectionProps) {
   const [showReviewModal, setShowReviewModal] = useState(false);
-  const [reviewRating, setReviewRating]       = useState(5);
-  const [reviewText, setReviewText]           = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
   const { scrollRef, scrollLeft, scrollRight } = useAutoHorizontalScroll({ delay: 5000 });
 
   if (!homepageSections["testimonials"]) return null;
@@ -50,7 +55,9 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
   return (
     <ScrollReveal>
       {isLoading ? (
-        <div className="py-8 md:py-10 px-4"><TestimonialsSkeleton /></div>
+        <div className="py-8 md:py-10 px-4">
+          <TestimonialsSkeleton />
+        </div>
       ) : (
         <Section
           title="What Travelers Say"
@@ -93,7 +100,12 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
               >
-                <TestimonialCard userName={t.userName} rating={t.rating} content={t.content} avatar={t.avatar} />
+                <TestimonialCard
+                  userName={t.userName}
+                  rating={t.rating}
+                  content={t.content}
+                  avatar={t.avatar}
+                />
               </motion.div>
             ))}
           </motion.div>
@@ -102,7 +114,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
           <div className="flex justify-center mt-10">
             <Button
               onClick={() => setShowReviewModal(true)}
-              className="bg-[#0F5C8A] hover:bg-[#14709F] text-white rounded-full px-8 h-11 transition-all duration-200 font-medium flex items-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+              className="bg-[#117479] hover:bg-[#128086] text-white rounded-full px-8 h-11 transition-all duration-200 font-medium flex items-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <span>Write a Review</span>
               <SlArrowRight className="w-3.5 h-3.5" />
@@ -121,7 +133,11 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
             {/* User info */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-gray-100 flex-shrink-0">
-                <img src={getImageUrl(user?.photo) || "/user-avatar.svg"} alt={user?.email || "Guest"} className="w-full h-full object-cover" />
+                <img
+                  src={getImageUrl(user?.photo) || "/user-avatar.svg"}
+                  alt={user?.email || "Guest"}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <p className="font-semibold text-sm leading-tight">{user?.firstName || "Guest"}</p>
@@ -142,8 +158,8 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
                     whileTap={{ scale: 0.92 }}
                     className={`w-8 h-8 rounded-full border text-sm font-semibold transition-colors duration-150 flex items-center justify-center ${
                       reviewRating >= n
-                        ? "bg-[#0F5C8A] text-white border-[#0F5C8A] shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#0F5C8A]"
+                        ? "bg-[#117479] text-white border-[#117479] shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#117479]"
                     }`}
                   >
                     {n}
@@ -158,7 +174,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
               onChange={(e) => setReviewText(e.target.value)}
               placeholder="Share your experience..."
               required
-              className="min-h-[120px] resize-none border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#0A2B40] focus:border-[#0A2B40] rounded-xl text-sm"
+              className="min-h-[120px] resize-none border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-[#0a1c1c] focus:border-[#0a1c1c] rounded-xl text-sm"
             />
 
             {/* Actions */}
@@ -173,7 +189,7 @@ export function TestimonialsSection({ homepageSections, testimonials, refetchTes
               </Button>
               <Button
                 type="submit"
-                className="rounded-full bg-[#0F5C8A] hover:bg-[#14709F] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                className="rounded-full bg-[#117479] hover:bg-[#128086] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
                 Submit
               </Button>

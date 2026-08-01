@@ -93,7 +93,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
           style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Amenities &amp; Features
@@ -118,7 +118,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             Features
           </p>
           {totalSelected > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-2.5 py-[2px]">
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(17, 116, 121,0.20)] rounded-full px-2.5 py-[2px]">
               {totalSelected} selected
             </span>
           )}
@@ -175,12 +175,10 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={`custom-${idx}`}
                 type="button"
                 onClick={() => handleRemoveCustom(idx)}
-                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] cursor-pointer text-th-brand"
+                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] cursor-pointer text-th-brand"
               >
                 <MoreHorizontal size={14} />
-                <span className="text-[13px] font-semibold tracking-[-0.01em]">
-                  {feature}
-                </span>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature}</span>
                 <X size={12} />
               </button>
             ))}
@@ -198,7 +196,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   className={cn(
                     "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                     isSelected
-                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] text-th-brand"
                       : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                   )}
                 >
@@ -230,7 +228,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             {/* ── Inline custom input pill ── */}
             {customFeatures.length < 20 &&
               (showCustomFeaturesInput ? (
-                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(15,92,138,0.20)]">
+                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)]">
                   <input
                     ref={inputRef}
                     type="text"
@@ -278,9 +276,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   className="flex items-center gap-1.5 px-[14px] py-2 rounded-full border-[1.5px] border-dashed border-th-warm-border bg-transparent cursor-pointer transition-all duration-150 text-th-warm-text-muted hover:border-th-brand hover:text-th-brand"
                 >
                   <Plus size={13} strokeWidth={2.5} />
-                  <span className="text-[13px] font-semibold tracking-[-0.01em]">
-                    Add custom
-                  </span>
+                  <span className="text-[13px] font-semibold tracking-[-0.01em]">Add custom</span>
                 </button>
               ))}
           </div>
@@ -298,7 +294,12 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             className="shrink-0 text-th-error-bright"
           >
             <circle cx="6" cy="6" r="5.25" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M6 3.5v3M6 8.25v.25" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            <path
+              d="M6 3.5v3M6 8.25v.25"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            />
           </svg>
           <p className="text-[12px] font-semibold text-th-error-bright">{errors.features}</p>
         </div>

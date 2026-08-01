@@ -49,7 +49,6 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   dialCode: c.phonecode,
 }));
 
-
 const CaravanOnboarding = () => {
   const navigate = useNavigate();
   const { updateUserType, isAuthenticated } = useAuth();
@@ -627,7 +626,7 @@ const CaravanOnboarding = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-[#0F5C8A] border-t-transparent animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-[#117479] border-t-transparent animate-spin" />
           <p className="text-sm text-[#888780]">Loading…</p>
         </div>
       </div>
@@ -646,14 +645,14 @@ const CaravanOnboarding = () => {
           </p>
           {formData.name && (
             <div className="inline-flex items-center gap-2 bg-[#F7F8FA] rounded-full px-4 py-2 mb-6">
-              <Home className="w-4 h-4 text-[#0F5C8A]" />
+              <Home className="w-4 h-4 text-[#117479]" />
               <span className="text-sm font-medium text-[#1a1a1a]">{formData.name}</span>
             </div>
           )}
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate("/dashboard")}
-              className="w-full bg-[#0F5C8A] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#145189] transition-colors"
+              className="w-full bg-[#117479] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#145189] transition-colors"
             >
               Go to Dashboard
             </button>

@@ -48,7 +48,6 @@ const DEFAULT_TESTIMONIALS: PublicTestimonial[] = [
     rating: 5,
     content:
       "An amazing experience! The booking process was seamless, and the support team was super helpful throughout.",
-    avatar: "/test5.png",
     email: "aarav.mehta@example.com",
     createdAt: "2025-10-12T09:24:00Z",
   },
@@ -58,7 +57,6 @@ const DEFAULT_TESTIMONIALS: PublicTestimonial[] = [
     rating: 4,
     content:
       "Really impressed with how easy it was to find what I needed. The platform feels modern and intuitive.",
-    avatar: "/user-avatar.svg",
     email: "priya.sharma@example.com",
     createdAt: "2025-09-28T14:45:00Z",
   },
@@ -68,7 +66,6 @@ const DEFAULT_TESTIMONIALS: PublicTestimonial[] = [
     rating: 5,
     content:
       "Exceptional service and great user experience. I found exactly what I was looking for within minutes!",
-    avatar: "/test2.png",
     email: "rahul.verma@example.com",
     createdAt: "2025-08-20T11:10:00Z",
   },
@@ -78,7 +75,6 @@ const DEFAULT_TESTIMONIALS: PublicTestimonial[] = [
     rating: 5,
     content:
       "Loved the design and smooth navigation. It's rare to see a platform this well thought out!",
-    avatar: "/test3.png",
     email: "neha.kapoor@example.com",
     createdAt: "2025-07-05T18:20:00Z",
   },
@@ -88,7 +84,6 @@ const DEFAULT_TESTIMONIALS: PublicTestimonial[] = [
     rating: 4,
     content:
       "Great experience overall! Would definitely recommend this to anyone looking for reliable service.",
-    avatar: "/test4.png",
     email: "rohan.singh@example.com",
     createdAt: "2025-06-15T07:40:00Z",
   },
@@ -419,7 +414,7 @@ export default function Index() {
                   <div className="mt-6 flex justify-center">
                     <Button
                       onClick={() => incPage("unique-stays")}
-                      className="rounded-full bg-[#0F5C8A] hover:bg-[#14709F] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
+                      className="rounded-full bg-[#117479] hover:bg-[#128086] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
                     >
                       View more
                     </Button>

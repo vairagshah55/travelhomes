@@ -125,7 +125,7 @@ const Revenue = () => {
                 value={totals.total}
                 format={inr}
                 hint="Received plus pending"
-                color="#0d9488"
+                color="#117479"
               />
               <StatTile
                 index={1}

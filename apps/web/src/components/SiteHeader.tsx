@@ -320,26 +320,26 @@ export default function SiteHeader({
                         key={tab.id}
                         onClick={() => handleTabClick(tab.id)}
                         className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
-                          isActive ? "text-white" : "text-[#0A2B40] hover:text-[#0F5C8A]"
+                          isActive ? "text-white" : "text-[#0a1c1c] hover:text-[#117479]"
                         }`}
                       >
                         {/* Active pill — shared layoutId slides between tabs */}
                         {isActive && (
                           <motion.span
                             layoutId="site-header-active-pill"
-                            className="absolute inset-0 rounded-full bg-[#0F5C8A] shadow-[0_2px_8px_rgba(15,92,138,0.25)]"
+                            className="absolute inset-0 rounded-full bg-[#117479] shadow-[0_2px_8px_rgba(17, 116, 121,0.25)]"
                             transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.6 }}
                           />
                         )}
 
                         {/* Idle background — subtle outlined chip when NOT active */}
                         {!isActive && (
-                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#E8F2F8] group-hover:border-[#0F5C8A]/30 transition-colors duration-150" />
+                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#e6fafa] group-hover:border-[#117479]/30 transition-colors duration-150" />
                         )}
 
                         <IconComponent
                           className={`relative z-10 w-4 h-4 transition-colors duration-150 ${
-                            isActive ? "text-white" : "text-[#5F6A82] group-hover:text-[#0F5C8A]"
+                            isActive ? "text-white" : "text-[#5F6A82] group-hover:text-[#117479]"
                           }`}
                         />
                         <span className="relative z-10">{tab.label}</span>
@@ -503,7 +503,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -697,7 +697,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -851,7 +851,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#0F5C8A] hover:bg-[#0A4670] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -871,7 +871,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#117479] text-white hover:bg-[#0d4548] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
@@ -891,7 +891,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#0F5C8A] text-white hover:bg-[#0A4670] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#117479] text-white hover:bg-[#0d4548] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
@@ -899,7 +899,7 @@ export default function SiteHeader({
                   </button>
                   <button
                     onClick={() => navigate("/register")}
-                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#0F5C8A] hover:bg-[#0A4670] text-white shadow-sm hover:shadow-md transition-all duration-200"
+                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#117479] hover:bg-[#0d4548] text-white shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     Sign up
                   </button>
@@ -938,8 +938,8 @@ export default function SiteHeader({
                       onClick={() => handleTabClick(tab.id)}
                       className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
                         activeFilter === tab.id
-                          ? "bg-[#0A2B40] text-white"
-                          : "text-[#0A2B40] hover:bg-[#F7F7F7]"
+                          ? "bg-[#0a1c1c] text-white"
+                          : "text-[#0a1c1c] hover:bg-[#F7F7F7]"
                       }`}
                     >
                       <IconComponent className="w-5 h-5" />

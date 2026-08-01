@@ -16,12 +16,10 @@ const StepHeader: React.FC<StepHeaderProps> = ({ kicker, title, subtitle, extra 
       </span>
       <div className="w-6 h-[3px] rounded-full bg-th-brand" />
     </div>
-    <h1 className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]">
+    <h1 className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0d4548] tracking-[-0.015em] leading-[1.15]">
       {title}
     </h1>
-    {subtitle && (
-      <p className="text-sm text-th-warm-text-dark leading-[1.6]">{subtitle}</p>
-    )}
+    {subtitle && <p className="text-sm text-th-warm-text-dark leading-[1.6]">{subtitle}</p>}
     {extra}
   </div>
 );

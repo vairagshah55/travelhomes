@@ -11,17 +11,17 @@
    renders correctly in either scope without forking.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --brand: 202 80% 30%;             /* #0F5C8A — Pacific Teal-Blue primary */
-  --brand-hover: 199 78% 35%;       /* #14709F — lighter on hover */
-  --brand-fg: 0 0% 100%;            /* white text on brand */
-  --brand-subtle: 202 50% 95%;      /* #E8F2F8 — brand-50 mist */
+  --brand: 183 76% 27%; /* #117479 — Logo Cyan primary */
+  --brand-hover: 183 76% 30%; /* #128086 — lighter on hover */
+  --brand-fg: 0 0% 100%; /* white text on brand */
+  --brand-subtle: 180 67% 94%; /* #e6fafa — brand-50 mist */
 }
 
 [data-brand="admin"] {
-  --brand: 202 80% 30%;             /* #0F5C8A — same Pacific Teal-Blue */
-  --brand-hover: 199 78% 35%;       /* #14709F */
+  --brand: 183 76% 27%; /* #117479 — same Logo Cyan */
+  --brand-hover: 183 76% 30%; /* #128086 */
   --brand-fg: 0 0% 100%;
-  --brand-subtle: 202 50% 95%;
+  --brand-subtle: 180 67% 94%;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -32,26 +32,26 @@
    vendor theme — light values on :root, dark values on .dark.
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  --surface:          #ffffff;            /* tpl-card-bg */
-  --surface-2:        #f3f4f6;            /* tpl-gray-2 — subtle fills */
-  --surface-border:   #e6ebf1;            /* tpl-stroke */
-  --surface-fg:       #111928;            /* tpl-dark — primary text */
-  --surface-fg-muted: #6b7280;            /* tpl-dark-5 — secondary text */
-  --surface-fg-subtle:#9ca3af;            /* tpl-dark-6 — icons/tertiary */
-  --accent:           #5750f1;            /* tpl-primary (purple) */
-  --accent-hover:     #4a44d4;            /* tpl-primary-hover */
-  --accent-soft:      rgba(87, 80, 241, 0.07); /* tpl-primary-soft */
-  --accent-fg:        #ffffff;
+  --surface: #ffffff; /* tpl-card-bg */
+  --surface-2: #f3f4f6; /* tpl-gray-2 — subtle fills */
+  --surface-border: #e6ebf1; /* tpl-stroke */
+  --surface-fg: #111928; /* tpl-dark — primary text */
+  --surface-fg-muted: #6b7280; /* tpl-dark-5 — secondary text */
+  --surface-fg-subtle: #9ca3af; /* tpl-dark-6 — icons/tertiary */
+  --accent: #5750f1; /* tpl-primary (purple) */
+  --accent-hover: #4a44d4; /* tpl-primary-hover */
+  --accent-soft: rgba(87, 80, 241, 0.07); /* tpl-primary-soft */
+  --accent-fg: #ffffff;
 }
 
 .dark {
-  --surface:          #1f2a37;            /* tpl-dark-2 */
-  --surface-2:        rgba(255, 255, 255, 0.05);
-  --surface-border:   #27303e;            /* tpl-stroke dark */
-  --surface-fg:       #ffffff;
+  --surface: #1f2a37; /* tpl-dark-2 */
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-border: #27303e; /* tpl-stroke dark */
+  --surface-fg: #ffffff;
   --surface-fg-muted: #9ca3af;
-  --surface-fg-subtle:#6b7280;
-  --accent-soft:      rgba(255, 255, 255, 0.06);
+  --surface-fg-subtle: #6b7280;
+  --accent-soft: rgba(255, 255, 255, 0.06);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -59,16 +59,16 @@
    Blue primary · Warm sand · Teal accents · Airy neutrals
    ═══════════════════════════════════════════════════════════════ */
 :root {
-  /* Primary — Pacific Teal-Blue */
-  --ds-sky: #e8f2f8;   /* brand-50 surface */
-  --ds-mist: #d0e4ef;  /* brand-100 tint */
-  --ds-ocean: #1e88ba; /* brand-400 accent */
-  --ds-deep: #0f5c8a;  /* brand-500 — primary brand, CTAs */
-  --ds-navy: #0a2b40;  /* ink — deepest, headings, hero */
+  /* Primary — Logo Cyan */
+  --ds-sky: #e6fafa; /* brand-50 surface */
+  --ds-mist: #ccf2f2; /* brand-100 tint */
+  --ds-ocean: #128086; /* brand-400 accent */
+  --ds-deep: #117479; /* brand-500 — primary brand, CTAs */
+  --ds-navy: #0a1c1c; /* ink — deepest, headings, hero */
 
   /* Accent — Champagne (luxury markers, used sparingly) */
-  --ds-sand: #e7d3a6;  /* champagne-300 soft tint */
-  --ds-dune: #c8a96a;  /* champagne-500 fill */
+  --ds-sand: #e7d3a6; /* champagne-300 soft tint */
+  --ds-dune: #c8a96a; /* champagne-500 fill */
   --ds-rust: #b42318; /* refined red — error/warm-stop */
 
   /* Accent — Teal (nature, calm) */
@@ -89,7 +89,7 @@
   --ds-warning: #ef9f27;
 
   /* Card shadow */
-  --ds-shadow-card: 0 4px 20px rgba(15, 92, 138, 0.10);
+  --ds-shadow-card: 0 4px 20px rgba(17, 116, 121, 0.1);
   --ds-shadow-drop: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -101,9 +101,12 @@
 @layer base {
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand — Pacific Teal-Blue: #0F5C8A primary, #14709F hover */
-    --th-brand: #0f5c8a;
-    --th-brand-hover: #14709f;
+    /* Brand — the logo cyan #3BD9D9 darkened along its own hue (180°) until it
+       holds AA on white: #117479 primary (5.5:1), #128086 hover (4.7:1). The
+       pure logo cyan is 1.7:1 on white, so on light surfaces it may only ever
+       be a fill behind black artwork (see --th-logo), never text or a button. */
+    --th-brand: #117479;
+    --th-brand-hover: #128086;
     --th-brand-fg: #ffffff;
 
     /* Logo cyan — the colour of the delivered artwork itself, so unlike --th-brand
@@ -115,7 +118,7 @@
     /* CTA accent — Champagne (use ONLY as fill/bg, never as text on white) */
     --th-cta: #c8a96a;
     --th-cta-hover: #8c6f33;
-    --th-cta-fg: #0a2b40;
+    --th-cta-fg: #0a1c1c;
 
     /* Surfaces */
     --th-surface-0: #ffffff;
@@ -125,18 +128,18 @@
     --th-surface-raised: #ffffff;
 
     /* Text */
-    --th-text-primary: #0a2b40;
+    --th-text-primary: #0a1c1c;
     --th-text-secondary: #1f2a44;
-    --th-text-tertiary: #0f5c8a;
+    --th-text-tertiary: #117479;
     --th-text-muted: #5f6a82;
     --th-text-placeholder: #9aa3b5;
     --th-text-inverse: #ffffff;
-    --th-text-link: #0f5c8a;
+    --th-text-link: #117479;
 
     /* Borders */
     --th-border: #e4e8f0;
     --th-border-hover: #c9d1e0;
-    --th-border-focus: #0f5c8a;
+    --th-border-focus: #117479;
     --th-border-error: #b42318;
 
     /* Status */
@@ -149,36 +152,36 @@
     --th-error: #b42318;
     --th-error-bg: rgba(180, 35, 24, 0.06);
     --th-error-text: #b42318;
-    --th-info: #0f5c8a;
-    --th-info-bg: #e8f2f8;
-    --th-info-text: #0a2b40;
+    --th-info: #117479;
+    --th-info-bg: #e6fafa;
+    --th-info-text: #0a1c1c;
     --th-purple-bg: #f6e0fd;
     --th-purple-text: #b127dc;
 
     /* Stats card fills — indigo palette tints */
-    --th-stat-impression: #e8f2f8;
-    --th-stat-impression-icon: #d0e4ef;
+    --th-stat-impression: #e6fafa;
+    --th-stat-impression-icon: #ccf2f2;
     --th-stat-bookings: #e7ecf8;
     --th-stat-bookings-icon: #c9d4ee;
     --th-stat-properties: #f1f4f9;
-    --th-stat-properties-icon: #d0e4ef;
+    --th-stat-properties-icon: #ccf2f2;
     --th-stat-earnings: #f4eee0;
     --th-stat-earnings-icon: #e7d3a6;
     --th-stat-clicks: #ecf0f9;
-    --th-stat-clicks-icon: #d0e4ef;
+    --th-stat-clicks-icon: #ccf2f2;
 
     /* Interactive */
-    --th-ring: rgba(15, 92, 138, 0.15);
+    --th-ring: rgba(17, 116, 121, 0.15);
     --th-ring-error: rgba(180, 35, 24, 0.12);
-    --th-overlay: rgba(10, 43, 64, 0.45);
-    --th-booking-link: #0f5c8a;
+    --th-overlay: rgba(10, 28, 28, 0.45);
+    --th-booking-link: #117479;
 
     /* Accent (mid-indigo for highlights & active states) */
-    --th-accent: #1e88ba;
-    --th-accent-hover: #0f5c8a;
+    --th-accent: #128086;
+    --th-accent-hover: #117479;
     --th-accent-fg: #ffffff;
-    --th-accent-subtle: #e8f2f8;
-    --th-accent-muted: #d0e4ef;
+    --th-accent-subtle: #e6fafa;
+    --th-accent-muted: #ccf2f2;
 
     /* Congratulations page */
     --th-congrats-star-yellow: #ffdc64;
@@ -192,26 +195,26 @@
        Preserve the warm/desert grey + bright error/success palette
        used by the onboarding flow. These exist alongside the cool
        th-* tokens until a follow-up palette-reconciliation pass. */
-    --th-warm-text-dark: #2c2c2a;          /* GRAY_700 / GRAY_500 */
-    --th-warm-text-muted: #888780;         /* GRAY_400 */
-    --th-warm-border: #d3d1c7;             /* GRAY_200 */
-    --th-warm-surface: #f7f8fa;            /* SURFACE */
+    --th-warm-text-dark: #2c2c2a; /* GRAY_700 / GRAY_500 */
+    --th-warm-text-muted: #888780; /* GRAY_400 */
+    --th-warm-border: #d3d1c7; /* GRAY_200 */
+    --th-warm-surface: #f7f8fa; /* SURFACE */
 
-    --th-brand-soft: rgba(15, 92, 138, 0.07);     /* TEAL_BG */
-    --th-brand-border-soft: rgba(15, 92, 138, 0.3); /* TEAL_BORDER */
+    --th-brand-soft: rgba(17, 116, 121, 0.07); /* TEAL_BG */
+    --th-brand-border-soft: rgba(17, 116, 121, 0.3); /* TEAL_BORDER */
 
-    --th-error-bright: #ef4444;            /* ERROR */
-    --th-error-bright-soft: #fca5a5;       /* ERROR_SOFT */
+    --th-error-bright: #ef4444; /* ERROR */
+    --th-error-bright-soft: #fca5a5; /* ERROR_SOFT */
     --th-error-bright-bg: rgba(239, 68, 68, 0.04); /* ERROR_BG */
     --th-error-bright-ring: rgba(239, 68, 68, 0.1); /* ERROR_RING */
 
-    --th-success-bright: #22c55e;          /* SUCCESS */
-    --th-success-bright-bg: rgba(34, 197, 94, 0.08);     /* SUCCESS_BG */
-    --th-success-bright-border: rgba(34, 197, 94, 0.2);  /* SUCCESS_BORDER */
+    --th-success-bright: #22c55e; /* SUCCESS */
+    --th-success-bright-bg: rgba(34, 197, 94, 0.08); /* SUCCESS_BG */
+    --th-success-bright-border: rgba(34, 197, 94, 0.2); /* SUCCESS_BORDER */
 
-    --th-warn-bright: #f59e0b;             /* WARN */
-    --th-warn-bright-bg: rgba(245, 158, 11, 0.1);        /* WARN_BG */
-    --th-warn-bright-border: rgba(245, 158, 11, 0.25);   /* WARN_BORDER */
+    --th-warn-bright: #f59e0b; /* WARN */
+    --th-warn-bright-bg: rgba(245, 158, 11, 0.1); /* WARN_BG */
+    --th-warn-bright-border: rgba(245, 158, 11, 0.25); /* WARN_BORDER */
 
     /* ─── 2. SPACING SCALE ───────────────────────────────────── */
     --th-space-0: 0px;
@@ -312,58 +315,58 @@
     --th-z-tooltip: 500;
 
     /* ─── SHADCN COMPATIBILITY (mapped from th-tokens) ───────── */
-    --background: 220 33% 97%;
-    --foreground: 218 72% 14%;
+    --background: 180 25% 97%;
+    --foreground: 183 55% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 218 72% 14%;
+    --card-foreground: 183 55% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 218 72% 14%;
-    --primary: 226 64% 33%;
+    --popover-foreground: 183 55% 9%;
+    --primary: 183 76% 27%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 33% 95%;
-    --secondary-foreground: 218 68% 21%;
-    --muted: 220 33% 95%;
-    --muted-foreground: 222 16% 44%;
-    --accent: 224 64% 54%;
+    --secondary: 180 25% 95%;
+    --secondary-foreground: 183 68% 16%;
+    --muted: 180 25% 95%;
+    --muted-foreground: 185 12% 40%;
+    --accent: 183 72% 28%;
     --accent-foreground: 0 0% 100%;
     --destructive: 5 76% 40%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 21% 92%;
-    --input: 220 21% 92%;
-    --ring: 226 64% 33%;
+    --border: 180 15% 92%;
+    --input: 180 15% 92%;
+    --ring: 183 76% 27%;
 
     /* Sidebar (shadcn) — light, content-first */
-    --sidebar-background: 0 0% 100%;          /* #FFFFFF */
-    --sidebar-foreground: 222 38% 20%;        /* #1F2A44 body */
-    --sidebar-primary: 226 64% 33%;           /* #0F5C8A active nav */
+    --sidebar-background: 0 0% 100%; /* #FFFFFF */
+    --sidebar-foreground: 185 30% 17%; /* #1F2A44 body */
+    --sidebar-primary: 183 76% 27%; /* #117479 active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 96%;            /* #E8F2F8 hover bg */
-    --sidebar-accent-foreground: 218 68% 21%; /* #0A4670 hover text */
-    --sidebar-border: 220 21% 92%;            /* #E4E8F0 */
-    --sidebar-ring: 226 64% 33%;
+    --sidebar-accent: 180 60% 94%; /* #e6fafa hover bg */
+    --sidebar-accent-foreground: 183 68% 16%; /* #0d4548 hover text */
+    --sidebar-border: 180 15% 92%; /* #E4E8F0 */
+    --sidebar-ring: 183 76% 27%;
 
     /* Legacy dashboard compat (HSL without hsl() wrapper) */
-    --dashboard-bg: 220 33% 97%;
-    --dashboard-primary: 218 72% 14%;
-    --dashboard-heading: 218 68% 21%;
-    --dashboard-body: 222 38% 20%;
-    --dashboard-title: 218 68% 21%;
-    --dashboard-stroke: 220 21% 92%;
-    --dashboard-neutral-06: 222 14% 66%;
-    --dashboard-neutral-07: 222 16% 44%;
-    --dashboard-text: 218 72% 14%;
+    --dashboard-bg: 180 25% 97%;
+    --dashboard-primary: 183 55% 9%;
+    --dashboard-heading: 183 68% 16%;
+    --dashboard-body: 185 30% 17%;
+    --dashboard-title: 183 68% 16%;
+    --dashboard-stroke: 180 15% 92%;
+    --dashboard-neutral-06: 183 12% 62%;
+    --dashboard-neutral-07: 185 12% 40%;
+    --dashboard-text: 183 55% 9%;
 
     /* Legacy stats (HSL) — indigo palette tints */
-    --stats-impression-bg: 224 64% 96%;
-    --stats-impression-icon-bg: 224 60% 91%;
-    --stats-bookings-bg: 224 50% 94%;
-    --stats-bookings-icon-bg: 224 45% 86%;
-    --stats-properties-bg: 220 33% 95%;
-    --stats-properties-icon-bg: 224 60% 91%;
+    --stats-impression-bg: 180 60% 94%;
+    --stats-impression-icon-bg: 180 45% 89%;
+    --stats-bookings-bg: 180 40% 92%;
+    --stats-bookings-icon-bg: 180 38% 84%;
+    --stats-properties-bg: 180 25% 95%;
+    --stats-properties-icon-bg: 180 45% 89%;
     --stats-earnings-bg: 39 53% 92%;
     --stats-earnings-icon-bg: 39 53% 78%;
-    --stats-clicks-bg: 220 50% 95%;
-    --stats-clicks-icon-bg: 224 60% 91%;
+    --stats-clicks-bg: 180 40% 93%;
+    --stats-clicks-icon-bg: 180 45% 89%;
 
     /* Legacy status (HSL) */
     --status-orange-bg: 38 100% 95%;
@@ -374,32 +377,32 @@
     --status-green-text: 120 100% 36%;
 
     /* Legacy misc */
-    --booking-link: 226 64% 33%;
-    --nav-tree-line: 220 21% 92%;
+    --booking-link: 183 76% 27%;
+    --nav-tree-line: 180 15% 92%;
 
     /* Legacy auth */
-    --auth-blackish-green: #0a2b40;
+    --auth-blackish-green: #0a1c1c;
     --auth-neutral-06: #9aa3b5;
-    --auth-neutral-07: #0f5c8a;
-    --auth-primary: #0f5c8a;
+    --auth-neutral-07: #117479;
+    --auth-primary: #117479;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(31, 42, 68, 0.75);
 
     /* Legacy naming aliases (DO NOT use in new code) */
     --Background: #f6f8fb;
-    --pRIMARY: #0f5c8a;
-    --Black-Heading: #0a2b40;
+    --pRIMARY: #117479;
+    --Black-Heading: #0a1c1c;
     --Black-Stroke: #e4e8f0;
     --White: #fff;
     --Title: #1f2a44;
     --Stroke: #e4e8f0;
     --Primary-0: #fff;
     --Neutral-06: #9aa3b5;
-    --Neutral-07: #0f5c8a;
+    --Neutral-07: #117479;
     --Body: #1f2a44;
-    --Secondary-30: #e8f2f8;
-    --Heading: #0a2b40;
-    --Text: #0a2b40;
+    --Secondary-30: #e6fafa;
+    --Heading: #0a1c1c;
+    --Text: #0a1c1c;
     --16: 16px;
     --4: 4px;
     --12: 12px;
@@ -408,31 +411,32 @@
 
   /* ─── DARK MODE ────────────────────────────────────────────── */
   .dark {
-    /* Brand — sky blue leads on dark, navy as fg */
-    --th-brand: #55a9cb;
-    --th-brand-hover: #7abfd6;
-    --th-brand-fg: #001f4b;
+    /* Brand — the logo cyan leads on dark (≈12:1 on the black surfaces) and
+       carries BLACK, matching the delivered black-on-cyan artwork. */
+    --th-brand: #3bd9d9;
+    --th-brand-hover: #5fe0e0;
+    --th-brand-fg: #001414;
 
-    /* Surfaces — deep ocean stack */
-    --th-surface-0: #00080a;
-    --th-surface-1: #000d1a;
-    --th-surface-2: #001530;
-    --th-surface-3: #001f4b;
-    --th-surface-raised: #001530;
+    /* Surfaces — black stack with a faint cyan cast */
+    --th-surface-0: #040808;
+    --th-surface-1: #081010;
+    --th-surface-2: #0c1818;
+    --th-surface-3: #102020;
+    --th-surface-raised: #0c1818;
 
     /* Text */
     --th-text-primary: #ffffff;
-    --th-text-secondary: #55a9cb;
-    --th-text-tertiary: rgba(85, 169, 203, 0.75);
-    --th-text-muted: rgba(85, 169, 203, 0.45);
-    --th-text-placeholder: rgba(85, 169, 203, 0.35);
-    --th-text-inverse: #00080a;
-    --th-text-link: #55a9cb;
+    --th-text-secondary: #3bd9d9;
+    --th-text-tertiary: rgba(59, 217, 217, 0.75);
+    --th-text-muted: rgba(59, 217, 217, 0.45);
+    --th-text-placeholder: rgba(59, 217, 217, 0.35);
+    --th-text-inverse: #040808;
+    --th-text-link: #3bd9d9;
 
     /* Borders */
-    --th-border: rgba(85, 169, 203, 0.15);
-    --th-border-hover: rgba(85, 169, 203, 0.35);
-    --th-border-focus: #55a9cb;
+    --th-border: rgba(59, 217, 217, 0.15);
+    --th-border-hover: rgba(59, 217, 217, 0.35);
+    --th-border-focus: #3bd9d9;
     --th-border-error: #ef4444;
 
     /* Status (dark) */
@@ -442,100 +446,100 @@
     --th-warning-text: #fbbf24;
     --th-error-bg: rgba(239, 68, 68, 0.12);
     --th-error-text: #f87171;
-    --th-info-bg: rgba(85, 169, 203, 0.12);
-    --th-info-text: #55a9cb;
+    --th-info-bg: rgba(59, 217, 217, 0.12);
+    --th-info-text: #3bd9d9;
     --th-purple-bg: rgba(177, 39, 220, 0.12);
     --th-purple-text: #c084fc;
 
     /* Stats dark — ocean palette transparencies */
-    --th-stat-impression: rgba(85, 169, 203, 0.08);
-    --th-stat-impression-icon: rgba(85, 169, 203, 0.14);
-    --th-stat-bookings: rgba(1, 72, 126, 0.12);
-    --th-stat-bookings-icon: rgba(1, 72, 126, 0.2);
-    --th-stat-properties: rgba(85, 169, 203, 0.06);
-    --th-stat-properties-icon: rgba(85, 169, 203, 0.12);
-    --th-stat-earnings: rgba(0, 31, 75, 0.5);
-    --th-stat-earnings-icon: rgba(0, 31, 75, 0.7);
-    --th-stat-clicks: rgba(85, 169, 203, 0.06);
-    --th-stat-clicks-icon: rgba(85, 169, 203, 0.1);
+    --th-stat-impression: rgba(59, 217, 217, 0.08);
+    --th-stat-impression-icon: rgba(59, 217, 217, 0.14);
+    --th-stat-bookings: rgba(18, 128, 134, 0.12);
+    --th-stat-bookings-icon: rgba(18, 128, 134, 0.2);
+    --th-stat-properties: rgba(59, 217, 217, 0.06);
+    --th-stat-properties-icon: rgba(59, 217, 217, 0.12);
+    --th-stat-earnings: rgba(6, 32, 32, 0.5);
+    --th-stat-earnings-icon: rgba(6, 32, 32, 0.7);
+    --th-stat-clicks: rgba(59, 217, 217, 0.06);
+    --th-stat-clicks-icon: rgba(59, 217, 217, 0.1);
 
     /* Interactive dark */
-    --th-ring: rgba(85, 169, 203, 0.25);
+    --th-ring: rgba(59, 217, 217, 0.25);
     --th-ring-error: rgba(239, 68, 68, 0.18);
-    --th-overlay: rgba(0, 8, 10, 0.65);
-    --th-booking-link: #55a9cb;
+    --th-overlay: rgba(2, 8, 8, 0.65);
+    --th-booking-link: #3bd9d9;
 
     /* Accent dark */
-    --th-accent: #55a9cb;
-    --th-accent-hover: #7abfd6;
-    --th-accent-fg: #001f4b;
-    --th-accent-subtle: #001530;
-    --th-accent-muted: #001f4b;
+    --th-accent: #3bd9d9;
+    --th-accent-hover: #5fe0e0;
+    --th-accent-fg: #102020;
+    --th-accent-subtle: #0c1818;
+    --th-accent-muted: #102020;
 
     /* Shadows dark */
-    --th-shadow-xs: 0 1px 2px rgba(0, 8, 10, 0.25);
-    --th-shadow-sm: 0 1px 3px rgba(0, 8, 10, 0.35), 0 1px 2px rgba(0, 8, 10, 0.25);
-    --th-shadow-md: 0 4px 6px rgba(0, 8, 10, 0.35), 0 2px 4px rgba(0, 8, 10, 0.25);
-    --th-shadow-lg: 0 8px 24px rgba(0, 8, 10, 0.45), 0 2px 8px rgba(0, 8, 10, 0.25);
-    --th-shadow-xl: 0 16px 40px rgba(0, 8, 10, 0.55), 0 4px 12px rgba(0, 8, 10, 0.35);
-    --th-shadow-2xl: 0 24px 56px rgba(0, 8, 10, 0.65);
+    --th-shadow-xs: 0 1px 2px rgba(2, 8, 8, 0.25);
+    --th-shadow-sm: 0 1px 3px rgba(2, 8, 8, 0.35), 0 1px 2px rgba(2, 8, 8, 0.25);
+    --th-shadow-md: 0 4px 6px rgba(2, 8, 8, 0.35), 0 2px 4px rgba(2, 8, 8, 0.25);
+    --th-shadow-lg: 0 8px 24px rgba(2, 8, 8, 0.45), 0 2px 8px rgba(2, 8, 8, 0.25);
+    --th-shadow-xl: 0 16px 40px rgba(2, 8, 8, 0.55), 0 4px 12px rgba(2, 8, 8, 0.35);
+    --th-shadow-2xl: 0 24px 56px rgba(2, 8, 8, 0.65);
 
     /* Congrats dark */
     --th-congrats-sec-400: #9ca3af;
     --th-congrats-sec-500: #d1d5db;
 
     /* shadcn dark compat */
-    --background: 192 100% 2%;
+    --background: 180 30% 3%;
     --foreground: 0 0% 100%;
-    --card: 215 100% 8%;
+    --card: 183 40% 7%;
     --card-foreground: 0 0% 100%;
-    --popover: 215 100% 8%;
+    --popover: 183 40% 7%;
     --popover-foreground: 0 0% 100%;
-    --primary: 197 53% 57%;
-    --primary-foreground: 215 100% 15%;
-    --secondary: 215 100% 15%;
+    --primary: 180 68% 54%;
+    --primary-foreground: 180 100% 4%;
+    --secondary: 183 45% 9%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 215 100% 15%;
-    --muted-foreground: 197 53% 57%;
-    --accent: 215 100% 15%;
+    --muted: 183 45% 9%;
+    --muted-foreground: 180 68% 54%;
+    --accent: 183 45% 9%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 215 80% 20%;
-    --input: 215 80% 20%;
-    --ring: 197 53% 57%;
+    --border: 183 40% 18%;
+    --input: 183 40% 18%;
+    --ring: 180 68% 54%;
 
-    --sidebar-background: 215 100% 15%;
+    --sidebar-background: 183 40% 6%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 197 53% 57%;
-    --sidebar-primary-foreground: 192 100% 2%;
-    --sidebar-accent: 215 100% 12%;
+    --sidebar-primary: 180 68% 54%;
+    --sidebar-primary-foreground: 180 30% 3%;
+    --sidebar-accent: 183 45% 12%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 80% 18%;
-    --sidebar-ring: 197 53% 57%;
+    --sidebar-border: 183 40% 16%;
+    --sidebar-ring: 180 68% 54%;
 
     /* Legacy dashboard dark */
-    --dashboard-bg: 192 100% 2%;
+    --dashboard-bg: 180 30% 3%;
     --dashboard-primary: 0 0% 100%;
     --dashboard-heading: 0 0% 100%;
-    --dashboard-body: 197 53% 57%;
+    --dashboard-body: 180 68% 54%;
     --dashboard-title: 0 0% 90%;
-    --dashboard-stroke: 215 80% 20%;
-    --dashboard-neutral-06: 197 30% 50%;
-    --dashboard-neutral-07: 197 40% 60%;
+    --dashboard-stroke: 183 40% 18%;
+    --dashboard-neutral-06: 183 25% 48%;
+    --dashboard-neutral-07: 183 30% 55%;
     --dashboard-text: 0 0% 100%;
 
     /* Legacy stats dark — ocean tones */
-    --stats-impression-bg: 197 30% 10%;
-    --stats-impression-icon-bg: 197 35% 15%;
-    --stats-bookings-bg: 206 40% 10%;
-    --stats-bookings-icon-bg: 206 45% 15%;
-    --stats-properties-bg: 197 30% 10%;
-    --stats-properties-icon-bg: 197 35% 15%;
-    --stats-earnings-bg: 215 50% 10%;
-    --stats-earnings-icon-bg: 215 55% 15%;
-    --stats-clicks-bg: 197 30% 10%;
-    --stats-clicks-icon-bg: 197 35% 15%;
+    --stats-impression-bg: 183 30% 10%;
+    --stats-impression-icon-bg: 183 35% 15%;
+    --stats-bookings-bg: 183 40% 10%;
+    --stats-bookings-icon-bg: 183 45% 15%;
+    --stats-properties-bg: 183 30% 10%;
+    --stats-properties-icon-bg: 183 35% 15%;
+    --stats-earnings-bg: 183 50% 10%;
+    --stats-earnings-icon-bg: 183 55% 15%;
+    --stats-clicks-bg: 183 30% 10%;
+    --stats-clicks-icon-bg: 183 35% 15%;
 
     /* Legacy status dark */
     --status-orange-bg: 38 30% 15%;
@@ -545,16 +549,16 @@
     --status-green-bg: 120 30% 15%;
     --status-green-text: 120 60% 60%;
 
-    --booking-link: 197 53% 57%;
-    --nav-tree-line: 215 80% 20%;
+    --booking-link: 180 68% 54%;
+    --nav-tree-line: 183 40% 18%;
 
     /* Legacy auth dark */
-    --auth-blackish-green: #55a9cb;
-    --auth-neutral-06: rgba(85, 169, 203, 0.5);
-    --auth-neutral-07: rgba(85, 169, 203, 0.7);
-    --auth-primary: #55a9cb;
-    --auth-primary-0: #000d1a;
-    --auth-text-muted: rgba(85, 169, 203, 0.75);
+    --auth-blackish-green: #3bd9d9;
+    --auth-neutral-06: rgba(59, 217, 217, 0.5);
+    --auth-neutral-07: rgba(59, 217, 217, 0.7);
+    --auth-primary: #3bd9d9;
+    --auth-primary-0: #081010;
+    --auth-text-muted: rgba(59, 217, 217, 0.75);
   }
 
   /* ─── BASE RESETS ──────────────────────────────────────────── */
@@ -1210,9 +1214,9 @@
     background: var(--th-accent-subtle) !important;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
   }
-  /* Midnight Indigo: primary CTA = #0F5C8A ds-deep, navy hover. */
+  /* Logo Cyan: primary CTA = #117479 ds-deep, navy hover. */
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(15, 92, 138, 0.20);
+    box-shadow: 0 4px 20px rgba(17, 116, 121, 0.2);
   }
   .onb-btn-primary {
     background: var(--ds-deep);
@@ -1222,7 +1226,7 @@
   .onb-btn-primary:hover:not(:disabled) {
     background: var(--ds-navy);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(15, 92, 138, 0.28);
+    box-shadow: 0 6px 24px rgba(17, 116, 121, 0.28);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1248,7 +1252,7 @@
     background: var(--ds-sky) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(15, 92, 138, 0.15);
+    box-shadow: 0 2px 12px rgba(17, 116, 121, 0.15);
   }
 
   /* Congratulations */

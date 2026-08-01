@@ -1,60 +1,51 @@
-import React, { useState } from 'react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
-  isOpen,
-  onOpenChange
-}) => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpenChange }) => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const resetForm = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Please fill in all fields');
+      toast.error("Please fill in all fields");
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error('New password and confirm password do not match');
+      toast.error("New password and confirm password do not match");
       return;
     }
     if (newPassword.length < 8) {
-      toast.error('New password must be at least 8 characters');
+      toast.error("New password must be at least 8 characters");
       return;
     }
 
     setSubmitting(true);
     try {
-      const token =
-        localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
-      const res = await fetch('/api/admin/auth/change-password', {
-        method: 'POST',
+      const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
+      const res = await fetch("/api/admin/auth/change-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -64,15 +55,15 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
         const msg =
           data?.error?.message ||
           data?.message ||
-          (res.status === 401 ? 'Incorrect current password' : 'Failed to change password');
+          (res.status === 401 ? "Incorrect current password" : "Failed to change password");
         toast.error(msg);
         return;
       }
-      toast.success('Password changed successfully');
+      toast.success("Password changed successfully");
       resetForm();
       onOpenChange(false);
     } catch {
-      toast.error('Network error. Please try again.');
+      toast.error("Network error. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -88,7 +79,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       <DialogContent className="sm:max-w-[540px] p-0 bg-white border-0 shadow-xl">
         {/* Modal Background Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-25 z-[-1]" />
-        
+
         {/* Modal Content */}
         <div className="relative bg-white rounded-xl p-8">
           {/* Close Button */}
@@ -114,8 +105,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <div className="space-y-5">
               {/* Current Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="currentPassword" 
+                <Label
+                  htmlFor="currentPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Current Password
@@ -132,8 +123,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
               {/* New Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="newPassword" 
+                <Label
+                  htmlFor="newPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Create New Password
@@ -150,8 +141,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
               {/* Confirm Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="confirmPassword" 
+                <Label
+                  htmlFor="confirmPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Confirm Password
@@ -172,9 +163,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-dashboard-primary hover:bg-[#14709F] text-white py-3 px-8 rounded-full text-base font-geist transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-dashboard-primary hover:bg-[#128086] text-white py-3 px-8 rounded-full text-base font-geist transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Saving…' : 'Re-set Password'}
+                {submitting ? "Saving…" : "Re-set Password"}
               </Button>
             </div>
           </form>

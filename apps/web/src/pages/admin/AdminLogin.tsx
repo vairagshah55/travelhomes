@@ -134,7 +134,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0d9488] focus:ring-[#0d9488]"
+                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#117479] focus:ring-[#117479]"
                   placeholder="Enter admin email"
                   required
                 />
@@ -150,7 +150,7 @@ const AdminLogin = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#0d9488] focus:ring-[#0d9488] pr-12"
+                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#117479] focus:ring-[#117479] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
@@ -172,7 +172,7 @@ const AdminLogin = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#0d9488] bg-white border-gray-300 rounded focus:ring-[#0d9488]"
+                  className="w-4 h-4 text-[#117479] bg-white border-gray-300 rounded focus:ring-[#117479]"
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-700">
                   Keep me signed in
@@ -183,7 +183,7 @@ const AdminLogin = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-[#0d9488] to-[#0f766e] hover:from-[#0f766e] hover:to-[#0d9488] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full h-12 bg-gradient-to-r from-[#117479] to-[#0d5c60] hover:from-[#0d5c60] hover:to-[#117479] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">

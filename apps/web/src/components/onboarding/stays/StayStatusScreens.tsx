@@ -40,7 +40,7 @@ export function StayStatusScreen({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-th-warm-surface p-6">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(10,70,112,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-[0_8px_30px_rgba(13, 69, 72,0.08)] border border-[#EBEBEB] p-8 flex flex-col items-center gap-6 text-center">
         <div
           className="w-16 h-16 rounded-full flex items-center justify-center"
           style={{
@@ -55,7 +55,7 @@ export function StayStatusScreen({
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-[#0A4670]">
+          <h2 className="text-xl font-semibold text-[#0d4548]">
             {isPending ? "Submission Under Review" : "Listing Approved!"}
           </h2>
           <p className="text-sm leading-relaxed text-th-warm-text-muted">
@@ -66,7 +66,7 @@ export function StayStatusScreen({
         </div>
 
         {primaryPropertyName && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(15,92,138,0.2)]">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(17, 116, 121,0.2)]">
             <Home className="w-4 h-4" />
             {stayType === "entire" ? `Entire ${primaryPropertyName}` : primaryPropertyName}
           </div>

@@ -321,7 +321,7 @@ const Offers = () => {
                 label="Offerings"
                 hint="Everything you've listed"
                 value={stats.total}
-                color="#0d9488"
+                color="#117479"
               />
               <StatTile
                 index={1}

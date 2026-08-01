@@ -80,7 +80,7 @@ const ManagementOverview = () => {
               transition={{ delay: i * 0.06, duration: 0.28, ease: "easeOut" }}
               onClick={() => navigate(c.path)}
               aria-label={`${c.title} — ${c.desc}`}
-              className="group relative overflow-hidden text-left bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5 outline-none transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.10)] hover:border-gray-300 focus-visible:ring-2 focus-visible:ring-[#0d9488] focus-visible:ring-offset-2"
+              className="group relative overflow-hidden text-left bg-white rounded-2xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-5 outline-none transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.10)] hover:border-gray-300 focus-visible:ring-2 focus-visible:ring-[#117479] focus-visible:ring-offset-2"
             >
               {/* Top accent stripe — the card's hue bleeding from the icon corner */}
               <span
@@ -98,7 +98,7 @@ const ManagementOverview = () => {
                 </span>
                 <ArrowRight
                   size={18}
-                  className="text-gray-300 transition-all duration-200 group-hover:text-[#0d9488] group-hover:translate-x-1"
+                  className="text-gray-300 transition-all duration-200 group-hover:text-[#117479] group-hover:translate-x-1"
                 />
               </div>
 

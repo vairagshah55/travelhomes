@@ -40,7 +40,7 @@ function FilterButton({
       onClick={onClick}
       className={`flex items-center gap-3 max-md:gap-1 px-4 py-2 rounded-full transition-colors ${
         active
-          ? "bg-[#0F5C8A] dark:bg-white dark:text-black text-white border border-black"
+          ? "bg-[#117479] dark:bg-white dark:text-black text-white border border-black"
           : "bg-white/10 text-gray-900 dark:bg-black dark:text-white hover:bg-gray-200 border border-gray-200"
       }`}
     >
@@ -152,7 +152,7 @@ function Header({
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <Button
-            className="hidden md:flex bg-[#0F5C8A] text-white hover:bg-[#0A4670] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+            className="hidden md:flex bg-[#117479] text-white hover:bg-[#0d4548] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ function Header({
                 className={`${
                   isTransparent
                     ? "bg-white/90 backdrop-blur-sm text-black hover:bg-white/100"
-                    : "bg-[#0F5C8A] text-white hover:bg-[#0A4670]"
+                    : "bg-[#117479] text-white hover:bg-[#0d4548]"
                 } rounded-full px-4 md:px-6 h-10`}
               >
                 Register

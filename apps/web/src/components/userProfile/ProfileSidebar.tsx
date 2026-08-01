@@ -32,7 +32,7 @@ const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
         {/* Back */}
         <button
           onClick={() => navigate("/")}
-          className="max-md:hidden absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#0F5C8A] transition-colors"
+          className="max-md:hidden absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#117479] transition-colors"
         >
           <ChevronLeft size={14} />
           <span>Back</span>
@@ -40,16 +40,14 @@ const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
 
         {/* Avatar + Name */}
         <div className="text-center pt-6 pb-6">
-          <Avatar className="w-28 h-28 mx-auto mb-4 ring-4 ring-[#E8F2F8]">
+          <Avatar className="w-28 h-28 mx-auto mb-4 ring-4 ring-[#e6fafa]">
             {photoSrc && <AvatarImage src={photoSrc} alt={`${fullName} avatar`} />}
-            <AvatarFallback className="bg-[#E8F2F8] text-[#0F5C8A] text-[28px] font-bold">
+            <AvatarFallback className="bg-[#e6fafa] text-[#117479] text-[28px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <h2 className="text-[18px] font-bold text-gray-900 leading-tight">{fullName}</h2>
-          {user?.email && (
-            <p className="text-[12.5px] text-gray-500 mt-1 truncate">{user.email}</p>
-          )}
+          {user?.email && <p className="text-[12.5px] text-gray-500 mt-1 truncate">{user.email}</p>}
         </div>
 
         <div className="h-px bg-gray-100 -mx-6 my-1" />
@@ -65,15 +63,31 @@ const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
 
         {/* Verification chips */}
         <div className="mt-4 space-y-2">
-          <VerifyChip ok={emailVerified} okLabel="Email Verified" pendingLabel="Email Not Verified" />
-          <VerifyChip ok={mobileVerified} okLabel="Mobile Verified" pendingLabel="Mobile Not Verified" />
+          <VerifyChip
+            ok={emailVerified}
+            okLabel="Email Verified"
+            pendingLabel="Email Not Verified"
+          />
+          <VerifyChip
+            ok={mobileVerified}
+            okLabel="Mobile Verified"
+            pendingLabel="Mobile Not Verified"
+          />
         </div>
       </div>
     </aside>
   );
 };
 
-function VerifyChip({ ok, okLabel, pendingLabel }: { ok: boolean; okLabel: string; pendingLabel: string }) {
+function VerifyChip({
+  ok,
+  okLabel,
+  pendingLabel,
+}: {
+  ok: boolean;
+  okLabel: string;
+  pendingLabel: string;
+}) {
   return (
     <div
       className={`inline-flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium ${
@@ -82,7 +96,11 @@ function VerifyChip({ ok, okLabel, pendingLabel }: { ok: boolean; okLabel: strin
           : "bg-amber-50 text-amber-700 ring-1 ring-amber-200/70"
       }`}
     >
-      {ok ? <ShieldCheck size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
+      {ok ? (
+        <ShieldCheck size={14} className="shrink-0" />
+      ) : (
+        <AlertCircle size={14} className="shrink-0" />
+      )}
       <span>{ok ? okLabel : pendingLabel}</span>
     </div>
   );

@@ -46,13 +46,9 @@ export function CalendarDropdown({
   const dayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   const nextMonth = () =>
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
-    );
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
   const prevMonth = () =>
-    setCurrentMonth(
-      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1)
-    );
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -108,7 +104,7 @@ export function CalendarDropdown({
   const renderCalendar = (monthOffset: number) => {
     const displayMonth = new Date(
       currentMonth.getFullYear(),
-      currentMonth.getMonth() + monthOffset
+      currentMonth.getMonth() + monthOffset,
     );
     const days = getDaysInMonth(displayMonth);
 
@@ -127,7 +123,7 @@ export function CalendarDropdown({
           {monthOffset === 0 && (
             <button
               onClick={prevMonth}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-full transition-colors z-30 absolute left-0"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#128086] rounded-full transition-colors z-30 absolute left-0"
             >
               <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -138,14 +134,14 @@ export function CalendarDropdown({
           {monthOffset === 1 ? (
             <button
               onClick={nextMonth}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-full transition-colors z-30 absolute right-0"
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#128086] rounded-full transition-colors z-30 absolute right-0"
             >
               <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
           ) : (
             <button
               onClick={nextMonth}
-              className="md:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-[#14709F] rounded-full transition-colors z-30 absolute right-0"
+              className="md:hidden p-1.5 hover:bg-gray-100 dark:hover:bg-[#128086] rounded-full transition-colors z-30 absolute right-0"
             >
               <ChevronRight className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
@@ -154,11 +150,10 @@ export function CalendarDropdown({
 
         <div className="grid grid-cols-7 gap-0.5">
           {dayNames.map((day) => (
-            <div
-              key={day}
-              className="h-7 flex items-center justify-center"
-            >
-              <span className="text-gray-400 dark:text-gray-500 text-[11px] font-medium uppercase tracking-wider">{day}</span>
+            <div key={day} className="h-7 flex items-center justify-center">
+              <span className="text-gray-400 dark:text-gray-500 text-[11px] font-medium uppercase tracking-wider">
+                {day}
+              </span>
             </div>
           ))}
 
@@ -194,7 +189,7 @@ export function CalendarDropdown({
                           ? "border-2 border-primary rounded-full text-primary font-bold"
                           : inRange
                             ? "text-primary border rounded-full font-medium"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#14709F]"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#128086]"
                     }
                   `}
                 >
@@ -212,7 +207,8 @@ export function CalendarDropdown({
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      className="absolute top-[calc(100%+24px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800">
+      className="absolute top-[calc(100%+24px)] left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-900 rounded-2xl shadow-xl z-[9999] w-[95vw] md:w-auto max-w-[360px] md:max-w-none p-4 md:p-5 border border-gray-100 dark:border-gray-800"
+    >
       <div className="flex flex-col md:flex-row gap-6 items-start justify-center">
         <div className="w-full md:w-auto">{renderCalendar(0)}</div>
         <div className="hidden md:block w-[1px] self-stretch bg-gray-100 dark:bg-gray-800" />
@@ -227,7 +223,7 @@ export function CalendarDropdown({
         </button>
         <button
           onClick={handleDone}
-          className="bg-[#0F5C8A] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-[#14709F] active:scale-[0.98] transition-all text-xs shadow-sm"
+          className="bg-[#117479] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-[#128086] active:scale-[0.98] transition-all text-xs shadow-sm"
         >
           Done
         </button>

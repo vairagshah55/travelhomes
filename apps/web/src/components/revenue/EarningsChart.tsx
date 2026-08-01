@@ -101,8 +101,8 @@ export const EarningsChart: React.FC<{
             <AreaChart data={chartData} margin={{ top: 8, right: 12, left: 4, bottom: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#0d9488" stopOpacity={0.28} />
-                  <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                  <stop offset="0%" stopColor="#117479" stopOpacity={0.28} />
+                  <stop offset="95%" stopColor="#117479" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -129,17 +129,17 @@ export const EarningsChart: React.FC<{
                 width={56}
               />
               <Tooltip
-                cursor={{ stroke: "#0d9488", strokeWidth: 1, strokeDasharray: "3 3" }}
+                cursor={{ stroke: "#117479", strokeWidth: 1, strokeDasharray: "3 3" }}
                 content={<ChartTooltip valueFormatter={(v) => inr(v)} />}
               />
               <Area
                 type="monotone"
                 dataKey="value"
-                stroke="#0d9488"
+                stroke="#117479"
                 strokeWidth={2.25}
                 fillOpacity={1}
                 fill={`url(#${gradientId})`}
-                activeDot={{ r: 4, strokeWidth: 2, stroke: "#ffffff", fill: "#0d9488" }}
+                activeDot={{ r: 4, strokeWidth: 2, stroke: "#ffffff", fill: "#117479" }}
               />
             </AreaChart>
           </ResponsiveContainer>

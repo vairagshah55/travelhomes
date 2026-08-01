@@ -160,16 +160,14 @@ export function HiddenPdfView({
                 <span className="text-base font-normal text-gray-600">/ {priceLabel}</span>
               </p>
               <div className="w-full h-px bg-gray-200 my-4" />
-              <p className="text-sm text-gray-500">
-                Prices may vary based on dates and guests.
-              </p>
+              <p className="text-sm text-gray-500">Prices may vary based on dates and guests.</p>
             </div>
 
             {vendor && (
               <div className="bg-white p-6 rounded-xl border border-gray-200">
                 <h3 className="font-bold text-lg mb-4">Hosted by</h3>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-[#0F5C8A] text-white rounded-full flex items-center justify-center text-xl font-bold">
+                  <div className="w-12 h-12 bg-[#117479] text-white rounded-full flex items-center justify-center text-xl font-bold">
                     {(vendor.brandName || vendor.personName || "V")[0]}
                   </div>
                   <div>

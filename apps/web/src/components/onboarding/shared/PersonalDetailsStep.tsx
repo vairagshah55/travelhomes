@@ -10,13 +10,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { cn, getImageUrl } from "@/lib/utils";
-import {
-  SectionCard,
-  Field,
-  IconInput,
-  IconSelect,
-  StepHeader,
-} from "./primitives";
+import { SectionCard, Field, IconInput, IconSelect, StepHeader } from "./primitives";
 
 interface PersonalDetailsStepProps {
   values: {
@@ -232,7 +226,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 uploadHasError
                   ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
                   : idProofImage
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.12)]"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.12)]"
                     : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
               )}
             >

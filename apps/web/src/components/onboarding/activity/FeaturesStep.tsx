@@ -67,9 +67,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           </span>
           <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
-        <h1
-          className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
-        >
+        <h1 className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0d4548] tracking-[-0.015em] leading-[1.15]">
           Activity Features
         </h1>
         <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
@@ -100,12 +98,10 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
               key={`custom-${idx}`}
               type="button"
               onClick={() => onRemoveCustomFeature(idx)}
-              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] cursor-pointer text-th-brand"
+              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] cursor-pointer text-th-brand"
             >
               <MoreHorizontal size={14} className="text-th-brand" />
-              <span className="text-[13px] font-semibold tracking-[-0.01em]">
-                {customFeature}
-              </span>
+              <span className="text-[13px] font-semibold tracking-[-0.01em]">{customFeature}</span>
               <X size={12} className="text-th-brand" />
             </button>
           ))}
@@ -126,9 +122,9 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 className={cn(
                   "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] text-th-brand"
                     : isRecommended
-                      ? "border-th-brand-border-soft bg-[rgba(15,92,138,0.04)] text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft"
+                      ? "border-th-brand-border-soft bg-[rgba(17, 116, 121,0.04)] text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft"
                       : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
@@ -163,7 +159,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 className={cn(
                   "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] text-th-brand"
                     : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
@@ -179,9 +175,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                     className="w-full h-full object-contain"
                   />
                 </span>
-                <span className="text-[13px] font-semibold tracking-[-0.01em]">
-                  {feature.name}
-                </span>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature.name}</span>
               </button>
             );
           })}
@@ -189,7 +183,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           {/* ── Inline custom input pill ── */}
           {customFeatures.length < 20 &&
             (showCustomFeaturesInput ? (
-              <div className="flex items-center gap-1.5 pl-[14px] pr-[6px] py-1 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(15,92,138,0.20)]">
+              <div className="flex items-center gap-1.5 pl-[14px] pr-[6px] py-1 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)]">
                 <input
                   ref={inputRef}
                   type="text"
@@ -237,9 +231,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 className="flex items-center gap-1.5 px-[14px] py-2 rounded-full border-[1.5px] border-dashed border-th-warm-border bg-transparent cursor-pointer transition-all duration-150 text-th-warm-text-muted hover:border-th-brand hover:text-th-brand"
               >
                 <Plus size={13} strokeWidth={2.5} />
-                <span className="text-[13px] font-semibold tracking-[-0.01em]">
-                  Add custom
-                </span>
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">Add custom</span>
               </button>
             ))}
         </div>

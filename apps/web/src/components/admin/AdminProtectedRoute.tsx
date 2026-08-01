@@ -50,7 +50,7 @@ const AccessUnavailable = ({ message, onRetry }: { message: string; onRetry: () 
         <div className="mt-5 flex items-center justify-center gap-2">
           <button
             onClick={onRetry}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0d9488] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#0f766e]"
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#117479] px-4 text-[13px] font-semibold text-white transition-colors hover:bg-[#0d5c60]"
           >
             <RotateCcw size={15} /> Try again
           </button>

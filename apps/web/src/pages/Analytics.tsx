@@ -409,7 +409,7 @@ const Analytics = () => {
               onFilterChange={setMonthlyFilter}
               data={monthlyQuery.data ?? []}
               dataKey="earnings"
-              color="#0d9488"
+              color="#117479"
               loading={monthlyQuery.isLoading}
               currency
             />

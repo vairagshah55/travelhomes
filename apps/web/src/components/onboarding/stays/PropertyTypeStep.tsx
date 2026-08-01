@@ -33,7 +33,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
           <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
           style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Types of Property
@@ -51,13 +51,16 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
             Properties
           </p>
           {selectedCount > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(15,92,138,0.20)] rounded-full px-2.5 py-[2px]">
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(17, 116, 121,0.20)] rounded-full px-2.5 py-[2px]">
               {selectedCount} selected
             </span>
           )}
         </div>
 
-        <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))" }}>
+        <div
+          className="grid gap-2.5"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))" }}
+        >
           {propertyTypes.map((property) => {
             const selected = selectedProperties.includes(property.id);
             return (
@@ -68,7 +71,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-2.5 px-2.5 py-[18px] rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)]"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)]"
                     : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >

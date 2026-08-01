@@ -53,7 +53,8 @@ const Login = () => {
     if (!formData.email.trim()) newErrors.email = "Email is required.";
     else if (!EMAIL_RE.test(formData.email)) newErrors.email = "Enter a valid email address.";
     if (!formData.password.trim()) newErrors.password = "Password is required.";
-    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters.";
+    else if (formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters.";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -65,16 +66,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const success = await login(
-        formData.email,
-        formData.password,
-        rememberMe
-      );
+      const success = await login(formData.email, formData.password, rememberMe);
       if (success) {
         toast.success("Login successful!");
-        const redirect = sessionStorage.getItem('auth_redirect');
+        const redirect = sessionStorage.getItem("auth_redirect");
         if (redirect) {
-          sessionStorage.removeItem('auth_redirect');
+          sessionStorage.removeItem("auth_redirect");
           navigate(redirect);
         } else {
           navigate("/");
@@ -83,11 +80,11 @@ const Login = () => {
         setServerError("Invalid email or password.");
       }
     } catch (err: any) {
-      const msg = err?.message || '';
+      const msg = err?.message || "";
       const status = err?.status ?? err?.statusCode ?? err?.response?.status;
       if (status === 429 || /too many|rate.?limit/i.test(msg)) {
         setServerError("Too many attempts. Please wait a minute and try again.");
-      } else if (msg.includes('verify your OTP')) {
+      } else if (msg.includes("verify your OTP")) {
         setServerError("Please verify your OTP first. Try registering again.");
       } else {
         setServerError("Something went wrong. Please try again.");
@@ -104,7 +101,10 @@ const Login = () => {
 
         {/* FORM */}
         <div className="w-full lg:w-1/2 max-w-md mx-auto mt-8">
-          <Link to="/" className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-1 mb-6 text-sm font-medium text-gray-900 dark:text-white hover:opacity-70 transition-opacity"
+          >
             <IoIosArrowBack size={18} /> Home
           </Link>
 
@@ -125,9 +125,7 @@ const Login = () => {
                 onBlur={() => validateField("email")}
                 className={`auth-input w-full ${errors.email ? "auth-input-error" : ""}`}
               />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>}
             </div>
 
             {/* PASSWORD */}
@@ -149,12 +147,8 @@ const Login = () => {
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-              {errors.password && (
-                <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>
-              )}
-              {serverError && (
-                <p className="text-red-500 text-xs mt-1.5">{serverError}</p>
-              )}
+              {errors.password && <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>}
+              {serverError && <p className="text-red-500 text-xs mt-1.5">{serverError}</p>}
             </div>
 
             <label className="hidden items-center gap-2 cursor-pointer">
@@ -178,7 +172,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-[#14709F] dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full bg-gray-900 dark:bg-white dark:text-black text-white py-3 rounded-full font-medium text-sm hover:bg-[#128086] dark:hover:bg-gray-100 transition-all duration-200 shadow-md hover:shadow-lg"
             >
               {loading ? "Signing in..." : "Login"}
             </button>
@@ -186,7 +180,10 @@ const Login = () => {
 
           <p className="text-sm text-center mt-6 text-gray-500 dark:text-gray-400">
             Don't have an account?
-            <Link to="/register" className="font-semibold ml-1 text-gray-900 dark:text-white hover:underline">
+            <Link
+              to="/register"
+              className="font-semibold ml-1 text-gray-900 dark:text-white hover:underline"
+            >
               Register
             </Link>
           </p>
@@ -200,7 +197,7 @@ const Login = () => {
           <button
             onClick={loginWithGoogle}
             disabled={googleLoading}
-            className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 py-3 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#14709F] transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 py-3 rounded-full text-sm font-medium hover:bg-gray-50 dark:hover:bg-[#128086] transition-all duration-200"
           >
             <FcGoogle size={22} />
             {googleLoading ? "Signing in..." : "Continue with Google"}

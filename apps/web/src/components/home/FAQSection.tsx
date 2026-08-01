@@ -6,7 +6,11 @@ import { PublicFaq } from "@/lib/api";
 import { FAQSkeleton } from "./skeletons";
 import { ScrollReveal } from "./ScrollReveal";
 
-interface FAQTab { id: string; label: string; isVisible: boolean }
+interface FAQTab {
+  id: string;
+  label: string;
+  isVisible: boolean;
+}
 
 interface FAQSectionProps {
   homepageSections: Record<string, boolean>;
@@ -16,7 +20,13 @@ interface FAQSectionProps {
   visibleFAQTabs: FAQTab[];
 }
 
-export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, visibleFAQTabs }: FAQSectionProps) {
+export function FAQSection({
+  homepageSections,
+  faqs,
+  activeTab,
+  setActiveTab,
+  visibleFAQTabs,
+}: FAQSectionProps) {
   if (!homepageSections["faq"]) return null;
 
   const isLoading = faqs.length === 0;
@@ -24,9 +34,9 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
   const filteredFaqs = (tab: string) =>
     faqs.filter((faq) => {
       const cat = (faq.category || "").toLowerCase();
-      if (tab === "activities")   return cat === "activity";
+      if (tab === "activities") return cat === "activity";
       if (tab === "unique-stays") return cat === "unique stay";
-      if (tab === "caravan")      return cat === "camper van";
+      if (tab === "caravan") return cat === "camper van";
       return false;
     });
 
@@ -45,7 +55,7 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
               >
-                <h2 className="text-center lg:text-left text-2xl md:text-[28px] font-semibold text-[#0A2B40] mb-3 tracking-tight">
+                <h2 className="text-center lg:text-left text-2xl md:text-[28px] font-semibold text-[#0a1c1c] mb-3 tracking-tight">
                   Frequently Asked Questions
                 </h2>
                 <p className="text-[#5F6A82] text-center lg:text-left dark:text-gray-400 max-w-sm mx-auto lg:mx-0 mb-8 text-sm leading-relaxed">
@@ -57,13 +67,16 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList
                   className="w-full rounded-full bg-white dark:bg-gray-900 border border-[#E4E8F0] dark:border-gray-700 p-1 shadow-sm h-auto"
-                  style={{ gridTemplateColumns: `repeat(${visibleFAQTabs.length}, minmax(0, 1fr))`, display: "grid" }}
+                  style={{
+                    gridTemplateColumns: `repeat(${visibleFAQTabs.length}, minmax(0, 1fr))`,
+                    display: "grid",
+                  }}
                 >
                   {visibleFAQTabs.map((tab) => (
                     <TabsTrigger
                       key={tab.id}
                       value={tab.id}
-                      className="rounded-full py-2 text-sm font-semibold capitalize transition-all duration-200 text-[#5F6A82] hover:text-[#0F5C8A] data-[state=active]:bg-[#0F5C8A] data-[state=active]:text-white data-[state=active]:shadow-sm"
+                      className="rounded-full py-2 text-sm font-semibold capitalize transition-all duration-200 text-[#5F6A82] hover:text-[#117479] data-[state=active]:bg-[#117479] data-[state=active]:text-white data-[state=active]:shadow-sm"
                     >
                       {tab.label}
                     </TabsTrigger>
@@ -92,7 +105,9 @@ export function FAQSection({ homepageSections, faqs, activeTab, setActiveTab, vi
                     <FAQItem key={faq._id} question={faq.question} answer={faq.answer || ""} />
                   ))}
                   {filteredFaqs(activeTab).length === 0 && (
-                    <p className="text-[#5F6A82] italic text-sm py-4">No FAQs available for this category.</p>
+                    <p className="text-[#5F6A82] italic text-sm py-4">
+                      No FAQs available for this category.
+                    </p>
                   )}
                 </motion.div>
               </AnimatePresence>

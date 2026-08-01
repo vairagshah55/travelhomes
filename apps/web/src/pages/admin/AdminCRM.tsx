@@ -302,7 +302,7 @@ const AdminCRM: React.FC = () => {
                   "inline-flex items-center gap-2 h-10 px-5 rounded-xl",
                   "bg-app-accent text-app-accent-fg text-[13px] font-semibold",
                   "transition-[background-color,box-shadow] duration-150 hover:bg-app-accent-hover",
-                  "shadow-[0_1px_2px_rgba(13,148,136,0.24),0_6px_16px_-6px_rgba(13,148,136,0.45)]",
+                  "shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-6px_rgba(17, 116, 121,0.45)]",
                   "disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed",
                 )}
               >

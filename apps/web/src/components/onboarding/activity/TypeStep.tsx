@@ -27,9 +27,7 @@ const TypeStep: React.FC<TypeStepProps> = ({ selectedActivities, activityTypes, 
           </span>
           <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
-        <h1
-          className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
-        >
+        <h1 className="font-serif text-[clamp(24px,3.6vw,32px)] font-normal text-[#0d4548] tracking-[-0.015em] leading-[1.15]">
           Types of Activity
         </h1>
         <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
@@ -62,7 +60,7 @@ const TypeStep: React.FC<TypeStepProps> = ({ selectedActivities, activityTypes, 
                 className={cn(
                   "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)] text-th-brand"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)] text-th-brand"
                     : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >

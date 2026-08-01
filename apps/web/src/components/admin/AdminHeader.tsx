@@ -40,8 +40,8 @@ import { useNotificationCount } from "@/hooks/admin/useNotifications";
 /** Shared silhouette for the 44px circular controls (search, bell). */
 const CTRL =
   "border border-[#dce7e5] bg-white text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] " +
-  "hover:border-[#0d9488]/35 hover:text-[#0d9488] hover:shadow-[0_2px_8px_-2px_rgba(13,148,136,0.25)] " +
-  "focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 " +
+  "hover:border-[#117479]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(17, 116, 121,0.25)] " +
+  "focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-[#f1f8f7] outline-none " +
   "transition-[color,border-color,box-shadow] duration-200";
 
@@ -94,12 +94,12 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         <Search
           size={18}
           strokeWidth={2}
-          className="text-[#98a2b3] group-hover:text-[#0d9488] transition-colors"
+          className="text-[#98a2b3] group-hover:text-[#117479] transition-colors"
         />
         <span className="flex-1 text-left text-[#667085] group-hover:text-[#475467] transition-colors">
           Search…
         </span>
-        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#0d9488]/25 group-hover:text-[#0d9488] transition-colors">
+        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#117479]/25 group-hover:text-[#117479] transition-colors">
           ⌘K
         </span>
       </motion.button>
@@ -178,17 +178,17 @@ function HeaderUserInfo() {
       <DropdownMenuTrigger
         className={`group cursor-pointer shrink-0 flex items-center gap-2.5 h-11 pl-1 pr-1 lg:pr-3 rounded-full
           border transition-[background-color,border-color,box-shadow] duration-200 outline-none
-          focus-visible:ring-2 focus-visible:ring-[#0d9488]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
+          focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
           ${
             isOpen
-              ? "bg-white border-[#0d9488]/35 shadow-[0_2px_8px_-2px_rgba(13,148,136,0.25)]"
+              ? "bg-white border-[#117479]/35 shadow-[0_2px_8px_-2px_rgba(17, 116, 121,0.25)]"
               : "bg-transparent border-transparent hover:bg-white hover:border-[#dce7e5]"
           }`}
       >
         <span className="sr-only">My Account</span>
         <figure className="flex items-center gap-2.5">
-          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(13,148,136,0.45)]">
-            <AvatarFallback className="bg-[#0d9488] text-white text-[13px] font-bold">
+          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(17, 116, 121,0.45)]">
+            <AvatarFallback className="bg-[#117479] text-white text-[13px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -218,7 +218,7 @@ function HeaderUserInfo() {
         {/* Identity row — solid brand avatar, name, muted email */}
         <div className="flex items-center gap-3 px-4 py-3.5">
           <Avatar className="size-11 shrink-0">
-            <AvatarFallback className="bg-[#0d9488] text-white text-[14px] font-bold">
+            <AvatarFallback className="bg-[#117479] text-white text-[14px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>

@@ -255,7 +255,7 @@ const Offering = () => {
                   label="Catalog value"
                   hint="Approved listings, per day"
                   value={currencyINR(stats.revenue)}
-                  color="#0d9488"
+                  color="#117479"
                   index={2}
                 />
               </>

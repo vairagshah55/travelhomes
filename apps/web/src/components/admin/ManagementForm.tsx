@@ -452,7 +452,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
                   </button>
                 </div>
               ))}
-              <label className="cursor-pointer w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 grid place-items-center text-gray-400 hover:border-[#0d9488] hover:text-[#0d9488] transition-colors">
+              <label className="cursor-pointer w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 grid place-items-center text-gray-400 hover:border-[#117479] hover:text-[#117479] transition-colors">
                 <div className="flex flex-col items-center gap-1">
                   <Upload size={18} />
                   <span className="text-[11px]">Add</span>
@@ -483,7 +483,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
                       type="checkbox"
                       checked={!!disc.enabled}
                       onChange={(e) => handleDiscountChange(key, "enabled", e.target.checked)}
-                      className="h-4 w-4 accent-[#0d9488]"
+                      className="h-4 w-4 accent-[#117479]"
                     />
                     {label}
                   </label>
@@ -532,7 +532,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             <Button
               type="submit"
               disabled={isLoading}
-              className="px-6 bg-[#0d9488] text-white hover:bg-[#0f766e]"
+              className="px-6 bg-[#117479] text-white hover:bg-[#0d5c60]"
             >
               {isLoading ? "Saving…" : "Save"}
             </Button>

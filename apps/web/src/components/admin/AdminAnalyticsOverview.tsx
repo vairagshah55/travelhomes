@@ -37,7 +37,7 @@ interface CatStats {
 }
 
 const SERVICES: { key: string; label: string; color: string; icon: LucideIcon }[] = [
-  { key: "camper-van", label: "Camper Van", color: "#0F5C8A", icon: Tent },
+  { key: "camper-van", label: "Camper Van", color: "#117479", icon: Tent },
   { key: "unique-stay", label: "Unique Stay", color: "#a855f7", icon: Home },
   { key: "activity", label: "Activity", color: "#f59e0b", icon: Compass },
 ];
@@ -95,7 +95,7 @@ const AdminAnalyticsOverview = () => {
     iconColor: string;
     nav?: string;
   }[] = [
-    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#0d9488" },
+    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#117479" },
     { title: "Total Clicks", value: totals.clicks, icon: MousePointerClick, iconColor: "#3b82f6" },
     { title: "Avg. CTR", value: `${ctr.toFixed(1)}%`, icon: TrendingUp, iconColor: "#22c55e" },
     {

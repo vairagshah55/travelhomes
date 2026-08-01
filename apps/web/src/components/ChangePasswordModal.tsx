@@ -1,102 +1,94 @@
-import React, { useState } from 'react';
-import toast from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { X } from 'lucide-react';
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ 
-  isOpen, 
-  onOpenChange 
-}) => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpenChange }) => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic validation
     if (!currentPassword || !newPassword || !confirmPassword) {
-      toast.error('Please fill in all fields', {
+      toast.error("Please fill in all fields", {
         duration: 4000,
-        position: 'top-right',
+        position: "top-right",
         style: {
-          background: '#EF4444',
-          color: '#fff',
-          fontWeight: '500',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.4)',
+          background: "#EF4444",
+          color: "#fff",
+          fontWeight: "500",
+          borderRadius: "12px",
+          padding: "16px",
+          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
         },
         iconTheme: {
-          primary: '#fff',
-          secondary: '#EF4444',
+          primary: "#fff",
+          secondary: "#EF4444",
         },
       });
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
-      toast.error('New password and confirm password do not match', {
+      toast.error("New password and confirm password do not match", {
         duration: 4000,
-        position: 'top-right',
+        position: "top-right",
         style: {
-          background: '#EF4444',
-          color: '#fff',
-          fontWeight: '500',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 25px -5px rgba(239, 68, 68, 0.4)',
+          background: "#EF4444",
+          color: "#fff",
+          fontWeight: "500",
+          borderRadius: "12px",
+          padding: "16px",
+          boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
         },
         iconTheme: {
-          primary: '#fff',
-          secondary: '#EF4444',
+          primary: "#fff",
+          secondary: "#EF4444",
         },
       });
       return;
     }
-    
+
     // Reset form and close modal
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     onOpenChange(false);
-    
+
     // Show success message
-    toast.success('Password changed successfully!', {
-        duration: 4000,
-        position: 'top-right',
-        style: {
-          background: '#10B981',
-          color: '#fff',
-          fontWeight: '500',
-          borderRadius: '12px',
-          padding: '16px',
-          boxShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.4)',
-        },
-        iconTheme: {
-          primary: '#fff',
-          secondary: '#10B981',
-        },
-      });
+    toast.success("Password changed successfully!", {
+      duration: 4000,
+      position: "top-right",
+      style: {
+        background: "#10B981",
+        color: "#fff",
+        fontWeight: "500",
+        borderRadius: "12px",
+        padding: "16px",
+        boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
+      },
+      iconTheme: {
+        primary: "#fff",
+        secondary: "#10B981",
+      },
+    });
   };
 
   const handleClose = () => {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
     onOpenChange(false);
   };
 
@@ -105,7 +97,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
       <DialogContent className="sm:max-w-[540px] p-0 bg-white border-0 shadow-xl">
         {/* Modal Background Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-25 z-[-1]" />
-        
+
         {/* Modal Content */}
         <div className="relative bg-white rounded-xl p-8">
           {/* Close Button */}
@@ -131,8 +123,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <div className="space-y-5">
               {/* Current Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="currentPassword" 
+                <Label
+                  htmlFor="currentPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Current Password
@@ -149,8 +141,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
               {/* New Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="newPassword" 
+                <Label
+                  htmlFor="newPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Create New Password
@@ -167,8 +159,8 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
 
               {/* Confirm Password */}
               <div className="space-y-3">
-                <Label 
-                  htmlFor="confirmPassword" 
+                <Label
+                  htmlFor="confirmPassword"
                   className="text-base text-dashboard-title font-plus-jakarta"
                 >
                   Confirm Password
@@ -188,7 +180,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
             <div className="pt-4">
               <Button
                 type="submit"
-                className="w-full bg-dashboard-primary hover:bg-[#14709F] text-white py-3 px-8 rounded-full text-base font-geist transition-colors"
+                className="w-full bg-dashboard-primary hover:bg-[#128086] text-white py-3 px-8 rounded-full text-base font-geist transition-colors"
               >
                 Re-set Password
               </Button>

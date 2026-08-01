@@ -57,7 +57,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
       </div>
 
       {/* Card mirroring ResultCard */}
-      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(10,70,112,0.08)] border border-[#EBEBEB]">
+      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(13, 69, 72,0.08)] border border-[#EBEBEB]">
         {/* Image */}
         <div className="relative">
           <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-[#F7F8FA]">
@@ -70,7 +70,13 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-th-brand-soft">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-th-brand">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="text-th-brand"
+                  >
                     <rect
                       x="3"
                       y="5"
@@ -161,9 +167,7 @@ const CaravanCardPreview: React.FC<CaravanCardPreviewProps> = ({
                 <span className="text-[13px] text-gray-500">{baseUnit}</span>
               </>
             ) : (
-              <span className="text-[13px] text-[#A8A6A0] italic">
-                Pricing — added in step 4
-              </span>
+              <span className="text-[13px] text-[#A8A6A0] italic">Pricing — added in step 4</span>
             )}
           </div>
 

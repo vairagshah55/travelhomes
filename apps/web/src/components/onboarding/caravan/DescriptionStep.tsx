@@ -70,7 +70,7 @@ const PillCTA: React.FC<{
 
   const baseClass = cn(
     "inline-flex items-center gap-1.5 font-bold text-th-brand bg-th-brand-soft border-[1.5px] border-th-brand-border-soft rounded-full cursor-pointer tracking-[0.01em] transition-colors duration-150 whitespace-nowrap",
-    "hover:bg-[rgba(15,92,138,0.14)]",
+    "hover:bg-[rgba(17, 116, 121,0.14)]",
     padY,
     padX,
     fontSize,
@@ -252,7 +252,7 @@ const RulesEmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
       "bg-th-brand-soft",
     )}
   >
-    <div className="w-[42px] h-[42px] rounded-[13px] bg-th-surface-0 border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_2px_8px_rgba(15,92,138,0.08)]">
+    <div className="w-[42px] h-[42px] rounded-[13px] bg-th-surface-0 border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_2px_8px_rgba(17, 116, 121,0.08)]">
       <ShieldCheck size={18} className="text-th-brand" strokeWidth={2.2} />
     </div>
     <div className="text-center">
@@ -403,7 +403,7 @@ const CoverDropzone: React.FC<{
         "h-[200px] rounded-[18px] border-2 border-dashed transition-all duration-200",
         // Subtle radial highlight so the empty dropzone reads as a
         // "drop here" target rather than a flat grey card.
-        "bg-th-warm-surface [background-image:radial-gradient(circle_at_50%_30%,rgba(15,92,138,0.05),transparent_60%)]",
+        "bg-th-warm-surface [background-image:radial-gradient(circle_at_50%_30%,rgba(17, 116, 121,0.05),transparent_60%)]",
         error
           ? "border-th-error-bright-soft"
           : "border-th-warm-border hover:border-th-brand hover:bg-th-brand-soft",

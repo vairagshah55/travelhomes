@@ -24,14 +24,15 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
   const inputBase =
     "w-full bg-transparent outline-none text-[14px] text-ds-charcoal placeholder:text-ds-slate font-sans";
 
-  const labelBase = "text-[11px] font-semibold text-ds-navy uppercase tracking-wide leading-none mb-1";
+  const labelBase =
+    "text-[11px] font-semibold text-ds-navy uppercase tracking-wide leading-none mb-1";
 
   return (
     <div className={`w-full ${className}`}>
       {/* Desktop: pill row */}
       <div
         className="hidden md:flex items-center rounded-full bg-ds-white border border-ds-pebble"
-        style={{ boxShadow: "0 2px 16px rgba(15,92,138,0.10)" }}
+        style={{ boxShadow: "0 2px 16px rgba(17, 116, 121,0.10)" }}
       >
         {/* Location */}
         <div className="flex items-center gap-2 px-5 py-3 flex-1 min-w-0">
@@ -114,7 +115,7 @@ export default function SearchBar({ onSearch, className = "" }: SearchBarProps) 
       {/* Mobile: stacked column */}
       <div
         className="flex md:hidden flex-col rounded-xl bg-ds-white border border-ds-pebble overflow-hidden"
-        style={{ boxShadow: "0 2px 16px rgba(15,92,138,0.10)" }}
+        style={{ boxShadow: "0 2px 16px rgba(17, 116, 121,0.10)" }}
       >
         {/* Location */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-ds-pebble">

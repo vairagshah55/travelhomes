@@ -314,7 +314,7 @@ const Notifications = () => {
   };
 
   const railItems: { key: FilterKey; label: string; icon: LucideIcon; color: string }[] = [
-    { key: "all", label: "All", icon: Inbox, color: "#0d9488" },
+    { key: "all", label: "All", icon: Inbox, color: "#117479" },
     { key: "unread", label: "Unread", icon: BellRing, color: "#f23030" },
     // A category with nothing in it is a dead end — only offer real ones.
     ...CATEGORY_FILTERS.filter((f) => counts[f.key] > 0 || filter === f.key),

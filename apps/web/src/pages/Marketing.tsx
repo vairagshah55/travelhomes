@@ -55,7 +55,7 @@ const Marketing = () => {
                 label="Posts"
                 hint="In the feed"
                 value={stats.posts}
-                color="#0d9488"
+                color="#117479"
               />
               <StatTile
                 index={1}

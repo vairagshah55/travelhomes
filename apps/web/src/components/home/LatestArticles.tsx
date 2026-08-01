@@ -9,15 +9,30 @@ import { ArticlesSkeleton } from "./skeletons";
 import { ScrollReveal, staggerContainer, staggerItem } from "./ScrollReveal";
 
 type BlogDTO = {
-  _id: string; title: string; slug: string;
-  coverImage?: string; createdAt?: string;
+  _id: string;
+  title: string;
+  slug: string;
+  coverImage?: string;
+  createdAt?: string;
 };
 
 const FALLBACK_ARTICLES = [
-  { image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=610&q=80", title: "Experience Goa Like Never Before: Unique Adventures Await!" },
-  { image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=610&q=80", title: "Top 10 Campervan Trips Through the Himalayas" },
-  { image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=610&q=80", title: "Kerala Backwaters: A Complete Guide for First-Timers" },
-  { image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=610&q=80", title: "Hidden Gems of Delhi You've Never Seen Before" },
+  {
+    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=610&q=80",
+    title: "Experience Goa Like Never Before: Unique Adventures Await!",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=610&q=80",
+    title: "Top 10 Campervan Trips Through the Himalayas",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=610&q=80",
+    title: "Kerala Backwaters: A Complete Guide for First-Timers",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=610&q=80",
+    title: "Hidden Gems of Delhi You've Never Seen Before",
+  },
 ];
 
 interface LatestArticlesProps {
@@ -30,7 +45,13 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
   const articlesRef = useRef<HTMLDivElement>(null);
 
   if (loadingBlogs) {
-    return <ScrollReveal><div className="py-8 md:py-12"><ArticlesSkeleton /></div></ScrollReveal>;
+    return (
+      <ScrollReveal>
+        <div className="py-8 md:py-12">
+          <ArticlesSkeleton />
+        </div>
+      </ScrollReveal>
+    );
   }
 
   return (
@@ -43,14 +64,17 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
           <Button
             variant="outline"
             onClick={() => navigate("/blogs")}
-            className="rounded-full border-[#0A2B40] text-[#0A2B40] hover:bg-[#0A2B40] hover:text-white transition-all duration-200 px-5 h-10 font-medium text-sm hover:shadow-md active:scale-[0.98]"
+            className="rounded-full border-[#0a1c1c] text-[#0a1c1c] hover:bg-[#0a1c1c] hover:text-white transition-all duration-200 px-5 h-10 font-medium text-sm hover:shadow-md active:scale-[0.98]"
           >
             <span className="mr-2">Read all articles</span>
             <SlArrowRight className="w-3.5 h-3.5" />
           </Button>
         }
       >
-        <div ref={articlesRef} className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+        <div
+          ref={articlesRef}
+          className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
+        >
           <motion.div
             className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5"
             initial="hidden"
@@ -60,14 +84,22 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
           >
             {latestBlogs.length > 0
               ? latestBlogs.map((b) => (
-                  <motion.div key={b._id} variants={staggerItem} className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink">
+                  <motion.div
+                    key={b._id}
+                    variants={staggerItem}
+                    className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
+                  >
                     <Link to={`/blogsDetials?slug=${b.slug}`} className="block">
                       <ArticleCard image={b.coverImage || "/placeholder.svg"} title={b.title} />
                     </Link>
                   </motion.div>
                 ))
               : FALLBACK_ARTICLES.map((article, i) => (
-                  <motion.div key={i} variants={staggerItem} className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink">
+                  <motion.div
+                    key={i}
+                    variants={staggerItem}
+                    className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
+                  >
                     <ArticleCard {...article} />
                   </motion.div>
                 ))}

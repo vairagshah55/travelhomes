@@ -51,7 +51,7 @@ export function HostedByCard({ vendor, onContactClick }: HostedByCardProps) {
         </div>
         <Button
           size="sm"
-          className="bg-[#0F5C8A] text-white rounded-full px-4 text-xs hover:bg-[#14709F] dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
+          className="bg-[#117479] text-white rounded-full px-4 text-xs hover:bg-[#128086] dark:bg-white dark:text-black dark:hover:bg-gray-200 flex-shrink-0"
           onClick={onContactClick}
         >
           Contact

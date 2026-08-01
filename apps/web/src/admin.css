@@ -14,8 +14,8 @@
     --4: 4px;
     --12: 12px;
     --8: 8px;
-    --pRIMARY: #0f5c8a;
-    --Black-Heading: #0a2b40;
+    --pRIMARY: #117479;
+    --Black-Heading: #0a1c1c;
     --Black-Stroke: #e4e8f0;
     --White: #fff;
     --Title: #1f2a44;
@@ -24,16 +24,16 @@
     --Neutral-06: #9aa3b5;
     --Neutral-07: #5f6a82;
     --Body: #1f2a44;
-    --Secondary-30: #e8f2f8;
-    --Heading: #0a2b40;
-    --Text: #0a2b40;
+    --Secondary-30: #e6fafa;
+    --Heading: #0a1c1c;
+    --Text: #0a1c1c;
 
-    /* ── Midnight Indigo brand tokens (shared with frontend) ── */
-    --ds-sky: #e8f2f8;
-    --ds-mist: #d0e4ef;
-    --ds-ocean: #1e88ba;
-    --ds-deep: #0f5c8a; /* main brand */
-    --ds-navy: #0a2b40;
+    /* ── Logo Cyan brand tokens (shared with frontend) ── */
+    --ds-sky: #e6fafa;
+    --ds-mist: #ccf2f2;
+    --ds-ocean: #128086;
+    --ds-deep: #117479; /* main brand */
+    --ds-navy: #0a1c1c;
     --ds-sand: #e7d3a6;
     --ds-dune: #c8a96a;
     --ds-rust: #b42318;
@@ -48,58 +48,58 @@
     --ds-success: #0e7c66;
     --ds-warning: #a47200;
 
-    /* Travel Dashboard specific colors — Midnight Indigo */
-    --dashboard-bg: 220 33% 97%; /* #F6F8FB */
-    --dashboard-primary: 226 64% 33%; /* #0F5C8A brand indigo */
-    --dashboard-primary-hover: 222 58% 42%; /* #14709F hover */
-    --dashboard-heading: 218 72% 14%; /* #0A2B40 */
-    --dashboard-body: 222 38% 20%; /* #1F2A44 */
-    --dashboard-title: 222 38% 20%; /* #1F2A44 */
-    --dashboard-stroke: 220 21% 92%; /* #E4E8F0 */
-    --dashboard-neutral-06: 222 14% 66%; /* #9AA3B5 */
-    --dashboard-neutral-07: 222 16% 44%; /* #5F6A82 */
-    --dashboard-text: 218 72% 14%; /* #0A2B40 */
+    /* Travel Dashboard specific colors — Logo Cyan */
+    --dashboard-bg: 180 25% 97%; /* #F6F8FB */
+    --dashboard-primary: 183 76% 27%; /* #117479 brand indigo */
+    --dashboard-primary-hover: 183 76% 30%; /* #128086 hover */
+    --dashboard-heading: 183 55% 9%; /* #0a1c1c */
+    --dashboard-body: 185 30% 17%; /* #1F2A44 */
+    --dashboard-title: 185 30% 17%; /* #1F2A44 */
+    --dashboard-stroke: 180 15% 92%; /* #E4E8F0 */
+    --dashboard-neutral-06: 183 12% 62%; /* #9AA3B5 */
+    --dashboard-neutral-07: 185 12% 40%; /* #5F6A82 */
+    --dashboard-text: 183 55% 9%; /* #0a1c1c */
 
     /* Override default shadcn colors to match design */
-    --background: 220 33% 97%; /* Match dashboard bg */
-    --foreground: 218 72% 14%; /* Match primary */
+    --background: 180 25% 97%; /* Match dashboard bg */
+    --foreground: 183 55% 9%; /* Match primary */
 
     --card: 0 0% 100%;
-    --card-foreground: 218 72% 14%;
+    --card-foreground: 183 55% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 218 72% 14%;
+    --popover-foreground: 183 55% 9%;
 
-    --primary: 226 64% 33%; /* #0F5C8A brand indigo */
+    --primary: 183 76% 27%; /* #117479 brand indigo */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 33% 95%;
-    --secondary-foreground: 218 68% 21%;
+    --secondary: 180 25% 95%;
+    --secondary-foreground: 183 68% 16%;
 
-    --muted: 220 33% 95%;
-    --muted-foreground: 222 16% 44%;
+    --muted: 180 25% 95%;
+    --muted-foreground: 185 12% 40%;
 
-    --accent: 224 64% 96%;
-    --accent-foreground: 218 68% 21%;
+    --accent: 180 60% 94%;
+    --accent-foreground: 183 68% 16%;
 
     --destructive: 5 76% 40%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 21% 92%; /* #E4E8F0 */
-    --input: 220 21% 92%;
-    --ring: 226 64% 33%;
+    --border: 180 15% 92%; /* #E4E8F0 */
+    --input: 180 15% 92%;
+    --ring: 183 76% 27%;
 
     --radius: 0.75rem; /* 12px like in design */
 
     /* Sidebar colors — light, content-first (Stripe/Notion) */
     --sidebar-background: 0 0% 100%; /* #FFFFFF */
-    --sidebar-foreground: 222 38% 20%; /* #1F2A44 body */
-    --sidebar-primary: 226 64% 33%; /* #0F5C8A active nav */
+    --sidebar-foreground: 185 30% 17%; /* #1F2A44 body */
+    --sidebar-primary: 183 76% 27%; /* #117479 active nav */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 64% 96%; /* #E8F2F8 hover bg */
-    --sidebar-accent-foreground: 218 68% 21%; /* #0A4670 hover text */
-    --sidebar-border: 220 21% 92%; /* #E4E8F0 */
-    --sidebar-ring: 226 64% 33%;
+    --sidebar-accent: 180 60% 94%; /* #e6fafa hover bg */
+    --sidebar-accent-foreground: 183 68% 16%; /* #0d4548 hover text */
+    --sidebar-border: 180 15% 92%; /* #E4E8F0 */
+    --sidebar-ring: 183 76% 27%;
 
     /* Additional dashboard neutral colors */
     --dashboard-neutral-07: 0 0% 44%; /* #717171 */
@@ -109,8 +109,8 @@
     --stats-impression-icon-bg: 23 69% 88%; /* #F8DBCB */
     --stats-bookings-bg: 120 60% 95%; /* #E3FBE4 */
     --stats-bookings-icon-bg: 120 53% 91%; /* #D8F4D9 */
-    --stats-properties-bg: 194 71% 93%; /* #DBF6FC */
-    --stats-properties-icon-bg: 194 100% 90%; /* #CCF5FF */
+    --stats-properties-bg: 183 60% 92%; /* #DBF6FC */
+    --stats-properties-icon-bg: 183 80% 89%; /* #CCF5FF */
     --stats-earnings-bg: 290 62% 95%; /* #F6E0FD */
     --stats-earnings-icon-bg: 290 100% 91%; /* #F4D2FF */
     --stats-clicks-bg: 245 81% 94%; /* #DBD9FF */
@@ -125,19 +125,19 @@
     --status-green-text: 120 100% 36%; /* #37B800 */
 
     /* Booking ID link color */
-    --booking-link: 226 64% 33%; /* #0F5C8A */
+    --booking-link: 183 76% 27%; /* #117479 */
 
     /* Navigation tree lines */
     --nav-tree-line: 0 0% 90%; /* #E7E7E7 */
 
     /* Blue toggle switch */
-    --dashboard-blue-600: 226 64% 33%; /* #0F5C8A */
+    --dashboard-blue-600: 183 76% 27%; /* #117479 */
 
     /* Authentication colors */
-    --auth-blackish-green: #0a2b40;
+    --auth-blackish-green: #0a1c1c;
     --auth-neutral-06: #9aa3b5;
     --auth-neutral-07: #5f6a82;
-    --auth-primary: #0f5c8a;
+    --auth-primary: #117479;
     --auth-primary-0: #fff;
     --auth-text-muted: rgba(31, 42, 68, 0.75);
 
@@ -207,8 +207,8 @@
     --stats-impression-icon-bg: 23 30% 15%;
     --stats-bookings-bg: 120 20% 10%;
     --stats-bookings-icon-bg: 120 25% 15%;
-    --stats-properties-bg: 194 20% 10%;
-    --stats-properties-icon-bg: 194 25% 15%;
+    --stats-properties-bg: 183 20% 10%;
+    --stats-properties-icon-bg: 183 25% 15%;
     --stats-earnings-bg: 290 20% 10%;
     --stats-earnings-icon-bg: 290 25% 15%;
     --stats-clicks-bg: 245 20% 10%;
@@ -1207,32 +1207,32 @@
   --th-font-display:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 
-  /* Primary CTA → navy #0F5C8A (dark, so fills carry WHITE text). */
-  --dashboard-primary: 202 80% 30%; /* #0F5C8A */
-  --dashboard-primary-hover: 199 78% 35%; /* #14709F */
+  /* Primary CTA → navy #117479 (dark, so fills carry WHITE text). */
+  --dashboard-primary: 183 76% 27%; /* #117479 */
+  --dashboard-primary-hover: 183 76% 30%; /* #128086 */
   /* Text — black on white */
   --dashboard-heading: 0 0% 0%;
-  --dashboard-body: 220 9% 20%;
-  --dashboard-title: 220 9% 20%;
+  --dashboard-body: 185 8% 20%;
+  --dashboard-title: 185 8% 20%;
   --dashboard-text: 0 0% 0%;
   /* Surfaces — white / near-white */
-  --dashboard-bg: 220 20% 98%; /* #F7F8FA */
-  --dashboard-stroke: 216 13% 91%; /* #E4E7EB */
-  --dashboard-neutral-06: 220 14% 71%; /* #9ca3af */
-  --dashboard-neutral-07: 220 9% 46%; /* #6b7280 */
+  --dashboard-bg: 180 15% 98%; /* #F7F8FA */
+  --dashboard-stroke: 183 10% 91%; /* #E4E7EB */
+  --dashboard-neutral-06: 183 10% 71%; /* #9ca3af */
+  --dashboard-neutral-07: 185 8% 46%; /* #6b7280 */
   /* Booking ID link → navy (dark, reads on white) */
-  --booking-link: 202 80% 30%;
-  --sidebar-primary: 202 80% 30%;
-  --sidebar-ring: 202 80% 30%;
+  --booking-link: 183 76% 27%;
+  --sidebar-primary: 183 76% 27%;
+  --sidebar-ring: 183 76% 27%;
 }
 
 [data-brand="admin"] {
-  /* Brand → deep teal #0d9488 (dark, so fills carry WHITE text). Harmonises
+  /* Brand → deep teal #117479 (dark, so fills carry WHITE text). Harmonises
      with the bright-teal graphite chrome — one teal family across the app. */
-  --tpl-primary: #0d9488;
-  --tpl-primary-hover: #0f766e;
-  --tpl-primary-soft: rgba(13, 148, 136, 0.08);
-  --tpl-primary-soft-2: rgba(13, 148, 136, 0.14);
+  --tpl-primary: #117479;
+  --tpl-primary-hover: #0d5c60;
+  --tpl-primary-soft: rgba(17, 116, 121, 0.08);
+  --tpl-primary-soft-2: rgba(17, 116, 121, 0.14);
 
   /* Neutrals — light surface */
   --tpl-body-bg: #f9fafb; /* page bg */
@@ -1281,12 +1281,12 @@
      admin.css loads after global.css (via AdminApp), so these win over
      global.css's blue [data-brand="admin"] tokens. */
   /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
-  --primary: 175 84% 32%;
+  --primary: 183 76% 27%;
   --primary-foreground: 0 0% 100%;
-  --ring: 175 84% 32%;
+  --ring: 183 76% 27%;
   /* shared primitives (bg-brand / text-brand / EmptyState / TabStrip) */
-  --brand: 175 84% 32%;
-  --brand-hover: 175 78% 26%;
+  --brand: 183 76% 27%;
+  --brand-hover: 183 76% 22%;
   --brand-fg: 0 0% 100%;
   --brand-subtle: 174 45% 94%;
   /* app/surface semantic layer (AdminStatCard, app-accent) */
@@ -1296,27 +1296,27 @@
   --surface-fg: #101828;
   --surface-fg-muted: #55585e;
   --surface-fg-subtle: #6e7278;
-  --accent: #0d9488;
-  --accent-hover: #0f766e;
-  --accent-soft: rgba(13, 148, 136, 0.1);
+  --accent: #117479;
+  --accent-hover: #0d5c60;
+  --accent-soft: rgba(17, 116, 121, 0.1);
   --accent-fg: #ffffff;
 
   /* Glass / teal utility tokens — LIGHT content values (teal tints).
      The graphite chrome scope below redefines these for the sidebar/header. */
   --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-bg-hover: rgba(13, 148, 136, 0.06);
+  --glass-bg-hover: rgba(17, 116, 121, 0.06);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-border-strong: rgba(0, 0, 0, 0.14);
   --glass-header: rgba(255, 255, 255, 0.85);
-  --teal-glass: rgba(13, 148, 136, 0.1);
-  --teal-border: rgba(13, 148, 136, 0.3);
-  --teal-subtle: rgba(13, 148, 136, 0.07);
-  --shadow-teal: 0 0 0 1px rgba(13, 148, 136, 0.4);
-  --search-focus-ring: rgba(13, 148, 136, 0.2);
+  --teal-glass: rgba(17, 116, 121, 0.1);
+  --teal-border: rgba(17, 116, 121, 0.3);
+  --teal-subtle: rgba(17, 116, 121, 0.07);
+  --shadow-teal: 0 0 0 1px rgba(17, 116, 121, 0.4);
+  --search-focus-ring: rgba(17, 116, 121, 0.2);
 }
 
 /* ── Clean LIGHT chrome (sidebar + header) — white rail + white header,
-   hairline #e6ebf1 borders, deep-teal #0d9488 accent. Applied by
+   hairline #e6ebf1 borders, deep-cyan #117479 accent. Applied by
    data-admin-skin="teal" (marker name kept for continuity) on the AdminSidebar
    and AdminHeader roots. The chrome shares the CONTENT's teal accent, so rail +
    header + content read as one continuous light surface. Scoped to these two
@@ -1333,13 +1333,13 @@
   --tpl-dark-6: #475467; /* secondary text (sub-items) */
   --tpl-gray-2: #f2f4f7;
   --tpl-gray-3: #eceff3;
-  --tpl-primary: #0d9488; /* active-nav text + accent → deep teal */
+  --tpl-primary: #117479; /* active-nav text + accent → deep teal */
   --glass-header: #f1f8f7;
   --glass-bg: rgba(16, 24, 40, 0.03);
   --glass-bg-hover: rgba(16, 24, 40, 0.05);
-  --teal-glass: rgba(13, 148, 136, 0.1); /* active pill / sub-item active fill */
-  --teal-border: rgba(13, 148, 136, 0.3);
-  --sidebar-primary: 175 84% 32%;
+  --teal-glass: rgba(17, 116, 121, 0.1); /* active pill / sub-item active fill */
+  --teal-border: rgba(17, 116, 121, 0.3);
+  --sidebar-primary: 183 76% 27%;
 }
 
 /* ── Flat light chrome — white rail + header separated from the content only by
@@ -1352,7 +1352,7 @@
 
 /* Teal fills carry WHITE text. Force white on the primary/brand/accent FILLS
    in admin content so leftover dark labels/icons don't sit dark-on-teal.
-   (Accent-as-TEXT resolves to deep teal #0d9488, which reads fine on white.) */
+   (Accent-as-TEXT resolves to deep teal #117479, which reads fine on white.) */
 [data-brand="admin"] .bg-dashboard-primary,
 [data-brand="admin"] .bg-tpl-primary,
 [data-brand="admin"] .bg-primary,
@@ -1393,12 +1393,12 @@
   --tpl-primary-soft-2: rgba(59, 217, 217, 0.26);
 
   /* Layered dark surfaces (depth via color steps, not shadows) */
-  --tpl-body-bg: #080a0d; /* page bg            */
-  --tpl-card-bg: #0d1118; /* cards / sidebar    */
-  --tpl-stroke: #1c2535; /* borders / dividers */
+  --tpl-body-bg: #050b0b; /* page bg            */
+  --tpl-card-bg: #0b1414; /* cards / sidebar    */
+  --tpl-stroke: #1a2e2e; /* borders / dividers */
 
   /* Grays remapped to dark surfaces + light text */
-  --tpl-gray-1: #0d1118;
+  --tpl-gray-1: #0b1414;
   --tpl-gray-2: #131a25; /* table head / search fill / secondary */
   --tpl-gray-3: #1a2235; /* elevated / hover                     */
   --tpl-gray-4: #243049;
@@ -1406,7 +1406,7 @@
   --tpl-gray-6: #a8b0bf;
   --tpl-gray-7: #c7cdd9;
   --tpl-dark: #ffffff; /* primary text */
-  --tpl-dark-2: #0d1118; /* card / sidebar / header surface */
+  --tpl-dark-2: #0b1414; /* card / sidebar / header surface */
   --tpl-dark-3: #c7cdd9;
   --tpl-dark-4: #a8b0bf;
   --tpl-dark-5: #8a929f; /* muted text  */
@@ -1438,24 +1438,24 @@
   --search-focus-ring: rgba(59, 217, 217, 0.22);
 
   /* HSL --dashboard-* layer (~190 usages: text-dashboard-heading, etc.) */
-  --dashboard-bg: 216 24% 4%;
-  --dashboard-stroke: 218 31% 16%;
+  --dashboard-bg: 183 20% 4%;
+  --dashboard-stroke: 183 25% 15%;
   --dashboard-primary: 180 68% 54%;
   --dashboard-primary-hover: 180 62% 63%;
   --dashboard-heading: 0 0% 100%;
-  --dashboard-body: 219 15% 70%;
-  --dashboard-title: 219 15% 70%;
+  --dashboard-body: 183 12% 68%;
+  --dashboard-title: 183 12% 68%;
   --dashboard-text: 0 0% 100%;
-  --dashboard-neutral-06: 217 10% 58%;
-  --dashboard-neutral-07: 219 15% 70%;
+  --dashboard-neutral-06: 183 10% 56%;
+  --dashboard-neutral-07: 183 12% 68%;
   --booking-link: 180 68% 54%;
   --sidebar-primary: 180 68% 54%;
   --sidebar-ring: 180 68% 54%;
 
   /* app-* / --surface-* semantic layer (AdminStatCard, app-accent, etc.) */
-  --surface: #0d1118;
+  --surface: #0b1414;
   --surface-2: #131a25;
-  --surface-border: #1c2535;
+  --surface-border: #1a2e2e;
   --surface-fg: #ffffff;
   --surface-fg-muted: #8a929f;
   --surface-fg-subtle: #a8b0bf;
@@ -1475,20 +1475,20 @@
      dropdown/DropdownMenu) renders outside this scope and is themed in a
      follow-up. We intentionally leave shadcn --accent alone: it collides
      with the app-layer hex --accent (hex wins app-wide). */
-  --background: 216 24% 4%;
+  --background: 183 20% 4%;
   --foreground: 0 0% 100%;
-  --card: 218 30% 7%;
+  --card: 183 25% 7%;
   --card-foreground: 0 0% 100%;
-  --popover: 218 31% 16%;
+  --popover: 183 25% 15%;
   --popover-foreground: 0 0% 100%;
   --primary: 180 68% 54%;
   --primary-foreground: 0 0% 0%;
-  --secondary: 218 30% 11%;
-  --secondary-foreground: 219 15% 70%;
-  --muted: 218 30% 11%;
-  --muted-foreground: 217 10% 58%;
-  --border: 218 31% 16%;
-  --input: 218 31% 16%;
+  --secondary: 183 25% 10%;
+  --secondary-foreground: 183 12% 68%;
+  --muted: 183 25% 10%;
+  --muted-foreground: 183 10% 56%;
+  --border: 183 25% 15%;
+  --input: 183 25% 15%;
   --ring: 180 68% 54%;
 }
 

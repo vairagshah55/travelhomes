@@ -142,7 +142,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         {(() => {
           const items = [
-            navItem("/admin/cms", FileText, "#0D9488", "CMS"),
+            navItem("/admin/cms", FileText, "#117479", "CMS"),
             navItem("/admin/crm", Bell, "#0284C7", "CRM"),
             navItem("/admin/plugins", Box, "#7C3AED", "Plugins"),
             navItem("/admin/staff", Users2, "#059669", "Staff · All"),

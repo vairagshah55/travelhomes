@@ -58,72 +58,70 @@ const CATEGORIES = [
 const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedded }) => {
   const list = (
     <div className="w-full flex flex-col gap-3">
-        {CATEGORIES.map((cat) => {
-          const selected = category === cat.name;
-          return (
-            <button
-              key={cat.name}
-              type="button"
-              onClick={() => onSelect(cat.name)}
+      {CATEGORIES.map((cat) => {
+        const selected = category === cat.name;
+        return (
+          <button
+            key={cat.name}
+            type="button"
+            onClick={() => onSelect(cat.name)}
+            className={cn(
+              "w-full flex items-center gap-4 px-[18px] py-4 rounded-[16px] border-[1.5px] cursor-pointer text-left transition-all duration-150",
+              selected
+                ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
+                : "border-th-warm-border bg-th-surface-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-th-brand hover:bg-th-brand-soft",
+            )}
+          >
+            {/* Icon */}
+            <div
               className={cn(
-                "w-full flex items-center gap-4 px-[18px] py-4 rounded-[16px] border-[1.5px] cursor-pointer text-left transition-all duration-150",
+                "w-12 h-12 rounded-[14px] border-[1.5px] flex items-center justify-center text-[22px] shrink-0 transition-all duration-150",
                 selected
-                  ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
-                  : "border-th-warm-border bg-th-surface-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-th-brand hover:bg-th-brand-soft"
+                  ? "bg-[rgba(17, 116, 121,0.12)] border-th-brand-border-soft"
+                  : "bg-th-warm-surface border-th-warm-border",
               )}
             >
-              {/* Icon */}
-              <div
+              {cat.emoji}
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p
                 className={cn(
-                  "w-12 h-12 rounded-[14px] border-[1.5px] flex items-center justify-center text-[22px] shrink-0 transition-all duration-150",
-                  selected
-                    ? "bg-[rgba(15,92,138,0.12)] border-th-brand-border-soft"
-                    : "bg-th-warm-surface border-th-warm-border"
+                  "text-[14px] font-bold tracking-[-0.01em] mb-[3px] transition-colors duration-150",
+                  selected ? "text-th-brand" : "text-th-text-primary",
                 )}
               >
-                {cat.emoji}
-              </div>
+                {cat.name}
+              </p>
+              <p className="text-[12.5px] text-th-warm-text-dark leading-[1.55] font-normal">
+                {cat.description}
+              </p>
+            </div>
 
-              {/* Text */}
-              <div className="flex-1 min-w-0">
-                <p
-                  className={cn(
-                    "text-[14px] font-bold tracking-[-0.01em] mb-[3px] transition-colors duration-150",
-                    selected ? "text-th-brand" : "text-th-text-primary"
-                  )}
-                >
-                  {cat.name}
-                </p>
-                <p className="text-[12.5px] text-th-warm-text-dark leading-[1.55] font-normal">
-                  {cat.description}
-                </p>
-              </div>
-
-              {/* Selection indicator */}
-              <div
-                className={cn(
-                  "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150",
-                  selected
-                    ? "border-th-brand bg-th-brand"
-                    : "border-th-warm-border bg-transparent"
-                )}
-              >
-                {selected && (
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path
-                      d="M2 5l2.5 2.5L8 3"
-                      stroke="currentColor"
-                      className="text-th-text-inverse"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
-              </div>
-            </button>
-          );
-        })}
+            {/* Selection indicator */}
+            <div
+              className={cn(
+                "w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-150",
+                selected ? "border-th-brand bg-th-brand" : "border-th-warm-border bg-transparent",
+              )}
+            >
+              {selected && (
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path
+                    d="M2 5l2.5 2.5L8 3"
+                    stroke="currentColor"
+                    className="text-th-text-inverse"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -141,7 +139,7 @@ const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedde
           <div className="w-6 h-[3px] rounded-[99px] bg-th-brand" />
         </div>
         <h1
-          className="font-serif font-normal text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          className="font-serif font-normal text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
           style={{ fontSize: "clamp(24px, 3.6vw, 32px)" }}
         >
           Choose a caravan category

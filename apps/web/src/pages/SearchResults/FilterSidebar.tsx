@@ -228,7 +228,7 @@ export function FilterSidebar({
                 onClick={() => setSelectedRating(rating)}
                 className={`px-3 py-1.5 rounded-md border text-sm font-medium ${
                   selectedRating <= rating
-                    ? "bg-[#0F5C8A] text-white border-black"
+                    ? "bg-[#117479] text-white border-black"
                     : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
                 }`}
               >

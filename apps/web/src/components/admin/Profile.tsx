@@ -155,7 +155,7 @@ const Profile = () => {
             </div>
             <Button
               onClick={() => setIsChangePasswordOpen(true)}
-              className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#14709F] text-white px-6 py-3 rounded-full font-geist text-sm"
+              className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-6 py-3 rounded-full font-geist text-sm"
             >
               Change Password
             </Button>
@@ -343,7 +343,7 @@ const Profile = () => {
                         className="border-gray-300 bg-white dark:bg-black dark:text-white text-sm text-dashboard-neutral-07 font-plus-jakarta"
                       />
                     </div>
-                    <Button className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#14709F] text-white px-8 py-3 rounded-full font-geist">
+                    <Button className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-8 py-3 rounded-full font-geist">
                       ADD
                     </Button>
                   </div>

@@ -70,7 +70,7 @@ export function AdminStatCard({
       aria-label={clickable ? `${title}: ${displayValue}` : undefined}
       className={`group relative overflow-hidden bg-app-surface rounded-[18px] border border-app-border p-4 outline-none shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] transition-[transform,box-shadow] duration-200 ${
         clickable
-          ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(13,148,136,0.14),0_14px_32px_-16px_rgba(13,148,136,0.45)] focus-visible:ring-4 focus-visible:ring-app-accent/20"
+          ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17, 116, 121,0.14),0_14px_32px_-16px_rgba(17, 116, 121,0.45)] focus-visible:ring-4 focus-visible:ring-app-accent/20"
           : ""
       } ${className}`}
     >

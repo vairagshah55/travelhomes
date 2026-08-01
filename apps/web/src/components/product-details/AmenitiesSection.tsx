@@ -37,7 +37,7 @@ export function AmenitiesSection({
         {visibleAmenities.map((amenity, i) => (
           <div
             key={i}
-            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#14709F] transition-colors"
+            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-[#128086] transition-colors"
           >
             <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
               <amenity.icon className="w-5 h-5 text-gray-700 dark:text-gray-200" />

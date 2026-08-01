@@ -29,8 +29,8 @@ export const NO_SERVICE_SENTINEL = "No Service Available";
  */
 export const SELECT_ITEM_CLASS =
   "cursor-pointer text-[#131313] " +
-  "focus:bg-[rgba(13,148,136,0.10)] focus:text-[#0d9488] " +
-  "data-[highlighted]:bg-[rgba(13,148,136,0.10)] data-[highlighted]:text-[#0d9488]";
+  "focus:bg-[rgba(17, 116, 121,0.10)] focus:text-[#117479] " +
+  "data-[highlighted]:bg-[rgba(17, 116, 121,0.10)] data-[highlighted]:text-[#117479]";
 
 /* ─── Section header ──────────────────────────────────────────────────────── */
 export const SectionHeader = ({
@@ -134,10 +134,10 @@ export const tealBtn = (
     disabled={disabled}
     className={cn(
       // Kit BTN_PRIMARY geometry + teal glow. The old shadow was still keyed to
-      // the navy public brand (rgba(15,92,138,…)) inside a teal console.
+      // the navy public brand (rgba(17, 116, 121,…)) inside a teal console.
       "inline-flex items-center gap-1.5 h-10 px-5 rounded-xl border-0 bg-brand hover:bg-brand-hover",
       "text-[13px] font-semibold text-brand-fg transition-[background-color,box-shadow] duration-150",
-      "shadow-[0_1px_2px_rgba(13,148,136,0.24),0_6px_16px_-6px_rgba(13,148,136,0.45)]",
+      "shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-6px_rgba(17, 116, 121,0.45)]",
       disabled ? "cursor-not-allowed opacity-45 shadow-none" : "cursor-pointer",
     )}
   >
@@ -268,8 +268,8 @@ export const DatePickerField = ({
             cell: "h-8 w-8 text-center text-[12.5px] p-0 relative focus-within:relative focus-within:z-20",
             day: "h-8 w-8 p-0 font-normal rounded-md hover:bg-gray-100 aria-selected:opacity-100 inline-flex items-center justify-center",
             day_selected:
-              "bg-[#0F5C8A] text-white hover:bg-[#0F5C8A] hover:text-white focus:bg-[#0F5C8A] focus:text-white",
-            day_today: "bg-gray-100 font-semibold text-[#0F5C8A]",
+              "bg-[#117479] text-white hover:bg-[#117479] hover:text-white focus:bg-[#117479] focus:text-white",
+            day_today: "bg-gray-100 font-semibold text-[#117479]",
             day_outside: "text-gray-300 opacity-50",
             day_disabled: "text-gray-300 opacity-50 cursor-not-allowed",
             day_hidden: "invisible",

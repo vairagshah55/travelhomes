@@ -34,9 +34,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
       label: "Profile",
       path: "/user-profile",
       icon: UserIcon,
-      active:
-        location.pathname === "/user-profile" ||
-        location.pathname === "/user-profile-edit",
+      active: location.pathname === "/user-profile" || location.pathname === "/user-profile-edit",
     },
     {
       label: "Trips",
@@ -73,10 +71,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -108,15 +103,14 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
       updateUser(d);
     };
     window.addEventListener("profileUpdated" as any, handler as any);
-    return () =>
-      window.removeEventListener("profileUpdated" as any, handler as any);
+    return () => window.removeEventListener("profileUpdated" as any, handler as any);
   }, [updateUser]);
 
   // Refresh user data on mount to ensure we have the latest status
   useEffect(() => {
     // Force refresh on mount to check for vendor status updates (e.g. after approval)
     if (user) {
-      refreshUser(); 
+      refreshUser();
     }
   }, []); // Run once on mount
 
@@ -149,8 +143,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`Account menu for ${displayName}`}
-        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F5C8A] md:pl-3.5 md:pr-1.5 md:bg-[#0F5C8A] md:hover:bg-[#0A4670] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
-          isOpen ? "md:bg-[#0A4670] md:shadow-lg" : ""
+        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#117479] md:pl-3.5 md:pr-1.5 md:bg-[#117479] md:hover:bg-[#0d4548] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
+          isOpen ? "md:bg-[#0d4548] md:shadow-lg" : ""
         }`}
       >
         <span className="hidden md:inline-flex items-baseline gap-1 text-[13px] leading-none">
@@ -161,7 +155,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
         </span>
         <Avatar className="h-9 w-9 md:ring-2 md:ring-white/30 shrink-0">
           {photoSrc && <AvatarImage src={photoSrc} alt={`${displayName}'s avatar`} />}
-          <AvatarFallback className="bg-white text-[#0F5C8A] text-[12px] font-bold">
+          <AvatarFallback className="bg-white text-[#117479] text-[12px] font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>
@@ -189,100 +183,100 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
               sm:absolute sm:left-[14px] sm:right-auto sm:top-full sm:mt-3 sm:w-64 sm:rounded-2xl sm:shadow-2xl sm:border sm:border-gray-100 sm:max-h-[min(360px,calc(100vh-200px))] sm:overflow-y-auto
               fixed top-0 left-0 w-full h-full sm:h-auto"
           >
-          {/* ── Mobile-only: "List your offering" CTA + close ── */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 md:hidden">
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                navigate(user ? "/onboarding/service-selection" : "/register");
-              }}
-              className="inline-flex items-center gap-2 text-sm font-medium bg-[#0F5C8A] text-white px-4 py-2 rounded-full hover:bg-[#0A4670] transition-colors"
-            >
-              <FileText size={16} strokeWidth={2} />
-              List your offering
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
-              aria-label="Close menu"
-              className="w-9 h-9 grid place-items-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
-            >
-              <CloseIcon size={18} />
-            </button>
-          </div>
+            {/* ── Mobile-only: "List your offering" CTA + close ── */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 md:hidden">
+              <button
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate(user ? "/onboarding/service-selection" : "/register");
+                }}
+                className="inline-flex items-center gap-2 text-sm font-medium bg-[#117479] text-white px-4 py-2 rounded-full hover:bg-[#0d4548] transition-colors"
+              >
+                <FileText size={16} strokeWidth={2} />
+                List your offering
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                aria-label="Close menu"
+                className="w-9 h-9 grid place-items-center rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+              >
+                <CloseIcon size={18} />
+              </button>
+            </div>
 
-          {/* ── Identity header — name + email only.
+            {/* ── Identity header — name + email only.
               The avatar is intentionally NOT repeated here: it's already shown
               in the trigger pill above (same visual moment). Showing it twice
               adds no information and steals ~36px of menu height. ── */}
-          <div className="px-3.5 py-2.5 border-b border-gray-100">
-            <p className="text-[13px] font-semibold text-gray-900 leading-tight truncate">
-              {fullName}
-            </p>
-            {user?.email && (
-              <p className="text-[11.5px] text-gray-500 leading-tight truncate mt-1">
-                {user.email}
+            <div className="px-3.5 py-2.5 border-b border-gray-100">
+              <p className="text-[13px] font-semibold text-gray-900 leading-tight truncate">
+                {fullName}
               </p>
-            )}
-          </div>
+              {user?.email && (
+                <p className="text-[11.5px] text-gray-500 leading-tight truncate mt-1">
+                  {user.email}
+                </p>
+              )}
+            </div>
 
-          {/* ── Primary nav ── */}
-          <div className="p-1 flex-1 sm:flex-none">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.path}
-                  role="menuitem"
-                  onClick={() => handleItemClick(item.path)}
-                  className={`group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium transition-colors ${
-                    item.active
-                      ? "bg-[#E8F2F8] text-[#0F5C8A]"
-                      : "text-gray-700 hover:bg-[#F4F9FC] hover:text-[#0F5C8A]"
-                  }`}
-                >
-                  <Icon
-                    size={14}
-                    strokeWidth={1.75}
-                    className={`shrink-0 transition-colors ${
-                      item.active ? "text-[#0F5C8A]" : "text-gray-400 group-hover:text-[#0F5C8A]"
+            {/* ── Primary nav ── */}
+            <div className="p-1 flex-1 sm:flex-none">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.path}
+                    role="menuitem"
+                    onClick={() => handleItemClick(item.path)}
+                    className={`group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium transition-colors ${
+                      item.active
+                        ? "bg-[#e6fafa] text-[#117479]"
+                        : "text-gray-700 hover:bg-[#F4F9FC] hover:text-[#117479]"
                     }`}
-                  />
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
+                  >
+                    <Icon
+                      size={14}
+                      strokeWidth={1.75}
+                      className={`shrink-0 transition-colors ${
+                        item.active ? "text-[#117479]" : "text-gray-400 group-hover:text-[#117479]"
+                      }`}
+                    />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* ── Switch to Vendor (if vendor) ── */}
-          {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
-            <>
-              <div className="h-px bg-gray-100 mx-1.5" />
-              <div className="p-1">
-                <button
-                  role="menuitem"
-                  onClick={handleSwitchToVendor}
-                  className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-[#0F5C8A] hover:bg-[#E8F2F8] transition-colors"
-                >
-                  <ArrowUpRight size={14} strokeWidth={2} className="shrink-0" />
-                  Switch to Vendor
-                </button>
-              </div>
-            </>
-          )}
+            {/* ── Switch to Vendor (if vendor) ── */}
+            {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
+              <>
+                <div className="h-px bg-gray-100 mx-1.5" />
+                <div className="p-1">
+                  <button
+                    role="menuitem"
+                    onClick={handleSwitchToVendor}
+                    className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-[#117479] hover:bg-[#e6fafa] transition-colors"
+                  >
+                    <ArrowUpRight size={14} strokeWidth={2} className="shrink-0" />
+                    Switch to Vendor
+                  </button>
+                </div>
+              </>
+            )}
 
-          {/* ── Logout ── */}
-          <div className="h-px bg-gray-100 mx-1.5" />
-          <div className="p-1">
-            <button
-              role="menuitem"
-              onClick={handleLogout}
-              className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
-              Logout
-            </button>
+            {/* ── Logout ── */}
+            <div className="h-px bg-gray-100 mx-1.5" />
+            <div className="p-1">
+              <button
+                role="menuitem"
+                onClick={handleLogout}
+                className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
+              >
+                <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
+                Logout
+              </button>
+            </div>
           </div>
-        </div>
         </>
       )}
     </div>

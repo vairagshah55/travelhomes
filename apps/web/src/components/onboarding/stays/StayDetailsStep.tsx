@@ -89,7 +89,7 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
           <div className="w-6 h-[3px] rounded-full bg-th-brand" />
         </div>
         <h1
-          className="font-serif text-[#0A4670] tracking-[-0.015em] leading-[1.15]"
+          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
           style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
         >
           Stay Details
@@ -116,7 +116,7 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
                   className={cn(
                     "relative flex flex-col items-center gap-2 px-[14px] py-5 rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150 text-center",
                     selected
-                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(15,92,138,0.20)]"
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(17, 116, 121,0.20)]"
                       : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
                   )}
                 >

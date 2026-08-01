@@ -76,7 +76,15 @@ interface EditProfileFormProps {
 
 /* ─── Sub-components ──────────────────────────────────────────────────────── */
 
-const VerifyChip = ({ ok, okLabel, pendingLabel }: { ok: boolean; okLabel: string; pendingLabel: string }) => (
+const VerifyChip = ({
+  ok,
+  okLabel,
+  pendingLabel,
+}: {
+  ok: boolean;
+  okLabel: string;
+  pendingLabel: string;
+}) => (
   <div
     className={`inline-flex w-full items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium ${
       ok
@@ -84,7 +92,11 @@ const VerifyChip = ({ ok, okLabel, pendingLabel }: { ok: boolean; okLabel: strin
         : "bg-amber-50 text-amber-700 ring-1 ring-amber-200/70"
     }`}
   >
-    {ok ? <ShieldCheck size={14} className="shrink-0" /> : <AlertCircle size={14} className="shrink-0" />}
+    {ok ? (
+      <ShieldCheck size={14} className="shrink-0" />
+    ) : (
+      <AlertCircle size={14} className="shrink-0" />
+    )}
     <span>{ok ? okLabel : pendingLabel}</span>
   </div>
 );
@@ -133,7 +145,7 @@ const EditProfileSidebar = ({
     <aside className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 max-md:hidden lg:w-80 flex-shrink-0 relative">
       <button
         onClick={onBack}
-        className="absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#0F5C8A] transition-colors"
+        className="absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#117479] transition-colors"
       >
         <ChevronLeft size={14} />
         <span>Back</span>
@@ -142,14 +154,14 @@ const EditProfileSidebar = ({
       {/* Avatar with upload affordance */}
       <div className="text-center pt-6 pb-6">
         <div className="relative inline-block mb-4">
-          <Avatar className="w-28 h-28 ring-4 ring-[#E8F2F8]">
+          <Avatar className="w-28 h-28 ring-4 ring-[#e6fafa]">
             {photoSrc && <AvatarImage src={photoSrc} alt={`${fullName} avatar`} />}
-            <AvatarFallback className="bg-[#E8F2F8] text-[#0F5C8A] text-[28px] font-bold">
+            <AvatarFallback className="bg-[#e6fafa] text-[#117479] text-[28px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <label
-            className="absolute bottom-1 right-1 w-9 h-9 bg-[#0F5C8A] hover:bg-[#0A4670] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
+            className="absolute bottom-1 right-1 w-9 h-9 bg-[#117479] hover:bg-[#0d4548] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
             aria-label="Upload photo"
           >
             <input type="file" accept="image/*" className="hidden" onChange={onPhotoFileChange} />
@@ -171,7 +183,11 @@ const EditProfileSidebar = ({
 
       <div className="mt-4 space-y-2">
         <VerifyChip ok={emailVerified} okLabel="Email Verified" pendingLabel="Email Not Verified" />
-        <VerifyChip ok={mobileVerified} okLabel="Mobile Verified" pendingLabel="Mobile Not Verified" />
+        <VerifyChip
+          ok={mobileVerified}
+          okLabel="Mobile Verified"
+          pendingLabel="Mobile Not Verified"
+        />
       </div>
     </aside>
   );
@@ -195,7 +211,7 @@ const EditProfileHeader = ({ onSave, saving }: EditProfileHeaderProps) => (
     <Button
       onClick={onSave}
       disabled={saving}
-      className="bg-[#0F5C8A] hover:bg-[#0A4670] text-white px-6 rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:translate-y-0 disabled:shadow-md"
+      className="bg-[#117479] hover:bg-[#0d4548] text-white px-6 rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:translate-y-0 disabled:shadow-md"
     >
       {saving ? "Saving…" : "Save"}
     </Button>
@@ -209,11 +225,10 @@ interface EditProfileFormPropsWithSaving extends EditProfileFormProps {
 const baseInputCls =
   "w-full h-11 px-3 dark:bg-gray-900 dark:text-white rounded-lg text-[14px] text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0";
 const okBorderCls =
-  "border-gray-200 dark:border-gray-700 focus-visible:ring-[#0F5C8A] focus-visible:border-[#0F5C8A]";
+  "border-gray-200 dark:border-gray-700 focus-visible:ring-[#117479] focus-visible:border-[#117479]";
 const errBorderCls =
   "border-red-300 dark:border-red-500/40 focus-visible:ring-red-500 focus-visible:border-red-500";
-const labelCls =
-  "block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5";
+const labelCls = "block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5";
 
 const FieldError = ({ message }: { message?: string }) =>
   message ? (
@@ -307,19 +322,21 @@ const DOBPicker = ({ value, onChange, hasError }: DOBPickerProps) => {
             caption_dropdowns: "flex items-center gap-1.5",
             caption_label: "hidden",
             dropdown:
-              "h-8 rounded-md border border-gray-200 bg-white px-2 text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0F5C8A] cursor-pointer",
+              "h-8 rounded-md border border-gray-200 bg-white px-2 text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#117479] cursor-pointer",
             dropdown_month: "min-w-[110px]",
             dropdown_year: "min-w-[80px]",
-            nav_button: "h-7 w-7 bg-transparent p-0 opacity-60 hover:opacity-100 rounded-md hover:bg-gray-100",
+            nav_button:
+              "h-7 w-7 bg-transparent p-0 opacity-60 hover:opacity-100 rounded-md hover:bg-gray-100",
             nav_button_previous: "absolute left-1",
             nav_button_next: "absolute right-1",
-            head_cell: "text-gray-400 rounded-md w-9 font-medium text-[11px] uppercase tracking-wide",
+            head_cell:
+              "text-gray-400 rounded-md w-9 font-medium text-[11px] uppercase tracking-wide",
             row: "flex w-full mt-1",
             cell: "h-9 w-9 text-center text-[13px] p-0 relative focus-within:relative focus-within:z-20",
             day: "h-9 w-9 p-0 font-normal rounded-md hover:bg-gray-100 aria-selected:opacity-100 transition-colors",
             day_selected:
-              "bg-[#0F5C8A] text-white hover:bg-[#0A4670] hover:text-white focus:bg-[#0A4670] focus:text-white",
-            day_today: "ring-1 ring-[#0F5C8A]/40 text-[#0F5C8A] font-semibold",
+              "bg-[#117479] text-white hover:bg-[#0d4548] hover:text-white focus:bg-[#0d4548] focus:text-white",
+            day_today: "ring-1 ring-[#117479]/40 text-[#117479] font-semibold",
             day_outside: "text-gray-300",
             day_disabled: "text-gray-300 opacity-50 cursor-not-allowed hover:bg-transparent",
           }}
@@ -329,7 +346,13 @@ const DOBPicker = ({ value, onChange, hasError }: DOBPickerProps) => {
   );
 };
 
-const EditProfileForm = ({ formData, errors, onChange, onSave, saving }: EditProfileFormPropsWithSaving) => (
+const EditProfileForm = ({
+  formData,
+  errors,
+  onChange,
+  onSave,
+  saving,
+}: EditProfileFormPropsWithSaving) => (
   <>
     <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-5">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
@@ -414,7 +437,7 @@ const EditProfileForm = ({ formData, errors, onChange, onSave, saving }: EditPro
       <Button
         onClick={onSave}
         disabled={saving}
-        className="w-full h-12 bg-[#0F5C8A] hover:bg-[#0A4670] text-white rounded-full font-geist shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
+        className="w-full h-12 bg-[#117479] hover:bg-[#0d4548] text-white rounded-full font-geist shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save"}
       </Button>
@@ -434,7 +457,7 @@ const EditProfileSkeleton = () => (
     <aside className="max-md:hidden lg:w-80 flex-shrink-0">
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
         <div className="flex justify-center pt-6 pb-4">
-          <div className="w-28 h-28 rounded-full bg-gray-100 animate-pulse ring-4 ring-[#E8F2F8]" />
+          <div className="w-28 h-28 rounded-full bg-gray-100 animate-pulse ring-4 ring-[#e6fafa]" />
         </div>
         <div className="space-y-2 text-center">
           <ShimmerBox className="h-4 w-32 mx-auto" />
