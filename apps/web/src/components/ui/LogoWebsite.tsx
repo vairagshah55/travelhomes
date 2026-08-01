@@ -4,9 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { BrandLogo } from "@/components/BrandLogo";
 
 /**
- * Public/vendor site logo. Renders the HD vector BrandLogo (TravelHomes) and
- * links home (vendors → /dashboard, everyone else → /). The previous
- * CMS-fetched/builder.io image logo was replaced with the in-app vector logo.
+ * Public/vendor site logo — the horizontal brand lockup, linking home (vendors →
+ * /dashboard, everyone else → /). Tone resolves itself: black on light surfaces,
+ * white under `.dark`.
  */
 const LogoWebsite = () => {
   const { user } = useAuth();
@@ -21,8 +21,8 @@ const LogoWebsite = () => {
 };
 
 /**
- * Header variant — `variant="light"` forces the white wordmark for transparent
- * hero headers sitting over photos.
+ * Header variant — `variant="light"` forces the white lockup for transparent hero
+ * headers sitting over photos.
  */
 export function HomeLogoWebsite({ variant = "auto" }: { variant?: "auto" | "light" | "dark" }) {
   const { user } = useAuth();

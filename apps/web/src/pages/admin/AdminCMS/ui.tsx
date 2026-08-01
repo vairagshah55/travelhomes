@@ -298,6 +298,12 @@ export const MediaPicker: React.FC<{
   previewClassName?: string;
   /** Skip the built-in preview when the page already shows the image bigger. */
   hidePreview?: boolean;
+  /**
+   * Shown in the preview while nothing is uploaded — i.e. the bundled asset the
+   * site actually falls back to, so the field reflects what's live rather than an
+   * empty slot. Rendered as-is (no `getImageUrl`), so pass an app-relative path.
+   */
+  fallbackSrc?: string;
 }> = ({
   value,
   onFile,
@@ -311,6 +317,7 @@ export const MediaPicker: React.FC<{
   className,
   previewClassName,
   hidePreview = false,
+  fallbackSrc,
 }) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const frame =
@@ -332,6 +339,16 @@ export const MediaPicker: React.FC<{
             )}
           >
             <Loader2 size={18} className="animate-spin text-app-accent" />
+          </div>
+        ) : !value && fallbackSrc ? (
+          <div
+            className={cn(
+              "grid place-items-center shrink-0 overflow-hidden border border-app-border bg-app-surface-2",
+              frame,
+              previewClassName,
+            )}
+          >
+            <img src={fallbackSrc} alt="" className="w-full h-full object-contain p-1.5" />
           </div>
         ) : (
           <Thumb

@@ -18,6 +18,32 @@ function notFoundHandler(req, _res, next) {
   next(new AppError("ROUTE_NOT_FOUND", 404, `Route not found: ${req.method} ${req.path}`));
 }
 
+/**
+ * Is this "MongoDB is unreachable" rather than a real application fault?
+ *
+ * Covers the three shapes it arrives in: the buffering timeout Mongoose raises
+ * when a query waited out `bufferTimeoutMS` on a downed connection, driver-level
+ * selection/network failures, and `bufferCommands: false` rejections.
+ */
+function isDatabaseUnavailable(err) {
+  const name = err?.name || "";
+  if (
+    name === "MongoServerSelectionError" ||
+    name === "MongoNetworkError" ||
+    name === "MongoNotConnectedError" ||
+    name === "MongoTimeoutError"
+  ) {
+    return true;
+  }
+  const message = String(err?.message || "");
+  return (
+    name === "MongooseError" &&
+    (/buffering timed out/i.test(message) ||
+      /Client must be connected/i.test(message) ||
+      /must be connected/i.test(message))
+  );
+}
+
 function errorHandler(err, req, res, _next) {
   let status = 500;
   let code = "INTERNAL_SERVER_ERROR";
@@ -52,6 +78,14 @@ function errorHandler(err, req, res, _next) {
     status = 401;
     code = "INVALID_TOKEN";
     message = "Invalid or expired token";
+  } else if (isDatabaseUnavailable(err)) {
+    // The connection dropped between `requireDatabase` and the query, or the
+    // query was already buffered when it went down. Either way this is the
+    // database being unreachable, not a bug in the handler — 503 so clients can
+    // tell "retry in a moment" apart from "this request is broken".
+    status = 503;
+    code = "DATABASE_UNAVAILABLE";
+    message = "Database is unavailable. Please try again.";
   } else if (typeof err?.status === "number" && err.status >= 400 && err.status < 600) {
     // body-parser / http-errors style exceptions (PayloadTooLargeError, etc.)
     // already carry an HTTP status — honor it instead of masking as a 500.

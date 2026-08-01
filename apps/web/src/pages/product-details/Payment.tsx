@@ -11,6 +11,7 @@ import { useCountriesData } from "@/hooks/useCountriesData";
 import { LocationDropdown } from "@/components/LocationDropdown";
 import { GuestDropdown } from "@/components/GuestDropdown";
 import { CalendarDropdown } from "@/components/CalendarDropdown";
+import { BrandLogo } from "@/components/BrandLogo";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
@@ -784,11 +785,7 @@ export default function PaymentPage() {
             {/* Header with Logo */}
             <div className=" text-center dark:border-gray-800">
               <div className="flex justify-center mb-2">
-                <img
-                  src="https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160"
-                  alt="Travel Homes Logo"
-                  className="h-12 object-contain"
-                />
+                <BrandLogo variant="stacked" size={48} />
               </div>
               <h2 className="text-lg font-semibold text-black dark:text-white mb-1">
                 Booking Confirmation

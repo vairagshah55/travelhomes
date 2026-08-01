@@ -5,9 +5,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 
 import { adminAuthService } from "@/services/api";
 import { useAuth } from "@/contexts/AdminAuthContext";
+
+/**
+ * Turn whatever the api layer threw into something the operator can act on.
+ * Bad credentials, a stopped API and an unreachable database are three different
+ * problems and used to produce one indistinguishable toast.
+ */
+function describeLoginFailure(err: unknown): string {
+  if (typeof err === "string" && err.trim()) {
+    return /network|timeout|failed to fetch/i.test(err)
+      ? "Can't reach the server. Check that the API is running on its port."
+      : err;
+  }
+  const e = err as { error?: { code?: string; message?: string }; message?: string } | null;
+  switch (e?.error?.code) {
+    case "DATABASE_UNAVAILABLE":
+      return "The server can't reach its database. Check the API log for the reason, then retry.";
+    case "UNAUTHORIZED":
+      return "Incorrect email or password.";
+    case "FORBIDDEN":
+      return e?.error?.message || "This account isn't active. Contact an administrator.";
+    case "TOO_MANY_REQUESTS":
+      return "Too many attempts. Wait a few minutes and try again.";
+    default:
+      return e?.error?.message || e?.message || "Admin login failed. Please try again.";
+  }
+}
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -70,8 +97,12 @@ const AdminLogin = () => {
       // A staff member without view_dashboard gets bounced from here to the
       // first area their role does hold (see AdminProtectedRoute).
       navigate("/admin/dashboard");
-    } catch (error: any) {
-      toast.error(error?.message || "Admin login failed. Please try again.");
+    } catch (error: unknown) {
+      // `services/api.ts` re-throws the server envelope, or a bare string when
+      // the request never landed — so `error.message` is usually undefined and
+      // every failure used to read as the same generic "login failed", including
+      // "the API is down" and "the database is unreachable".
+      toast.error(describeLoginFailure(error));
     } finally {
       setIsLoading(false);
     }
@@ -83,7 +114,7 @@ const AdminLogin = () => {
         {/* Admin Panel Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-5">
-            <img src="/th-logo.png" alt="TravelHomes" className="h-20 w-auto object-contain" />
+            <BrandLogo variant="stacked" size={84} />
           </div>
           <h1 className="text-2xl font-bold text-black mb-1">Admin Panel</h1>
           <p className="text-gray-700">Secure administrative access</p>

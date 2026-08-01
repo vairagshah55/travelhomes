@@ -64,6 +64,13 @@ interface AuthContextType {
   /** The role's resolved feature grants, or null until /me has answered. */
   access: AdminAccess | null;
   /**
+   * Why /me failed, when it failed for a reason that isn't "not signed in" —
+   * server down, database unreachable, network drop. Consumers must not treat a
+   * null `access` as "still loading" without checking this, or a failed /me
+   * shows an eternal spinner.
+   */
+  error: string | null;
+  /**
    * Whether the admin may perform `action` on `feature`. Mirrors the server's
    * requireFeature check so the UI hides what the API would refuse — it is a
    * convenience, never the enforcement point.
@@ -128,29 +135,60 @@ function toAccess(raw: unknown): AdminAccess | null {
   };
 }
 
+/**
+ * Pull a human message out of whatever `services/api.ts` threw. Its interceptors
+ * re-throw `error.response.data` (the server envelope) or a bare string for
+ * transport failures, so neither is an Error and `err.message` alone is usually
+ * undefined.
+ */
+function describeFailure(err: unknown): string {
+  if (typeof err === "string" && err.trim()) {
+    return /network|timeout/i.test(err)
+      ? "Can't reach the server. Check that the API is running."
+      : err;
+  }
+  const e = err as { error?: { code?: string; message?: string }; message?: string } | null;
+  const code = e?.error?.code;
+  if (code === "DATABASE_UNAVAILABLE") {
+    return "The server can't reach its database. Check the API log for the reason, then retry.";
+  }
+  return (
+    e?.error?.message ||
+    e?.message ||
+    "Couldn't load your account. The server may be unavailable."
+  );
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [access, setAccess] = useState<AdminAccess | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const refresh = useCallback(async () => {
     if (!readAdminToken()) {
       setUser(null);
       setAccess(null);
+      setError(null);
       setIsLoading(false);
       return;
     }
+    setIsLoading(true);
+    setError(null);
     try {
       const resp = await adminAuthService.getMe();
       setUser(toUser(resp?.admin));
       setAccess(toAccess(resp?.access));
-    } catch {
+      setError(null);
+    } catch (err) {
       // The api response interceptor already clears the token + redirects on
-      // 401. For other failures (network / 5xx), we keep the existing user
-      // (likely null) and stop loading; the next page-level fetch will
-      // surface a clearer error.
+      // 401, so anything landing here is a transport or server failure. Record
+      // WHY: a null `access` with no error is indistinguishable from "still
+      // loading", which is what made a 500 from /me hang the whole panel on its
+      // loading spinner.
       setUser(null);
       setAccess(null);
+      setError(describeFailure(err));
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAdminToken();
     setUser(null);
     setAccess(null);
+    setError(null);
   }, []);
 
   const can = useCallback(
@@ -194,6 +233,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         refresh,
         access,
+        error,
         can,
       }}
     >

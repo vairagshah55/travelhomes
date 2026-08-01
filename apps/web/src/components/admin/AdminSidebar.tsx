@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { AdminBrandMark } from "@/components/admin/AdminBrand";
+import { BrandLogo } from "@/components/BrandLogo";
 import LogoWebsite from "@/components/admin/LogoWebsite";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { featureForPath } from "@/lib/adminPermissions";
@@ -569,15 +570,12 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             aria-label="TravelHomes admin home"
           >
             <AdminBrandMark size={34} />
-            <span
-              className={cn(
-                "font-extrabold tracking-tight leading-none text-[19px] whitespace-nowrap",
-                reveal(!railOpen),
-              )}
-            >
-              <span className="text-[#101828]">Travel</span>
-              <span className="text-[#0d9488]">Homes</span>
-            </span>
+            <BrandLogo
+              variant="name"
+              size={17}
+              decorative
+              className={cn(reveal(!railOpen))}
+            />
           </button>
 
           <button

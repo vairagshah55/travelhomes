@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const LISTING_LABELS: Record<string, string> = {
   stay: "stay",
@@ -25,11 +26,7 @@ const OnboardingComplete = () => {
       {/* Header */}
       <header className="flex-none border-b border-ds-pebble">
         <div className="flex items-center h-14 px-6 lg:px-16">
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/f6f09b434677d6443a1c0584231cf8b7ddcb9a02?width=160"
-            alt="Travel Homes Logo"
-            className="w-20 h-12 object-contain"
-          />
+          <BrandLogo size={36} />
         </div>
       </header>
 

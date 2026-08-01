@@ -2,6 +2,8 @@
 // user action (e.g. "Download PDF" buttons). We lazy-import them inside
 // each function so neither lib lands in any route's initial chunk.
 
+import { logoSrc as brandLogoSrc } from "@/lib/brand";
+
 export interface PDFOptions {
   filename: string;
   title?: string;
@@ -47,8 +49,8 @@ export const downloadDetailsAsPDF = async (
   element.style.backgroundColor = "#fff";
   element.style.color = "#000";
 
-  const logoUrl =
-    "https://api.builder.io/api/v1/image/assets/TEMP/ef12e49186360c5f295a30497de96e3fcb05f7d8?width=160";
+  // html2pdf rasterises the node, so the logo has to be an absolute URL it can fetch.
+  const logoUrl = new URL(brandLogoSrc("horizontal", "black"), window.location.origin).href;
 
   element.innerHTML = `
     <div style="text-align: center; margin-bottom: 30px;">

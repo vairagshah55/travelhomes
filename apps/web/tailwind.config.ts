@@ -69,6 +69,10 @@ export default {
           "brand-hover":   "var(--th-brand-hover)",
           "brand-fg":      "var(--th-brand-fg)",
 
+          /* Logo artwork cyan — theme-independent, see global.css */
+          logo:            "var(--th-logo)",
+          "logo-fg":       "var(--th-logo-fg)",
+
           "surface-0":     "var(--th-surface-0)",
           "surface-1":     "var(--th-surface-1)",
           "surface-2":     "var(--th-surface-2)",

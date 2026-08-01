@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { useToast } from "@/components/ui/use-toast";
 import { settingsApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
+import { logoSrc as brandLogoSrc } from "@/lib/brand";
 
 export default function Footer() {
   const [email, setEmail] = useState("");
@@ -27,9 +28,8 @@ export default function Footer() {
     fetchLogo();
   }, []);
 
-  // Footer is black background -> Use Dark Theme Logo (White text)
-  const defaultDarkLogo = "https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162";
-  const logoSrc = logoDarkUrl ? getImageUrl(logoDarkUrl) : defaultDarkLogo;
+  // Footer sits on black, so fall back to the white lockup when the CMS has no upload.
+  const logoSrc = logoDarkUrl ? getImageUrl(logoDarkUrl) : brandLogoSrc("horizontal", "white");
 
   const handleSubscribe = async () => {
     if (!email) {
@@ -86,8 +86,9 @@ return(
       <div>
         <img
           src={logoSrc}
-          alt="Logo"
-          className="w-16 h-12 mb-4"
+          alt="TravelHomes"
+          draggable={false}
+          className="h-9 w-auto max-w-[180px] object-contain object-left mb-4"
         />
         <p className="text-gray-400 text-xs leading-relaxed max-w-xs">
           Caravan trips blend adventure and comfort, as travelers embark on open-road journeys in well-equipped recreational vehicles like camper vans, RVs, motorhomes, and caravans.

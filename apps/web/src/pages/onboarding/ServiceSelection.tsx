@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { getOnboardingData, cmsPublicApi } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/BrandLogo";
 
 type ServiceType = "caravan" | "stay" | "activity";
 
@@ -154,14 +155,7 @@ const ServiceSelection = () => {
     <div className="min-h-screen overflow-hidden bg-th-surface-0 text-[#0A4670]">
       {/* ─── Header ─────────────────────────────────────────────────────────── */}
       <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-12 bg-white/97 backdrop-blur-[16px] border-b border-th-warm-border">
-        <img
-          src="https://travelhomes.in/wp-content/uploads/2022/03/th-logo.png"
-          srcSet="https://travelhomes.in/wp-content/uploads/2022/03/th-logo-300x209.png 300w, https://travelhomes.in/wp-content/uploads/2022/03/th-logo.png 384w"
-          sizes="(max-width: 300px) 300px, 384px"
-          alt="TravelHomes"
-          className="h-9 w-auto object-contain"
-          draggable={false}
-        />
+        <BrandLogo size={36} />
 
         {/* Step progress */}
         <div className="hidden sm:flex items-center gap-2">

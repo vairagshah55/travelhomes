@@ -8,9 +8,11 @@ const cors = require("cors");
 const helmet = require("helmet");
 const http = require("http");
 const pinoHttp = require("pino-http");
+const mongoose = require("mongoose");
 const { connectDB, mongoStatus } = require("../config/db");
 const { requireJwt } = require("../middleware/auth");
 const { requireFeature } = require("../middleware/permissions");
+const { requireDatabase } = require("../middleware/dbReady");
 const { Server } = require("socket.io");
 const session = require("express-session");
 const passport = require("../config/passport");
@@ -176,12 +178,21 @@ app.get("/api/ping", (req, res) => {
 });
 
 app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
+  const dbUp = mongoose.connection.readyState === 1;
+  // A health check that answers "ok" while the database is unreachable is worse
+  // than no health check — it's what a load balancer keeps routing traffic to.
+  res.status(dbUp ? 200 : 503).json({
+    status: dbUp ? "ok" : "degraded",
     timestamp: new Date().toISOString(),
     mongodb: mongoStatus(),
   });
 });
+
+// Every route below this line talks to MongoDB. Reject immediately when the
+// connection is down instead of letting Mongoose buffer each query for 10s and
+// surface it as an opaque 500. /api/ping and /api/health stay reachable so you
+// can still ask the server what's wrong.
+app.use("/api", requireDatabase);
 
 // Public auth + user routes.
 // /api/auth registration + OTP + Google sign-in is owned by the layered auth module

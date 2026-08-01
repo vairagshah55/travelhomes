@@ -106,6 +106,12 @@
     --th-brand-hover: #14709f;
     --th-brand-fg: #ffffff;
 
+    /* Logo cyan — the colour of the delivered artwork itself, so unlike --th-brand
+       it is a fixed constant and is deliberately NOT re-mapped per theme or skin.
+       Carries BLACK artwork/text (cyan-on-black is ~14:1, white-on-cyan is 1.6:1). */
+    --th-logo: #3bd9d9;
+    --th-logo-fg: #000000;
+
     /* CTA accent — Champagne (use ONLY as fill/bg, never as text on white) */
     --th-cta: #c8a96a;
     --th-cta-hover: #8c6f33;

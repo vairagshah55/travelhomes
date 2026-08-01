@@ -8,6 +8,13 @@ const MONGO_DB_NAME = env.MONGO_DB_NAME;
 let mongoStatus = {
   isConnected: false,
   message: "Not connected",
+  /**
+   * Has a connection attempt failed? Distinguishes "still shaking hands on a
+   * cold start" (where Mongoose should buffer) from "we already know this host
+   * is unreachable" (where requests should be refused immediately). See
+   * middleware/dbReady.js.
+   */
+  hasFailed: false,
 };
 
 // Connection options
@@ -16,8 +23,33 @@ const options = {
   maxPoolSize: 10, // Maintain up to 10 socket connections
   serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
   socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-  family: 4, // Use IPv4, skip trying IPv6
+  /**
+   * Address family is deliberately NOT pinned.
+   *
+   * This used to be `family: 4` ("use IPv4, skip trying IPv6"), which forces
+   * `dns.lookup(host, { family: 4 })`. On an IPv6-only network with NAT64/DNS64
+   * — increasingly common on mobile tethering and some ISPs — the resolver
+   * serves *only* a synthesized AAAA record (a 64:ff9b::/96 address) for
+   * IPv4-only hosts like Atlas. Asking it for an A record returns
+   * `getaddrinfo ENOENT`, so every shard host fails selection and the driver
+   * reports its generic "check your IP allow-list" hint, which sends you looking
+   * in entirely the wrong place. Leaving the family unset lets Node take the
+   * NAT64 address and route normally.
+   *
+   * Set MONGO_IP_FAMILY=4 (or 6) only if a specific host genuinely needs it.
+   */
+  ...(process.env.MONGO_IP_FAMILY ? { family: Number(process.env.MONGO_IP_FAMILY) } : {}),
 };
+
+// How long a query may sit buffered on a downed connection before it throws.
+// The 10s default meant a page whose calls all queued behind a dead connection
+// froze for ten seconds and then 500ed. `middleware/dbReady.js` rejects those
+// requests up front; this only bounds the race where the link drops mid-query.
+mongoose.set("bufferTimeoutMS", 5000);
+
+/** Delay between initial-connection retries (dev only — see connectDB). */
+const RETRY_DELAY_MS = 5000;
+let retryTimer = null;
 
 /**
  * Connect to MongoDB database
@@ -41,7 +73,14 @@ const connectDB = async () => {
     mongoStatus = {
       isConnected: true,
       message: `Connected to ${conn.connection.host}${MONGO_DB_NAME ? `/${MONGO_DB_NAME}` : ""}`,
+      hasFailed: false,
     };
+
+    // A retry loop from an earlier failed attempt has done its job.
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
 
     console.log(`MongoDB connected successfully`);
 
@@ -67,6 +106,7 @@ const connectDB = async () => {
     mongoStatus = {
       isConnected: false,
       message: `Connection failed: ${error.message}`,
+      hasFailed: true,
     };
     console.error(`Error connecting to MongoDB: ${error.message}`);
 
@@ -89,6 +129,24 @@ const connectDB = async () => {
     if (env.NODE_ENV === "production") {
       process.exit(1);
     }
+
+    /**
+     * Keep trying in the background.
+     *
+     * Mongoose's automatic reconnection only arms itself after a successful
+     * initial handshake — if the very first `connect()` fails, readyState stays
+     * at 0 forever and every request 503s until someone restarts the process,
+     * even once MongoDB is back up. Retrying here means starting Mongo after the
+     * API is enough to bring the app back on its own.
+     */
+    if (!retryTimer && env.NODE_ENV !== "test") {
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        console.log("[db] retrying MongoDB connection…");
+        void connectDB();
+      }, RETRY_DELAY_MS);
+      retryTimer.unref?.(); // never hold the process open just for a retry
+    }
   }
 };
 
@@ -97,4 +155,7 @@ const getMongoStatus = () => {
   return mongoStatus.message || "Unknown";
 };
 
-module.exports = { connectDB, mongoStatus: getMongoStatus };
+/** Structured view of the connection, for the readiness gate + /api/health. */
+const getMongoState = () => ({ ...mongoStatus });
+
+module.exports = { connectDB, mongoStatus: getMongoStatus, mongoState: getMongoState };

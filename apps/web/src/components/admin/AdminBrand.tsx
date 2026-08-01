@@ -1,11 +1,14 @@
 import React from "react";
-import { Caravan } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { cn } from "@/lib/utils";
+import { BRAND_NAME, logoSrc } from "@/lib/brand";
 
 /**
- * TravelHomes admin brand mark — a rounded deep-teal tile with a white caravan
- * glyph (nods to the camper-van brand logo while staying crisp/vector at any
- * size). Solid #0d9488 to match the admin accent; square so it also works as
- * the collapsed-rail icon.
+ * Compact brand mark — the caravan silhouette on a rounded brand-teal tile.
+ *
+ * Black-on-teal is the delivered on-brand-colour treatment ("Small Blue BG.png"),
+ * and at ~14:1 it stays readable down to the collapsed rail's 34px and the 32px
+ * favicon. Square, so it also works as an avatar-shaped slot.
  */
 export function AdminBrandMark({
   size = 34,
@@ -17,30 +20,35 @@ export function AdminBrandMark({
   return (
     <span
       role="img"
-      aria-label="TravelHomes"
-      className={`grid place-items-center shrink-0 rounded-[11px] text-white shadow-[0_5px_14px_-4px_rgba(13,148,136,0.65)] ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: "linear-gradient(140deg, #12b3a4 0%, #0d9488 55%, #0b7d72 100%)",
-      }}
+      aria-label={BRAND_NAME}
+      className={cn(
+        "grid place-items-center shrink-0 bg-th-logo",
+        "shadow-[0_5px_14px_-4px_rgba(59,217,217,0.75)]",
+        className,
+      )}
+      // Sized from the `size` prop, so these three can't be class names.
+      style={{ width: size, height: size, borderRadius: Math.round(size * 0.32) }}
     >
-      <Caravan size={Math.round(size * 0.56)} strokeWidth={2} />
+      <img
+        src={logoSrc("caravan", "black")}
+        alt=""
+        aria-hidden
+        draggable={false}
+        className="select-none object-contain"
+        style={{ width: Math.round(size * 0.7) }}
+      />
     </span>
   );
 }
 
-/** Full lockup: teal caravan mark + "TravelHomes" wordmark. */
+/**
+ * Full horizontal lockup for admin headers and the open sidebar.
+ *
+ * `markSize` is the lockup's height (it used to be the mark's, which was the same
+ * number) — kept under the old name so existing call sites read unchanged.
+ */
 export function AdminBrandLockup({ markSize = 34 }: { markSize?: number }) {
-  return (
-    <span className="inline-flex items-center gap-2.5">
-      <AdminBrandMark size={markSize} />
-      <span className="font-extrabold tracking-tight leading-none text-[19px] whitespace-nowrap">
-        <span className="text-[#101828]">Travel</span>
-        <span className="text-[#0d9488]">Homes</span>
-      </span>
-    </span>
-  );
+  return <BrandLogo variant="horizontal" size={markSize} />;
 }
 
 export default AdminBrandMark;

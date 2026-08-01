@@ -1,4 +1,5 @@
 import LogoWebsite, { HomeLogoWebsite } from "@/components/ui/LogoWebsite";
+import { BrandLogo } from "@/components/BrandLogo";
 import React, { useEffect, useState } from "react";
 
 // Vehicle types with their respective emojis and speeds
@@ -46,12 +47,9 @@ const Interchange = () => {
   return (
     <div className="relative w-full h-screen bg-green-900 flex items-center justify-center overflow-hidden">
       <div className="absolute left-72 top-10 text-white text-center z-10">
-        <div className="flex justify-center items-center w-20 h-20 max-w-60 max-h-60">
-          <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/871bfcdbcdbc969135e889b258ef410c6bcc2658?width=162"
-            className="w-full h-full object-cover"
-            alt="logo"
-          />
+        <div className="flex justify-center items-center">
+          {/* Green hero background → the white lockup. */}
+          <BrandLogo variant="stacked" size={72} tone="light" />
         </div>
       </div>
       <div className="absolute right-72 top-10 text-white text-center z-10">
