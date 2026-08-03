@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 // ─── Token constants kept for consumers that import them directly ──────────
 // These are the raw hex values; Tailwind classes are used in this file.
 export const TEAL = "#117479";
-export const TEAL_BG = "rgba(17, 116, 121, 0.07)";
-export const TEAL_FOCUS = "rgba(17, 116, 121, 0.15)";
+export const TEAL_BG = "rgba(59, 217, 218, 0.14)";
+export const TEAL_FOCUS = "rgba(59, 217, 218, 0.3)";
 export const BLACK = "#0a1c1c";
 export const GRAY_500 = "#6b6b6b";
 export const GRAY_400 = "#888780";

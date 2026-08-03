@@ -77,7 +77,7 @@ const CategoryStep: React.FC<CategoryStepProps> = ({ category, onSelect, embedde
               className={cn(
                 "w-12 h-12 rounded-[14px] border-[1.5px] flex items-center justify-center text-[22px] shrink-0 transition-all duration-150",
                 selected
-                  ? "bg-[rgba(17, 116, 121,0.12)] border-th-brand-border-soft"
+                  ? "bg-[rgba(59, 217, 218, 0.24)] border-th-brand-border-soft"
                   : "bg-th-warm-surface border-th-warm-border",
               )}
             >

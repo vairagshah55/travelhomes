@@ -7,6 +7,7 @@ import { MapPin, Calendar, Users, Search, X, Star } from "lucide-react";
 import { HomeLogoWebsite } from "./ui/LogoWebsite";
 import { DateRange } from "react-date-range";
 import UserDropdown from "./UserDropdown";
+import FilterButton from "./FilterButton";
 import { CgLoadbarDoc } from "react-icons/cg";
 
 // ─── Shared types ─────────────────────────────────────────────────────────────
@@ -20,33 +21,10 @@ interface HeaderProps {
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
 // ─── Small icon helpers (duplicated from Header.tsx for self-containment) ─────
-function FilterButton({
-  icon: Icon,
-  label,
-  active = false,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 max-md:gap-1 px-4 py-2 rounded-full transition-colors ${
-        active
-          ? "bg-[#117479] dark:bg-white dark:text-black text-white border border-black"
-          : "bg-white/10 text-gray-900 dark:bg-black dark:text-white hover:bg-gray-200 border border-gray-200"
-      }`}
-    >
-      <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-        <Icon className="w-4 h-4 text-black" />
-      </div>
-      <span className="text-sm font-medium capitalize">{label}</span>
-    </button>
-  );
-}
+/* The sticky filter row uses the shared `components/FilterButton`. It used to
+   carry a private copy that had drifted to its own colours (old teal fill, a
+   black 1px border, and a white disc behind every icon), so re-theming the pill
+   left the header on the previous brand. One implementation, one look. */
 
 function CamperVanIcon({ className }: { className?: string }) {
   return (

@@ -143,17 +143,20 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`Account menu for ${displayName}`}
-        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#117479] md:pl-3.5 md:pr-1.5 md:bg-[#117479] md:hover:bg-[#0d4548] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
-          isOpen ? "md:bg-[#0d4548] md:shadow-lg" : ""
+        /* Cyan pill carries WHITE, matching every other brand-filled control.
+           The focus ring stays dark ink on purpose — it's an indicator, not a
+           label, and a white ring on cyan would be almost invisible. */
+        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0a1c1c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#3BD9DA] md:pl-3.5 md:pr-1.5 md:bg-[#3BD9DA] md:hover:bg-[#2BC7C8] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
+          isOpen ? "md:bg-[#2BC7C8] md:shadow-lg" : ""
         }`}
       >
         <span className="hidden md:inline-flex items-baseline gap-1 text-[13px] leading-none">
-          <span className="text-white/75">Hi,</span>
+          <span className="text-white/80">Hi,</span>
           <span className="text-white font-semibold tracking-tight max-w-[140px] truncate inline-block align-middle">
             {displayName}
           </span>
         </span>
-        <Avatar className="h-9 w-9 md:ring-2 md:ring-white/30 shrink-0">
+        <Avatar className="h-9 w-9 md:ring-2 md:ring-white/50 shrink-0">
           {photoSrc && <AvatarImage src={photoSrc} alt={`${displayName}'s avatar`} />}
           <AvatarFallback className="bg-white text-[#117479] text-[12px] font-bold">
             {initials}

@@ -3,6 +3,10 @@ import { motion } from "framer-motion";
 import { Search, CalendarCheck, Compass } from "lucide-react";
 import { ScrollReveal, staggerContainer, staggerItem } from "./ScrollReveal";
 
+// `accent` is the glyph on the cyan disc. These discs are logo-cyan *artwork*,
+// so they take the --th-logo / --th-logo-fg pairing (ink on cyan, ~14:1) — not
+// --th-brand / --th-brand-fg, whose white-on-cyan is the deliberate 1.6:1 UI
+// pairing. White glyphs here were all but invisible against the disc.
 const STEPS = [
   {
     icon: Search,
@@ -11,7 +15,7 @@ const STEPS = [
     description:
       "Browse campervans, unique stays, and activities across India. Filter by location, date, and budget to find your perfect match.",
     accent: "#0a1c1c",
-    bg: "#F7F7F7",
+    bg: "#3BD9DA",
   },
   {
     icon: CalendarCheck,
@@ -19,8 +23,8 @@ const STEPS = [
     title: "Book Instantly",
     description:
       "Secure your booking in seconds with a seamless checkout. Pay safely, get instant confirmation, and receive your itinerary details.",
-    accent: "#117479",
-    bg: "#FFE8EE",
+    accent: "#0a1c1c",
+    bg: "#3BD9DA",
   },
   {
     icon: Compass,
@@ -29,33 +33,33 @@ const STEPS = [
     description:
       "Pack your bags and go! From Himalayan trails to coastal stays, every Travel Homes experience is curated for unforgettable moments.",
     accent: "#0a1c1c",
-    bg: "#F7F7F7",
+    bg: "#3BD9DA",
   },
 ];
 
 export function HowItWorks() {
   return (
     <ScrollReveal delay={0.05}>
-      <section className="py-12 md:py-16 px-4">
+      <section className="py-10 md:py-16">
         {/* Header */}
         <motion.div
-          className="text-center mb-10 md:mb-14"
+          className="text-center mb-6 md:mb-14"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
           transition={{ duration: 0.5, ease: "easeOut" }}
         >
-          <h2 className="text-2xl md:text-[32px] font-semibold text-[#0a1c1c] tracking-tight">
+          <h2 className="text-[20px] md:text-[32px] font-semibold text-[#0a1c1c] tracking-tight">
             How Travel Homes Works
           </h2>
-          <p className="text-sm text-[#717171] mt-2 max-w-md mx-auto leading-relaxed">
+          <p className="text-[13px] md:text-sm text-[#717171] mt-2 max-w-md mx-auto leading-relaxed">
             From search to stay — three easy steps to your next adventure.
           </p>
         </motion.div>
 
         {/* Steps grid */}
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto"
+          className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-8 max-w-5xl mx-auto"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-60px" }}
@@ -66,7 +70,9 @@ export function HowItWorks() {
               key={step}
               variants={staggerItem}
               whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              className="relative flex flex-col gap-5 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
+              // Icon beside the copy on phones — three stacked 200px-tall cards
+              // is a lot of scrolling for one explainer.
+              className="relative flex flex-row md:flex-col items-start gap-4 md:gap-5 p-4 md:p-6 rounded-2xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm hover:shadow-md transition-shadow duration-300"
             >
               {/* Connector line — neutral (desktop) */}
               {i < STEPS.length - 1 && (
@@ -74,25 +80,34 @@ export function HowItWorks() {
               )}
 
               {/* Icon circle + step badge */}
-              <div className="relative inline-flex w-fit">
+              <div className="relative inline-flex w-fit flex-shrink-0">
                 <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+                  className="w-11 h-11 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: bg }}
                 >
-                  <Icon size={24} style={{ color: accent }} strokeWidth={2} />
+                  <Icon size={20} className="md:hidden" style={{ color: accent }} strokeWidth={2} />
+                  <Icon
+                    size={24}
+                    className="hidden md:block"
+                    style={{ color: accent }}
+                    strokeWidth={2}
+                  />
                 </div>
-                <span
-                  className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                  style={{ backgroundColor: "#117479" }}
-                >
+                {/* Ink badge, white numerals. The old #117479 fill was a
+                    near-neighbour of the cyan disc it sits on, so the badge
+                    read as a smudge; ink separates from both the disc and the
+                    white card, and the numerals hold 16:1 on it. */}
+                <span className="absolute -top-1.5 -left-1.5 w-[22px] h-[22px] md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white bg-[#0a1c1c] ring-2 ring-white dark:ring-gray-900">
                   {step}
                 </span>
               </div>
 
               {/* Text */}
-              <div className="space-y-1.5">
-                <h3 className="text-[17px] font-semibold text-[#0a1c1c]">{title}</h3>
-                <p className="text-sm text-[#717171] leading-relaxed">{description}</p>
+              <div className="space-y-1 md:space-y-1.5 min-w-0">
+                <h3 className="text-[15px] md:text-[17px] font-semibold text-[#0a1c1c]">{title}</h3>
+                <p className="text-[13px] md:text-sm text-[#717171] leading-relaxed">
+                  {description}
+                </p>
               </div>
             </motion.div>
           ))}

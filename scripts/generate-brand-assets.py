@@ -16,7 +16,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "Final Logo", "Big Black BG.png")
 OUT = os.path.join(ROOT, "apps", "web", "public", "brand")
 
-TEAL = (59, 217, 217)     # #3BD9D9 - brand teal, sampled from "TH Logo.png" swatch
+TEAL = (59, 217, 218)     # #3BD9DA - brand teal, sampled from "TH Logo.png" swatch
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 TONES = {"color": TEAL, "black": BLACK, "white": WHITE}
@@ -129,7 +129,7 @@ for shape, m in art.items():
 
 # ── app icons: black artwork on a rounded brand-teal tile ────────────────────
 # Matches the delivered on-teal treatment ("Small Blue BG.png" / "Travelhomes
-# Caravan.png"): black art on #3BD9D9. Black-on-teal is ~14:1, so it survives 32px.
+# Caravan.png"): black art on #3BD9DA. Black-on-teal is ~14:1, so it survives 32px.
 def tile(size, shape="mark", pad=0.12, radius=0.22):
     m = art[shape]
     inner = round(size * (1 - pad * 2))

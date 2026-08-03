@@ -20,7 +20,7 @@ export default function MapPin({
   const pillBg = isActive ? "var(--ds-navy)" : "var(--ds-deep)";
   const pillShadow = isActive
     ? "0 4px 16px rgba(13, 69, 72,0.45)"
-    : "0 2px 8px rgba(17, 116, 121,0.3)";
+    : "0 2px 8px rgba(59, 217, 218, 0.6)";
 
   return (
     <div

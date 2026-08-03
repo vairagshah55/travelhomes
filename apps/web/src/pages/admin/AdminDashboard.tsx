@@ -85,7 +85,7 @@ const DashboardChart = ({
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 pt-5 pb-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(17, 116, 121,0.14),0_14px_32px_-16px_rgba(17, 116, 121,0.45)]">
+    <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 pt-5 pb-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.28),0_14px_32px_-16px_rgba(59, 217, 218, 0.65)]">
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">{title}</h3>
         <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">

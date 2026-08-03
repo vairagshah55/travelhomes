@@ -139,7 +139,7 @@ const Help = () => {
                 <Button
                   onClick={handleSubmit}
                   disabled={submitting}
-                  className="bg-tpl-primary text-black px-6 sm:px-10 py-3 rounded-full hover:bg-tpl-primary/90 font-geist disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="bg-tpl-primary text-white px-6 sm:px-10 py-3 rounded-full hover:bg-tpl-primary/90 font-geist disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {submitting ? "Submitting…" : "Submit"}
                 </Button>

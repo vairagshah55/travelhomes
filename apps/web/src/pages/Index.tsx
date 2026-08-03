@@ -361,7 +361,10 @@ export default function Index() {
         scrollHighlightFilter={scrollHighlightFilter}
       />
 
-      <div ref={contentRef} className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-6">
+      <div
+        ref={contentRef}
+        className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-4 md:pt-6 overflow-x-clip"
+      >
         <OfferSections
           activeFilter={activeFilter}
           homepageSections={homepageSections}
@@ -437,9 +440,11 @@ export default function Index() {
       </div>
 
       <Footer />
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm dark:bg-gray-900/95 border-t border-gray-100 dark:border-gray-800 shadow-sm">
-        <MobileUserNav />
-      </div>
+      {/* Clearance for the fixed bottom nav, painted in the footer's own colour
+          so the page doesn't end on a white band. Collapses to 0 at lg, where
+          the nav is hidden. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+      <MobileUserNav />
     </>
   );
 }

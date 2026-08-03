@@ -42,7 +42,7 @@ export const ADMIN_APP_VARS = {
   "--surface-fg-subtle": "#6e7278",
   "--accent": "#117479",
   "--accent-hover": "#0d5c60",
-  "--accent-soft": "rgba(17, 116, 121, 0.1)",
+  "--accent-soft": "rgba(59, 217, 218, 0.2)",
   "--accent-fg": "#ffffff",
 } as React.CSSProperties;
 
@@ -104,8 +104,8 @@ export const BTN_NEUTRAL =
   "hover:bg-muted/70 text-[12.5px] font-semibold gap-1.5";
 export const BTN_PRIMARY =
   "h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 " +
-  "shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-6px_rgba(17, 116, 121,0.45)] " +
-  "hover:shadow-[0_1px_2px_rgba(17, 116, 121,0.28),0_8px_20px_-6px_rgba(17, 116, 121,0.55)] " +
+  "shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-6px_rgba(59, 217, 218, 0.65)] " +
+  "hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.56),0_8px_20px_-6px_rgba(59, 217, 218, 0.65)] " +
   "transition-shadow duration-150";
 
 export const Panel = ({

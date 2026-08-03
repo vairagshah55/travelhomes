@@ -66,7 +66,7 @@ export function StayStatusScreen({
         </div>
 
         {primaryPropertyName && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(17, 116, 121,0.2)]">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(59, 217, 218, 0.4)]">
             <Home className="w-4 h-4" />
             {stayType === "entire" ? `Entire ${primaryPropertyName}` : primaryPropertyName}
           </div>

@@ -24,33 +24,10 @@ interface HeaderProps {
 
 type FilterType = "camper-van" | "unique-stays" | "activity";
 
-function FilterButton({
-  icon: Icon,
-  label,
-  active = false,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-3 max-md:gap-1 px-4 py-2 rounded-full transition-colors ${
-        active
-          ? "bg-[#117479] dark:bg-white dark:text-black text-white border border-black"
-          : "bg-white/10 text-gray-900 dark:bg-black dark:text-white hover:bg-gray-200 border border-gray-200"
-      }`}
-    >
-      <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-        <Icon className="w-4 h-4 text-black" />
-      </div>
-      <span className="text-sm font-medium capitalize">{label}</span>
-    </button>
-  );
-}
+/* A third copy of FilterButton used to live here, rendered by nothing. Deleted
+   rather than re-themed — a stale duplicate of a component we restyle is how the
+   header ended up on the previous brand colour in the first place. Use
+   `components/FilterButton`. */
 
 function CamperVanIcon({ className }: { className?: string }) {
   return (

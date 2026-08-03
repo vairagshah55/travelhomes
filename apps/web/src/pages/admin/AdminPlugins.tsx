@@ -86,7 +86,7 @@ const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
               <Button
                 onClick={handleSubmit}
                 disabled={saving}
-                className="h-12 px-8 bg-tpl-primary hover:bg-tpl-primary/90 text-black rounded-[60px] text-base font-medium"
+                className="h-12 px-8 bg-tpl-primary hover:bg-tpl-primary/90 text-white rounded-[60px] text-base font-medium"
               >
                 {saving ? "Saving..." : "Submit"}
               </Button>

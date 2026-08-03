@@ -289,7 +289,7 @@ const VendorManagement = () => {
                 access.canCreate ? (
                   <Button
                     onClick={() => setShowAddModal(true)}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
                   >
                     <Plus size={16} /> Add Vendor
                   </Button>
@@ -463,7 +463,7 @@ function AddVendorDialog({
             <Button
               type="submit"
               disabled={isSaving}
-              className="bg-tpl-primary hover:bg-tpl-primary/90 text-black"
+              className="bg-tpl-primary hover:bg-tpl-primary/90 text-white"
             >
               {isSaving ? "Saving…" : "Save Vendor"}
             </Button>

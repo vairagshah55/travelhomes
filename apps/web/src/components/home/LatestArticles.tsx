@@ -59,24 +59,23 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
       <Section
         title="Stories from the Road"
         subtitle="Tips, guides and tales from India's best journeys"
-        className="py-8 px-4 md:py-12"
+        className="py-8 md:py-12"
         rightContent={
           <Button
             variant="outline"
             onClick={() => navigate("/blogs")}
-            className="rounded-full border-[#0a1c1c] text-[#0a1c1c] hover:bg-[#0a1c1c] hover:text-white transition-all duration-200 px-5 h-10 font-medium text-sm hover:shadow-md active:scale-[0.98]"
+            className="rounded-full border-[#0a1c1c] text-[#0a1c1c] hover:bg-[#0a1c1c] hover:text-white transition-all duration-200 px-4 md:px-5 h-9 md:h-10 font-medium text-[13px] md:text-sm hover:shadow-md active:scale-[0.98]"
           >
-            <span className="mr-2">Read all articles</span>
+            <span className="mr-2">
+              Read all<span className="hidden sm:inline"> articles</span>
+            </span>
             <SlArrowRight className="w-3.5 h-3.5" />
           </Button>
         }
       >
-        <div
-          ref={articlesRef}
-          className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0"
-        >
+        <div ref={articlesRef} className="overflow-x-auto scrollbar-hide snap-rail rail-bleed">
           <motion.div
-            className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5"
+            className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5"
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-60px" }}
@@ -87,7 +86,7 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
                   <motion.div
                     key={b._id}
                     variants={staggerItem}
-                    className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
+                    className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
                   >
                     <Link to={`/blogsDetials?slug=${b.slug}`} className="block">
                       <ArticleCard image={b.coverImage || "/placeholder.svg"} title={b.title} />
@@ -98,7 +97,7 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
                   <motion.div
                     key={i}
                     variants={staggerItem}
-                    className="w-[280px] flex-shrink-0 md:w-auto md:flex-shrink"
+                    className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
                   >
                     <ArticleCard {...article} />
                   </motion.div>

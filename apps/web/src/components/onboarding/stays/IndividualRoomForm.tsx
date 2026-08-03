@@ -147,7 +147,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
       {/* ── Cover Photo ── */}
       <div className="bg-th-surface-0 border-[1.5px] border-[#EBEBEB] rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(17, 116, 121,0.25)] flex items-center justify-center shrink-0 text-th-brand">
+          <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59, 217, 218, 0.5)] flex items-center justify-center shrink-0 text-th-brand">
             <ImagePlus size={16} strokeWidth={2.5} />
           </div>
           <div className="flex-1">

@@ -97,7 +97,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
               onClick={onNext}
               disabled={isLoading || !canProceed || (isLastStep && !termsAccepted)}
               className="h-10 px-8 text-sm rounded-full onb-btn-primary disabled:opacity-35 disabled:cursor-not-allowed"
-              style={canProceed ? { boxShadow: "0 4px 20px rgba(17, 116, 121, 0.20)" } : undefined}
+              style={canProceed ? { boxShadow: "0 4px 20px rgba(59, 217, 218, 0.4)" } : undefined}
             >
               {isLoading ? "Loading..." : isLastStep ? "Start Verification" : "Next"}
             </button>

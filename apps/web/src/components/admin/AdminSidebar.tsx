@@ -69,7 +69,7 @@ interface NavSection {
 const SECTIONS: NavSection[] = [
   {
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", color: "#3BD9D9", path: "/admin/dashboard" },
+      { icon: LayoutDashboard, label: "Dashboard", color: "#3BD9DA", path: "/admin/dashboard" },
     ],
   },
   {
@@ -196,7 +196,7 @@ function NavRow({
       {isActive && (
         <motion.span
           layoutId={pillId}
-          className="absolute inset-0 rounded-xl bg-[rgba(17, 116, 121,0.09)] shadow-[inset_3px_0_0_0_#117479]"
+          className="absolute inset-0 rounded-xl bg-[rgba(59, 217, 218, 0.18)] shadow-[inset_3px_0_0_0_#117479]"
           transition={{ type: "spring", stiffness: 520, damping: 42 }}
         />
       )}
@@ -221,7 +221,7 @@ function NavRow({
               ? {
                   backgroundColor: "#117479",
                   color: "#fff",
-                  boxShadow: "0 5px 14px -3px rgba(17, 116, 121,0.5)",
+                  boxShadow: "0 5px 14px -3px rgba(59, 217, 218, 0.65)",
                 }
               : { backgroundColor: `${item.color}1f`, color: item.color }
           }
@@ -373,7 +373,7 @@ function SidebarBody({
                                     "text-left select-none outline-none transition-colors duration-150",
                                     "focus-visible:ring-2 focus-visible:ring-[#117479]/40",
                                     subActive
-                                      ? "bg-[rgba(17, 116, 121,0.09)] text-[#117479]"
+                                      ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479]"
                                       : "text-tpl-dark-6 hover:bg-[rgba(16,24,40,0.045)] hover:text-tpl-dark",
                                   )}
                                 >
@@ -581,7 +581,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               "ml-auto shrink-0 grid place-items-center w-7 h-7 rounded-lg outline-none",
               "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#117479]/40",
               pinned
-                ? "bg-[rgba(17, 116, 121,0.09)] text-[#117479] hover:bg-[rgba(17, 116, 121,0.16)]"
+                ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479] hover:bg-[rgba(59, 217, 218, 0.32)]"
                 : "text-tpl-dark-5/70 hover:text-tpl-dark-5 hover:bg-[rgba(16,24,40,0.05)]",
               reveal(!railOpen),
             )}

@@ -38,7 +38,8 @@ export function TrendingDestinations({
 
   return (
     <ScrollReveal>
-      <section className="py-8 md:py-12 px-4">
+      {/* No px-4 here — the page container already owns the mobile gutter. */}
+      <section className="py-8 md:py-12">
         {loadingOffers && <DestinationsSkeleton />}
         {offerError && (
           <p className="text-red-500 text-center py-8">Failed to load. Please try again.</p>
@@ -48,15 +49,15 @@ export function TrendingDestinations({
           <>
             {/* Mobile heading */}
             <div className="mb-4 lg:hidden">
-              <h2 className="text-2xl font-semibold text-[#0a1c1c] leading-tight tracking-tight">
+              <h2 className="text-[20px] font-semibold text-[#0a1c1c] leading-tight tracking-tight">
                 Trending Destinations
               </h2>
-              <p className="text-sm text-[#717171] mt-1">India's most-booked destinations</p>
+              <p className="text-[13px] text-[#717171] mt-1">India's most-booked destinations</p>
             </div>
 
-            {/* Mobile: horizontal scroll with stagger */}
+            {/* Mobile: horizontal snap rail with stagger */}
             <motion.div
-              className="overflow-x-auto scrollbar-hide -mx-4 px-4 lg:hidden"
+              className="overflow-x-auto scrollbar-hide snap-rail rail-bleed lg:hidden"
               initial="hidden"
               whileInView="visible"
               viewport={{ once: true, margin: "-60px" }}
@@ -64,11 +65,11 @@ export function TrendingDestinations({
             >
               <div className="flex gap-4 min-w-max">
                 {DESTINATIONS.map((d) => (
-                  <motion.div key={d.title} variants={staggerItem}>
+                  <motion.div key={d.title} variants={staggerItem} className="snap-start">
                     <DestinationCard
                       image={d.image}
                       title={d.title}
-                      className="w-[240px] h-[180px] flex-shrink-0"
+                      className="w-[62vw] max-w-[260px] h-[170px] flex-shrink-0"
                     />
                   </motion.div>
                 ))}

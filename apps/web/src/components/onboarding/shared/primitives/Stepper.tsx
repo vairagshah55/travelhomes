@@ -55,7 +55,7 @@ const Stepper: React.FC<StepperProps> = ({
         buttonBase,
         outlined
           ? "bg-th-surface-0 border-th-warm-border text-th-text-primary enabled:hover:border-th-brand enabled:hover:text-th-brand"
-          : "bg-th-brand-soft border-th-brand text-th-brand enabled:hover:bg-[rgba(17, 116, 121,0.18)]",
+          : "bg-th-brand-soft border-th-brand text-th-brand enabled:hover:bg-[rgba(59, 217, 218, 0.36)]",
       )}
     >
       <Plus size={14} />

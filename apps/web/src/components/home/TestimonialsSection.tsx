@@ -62,9 +62,12 @@ export function TestimonialsSection({
         <Section
           title="What Travelers Say"
           subtitle="Real experiences from our community"
-          className="py-8 md:py-10 px-4 bg-[#F7F8FA] text-black"
+          // Full-bleed grey band on phones (the page container's gutter is
+          // cancelled), inset panel from sm up.
+          className="py-8 md:py-10 -mx-4 px-4 sm:mx-0 sm:rounded-3xl bg-[#F7F8FA] text-black"
           rightContent={
-            <div className="flex items-center gap-3">
+            // Swipe is the mobile gesture; the arrows are pointer affordances.
+            <div className="hidden md:flex items-center gap-3">
               <Button
                 variant="outline"
                 size="icon"
@@ -87,7 +90,7 @@ export function TestimonialsSection({
           {/* Testimonial cards */}
           <motion.div
             ref={scrollRef}
-            className="flex overflow-x-auto scrollbar-hidden gap-1"
+            className="flex overflow-x-auto scrollbar-hidden snap-rail gap-1 -mx-2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.1 }}
@@ -95,7 +98,9 @@ export function TestimonialsSection({
             {testimonials.map((t, i) => (
               <motion.div
                 key={t.id ?? i}
-                className="flex-shrink-0 snap-center w-full md:w-1/3 lg:w-1/4 px-2"
+                // 88% wide, not 100%: the peeking edge of the next quote is
+                // what tells a phone user there are more of them.
+                className="flex-shrink-0 snap-start w-[88%] sm:w-1/2 md:w-1/3 lg:w-1/4 px-2"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
@@ -111,10 +116,10 @@ export function TestimonialsSection({
           </motion.div>
 
           {/* Write a review CTA */}
-          <div className="flex justify-center mt-10">
+          <div className="flex justify-center mt-6 md:mt-10">
             <Button
               onClick={() => setShowReviewModal(true)}
-              className="bg-[#117479] hover:bg-[#128086] text-white rounded-full px-8 h-11 transition-all duration-200 font-medium flex items-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
+              className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full px-8 h-12 md:h-11 w-full sm:w-auto transition-all duration-200 font-medium flex items-center justify-center gap-2 shadow-sm hover:shadow-md active:scale-[0.98]"
             >
               <span>Write a Review</span>
               <SlArrowRight className="w-3.5 h-3.5" />
@@ -158,8 +163,8 @@ export function TestimonialsSection({
                     whileTap={{ scale: 0.92 }}
                     className={`w-8 h-8 rounded-full border text-sm font-semibold transition-colors duration-150 flex items-center justify-center ${
                       reviewRating >= n
-                        ? "bg-[#117479] text-white border-[#117479] shadow-sm"
-                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#117479]"
+                        ? "bg-[#3BD9DA] text-white border-[#3BD9DA] shadow-sm"
+                        : "bg-white dark:bg-gray-800 text-gray-500 border-gray-200 hover:border-[#3BD9DA]"
                     }`}
                   >
                     {n}
@@ -189,7 +194,7 @@ export function TestimonialsSection({
               </Button>
               <Button
                 type="submit"
-                className="rounded-full bg-[#117479] hover:bg-[#128086] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
+                className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white px-5 h-10 text-sm shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
               >
                 Submit
               </Button>

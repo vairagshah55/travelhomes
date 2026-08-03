@@ -576,7 +576,7 @@ const ManagementListing = () => {
                 access.canCreate ? (
                   <Button
                     onClick={handleAddNew}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
                   >
                     <Plus size={16} /> Add Listing
                   </Button>

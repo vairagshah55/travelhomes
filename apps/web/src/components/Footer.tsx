@@ -79,11 +79,12 @@ export default function Footer() {
   };
   return (
     <footer className="bg-[#0a1c1c] text-white pb-4">
-      <div className="max-w-7xl mx-auto py-10 px-4 sm:px-4 md:px-4 lg:px-10 mt-6">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+      <div className="max-w-7xl mx-auto py-8 md:py-10 px-4 lg:px-10 mt-6">
+        {/* Top Section — the two link columns pair up on phones instead of
+            stacking into a 4-screen-tall wall. */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8 md:gap-10 mb-8 md:mb-12">
           {/* Logo + Description */}
-          <div>
+          <div className="col-span-2 lg:col-span-1">
             <img
               src={logoSrc}
               alt="TravelHomes"
@@ -104,7 +105,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/about"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="inline-block py-1.5 text-gray-400 text-sm hover:text-white transition-colors"
                 >
                   About
                 </Link>
@@ -112,7 +113,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/hostwithus"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="inline-block py-1.5 text-gray-400 text-sm hover:text-white transition-colors"
                 >
                   Why Host with us
                 </Link>
@@ -120,7 +121,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/career"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="inline-block py-1.5 text-gray-400 text-sm hover:text-white transition-colors"
                 >
                   Careers
                 </Link>
@@ -135,7 +136,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/contact"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="inline-block py-1.5 text-gray-400 text-sm hover:text-white transition-colors"
                 >
                   Contact Us
                 </Link>
@@ -143,7 +144,7 @@ export default function Footer() {
               <li>
                 <Link
                   to="/blogs"
-                  className="text-gray-400 text-sm hover:text-white transition-colors"
+                  className="inline-block py-1.5 text-gray-400 text-sm hover:text-white transition-colors"
                 >
                   Blog
                 </Link>
@@ -152,24 +153,30 @@ export default function Footer() {
           </div>
 
           {/* Newsletter */}
-          <div>
-            <h3 className="text-sm font-medium mb-4 capitalize">Newsletter</h3>
-            <p className="text-gray-400 text-xs mb-6">
+          <div className="col-span-2 lg:col-span-1">
+            <h3 className="text-sm font-medium mb-2 md:mb-4 capitalize">Newsletter</h3>
+            <p className="text-gray-400 text-xs mb-4 md:mb-6">
               Be the first to know about discounts, offers, and events. Unsubscribe anytime.
             </p>
-            <div className="flex items-center bg-white rounded-full p-1">
-              <div className="flex items-center px-2 flex-1">
-                <Mail className="w-4 h-4 text-gray-600 mr-2" />
+            {/* 44px-tall pill so the field and its button are both thumb-sized. */}
+            <div className="flex items-center bg-white rounded-full p-1 h-12 md:h-auto">
+              <div className="flex items-center px-2 flex-1 min-w-0">
+                <Mail className="w-4 h-4 text-gray-600 mr-2 flex-shrink-0" />
                 <input
                   type="email"
+                  inputMode="email"
+                  autoComplete="email"
                   placeholder="Enter your email"
-                  className="w-full bg-transparent text-gray-800 placeholder:text-gray-600 text-xs outline-none"
+                  aria-label="Email address"
+                  // 16px on mobile: iOS Safari zooms the page for anything
+                  // smaller when the field takes focus.
+                  className="w-full min-w-0 bg-transparent text-gray-800 placeholder:text-gray-600 text-base md:text-xs outline-none"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <Button
-                className="bg-[#117479] text-white rounded-full px-5 h-8 text-xs font-bold"
+                className="bg-[#117479] text-white rounded-full px-4 md:px-5 h-10 md:h-8 text-xs font-bold flex-shrink-0"
                 onClick={handleSubscribe}
                 disabled={loading}
               >

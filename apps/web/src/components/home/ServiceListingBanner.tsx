@@ -18,42 +18,57 @@ export function ServiceListingBanner() {
     <ScrollReveal delay={0.05}>
       <section className="my-8 md:my-12">
         <motion.div
-          className="relative rounded-3xl overflow-hidden bg-[#F7F7F7] border border-[#EBEBEB]"
+          // Brand-cyan panel carrying WHITE copy — the --th-brand / --th-brand-fg
+          // pairing from global.css. That pairing is 1.6:1 and is a deliberate
+          // product decision for brand consistency; see the note on --th-brand
+          // before "fixing" this to ink. Hierarchy comes from size/weight here,
+          // not opacity — stepped white washes out against a light cyan.
+          className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-[#3BD9DA] border border-[#2BC7C8]"
           whileHover={{ scale: 1.002 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] items-center">
-            {/* Left — copy */}
+          {/* Image first on mobile: the photo sells the pitch, and a wall of
+              copy above it is what a thumb scrolls straight past. */}
+          <div className="flex flex-col-reverse lg:grid lg:grid-cols-[1.1fr_0.9fr] items-center">
+            {/* Copy */}
             <motion.div
-              className="px-8 md:px-12 lg:px-14 py-10 md:py-14 flex flex-col gap-6"
+              className="w-full px-5 sm:px-8 md:px-12 lg:px-14 py-7 md:py-14 flex flex-col gap-5 md:gap-6"
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, ease: "easeOut" }}
             >
-              <h3 className="text-[28px] md:text-[40px] lg:text-[44px] font-semibold text-[#0a1c1c] leading-[1.1] tracking-tight">
-                It's easy to <span className="text-[#117479]">host</span> on Travel Homes.
+              <h3 className="text-[24px] sm:text-[28px] md:text-[40px] lg:text-[44px] font-semibold text-white leading-[1.12] tracking-tight text-balance">
+                It's easy to{" "}
+                <span className="underline decoration-[3px] underline-offset-4 decoration-white/70">
+                  host
+                </span>{" "}
+                on Travel Homes.
               </h3>
-              <p className="text-[#717171] text-base md:text-[15px] leading-relaxed max-w-md">
+              <p className="text-white text-[14px] md:text-[15px] leading-relaxed max-w-md">
                 Earn extra income with your caravan, unique stay, or activity. Full transparency,
                 instant payouts — list in minutes.
               </p>
 
-              {/* Stats */}
-              <div className="flex gap-8 md:gap-12 pt-2">
+              {/* Stats — an even 3-up grid, because three flex columns with
+                  gap-8 collide on a 320px screen. */}
+              <div className="grid grid-cols-3 gap-3 md:flex md:gap-12 pt-1 md:pt-2">
                 {STATS.map(({ value, label }) => (
-                  <div key={label} className="flex flex-col gap-0.5">
-                    <span className="text-xl md:text-[26px] font-semibold text-[#0a1c1c] leading-none">
+                  <div key={label} className="flex flex-col gap-0.5 min-w-0">
+                    <span className="text-lg md:text-[26px] font-semibold text-white leading-none">
                       {value}
                     </span>
-                    <span className="text-xs text-[#717171] leading-tight">{label}</span>
+                    <span className="text-[11px] md:text-xs text-white leading-tight">{label}</span>
                   </div>
                 ))}
               </div>
 
               <Button
                 onClick={() => navigate("/hostwithus")}
-                className="group bg-[#117479] hover:bg-[#128086] text-white rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center gap-2 w-fit mt-2"
+                // Ink button on cyan — the logo's own black-on-cyan pairing, and it
+                // reads far harder here than the mid-tone brand fill would.
+                // Full-bleed on mobile — a thumb-sized target beats a tidy one.
+                className="group bg-[#0a1c1c] hover:bg-[#0d4548] text-white rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 w-full md:w-fit mt-1 md:mt-2"
               >
                 Become a Host
                 <ArrowRight
@@ -63,16 +78,25 @@ export function ServiceListingBanner() {
               </Button>
             </motion.div>
 
-            {/* Right — image */}
+            {/* Image */}
             <motion.div
-              className="relative h-64 lg:h-full min-h-[280px] lg:min-h-[420px]"
+              className="relative w-full h-44 sm:h-64 lg:h-full lg:min-h-[420px]"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
             >
               <img
-                src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=80&auto=format"
+                src="https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200&q=80&auto=format&fit=crop"
+                srcSet={[640, 828, 1200]
+                  .map(
+                    (w) =>
+                      `https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=${w}&q=75&auto=format&fit=crop ${w}w`,
+                  )
+                  .join(", ")}
+                sizes="(min-width: 1024px) 45vw, 100vw"
+                loading="lazy"
+                decoding="async"
                 alt="Host on Travel Homes"
                 className="absolute inset-0 w-full h-full object-cover"
               />

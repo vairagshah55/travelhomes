@@ -31,7 +31,7 @@ const SectionCard = ({
 }) => (
   <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] px-[22px] pt-5 pb-[22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(17, 116, 121,0.25)] flex items-center justify-center flex-shrink-0">
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59, 217, 218, 0.5)] flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
       <div className="flex-1">

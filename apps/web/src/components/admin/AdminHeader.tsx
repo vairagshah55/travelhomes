@@ -40,7 +40,7 @@ import { useNotificationCount } from "@/hooks/admin/useNotifications";
 /** Shared silhouette for the 44px circular controls (search, bell). */
 const CTRL =
   "border border-[#dce7e5] bg-white text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] " +
-  "hover:border-[#117479]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(17, 116, 121,0.25)] " +
+  "hover:border-[#117479]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)] " +
   "focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-[#f1f8f7] outline-none " +
   "transition-[color,border-color,box-shadow] duration-200";
@@ -181,13 +181,13 @@ function HeaderUserInfo() {
           focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
           ${
             isOpen
-              ? "bg-white border-[#117479]/35 shadow-[0_2px_8px_-2px_rgba(17, 116, 121,0.25)]"
+              ? "bg-white border-[#117479]/35 shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)]"
               : "bg-transparent border-transparent hover:bg-white hover:border-[#dce7e5]"
           }`}
       >
         <span className="sr-only">My Account</span>
         <figure className="flex items-center gap-2.5">
-          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(17, 116, 121,0.45)]">
+          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(59, 217, 218, 0.65)]">
             <AvatarFallback className="bg-[#117479] text-white text-[13px] font-bold">
               {initials}
             </AvatarFallback>

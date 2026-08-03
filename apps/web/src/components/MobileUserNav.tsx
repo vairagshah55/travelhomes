@@ -118,32 +118,31 @@ const MobileUserNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white shadow-[0_-4px_44px_4px_rgba(102,102,102,0.07)] lg:hidden z-50">
-      <nav className="flex justify-between items-center  py-3">
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className="flex flex-col items-center gap-2 w-[72px]"
-          >
-            <div className={`${isActive(item.path) ? "text-dashboard-primary" : "text-gray-500"}`}>
-              {item.icon}
-            </div>
-            <span
-              className={`text-xs font-plus-jakarta font-semibold ${
-                isActive(item.path) ? "text-dashboard-primary" : "text-gray-500"
-              }`}
+    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 shadow-[0_-4px_44px_4px_rgba(102,102,102,0.07)] lg:hidden z-50 safe-bottom">
+      {/* flex-1, not a fixed 72px: five fixed-width items overflowed a 320px
+          screen and pushed Profile off the edge. */}
+      <nav className="flex items-stretch pt-2 pb-1.5">
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              aria-current={active ? "page" : undefined}
+              className="flex flex-1 min-w-0 flex-col items-center justify-center gap-1 px-0.5 py-1 min-h-[48px] active:opacity-60 transition-opacity"
             >
-              {item.label}
-            </span>
-          </Link>
-        ))}
+              <div className={active ? "text-dashboard-primary" : "text-gray-500"}>{item.icon}</div>
+              <span
+                className={`text-[10px] leading-tight font-plus-jakarta font-semibold truncate max-w-full ${
+                  active ? "text-dashboard-primary" : "text-gray-500"
+                }`}
+              >
+                {item.label}
+              </span>
+            </Link>
+          );
+        })}
       </nav>
-
-      {/* Home Indicator for iPhones */}
-      <div className="flex justify-center pb-2">
-        <div className="w-36 h-1 bg-[#117479] rounded-full"></div>
-      </div>
     </div>
   );
 };

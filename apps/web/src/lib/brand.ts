@@ -15,7 +15,7 @@ export const BRAND_NAME = "TravelHomes";
 export const BRAND_TAGLINE = "Be At Home Everywhere";
 
 /**
- * The artwork's cyan (#3BD9D9, sampled from the delivered "TH Logo.png" swatch) lives
+ * The artwork's cyan (#3BD9DA, sampled from the delivered "TH Logo.png" swatch) lives
  * in CSS as `--th-logo` / `bg-th-logo`, not as a constant here — see CONVENTIONS.md
  * Rule 3. Reach for the class; this file only owns file paths and geometry.
  */
@@ -32,13 +32,7 @@ export const BRAND_TAGLINE = "Be At Home Everywhere";
  * - `caravan` — caravan silhouette alone. Survives down to ~24px, so it's the
  *   compact/app-icon mark.
  */
-export type LogoShape =
-  | "horizontal"
-  | "stacked"
-  | "mark"
-  | "wordmark"
-  | "name"
-  | "caravan";
+export type LogoShape = "horizontal" | "stacked" | "mark" | "wordmark" | "name" | "caravan";
 
 /** `color` is brand teal — it needs a dark or white surface to hold contrast. */
 export type LogoTone = "color" | "black" | "white";
@@ -53,8 +47,7 @@ export const LOGO_ASPECT: Record<LogoShape, number> = {
   caravan: 1.591,
 };
 
-export const logoSrc = (shape: LogoShape, tone: LogoTone) =>
-  `/brand/logo-${shape}-${tone}.png`;
+export const logoSrc = (shape: LogoShape, tone: LogoTone) => `/brand/logo-${shape}-${tone}.png`;
 
 /** Rounded brand-teal app icon with black artwork. 32–64 use the caravan alone. */
 export type IconSize = 32 | 48 | 64 | 180 | 192 | 512;

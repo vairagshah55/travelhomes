@@ -3,12 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Heart, MapPin } from "lucide-react";
 import { Star as StarIcon } from "lucide-react";
 import CardImageCarousel from "./CardImageCarousel";
-import {
-  addWishlistItem,
-  removeWishlistItem,
-  getWishlist,
-  WISHLIST_UPDATED,
-} from "@/lib/wishlist";
+import { addWishlistItem, removeWishlistItem, getWishlist, WISHLIST_UPDATED } from "@/lib/wishlist";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
@@ -41,10 +36,14 @@ function ResultCard({
 
   const getCardContent = () => {
     switch (activeFilter) {
-      case "camper-van": return ResultcaravanShown;
-      case "unique-stays": return ResultstayShown;
-      case "activity": return ResultactivityShown;
-      default: return ResultcaravanShown;
+      case "camper-van":
+        return ResultcaravanShown;
+      case "unique-stays":
+        return ResultstayShown;
+      case "activity":
+        return ResultactivityShown;
+      default:
+        return ResultcaravanShown;
     }
   };
 
@@ -59,14 +58,19 @@ function ResultCard({
     try {
       if (!isLiked) {
         const type =
-          activeFilter === "camper-van" ? "campervan"
-            : activeFilter === "unique-stays" ? "stay"
-            : "activity";
+          activeFilter === "camper-van"
+            ? "campervan"
+            : activeFilter === "unique-stays"
+              ? "stay"
+              : "activity";
         addWishlistItem({
-          id, title: item.title, type: type as any,
+          id,
+          title: item.title,
+          type: type as any,
           location: item.details,
           price: `${item.price}${item.unit || ""}`,
-          rating: 4.91, image: item.image,
+          rating: 4.91,
+          image: item.image,
           dateAdded: new Date().toISOString(),
         });
       } else {
@@ -78,86 +82,100 @@ function ResultCard({
   const content = getCardContent();
 
   return (
-    <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-5">
-      {content.map((item) => {
-        const isLiked = wishlistIds.has(item.id);
-        return (
-          <Link
-            key={item.id}
-            to={item.id}
-            className="group block w-[280px] flex-shrink-0 md:w-auto md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
-          >
-            {/* Image */}
-            <div className="relative">
-              <CardImageCarousel
-                images={item.images || [item.image]}
-                alt={item.title}
-              />
+    <div className="overflow-x-auto scrollbar-hide snap-rail rail-bleed">
+      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+        {content.map((item) => {
+          const isLiked = wishlistIds.has(item.id);
+          return (
+            <Link
+              key={item.id}
+              to={item.id}
+              // 74vw leaves a sliver of the next card visible, which is what tells
+              // a phone user the row scrolls at all.
+              className="group block snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+            >
+              {/* Image */}
+              <div className="relative">
+                <CardImageCarousel images={item.images || [item.image]} alt={item.title} />
 
-              {/* Heart */}
-              <button
-                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleFavorite(item); }}
-                className={`absolute top-2.5 right-2.5 z-30 w-8 h-8 rounded-full
+                {/* Heart */}
+                {/* Reveal-on-hover hides this button forever on a touch screen —
+                  it stays visible below md so the wishlist is reachable. */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleFavorite(item);
+                  }}
+                  aria-label={
+                    isLiked
+                      ? `Remove ${item.title} from wishlist`
+                      : `Save ${item.title} to wishlist`
+                  }
+                  aria-pressed={isLiked}
+                  className={`absolute top-2 right-2 z-30 w-9 h-9 md:w-8 md:h-8 rounded-full
                   flex items-center justify-center backdrop-blur-md
                   transition-all duration-300 ease-out
                   hover:scale-110 active:scale-90
-                  ${isLiked
-                    ? "opacity-100 bg-red-500/20"
-                    : "opacity-0 group-hover:opacity-100 bg-black/25"
+                  ${
+                    isLiked
+                      ? "opacity-100 bg-red-500/20"
+                      : "opacity-100 bg-black/25 md:opacity-0 md:group-hover:opacity-100"
                   }`}
-              >
-                <Heart className={`w-[18px] h-[18px] transition-all duration-300 ${
-                  isLiked ? "fill-red-500 text-red-500" : "text-white drop-shadow-sm"
-                }`} />
-              </button>
+                >
+                  <Heart
+                    className={`w-[18px] h-[18px] transition-all duration-300 ${
+                      isLiked ? "fill-red-500 text-red-500" : "text-white drop-shadow-sm"
+                    }`}
+                  />
+                </button>
 
-              {isLiked && (
-                <div className="absolute top-2.5 left-2.5 z-20 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full px-2.5 py-0.5 shadow-sm">
-                  <span className="text-[10px] font-semibold text-gray-900 dark:text-white tracking-wide uppercase">Saved</span>
-                </div>
-              )}
-            </div>
-
-            {/* Details */}
-            <div className="pt-3 px-1 space-y-1.5">
-              {/* Title + Rating */}
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold text-[15px] leading-snug text-gray-900 dark:text-white line-clamp-1">
-                  {item.title}
-                </h3>
-                <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
-                  <StarIcon className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
-                  <span className="text-[13px] font-medium text-gray-900 dark:text-white">4.91</span>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
-                  {item.details}
-                </span>
-              </div>
-
-              {/* Price */}
-              <div className="flex items-baseline gap-1.5 pt-1">
-                {item.Maxprice && (
-                  <span className="text-[13px] text-gray-400 line-through">
-                    ₹{item.Maxprice}
-                  </span>
+                {isLiked && (
+                  <div className="absolute top-2.5 left-2.5 z-20 bg-white/90 dark:bg-black/80 backdrop-blur-sm rounded-full px-2.5 py-0.5 shadow-sm">
+                    <span className="text-[10px] font-semibold text-gray-900 dark:text-white tracking-wide uppercase">
+                      Saved
+                    </span>
+                  </div>
                 )}
-                <span className="text-[15px] font-bold text-gray-900 dark:text-white">
-                  {item.price}
-                </span>
-                <span className="text-[13px] text-gray-500 dark:text-gray-400">
-                  {item.unit}
-                </span>
               </div>
-            </div>
-          </Link>
-        );
-      })}
+
+              {/* Details */}
+              <div className="pt-3 px-1 space-y-1.5">
+                {/* Title + Rating */}
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold text-[15px] leading-snug text-gray-900 dark:text-white line-clamp-1">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                    <StarIcon className="w-3.5 h-3.5 fill-current text-gray-900 dark:text-white" />
+                    <span className="text-[13px] font-medium text-gray-900 dark:text-white">
+                      4.91
+                    </span>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                  <span className="text-[13px] text-gray-500 dark:text-gray-400 truncate">
+                    {item.details}
+                  </span>
+                </div>
+
+                {/* Price */}
+                <div className="flex items-baseline gap-1.5 pt-1">
+                  {item.Maxprice && (
+                    <span className="text-[13px] text-gray-400 line-through">₹{item.Maxprice}</span>
+                  )}
+                  <span className="text-[15px] font-bold text-gray-900 dark:text-white">
+                    {item.price}
+                  </span>
+                  <span className="text-[13px] text-gray-500 dark:text-gray-400">{item.unit}</span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

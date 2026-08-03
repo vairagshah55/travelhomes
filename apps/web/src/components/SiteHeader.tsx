@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, MapPin, Calendar, Users, Star as StarIcon, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LogoWebsite, { HomeLogoWebsite } from "./ui/LogoWebsite";
+import { BrandLogo } from "./BrandLogo";
 import { useAuth } from "../contexts/AuthContext";
 import UserDropdown from "./UserDropdown";
 import { LocationDropdown } from "./LocationDropdown";
@@ -22,6 +23,9 @@ interface SiteHeaderProps {
   onFilterChange?: (filter: string) => void;
   heroHeight?: number;
   scrollHighlightFilter?: string | null;
+  /** Opens the phone-sized search sheet. Supplied by the landing page; when
+   *  absent the mobile search affordances fall back to the /search route. */
+  onMobileSearchOpen?: () => void;
 }
 
 export default function SiteHeader({
@@ -31,6 +35,7 @@ export default function SiteHeader({
   onFilterChange,
   heroHeight,
   scrollHighlightFilter,
+  onMobileSearchOpen,
 }: SiteHeaderProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -186,6 +191,35 @@ export default function SiteHeader({
     setIsMobileMenuOpen(false);
   };
 
+  /* Phone: picking a category should lead straight into the search sheet —
+     the header panel is desktop-only. */
+  const handleMobileTabClick = (tabId: string) => {
+    onFilterChange?.(tabId);
+    setIsMobileMenuOpen(false);
+    if (onMobileSearchOpen) onMobileSearchOpen();
+    else navigate(`/search?filter=${tabId}`);
+  };
+
+  const openMobileSearch = () => {
+    if (onMobileSearchOpen) onMobileSearchOpen();
+    else navigate(`/search?filter=${activeFilter}`);
+  };
+
+  /* Lock the page behind the mobile menu so a scroll gesture over the sheet
+     doesn't drift the content underneath. */
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (selectedLocation)
       setSearchErrors((e) => {
@@ -251,6 +285,11 @@ export default function SiteHeader({
     navigate(`/search?${params.toString()}`);
   };
 
+  /* The header is transparent over the hero photo, so the logo has to be the
+     white lockup there and the ink one everywhere else. */
+  const onDarkHeader = !showFilterButtons && !pathname.includes("search");
+  const showMobileSearchPill = showFilterButtons && !isSearchPage;
+
   const navTabs = [
     { id: "camper-van", label: "Camper Van", icon: CamperVanIcon, sectionKey: "camper-van" },
     { id: "unique-stays", label: "Unique Stays", icon: HomeIcon, sectionKey: "unique-stays" },
@@ -271,33 +310,69 @@ export default function SiteHeader({
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex items-center justify-between h-20">
-            {/* Logo crossfade — both rendered, opacity toggles */}
+          {/* Shorter bar on phones — 80px of chrome is a lot of a 640px viewport. */}
+          <div className="flex items-center justify-between h-16 md:h-20">
+            {/* Phone logo. The horizontal lockup is 4.63:1 — at the desktop
+                size that's 185px, roughly half a 390px bar, which left the
+                search pill squeezed into a circle. So: a smaller lockup on the
+                hero, and the caravan mark alone once the pill appears. */}
+            <div
+              onClick={() => navigate("/")}
+              className="lg:hidden cursor-pointer flex-shrink-0 flex items-center"
+            >
+              <BrandLogo
+                variant={onDarkHeader ? "full" : showMobileSearchPill ? "mark" : "full"}
+                size={showMobileSearchPill && !onDarkHeader ? 34 : 30}
+                tone={onDarkHeader ? "light" : "dark"}
+              />
+            </div>
+
+            {/* Desktop logo crossfade — both rendered, opacity toggles */}
             <motion.div
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate("/")}
-              className="cursor-pointer flex-shrink-0 relative"
+              className="hidden lg:block cursor-pointer flex-shrink-0 relative"
             >
               {/* Dark logo (scrolled) */}
               <div
                 className="transition-opacity duration-500 ease-in-out"
-                style={{
-                  opacity: showFilterButtons || location.pathname.includes("search") ? 1 : 0,
-                }}
+                style={{ opacity: onDarkHeader ? 0 : 1 }}
               >
                 <LogoWebsite />
               </div>
               {/* White logo (hero) — absolute overlaid, fades out on scroll */}
               <div
                 className="absolute inset-0 transition-opacity duration-500 ease-in-out"
-                style={{
-                  opacity: showFilterButtons || location.pathname.includes("search") ? 0 : 1,
-                }}
+                style={{ opacity: onDarkHeader ? 1 : 0 }}
               >
-                <HomeLogoWebsite variant="dark" />
+                {/* "light" = paint the lockup WHITE for a dark surface — this one
+                    sits on the hero photo. "dark" would render black artwork. */}
+                <HomeLogoWebsite variant="light" />
               </div>
             </motion.div>
+
+            {/* Phone: once the hero search has scrolled away, the header
+                itself becomes the search entry point. */}
+            <AnimatePresence>
+              {showMobileSearchPill && (
+                <motion.button
+                  key="mobile-search-pill"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.96 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={openMobileSearch}
+                  aria-label="Open search"
+                  className="lg:hidden flex flex-1 items-center gap-2 mx-2 h-10 min-w-0 px-3 rounded-full border border-gray-200 bg-white shadow-sm active:scale-[0.98] transition-transform"
+                >
+                  <Search className="w-4 h-4 text-[#117479] flex-shrink-0" />
+                  <span className="text-[13px] font-semibold text-gray-700 truncate">
+                    Where to go?
+                  </span>
+                </motion.button>
+              )}
+            </AnimatePresence>
 
             <AnimatePresence mode="wait">
               {showFilterButtons && !isSearchPage && (
@@ -323,11 +398,14 @@ export default function SiteHeader({
                           isActive ? "text-white" : "text-[#0a1c1c] hover:text-[#117479]"
                         }`}
                       >
-                        {/* Active pill — shared layoutId slides between tabs */}
+                        {/* Active pill — shared layoutId slides between tabs.
+                            Arbitrary values must not contain spaces: Tailwind
+                            drops the whole class, which is why the glow on
+                            `rgba(59, 217, 218, 0.65)` never rendered. */}
                         {isActive && (
                           <motion.span
                             layoutId="site-header-active-pill"
-                            className="absolute inset-0 rounded-full bg-[#117479] shadow-[0_2px_8px_rgba(17, 116, 121,0.25)]"
+                            className="absolute inset-0 rounded-full bg-[#3BD9DA] shadow-[0_2px_10px_rgba(59,217,218,0.55)]"
                             transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.6 }}
                           />
                         )}
@@ -357,7 +435,10 @@ export default function SiteHeader({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.98 }}
                   transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                  className="absolute top-20 shadow-2xl left-0 right-0 bg-white rounded-2xl p-3 md:p-4 overflow-visible z-50 border border-gray-100"
+                  // Desktop only. On phones the same job is done by
+                  // MobileSearchSheet, which doesn't have to fight a
+                  // 60px-tall header for room.
+                  className="hidden lg:block absolute top-20 shadow-2xl left-0 right-0 bg-white rounded-2xl p-3 md:p-4 overflow-visible z-50 border border-gray-100"
                 >
                   {/* ── Activity Filter ──────────────────── */}
                   {activeFilter === "activity" && (
@@ -503,7 +584,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#3BD9DA] hover:bg-[#2BC7C8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -697,7 +778,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#3BD9DA] hover:bg-[#2BC7C8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -851,7 +932,7 @@ export default function SiteHeader({
                       <div className="flex justify-center lg:flex-shrink-0 lg:ml-3 mt-3 lg:mt-1">
                         <Button
                           onClick={handleSearch}
-                          className="bg-[#117479] hover:bg-[#0d4548] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
+                          className="bg-[#3BD9DA] hover:bg-[#2BC7C8] active:scale-95 text-white rounded-full h-11 w-11 transition-all duration-200 shadow-md hover:shadow-lg"
                           size="icon"
                         >
                           <Search className="w-4 h-4" />
@@ -863,7 +944,7 @@ export default function SiteHeader({
               )}
             </AnimatePresence>
 
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0">
               {user ? (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -871,7 +952,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#117479] text-white hover:bg-[#0d4548] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
@@ -891,15 +972,19 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#117479] text-white hover:bg-[#0d4548] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
                     List your offering
                   </button>
+                  {/* Yields to the search pill on a phone — Sign up is one tap
+                      away in the menu, and the pill is the money action. */}
                   <button
                     onClick={() => navigate("/register")}
-                    className="rounded-full px-5 h-9 text-sm font-semibold bg-[#117479] hover:bg-[#0d4548] text-white shadow-sm hover:shadow-md transition-all duration-200"
+                    className={`rounded-full px-4 md:px-5 h-9 text-[13px] md:text-sm font-semibold whitespace-nowrap bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white shadow-sm hover:shadow-md transition-all duration-200 ${
+                      showMobileSearchPill ? "hidden lg:block" : ""
+                    }`}
                   >
                     Sign up
                   </button>
@@ -910,7 +995,9 @@ export default function SiteHeader({
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className={`lg:hidden p-2 rounded-full transition-all duration-500 ease-in-out ${
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isMobileMenuOpen}
+                className={`lg:hidden ml-1 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out ${
                   isScrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/15"
                 }`}
               >
@@ -922,33 +1009,70 @@ export default function SiteHeader({
 
         <AnimatePresence>
           {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="lg:hidden border-t border-gray-100 bg-white shadow-lg"
-            >
-              <div className="px-4 py-4 space-y-2 ">
-                {navTabs.map((tab) => {
-                  const IconComponent = tab.icon;
-                  return (
-                    <motion.button
-                      key={tab.id}
-                      whileHover={{ backgroundColor: "#f3f4f6" }}
-                      onClick={() => handleTabClick(tab.id)}
-                      className={`w-full text-left px-4 py-3 text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
-                        activeFilter === tab.id
-                          ? "bg-[#0a1c1c] text-white"
-                          : "text-[#0a1c1c] hover:bg-[#F7F7F7]"
-                      }`}
+            <>
+              {/* Tap-anywhere-to-close scrim */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="lg:hidden fixed inset-0 top-16 bg-black/30"
+              />
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                // `relative` so it paints above the fixed scrim that precedes it.
+                className="lg:hidden relative border-t border-gray-100 bg-white shadow-lg max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain"
+              >
+                <div className="px-4 py-4 space-y-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+                  <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                    Browse
+                  </p>
+                  {navTabs.map((tab) => {
+                    const IconComponent = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleMobileTabClick(tab.id)}
+                        className={`w-full text-left px-4 py-3 min-h-[48px] text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
+                          activeFilter === tab.id
+                            ? "bg-[#0a1c1c] text-white"
+                            : "text-[#0a1c1c] active:bg-[#F7F7F7]"
+                        }`}
+                      >
+                        <IconComponent className="w-5 h-5" />
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+
+                  <div className="pt-2 mt-2 border-t border-gray-100 space-y-2">
+                    <button
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        navigate("/onboarding/service-selection");
+                      }}
+                      className="w-full flex items-center justify-center gap-2 h-12 rounded-full bg-[#3BD9DA] text-white text-sm font-semibold active:scale-[0.98] transition-transform"
                     >
-                      <IconComponent className="w-5 h-5" />
-                      {tab.label}
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
+                      <CgLoadbarDoc size={16} className="shrink-0" />
+                      List your offering
+                    </button>
+                    {!user && (
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          navigate("/login");
+                        }}
+                        className="w-full h-12 rounded-full border border-gray-200 text-[#0a1c1c] text-sm font-semibold active:bg-gray-50"
+                      >
+                        Log in
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
       </motion.header>

@@ -446,7 +446,7 @@
   }
   .btn-brand:hover {
     background: #5fe0e0;
-    box-shadow: 0 4px 12px rgba(59, 217, 217, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 217, 218, 0.3);
   }
 
   /* Upload area */
@@ -1231,8 +1231,8 @@
      with the bright-teal graphite chrome — one teal family across the app. */
   --tpl-primary: #117479;
   --tpl-primary-hover: #0d5c60;
-  --tpl-primary-soft: rgba(17, 116, 121, 0.08);
-  --tpl-primary-soft-2: rgba(17, 116, 121, 0.14);
+  --tpl-primary-soft: rgba(59, 217, 218, 0.16);
+  --tpl-primary-soft-2: rgba(59, 217, 218, 0.28);
 
   /* Neutrals — light surface */
   --tpl-body-bg: #f9fafb; /* page bg */
@@ -1277,7 +1277,7 @@
   /* Radii */
   --tpl-radius-card: 10px;
 
-  /* ── Admin-scoped brand overrides → cyan #3BD9D9 · black · white ──
+  /* ── Admin-scoped brand overrides → cyan #3BD9DA · black · white ──
      admin.css loads after global.css (via AdminApp), so these win over
      global.css's blue [data-brand="admin"] tokens. */
   /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
@@ -1298,21 +1298,21 @@
   --surface-fg-subtle: #6e7278;
   --accent: #117479;
   --accent-hover: #0d5c60;
-  --accent-soft: rgba(17, 116, 121, 0.1);
+  --accent-soft: rgba(59, 217, 218, 0.2);
   --accent-fg: #ffffff;
 
   /* Glass / teal utility tokens — LIGHT content values (teal tints).
      The graphite chrome scope below redefines these for the sidebar/header. */
   --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-bg-hover: rgba(17, 116, 121, 0.06);
+  --glass-bg-hover: rgba(59, 217, 218, 0.12);
   --glass-border: rgba(0, 0, 0, 0.08);
   --glass-border-strong: rgba(0, 0, 0, 0.14);
   --glass-header: rgba(255, 255, 255, 0.85);
-  --teal-glass: rgba(17, 116, 121, 0.1);
-  --teal-border: rgba(17, 116, 121, 0.3);
-  --teal-subtle: rgba(17, 116, 121, 0.07);
-  --shadow-teal: 0 0 0 1px rgba(17, 116, 121, 0.4);
-  --search-focus-ring: rgba(17, 116, 121, 0.2);
+  --teal-glass: rgba(59, 217, 218, 0.2);
+  --teal-border: rgba(59, 217, 218, 0.6);
+  --teal-subtle: rgba(59, 217, 218, 0.14);
+  --shadow-teal: 0 0 0 1px rgba(59, 217, 218, 0.65);
+  --search-focus-ring: rgba(59, 217, 218, 0.4);
 }
 
 /* ── Clean LIGHT chrome (sidebar + header) — white rail + white header,
@@ -1337,8 +1337,8 @@
   --glass-header: #f1f8f7;
   --glass-bg: rgba(16, 24, 40, 0.03);
   --glass-bg-hover: rgba(16, 24, 40, 0.05);
-  --teal-glass: rgba(17, 116, 121, 0.1); /* active pill / sub-item active fill */
-  --teal-border: rgba(17, 116, 121, 0.3);
+  --teal-glass: rgba(59, 217, 218, 0.2); /* active pill / sub-item active fill */
+  --teal-border: rgba(59, 217, 218, 0.6);
   --sidebar-primary: 183 76% 27%;
 }
 
@@ -1385,12 +1385,12 @@
    per-file edits.                                                            */
 [data-brand="admin"][data-admin-skin="sf"].dark,
 .dark [data-brand="admin"][data-admin-skin="sf"] {
-  /* Brand → cyan #3BD9D9 (leads on dark: cyan-on-black = 12:1).
+  /* Brand → cyan #3BD9DA (leads on dark: cyan-on-black = 12:1).
      Cyan fills carry BLACK text — see the *-foreground/*-fg tokens below. */
-  --tpl-primary: #3bd9d9;
+  --tpl-primary: #3bd9da;
   --tpl-primary-hover: #5fe0e0;
-  --tpl-primary-soft: rgba(59, 217, 217, 0.16);
-  --tpl-primary-soft-2: rgba(59, 217, 217, 0.26);
+  --tpl-primary-soft: rgba(59, 217, 218, 0.16);
+  --tpl-primary-soft-2: rgba(59, 217, 218, 0.26);
 
   /* Layered dark surfaces (depth via color steps, not shadows) */
   --tpl-body-bg: #050b0b; /* page bg            */
@@ -1431,11 +1431,11 @@
   --glass-border: rgba(255, 255, 255, 0.07);
   --glass-border-strong: rgba(255, 255, 255, 0.12);
   --glass-header: rgba(13, 17, 24, 0.72);
-  --teal-glass: rgba(59, 217, 217, 0.18);
-  --teal-border: rgba(59, 217, 217, 0.3);
-  --teal-subtle: rgba(59, 217, 217, 0.1);
-  --shadow-teal: 0 0 0 1px rgba(59, 217, 217, 0.5);
-  --search-focus-ring: rgba(59, 217, 217, 0.22);
+  --teal-glass: rgba(59, 217, 218, 0.18);
+  --teal-border: rgba(59, 217, 218, 0.3);
+  --teal-subtle: rgba(59, 217, 218, 0.1);
+  --shadow-teal: 0 0 0 1px rgba(59, 217, 218, 0.5);
+  --search-focus-ring: rgba(59, 217, 218, 0.22);
 
   /* HSL --dashboard-* layer (~190 usages: text-dashboard-heading, etc.) */
   --dashboard-bg: 183 20% 4%;
@@ -1459,9 +1459,9 @@
   --surface-fg: #ffffff;
   --surface-fg-muted: #8a929f;
   --surface-fg-subtle: #a8b0bf;
-  --accent: #3bd9d9;
+  --accent: #3bd9da;
   --accent-hover: #5fe0e0;
-  --accent-soft: rgba(59, 217, 217, 0.16);
+  --accent-soft: rgba(59, 217, 218, 0.16);
   --accent-fg: #000000;
 
   /* brand-* (TabStrip text-brand, shared primitives) → cyan; black on fills */
@@ -1653,7 +1653,7 @@ main::-webkit-scrollbar-thumb:hover {
   background: #243049;
 }
 [data-admin-skin="sf"] main::-webkit-scrollbar-thumb:hover {
-  background: #3bd9d9;
+  background: #3bd9da;
 }
 
 /* Smooth focus outline on buttons and inputs — scoped to the admin shell.

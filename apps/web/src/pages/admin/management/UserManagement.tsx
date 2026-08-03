@@ -274,7 +274,7 @@ const UserManagement = () => {
                 isSubscribers || !access.canCreate ? undefined : (
                   <Button
                     onClick={() => setFormState({ mode: "add" })}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-black gap-2"
+                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
                   >
                     <Plus size={16} /> Add User
                   </Button>
@@ -522,7 +522,7 @@ function UserFormDialog({
             <Button
               type="submit"
               disabled={isSaving}
-              className="bg-tpl-primary hover:bg-tpl-primary/90 text-black"
+              className="bg-tpl-primary hover:bg-tpl-primary/90 text-white"
             >
               {isSaving ? "Saving…" : state?.mode === "edit" ? "Update User" : "Add User"}
             </Button>

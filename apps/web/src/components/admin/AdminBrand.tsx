@@ -23,7 +23,7 @@ export function AdminBrandMark({
       aria-label={BRAND_NAME}
       className={cn(
         "grid place-items-center shrink-0 bg-th-logo",
-        "shadow-[0_5px_14px_-4px_rgba(59,217,217,0.75)]",
+        "shadow-[0_5px_14px_-4px_rgba(59, 217, 218,0.75)]",
         className,
       )}
       // Sized from the `size` prop, so these three can't be class names.

@@ -77,7 +77,7 @@ const menuItems: MenuItem[] = [
     label: "Dashboard",
     icon: LayoutDashboard,
     path: "/dashboard",
-    color: "#3BD9D9",
+    color: "#3BD9DA",
   },
   {
     id: "bookings",
@@ -393,7 +393,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 "transition-[background-color,color,box-shadow] duration-150",
                 "focus-visible:ring-2 focus-visible:ring-brand/40",
                 active
-                  ? "bg-brand text-brand-fg shadow-[0_1px_2px_rgba(17, 116, 121,0.24),0_6px_16px_-8px_rgba(17, 116, 121,0.45)]"
+                  ? "bg-brand text-brand-fg shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-8px_rgba(59, 217, 218, 0.65)]"
                   : "hover:brightness-95",
               )}
             >

@@ -89,7 +89,7 @@
   --ds-warning: #ef9f27;
 
   /* Card shadow */
-  --ds-shadow-card: 0 4px 20px rgba(17, 116, 121, 0.1);
+  --ds-shadow-card: 0 4px 20px rgba(59, 217, 218, 0.2);
   --ds-shadow-drop: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -101,18 +101,19 @@
 @layer base {
   /* ─── 1. COLOR TOKENS ──────────────────────────────────────── */
   :root {
-    /* Brand — the logo cyan #3BD9D9 darkened along its own hue (180°) until it
-       holds AA on white: #117479 primary (5.5:1), #128086 hover (4.7:1). The
-       pure logo cyan is 1.7:1 on white, so on light surfaces it may only ever
-       be a fill behind black artwork (see --th-logo), never text or a button. */
-    --th-brand: #117479;
-    --th-brand-hover: #128086;
+    /* Brand — the logo cyan itself, carrying WHITE on top (product decision).
+       This was previously the cyan darkened along its own hue until it held AA
+       on white (#117479, 5.5:1). Recorded so nobody "fixes" it back by accident:
+       white-on-#3BD9DA is 1.6:1 and cyan-as-text on white is 1.7:1, both below
+       the WCAG AA floor. Accepted deliberately for brand consistency. */
+    --th-brand: #3bd9da;
+    --th-brand-hover: #3bd9da;
     --th-brand-fg: #ffffff;
 
     /* Logo cyan — the colour of the delivered artwork itself, so unlike --th-brand
        it is a fixed constant and is deliberately NOT re-mapped per theme or skin.
        Carries BLACK artwork/text (cyan-on-black is ~14:1, white-on-cyan is 1.6:1). */
-    --th-logo: #3bd9d9;
+    --th-logo: #3bd9da;
     --th-logo-fg: #000000;
 
     /* CTA accent — Champagne (use ONLY as fill/bg, never as text on white) */
@@ -171,7 +172,7 @@
     --th-stat-clicks-icon: #ccf2f2;
 
     /* Interactive */
-    --th-ring: rgba(17, 116, 121, 0.15);
+    --th-ring: rgba(59, 217, 218, 0.3);
     --th-ring-error: rgba(180, 35, 24, 0.12);
     --th-overlay: rgba(10, 28, 28, 0.45);
     --th-booking-link: #117479;
@@ -200,8 +201,8 @@
     --th-warm-border: #d3d1c7; /* GRAY_200 */
     --th-warm-surface: #f7f8fa; /* SURFACE */
 
-    --th-brand-soft: rgba(17, 116, 121, 0.07); /* TEAL_BG */
-    --th-brand-border-soft: rgba(17, 116, 121, 0.3); /* TEAL_BORDER */
+    --th-brand-soft: rgba(59, 217, 218, 0.14); /* TEAL_BG */
+    --th-brand-border-soft: rgba(59, 217, 218, 0.6); /* TEAL_BORDER */
 
     --th-error-bright: #ef4444; /* ERROR */
     --th-error-bright-soft: #fca5a5; /* ERROR_SOFT */
@@ -413,7 +414,7 @@
   .dark {
     /* Brand — the logo cyan leads on dark (≈12:1 on the black surfaces) and
        carries BLACK, matching the delivered black-on-cyan artwork. */
-    --th-brand: #3bd9d9;
+    --th-brand: #3bd9da;
     --th-brand-hover: #5fe0e0;
     --th-brand-fg: #001414;
 
@@ -426,17 +427,17 @@
 
     /* Text */
     --th-text-primary: #ffffff;
-    --th-text-secondary: #3bd9d9;
-    --th-text-tertiary: rgba(59, 217, 217, 0.75);
-    --th-text-muted: rgba(59, 217, 217, 0.45);
-    --th-text-placeholder: rgba(59, 217, 217, 0.35);
+    --th-text-secondary: #3bd9da;
+    --th-text-tertiary: rgba(59, 217, 218, 0.75);
+    --th-text-muted: rgba(59, 217, 218, 0.45);
+    --th-text-placeholder: rgba(59, 217, 218, 0.35);
     --th-text-inverse: #040808;
-    --th-text-link: #3bd9d9;
+    --th-text-link: #3bd9da;
 
     /* Borders */
-    --th-border: rgba(59, 217, 217, 0.15);
-    --th-border-hover: rgba(59, 217, 217, 0.35);
-    --th-border-focus: #3bd9d9;
+    --th-border: rgba(59, 217, 218, 0.15);
+    --th-border-hover: rgba(59, 217, 218, 0.35);
+    --th-border-focus: #3bd9da;
     --th-border-error: #ef4444;
 
     /* Status (dark) */
@@ -446,31 +447,31 @@
     --th-warning-text: #fbbf24;
     --th-error-bg: rgba(239, 68, 68, 0.12);
     --th-error-text: #f87171;
-    --th-info-bg: rgba(59, 217, 217, 0.12);
-    --th-info-text: #3bd9d9;
+    --th-info-bg: rgba(59, 217, 218, 0.12);
+    --th-info-text: #3bd9da;
     --th-purple-bg: rgba(177, 39, 220, 0.12);
     --th-purple-text: #c084fc;
 
     /* Stats dark — ocean palette transparencies */
-    --th-stat-impression: rgba(59, 217, 217, 0.08);
-    --th-stat-impression-icon: rgba(59, 217, 217, 0.14);
+    --th-stat-impression: rgba(59, 217, 218, 0.08);
+    --th-stat-impression-icon: rgba(59, 217, 218, 0.14);
     --th-stat-bookings: rgba(18, 128, 134, 0.12);
     --th-stat-bookings-icon: rgba(18, 128, 134, 0.2);
-    --th-stat-properties: rgba(59, 217, 217, 0.06);
-    --th-stat-properties-icon: rgba(59, 217, 217, 0.12);
+    --th-stat-properties: rgba(59, 217, 218, 0.06);
+    --th-stat-properties-icon: rgba(59, 217, 218, 0.12);
     --th-stat-earnings: rgba(6, 32, 32, 0.5);
     --th-stat-earnings-icon: rgba(6, 32, 32, 0.7);
-    --th-stat-clicks: rgba(59, 217, 217, 0.06);
-    --th-stat-clicks-icon: rgba(59, 217, 217, 0.1);
+    --th-stat-clicks: rgba(59, 217, 218, 0.06);
+    --th-stat-clicks-icon: rgba(59, 217, 218, 0.1);
 
     /* Interactive dark */
-    --th-ring: rgba(59, 217, 217, 0.25);
+    --th-ring: rgba(59, 217, 218, 0.25);
     --th-ring-error: rgba(239, 68, 68, 0.18);
     --th-overlay: rgba(2, 8, 8, 0.65);
-    --th-booking-link: #3bd9d9;
+    --th-booking-link: #3bd9da;
 
     /* Accent dark */
-    --th-accent: #3bd9d9;
+    --th-accent: #3bd9da;
     --th-accent-hover: #5fe0e0;
     --th-accent-fg: #102020;
     --th-accent-subtle: #0c1818;
@@ -553,12 +554,12 @@
     --nav-tree-line: 183 40% 18%;
 
     /* Legacy auth dark */
-    --auth-blackish-green: #3bd9d9;
-    --auth-neutral-06: rgba(59, 217, 217, 0.5);
-    --auth-neutral-07: rgba(59, 217, 217, 0.7);
-    --auth-primary: #3bd9d9;
+    --auth-blackish-green: #3bd9da;
+    --auth-neutral-06: rgba(59, 217, 218, 0.5);
+    --auth-neutral-07: rgba(59, 217, 218, 0.7);
+    --auth-primary: #3bd9da;
     --auth-primary-0: #081010;
-    --auth-text-muted: rgba(59, 217, 217, 0.75);
+    --auth-text-muted: rgba(59, 217, 218, 0.75);
   }
 
   /* ─── BASE RESETS ──────────────────────────────────────────── */
@@ -1216,7 +1217,7 @@
   }
   /* Logo Cyan: primary CTA = #117479 ds-deep, navy hover. */
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(17, 116, 121, 0.2);
+    box-shadow: 0 4px 20px rgba(59, 217, 218, 0.4);
   }
   .onb-btn-primary {
     background: var(--ds-deep);
@@ -1226,7 +1227,7 @@
   .onb-btn-primary:hover:not(:disabled) {
     background: var(--ds-navy);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(17, 116, 121, 0.28);
+    box-shadow: 0 6px 24px rgba(59, 217, 218, 0.56);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
@@ -1252,7 +1253,7 @@
     background: var(--ds-sky) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(17, 116, 121, 0.15);
+    box-shadow: 0 2px 12px rgba(59, 217, 218, 0.3);
   }
 
   /* Congratulations */
@@ -1461,6 +1462,50 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @layer utilities {
+  /* ─── MOBILE FOUNDATIONS ───────────────────────────────────── */
+  /* The landing page is mobile-first: a fixed bottom nav owns the last ~76px
+     of the viewport, and iPhones add a home-indicator inset below that. */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Clears the fixed MobileUserNav so page content is never trapped under it. */
+  .pb-mobile-nav {
+    padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  }
+  @media (min-width: 1024px) {
+    .pb-mobile-nav {
+      padding-bottom: 0;
+    }
+  }
+
+  /* Horizontal card rails. Snap + momentum makes a scroller feel native on
+     touch; `overscroll-x-contain` stops a rail flick from triggering the
+     browser's back-swipe. */
+  /* Pair with Tailwind's `snap-start` on each item. Deliberately no
+     `.snap-rail > *` rule: several rails wrap their items in a flex row, and
+     snapping that full-width wrapper would pin the rail at scroll position 0. */
+  .snap-rail {
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding-left: 1rem;
+  }
+  /* Rails are edge-to-edge on phones and inline in the grid from md up. */
+  .rail-bleed {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  @media (min-width: 768px) {
+    .rail-bleed {
+      margin-left: 0;
+      margin-right: 0;
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
   /* ─── RESPONSIVE SPACING ───────────────────────────────────── */
   .container-responsive {
     @apply px-4 sm:px-6 lg:px-8;
