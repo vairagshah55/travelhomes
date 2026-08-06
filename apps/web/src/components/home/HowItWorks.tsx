@@ -3,10 +3,7 @@ import { motion } from "framer-motion";
 import { Search, CalendarCheck, Compass } from "lucide-react";
 import { ScrollReveal, staggerContainer, staggerItem } from "./ScrollReveal";
 
-// `accent` is the glyph on the cyan disc. These discs are logo-cyan *artwork*,
-// so they take the --th-logo / --th-logo-fg pairing (ink on cyan, ~14:1) — not
-// --th-brand / --th-brand-fg, whose white-on-cyan is the deliberate 1.6:1 UI
-// pairing. White glyphs here were all but invisible against the disc.
+// `accent` is the glyph on the cyan disc.
 const STEPS = [
   {
     icon: Search,
@@ -14,7 +11,7 @@ const STEPS = [
     title: "Search & Discover",
     description:
       "Browse campervans, unique stays, and activities across India. Filter by location, date, and budget to find your perfect match.",
-    accent: "#0a1c1c",
+    accent: "#FFFFFF",
     bg: "#3BD9DA",
   },
   {
@@ -23,7 +20,7 @@ const STEPS = [
     title: "Book Instantly",
     description:
       "Secure your booking in seconds with a seamless checkout. Pay safely, get instant confirmation, and receive your itinerary details.",
-    accent: "#0a1c1c",
+    accent: "#FFFFFF",
     bg: "#3BD9DA",
   },
   {
@@ -32,7 +29,7 @@ const STEPS = [
     title: "Explore & Enjoy",
     description:
       "Pack your bags and go! From Himalayan trails to coastal stays, every Travel Homes experience is curated for unforgettable moments.",
-    accent: "#0a1c1c",
+    accent: "#FFFFFF",
     bg: "#3BD9DA",
   },
 ];
@@ -96,8 +93,10 @@ export function HowItWorks() {
                 {/* Ink badge, white numerals. The old #117479 fill was a
                     near-neighbour of the cyan disc it sits on, so the badge
                     read as a smudge; ink separates from both the disc and the
-                    white card, and the numerals hold 16:1 on it. */}
-                <span className="absolute -top-1.5 -left-1.5 w-[22px] h-[22px] md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white bg-[#0a1c1c] ring-2 ring-white dark:ring-gray-900">
+                    white card, and the numerals hold 16:1 on it. Ring
+                    thickened + shadow added so the badge lifts off the disc
+                    instead of just sitting flush against it. */}
+                <span className="absolute -top-1.5 -left-1.5 w-[22px] h-[22px] md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white bg-[#0a1c1c] ring-[3px] ring-white dark:ring-gray-900 shadow-md">
                   {step}
                 </span>
               </div>
