@@ -331,11 +331,10 @@ export function HeroSection({
             Caravans, unique stays, and curated activities across India.
           </motion.p>
 
-          {/* Category filter pills — a snap rail on phones (three pills don't
-              fit on a 360px screen and wrapping them looked broken), a
-              centred row from sm up. */}
+          {/* Category filter pills — hidden on phones, where they duplicated
+              the tabs already in MobileSearchSheet; centred row from sm up. */}
           <motion.div
-            className="flex flex-nowrap items-center justify-start sm:justify-center gap-2 md:gap-3 mb-5 md:mb-8 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
+            className="hidden sm:flex flex-nowrap items-center justify-start sm:justify-center gap-2 md:gap-3 mb-5 md:mb-8 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
             initial="hidden"
             animate="visible"
             variants={{
