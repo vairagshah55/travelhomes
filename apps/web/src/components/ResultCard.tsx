@@ -82,7 +82,13 @@ function ResultCard({
   const content = getCardContent();
 
   return (
-    <div className="overflow-x-auto scrollbar-hide snap-rail rail-bleed">
+    // Mandatory (not proximity) snap: guarantees the rail always rests with
+    // one full card flush to the edge on mobile, instead of a fast flick
+    // overshooting and stopping mid-card between two partial ones.
+    <div
+      className="overflow-x-auto scrollbar-hide snap-rail rail-bleed"
+      style={{ scrollSnapType: "x mandatory" }}
+    >
       <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
         {content.map((item) => {
           const isLiked = wishlistIds.has(item.id);
@@ -90,9 +96,10 @@ function ResultCard({
             <Link
               key={item.id}
               to={item.id}
-              // 74vw leaves a sliver of the next card visible, which is what tells
-              // a phone user the row scrolls at all.
-              className="group block snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+              // Exactly fills the rail's visible width (viewport minus the
+              // rail-bleed's 1rem inset on each side) — one card, edge to
+              // edge, zero peek of the next one bleeding in.
+              className="group block snap-start w-[calc(100vw-2rem)] max-w-[420px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
             >
               {/* Image */}
               <div className="relative">
