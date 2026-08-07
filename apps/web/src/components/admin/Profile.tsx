@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/admin/ThemeToggle";
 import ProfileDropdown from "@/components/admin/ProfileDropdown";
 import AdminHeader from "./AdminHeader";
 import AdminPageTitle from "./AdminPageTitle";
+import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
@@ -107,14 +108,14 @@ const Profile = () => {
         </div>
 
         {/* Profile Content */}
-        <main className="flex-1 p-4 lg:p-5 dark:bg-black dark:text-white bg-white mx-2 lg:mx-5 mb-2 lg:mb-5 rounded-2xl lg:rounded-3xl overflow-auto">
+        <main className="flex-1 p-4 lg:p-5 pb-20 lg:pb-5 dark:bg-black dark:text-white bg-white mx-2 lg:mx-5 mb-2 lg:mb-5 rounded-2xl lg:rounded-3xl overflow-auto">
           {/* Profile Tabs Header */}
-          <div className="flex items-center justify-between gap-6 border-b border-dashboard-stroke pb-4 mb-5">
-            <div className="flex items-center flex-1">
-              <div className="flex items-center gap-0">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-dashboard-stroke pb-4 mb-5">
+            <div className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-hide">
+              <div className="flex items-center gap-0 shrink-0">
                 <button
                   onClick={() => setActiveTab("personal")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
+                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative whitespace-nowrap shrink-0 ${
                     activeTab === "personal"
                       ? "text-dashboard-heading"
                       : "text-gray-400 dark:bg-black dark:text-white hover:text-dashboard-heading"
@@ -127,7 +128,7 @@ const Profile = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("social")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
+                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative whitespace-nowrap shrink-0 ${
                     activeTab === "social"
                       ? "text-dashboard-heading"
                       : "text-gray-400 dark:bg-black dark:text-white hover:text-dashboard-heading"
@@ -140,7 +141,7 @@ const Profile = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab("business")}
-                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative ${
+                  className={`px-4 py-3 text-base font-bold font-plus-jakarta transition-colors relative whitespace-nowrap shrink-0 ${
                     activeTab === "business"
                       ? "text-dashboard-heading"
                       : "text-gray-400 dark:bg-black dark:text-white hover:text-dashboard-heading"
@@ -155,7 +156,7 @@ const Profile = () => {
             </div>
             <Button
               onClick={() => setIsChangePasswordOpen(true)}
-              className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-6 py-3 rounded-full font-geist text-sm"
+              className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-6 py-3 rounded-full font-geist text-sm shrink-0"
             >
               Change Password
             </Button>
@@ -322,7 +323,7 @@ const Profile = () => {
               {/* Add Link Form */}
               <Card className="bg-gray-50 border-0 dark:bg-black dark:text-white">
                 <CardContent className="p-5">
-                  <div className="flex items-end gap-6">
+                  <div className="flex flex-col sm:flex-row sm:items-end gap-4 sm:gap-6">
                     <div className="flex-1 space-y-3">
                       <label className="text-base text-dashboard-title font-plus-jakarta">
                         Link Title
@@ -343,7 +344,7 @@ const Profile = () => {
                         className="border-gray-300 bg-white dark:bg-black dark:text-white text-sm text-dashboard-neutral-07 font-plus-jakarta"
                       />
                     </div>
-                    <Button className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-8 py-3 rounded-full font-geist">
+                    <Button className="bg-dashboard-primary dark:bg-white dark:text-black hover:bg-[#128086] text-white px-8 py-3 rounded-full font-geist w-full sm:w-auto">
                       ADD
                     </Button>
                   </div>
@@ -634,6 +635,8 @@ const Profile = () => {
           )}
         </main>
       </div>
+
+      <MobileBottomNav />
 
       {/* Change Password Modal */}
       <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />

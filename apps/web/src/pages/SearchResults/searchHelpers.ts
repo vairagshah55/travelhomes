@@ -87,7 +87,7 @@ export function filterSearchItems(items: any[], args: FilterArgs) {
     }
 
     if (selectedFacilities.length > 0) {
-      const itemFacilities = item.facilities || item.amenities || [];
+      const itemFacilities = item.features || item.facilities || item.amenities || [];
       const facilitiesArray = Array.isArray(itemFacilities) ? itemFacilities : [itemFacilities];
       if (
         !selectedFacilities.some((facility) =>
@@ -101,12 +101,12 @@ export function filterSearchItems(items: any[], args: FilterArgs) {
     }
 
     if (activeFilter === "camper-van" && sleepRange) {
-      const sleeps = Number(item.sleeps || item.capacity || 0);
+      const sleeps = Number(item.sleepingCapacity || item.sleeps || item.capacity || 0);
       if (sleeps < sleepRange.minVal || sleeps > sleepRange.maxVal) return false;
     }
 
     if (activeFilter === "camper-van" && seatRange) {
-      const seating = Number(item.seating || item.passengers || 0);
+      const seating = Number(item.seatingCapacity || item.seating || item.passengers || 0);
       if (seating < seatRange.minVal || seating > seatRange.maxVal) return false;
     }
 

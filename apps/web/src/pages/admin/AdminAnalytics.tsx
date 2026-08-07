@@ -11,11 +11,11 @@ const AdminAnalytics = () => {
     <AdminLayout title="Analytics">
       <div className="space-y-6">
         {/* Toolbar — title + Overview/Report segmented control */}
-        <div className="flex items-center justify-between gap-4 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 py-4">
-          <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 py-4">
+          <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight truncate">
             {activeTab === "analytics" ? "Analytics Overview" : "Analytics Report"}
           </h2>
-          <div className="flex gap-1 bg-tpl-gray-2 dark:bg-white/5 rounded-lg p-1">
+          <div className="flex gap-1 bg-tpl-gray-2 dark:bg-white/5 rounded-lg p-1 shrink-0">
             {(
               [
                 ["analytics", "Overview"],

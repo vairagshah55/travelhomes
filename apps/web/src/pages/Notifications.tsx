@@ -750,7 +750,8 @@ const Notifications = () => {
                                   "mt-1.5 grid place-items-center w-8 h-8 rounded-lg shrink-0 outline-none",
                                   "text-muted-foreground/70 hover:text-red-600 hover:bg-red-50",
                                   "dark:hover:text-red-400 dark:hover:bg-red-500/10",
-                                  "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
+                                  // Always reachable on touch; reveals on hover on desktop.
+                                  "opacity-70 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100",
                                   "focus-visible:ring-2 focus-visible:ring-red-500/40",
                                   "transition-[opacity,color,background-color] duration-150",
                                 )}

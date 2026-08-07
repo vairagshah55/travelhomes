@@ -161,7 +161,7 @@ export const PostComposer: React.FC<{ draft: PostDraft }> = ({ draft }) => {
                       aria-label={`Remove ${img.file.name}`}
                       className="absolute -top-1.5 -right-1.5 grid place-items-center w-6 h-6 rounded-full
                         bg-card border border-border text-muted-foreground shadow-sm
-                        opacity-0 group-hover:opacity-100 focus-visible:opacity-100
+                        opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100
                         hover:text-red-600 hover:border-red-200 transition-opacity duration-150"
                     >
                       <X size={11} strokeWidth={2.6} />

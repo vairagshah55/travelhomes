@@ -41,7 +41,7 @@ const LicenseDetailsModal: React.FC<LicenseDetailsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[618px] p-0 bg-white rounded-xl overflow-hidden">
+      <DialogContent className="w-[calc(100%-2rem)] sm:w-[618px] max-w-[618px] max-h-[90vh] p-0 bg-white rounded-xl overflow-y-auto">
         <div className="flex flex-col gap-2.5 p-6 pb-4">
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-5">

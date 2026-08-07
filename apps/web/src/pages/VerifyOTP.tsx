@@ -140,7 +140,7 @@ const VerifyOTP = () => {
       <div className="auth-form-container max-md:mt-0 max-md:p-0 lg:mt-48  ">
         <div className="auth-form">
           {/* Back button and header */}
-          <div className="space-y-8 max-md:mt-[-350px]">
+          <div className="space-y-8">
             <button
               onClick={handleBack}
               className="flex items-center gap-1 text-[#131313] dark:text-white hover:opacity-80 transition-opacity"
@@ -150,7 +150,7 @@ const VerifyOTP = () => {
             </button>
 
             <div className="space-y-3">
-              <h1 className="text-4xl font-bold text-black dark:text-white font-['Inter']">
+              <h1 className="text-3xl sm:text-4xl font-bold text-black dark:text-white font-['Inter']">
                 Verify code
               </h1>
               <p className="text-base text-[#112211] dark:text-gray-300 opacity-75 font-['Plus_Jakarta_Sans']">

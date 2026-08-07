@@ -468,8 +468,12 @@ export function HomeHeader({
         //   } ${className}`}
       >
         <div className="flex items-center bg-transparent justify-between w-full">
-          {/* Logo */}
-          <div className="w-40 flex-shrink-0">
+          {/* Logo — no fixed width: HomeLogoWebsite renders the horizontal lockup
+              at a hardcoded 40px height (~185px wide at its 4.627 aspect ratio),
+              which overflowed the old `w-40` (160px) box. Sized to content
+              instead, and scaled down on phones so it doesn't crowd the action
+              buttons. */}
+          <div className="flex-shrink-0 origin-left scale-[0.8] sm:scale-100">
             <HomeLogoWebsite />
           </div>
 

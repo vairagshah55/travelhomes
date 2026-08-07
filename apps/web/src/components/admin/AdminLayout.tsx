@@ -54,7 +54,7 @@ export default function AdminLayout({
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
           >
-            <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 md:pb-8">
+            <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 lg:pb-8">
               <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} />
               {children}
             </div>

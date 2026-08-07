@@ -17,7 +17,6 @@ import OnboardingRedirect from "./components/OnboardingRedirect";
 import { DashboardLayoutShell } from "./components/DashboardLayout";
 import SEOMeta from "./components/SEOMeta";
 import ScrollToTop from "./components/ScrollToTop";
-import GenericRouteFallback from "./components/GenericRouteFallback";
 import AdminRouteFallback from "./components/admin/AdminRouteFallback";
 import ProductDetailsSkeleton from "./components/product-details/ProductDetailsSkeleton";
 import { initDashboardAnimations } from "./animations";
@@ -151,7 +150,7 @@ const App = () => {
             <BrowserRouter>
               <ScrollToTop />
               <SEOMeta />
-              <Suspense fallback={<GenericRouteFallback />}>
+              <Suspense fallback={null}>
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />

@@ -1020,7 +1020,7 @@ export default function SearchResults() {
 
             {/* Results Cards Div - Scrollable */}
             <div
-              className="flex-1 overflow-y-auto pr-2 max-h-[750px] scrollbar-hide"
+              className="flex-1 overflow-y-auto pr-2 max-h-[70vh] md:max-h-[750px] scrollbar-hide"
               style={{ minHeight: "400px" }}
             >
               {isLoading ? (

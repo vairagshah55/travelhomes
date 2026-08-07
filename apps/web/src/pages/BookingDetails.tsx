@@ -886,7 +886,7 @@ const BookingDetails = () => {
         }
       >
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PanelInput
               label="Customer Name"
               value={editForm.customerName}
@@ -915,7 +915,7 @@ const BookingDetails = () => {
             <option value="active">Active</option>
             <option value="cancelled">Cancelled</option>
           </PanelSelect>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PanelInput
               label="Check-in Date"
               value={editForm.checkInDate}
@@ -929,7 +929,7 @@ const BookingDetails = () => {
               type="time"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PanelInput
               label="Check-out Date"
               value={editForm.checkOutDate}
@@ -948,7 +948,7 @@ const BookingDetails = () => {
             value={editForm.locationFrom}
             onChange={(v) => setEditForm((p) => ({ ...p, locationFrom: v }))}
           />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <PanelInput
               label="Price"
               value={editForm.servicePrice}

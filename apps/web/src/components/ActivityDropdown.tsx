@@ -8,16 +8,10 @@ export function ActivityDropdown({
   onSelect: (activity: string) => void;
   onClose: () => void;
 }) {
-  const activities = [
-    "Tracking",
-    "Hiking",
-    "Camping",
-    "Photography",
-    "Bird Watching",
-  ];
+  const activities = ["Tracking", "Hiking", "Camping", "Photography", "Bird Watching"];
 
   return (
-    <div className="absolute top-[calc(100%+24px)] left-0 w-[300px] bg-white rounded-2xl shadow-xl p-2 z-[9999] border border-gray-100">
+    <div className="absolute top-[calc(100%+24px)] left-0 w-[85vw] max-w-[300px] bg-white rounded-2xl shadow-xl p-2 z-[9999] border border-gray-100">
       {activities.map((activity) => (
         <button
           key={activity}

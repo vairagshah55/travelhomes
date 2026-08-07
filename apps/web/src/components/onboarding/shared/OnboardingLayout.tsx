@@ -62,15 +62,15 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
 
       {/* Fixed Footer */}
       <div className="flex w-full z-30 fixed bottom-0 items-center justify-center px-6 lg:px-16 bg-white border-t border-ds-pebble py-4">
-        <div className="max-w-4xl mx-auto w-full flex justify-between items-center gap-5">
+        <div className="max-w-4xl mx-auto w-full flex justify-between items-center gap-2 sm:gap-5">
           {/* LEFT - progress */}
           {!isLastStep && (
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0">
               <span className="hidden sm:block text-sm font-medium text-ds-slate whitespace-nowrap">
                 Step <span className="font-semibold text-ds-deep">{currentStep + 1}</span> of{" "}
                 {totalSteps - 1}
               </span>
-              <div className="flex gap-1.5 w-36 sm:w-48 h-1.5">
+              <div className="flex gap-1.5 w-16 sm:w-36 md:w-48 h-1.5 shrink-0">
                 {Array.from({ length: totalSteps - 1 }, (_, i) => (
                   <div
                     key={i}
@@ -84,10 +84,10 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
           )}
 
           {/* RIGHT - nav */}
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="flex items-center gap-2 sm:gap-3 ml-auto shrink-0">
             <button
               onClick={onBack}
-              className="h-10 px-6 text-sm border border-ds-pebble rounded-full text-ds-charcoal hover:border-ds-deep hover:bg-ds-sky active:scale-95 transition-all duration-200"
+              className="h-10 px-4 sm:px-6 text-sm border border-ds-pebble rounded-full text-ds-charcoal hover:border-ds-deep hover:bg-ds-sky active:scale-95 transition-all duration-200"
             >
               Back
             </button>
@@ -96,7 +96,7 @@ const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
               type="button"
               onClick={onNext}
               disabled={isLoading || !canProceed || (isLastStep && !termsAccepted)}
-              className="h-10 px-8 text-sm rounded-full onb-btn-primary disabled:opacity-35 disabled:cursor-not-allowed"
+              className="h-10 px-5 sm:px-8 text-sm rounded-full onb-btn-primary disabled:opacity-35 disabled:cursor-not-allowed whitespace-nowrap"
               style={canProceed ? { boxShadow: "0 4px 20px rgba(59, 217, 218, 0.4)" } : undefined}
             >
               {isLoading ? "Loading..." : isLastStep ? "Start Verification" : "Next"}

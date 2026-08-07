@@ -45,9 +45,9 @@ function About() {
       </section>
 
       {/* Hero Section */}
-      <section className="max-w-7xl  mx-auto md:px-10 py-16 grid md:grid-cols-2 gap-8 items-center">
+      <section className="max-w-7xl  mx-auto px-4 md:px-10 py-16 grid md:grid-cols-2 gap-8 items-center">
         <div className="space-y-4 animate-fadeIn">
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight">
             Your Home <br /> Away From Home!
           </h1>
           <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
@@ -80,15 +80,15 @@ function About() {
       </section>
 
       {/* Stats */}
-      <section className="max-w-7xl flex justify-between w-full mx-auto px-4 py-8  animate-fadeIn delay-200">
-        <p className="italic w-1/2 text-5xl max-md:text-2xl text-start font-bold">
+      <section className="max-w-7xl flex flex-col md:flex-row justify-between w-full mx-auto px-4 py-8 gap-8 animate-fadeIn delay-200">
+        <p className="italic w-full md:w-1/2 text-5xl max-md:text-2xl text-start font-bold">
           “Where Unique <br /> Stays Meet <br />
           <span className="text-gray-400">
             Exceptional <br /> Service
           </span>{" "}
           ”
         </p>
-        <div className="flex w-1/2 flex-wrap gap-20 mt-8 text-center font-semibold">
+        <div className="flex w-full md:w-1/2 flex-wrap gap-8 sm:gap-12 md:gap-20 mt-8 text-center font-semibold">
           <div>
             <span className="text-3xl md:text-4xl">15k+</span>
             <p className="text-sm text-[#979797]">Unique stays in 120+ countries.</p>

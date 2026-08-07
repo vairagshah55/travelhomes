@@ -381,7 +381,11 @@ export const offersApi = {
       method: "DELETE",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }),
-  setStatus: (id: string, status: "pending" | "approved" | "cancelled", token?: string) =>
+  setStatus: (
+    id: string,
+    status: "pending" | "approved" | "cancelled" | "deactivated",
+    token?: string,
+  ) =>
     request<ApiItemResponse<OfferDTO>>(`/api/offers/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),

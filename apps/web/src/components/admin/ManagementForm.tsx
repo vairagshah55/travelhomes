@@ -276,7 +276,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-8 w-full max-w-4xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div className="bg-white rounded-xl p-5 sm:p-8 w-full max-w-4xl relative max-h-[90vh] overflow-y-auto custom-scrollbar">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -285,7 +285,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           <X size={16} className="text-gray-700" />
         </button>
 
-        <div className="mb-6">
+        <div className="mb-6 pr-8">
           <h2 className="text-2xl font-bold text-gray-900">
             {initialData ? "Edit Listing" : "Add New Listing"}
           </h2>

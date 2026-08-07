@@ -467,7 +467,7 @@ const Register = () => {
 
             {/* Dropdown panel */}
             {phoneDropdownOpen && (
-              <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
+              <div className="absolute top-[calc(100%+6px)] left-0 z-50 w-[85vw] max-w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl overflow-hidden">
                 {/* Search */}
                 <div className="px-3 pt-3 pb-2">
                   <div className="relative">

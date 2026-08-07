@@ -33,7 +33,7 @@ export default function FAQSection({
 
   return (
     <div className="flex max-md:flex-col space-y-8">
-      <div className="w-[50%] max-md:w-full mt-32">
+      <div className="w-[50%] max-md:w-full mt-8 md:mt-32">
         <h2 className="text-2xl text-center  font-bold dark:bg-black dark:text-white text-black mb-6">
           {title}
         </h2>

@@ -1,57 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Eye, EyeOff, X, Loader2 } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { IoIosArrowBack } from 'react-icons/io';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { vendorAuthApi } from '@/lib/api';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Eye, EyeOff, X, Loader2 } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { IoIosArrowBack } from "react-icons/io";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { vendorAuthApi } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 const AccountSettings = () => {
   const { user, updateUser } = useAuth();
   const { toast } = useToast();
   const [activeSetting, setActiveSetting] = useState<string | null>(null);
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [confirmEmail, setConfirmEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [otp, setOtp] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [verificationEmail, setVerificationEmail] = useState('');
-  const [verificationOtp, setVerificationOtp] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationOtp, setVerificationOtp] = useState("");
   const [serverOtp, setServerOtp] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<'input' | 'otp'>('input');
+  const [step, setStep] = useState<"input" | "otp">("input");
 
   const settingsItems = [
     {
-      title: 'Change Phone Number',
-      description: 'You can update your phone number and extension.',
+      title: "Change Phone Number",
+      description: "You can update your phone number and extension.",
     },
     {
-      title: 'Change Email ID',
-      description: 'Update the email address associated with your account.',
+      title: "Change Email ID",
+      description: "Update the email address associated with your account.",
     },
     {
-      title: 'Change Password',
-      description: 'Ensure your account is secure by updating your password.',
+      title: "Change Password",
+      description: "Ensure your account is secure by updating your password.",
     },
   ];
 
   useEffect(() => {
     if (user) {
-      setPhone(user.phoneNumber || '');
-      setEmail(user.email || '');
+      setPhone(user.phoneNumber || "");
+      setEmail(user.email || "");
     }
   }, [user]);
 
@@ -60,17 +60,17 @@ const AccountSettings = () => {
     setShowOtpInput(false);
     setIsOtpSent(false);
     setIsVerified(false);
-    setOtp('');
-    setVerificationEmail('');
-    setVerificationOtp('');
-    setCurrentPassword('');
+    setOtp("");
+    setVerificationEmail("");
+    setVerificationOtp("");
+    setCurrentPassword("");
     setShowCurrentPassword(false);
-    setPassword('');
-    setConfirmPassword('');
-    setConfirmEmail('');
-    setStep('input');
+    setPassword("");
+    setConfirmPassword("");
+    setConfirmEmail("");
+    setStep("input");
   };
-  
+
   const navigate = useNavigate();
 
   const handleUpdate = async () => {
@@ -78,28 +78,41 @@ const AccountSettings = () => {
     setLoading(true);
 
     try {
-      if (activeSetting === 'Change Phone Number') {
-        if (step === 'input') {
+      if (activeSetting === "Change Phone Number") {
+        if (step === "input") {
           if (phone.length !== 10) {
-            toast({ title: "Error", description: "Phone number must be exactly 10 digits", variant: "destructive" });
-            setLoading(false); return;
+            toast({
+              title: "Error",
+              description: "Phone number must be exactly 10 digits",
+              variant: "destructive",
+            });
+            setLoading(false);
+            return;
           }
           if (phone === user.phoneNumber && user.mobileVerified) {
-             toast({ title: "Info", description: "Please enter a new phone number" });
-             setLoading(false); return;
+            toast({ title: "Info", description: "Please enter a new phone number" });
+            setLoading(false);
+            return;
           }
-          const res = await vendorAuthApi.sendChangeOtp({ currentEmail: user.email, userType: user.userType, newMobile: phone });
+          const res = await vendorAuthApi.sendChangeOtp({
+            currentEmail: user.email,
+            userType: user.userType,
+            newMobile: phone,
+          });
           if (res.success) {
-            setStep('otp');
+            setStep("otp");
             toast({ title: "Success", description: "OTP sent to " + phone });
           }
           setLoading(false);
           return; // Stop here, wait for OTP
         } else {
           // Verify OTP first
-          const verifyRes = await vendorAuthApi.verifyOtp({ email: user.email, otp: verificationOtp });
+          const verifyRes = await vendorAuthApi.verifyOtp({
+            email: user.email,
+            otp: verificationOtp,
+          });
           if (!verifyRes.success) throw new Error("Invalid OTP");
-          
+
           // Then update
           const payload = { currentEmail: user.email, userType: user.userType, mobile: phone };
           const res = await vendorAuthApi.updateAccount(payload);
@@ -109,26 +122,35 @@ const AccountSettings = () => {
             closeModal();
           }
         }
-      } else if (activeSetting === 'Change Email ID') {
-        if (step === 'input') {
+      } else if (activeSetting === "Change Email ID") {
+        if (step === "input") {
           if (email !== confirmEmail) {
             toast({ title: "Error", description: "Emails do not match", variant: "destructive" });
-            setLoading(false); return;
+            setLoading(false);
+            return;
           }
-           if (email === user.email) {
-             toast({ title: "Info", description: "Please enter a new email address" });
-             setLoading(false); return;
+          if (email === user.email) {
+            toast({ title: "Info", description: "Please enter a new email address" });
+            setLoading(false);
+            return;
           }
-          const res = await vendorAuthApi.sendChangeOtp({ currentEmail: user.email, userType: user.userType, newEmail: email });
+          const res = await vendorAuthApi.sendChangeOtp({
+            currentEmail: user.email,
+            userType: user.userType,
+            newEmail: email,
+          });
           if (res.success) {
-             setStep('otp');
-             toast({ title: "Success", description: "OTP sent to " + email });
+            setStep("otp");
+            toast({ title: "Success", description: "OTP sent to " + email });
           }
           setLoading(false);
           return;
         } else {
-           // Verify OTP first
-          const verifyRes = await vendorAuthApi.verifyOtp({ email: user.email, otp: verificationOtp });
+          // Verify OTP first
+          const verifyRes = await vendorAuthApi.verifyOtp({
+            email: user.email,
+            otp: verificationOtp,
+          });
           if (!verifyRes.success) throw new Error("Invalid OTP");
 
           const payload = { currentEmail: user.email, userType: user.userType, email: email };
@@ -139,12 +161,18 @@ const AccountSettings = () => {
             closeModal();
           }
         }
-      } else if (activeSetting === 'Change Password') {
+      } else if (activeSetting === "Change Password") {
         if (password !== confirmPassword) {
           toast({ title: "Error", description: "Passwords do not match", variant: "destructive" });
-          setLoading(false); return;
+          setLoading(false);
+          return;
         }
-        const payload = { currentEmail: user.email, userType: user.userType, currentPassword, newPassword: password };
+        const payload = {
+          currentEmail: user.email,
+          userType: user.userType,
+          currentPassword,
+          newPassword: password,
+        };
         const res = await vendorAuthApi.updateAccount(payload);
         if (res.success) {
           toast({ title: "Success", description: "Password updated successfully" });
@@ -153,7 +181,11 @@ const AccountSettings = () => {
         }
       }
     } catch (error: any) {
-      toast({ title: "Error", description: error.message || "Failed to update account", variant: "destructive" });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update account",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -164,16 +196,16 @@ const AccountSettings = () => {
       toast({
         title: "Error",
         description: "Please enter your email address",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
-    
+
     if (user && user.email && verificationEmail.toLowerCase() !== user.email.toLowerCase()) {
-       toast({
+      toast({
         title: "Error",
         description: "Email does not match your account email",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -197,7 +229,7 @@ const AccountSettings = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to send OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -209,16 +241,16 @@ const AccountSettings = () => {
       toast({
         title: "Error",
         description: "Please enter OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
 
     if (serverOtp && verificationOtp !== serverOtp) {
-       toast({
+      toast({
         title: "Error",
         description: "Invalid OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -226,21 +258,21 @@ const AccountSettings = () => {
     setLoading(true);
     try {
       const res = await vendorAuthApi.verifyOtp({ email: verificationEmail, otp: verificationOtp });
-      
+
       if (res.success) {
-         setIsVerified(true);
-         toast({
+        setIsVerified(true);
+        toast({
           title: "Success",
           description: "Identity verified successfully",
         });
       } else {
-         throw new Error(res.message || "Invalid OTP");
+        throw new Error(res.message || "Invalid OTP");
       }
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Invalid OTP",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
@@ -248,34 +280,42 @@ const AccountSettings = () => {
   };
 
   const renderModalContent = () => {
-    if (step === 'otp') {
+    if (step === "otp") {
       return (
         <>
           <h2 className="text-2xl font-bold mb-6 text-center">Enter OTP</h2>
           <div className="mb-4">
             <p className="text-sm text-gray-500 mb-4 text-center">
-              We've sent a verification code to <strong>{activeSetting === 'Change Phone Number' ? phone : email}</strong>
+              We've sent a verification code to{" "}
+              <strong>{activeSetting === "Change Phone Number" ? phone : email}</strong>
             </p>
             <label className="text-sm font-medium text-gray-700 block mb-1">
               OTP Code<span className="text-red-500">*</span>
             </label>
-            <Input 
-              value={verificationOtp} 
-              onChange={(e) => setVerificationOtp(e.target.value)} 
+            <Input
+              value={verificationOtp}
+              onChange={(e) => setVerificationOtp(e.target.value)}
               placeholder="Enter OTP"
               maxLength={6}
             />
             <div className="mt-2 text-right">
-              <button 
-                onClick={() => { setStep('input'); setVerificationOtp(''); }}
+              <button
+                onClick={() => {
+                  setStep("input");
+                  setVerificationOtp("");
+                }}
                 className="text-sm text-blue-600 hover:underline"
               >
-                Change {activeSetting === 'Change Phone Number' ? 'Number' : 'Email'}
+                Change {activeSetting === "Change Phone Number" ? "Number" : "Email"}
               </button>
             </div>
           </div>
           <div className="flex justify-end gap-4 mt-6">
-            <Button onClick={closeModal} variant="outline" className="border-gray-500 text-gray-800">
+            <Button
+              onClick={closeModal}
+              variant="outline"
+              className="border-gray-500 text-gray-800"
+            >
               Cancel
             </Button>
             <Button
@@ -283,7 +323,7 @@ const AccountSettings = () => {
               disabled={loading}
               className="bg-gray-800 text-white min-w-[100px]"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Verify & Update'}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Update"}
             </Button>
           </div>
         </>
@@ -291,7 +331,7 @@ const AccountSettings = () => {
     }
 
     switch (activeSetting) {
-      case 'Change Phone Number':
+      case "Change Phone Number":
         return (
           <>
             <h2 className="text-2xl font-bold mb-6 text-center">Update Phone Number</h2>
@@ -299,17 +339,21 @@ const AccountSettings = () => {
               <label className="text-sm font-medium text-gray-700 block mb-1">
                 New Phone Number<span className="text-red-500">*</span>
               </label>
-              <Input 
-                value={phone} 
+              <Input
+                value={phone}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '');
+                  const val = e.target.value.replace(/\D/g, "");
                   if (val.length <= 10) setPhone(val);
                 }}
                 placeholder="Enter new phone number"
               />
             </div>
             <div className="flex justify-end gap-4 mt-6">
-              <Button onClick={closeModal} variant="outline" className="border-gray-500 text-gray-800">
+              <Button
+                onClick={closeModal}
+                variant="outline"
+                className="border-gray-500 text-gray-800"
+              >
                 Cancel
               </Button>
               <Button
@@ -317,13 +361,13 @@ const AccountSettings = () => {
                 disabled={loading}
                 className="bg-gray-800 text-white min-w-[100px]"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Next'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Next"}
               </Button>
             </div>
           </>
         );
 
-      case 'Change Email ID':
+      case "Change Email ID":
         return (
           <>
             <h2 className="text-2xl font-bold mb-6 text-center">Update Email Address</h2>
@@ -351,7 +395,11 @@ const AccountSettings = () => {
               </div>
             </div>
             <div className="flex justify-end gap-4 mt-6">
-              <Button onClick={closeModal} variant="outline" className="border-gray-500 text-gray-800">
+              <Button
+                onClick={closeModal}
+                variant="outline"
+                className="border-gray-500 text-gray-800"
+              >
                 Cancel
               </Button>
               <Button
@@ -359,13 +407,13 @@ const AccountSettings = () => {
                 disabled={loading}
                 className="bg-gray-800 text-white min-w-[100px]"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Next'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Next"}
               </Button>
             </div>
           </>
         );
 
-      case 'Change Password':
+      case "Change Password":
         return (
           <>
             <h2 className="text-2xl font-bold mb-6 text-center">Update Password</h2>
@@ -375,7 +423,7 @@ const AccountSettings = () => {
                   Current Password<span className="text-red-500">*</span>
                 </label>
                 <Input
-                  type={showCurrentPassword ? 'text' : 'password'}
+                  type={showCurrentPassword ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="h-12 pr-12"
@@ -384,7 +432,7 @@ const AccountSettings = () => {
                 <button
                   type="button"
                   onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-10 transform -translate-y-1/2 text-[#717171]"
+                  className="absolute right-2 top-10 transform -translate-y-1/2 text-[#717171] p-2.5"
                 >
                   {showCurrentPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -395,7 +443,7 @@ const AccountSettings = () => {
                   New Password<span className="text-red-500">*</span>
                 </label>
                 <Input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="h-12 pr-12"
@@ -404,7 +452,7 @@ const AccountSettings = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-10 transform -translate-y-1/2 text-[#717171]"
+                  className="absolute right-2 top-10 transform -translate-y-1/2 text-[#717171] p-2.5"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -415,7 +463,7 @@ const AccountSettings = () => {
                   Confirm New Password<span className="text-red-500">*</span>
                 </label>
                 <Input
-                  type={showConfirmPassword ? 'text' : 'password'}
+                  type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-12 pr-12"
@@ -424,14 +472,18 @@ const AccountSettings = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-10 transform -translate-y-1/2 text-[#717171]"
+                  className="absolute right-2 top-10 transform -translate-y-1/2 text-[#717171] p-2.5"
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
             </div>
             <div className="flex justify-end gap-4 mt-6">
-              <Button onClick={closeModal} variant="outline" className="border-gray-500 text-gray-800">
+              <Button
+                onClick={closeModal}
+                variant="outline"
+                className="border-gray-500 text-gray-800"
+              >
                 Cancel
               </Button>
               <Button
@@ -439,7 +491,7 @@ const AccountSettings = () => {
                 disabled={loading}
                 className="bg-gray-800 text-white min-w-[100px]"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Update'}
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}
               </Button>
             </div>
           </>
@@ -456,8 +508,8 @@ const AccountSettings = () => {
 
       <main className="container mt-10 mx-auto px-4 lg:px-20 py-10">
         <div className="max-w-7xl mx-auto">
-          <div onClick={()=>navigate(-1)} className="mb-1 cursor-pointer flex items-center gap-1">
-            <IoIosArrowBack size={20}/>
+          <div onClick={() => navigate(-1)} className="mb-1 cursor-pointer flex items-center gap-1">
+            <IoIosArrowBack size={20} />
             <h1 className="text-2xl max-md:text-lg font-semibold text-dashboard-heading font-poppins leading-[46px]">
               Account Settings
             </h1>
@@ -466,7 +518,7 @@ const AccountSettings = () => {
           <div className="space-y-0">
             {settingsItems.map((item, index) => (
               <div key={index}>
-                <div className="flex items-start justify-between p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 p-4">
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold text-dashboard-title font-plus-jakarta mb-3">
                       {item.title}
@@ -478,7 +530,7 @@ const AccountSettings = () => {
                   <Button
                     onClick={() => setActiveSetting(item.title)}
                     variant="outline"
-                    className="ml-10 px-4 py-2 rounded-full dark:border-white border-black dark:hover:bg-gray-500 text-dashboard-primary hover:bg-gray-50 font-geist text-sm"
+                    className="w-full sm:w-auto sm:ml-10 px-4 py-2 rounded-full dark:border-white border-black dark:hover:bg-gray-500 text-dashboard-primary hover:bg-gray-50 font-geist text-sm"
                   >
                     Update Now
                   </Button>

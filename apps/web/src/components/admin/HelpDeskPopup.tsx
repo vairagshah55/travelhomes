@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import React from "react";
+import { X } from "lucide-react";
 
 interface HelpDeskPopupProps {
   isOpen: boolean;
@@ -19,7 +19,7 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl p-8 w-full max-w-[774px] relative">
+      <div className="bg-white rounded-xl p-5 sm:p-8 w-full max-w-[774px] max-h-[90vh] overflow-y-auto relative">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -29,13 +29,13 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
         </button>
 
         {/* Header */}
-        <h2 className="text-2xl font-bold text-[#131313] font-geist mb-7">Help Desk</h2>
+        <h2 className="text-2xl font-bold text-[#131313] font-geist mb-7 pr-8">Help Desk</h2>
 
         {/* Content */}
         <div className="space-y-9">
           {/* First Row */}
-          <div className="flex items-center gap-10">
-            <div className="w-52">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
+            <div>
               <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
                 Vendor Name
               </div>
@@ -43,7 +43,7 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
                 {ticket.vendorName}
               </div>
             </div>
-            <div className="w-52">
+            <div>
               <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
                 Email
               </div>
@@ -51,7 +51,7 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
                 {ticket.email}
               </div>
             </div>
-            <div className="w-52">
+            <div>
               <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
                 Date
               </div>
@@ -62,8 +62,8 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
           </div>
 
           {/* Second Row */}
-          <div className="flex items-center gap-10">
-            <div className="w-52">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
+            <div>
               <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
                 Status
               </div>
@@ -71,7 +71,7 @@ const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }
                 {ticket.status}
               </div>
             </div>
-            <div className="w-52">
+            <div>
               <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
                 Subject
               </div>

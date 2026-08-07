@@ -161,7 +161,7 @@ const EditProfileSidebar = ({
             </AvatarFallback>
           </Avatar>
           <label
-            className="absolute bottom-1 right-1 w-9 h-9 bg-[#117479] hover:bg-[#0d4548] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
+            className="absolute bottom-1 right-1 w-10 h-10 bg-[#117479] hover:bg-[#0d4548] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
             aria-label="Upload photo"
           >
             <input type="file" accept="image/*" className="hidden" onChange={onPhotoFileChange} />
@@ -433,7 +433,7 @@ const EditProfileForm = ({
     </div>
 
     {/* Mobile Save — sticks to brand styling */}
-    <div className="lg:hidden w-full mt-5">
+    <div className="md:hidden w-full mt-5">
       <Button
         onClick={onSave}
         disabled={saving}

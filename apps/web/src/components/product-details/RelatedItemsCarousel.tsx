@@ -57,7 +57,9 @@ export function RelatedItemsCarousel({
             >
               <Link
                 to={item.id}
-                className="block w-64 md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
+                // 74vw leaves a sliver of the next card visible on mobile, matching
+                // the fluid-width pattern used by ResultCard's rail.
+                className="block w-[74vw] max-w-[300px] md:w-auto flex-shrink-0 md:flex-shrink group card-shimmer-wrap rounded-2xl p-1.5 pb-3 cursor-pointer"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl img-shimmer-wrap">
                   <img

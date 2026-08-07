@@ -12,7 +12,9 @@ const VEHICLE_TYPES = [
 ];
 
 const Interchange = () => {
-  const [vehicles, setVehicles] = useState<{ id: number; icon: string; duration: number; path: any }[]>([]);
+  const [vehicles, setVehicles] = useState<
+    { id: number; icon: string; duration: number; path: any }[]
+  >([]);
 
   // Road paths (Simplified versions of the interchange loops)
   const paths = {
@@ -46,14 +48,16 @@ const Interchange = () => {
 
   return (
     <div className="relative w-full h-screen bg-green-900 flex items-center justify-center overflow-hidden">
-      <div className="absolute left-72 top-10 text-white text-center z-10">
+      <div className="absolute left-4 top-4 sm:left-10 sm:top-6 lg:left-72 lg:top-10 text-white text-center z-10">
         <div className="flex justify-center items-center">
           {/* Green hero background → the white lockup. */}
           <BrandLogo variant="stacked" size={72} tone="light" />
         </div>
       </div>
-      <div className="absolute right-72 top-10 text-white text-center z-10">
-        <h1 className="text-5xl font-bold uppercase tracking-widest">404</h1>
+      <div className="absolute right-4 top-4 sm:right-10 sm:top-6 lg:right-72 lg:top-10 text-white text-center z-10">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold uppercase tracking-widest">
+          404
+        </h1>
         <p className="text-sm opacity-70">Page Not Found !</p>
         <a
           href="/"

@@ -407,7 +407,7 @@ export default function VacationRentalPlatform() {
             <div className="flex flex-col lg:flex-row lg:justify-between gap-12 mx-auto">
               {/* Header + Tabs */}
               <div className="text-center lg:text-left w-full lg:w-4/12">
-                <h2 className="text-center text-2xl sm:text-xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 capitalize">
+                <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 capitalize">
                   Frequently asked questions
                 </h2>
                 <p className="text-gray-600 text-center dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 mb-8 text-sm sm:text-base">

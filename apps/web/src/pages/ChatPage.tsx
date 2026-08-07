@@ -515,7 +515,7 @@ const ChatPage = () => {
   const ChatList = () => {
     const unreadCount = chats.filter((c) => c.unreadCount > 0).length;
     return (
-      <div className="w-full md:w-1/3 h-screen bg-white border-r flex flex-col border-t">
+      <div className="w-full md:w-1/3 h-full bg-white border-r flex flex-col border-t">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-2xl font-semibold text-black dark:text-white">Chats</h2>
           <div className="border rounded-full w-12 h-12 flex items-center justify-center">
@@ -605,7 +605,7 @@ const ChatPage = () => {
   };
 
   const ChatPanel = () => (
-    <div className="flex-1 flex flex-col h-screen bg-gray-50 w-full border-t relative">
+    <div className="flex-1 flex flex-col h-full bg-gray-50 w-full border-t relative">
       {selectedUser ? (
         <>
           <div className="w-full flex justify-between items-center p-4 border-b bg-white">
@@ -881,7 +881,7 @@ const ChatPage = () => {
       )}
 
       <div
-        className={`dark:dark-color h-screen bg-white overflow-x-hidden max-lg:pt-0 transition-all duration-300 ${
+        className={`dark:dark-color h-screen bg-white overflow-x-hidden max-md:pt-0 transition-all duration-300 ${
           !isVendor ? "pt-[64px] md:pt-[85px]" : ""
         } ${isVendor ? "lg:pl-64" : ""}`}
       >

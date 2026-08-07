@@ -32,7 +32,7 @@ const ProfileSidebar = ({ user }: ProfileSidebarProps) => {
         {/* Back */}
         <button
           onClick={() => navigate("/")}
-          className="max-md:hidden absolute top-4 left-4 inline-flex items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#117479] transition-colors"
+          className="hidden lg:inline-flex absolute top-4 left-4 items-center gap-1 text-[12.5px] font-medium text-gray-500 hover:text-[#117479] transition-colors"
         >
           <ChevronLeft size={14} />
           <span>Back</span>

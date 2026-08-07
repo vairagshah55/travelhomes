@@ -76,12 +76,12 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpe
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[540px] p-0 bg-white border-0 shadow-xl">
+      <DialogContent className="w-[calc(100%-2rem)] sm:w-full sm:max-w-[540px] max-h-[90vh] overflow-y-auto p-0 bg-white border-0 shadow-xl">
         {/* Modal Background Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-25 z-[-1]" />
 
         {/* Modal Content */}
-        <div className="relative bg-white rounded-xl p-8">
+        <div className="relative bg-white rounded-xl p-5 sm:p-8">
           {/* Close Button */}
           <button
             onClick={handleClose}

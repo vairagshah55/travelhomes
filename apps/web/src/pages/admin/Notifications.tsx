@@ -204,8 +204,8 @@ const Notifications = () => {
     <AdminLayout title="Notifications">
       <main className="flex-1 p-5 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-auto">
         {/* Filter Tabs and Mark as Read */}
-        <div className="flex items-center justify-between overflow-y-scroll gap-6 border-b border-dashboard-stroke pb-4 mb-5">
-          <div className="flex items-center flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashboard-stroke pb-4 mb-5">
+          <div className="flex items-center">
             <div className="flex dark:border items-center bg-dashboard-bg rounded-full p-0.5 w-[142px]">
               <button
                 onClick={() => setActiveFilter("all")}
@@ -350,9 +350,9 @@ const Notifications = () => {
         }}
       >
         {selectedNotification && (
-          <DialogContent className="sm:max-w-lg rounded-3xl p-0 overflow-hidden">
+          <DialogContent className="w-[calc(100%-2rem)] sm:w-full sm:max-w-lg rounded-3xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
             {/* Header */}
-            <DialogHeader className="p-6 border-b border-gray-100 dark:border-gray-800">
+            <DialogHeader className="p-6 border-b border-gray-100 dark:border-gray-800 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                   {getIcon(selectedNotification.type)}
@@ -371,7 +371,7 @@ const Notifications = () => {
             </DialogHeader>
 
             {/* Body */}
-            <div className="p-8">
+            <div className="p-8 flex-1 min-h-0 overflow-y-auto">
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6">
                 <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {selectedNotification.message}
@@ -383,7 +383,7 @@ const Notifications = () => {
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
                     Reference Info
                   </p>
-                  <div className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl">
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-4 border border-gray-100 dark:border-gray-800 rounded-xl">
                     <span className="text-sm font-medium dark:text-gray-400">
                       Model: {selectedNotification.referenceModel}
                     </span>
@@ -396,7 +396,7 @@ const Notifications = () => {
             </div>
 
             {/* Footer */}
-            <DialogFooter className="p-6 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3 sm:space-x-0">
+            <DialogFooter className="p-6 bg-gray-50 dark:bg-gray-800/50 flex items-center justify-end gap-3 sm:space-x-0 shrink-0">
               <button
                 onClick={() => handleDelete(selectedNotification._id)}
                 className="px-6 py-2.5 rounded-full text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"

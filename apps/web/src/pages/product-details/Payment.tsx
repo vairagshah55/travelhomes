@@ -596,7 +596,7 @@ export default function PaymentPage() {
                   className="border-gray-400 rounded-[10px] mt-2"
                 />
 
-                <div className="flex justify-between items-center gap-4 mt-3">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mt-3">
                   <select
                     className="border w-full border-gray-200 rounded-lg px-3 py-2"
                     value={formData.state}

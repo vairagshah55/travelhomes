@@ -69,7 +69,12 @@ export function BookingWidget({
   const hasPrice = regularPrice != null && regularPrice > 0;
 
   return (
-    <div className="lg:col-span-1 lg:mt-24 mt-8">
+    // Below lg, MobileBookingBar (fixed bottom bar) is the booking CTA — this
+    // full sidebar (with its own calendar/guest dropdowns) would otherwise
+    // render stacked in the single-column grid underneath the content and
+    // double up with it. ProductDetailsSkeleton's loading placeholder already
+    // hides its "aside" the same way, so this now matches its loaded state.
+    <div className="hidden lg:block lg:col-span-1 lg:mt-24 mt-8">
       <div className="sticky top-8 bg-white dark:bg-black dark:text-white border border-gray-200 dark:border-gray-700 rounded-3xl p-6 sm:p-8 shadow-lg">
         <div className="mb-5">
           <div className="flex items-baseline gap-2 flex-wrap">

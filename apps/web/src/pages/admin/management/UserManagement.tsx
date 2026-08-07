@@ -388,7 +388,7 @@ function UserDetailsDialog({ user, onClose }: { user: User | null; onClose: () =
         <DialogHeader>
           <DialogTitle>User Details</DialogTitle>
         </DialogHeader>
-        <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
           {rows.map(([label, value]) => (
             <div key={label} className="space-y-1 min-w-0">
               <dt className="text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6">

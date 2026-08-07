@@ -66,9 +66,9 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl p-0 gap-0">
+      <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-full p-0 gap-0 max-h-[85vh] flex flex-col">
         {/* Header */}
-        <DialogHeader className="px-6 py-7 border-b border-gray-200">
+        <DialogHeader className="px-6 py-5 sm:py-7 border-b border-gray-200 shrink-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold text-black font-geist">Filters</DialogTitle>
             {/* <button
@@ -81,9 +81,9 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
         </DialogHeader>
 
         {/* Content */}
-        <div className="px-6 py-5 space-y-6">
+        <div className="px-6 py-5 space-y-6 overflow-y-auto">
           {/* First Row */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {/* Location */}
             <div className="space-y-2">
               <label className="block text-base font-normal text-gray-700">Location</label>
@@ -142,7 +142,7 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
           </div>
 
           {/* Second Row */}
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {/* Date From */}
             <div className="space-y-2">
               <label className="block text-base font-normal text-gray-700">Date From</label>
@@ -168,8 +168,8 @@ const FiltersPopup: React.FC<FiltersPopupProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200">
-          <div className="flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-gray-200 shrink-0">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3">
             <Button
               variant="outline"
               onClick={handleClearFilters}

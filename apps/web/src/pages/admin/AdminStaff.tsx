@@ -160,7 +160,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && !isSubmitting && onClose()}>
-      <DialogContent className="w-full max-w-2xl rounded-xl p-8 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-2xl rounded-xl p-5 sm:p-8 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-black font-geist text-2xl font-bold">
             Add New Account
@@ -305,7 +305,7 @@ const AddRoleModal: React.FC<AddRoleModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && !isSubmitting && onClose()}>
-      <DialogContent className="w-full max-w-2xl rounded-xl p-8 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-2xl rounded-xl p-5 sm:p-8 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-black font-geist text-2xl font-bold">
             Add New Role
@@ -526,7 +526,7 @@ const StaffList: React.FC<StaffListProps> = ({
   return (
     <div className="space-y-4">
       <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
             List of Staff
           </h3>
@@ -658,7 +658,7 @@ const RolesList: React.FC<RolesListProps> = ({
   return (
     <div className="space-y-4">
       <div className="border border-dashboard-stroke rounded-xl bg-white p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
           <h3 className="text-dashboard-heading font-geist text-xl font-bold tracking-tight leading-tight">
             Roles
           </h3>

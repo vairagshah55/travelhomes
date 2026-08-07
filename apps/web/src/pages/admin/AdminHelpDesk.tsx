@@ -348,7 +348,7 @@ const AdminHelpDesk: React.FC = () => {
 
       {/* Help Desk Details Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-3xl p-8">
+        <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-full p-5 sm:p-8 max-h-[85vh] overflow-y-auto">
           <DialogHeader className="space-y-7">
             <DialogTitle className="text-2xl font-bold text-dashboard-heading font-geist tracking-tight">
               Help Desk
@@ -358,8 +358,8 @@ const AdminHelpDesk: React.FC = () => {
           {selectedItem && (
             <div className="space-y-9">
               {/* First Row */}
-              <div className="flex gap-10">
-                <div className="flex-1 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Name
                   </label>
@@ -367,15 +367,15 @@ const AdminHelpDesk: React.FC = () => {
                     {selectedItem.vendorName || selectedItem.name || "N/A"}
                   </p>
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Email / Company
                   </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
+                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px] break-words">
                     {selectedItem.companyName || selectedItem.email || "N/A"}
                   </p>
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Date
                   </label>
@@ -386,14 +386,14 @@ const AdminHelpDesk: React.FC = () => {
               </div>
 
               {/* Second Row */}
-              <div className="flex gap-10">
-                <div className="flex-1 space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Status
                   </label>
                   <p className="text-sm text-dashboard-text font-poppins">{selectedItem.status}</p>
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Subject
                   </label>
@@ -401,7 +401,7 @@ const AdminHelpDesk: React.FC = () => {
                     {selectedItem.subject}
                   </p>
                 </div>
-                <div className="flex-1 space-y-3">
+                <div className="space-y-3">
                   <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
                     Phone
                   </label>

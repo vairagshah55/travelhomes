@@ -12,6 +12,7 @@
     "seed:activity-features": "node scripts/seed-activity-features.js",
     "seed:demo-products": "node scripts/seed-demo-products.js",
     "seed:fresh": "node scripts/seed-fresh.js",
+    "seed:filter-test": "node scripts/seed-filter-test.js",
     "seed:demo-admin": "node scripts/seed-demo-admin.js",
     "seed:faqs": "node migrations/seed-faqs.js",
     "test": "vitest run",

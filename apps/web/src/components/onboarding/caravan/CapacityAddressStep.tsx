@@ -120,143 +120,143 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
   const sections = (
     <>
       <SectionCard
-          icon={<Users size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Capacity"
-          subtitle="How many guests your caravan accommodates"
-        >
-          <div className="flex flex-col gap-3">
-            <CapacityRow
-              icon={<Users size={16} className="text-th-warm-text-muted" />}
-              label="Seating Capacity"
-              description="Guests who can sit during the journey"
-              value={seatingCapacity}
-              onDecrease={() => onAdjustCapacity("seating", "decrease")}
-              onIncrease={() => onAdjustCapacity("seating", "increase")}
-              min={1}
-              max={20}
-            />
-            <CapacityRow
-              icon={<BedDouble size={16} className="text-th-warm-text-muted" />}
-              label="Sleeping Capacity"
-              description="Guests who can sleep overnight"
-              value={sleepingCapacity}
-              onDecrease={() => onAdjustCapacity("sleeping", "decrease")}
-              onIncrease={() => {
-                onAdjustCapacity("sleeping", "increase");
-                clear("sleepingCapacity");
-              }}
-              min={0}
-              max={20}
-              error={errors.sleepingCapacity}
-            />
-          </div>
-        </SectionCard>
+        icon={<Users size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Capacity"
+        subtitle="How many guests your caravan accommodates"
+      >
+        <div className="flex flex-col gap-3">
+          <CapacityRow
+            icon={<Users size={16} className="text-th-warm-text-muted" />}
+            label="Seating Capacity"
+            description="Guests who can sit during the journey"
+            value={seatingCapacity}
+            onDecrease={() => onAdjustCapacity("seating", "decrease")}
+            onIncrease={() => onAdjustCapacity("seating", "increase")}
+            min={1}
+            max={20}
+          />
+          <CapacityRow
+            icon={<BedDouble size={16} className="text-th-warm-text-muted" />}
+            label="Sleeping Capacity"
+            description="Guests who can sleep overnight"
+            value={sleepingCapacity}
+            onDecrease={() => onAdjustCapacity("sleeping", "decrease")}
+            onIncrease={() => {
+              onAdjustCapacity("sleeping", "increase");
+              clear("sleepingCapacity");
+            }}
+            min={0}
+            max={20}
+            error={errors.sleepingCapacity}
+          />
+        </div>
+      </SectionCard>
 
-        <SectionCard
-          icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Location"
-          subtitle="Where guests can find your caravan"
-        >
-          <div className="flex flex-col gap-4">
-            <Field label="Street Address" required error={errors.address}>
-              <StyledInput
-                value={address}
+      <SectionCard
+        icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Location"
+        subtitle="Where guests can find your caravan"
+      >
+        <div className="flex flex-col gap-4">
+          <Field label="Street Address" required error={errors.address}>
+            <StyledInput
+              value={address}
+              onChange={(v) => {
+                onAddressChange(v);
+                clear("address");
+              }}
+              placeholder="e.g. 12 MG Road, Bengaluru"
+              error={!!errors.address}
+              softErrorBg
+              fontSize={14}
+            />
+          </Field>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="Country" required error={errors.locality}>
+              <StyledSelect
+                value={locality}
                 onChange={(v) => {
-                  onAddressChange(v);
-                  clear("address");
+                  onLocalityChange(v);
+                  clear("locality");
                 }}
-                placeholder="e.g. 12 MG Road, Bengaluru"
-                error={!!errors.address}
+                error={!!errors.locality}
+              >
+                <option value="India">India</option>
+              </StyledSelect>
+            </Field>
+
+            <Field label="Pincode" required error={errors.pincode}>
+              <StyledInput
+                value={pincode}
+                onChange={(v) => {
+                  onPincodeChange(v.replace(/\D/g, ""));
+                  clear("pincode");
+                }}
+                placeholder="e.g. 560001"
+                maxLength={6}
+                inputMode="numeric"
+                error={!!errors.pincode}
                 softErrorBg
                 fontSize={14}
               />
             </Field>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Country" required error={errors.locality}>
-                <StyledSelect
-                  value={locality}
-                  onChange={(v) => {
-                    onLocalityChange(v);
-                    clear("locality");
-                  }}
-                  error={!!errors.locality}
-                >
-                  <option value="India">India</option>
-                </StyledSelect>
-              </Field>
-
-              <Field label="Pincode" required error={errors.pincode}>
-                <StyledInput
-                  value={pincode}
-                  onChange={(v) => {
-                    onPincodeChange(v.replace(/\D/g, ""));
-                    clear("pincode");
-                  }}
-                  placeholder="e.g. 560001"
-                  maxLength={6}
-                  inputMode="numeric"
-                  error={!!errors.pincode}
-                  softErrorBg
-                  fontSize={14}
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="State" required error={errors.state}>
-                <SearchableSelect
-                  value={state}
-                  onChange={(v) => {
-                    onStateChange(v);
-                    clear("state");
-                  }}
-                  options={stateOptions}
-                  placeholder="Select State"
-                  searchPlaceholder="Search states…"
-                  emptyMessage="No states found"
-                  error={!!errors.state}
-                />
-              </Field>
-
-              <Field label="City" required error={errors.city}>
-                <SearchableSelect
-                  value={city}
-                  onChange={(v) => {
-                    onCityChange(v);
-                    clear("city");
-                  }}
-                  options={cityOptions}
-                  placeholder={state ? "Select City" : "Select a state first"}
-                  searchPlaceholder="Search cities…"
-                  emptyMessage="No cities found"
-                  disabled={!state}
-                  error={!!errors.city}
-                />
-              </Field>
-            </div>
           </div>
-        </SectionCard>
 
-        {mapSrc && (
-          <div className="rounded-[20px] overflow-hidden border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
-            <div className="flex items-center gap-2 px-[18px] py-3 bg-th-surface-0 border-b-[1.5px] border-th-warm-border">
-              <Navigation size={13} className="text-th-brand" />
-              <span className="text-[12px] font-semibold text-th-text-primary">
-                {[address, city, state].filter(Boolean).join(", ") || "Map Preview"}
-              </span>
-            </div>
-            <iframe
-              src={mapSrc}
-              width="100%"
-              height="240"
-              style={{ border: 0, display: "block" }}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Location Map"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Field label="State" required error={errors.state}>
+              <SearchableSelect
+                value={state}
+                onChange={(v) => {
+                  onStateChange(v);
+                  clear("state");
+                }}
+                options={stateOptions}
+                placeholder="Select State"
+                searchPlaceholder="Search states…"
+                emptyMessage="No states found"
+                error={!!errors.state}
+              />
+            </Field>
+
+            <Field label="City" required error={errors.city}>
+              <SearchableSelect
+                value={city}
+                onChange={(v) => {
+                  onCityChange(v);
+                  clear("city");
+                }}
+                options={cityOptions}
+                placeholder={state ? "Select City" : "Select a state first"}
+                searchPlaceholder="Search cities…"
+                emptyMessage="No cities found"
+                disabled={!state}
+                error={!!errors.city}
+              />
+            </Field>
           </div>
-        )}
+        </div>
+      </SectionCard>
+
+      {mapSrc && (
+        <div className="rounded-[20px] overflow-hidden border-[1.5px] border-th-warm-border shadow-[0_2px_12px_rgba(0,0,0,0.04)]">
+          <div className="flex items-center gap-2 px-[18px] py-3 bg-th-surface-0 border-b-[1.5px] border-th-warm-border">
+            <Navigation size={13} className="text-th-brand" />
+            <span className="text-[12px] font-semibold text-th-text-primary">
+              {[address, city, state].filter(Boolean).join(", ") || "Map Preview"}
+            </span>
+          </div>
+          <iframe
+            src={mapSrc}
+            width="100%"
+            height="240"
+            style={{ border: 0, display: "block" }}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Location Map"
+          />
+        </div>
+      )}
     </>
   );
 

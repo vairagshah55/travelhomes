@@ -176,7 +176,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Country" required>
                 <StyledSelect
                   value={locality}
@@ -206,7 +206,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
               </Field>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="State" required error={errors.state}>
                 <StyledSelect
                   value={state}

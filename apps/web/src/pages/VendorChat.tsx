@@ -158,7 +158,7 @@ const Bubble = ({ message, onCopy }: { message: ChatMessage; onCopy: () => void 
       type="button"
       onClick={onCopy}
       aria-label="Copy message"
-      className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 grid place-items-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-muted transition-opacity duration-150"
+      className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 grid place-items-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-muted transition-opacity duration-150"
     >
       <Copy size={13} />
     </button>

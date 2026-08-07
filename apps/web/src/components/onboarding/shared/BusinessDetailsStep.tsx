@@ -15,13 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type CountryOption } from "./types";
-import {
-  SectionCard,
-  Field,
-  IconInput,
-  StyledSelect,
-  StepHeader,
-} from "./primitives";
+import { SectionCard, Field, IconInput, StyledSelect, StepHeader } from "./primitives";
 
 interface BusinessDetailsStepProps {
   values: {
@@ -150,7 +144,11 @@ const CountryPickerModal = ({
                         )}
                       >
                         {FlagIcon && (
-                          <FlagIcon style={{ width: 22 }} className="flex-shrink-0" title={c.name} />
+                          <FlagIcon
+                            style={{ width: 22 }}
+                            className="flex-shrink-0"
+                            title={c.name}
+                          />
                         )}
                         <span
                           className={cn(
@@ -351,7 +349,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             />
           </Field>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Country">
               <StyledSelect value="India" disabled>
                 <option>India</option>
@@ -371,7 +369,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="State" required error={errors.state}>
               <StyledSelect value={selectedState} onChange={onStateChange} error={!!errors.state}>
                 <option value="" disabled>

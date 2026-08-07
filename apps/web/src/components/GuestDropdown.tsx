@@ -49,7 +49,7 @@ export function GuestDropdown({
         <button
           onClick={() => updateLocal(type, false)}
           disabled={(local[type] || 0) <= min}
-          className="w-7 h-7 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm hover:border-gray-900 hover:text-gray-900 disabled:opacity-25 disabled:hover:border-gray-200 disabled:hover:text-gray-500 transition-all duration-150"
+          className="w-8 h-8 sm:w-7 sm:h-7 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm hover:border-gray-900 hover:text-gray-900 disabled:opacity-25 disabled:hover:border-gray-200 disabled:hover:text-gray-500 transition-all duration-150"
         >
           -
         </button>
@@ -58,7 +58,7 @@ export function GuestDropdown({
         </span>
         <button
           onClick={() => updateLocal(type, true)}
-          className="w-7 h-7 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm hover:border-gray-900 hover:text-gray-900 transition-all duration-150"
+          className="w-8 h-8 sm:w-7 sm:h-7 border border-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm hover:border-gray-900 hover:text-gray-900 transition-all duration-150"
         >
           +
         </button>
@@ -67,7 +67,7 @@ export function GuestDropdown({
   );
 
   return (
-    <div className="absolute top-[calc(100%+24px)] left-0 w-[280px] bg-white rounded-2xl shadow-xl z-[9999] border border-gray-100 px-4 pt-2 pb-3">
+    <div className="absolute top-[calc(100%+24px)] left-0 w-[85vw] max-w-[280px] bg-white rounded-2xl shadow-xl z-[9999] border border-gray-100 px-4 pt-2 pb-3">
       <GuestRow label="Adults" subtitle="Ages 13 or above" type="adults" min={1} />
       <GuestRow label="Children" subtitle="Ages 2 – 12" type="children" />
       <GuestRow label="Infants" subtitle="Under 2" type="infants" />

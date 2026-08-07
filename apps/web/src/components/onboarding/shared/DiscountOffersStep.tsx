@@ -327,7 +327,7 @@ const OfferCard = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
                   {offer.type === "percentage" ? "Percentage" : "Fixed Amount"}

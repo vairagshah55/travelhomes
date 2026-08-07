@@ -154,7 +154,7 @@ const ServiceSelection = () => {
   return (
     <div className="min-h-screen overflow-hidden bg-th-surface-0 text-[#0d4548]">
       {/* ─── Header ─────────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-12 bg-white/97 backdrop-blur-[16px] border-b border-th-warm-border">
+      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4 sm:px-8 lg:px-12 bg-white/97 backdrop-blur-[16px] border-b border-th-warm-border">
         <BrandLogo size={36} />
 
         {/* Step progress */}
@@ -205,7 +205,7 @@ const ServiceSelection = () => {
       </header>
 
       {/* ─── Main ────────────────────────────────────────────────────────────── */}
-      <div className="w-full max-w-7xl mx-auto flex max-lg:flex-col items-stretch min-h-screen pt-16 px-12">
+      <div className="w-full max-w-7xl mx-auto flex max-lg:flex-col items-stretch min-h-screen pt-16 px-4 sm:px-8 lg:px-12">
         {/* ── Left ── */}
         <div className="w-full lg:w-[55%] flex flex-col justify-center py-12 lg:pr-16">
           {/* Back */}

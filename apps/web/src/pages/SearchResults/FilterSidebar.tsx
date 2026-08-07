@@ -36,7 +36,10 @@ interface FilterSidebarProps {
 const RATING_OPTIONS = ["1+", "2+", "3+", "4+", "5+"];
 
 const styles: Record<string, React.CSSProperties> = {
-  wrapper: { width: "280px", background: "#fff", userSelect: "none" },
+  // Fluid instead of a flat 280px — the mobile filter dialog can be narrower
+  // than that on small phones (e.g. 320px viewports), which pushed this past
+  // the panel edge. Capping at 300px keeps the desktop/tablet look intact.
+  wrapper: { width: "100%", maxWidth: "300px", background: "#fff", userSelect: "none" },
   track: {
     position: "relative",
     width: "100%",
@@ -226,7 +229,7 @@ export function FilterSidebar({
               <button
                 key={rating}
                 onClick={() => setSelectedRating(rating)}
-                className={`px-3 py-1.5 rounded-md border text-sm font-medium ${
+                className={`px-3 py-2.5 rounded-md border text-sm font-medium ${
                   selectedRating <= rating
                     ? "bg-[#117479] text-white border-black"
                     : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"

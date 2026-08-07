@@ -22,38 +22,31 @@ interface BookingDetailsPopupProps {
   };
 }
 
-const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
-  isOpen,
-  onClose,
-  booking,
-}) => {
+const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({ isOpen, onClose, booking }) => {
   if (!isOpen) return null;
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
     }).format(amount);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center ">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black bg-opacity-50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="max-h-[600px] overflow-y-auto scrollbar-hide relative bg-white rounded-xl p-8 w-full max-w-2xl mx-4 shadow-xl">
+      <div className="max-h-[90vh] overflow-y-auto scrollbar-hide relative bg-white rounded-xl p-5 sm:p-8 w-full max-w-2xl shadow-xl">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -63,7 +56,7 @@ const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
         </button>
 
         {/* Header */}
-        <div className="mb-7">
+        <div className="mb-7 pr-8">
           <h2 className="text-2xl font-bold text-black">Booking Details</h2>
         </div>
 
@@ -71,15 +64,11 @@ const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
         <div className="space-y-9">
           {/* Booking Information */}
           <div>
-            <h3 className="text-lg font-semibold text-black mb-4">
-              Booking Information
-            </h3>
+            <h3 className="text-lg font-semibold text-black mb-4">Booking Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Booking ID</p>
-                <p className="text-base font-medium text-black">
-                  {booking.bookingId}
-                </p>
+                <p className="text-base font-medium text-black">{booking.bookingId}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Status</p>
@@ -89,21 +78,15 @@ const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Service Name</p>
-                <p className="text-base font-medium text-black">
-                  {booking.serviceName}
-                </p>
+                <p className="text-base font-medium text-black">{booking.serviceName}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Service Type</p>
-                <p className="text-base font-medium text-black">
-                  {booking.serviceType}
-                </p>
+                <p className="text-base font-medium text-black">{booking.serviceType}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Location</p>
-                <p className="text-base font-medium text-black">
-                  {booking.location}
-                </p>
+                <p className="text-base font-medium text-black">{booking.location}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Amount</p>
@@ -116,63 +99,45 @@ const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
 
           {/* Client Information */}
           <div>
-            <h3 className="text-lg font-semibold text-black mb-4">
-              Client Information
-            </h3>
+            <h3 className="text-lg font-semibold text-black mb-4">Client Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Client Name</p>
-                <p className="text-base font-medium text-black">
-                  {booking.clientName}
-                </p>
+                <p className="text-base font-medium text-black">{booking.clientName}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Email</p>
-                <p className="text-base font-medium text-black">
-                  {booking.clientEmail}
-                </p>
+                <p className="text-base font-medium text-black">{booking.clientEmail}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Phone</p>
-                <p className="text-base font-medium text-black">
-                  {booking.clientPhone}
-                </p>
+                <p className="text-base font-medium text-black">{booking.clientPhone}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Number of Guests</p>
-                <p className="text-base font-medium text-black">
-                  {booking.guests}
-                </p>
+                <p className="text-base font-medium text-black">{booking.guests}</p>
               </div>
             </div>
           </div>
 
           {/* Booking Dates */}
           <div>
-            <h3 className="text-lg font-semibold text-black mb-4">
-              Booking Dates
-            </h3>
+            <h3 className="text-lg font-semibold text-black mb-4">Booking Dates</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Check-in Date</p>
-                <p className="text-base font-medium text-black">
-                  {formatDate(booking.checkIn)}
-                </p>
+                <p className="text-base font-medium text-black">{formatDate(booking.checkIn)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600 mb-1">Check-out Date</p>
-                <p className="text-base font-medium text-black">
-                  {formatDate(booking.checkOut)}
-                </p>
+                <p className="text-base font-medium text-black">{formatDate(booking.checkOut)}</p>
               </div>
             </div>
           </div>
 
           {/* Payment Information */}
           <div>
-            <h3 className="text-lg font-semibold text-black mb-4">
-              Payment Information
-            </h3>
+            <h3 className="text-lg font-semibold text-black mb-4">Payment Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Payment Status</p>
@@ -192,9 +157,7 @@ const BookingDetailsPopup: React.FC<BookingDetailsPopupProps> = ({
           {/* Special Requests */}
           {booking.specialRequests && (
             <div>
-              <h3 className="text-lg font-semibold text-black mb-4">
-                Special Requests
-              </h3>
+              <h3 className="text-lg font-semibold text-black mb-4">Special Requests</h3>
               <p className="text-base text-gray-700 bg-gray-50 p-4 rounded-lg">
                 {booking.specialRequests}
               </p>

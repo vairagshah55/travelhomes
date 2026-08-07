@@ -36,8 +36,8 @@ const BanPopup: React.FC<BanPopupProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-8 w-full max-w-3xl mx-4 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-5 sm:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -48,8 +48,8 @@ const BanPopup: React.FC<BanPopupProps> = ({
         </button>
 
         {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-[32px] font-bold text-black font-geist">
+        <div className="mb-6 pr-8">
+          <h2 className="text-[22px] sm:text-[32px] font-bold text-black font-geist">
             Deactivate Listing
           </h2>
         </div>
@@ -57,9 +57,8 @@ const BanPopup: React.FC<BanPopupProps> = ({
         {/* Description */}
         <div className="mb-6">
           <p className="text-gray-700">
-            Are you sure you want to deactivate <strong>{listingName}</strong>? This
-            action will change the listing status to "deactivate" and it will no longer be
-            visible to users.
+            Are you sure you want to deactivate <strong>{listingName}</strong>? This action will
+            change the listing status to "deactivate" and it will no longer be visible to users.
           </p>
         </div>
 
