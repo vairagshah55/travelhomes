@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { Link, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
-import DefaultCard from "../components/DefaultCard";
+import ResultCard from "../components/ResultCard";
+import { CardSkeleton } from "../components/SearchResultsSkeleton";
 import {
   Search,
   MapPin,
@@ -15,6 +17,7 @@ import {
   Heart,
   Star,
   ArrowRight,
+  ArrowLeft,
   Plus,
   Minus,
   ChevronLeft,
@@ -40,7 +43,6 @@ import { getImageUrl } from "@/lib/utils";
 import UniqueStaysSkeleton from "@/utils/UniqueStaysSkeleton";
 import { CustomPagination } from "@/components/CustomPagination";
 import { IoIosArrowBack } from "react-icons/io";
-import FullPageLoader from "@/components/FullPageLoader";
 import { FilterSidebar } from "./SearchResults/FilterSidebar";
 import {
   getNormCategory,
@@ -368,12 +370,25 @@ export default function SearchResults() {
           onFilterChange={(filter) => setActiveFilter(filter as FilterType)}
         />
       </div>
-      {/* Hero Section with Dynamic Filters */}
-      <section className="mt-20  dark:bg-black dark:text-white py-6 pt-8">
-        <div ref={SearchbarRef} className="w-full mx-auto max-md:hidden">
-          {/* Category Filters - Horizontally Scrollable */}
-          <div className="sticky top-0 z-40 dark:dark-color py-4 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-4 mb-2 justify-center min-w-max px-4">
+      {/* Hero Section with Dynamic Filters — entirely hidden below md, so the
+          section itself carries no padding there; otherwise it's dead space
+          (the fixed-header offset lives on mt-20, which still applies). */}
+      <section className="mt-20  dark:bg-black dark:text-white py-6 pt-8 max-md:py-3">
+        {/* Category Filters - Horizontally Scrollable. Kept visible below md
+            (unlike the rest of the hero search form) so a mobile visitor can
+            still see — and switch — which category is active. A back arrow
+            leads the row on mobile, since the fixed header's logo-click-home
+            isn't an obvious "go back" affordance on its own. */}
+        <div className="relative">
+          <div className="sticky top-0 z-40 dark:dark-color py-4 max-md:py-0 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-3 mb-2 justify-center min-w-max px-4">
+              <button
+                onClick={() => navigate("/")}
+                aria-label="Back to home"
+                className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E4E8F0] text-[#0a1c1c] shadow-sm hover:border-[#117479]/40 hover:text-[#117479] active:scale-90 transition-all"
+              >
+                <ArrowLeft className="w-[18px] h-[18px]" />
+              </button>
               {visibleSections["camper-van"] !== false && (
                 <FilterButton
                   icon={CamperVanIcon}
@@ -400,7 +415,12 @@ export default function SearchResults() {
               )}
             </div>
           </div>
+          {/* Fades the trailing pill instead of hard-clipping it at the
+              viewport edge, so it reads as "scroll for more" rather than cut off. */}
+          <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-white dark:from-black to-transparent" />
+        </div>
 
+        <div ref={SearchbarRef} className="w-full mx-auto max-md:hidden">
           {/* Dynamic Search Form Based on Filter */}
           <div className="rounded-2xl px-10 max-w-7xl mx-auto  bg-white relative">
             {/* Search Form */}
@@ -1010,10 +1030,10 @@ export default function SearchResults() {
                   onClick={() => {
                     setMobileFilter(true);
                   }}
-                  className="lg:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="lg:hidden flex items-center gap-2 px-4 py-2.5 border border-gray-200 rounded-full bg-white shadow-sm hover:shadow-md hover:border-gray-300 active:scale-95 transition-all duration-200"
                 >
                   <CiFilter className="w-5 h-5" />
-                  <span>Filters</span>
+                  <span className="text-sm font-semibold">Filters</span>
                 </button>
               </div>
             </div>
@@ -1024,16 +1044,36 @@ export default function SearchResults() {
               style={{ minHeight: "400px" }}
             >
               {isLoading ? (
-                <FullPageLoader fullPage={false} message="Searching for perfect stays..." />
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <CardSkeleton key={i} />
+                  ))}
+                </div>
               ) : paginatedItems.length > 0 ? (
-                <>
-                  <DefaultCard CardData={paginatedItems} activeFilter={activeFilter} />
-                  <CustomPagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={setPage}
-                  />
-                </>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`${activeFilter}-${selectedLocation}-${page}`}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                  >
+                    {/* paginatedItems is already the list for activeFilter — ResultCard
+                        picks one of the three by that same filter, so passing it into
+                        all three is safe (only the matching branch ever renders). */}
+                    <ResultCard
+                      activeFilter={activeFilter}
+                      ResultcaravanShown={paginatedItems}
+                      ResultstayShown={paginatedItems}
+                      ResultactivityShown={paginatedItems}
+                    />
+                    <CustomPagination
+                      currentPage={page}
+                      totalPages={totalPages}
+                      onPageChange={setPage}
+                    />
+                  </motion.div>
+                </AnimatePresence>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
                   <div className="bg-gray-100 p-4 rounded-full mb-4">

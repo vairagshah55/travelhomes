@@ -998,7 +998,10 @@ export default function SiteHeader({
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isMobileMenuOpen}
                 className={`lg:hidden ml-3 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out ${
-                  isScrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/15"
+                  // isScrolled alone left this white-on-white on /search — there's
+                  // no dark hero photo there to justify a white icon, ever.
+                  // onDarkHeader already excludes /search for the logo; reuse it.
+                  onDarkHeader ? "text-white hover:bg-white/15" : "text-gray-800 hover:bg-gray-100"
                 }`}
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}

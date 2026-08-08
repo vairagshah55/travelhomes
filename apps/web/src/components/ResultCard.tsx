@@ -89,7 +89,9 @@ function ResultCard({
       className="overflow-x-auto scrollbar-hide snap-rail rail-bleed"
       style={{ scrollSnapType: "x mandatory" }}
     >
-      <div className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      <div
+        className={`flex md:grid md:grid-cols-2 ${location.pathname.includes("/search") ? "lg:grid-cols-3" : "lg:grid-cols-4"} gap-4 md:gap-5`}
+      >
         {content.map((item) => {
           const isLiked = wishlistIds.has(item.id);
           return (

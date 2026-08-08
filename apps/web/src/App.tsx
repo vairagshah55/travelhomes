@@ -19,6 +19,7 @@ import SEOMeta from "./components/SEOMeta";
 import ScrollToTop from "./components/ScrollToTop";
 import AdminRouteFallback from "./components/admin/AdminRouteFallback";
 import ProductDetailsSkeleton from "./components/product-details/ProductDetailsSkeleton";
+import SearchResultsSkeleton from "./components/SearchResultsSkeleton";
 import { initDashboardAnimations } from "./animations";
 
 // Eager: the homepage drives first paint, NotFound is the 404 fallback.
@@ -154,8 +155,22 @@ const App = () => {
                 <Routes>
                   {/* Public routes */}
                   <Route path="/" element={<Index />} />
-                  <Route path="/search" element={<SearchResults />} />
-                  <Route path="/search-results" element={<SearchResults />} />
+                  <Route
+                    path="/search"
+                    element={
+                      <Suspense fallback={<SearchResultsSkeleton />}>
+                        <SearchResults />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/search-results"
+                    element={
+                      <Suspense fallback={<SearchResultsSkeleton />}>
+                        <SearchResults />
+                      </Suspense>
+                    }
+                  />
                   {/* Product-detail routes get a skeleton that matches their
                       actual layout (real Header/Footer + content skeleton). The
                       same component is also rendered in-page while react-query

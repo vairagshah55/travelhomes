@@ -156,9 +156,12 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
             {displayName}
           </span>
         </span>
-        <Avatar className="h-9 w-9 md:ring-2 md:ring-white/50 shrink-0">
+        {/* Bare white-on-white was invisible on mobile (no pill behind it to
+            frame it) — teal fill + shadow there; back to white-on-cyan-pill
+            at md+, unchanged. */}
+        <Avatar className="h-9 w-9 shadow-sm md:shadow-none md:ring-2 md:ring-white/50 shrink-0">
           {photoSrc && <AvatarImage src={photoSrc} alt={`${displayName}'s avatar`} />}
-          <AvatarFallback className="bg-white text-[#117479] text-[12px] font-bold">
+          <AvatarFallback className="bg-[#117479] text-white md:bg-white md:text-[#117479] text-[12px] font-bold">
             {initials}
           </AvatarFallback>
         </Avatar>

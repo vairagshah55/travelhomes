@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 type RangeVal = { minVal: number; maxVal: number };
 type SetRange = React.Dispatch<React.SetStateAction<RangeVal>>;
@@ -44,14 +44,14 @@ const styles: Record<string, React.CSSProperties> = {
     position: "relative",
     width: "100%",
     height: "6px",
-    backgroundColor: "#e0e0e0",
+    backgroundColor: "#e6efef",
     borderRadius: "3px",
     cursor: "pointer",
   },
   fill: {
     position: "absolute",
     height: "100%",
-    backgroundColor: "#000",
+    background: "linear-gradient(90deg, #117479, #128086)",
     borderRadius: "3px",
   },
   thumb: {
@@ -59,18 +59,19 @@ const styles: Record<string, React.CSSProperties> = {
     top: "50%",
     width: "20px",
     height: "20px",
-    backgroundColor: "#000",
+    backgroundColor: "#fff",
     borderRadius: "50%",
     transform: "translate(-50%, -50%)",
-    border: "2px solid #fff",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+    border: "2.5px solid #117479",
+    boxShadow: "0 2px 6px rgba(17, 116, 121, 0.35)",
     cursor: "grab",
     zIndex: 2,
   },
   label: {
-    marginTop: "25px",
-    fontFamily: "Arial, sans-serif",
+    marginTop: "18px",
     fontSize: "14px",
+    fontWeight: 700,
+    color: "#0a1c1c",
     display: "flex",
     justifyContent: "between",
     alignItems: "center",
@@ -201,18 +202,19 @@ export function FilterSidebar({
   return (
     <div className="w-full lg:w-80 xl:w-80">
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm overflow-y-auto scrollbar-hide">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-base font-semibold text-gray-900">Filters</h3>
+        <div className="flex items-center gap-3 mb-6 pb-5 border-b border-gray-100">
           <button
             onClick={onClose}
-            className="lg:hidden p-2 -mr-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Back"
+            className="lg:hidden -ml-2 p-2 text-gray-500 hover:text-[#117479] rounded-full hover:bg-[#117479]/5 active:scale-90 transition-all"
           >
-            <X className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
+          <h3 className="text-lg font-bold text-[#0a1c1c] tracking-tight">Filters</h3>
         </div>
 
-        <div className="mb-2">
-          <h4 className="text-sm font-medium text-gray-900 mb-4">Price</h4>
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Price</h4>
           <DualRangeSlider
             min={priceBounds.min}
             max={priceBounds.max}
@@ -222,17 +224,17 @@ export function FilterSidebar({
           />
         </div>
 
-        <div className="mb-2">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Rating</h4>
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Rating</h4>
           <div className="flex gap-2 flex-wrap">
             {RATING_OPTIONS.map((rating) => (
               <button
                 key={rating}
                 onClick={() => setSelectedRating(rating)}
-                className={`px-3 py-2.5 rounded-md border text-sm font-medium ${
+                className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all duration-200 active:scale-95 ${
                   selectedRating <= rating
-                    ? "bg-[#117479] text-white border-black"
-                    : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    ? "bg-gradient-to-r from-[#117479] to-[#128086] text-white border-transparent shadow-sm"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-[#117479]/40 hover:text-[#117479]"
                 }`}
               >
                 {rating}
@@ -242,8 +244,8 @@ export function FilterSidebar({
         </div>
 
         {activeFilter === "camper-van" && (
-          <div className="mb-2">
-            <h4 className="text-base font-medium text-gray-900 mb-4">Sleeps</h4>
+          <div className="mb-6 pb-6 border-b border-gray-100">
+            <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Sleeps</h4>
             <DualRangeSlider
               min={sleepBounds.min}
               max={sleepBounds.max}
@@ -256,8 +258,8 @@ export function FilterSidebar({
         )}
 
         {activeFilter === "camper-van" && (
-          <div className="mb-2">
-            <h4 className="text-base font-medium text-gray-900 mb-2">Seating</h4>
+          <div className="mb-6 pb-6 border-b border-gray-100">
+            <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Seating</h4>
             <DualRangeSlider
               min={seatBounds.min}
               max={seatBounds.max}
@@ -269,11 +271,14 @@ export function FilterSidebar({
           </div>
         )}
 
-        <div className="mb-2">
-          <h4 className="text-base font-medium text-gray-900 mb-4">Type</h4>
-          <div className="space-y-3">
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Type</h4>
+          <div className="space-y-3.5">
             {filterOptions.types.map((item, index) => (
-              <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
+              <label
+                key={index}
+                className="flex items-center gap-3 cursor-pointer text-gray-600 hover:text-[#0a1c1c] transition-colors"
+              >
                 <input
                   type="checkbox"
                   checked={selectedTypes.includes(item)}
@@ -284,19 +289,22 @@ export function FilterSidebar({
                       setSelectedTypes(selectedTypes.filter((t) => t !== item));
                     }
                   }}
-                  className="w-5 h-5 rounded border-gray-400"
+                  className="w-[18px] h-[18px] rounded-md border-gray-300 accent-[#117479] cursor-pointer"
                 />
-                {item}
+                <span className="text-[14px]">{item}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="mb-2">
-          <h4 className="text-base font-medium text-gray-900 mb-4">Category</h4>
-          <div className="space-y-3">
+        <div className="mb-6 pb-6 border-b border-gray-100">
+          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Category</h4>
+          <div className="space-y-3.5">
             {filterOptions.categories.map((item, index) => (
-              <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
+              <label
+                key={index}
+                className="flex items-center gap-3 cursor-pointer text-gray-600 hover:text-[#0a1c1c] transition-colors"
+              >
                 <input
                   type="checkbox"
                   checked={selectedCategories.includes(item)}
@@ -307,19 +315,22 @@ export function FilterSidebar({
                       setSelectedCategories(selectedCategories.filter((c) => c !== item));
                     }
                   }}
-                  className="w-5 h-5 rounded border-gray-400"
+                  className="w-[18px] h-[18px] rounded-md border-gray-300 accent-[#117479] cursor-pointer"
                 />
-                {item}
+                <span className="text-[14px]">{item}</span>
               </label>
             ))}
           </div>
         </div>
 
         <div>
-          <h4 className="text-base font-medium text-gray-900 mb-2">Facilities</h4>
-          <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Facilities</h4>
+          <div className="space-y-3.5">
             {filterOptions.facilities.map((item, index) => (
-              <label key={index} className="flex items-center gap-3 cursor-pointer text-gray-700">
+              <label
+                key={index}
+                className="flex items-center gap-3 cursor-pointer text-gray-600 hover:text-[#0a1c1c] transition-colors"
+              >
                 <input
                   type="checkbox"
                   checked={selectedFacilities.includes(item)}
@@ -330,9 +341,9 @@ export function FilterSidebar({
                       setSelectedFacilities(selectedFacilities.filter((f) => f !== item));
                     }
                   }}
-                  className="w-5 h-5 rounded border-gray-400"
+                  className="w-[18px] h-[18px] rounded-md border-gray-300 accent-[#117479] cursor-pointer"
                 />
-                {item}
+                <span className="text-[14px]">{item}</span>
               </label>
             ))}
           </div>
