@@ -40,8 +40,8 @@ import { useNotificationCount } from "@/hooks/admin/useNotifications";
 /** Shared silhouette for the 44px circular controls (search, bell). */
 const CTRL =
   "border border-[#dce7e5] bg-white text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] " +
-  "hover:border-[#117479]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)] " +
-  "focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 " +
+  "hover:border-[#3bd9da]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)] " +
+  "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 " +
   "focus-visible:ring-offset-[#f1f8f7] outline-none " +
   "transition-[color,border-color,box-shadow] duration-200";
 
@@ -99,7 +99,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         <span className="flex-1 text-left text-[#667085] group-hover:text-[#475467] transition-colors">
           Search…
         </span>
-        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#117479]/25 group-hover:text-[#117479] transition-colors">
+        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#3bd9da]/25 group-hover:text-[#117479] transition-colors">
           ⌘K
         </span>
       </motion.button>
@@ -178,10 +178,10 @@ function HeaderUserInfo() {
       <DropdownMenuTrigger
         className={`group cursor-pointer shrink-0 flex items-center gap-2.5 h-11 pl-1 pr-1 lg:pr-3 rounded-full
           border transition-[background-color,border-color,box-shadow] duration-200 outline-none
-          focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
+          focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
           ${
             isOpen
-              ? "bg-white border-[#117479]/35 shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)]"
+              ? "bg-white border-[#3bd9da]/35 shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)]"
               : "bg-transparent border-transparent hover:bg-white hover:border-[#dce7e5]"
           }`}
       >

@@ -196,7 +196,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
                   setIsOpen(false);
                   navigate(user ? "/onboarding/service-selection" : "/register");
                 }}
-                className="inline-flex items-center gap-2 text-sm font-medium bg-[#117479] text-white px-4 py-2 rounded-full hover:bg-[#0d4548] transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium bg-[#3BD9DA] text-white px-4 py-2 rounded-full hover:bg-[#2BC7C8] transition-colors"
               >
                 <FileText size={16} strokeWidth={2} />
                 List your offering

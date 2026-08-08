@@ -619,7 +619,7 @@ const Register = () => {
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-[#117479] hover:bg-[#128086] text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+          className="w-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
         >
           {isLoading ? "Creating Account..." : "Register"}
         </Button>
@@ -700,7 +700,7 @@ const Register = () => {
       <Button
         type="submit"
         disabled={otpLoading || otp.join("").length !== 6}
-        className="w-full h-11 bg-[#117479] hover:bg-[#128086] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
+        className="w-full h-11 bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-[60px] text-base font-medium transition-all duration-200 disabled:opacity-50"
       >
         {otpLoading ? "Verifying..." : "Verify"}
       </Button>
@@ -1100,7 +1100,7 @@ const Register = () => {
 
         <Button
           type="submit"
-          className="w-full h-11 bg-[#117479] hover:bg-[#128086] text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+          className="w-full h-11 bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-[60px] text-base font-medium transition-all duration-200 shadow-md hover:shadow-lg"
         >
           Complete Registration
         </Button>

@@ -151,7 +151,7 @@ const Career = () => {
               placeholder="Search jobs..."
               className="flex-grow bg-transparent outline-none text-sm"
             />
-            <div className="flex items-center justify-center bg-[#117479] rounded-full h-8 w-8 cursor-pointer">
+            <div className="flex items-center justify-center bg-[#3BD9DA] rounded-full h-8 w-8 cursor-pointer">
               <SearchIcon className="text-white h-3 w-3" />
             </div>
           </div>
@@ -207,7 +207,7 @@ const Career = () => {
           ))}
           {/* <button
             onClick={() => handleOpenApply()}
-            className="ml-auto bg-[#117479] dark:bg-white dark:text-black text-white px-4 py-2 rounded-full text-sm"
+            className="ml-auto bg-[#3BD9DA] dark:bg-white dark:text-black text-white px-4 py-2 rounded-full text-sm"
           >
             Apply
           </button> */}
@@ -242,7 +242,7 @@ const Career = () => {
                     </button>
                     <button
                       onClick={() => handleOpenApply(job)}
-                      className="px-5 py-2 bg-[#117479] dark:bg-white dark:text-black text-white text-sm rounded-full border border-gray-400 hover:bg-[#128086] hover:text-white transition flex items-center"
+                      className="px-5 py-2 bg-[#3BD9DA] dark:bg-white dark:text-black text-white text-sm rounded-full border border-gray-400 hover:bg-[#2BC7C8] hover:text-white transition flex items-center"
                     >
                       Apply
                     </button>
@@ -274,7 +274,7 @@ const Career = () => {
             </p>
             <button
               onClick={() => navigate("/about")}
-              className="bg-[#117479] dark:bg-white dark:text-black text-white rounded-full py-2 px-4 text-sm w-fit"
+              className="bg-[#3BD9DA] dark:bg-white dark:text-black text-white rounded-full py-2 px-4 text-sm w-fit"
             >
               Know More
             </button>
@@ -356,7 +356,7 @@ const Career = () => {
                     setShowDetailsModal(false);
                     handleOpenApply(selectedJobForDetails);
                   }}
-                  className="px-6 py-2 bg-[#117479] dark:bg-white dark:text-black text-white rounded-full text-sm font-medium hover:bg-[#128086] transition"
+                  className="px-6 py-2 bg-[#3BD9DA] dark:bg-white dark:text-black text-white rounded-full text-sm font-medium hover:bg-[#2BC7C8] transition"
                 >
                   Apply Now
                 </button>

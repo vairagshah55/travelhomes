@@ -452,7 +452,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
                   </button>
                 </div>
               ))}
-              <label className="cursor-pointer w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 grid place-items-center text-gray-400 hover:border-[#117479] hover:text-[#117479] transition-colors">
+              <label className="cursor-pointer w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 grid place-items-center text-gray-400 hover:border-[#3bd9da] hover:text-[#117479] transition-colors">
                 <div className="flex flex-col items-center gap-1">
                   <Upload size={18} />
                   <span className="text-[11px]">Add</span>

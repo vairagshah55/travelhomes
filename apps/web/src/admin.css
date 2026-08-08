@@ -87,7 +87,7 @@
 
     --border: 180 15% 92%; /* #E4E8F0 */
     --input: 180 15% 92%;
-    --ring: 183 76% 27%;
+    --ring: 180 68% 54%;
 
     --radius: 0.75rem; /* 12px like in design */
 
@@ -99,7 +99,7 @@
     --sidebar-accent: 180 60% 94%; /* #e6fafa hover bg */
     --sidebar-accent-foreground: 183 68% 16%; /* #0d4548 hover text */
     --sidebar-border: 180 15% 92%; /* #E4E8F0 */
-    --sidebar-ring: 183 76% 27%;
+    --sidebar-ring: 180 68% 54%;
 
     /* Additional dashboard neutral colors */
     --dashboard-neutral-07: 0 0% 44%; /* #717171 */
@@ -1223,7 +1223,7 @@
   /* Booking ID link → navy (dark, reads on white) */
   --booking-link: 183 76% 27%;
   --sidebar-primary: 183 76% 27%;
-  --sidebar-ring: 183 76% 27%;
+  --sidebar-ring: 180 68% 54%;
 }
 
 [data-brand="admin"] {
@@ -1283,7 +1283,7 @@
   /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
   --primary: 183 76% 27%;
   --primary-foreground: 0 0% 100%;
-  --ring: 183 76% 27%;
+  --ring: 180 68% 54%;
   /* shared primitives (bg-brand / text-brand / EmptyState / TabStrip) */
   --brand: 183 76% 27%;
   --brand-hover: 183 76% 22%;

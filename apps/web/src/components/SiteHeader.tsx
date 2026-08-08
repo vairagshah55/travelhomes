@@ -430,7 +430,7 @@ export default function SiteHeader({
 
                         {/* Idle background — subtle outlined chip when NOT active */}
                         {!isActive && (
-                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#e6fafa] group-hover:border-[#117479]/30 transition-colors duration-150" />
+                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#e6fafa] group-hover:border-[#3bd9da]/30 transition-colors duration-150" />
                         )}
 
                         <IconComponent

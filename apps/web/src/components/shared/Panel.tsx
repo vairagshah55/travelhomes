@@ -21,7 +21,7 @@ export const BRAND_VARS = {
   // controls stay navy.
   "--primary": "183 76% 27%",
   "--primary-foreground": "0 0% 100%",
-  "--ring": "183 76% 27%",
+  "--ring": "180 68% 54%",
 } as React.CSSProperties;
 
 /**

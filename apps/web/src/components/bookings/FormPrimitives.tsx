@@ -267,7 +267,7 @@ export const DatePickerField = ({
             cell: "h-8 w-8 text-center text-[12.5px] p-0 relative focus-within:relative focus-within:z-20",
             day: "h-8 w-8 p-0 font-normal rounded-md hover:bg-gray-100 aria-selected:opacity-100 inline-flex items-center justify-center",
             day_selected:
-              "bg-[#117479] text-white hover:bg-[#117479] hover:text-white focus:bg-[#117479] focus:text-white",
+              "bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] hover:text-white focus:bg-[#2BC7C8] focus:text-white",
             day_today: "bg-gray-100 font-semibold text-[#117479]",
             day_outside: "text-gray-300 opacity-50",
             day_disabled: "text-gray-300 opacity-50 cursor-not-allowed",

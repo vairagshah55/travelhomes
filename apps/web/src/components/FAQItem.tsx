@@ -10,8 +10,8 @@ function FAQItem({ question, answer }: { question: string; answer?: string }) {
     <div
       className={`w-full rounded-lg border transition-colors ${
         openAns
-          ? "bg-[#e6fafa] dark:bg-black dark:text-white border-[#117479]"
-          : "border-[#E4E8F0] hover:border-[#117479]"
+          ? "bg-[#e6fafa] dark:bg-black dark:text-white border-[#3bd9da]"
+          : "border-[#E4E8F0] hover:border-[#3bd9da]"
       }`}
     >
       <div

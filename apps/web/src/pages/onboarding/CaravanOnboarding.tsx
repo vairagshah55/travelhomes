@@ -626,7 +626,7 @@ const CaravanOnboarding = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-[#117479] border-t-transparent animate-spin" />
+          <div className="w-10 h-10 rounded-full border-2 border-[#3bd9da] border-t-transparent animate-spin" />
           <p className="text-sm text-[#888780]">Loading…</p>
         </div>
       </div>
@@ -652,7 +652,7 @@ const CaravanOnboarding = () => {
           <div className="flex flex-col gap-3">
             <button
               onClick={() => navigate("/dashboard")}
-              className="w-full bg-[#117479] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#145189] transition-colors"
+              className="w-full bg-[#3BD9DA] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#2BC7C8] transition-colors"
             >
               Go to Dashboard
             </button>

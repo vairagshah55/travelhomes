@@ -62,7 +62,7 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: "#fff",
     borderRadius: "50%",
     transform: "translate(-50%, -50%)",
-    border: "2.5px solid #117479",
+    border: "2.5px solid #3bd9da",
     boxShadow: "0 2px 6px rgba(17, 116, 121, 0.35)",
     cursor: "grab",
     zIndex: 2,
@@ -234,7 +234,7 @@ export function FilterSidebar({
                 className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all duration-200 active:scale-95 ${
                   selectedRating <= rating
                     ? "bg-gradient-to-r from-[#117479] to-[#128086] text-white border-transparent shadow-sm"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-[#117479]/40 hover:text-[#117479]"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-[#3bd9da]/40 hover:text-[#117479]"
                 }`}
               >
                 {rating}

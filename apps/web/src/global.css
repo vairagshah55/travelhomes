@@ -140,7 +140,7 @@
     /* Borders */
     --th-border: #e4e8f0;
     --th-border-hover: #c9d1e0;
-    --th-border-focus: #117479;
+    --th-border-focus: #3bd9da;
     --th-border-error: #b42318;
 
     /* Status */
@@ -334,7 +334,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 180 15% 92%;
     --input: 180 15% 92%;
-    --ring: 183 76% 27%;
+    --ring: 180 68% 54%;
 
     /* Sidebar (shadcn) — light, content-first */
     --sidebar-background: 0 0% 100%; /* #FFFFFF */
@@ -344,7 +344,7 @@
     --sidebar-accent: 180 60% 94%; /* #e6fafa hover bg */
     --sidebar-accent-foreground: 183 68% 16%; /* #0d4548 hover text */
     --sidebar-border: 180 15% 92%; /* #E4E8F0 */
-    --sidebar-ring: 183 76% 27%;
+    --sidebar-ring: 180 68% 54%;
 
     /* Legacy dashboard compat (HSL without hsl() wrapper) */
     --dashboard-bg: 180 25% 97%;

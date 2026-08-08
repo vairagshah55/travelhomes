@@ -162,7 +162,7 @@ const EditProfileSidebar = ({
             </AvatarFallback>
           </Avatar>
           <label
-            className="absolute bottom-1 right-1 w-10 h-10 bg-[#117479] hover:bg-[#0d4548] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
+            className="absolute bottom-1 right-1 w-10 h-10 bg-[#3BD9DA] hover:bg-[#2BC7C8] rounded-full flex items-center justify-center cursor-pointer shadow-md ring-2 ring-white transition-colors"
             aria-label="Upload photo"
           >
             <input type="file" accept="image/*" className="hidden" onChange={onPhotoFileChange} />
@@ -212,7 +212,7 @@ const EditProfileHeader = ({ onSave, saving }: EditProfileHeaderProps) => (
     <Button
       onClick={onSave}
       disabled={saving}
-      className="bg-[#117479] hover:bg-[#0d4548] text-white px-6 rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:translate-y-0 disabled:shadow-md"
+      className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white px-6 rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:translate-y-0 disabled:shadow-md"
     >
       {saving ? "Saving…" : "Save"}
     </Button>
@@ -226,7 +226,7 @@ interface EditProfileFormPropsWithSaving extends EditProfileFormProps {
 const baseInputCls =
   "w-full h-11 px-3 dark:bg-gray-900 dark:text-white rounded-lg text-[14px] text-gray-900 placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0";
 const okBorderCls =
-  "border-gray-200 dark:border-gray-700 focus-visible:ring-[#117479] focus-visible:border-[#117479]";
+  "border-gray-200 dark:border-gray-700 focus-visible:ring-[#3bd9da] focus-visible:border-[#3bd9da]";
 const errBorderCls =
   "border-red-300 dark:border-red-500/40 focus-visible:ring-red-500 focus-visible:border-red-500";
 const labelCls = "block text-[11px] font-semibold uppercase tracking-wider text-gray-500 mb-1.5";
@@ -323,7 +323,7 @@ const DOBPicker = ({ value, onChange, hasError }: DOBPickerProps) => {
             caption_dropdowns: "flex items-center gap-1.5",
             caption_label: "hidden",
             dropdown:
-              "h-8 rounded-md border border-gray-200 bg-white px-2 text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#117479] cursor-pointer",
+              "h-8 rounded-md border border-gray-200 bg-white px-2 text-[13px] font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#3bd9da] cursor-pointer",
             dropdown_month: "min-w-[110px]",
             dropdown_year: "min-w-[80px]",
             nav_button:
@@ -336,8 +336,8 @@ const DOBPicker = ({ value, onChange, hasError }: DOBPickerProps) => {
             cell: "h-9 w-9 text-center text-[13px] p-0 relative focus-within:relative focus-within:z-20",
             day: "h-9 w-9 p-0 font-normal rounded-md hover:bg-gray-100 aria-selected:opacity-100 transition-colors",
             day_selected:
-              "bg-[#117479] text-white hover:bg-[#0d4548] hover:text-white focus:bg-[#0d4548] focus:text-white",
-            day_today: "ring-1 ring-[#117479]/40 text-[#117479] font-semibold",
+              "bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] hover:text-white focus:bg-[#2BC7C8] focus:text-white",
+            day_today: "ring-1 ring-[#3bd9da]/40 text-[#117479] font-semibold",
             day_outside: "text-gray-300",
             day_disabled: "text-gray-300 opacity-50 cursor-not-allowed hover:bg-transparent",
           }}
@@ -438,7 +438,7 @@ const EditProfileForm = ({
       <Button
         onClick={onSave}
         disabled={saving}
-        className="w-full h-12 bg-[#117479] hover:bg-[#0d4548] text-white rounded-full font-geist shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
+        className="w-full h-12 bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full font-geist shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-60"
       >
         {saving ? "Saving…" : "Save"}
       </Button>
@@ -664,7 +664,7 @@ const UserProfileEdit = () => {
         {loading ? (
           <EditProfileSkeleton />
         ) : (
-          <div className="flex flex-col lg:flex-row gap-12 max-w-7xl mx-auto">
+          <div className="flex flex-col lg:flex-row gap-3 lg:gap-12 max-w-7xl mx-auto">
             <MobileProfileEditHeader onBack={() => navigate(-1)} />
 
             <EditProfileSidebar

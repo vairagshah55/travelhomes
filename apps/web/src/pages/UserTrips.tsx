@@ -265,7 +265,7 @@ const UserTrips = () => {
                   <Button
                     onClick={() => onReview(trip)}
                     size="sm"
-                    className="bg-[#117479] text-white hover:bg-[#128086] rounded-full text-xs font-geist"
+                    className="bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] rounded-full text-xs font-geist"
                   >
                     Review
                   </Button>
@@ -291,7 +291,7 @@ const UserTrips = () => {
                 <Button
                   onClick={() => onView(trip)}
                   size="sm"
-                  className="bg-[#117479] text-white hover:bg-[#128086] rounded-full text-xs font-geist"
+                  className="bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] rounded-full text-xs font-geist"
                 >
                   View
                 </Button>
@@ -934,7 +934,7 @@ const UserTrips = () => {
             >
               Upcomings
               {activeTab === "upcoming" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#117479] dark:bg-white"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3BD9DA] dark:bg-white"></div>
               )}
             </button>
             <button
@@ -947,7 +947,7 @@ const UserTrips = () => {
             >
               Previous
               {activeTab === "previous" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#117479] dark:bg-white"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3BD9DA] dark:bg-white"></div>
               )}
             </button>
             <button
@@ -960,7 +960,7 @@ const UserTrips = () => {
             >
               Delete
               {activeTab === "delete" && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#117479] dark:bg-white"></div>
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#3BD9DA] dark:bg-white"></div>
               )}
             </button>
           </div>

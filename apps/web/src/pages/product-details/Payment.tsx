@@ -431,7 +431,7 @@ export default function PaymentPage() {
                     });
                   }
                 }}
-                className="w-fit px-8 rounded-[8px] bg-[#117479] text-white hover:bg-[#128086] dark:bg-white dark:text-black transition-colors"
+                className="w-fit px-8 rounded-[8px] bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] dark:bg-white dark:text-black transition-colors"
               >
                 {!isEditingBookingDetails ? "Edit" : "Save"}
               </Button>
@@ -650,7 +650,7 @@ export default function PaymentPage() {
               {/* Proceed Button */}
               {/* <Button
                 onClick={handleProceed}
-                className="w-fit px-6 py-2 rounded-[10px] mt-6 bg-[#117479] text-white hover:bg-[#128086] dark:bg-white dark:text-black transition-colors"
+                className="w-fit px-6 py-2 rounded-[10px] mt-6 bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] dark:bg-white dark:text-black transition-colors"
               >
                 Proceed
               </Button> */}
@@ -712,7 +712,7 @@ export default function PaymentPage() {
 
               <Button
                 onClick={handleProceedClick}
-                className="w-full relative z-10 px-6 py-3 rounded-[10px] mt-6 bg-[#117479] text-white hover:bg-[#128086] dark:bg-white dark:text-black transition-colors"
+                className="w-full relative z-10 px-6 py-3 rounded-[10px] mt-6 bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] dark:bg-white dark:text-black transition-colors"
               >
                 {isAuthenticated ? "Proceed to Payment" : "Login to Proceed"}
               </Button>
@@ -761,7 +761,7 @@ export default function PaymentPage() {
                 onClick={() => {
                   navigate("/user-trips");
                 }}
-                className="rounded-full w-full bg-[#117479] text-white px-5 py-2 hover:bg-[#128086]"
+                className="rounded-full w-full bg-[#3BD9DA] text-white px-5 py-2 hover:bg-[#2BC7C8]"
               >
                 View My Trips
               </Button>
@@ -985,7 +985,7 @@ export default function PaymentPage() {
               </Button>
               <Button
                 onClick={() => setShowBookingDetails(false)}
-                className="flex-1 rounded-lg bg-[#117479] text-white px-4 py-2 hover:bg-[#128086] dark:bg-white dark:text-black dark:hover:bg-gray-200"
+                className="flex-1 rounded-lg bg-[#3BD9DA] text-white px-4 py-2 hover:bg-[#2BC7C8] dark:bg-white dark:text-black dark:hover:bg-gray-200"
               >
                 Close
               </Button>

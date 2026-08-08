@@ -312,7 +312,7 @@ export function MobileSearchSheet({
                     onClick={() => setActivity(a)}
                     className={`px-3 h-8 rounded-full text-xs font-semibold border transition-colors ${
                       activity === a
-                        ? "bg-[#0a1c1c] text-white border-[#0a1c1c]"
+                        ? "bg-[#3BD9DA] text-white border-[#3BD9DA]"
                         : "bg-white text-[#5F6A82] border-gray-200"
                     }`}
                   >

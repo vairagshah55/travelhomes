@@ -196,7 +196,7 @@ function NavRow({
       {isActive && (
         <motion.span
           layoutId={pillId}
-          className="absolute inset-0 rounded-xl bg-[rgba(59, 217, 218, 0.18)] shadow-[inset_3px_0_0_0_#117479]"
+          className="absolute inset-0 rounded-xl bg-[rgba(59, 217, 218, 0.18)] shadow-[inset_3px_0_0_0_#3bd9da]"
           transition={{ type: "spring", stiffness: 520, damping: 42 }}
         />
       )}
@@ -210,7 +210,7 @@ function NavRow({
         title={item.label}
         aria-current={isActive ? "page" : undefined}
         data-active-row={anchor ? "" : undefined}
-        className="relative z-10 flex-1 min-w-0 flex items-center gap-3 h-11 pl-2 pr-1 rounded-xl text-left text-[14px] font-medium text-[#475467] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#117479]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]"
+        className="relative z-10 flex-1 min-w-0 flex items-center gap-3 h-11 pl-2 pr-1 rounded-xl text-left text-[14px] font-medium text-[#475467] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]"
       >
         {/* Icon tile — inverts on active (solid teal + white glyph). Fixed
             position so it never shifts between collapsed/expanded. */}
@@ -250,7 +250,7 @@ function NavRow({
           className={cn(
             "relative z-10 shrink-0 grid place-items-center w-6 h-11 mr-1 rounded-lg outline-none",
             "text-tpl-dark-5/70 hover:text-[#101828] transition-colors",
-            "focus-visible:ring-2 focus-visible:ring-[#117479]/40",
+            "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
             reveal(collapsed),
           )}
         >
@@ -371,7 +371,7 @@ function SidebarBody({
                                   className={cn(
                                     "group/sub w-full flex items-center gap-2 h-8 px-2.5 rounded-lg",
                                     "text-left select-none outline-none transition-colors duration-150",
-                                    "focus-visible:ring-2 focus-visible:ring-[#117479]/40",
+                                    "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
                                     subActive
                                       ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479]"
                                       : "text-tpl-dark-6 hover:bg-[rgba(16,24,40,0.045)] hover:text-tpl-dark",
@@ -566,7 +566,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <div className="flex items-center gap-2.5 h-[84px] shrink-0 pl-[18px] pr-3 border-b border-tpl-stroke">
           <button
             onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2.5 min-w-0 outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-[#117479]/40"
+            className="flex items-center gap-2.5 min-w-0 outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40"
             aria-label="TravelHomes admin home"
           >
             <AdminBrandMark size={34} />
@@ -579,7 +579,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             aria-pressed={pinned}
             className={cn(
               "ml-auto shrink-0 grid place-items-center w-7 h-7 rounded-lg outline-none",
-              "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#117479]/40",
+              "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
               pinned
                 ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479] hover:bg-[rgba(59, 217, 218, 0.32)]"
                 : "text-tpl-dark-5/70 hover:text-tpl-dark-5 hover:bg-[rgba(16,24,40,0.05)]",

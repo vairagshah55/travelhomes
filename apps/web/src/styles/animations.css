@@ -80,7 +80,7 @@
 }
 
 .motion-property-card[data-selected="true"] {
-  border: 2px solid var(--blue-500);
+  border: 2px solid #3bd9da;
   animation: motion-card-pulse var(--dur-slow) var(--ease-spring) 1;
 }
 
@@ -481,7 +481,7 @@
 .motion-spinner {
   display: inline-block;
   border: 2px solid rgba(191, 219, 254, 0.4);
-  border-top-color: var(--blue-500);
+  border-top-color: #3bd9da;
   border-radius: 999px;
   animation: motion-spin 600ms linear infinite;
 }

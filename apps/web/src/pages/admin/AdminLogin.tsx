@@ -134,7 +134,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#117479] focus:ring-[#117479]"
+                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#3bd9da] focus:ring-[#3bd9da]"
                   placeholder="Enter admin email"
                   required
                 />
@@ -150,7 +150,7 @@ const AdminLogin = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#117479] focus:ring-[#117479] pr-12"
+                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#3bd9da] focus:ring-[#3bd9da] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
@@ -172,7 +172,7 @@ const AdminLogin = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#117479] bg-white border-gray-300 rounded focus:ring-[#117479]"
+                  className="w-4 h-4 text-[#117479] bg-white border-gray-300 rounded focus:ring-[#3bd9da]"
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-700">
                   Keep me signed in

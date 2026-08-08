@@ -176,7 +176,7 @@ export default function Footer() {
                 />
               </div>
               <Button
-                className="bg-[#117479] text-white rounded-full px-4 md:px-5 h-10 md:h-8 text-xs font-bold flex-shrink-0"
+                className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full px-4 md:px-5 h-10 md:h-8 text-xs font-bold flex-shrink-0 transition-colors"
                 onClick={handleSubscribe}
                 disabled={loading}
               >

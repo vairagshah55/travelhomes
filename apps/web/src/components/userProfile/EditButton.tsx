@@ -9,7 +9,7 @@ interface EditButtonProps {
 const EditButton = ({ onClick, className }: EditButtonProps) => (
   <Button
     onClick={onClick}
-    className={`bg-[#117479] hover:bg-[#0d4548] text-white rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${className ?? ""}`}
+    className={`bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full font-geist shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 ${className ?? ""}`}
   >
     <EditIcon />
     Edit

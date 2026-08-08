@@ -387,7 +387,7 @@ export default function SearchResults() {
             <button
               onClick={() => navigate("/")}
               aria-label="Back to home"
-              className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E4E8F0] text-[#0a1c1c] shadow-sm hover:border-[#117479]/40 hover:text-[#117479] active:scale-90 transition-all"
+              className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E4E8F0] text-[#0a1c1c] shadow-sm hover:border-[#3bd9da]/40 hover:text-[#117479] active:scale-90 transition-all"
             >
               <ArrowLeft className="w-[18px] h-[18px]" />
             </button>
@@ -598,7 +598,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -821,7 +821,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />
@@ -992,7 +992,7 @@ export default function SearchResults() {
                   <div className="flex justify-center lg:flex-shrink-0 lg:ml-6 mt-4 lg:mt-0">
                     <Button
                       onClick={handleSearch}
-                      className="bg-[#117479] hover:bg-[#128086] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
                       size="icon"
                     >
                       <Search className="w-5 h-5 lg:w-6 lg:h-6" />

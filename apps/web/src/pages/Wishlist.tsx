@@ -119,7 +119,7 @@ const Wishlist = () => {
                 </p>
                 <Button
                   onClick={() => navigate("/")}
-                  className="bg-[#117479] hover:bg-[#0d5c60] text-white rounded-full px-6"
+                  className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full px-6"
                 >
                   Start Exploring
                 </Button>

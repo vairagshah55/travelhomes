@@ -132,7 +132,7 @@ function Header({
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
           <Button
-            className="hidden md:flex bg-[#117479] text-white hover:bg-[#0d4548] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
+            className="hidden md:flex bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             onClick={() => navigate("/onboarding/service-selection")}
           >
             <div className="flex items-center gap-2">
@@ -149,7 +149,7 @@ function Header({
                 className={`${
                   isTransparent
                     ? "bg-white/90 backdrop-blur-sm text-black hover:bg-white/100"
-                    : "bg-[#117479] text-white hover:bg-[#0d4548]"
+                    : "bg-[#3BD9DA] text-white hover:bg-[#2BC7C8]"
                 } rounded-full px-4 md:px-6 h-10`}
               >
                 Register

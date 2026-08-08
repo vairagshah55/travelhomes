@@ -159,13 +159,13 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
           <Button
             onClick={handleCancel}
             variant="outline"
-            className="flex-1 py-3 border-[#117479] text-[#117479] hover:bg-[#117479] dark:text-white hover:text-white rounded-full font-geist"
+            className="flex-1 py-3 border-[#3bd9da] text-[#117479] hover:bg-[#3BD9DA] dark:text-white hover:text-white rounded-full font-geist"
           >
             Cancel
           </Button>
           <Button
             onClick={handleApply}
-            className="flex-1 py-3 bg-[#117479] text-white hover:bg-[#128086] rounded-full font-geist"
+            className="flex-1 py-3 bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] rounded-full font-geist"
           >
             Apply
           </Button>

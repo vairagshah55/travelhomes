@@ -57,7 +57,7 @@ function About() {
           </p>
           <div className="flex gap-5 items-center">
             <Link to="/">
-              <button className="inline-block px-8 my-3 py-4 bg-[#117479] text-white dark:bg-white dark:text-black rounded-md shadow-lg hover:scale-105 transition-transform duration-300">
+              <button className="inline-block px-8 my-3 py-4 bg-[#3BD9DA] text-white dark:bg-white dark:text-black rounded-md shadow-lg hover:scale-105 transition-transform duration-300">
                 Book Now
               </button>
             </Link>

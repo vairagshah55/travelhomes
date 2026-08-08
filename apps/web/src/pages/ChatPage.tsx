@@ -796,7 +796,7 @@ const ChatPage = () => {
                 disabled={!messageText.trim() && selectedFiles.length === 0}
                 className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                   messageText.trim() || selectedFiles.length > 0
-                    ? "bg-[#117479] text-white hover:bg-[#128086] shadow-lg transform active:scale-95"
+                    ? "bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] shadow-lg transform active:scale-95"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >

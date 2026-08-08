@@ -417,7 +417,7 @@ export default function Index() {
                   <div className="mt-6 flex justify-center">
                     <Button
                       onClick={() => incPage("unique-stays")}
-                      className="rounded-full bg-[#117479] hover:bg-[#128086] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
+                      className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
                     >
                       View more
                     </Button>

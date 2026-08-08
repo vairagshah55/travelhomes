@@ -223,7 +223,7 @@ export function CalendarDropdown({
         </button>
         <button
           onClick={handleDone}
-          className="bg-[#117479] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-[#128086] active:scale-[0.98] transition-all text-xs shadow-sm"
+          className="bg-[#3BD9DA] text-white px-8 py-2.5 rounded-xl font-semibold hover:bg-[#2BC7C8] active:scale-[0.98] transition-all text-xs shadow-sm"
         >
           Done
         </button>
