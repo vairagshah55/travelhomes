@@ -1,7 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, MapPin, Calendar, Users, Star as StarIcon, Search } from "lucide-react";
+import {
+  Menu,
+  X,
+  MapPin,
+  Calendar,
+  Users,
+  Star as StarIcon,
+  Search,
+  User as UserIcon,
+  Heart,
+  Settings,
+  MessageCircle,
+  HelpCircle,
+  LogOut,
+  ArrowUpRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LogoWebsite, { HomeLogoWebsite } from "./ui/LogoWebsite";
 import { BrandLogo } from "./BrandLogo";
@@ -40,7 +55,7 @@ export default function SiteHeader({
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isSearchPage = pathname === "/search";
-  const { user, updateUserType } = useAuth();
+  const { user, updateUserType, logout } = useAuth();
 
   const [showFilterButtons, setShowFilterButtons] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -958,12 +973,17 @@ export default function SiteHeader({
                     <CgLoadbarDoc size={16} className="shrink-0" />
                     List your offering
                   </button>
-                  <UserDropdown
-                    onSwitchToVendor={() => {
-                      updateUserType("vendor");
-                      navigate("/dashboard");
-                    }}
-                  />
+                  {/* Avatar's own account menu (Profile/Trips/Logout/etc.) is
+                      mirrored into the hamburger drawer below, so on mobile
+                      it's reached from there instead of this small trigger. */}
+                  <div className="hidden md:block">
+                    <UserDropdown
+                      onSwitchToVendor={() => {
+                        updateUserType("vendor");
+                        navigate("/dashboard");
+                      }}
+                    />
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
@@ -1028,8 +1048,8 @@ export default function SiteHeader({
                 // `relative` so it paints above the fixed scrim that precedes it.
                 className="lg:hidden relative border-t border-gray-100 bg-white shadow-lg max-h-[calc(100svh-4rem)] overflow-y-auto overscroll-contain"
               >
-                <div className="px-4 py-4 space-y-2 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-                  <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+                <div className="px-4 py-3 space-y-0.5 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+                  <p className="px-1 pb-0.5 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
                     Browse
                   </p>
                   {navTabs.map((tab) => {
@@ -1038,25 +1058,96 @@ export default function SiteHeader({
                       <button
                         key={tab.id}
                         onClick={() => handleMobileTabClick(tab.id)}
-                        className={`w-full text-left px-4 py-3 min-h-[48px] text-sm font-medium rounded-xl transition-colors flex items-center gap-3 ${
+                        className={`w-full text-left px-3.5 py-2 min-h-[40px] text-sm font-medium rounded-lg transition-colors flex items-center gap-3 ${
                           activeFilter === tab.id
-                            ? "bg-[#0a1c1c] text-white"
+                            ? "bg-[#3BD9DA] text-white shadow-sm"
                             : "text-[#0a1c1c] active:bg-[#F7F7F7]"
                         }`}
                       >
-                        <IconComponent className="w-5 h-5" />
+                        <IconComponent className="w-[18px] h-[18px]" />
                         {tab.label}
                       </button>
                     );
                   })}
 
-                  <div className="pt-2 mt-2 border-t border-gray-100 space-y-2">
+                  {/* Account — mirrors UserDropdown's menu (Profile/Trips/etc.
+                      + Logout), since the avatar trigger is hidden below md. */}
+                  {user && (
+                    <div className="pt-1.5 mt-1.5 border-t border-gray-100 space-y-0.5">
+                      <div className="px-1 pb-0.5">
+                        <p className="text-[13px] font-semibold text-gray-900 leading-tight truncate">
+                          {[user.firstName, user.lastName].filter(Boolean).join(" ") ||
+                            user.firstName ||
+                            "User"}
+                        </p>
+                        {user.email && (
+                          <p className="text-[11.5px] text-gray-500 leading-tight truncate mt-0.5">
+                            {user.email}
+                          </p>
+                        )}
+                      </div>
+                      {[
+                        { label: "Profile", path: "/user-profile", icon: UserIcon },
+                        { label: "Trips", path: "/user-trips", icon: MapPin },
+                        { label: "Wishlist", path: "/wishlist", icon: Heart },
+                        { label: "Account Settings", path: "/account-settings", icon: Settings },
+                        { label: "Chat", path: "/chat", icon: MessageCircle },
+                        { label: "Help", path: "/help", icon: HelpCircle },
+                      ].map((item) => {
+                        const Icon = item.icon;
+                        const active = pathname === item.path;
+                        return (
+                          <button
+                            key={item.path}
+                            onClick={() => {
+                              setIsMobileMenuOpen(false);
+                              navigate(item.path);
+                            }}
+                            className={`w-full text-left px-3.5 py-1.5 min-h-[36px] text-sm font-medium rounded-lg transition-colors flex items-center gap-3 ${
+                              active
+                                ? "bg-[#e6fafa] text-[#117479]"
+                                : "text-[#0a1c1c] active:bg-[#F7F7F7]"
+                            }`}
+                          >
+                            <Icon className="w-[17px] h-[17px]" />
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                      {(user.vendorStatus === "approved" || user.vendorStatus === "active") && (
+                        <button
+                          onClick={() => {
+                            setIsMobileMenuOpen(false);
+                            updateUserType("vendor");
+                            navigate("/dashboard");
+                          }}
+                          className="w-full text-left px-3.5 py-1.5 min-h-[36px] text-sm font-medium rounded-lg flex items-center gap-3 text-[#117479] active:bg-[#e6fafa]"
+                        >
+                          <ArrowUpRight className="w-[17px] h-[17px]" />
+                          Switch to Vendor
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          logout();
+                          navigate("/");
+                        }}
+                        className="w-full text-left px-3.5 py-1.5 min-h-[36px] text-sm font-medium rounded-lg flex items-center gap-3 text-red-600 active:bg-red-50"
+                      >
+                        <LogOut className="w-[17px] h-[17px]" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="pt-1.5 mt-1.5 border-t border-gray-100 space-y-1.5">
                     <button
                       onClick={() => {
                         setIsMobileMenuOpen(false);
                         navigate("/onboarding/service-selection");
                       }}
-                      className="w-full flex items-center justify-center gap-2 h-12 rounded-full bg-[#3BD9DA] text-white text-sm font-semibold active:scale-[0.98] transition-transform"
+                      className="w-full flex items-center justify-center gap-2 h-10 rounded-full bg-[#3BD9DA] text-white text-sm font-semibold active:scale-[0.98] transition-transform"
                     >
                       <CgLoadbarDoc size={16} className="shrink-0" />
                       List your offering
@@ -1067,7 +1158,7 @@ export default function SiteHeader({
                           setIsMobileMenuOpen(false);
                           navigate("/login");
                         }}
-                        className="w-full h-12 rounded-full border border-gray-200 text-[#0a1c1c] text-sm font-semibold active:bg-gray-50"
+                        className="w-full h-10 rounded-full border border-gray-200 text-[#0a1c1c] text-sm font-semibold active:bg-gray-50"
                       >
                         Log in
                       </button>

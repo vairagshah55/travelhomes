@@ -361,6 +361,12 @@ export default function SearchResults() {
     }
   }, [activeFilterFromHeader]);
 
+  const activeCategoryMeta = {
+    "camper-van": { label: "Camper Van", icon: CamperVanIcon },
+    "unique-stays": { label: "Unique Stays", icon: HomeIcon },
+    activity: { label: "Activity", icon: RocketIcon },
+  }[activeFilter];
+
   return (
     <div className="min-h-screen  flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
       {/* Site Header */}
@@ -374,21 +380,18 @@ export default function SearchResults() {
           section itself carries no padding there; otherwise it's dead space
           (the fixed-header offset lives on mt-20, which still applies). */}
       <section className="mt-20  dark:bg-black dark:text-white py-6 pt-8 max-md:py-3">
-        {/* Category Filters - Horizontally Scrollable. Kept visible below md
-            (unlike the rest of the hero search form) so a mobile visitor can
-            still see — and switch — which category is active. A back arrow
-            leads the row on mobile, since the fixed header's logo-click-home
-            isn't an obvious "go back" affordance on its own. */}
-        <div className="relative">
-          <div className="sticky top-0 z-40 dark:dark-color py-4 max-md:py-0 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-3 mb-2 justify-center min-w-max px-4">
-              <button
-                onClick={() => navigate("/")}
-                aria-label="Back to home"
-                className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E4E8F0] text-[#0a1c1c] shadow-sm hover:border-[#117479]/40 hover:text-[#117479] active:scale-90 transition-all"
-              >
-                <ArrowLeft className="w-[18px] h-[18px]" />
-              </button>
+        {/* Category pills stay desktop-only (lg+) — on mobile only the back
+            arrow shows, leading straight to the results below. */}
+        <div className="sticky top-0 z-40 dark:dark-color py-4 max-md:py-0 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-3 mb-2 justify-start lg:justify-center min-w-max px-4">
+            <button
+              onClick={() => navigate("/")}
+              aria-label="Back to home"
+              className="lg:hidden flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-[#E4E8F0] text-[#0a1c1c] shadow-sm hover:border-[#117479]/40 hover:text-[#117479] active:scale-90 transition-all"
+            >
+              <ArrowLeft className="w-[18px] h-[18px]" />
+            </button>
+            <div className="hidden lg:flex items-center gap-3">
               {visibleSections["camper-van"] !== false && (
                 <FilterButton
                   icon={CamperVanIcon}
@@ -415,9 +418,17 @@ export default function SearchResults() {
               )}
             </div>
           </div>
-          {/* Fades the trailing pill instead of hard-clipping it at the
-              viewport edge, so it reads as "scroll for more" rather than cut off. */}
-          <div className="lg:hidden pointer-events-none absolute right-0 top-0 bottom-2 w-10 bg-gradient-to-l from-white dark:from-black to-transparent" />
+        </div>
+
+        {/* Mobile-only stand-in for the pills hidden above — fills what was
+            dead space with the one thing they conveyed: which category
+            you're looking at. */}
+        <div className="lg:hidden flex items-center gap-2 px-4 pt-3">
+          {(() => {
+            const CategoryIcon = activeCategoryMeta.icon;
+            return <CategoryIcon className="w-5 h-5 text-[#117479]" />;
+          })()}
+          <span className="text-base font-semibold text-[#0a1c1c]">{activeCategoryMeta.label}</span>
         </div>
 
         <div ref={SearchbarRef} className="w-full mx-auto max-md:hidden">
