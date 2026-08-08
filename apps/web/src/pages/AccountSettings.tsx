@@ -2,8 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, X, Loader2 } from "lucide-react";
-import Header from "@/components/Header";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import MobileUserNav from "@/components/MobileUserNav";
 import { IoIosArrowBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -283,11 +284,15 @@ const AccountSettings = () => {
     if (step === "otp") {
       return (
         <>
-          <h2 className="text-2xl font-bold mb-6 text-center">Enter OTP</h2>
+          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-[#0a1c1c]">
+            Enter OTP
+          </h2>
           <div className="mb-4">
             <p className="text-sm text-gray-500 mb-4 text-center">
               We've sent a verification code to{" "}
-              <strong>{activeSetting === "Change Phone Number" ? phone : email}</strong>
+              <strong className="text-[#0a1c1c]">
+                {activeSetting === "Change Phone Number" ? phone : email}
+              </strong>
             </p>
             <label className="text-sm font-medium text-gray-700 block mb-1">
               OTP Code<span className="text-red-500">*</span>
@@ -304,24 +309,24 @@ const AccountSettings = () => {
                   setStep("input");
                   setVerificationOtp("");
                 }}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-[#117479] hover:underline"
               >
                 Change {activeSetting === "Change Phone Number" ? "Number" : "Email"}
               </button>
             </div>
           </div>
-          <div className="flex justify-end gap-4 mt-6">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
             <Button
               onClick={closeModal}
               variant="outline"
-              className="border-gray-500 text-gray-800"
+              className="rounded-full border-gray-300 text-[#0a1c1c] hover:bg-gray-50 hover:text-[#0a1c1c]"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUpdate}
               disabled={loading}
-              className="bg-gray-800 text-white min-w-[100px]"
+              className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white min-w-[130px]"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify & Update"}
             </Button>
@@ -334,7 +339,9 @@ const AccountSettings = () => {
       case "Change Phone Number":
         return (
           <>
-            <h2 className="text-2xl font-bold mb-6 text-center">Update Phone Number</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-[#0a1c1c]">
+              Update Phone Number
+            </h2>
             <div className="mb-4">
               <label className="text-sm font-medium text-gray-700 block mb-1">
                 New Phone Number<span className="text-red-500">*</span>
@@ -348,18 +355,18 @@ const AccountSettings = () => {
                 placeholder="Enter new phone number"
               />
             </div>
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
               <Button
                 onClick={closeModal}
                 variant="outline"
-                className="border-gray-500 text-gray-800"
+                className="rounded-full border-gray-300 text-[#0a1c1c] hover:bg-gray-50 hover:text-[#0a1c1c]"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleUpdate}
                 disabled={loading}
-                className="bg-gray-800 text-white min-w-[100px]"
+                className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white min-w-[100px]"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Next"}
               </Button>
@@ -370,7 +377,9 @@ const AccountSettings = () => {
       case "Change Email ID":
         return (
           <>
-            <h2 className="text-2xl font-bold mb-6 text-center">Update Email Address</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-[#0a1c1c]">
+              Update Email Address
+            </h2>
             <div className="mb-6 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1">
@@ -394,18 +403,18 @@ const AccountSettings = () => {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
               <Button
                 onClick={closeModal}
                 variant="outline"
-                className="border-gray-500 text-gray-800"
+                className="rounded-full border-gray-300 text-[#0a1c1c] hover:bg-gray-50 hover:text-[#0a1c1c]"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleUpdate}
                 disabled={loading}
-                className="bg-gray-800 text-white min-w-[100px]"
+                className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white min-w-[100px]"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Next"}
               </Button>
@@ -416,7 +425,9 @@ const AccountSettings = () => {
       case "Change Password":
         return (
           <>
-            <h2 className="text-2xl font-bold mb-6 text-center">Update Password</h2>
+            <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center text-[#0a1c1c]">
+              Update Password
+            </h2>
             <div className="mb-6 space-y-4">
               <div className="relative">
                 <label className="text-sm font-medium text-gray-700 block mb-1">
@@ -478,18 +489,18 @@ const AccountSettings = () => {
                 </button>
               </div>
             </div>
-            <div className="flex justify-end gap-4 mt-6">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6">
               <Button
                 onClick={closeModal}
                 variant="outline"
-                className="border-gray-500 text-gray-800"
+                className="rounded-full border-gray-300 text-[#0a1c1c] hover:bg-gray-50 hover:text-[#0a1c1c]"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleUpdate}
                 disabled={loading}
-                className="bg-gray-800 text-white min-w-[100px]"
+                className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white min-w-[100px]"
               >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update"}
               </Button>
@@ -503,51 +514,60 @@ const AccountSettings = () => {
   };
 
   return (
-    <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header variant="transparent" className="fixed w-full z-50" />
+    <div className="flex flex-col min-h-screen gap-0 bg-gray-100 text-gray-900 transition-colors">
+      <SiteHeader />
 
-      <main className="container mt-10 mx-auto px-4 lg:px-20 py-10">
-        <div className="max-w-7xl mx-auto">
-          <div onClick={() => navigate(-1)} className="mb-1 cursor-pointer flex items-center gap-1">
+      <main className="flex-1 px-4 mt-20 py-6 sm:py-10">
+        <div className="max-w-3xl mx-auto">
+          <div
+            onClick={() => navigate(-1)}
+            className="mb-6 cursor-pointer inline-flex items-center gap-2 text-[#0a1c1c] hover:text-[#117479] transition-colors w-fit"
+          >
             <IoIosArrowBack size={20} />
-            <h1 className="text-2xl max-md:text-lg font-semibold text-dashboard-heading font-poppins leading-[46px]">
-              Account Settings
-            </h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold font-poppins">Account Settings</h1>
           </div>
 
-          <div className="space-y-0">
-            {settingsItems.map((item, index) => (
-              <div key={index}>
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 p-4">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-dashboard-title font-plus-jakarta mb-3">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-dashboard-neutral-07 font-plus-jakarta">
-                      {item.description}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => setActiveSetting(item.title)}
-                    variant="outline"
-                    className="w-full sm:w-auto sm:ml-10 px-4 py-2 rounded-full dark:border-white border-black dark:hover:bg-gray-500 text-dashboard-primary hover:bg-gray-50 font-geist text-sm"
-                  >
-                    Update Now
-                  </Button>
+          <div className="bg-white rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden shadow-sm">
+            {settingsItems.map((item) => (
+              <div
+                key={item.title}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 sm:p-6"
+              >
+                <div className="flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-[#0a1c1c] font-plus-jakarta mb-1">
+                    {item.title}
+                  </h3>
+                  <p className="text-sm text-gray-500 font-plus-jakarta">{item.description}</p>
                 </div>
-                {index < settingsItems.length - 1 && <div className="h-px bg-gray-100"></div>}
+                <Button
+                  onClick={() => setActiveSetting(item.title)}
+                  variant="outline"
+                  className="w-full sm:w-auto sm:ml-10 px-5 py-2 rounded-full border-gray-200 text-[#0a1c1c] hover:border-[#3BD9DA] hover:bg-[#e6fafa] hover:text-[#117479] font-geist text-sm"
+                >
+                  Update Now
+                </Button>
               </div>
             ))}
           </div>
         </div>
       </main>
 
+      <Footer />
+
+      {/* Clearance for the fixed bottom nav, painted in the footer's own
+          colour so the page doesn't end on a white band. Collapses to 0 at lg,
+          where the nav is hidden. Matches Wishlist.tsx's pattern. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+
+      <MobileUserNav />
+
       {activeSetting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-          <div className="relative bg-white rounded-md shadow-lg p-6 w-[90%] max-w-md text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto p-5 sm:p-6 text-gray-900">
             <button
               onClick={closeModal}
-              className="absolute top-3 right-3 text-gray-500 hover:text-black"
+              aria-label="Close"
+              className="absolute top-4 right-4 text-gray-400 hover:text-[#0a1c1c] transition-colors"
             >
               <X size={20} />
             </button>

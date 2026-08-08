@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface FilterModalProps {
   isOpen: boolean;
@@ -35,32 +36,21 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/20" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 sm:p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800 font-poppins">Filter</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-[#0a1c1c] font-poppins">Filter</h2>
           <button
             onClick={onClose}
+            aria-label="Close"
             className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
-            <svg
-              className="w-6 h-6 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <X className="w-6 h-6 text-gray-500" />
           </button>
         </div>
 
@@ -72,7 +62,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
             <div className="relative">
               <button
                 onClick={() => setIsServiceDropdownOpen(!isServiceDropdownOpen)}
-                className="w-full px-3 py-4 border border-gray-400 rounded-lg text-left text-base text-gray-600 font-plus-jakarta flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-4 border border-gray-300 rounded-xl text-left text-base text-gray-600 font-plus-jakarta flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#3BD9DA] focus:border-transparent"
               >
                 <span>{filters.service}</span>
                 <svg
@@ -92,7 +82,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
               </button>
 
               {isServiceDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 overflow-hidden">
                   {serviceOptions.map((option) => (
                     <button
                       key={option}
@@ -100,7 +90,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
                         setFilters((prev) => ({ ...prev, service: option }));
                         setIsServiceDropdownOpen(false);
                       }}
-                      className="w-full px-3 py-3 text-left text-base text-gray-600 font-plus-jakarta hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg transition-colors"
+                      className="w-full px-3 py-3 text-left text-base text-gray-600 font-plus-jakarta hover:bg-[#e6fafa] hover:text-[#117479] transition-colors"
                     >
                       {option}
                     </button>
@@ -116,7 +106,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
             <div className="relative">
               <button
                 onClick={() => setIsDateDropdownOpen(!isDateDropdownOpen)}
-                className="w-full px-3 py-4 border border-gray-400 rounded-lg text-left text-base text-gray-600 font-plus-jakarta flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-4 border border-gray-300 rounded-xl text-left text-base text-gray-600 font-plus-jakarta flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-[#3BD9DA] focus:border-transparent"
               >
                 <span>{filters.date}</span>
                 <svg
@@ -136,7 +126,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
               </button>
 
               {isDateDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-4">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 p-4">
                   <input
                     type="date"
                     value={filters.date.split("/").reverse().join("-")}
@@ -146,7 +136,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
                       setFilters((prev) => ({ ...prev, date: formattedDate }));
                       setIsDateDropdownOpen(false);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-base font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base font-plus-jakarta focus:outline-none focus:ring-2 focus:ring-[#3BD9DA]"
                   />
                 </div>
               )}
@@ -155,11 +145,11 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply }) =
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-6">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <Button
             onClick={handleCancel}
             variant="outline"
-            className="flex-1 py-3 border-[#3bd9da] text-[#117479] hover:bg-[#3BD9DA] dark:text-white hover:text-white rounded-full font-geist"
+            className="flex-1 py-3 border-[#3bd9da] text-[#117479] hover:bg-[#3BD9DA] hover:text-white rounded-full font-geist"
           >
             Cancel
           </Button>

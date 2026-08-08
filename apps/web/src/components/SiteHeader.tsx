@@ -55,7 +55,7 @@ export default function SiteHeader({
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isSearchPage = pathname === "/search";
-  const { user, updateUserType, logout } = useAuth();
+  const { user, updateUserType, logout, refreshUser } = useAuth();
 
   const [showFilterButtons, setShowFilterButtons] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -1017,7 +1017,14 @@ export default function SiteHeader({
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onClick={() => {
+                  const next = !isMobileMenuOpen;
+                  setIsMobileMenuOpen(next);
+                  // Same staleness issue as UserDropdown: vendor approval is an
+                  // out-of-band admin action, so re-check on every open instead
+                  // of relying on whatever was cached at page load.
+                  if (next && user) refreshUser();
+                }}
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isMobileMenuOpen}
                 className={`lg:hidden ml-3 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out ${

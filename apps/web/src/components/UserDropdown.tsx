@@ -139,7 +139,15 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
     <div className={`relative w-max ${isOpen ? "z-[130]" : "z-50"}`} ref={dropdownRef}>
       {/* Trigger — pill on md+ (Hi, Name · avatar · chevron); just the avatar on mobile. */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          const next = !isOpen;
+          setIsOpen(next);
+          // Vendor approval happens out-of-band (admin action) while this tab
+          // may already be open, so the mount-time refresh above can be stale
+          // by the time the user actually looks at the menu. Re-check on every
+          // open so an approval always shows up without a full page reload.
+          if (next) refreshUser();
+        }}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`Account menu for ${displayName}`}

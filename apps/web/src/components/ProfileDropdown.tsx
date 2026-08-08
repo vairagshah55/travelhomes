@@ -56,8 +56,16 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   onLogoutClick,
 }) => {
   const navigate = useNavigate();
-  const { logout, user, updateUserType } = useAuth();
+  const { logout, user, updateUserType, refreshUser } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleOpenChange = (next: boolean) => {
+    setIsOpen(next);
+    // Vendor approval is an out-of-band admin action, so the status cached
+    // at page load can be stale by the time the user opens this menu —
+    // re-check every time instead of only once on mount.
+    if (next && user) refreshUser();
+  };
 
   const handleProfileClick = () => {
     navigate("/profile");
@@ -110,7 +118,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   const canSwitchToVendor = user?.vendorStatus === "approved" || user?.vendorStatus === "active";
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger className="cursor-pointer rounded outline-none focus-visible:ring-1 focus-visible:ring-app-accent focus-visible:ring-offset-2 dark:focus-visible:ring-offset-gray-900 shrink-0">
         <span className="sr-only">My Account</span>
         <figure className="flex items-center gap-3">
