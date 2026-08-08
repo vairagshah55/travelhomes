@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
+import MobileUserNav from "../components/MobileUserNav";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -433,7 +434,7 @@ const EditProfileForm = ({
     </div>
 
     {/* Mobile Save — sticks to brand styling */}
-    <div className="md:hidden w-full mt-5">
+    <div className="md:hidden w-full mt-5 mb-2">
       <Button
         onClick={onSave}
         disabled={saving}
@@ -657,14 +658,9 @@ const UserProfileEdit = () => {
   // to appear/disappear with the loading switch).
   return (
     <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header
-        variant="transparent"
-        className="fixed w-full z-50"
-        callbackFun={() => {}}
-        onNavigate={() => {}}
-      />
+      <SiteHeader />
 
-      <div className="px-4 mt-20 md:px-20 py-10 max-md:py-0">
+      <div className="px-4 mt-20 md:px-20 py-10 max-md:pt-4 max-md:pb-10">
         {loading ? (
           <EditProfileSkeleton />
         ) : (
@@ -692,6 +688,11 @@ const UserProfileEdit = () => {
         )}
       </div>
       <Footer />
+      {/* Clearance for the fixed bottom nav, painted in the footer's own
+          colour so the page doesn't end on a white band. Collapses to 0 at lg,
+          where the nav is hidden. Matches Index.tsx's pattern. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+      <MobileUserNav />
     </div>
   );
 };

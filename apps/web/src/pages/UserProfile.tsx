@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import SiteHeader from "../components/SiteHeader";
 import Footer from "../components/Footer";
+import MobileUserNav from "../components/MobileUserNav";
 import { useAuth } from "../contexts/AuthContext";
 import MobileProfileHeader from "../components/userProfile/MobileProfileHeader";
 import ProfileSidebar from "../components/userProfile/ProfileSidebar";
@@ -21,9 +22,9 @@ const UserProfile = () => {
 
   return (
     <div className="min-h-screen flex-col flex gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header variant="transparent" className="fixed w-full z-50" />
+      <SiteHeader />
 
-      <div className="px-4 mt-14 md:px-20 py-5">
+      <div className="px-4 mt-20 md:px-20 py-5">
         <div className="flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto">
           <MobileProfileHeader onEdit={handleEdit} />
           <ProfileSidebar user={user} />
@@ -36,6 +37,11 @@ const UserProfile = () => {
       </div>
 
       <Footer />
+      {/* Clearance for the fixed bottom nav, painted in the footer's own
+          colour so the page doesn't end on a white band. Collapses to 0 at lg,
+          where the nav is hidden. Matches Index.tsx's pattern. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+      <MobileUserNav />
     </div>
   );
 };
