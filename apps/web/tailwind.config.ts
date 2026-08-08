@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 export default {
   darkMode: ["class"],
@@ -545,5 +546,16 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    // `short:` — viewport not tall enough to show the hero + first card row
+    // together on a normal laptop window. Added via addVariant (not
+    // theme.screens) because a non-numeric `raw` screen entry breaks
+    // Tailwind's max-* variant generation sitewide. Always pair with a width
+    // breakpoint (e.g. `lg:short:`) — alone it would also match short
+    // *phones*, which already use an entirely different mobile hero layout.
+    plugin(({ addVariant }) => {
+      addVariant("short", "@media (max-height: 820px)");
+    }),
+  ],
 } satisfies Config;

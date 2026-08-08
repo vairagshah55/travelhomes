@@ -49,6 +49,8 @@ function CardImageCarousel({ images, alt }: { images: string[]; alt: string }) {
 
   return (
     <div
+      // Tried 16:9 to save vertical space on the landing page, but the
+      // shorter, wider crop looked off on card thumbnails — reverted to 4:3.
       className="relative w-full aspect-[4/3] overflow-hidden rounded-xl group cursor-pointer img-shimmer-wrap"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}

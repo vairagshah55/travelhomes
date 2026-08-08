@@ -90,13 +90,12 @@ export function HowItWorks() {
                     strokeWidth={2}
                   />
                 </div>
-                {/* Ink badge, white numerals. The old #117479 fill was a
-                    near-neighbour of the cyan disc it sits on, so the badge
-                    read as a smudge; ink separates from both the disc and the
-                    white card, and the numerals hold 16:1 on it. Ring
-                    thickened + shadow added so the badge lifts off the disc
+                {/* White badge, teal numerals. Separates from the cyan disc
+                    by fill (white vs #3BD9DA) rather than by going to ink —
+                    #117479 text still reads clearly on white. Ring
+                    thickened + shadow so the badge lifts off the disc
                     instead of just sitting flush against it. */}
-                <span className="absolute -top-1.5 -left-1.5 w-[22px] h-[22px] md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-[11px] font-bold text-white bg-[#0a1c1c] ring-[3px] ring-white dark:ring-gray-900 shadow-md">
+                <span className="absolute -top-1.5 -left-1.5 w-[22px] h-[22px] md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-[11px] font-bold text-[#117479] bg-white ring-[3px] ring-white dark:ring-gray-900 shadow-md">
                   {step}
                 </span>
               </div>

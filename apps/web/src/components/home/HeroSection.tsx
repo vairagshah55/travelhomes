@@ -82,7 +82,7 @@ function HeroSlideshow() {
       />
       {/* Dots sit above the mobile CTA rail. The painted pill stays 6px tall,
           but each button carries a 44px hit area so it's tappable. */}
-      <div className="absolute bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
+      <div className="absolute bottom-4 md:bottom-8 lg:short:bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
         {HERO_PHOTOS.map((_, i) => (
           <button
             key={i}
@@ -310,9 +310,31 @@ export function HeroSection({
         />
 
         {/* Hero text + filters */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pt-20 pb-16 md:pt-28 md:pb-14 text-center overflow-visible">
+        {/* lg:pb-20: on desktop the search bar is the last piece of content
+            before this padding, and the slideshow dots below sit absolutely
+            positioned at the section's bottom edge (HeroSlideshow's
+            bottom-8) — md:pb-14 alone left them almost touching the bar.
+            lg:short:* tightens further on windows under 820px tall so the
+            first card row still clears the fold — see tailwind.config's
+            `short` screen. */}
+        {/* pt floor: the header is a fixed h-20 (80px) overlay at md+, so
+            content padding can't drop much below that without sliding
+            underneath it — lg:pt-24 (96px) is close to the safe minimum.
+            pb floor: dots sit "bottom-8" (32px) inside this padding, so
+            lg:short:pb-16 (64px) is the minimum that keeps ~32px clearance
+            between them and the search bar above — pb-14 was the original
+            bug (see the pt-28/pb-14 comment above this block). */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 sm:px-8 pt-20 pb-16 md:pt-28 lg:pt-24 md:pb-14 lg:pb-20 lg:short:pb-16 text-center overflow-visible">
           <motion.h1
-            className="text-[30px] sm:text-5xl md:text-[56px] lg:text-[64px] font-semibold text-white leading-[1.08] sm:leading-[1.05] tracking-[-0.025em] mb-3 md:mb-5 text-balance"
+            // Capped at md's 56px instead of scaling further to 64px at lg —
+            // the extra size bought little on wide screens and cost two full
+            // lines of vertical space the landing page needs to bring the
+            // first card row closer to the fold. Tried dropping further on
+            // short windows, but at 56px→30px the heading read as too small
+            // against the full-width photo — reverted; 56px holds on short
+            // windows too, so getting the whole row on-screen with zero
+            // scroll isn't always possible without hurting the hero's look.
+            className="text-[30px] sm:text-5xl md:text-[56px] font-semibold text-white leading-[1.08] sm:leading-[1.05] tracking-[-0.025em] mb-3 md:mb-5 text-balance"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
@@ -323,7 +345,10 @@ export function HeroSection({
           </motion.h1>
 
           <motion.p
-            className="text-white/85 text-[15px] sm:text-[17px] max-w-[19rem] sm:max-w-md mb-6 md:mb-10 leading-snug text-balance"
+            // Tried hiding this on short windows to buy more room for the
+            // card row below, but losing it left the hero feeling sparse —
+            // reverted, kept visible at every height.
+            className="text-white/85 text-[15px] sm:text-[17px] max-w-[19rem] sm:max-w-md mb-6 md:mb-10 lg:mb-6 leading-snug text-balance"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
@@ -334,7 +359,7 @@ export function HeroSection({
           {/* Category filter pills — hidden on phones, where they duplicated
               the tabs already in MobileSearchSheet; centred row from sm up. */}
           <motion.div
-            className="hidden sm:flex flex-nowrap items-center justify-start sm:justify-center gap-2 md:gap-3 mb-5 md:mb-8 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
+            className="hidden sm:flex flex-nowrap items-center justify-start sm:justify-center gap-2 md:gap-3 mb-5 md:mb-8 lg:mb-5 lg:short:mb-3 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
             initial="hidden"
             animate="visible"
             variants={{

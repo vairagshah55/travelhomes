@@ -99,7 +99,7 @@ function ResultCard({
               // Exactly fills the rail's visible width (viewport minus the
               // rail-bleed's 1rem inset on each side) — one card, edge to
               // edge, zero peek of the next one bleeding in.
-              className="group block snap-start w-[calc(100vw-2rem)] max-w-[420px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3"
+              className="group block snap-start w-[calc(100vw-2rem)] max-w-[420px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink card-shimmer-wrap rounded-2xl p-1.5 pb-3 lg:short:pb-1.5"
             >
               {/* Image */}
               <div className="relative">
@@ -147,7 +147,7 @@ function ResultCard({
               </div>
 
               {/* Details */}
-              <div className="pt-3 px-1 space-y-1.5">
+              <div className="pt-3 px-1 space-y-1.5 lg:short:pt-2 lg:short:space-y-1">
                 {/* Title + Rating */}
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-semibold text-[15px] leading-snug text-gray-900 dark:text-white line-clamp-1">

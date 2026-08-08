@@ -67,7 +67,11 @@ function OfferSection({
       <Section
         title={title}
         subtitle={subtitle}
-        className="py-8 md:py-12"
+        // Tighter top padding than the old py-8/12 (bottom kept as-is): the
+        // landing page wants the first card row visible closer to the fold,
+        // right under the hero. lg:short: tightens further on windows under
+        // 820px tall — see tailwind.config's `short` screen.
+        className="pt-5 pb-8 md:pt-7 md:pb-12 lg:short:pt-3"
         sectionId={sectionId}
         rightContent={viewAllHref ? <ViewAllLink href={viewAllHref} /> : undefined}
       >

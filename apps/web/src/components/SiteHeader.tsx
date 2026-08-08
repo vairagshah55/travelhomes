@@ -309,7 +309,7 @@ export default function SiteHeader({
           isScrolled ? "backdrop-blur-md" : "backdrop-blur-none"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="max-w-7xl mx-auto px-5 sm:px-6">
           {/* Shorter bar on phones — 80px of chrome is a lot of a 640px viewport. */}
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Phone logo. The horizontal lockup is 4.63:1 — at the desktop
@@ -997,7 +997,7 @@ export default function SiteHeader({
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isMobileMenuOpen}
-                className={`lg:hidden ml-1 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out ${
+                className={`lg:hidden ml-3 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-500 ease-in-out ${
                   isScrolled ? "text-gray-800 hover:bg-gray-100" : "text-white hover:bg-white/15"
                 }`}
               >

@@ -65,10 +65,13 @@ export function ServiceListingBanner() {
 
               <Button
                 onClick={() => navigate("/hostwithus")}
-                // Ink button on cyan — the logo's own black-on-cyan pairing, and it
-                // reads far harder here than the mid-tone brand fill would.
-                // Full-bleed on mobile — a thumb-sized target beats a tidy one.
-                className="group bg-[#0a1c1c] hover:bg-[#0d4548] text-white rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 w-full md:w-fit mt-1 md:mt-2"
+                // White fill now does the contrast work against the cyan
+                // panel on its own, so the earlier white border is gone —
+                // it'd just be invisible on top of a white button anyway.
+                // text-[#117479] is the site's actual brand teal (the same
+                // shade used for icons/text on white elsewhere, e.g. the
+                // search pill) — not the one-off blue tried earlier.
+                className="group bg-white hover:bg-[#e6fafa] text-[#117479] rounded-full px-8 h-12 font-semibold shadow-sm hover:shadow-md transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 w-full md:w-fit mt-1 md:mt-2"
               >
                 Become a Host
                 <ArrowRight
