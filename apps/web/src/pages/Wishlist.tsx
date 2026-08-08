@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Heart, X, Star, MapPin, Users } from "lucide-react";
+import { Heart, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Header from "@/components/Header";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import MobileUserNav from "@/components/MobileUserNav";
 import { getWishlist, removeWishlistItem, WishlistItem, WISHLIST_UPDATED } from "@/lib/wishlist";
 import { IoIosArrowBack } from "react-icons/io";
 import { useNavigate } from "react-router-dom";
-import { getImageUrl } from "@/lib/utils";
+import CardImageCarousel from "@/components/CardImageCarousel";
 import { CustomPagination } from "@/components/CustomPagination";
 
 /** Mirrors the real card grid below (same columns, aspect ratio, badge/heart
@@ -16,7 +17,7 @@ const WishlistSkeleton = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
     {Array.from({ length: 8 }).map((_, i) => (
       <div key={i} className="flex flex-col gap-4">
-        <div className="relative aspect-[3/2] rounded-xl overflow-hidden motion-skeleton" />
+        <div className="relative aspect-[4/3] rounded-xl overflow-hidden motion-skeleton" />
         <div className="flex justify-between items-start gap-3">
           <div className="flex-1 space-y-2">
             <div className="h-4 w-3/4 rounded motion-skeleton" />
@@ -86,34 +87,42 @@ const Wishlist = () => {
 
   return (
     <div className="flex flex-col min-h-screen gap-0 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header variant="transparent" className="fixed w-full z-50" />
+      <SiteHeader />
 
       <main className="px-4  mt-20 py-4 flex-1">
-        <div onClick={() => navigate(-1)} className="mb-1 cursor-pointer flex items-center gap-1">
+        <div
+          onClick={() => navigate(-1)}
+          className="mb-6 cursor-pointer inline-flex items-center gap-2 text-[#0a1c1c] hover:text-[#117479] transition-colors"
+        >
           <IoIosArrowBack size={20} />
-          <h1 className="text-2xl max-md:text-lg font-semibold text-dashboard-heading font-poppins leading-[46px]">
-            Wishlist
-          </h1>
+          <h1 className="text-2xl max-md:text-lg font-semibold font-poppins">Wishlist</h1>
         </div>
         <div className="max-w-7xl mx-auto ">
           {loadingOffers && <WishlistSkeleton />}
           {offerError && (
-            <div className="text-red-500 text-center">
+            <div className="text-red-500 text-center py-10">
               Failed to load offers. Please try again later.
             </div>
           )}
           {!loadingOffers &&
             !offerError &&
             (filteredItems.length === 0 ? (
-              <div className="text-center py-10">
-                <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-dashboard-heading mb-2">
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-full bg-[#e6fafa] flex items-center justify-center mx-auto mb-4">
+                  <Heart className="h-7 w-7 text-[#117479]" />
+                </div>
+                <h3 className="text-xl font-semibold text-[#0a1c1c] mb-2">
                   Your wishlist is empty
                 </h3>
-                <p className="text-dashboard-body mb-6">
+                <p className="text-gray-500 mb-6">
                   Start exploring and save your favorite places and activities
                 </p>
-                <Button onClick={() => (window.location.href = "/")}>Start Exploring</Button>
+                <Button
+                  onClick={() => navigate("/")}
+                  className="bg-[#117479] hover:bg-[#0d5c60] text-white rounded-full px-6"
+                >
+                  Start Exploring
+                </Button>
               </div>
             ) : (
               <>
@@ -121,28 +130,16 @@ const Wishlist = () => {
                   {paginatedItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex flex-col gap-4 cursor-pointer"
-                      onClick={() => {
-                        if (item.type === "campervan") {
-                          navigate(`${item.id}`);
-                        } else if (item.type === "stay") {
-                          navigate(`${item.id}`);
-                        } else if (item.type === "activity") {
-                          navigate(`${item.id}`);
-                        }
-                      }}
+                      className="group flex flex-col gap-3 cursor-pointer card-shimmer-wrap rounded-2xl p-1.5 pb-2"
+                      onClick={() => navigate(item.id)}
                     >
-                      {/* Image Container */}
-                      <div className="relative aspect-[3/2] rounded-xl overflow-hidden">
-                        <img
-                          src={getImageUrl(item.image)}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
+                      {/* Image */}
+                      <div className="relative">
+                        <CardImageCarousel images={[item.image]} alt={item.title} />
 
                         {/* Type Badge */}
-                        <div className="absolute top-4 left-4">
-                          <Badge className="bg-white hover:bg-black/30 dark:bg-black dark:text-white hover:text-white text-dashboard-primary px-2 py-1 rounded font-geist font-bold text-sm">
+                        <div className="absolute top-3 left-3 z-20">
+                          <Badge className="bg-white/90 backdrop-blur-sm text-[#0a1c1c] px-2.5 py-1 rounded-full font-bold text-[11px] shadow-sm">
                             {item.type === "campervan"
                               ? "Camper Van"
                               : item.type === "stay"
@@ -151,82 +148,41 @@ const Wishlist = () => {
                           </Badge>
                         </div>
 
-                        {/* Remove Button */}
-                        <div className="absolute top-4 right-4 z-10">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFromWishlist(item.id);
-                            }}
-                            className="h-10 w-10 p-2 bg-white/80 backdrop-blur-sm rounded-full hover:bg-white transition-colors"
-                          >
-                            <Heart className="h-full w-full text-red-600 fill-red-600" />
-                          </Button>
-                        </div>
-
-                        {/* Carousel Indicators */}
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                          {[...Array(5)].map((_, i) => (
-                            <div
-                              key={i}
-                              className={`w-${i === 0 ? "3" : "2"} h-1 rounded-full ${
-                                i === 0 ? "bg-white" : "bg-gray-400"
-                              }`}
-                            ></div>
-                          ))}
-                        </div>
+                        {/* Remove from wishlist */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromWishlist(item.id);
+                          }}
+                          aria-label={`Remove ${item.title} from wishlist`}
+                          className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md bg-black/25 hover:scale-110 active:scale-90 transition-all duration-200"
+                        >
+                          <Heart className="w-[18px] h-[18px] fill-red-500 text-red-500 drop-shadow-sm" />
+                        </button>
                       </div>
 
                       {/* Content */}
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-[15px] text-dashboard-primary font-plus-jakarta mb-1.5">
+                      <div className="flex justify-between items-start gap-2 px-1">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <h3 className="font-semibold text-[15px] leading-snug text-[#0a1c1c] line-clamp-1">
                             {item.title}
                           </h3>
 
-                          <div className="flex items-center gap-1.5 mb-2">
-                            {item.type === "campervan" ? (
-                              <p className="text-sm text-dashboard-neutral-07 font-poppins">
-                                {item.location}
-                              </p>
-                            ) : (
-                              <>
-                                <MapPin className="h-4 w-4 text-dashboard-neutral-07" />
-                                <p className="text-sm text-dashboard-neutral-07 font-poppins">
-                                  {item.location}
-                                </p>
-                              </>
-                            )}
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+                            <p className="text-[13px] text-gray-500 truncate">{item.location}</p>
                           </div>
 
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-sm text-dashboard-neutral-07 line-through font-plus-jakarta">
-                              ₹2890
-                            </span>
-                            <span className="font-bold text-base text-dashboard-primary font-plus-jakarta">
-                              {item.price}
-                            </span>
-                          </div>
+                          <p className="font-bold text-[15px] text-[#0a1c1c] pt-0.5">
+                            {item.price}
+                          </p>
                         </div>
 
-                        <div className="flex flex-col items-end gap-4">
-                          <div className="flex items-center gap-1.5">
-                            <Star className="h-4 w-4 fill-dashboard-primary text-dashboard-primary" />
-                            <span className="text-sm font-plus-jakarta text-dashboard-primary">
-                              {item.rating}
-                            </span>
-                          </div>
-
-                          {item.type === "stay" && (
-                            <div className="flex items-center gap-1.5">
-                              <Users className="h-4 w-4 text-dashboard-neutral-07" />
-                              <span className="text-sm text-dashboard-neutral-07 font-poppins">
-                                2
-                              </span>
-                            </div>
-                          )}
+                        <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                          <Star className="h-3.5 w-3.5 fill-current text-[#0a1c1c]" />
+                          <span className="text-[13px] font-medium text-[#0a1c1c]">
+                            {item.rating}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -242,6 +198,11 @@ const Wishlist = () => {
         </div>
       </main>
       <Footer />
+      {/* Clearance for the fixed bottom nav, painted in the footer's own
+          colour so the page doesn't end on a white band. Collapses to 0 at lg,
+          where the nav is hidden. Matches Index.tsx's pattern. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+      <MobileUserNav />
     </div>
   );
 };

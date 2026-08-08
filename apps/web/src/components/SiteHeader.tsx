@@ -302,7 +302,10 @@ export default function SiteHeader({
 
   /* The header is transparent over the hero photo, so the logo has to be the
      white lockup there and the ink one everywhere else. */
-  const onDarkHeader = !showFilterButtons && !pathname.includes("search");
+  // Only "/" has a dark hero photo behind the header — every other page
+  // SiteHeader renders on (search, wishlist, ...) is a plain light surface,
+  // so it should never sit in "white logo/icon on dark hero" mode.
+  const onDarkHeader = !showFilterButtons && pathname === "/";
   const showMobileSearchPill = showFilterButtons && !isSearchPage;
 
   const navTabs = [

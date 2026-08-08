@@ -1102,10 +1102,12 @@ export default function SearchResults() {
         </div>
       </div>
 
-      {/* <div>
-        <MobileUserNav />
-      </div> */}
       <Footer />
+      {/* Clearance for the fixed bottom nav, painted in the footer's own
+          colour so the page doesn't end on a white band. Collapses to 0 at lg,
+          where the nav is hidden. Matches Index.tsx's pattern. */}
+      <div className="bg-[#0a1c1c] pb-mobile-nav" aria-hidden />
+      <MobileUserNav />
     </div>
   );
 }
