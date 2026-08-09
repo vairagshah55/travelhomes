@@ -50,9 +50,12 @@ async function getByEmail(emailParam) {
 
   let vendorStatus = vendorDoc?.status;
 
-  // Safety fallback: missing vendor record but the user has at least one
-  // approved offer → treat as approved so the UI doesn't get stuck.
-  if (!vendorStatus && userDoc) {
+  // Safety fallback: the Vendor record may be missing, or its `status` may
+  // lag behind (e.g. approved through a listing-approval path that doesn't
+  // sync Vendor.status back). If the user has at least one approved
+  // service/offer, they should count as an approved vendor regardless of
+  // what the Vendor doc currently says, so the UI doesn't get stuck.
+  if (vendorStatus !== "approved" && vendorStatus !== "active" && userDoc) {
     const hasApproved = await Offer.exists({ userId: userDoc._id, status: "approved" });
     if (hasApproved) vendorStatus = "approved";
   }
