@@ -1,8 +1,19 @@
 import React from "react";
-import { IndianRupee, Percent, Tag } from "lucide-react";
+import {
+  IndianRupee,
+  Percent,
+  Tag,
+  Award,
+  PartyPopper,
+  CalendarRange,
+  Sparkles,
+  Check,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { type DiscountOffer } from "./types";
 import { ErrorMsg, StepHeader } from "./primitives";
+import { iconShellClass, iconShellFocusClass, iconSlotClass } from "./primitives/IconInput";
 
 type OfferKey = "firstUser" | "festival" | "weekly" | "special";
 
@@ -22,83 +33,75 @@ interface DiscountOffersStepProps {
   embedded?: boolean;
 }
 
+/**
+ * Each offer used to carry its own accent hex — purple / amber / green / rose —
+ * and enabling one repainted its border, background, title, icon chip, savings
+ * pill and toggle in that colour. Four unrelated saturated hues, none of them
+ * brand, which is what made this step look like a different product.
+ *
+ * Selection state is now the brand teal for all four; per-offer identity is
+ * carried by the icon alone. That is also what let the inline styles and the
+ * `useState(focused)` below go away — they only existed because the accent was a
+ * runtime value that couldn't be written as a Tailwind class.
+ *
+ * Icons are Lucide, matching the rest of the flow. The emoji they replace
+ * rendered as OS-specific colour glyphs that sat oddly beside line icons.
+ */
 const OFFER_CONFIG: Record<
   OfferKey,
-  { emoji: string; label: string; description: string; color: string; bg: string }
+  { Icon: LucideIcon; label: string; description: string }
 > = {
   firstUser: {
-    emoji: "🎖️",
+    Icon: Award,
     label: "First 5 Guests",
     description: "Welcome discount for your very first 5 bookings",
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.06)",
   },
   festival: {
-    emoji: "🎉",
+    Icon: PartyPopper,
     label: "Festival Offer",
     description: "Seasonal promotions tied to holidays & festivals",
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.06)",
   },
   weekly: {
-    emoji: "📅",
+    Icon: CalendarRange,
     label: "Weekly / Monthly",
     description: "Savings for guests who stay longer",
-    color: "#10b981",
-    bg: "rgba(16,185,129,0.06)",
   },
   special: {
-    emoji: "⭐",
+    Icon: Sparkles,
     label: "Special Offer",
     description: "Custom promotion for any occasion",
-    color: "#f43f5e",
-    bg: "rgba(244,63,94,0.06)",
   },
 };
 
-const Toggle = ({
-  enabled,
-  onToggle,
-  color,
-}: {
-  enabled: boolean;
-  onToggle: () => void;
-  color: string;
-}) => (
+const Toggle = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => (
   <button
     type="button"
     onClick={onToggle}
     role="switch"
     aria-checked={enabled}
-    style={{
-      backgroundColor: enabled ? color : undefined,
-      boxShadow: enabled ? `0 0 0 3px ${color}22` : "none",
-    }}
     className={cn(
-      "relative w-[44px] h-[24px] rounded-full border-none cursor-pointer flex-shrink-0 transition-colors [transition-duration:250ms]",
-      !enabled && "bg-th-warm-border",
+      "relative w-[44px] h-[24px] rounded-full border-none cursor-pointer shrink-0",
+      "transition-colors duration-200",
+      "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color:var(--th-ring)]",
+      enabled ? "bg-th-brand" : "bg-th-warm-border-strong",
     )}
   >
     <span
-      style={{
-        transform: enabled ? "translateX(20px)" : "translateX(0)",
-        transition: "transform 0.25s cubic-bezier(0.34,1.56,0.64,1)",
-      }}
-      className="absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.2)] block"
+      className={cn(
+        "absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-th-surface-0 block",
+        "shadow-[0_1px_4px_rgba(10,28,28,0.25)]",
+        "transition-transform duration-200 ease-th-spring",
+        enabled ? "translate-x-[20px]" : "translate-x-0",
+      )}
     />
   </button>
 );
 
-const TypeSegment = ({
-  value,
-  onChange,
-  color,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  color: string;
-}) => (
-  <div className="flex rounded-[11px] bg-th-warm-surface p-[3px] gap-[3px]">
+const TypeSegment = ({ value, onChange }: { value: string; onChange: (v: string) => void }) => (
+  <div
+    role="group"
+    className="flex rounded-[11px] bg-th-warm-surface border border-th-warm-border p-[3px] gap-[3px]"
+  >
     {[
       { label: "Percentage", val: "percentage", Icon: Percent },
       { label: "Fixed Amount", val: "fixed", Icon: IndianRupee },
@@ -109,16 +112,15 @@ const TypeSegment = ({
           key={val}
           type="button"
           onClick={() => onChange(val)}
-          style={{
-            ...(active
-              ? { border: `1.5px solid ${color}30`, color, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
-              : { border: "1.5px solid transparent" }),
-          }}
+          aria-pressed={active}
           className={cn(
-            "flex-1 flex items-center justify-center gap-[6px] h-[36px] rounded-[9px]",
+            "flex-1 flex items-center justify-center gap-[6px] h-[36px] rounded-[9px] border",
             "text-[12px] font-bold cursor-pointer tracking-[0.01em]",
             "transition-[background-color,color,border-color,box-shadow] duration-150",
-            active ? "bg-th-surface-0" : "bg-transparent text-th-warm-text-muted",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--th-ring)]",
+            active
+              ? "bg-th-surface-0 border-th-brand-border-soft text-th-brand shadow-[0_1px_3px_rgba(10,28,28,0.08)]"
+              : "bg-transparent border-transparent text-th-warm-text-muted hover:text-th-warm-text-dark",
           )}
         >
           <Icon size={12} />
@@ -129,91 +131,82 @@ const TypeSegment = ({
   </div>
 );
 
+/**
+ * Reuses the shared icon-shell classes, so this matches every other field in the
+ * flow: white at rest with a visible edge → teal on hover → teal + ring on focus.
+ * It previously rested on a grey fill with a transparent border, which is the
+ * combination that reads as `disabled`.
+ *
+ * The `useState(focused)` this used to need is gone with the dynamic colour — CSS
+ * :focus-within does the work now (CONVENTIONS Rule 2).
+ */
 const AmountInput = ({
   value,
   onChange,
   placeholder,
   isPercent,
-  color,
   error,
+  ariaLabel,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   isPercent?: boolean;
-  color: string;
   error?: boolean;
-}) => {
-  // focused state is kept because border/bg/shadow use the dynamic `color` prop
-  // which can't be expressed as a static Tailwind class
-  const [focused, setFocused] = React.useState(false);
-  return (
-    <div
-      style={
-        error
-          ? {}
-          : {
-              border: `1.5px solid ${focused ? color : "transparent"}`,
-              backgroundColor: focused ? "#ffffff" : undefined,
-              boxShadow: focused ? `0 0 0 3px ${color}22, 0 1px 4px rgba(0,0,0,0.06)` : undefined,
-            }
-      }
-      className={cn(
-        "flex items-center rounded-[12px] overflow-hidden transition-all duration-150",
-        error
-          ? "border-[1.5px] border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-          : !focused
-            ? "bg-th-warm-surface"
-            : undefined,
-      )}
-    >
-      <div
-        style={
-          focused ? { borderRight: `1.5px solid ${color}30`, backgroundColor: `${color}12` } : {}
-        }
-        className={cn(
-          "flex items-center px-[10px] h-[46px] flex-shrink-0 transition-all duration-150",
-          !focused && "border-r border-th-warm-border bg-th-warm-surface",
-        )}
-      >
-        {isPercent ? (
-          <Percent
-            size={12}
-            style={{ color: focused ? color : undefined }}
-            className={cn(!focused && "text-th-warm-text-muted")}
-          />
-        ) : (
-          <IndianRupee
-            size={12}
-            style={{ color: focused ? color : undefined }}
-            className={cn(!focused && "text-th-warm-text-muted")}
-          />
-        )}
-      </div>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder={placeholder}
-        className={cn(
-          "flex-1 h-[46px] px-3 text-[15px] font-semibold bg-transparent border-none outline-none tracking-[-0.01em] min-w-0",
-          value ? "text-th-text-primary" : "text-th-warm-text-muted",
-        )}
-      />
-      {isPercent && (
-        <span
-          className="pr-3 text-[12px] text-th-warm-text-muted font-semibold transition-opacity duration-150"
-          style={{ opacity: value ? 1 : 0 }}
-        >
-          %
-        </span>
-      )}
+  ariaLabel?: string;
+}) => (
+  <div
+    className={cn(
+      iconShellClass,
+      !error && iconShellFocusClass,
+      error &&
+        "border-th-error-bright-soft focus-within:shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
+    )}
+  >
+    <div className={cn(iconSlotClass, "px-3 h-[48px]")}>
+      {isPercent ? <Percent size={12} /> : <IndianRupee size={12} />}
     </div>
-  );
-};
+    <input
+      type="text"
+      inputMode="numeric"
+      value={value}
+      onChange={(e) => onChange(e.target.value.replace(/[^0-9.]/g, ""))}
+      placeholder={placeholder}
+      aria-label={ariaLabel}
+      className="flex-1 h-[48px] px-3 text-[15px] font-semibold text-th-text-primary placeholder:text-th-warm-text-muted placeholder:font-normal bg-transparent border-none outline-none tracking-[-0.01em] min-w-0"
+    />
+    {isPercent && value && (
+      <span className="pr-3 text-[12px] text-th-warm-text-muted font-semibold">%</span>
+    )}
+  </div>
+);
+
+/**
+ * Label for the fields revealed when an offer is switched on. Both of those
+ * fields are hard-required once enabled (see validateCaravanStep — an enabled
+ * offer with a blank value or final price blocks the step), so they carry the
+ * same red asterisk as every other mandatory field in the flow. Discount Type is
+ * never blank — it defaults to "percentage" — so it isn't marked.
+ */
+const FieldLabel = ({
+  children,
+  required,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) => (
+  <label className="text-[11.5px] font-bold text-th-warm-text-dark uppercase tracking-[0.06em]">
+    {children}
+    {required && (
+      <>
+        <span aria-hidden="true" className="text-th-error-bright ml-[3px]">
+          *
+        </span>
+        <span className="sr-only"> (required)</span>
+      </>
+    )}
+  </label>
+);
 
 const OfferCard = ({
   offerKey,
@@ -246,92 +239,66 @@ const OfferCard = ({
         : `Guests save ₹${offer.value}`
       : null;
 
+  const { Icon } = cfg;
+
   return (
     <div
-      style={{
-        ...(offer.enabled ? { border: `1.5px solid ${cfg.color}` } : {}),
-        boxShadow: offer.enabled
-          ? `0 0 0 3px ${cfg.color}18, 0 2px 12px rgba(0,0,0,0.04)`
-          : "0 2px 12px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03)",
-      }}
       className={cn(
-        "bg-th-surface-0 rounded-[20px] overflow-hidden transition-all duration-200",
-        !offer.enabled && "border-[1.5px] border-th-warm-border",
+        "bg-th-surface-0 rounded-[18px] overflow-hidden transition-[border-color,box-shadow] duration-200",
+        "border",
+        offer.enabled
+          ? "border-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
+          : "border-[color:var(--onb-card-border)] shadow-[var(--onb-card-shadow)]",
       )}
     >
-      <div
-        style={{ backgroundColor: offer.enabled ? cfg.bg : undefined }}
-        className={cn(
-          "flex items-center justify-between px-5 py-4 transition-colors duration-200",
-          !offer.enabled && "bg-th-surface-0",
-        )}
-      >
-        <div className="flex items-center gap-3">
+      <div className="flex items-center justify-between px-5 py-4 gap-4">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            style={
-              offer.enabled
-                ? { backgroundColor: `${cfg.color}18`, border: `1.5px solid ${cfg.color}30` }
-                : {}
-            }
             className={cn(
-              "w-[42px] h-[42px] rounded-[13px] flex items-center justify-center text-[20px] flex-shrink-0 transition-all duration-200",
-              !offer.enabled && "bg-th-warm-surface border-[1.5px] border-th-warm-border",
+              "w-[42px] h-[42px] rounded-[12px] flex items-center justify-center shrink-0 border",
+              "transition-colors duration-200",
+              offer.enabled
+                ? "bg-th-brand-soft border-th-brand-border-soft text-th-brand"
+                : "bg-th-warm-surface border-th-warm-border text-th-warm-text-muted",
             )}
           >
-            {cfg.emoji}
+            <Icon size={19} strokeWidth={2} />
           </div>
-          <div>
-            <p
-              style={{ color: offer.enabled ? cfg.color : undefined }}
-              className={cn(
-                "text-[13.5px] font-bold tracking-[-0.01em] transition-colors duration-200",
-                !offer.enabled && "text-th-text-primary",
-              )}
-            >
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-bold tracking-[-0.01em] text-th-text-primary">
               {label}
             </p>
-            <p className="text-[11.5px] text-th-warm-text-dark mt-[2px]">{cfg.description}</p>
+            <p className="text-[11.5px] text-[color:var(--onb-text-secondary,#657477)] mt-[2px]">
+              {cfg.description}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+        <div className="flex items-center gap-3 shrink-0">
           {savingsHint && (
-            <span
-              style={{
-                color: cfg.color,
-                backgroundColor: `${cfg.color}14`,
-                border: `1px solid ${cfg.color}30`,
-              }}
-              className="text-[11px] font-bold rounded-full px-[10px] py-[3px] whitespace-nowrap"
-            >
+            <span className="hidden sm:inline-block text-[11px] font-bold rounded-full px-[10px] py-[3px] whitespace-nowrap text-th-brand bg-th-brand-soft border border-th-brand-border-soft">
               {savingsHint}
             </span>
           )}
-          <Toggle enabled={offer.enabled} onToggle={onToggle} color={cfg.color} />
+          <Toggle enabled={offer.enabled} onToggle={onToggle} />
         </div>
       </div>
 
       {offer.enabled && (
-        <div style={{ backgroundColor: cfg.bg }} className="px-5 pb-5">
-          <div style={{ backgroundColor: `${cfg.color}25` }} className="h-px mb-[18px]" />
+        <div className="px-5 pb-5">
+          <div className="h-px mb-[18px] bg-th-warm-border" />
 
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
-                Discount Type
-              </label>
-              <TypeSegment
-                value={offer.type}
-                onChange={(v) => onOfferChange("type", v)}
-                color={cfg.color}
-              />
+              <FieldLabel>Discount Type</FieldLabel>
+              <TypeSegment value={offer.type} onChange={(v) => onOfferChange("type", v)} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
+                <FieldLabel required>
                   {offer.type === "percentage" ? "Percentage" : "Fixed Amount"}
-                </label>
+                </FieldLabel>
                 <AmountInput
                   value={offer.value}
                   onChange={(v) => {
@@ -340,37 +307,36 @@ const OfferCard = ({
                   }}
                   placeholder={offer.type === "percentage" ? "e.g. 20" : "e.g. 500"}
                   isPercent={offer.type === "percentage"}
-                  color={cfg.color}
                   error={!!valueError}
+                  ariaLabel={offer.type === "percentage" ? "Discount percentage" : "Discount amount"}
                 />
                 <ErrorMsg message={valueError} size={11} iconSize={11} marginTop={2} />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
-                  Final Price
-                </label>
+                <FieldLabel required>Final Price</FieldLabel>
                 <AmountInput
                   value={offer.finalPrice}
                   onChange={(v) => onOfferChange("finalPrice", v)}
                   placeholder="e.g. 1200"
-                  color={cfg.color}
                   error={!!finalPriceError}
+                  ariaLabel="Final price after discount"
                 />
                 <ErrorMsg message={finalPriceError} size={11} iconSize={11} marginTop={2} />
               </div>
             </div>
 
             {offer.value && offer.finalPrice && (
-              <div
-                style={{
-                  backgroundColor: `${cfg.color}10`,
-                  border: `1px solid ${cfg.color}25`,
-                }}
-                className="flex items-center gap-2 px-[14px] py-[10px] rounded-[11px]"
-              >
-                <span className="text-[16px]">✓</span>
-                <span style={{ color: cfg.color }} className="text-[12.5px] font-semibold">
+              <div className="flex items-center gap-2 px-[14px] py-[10px] rounded-[11px] bg-th-success-bright-bg border border-th-success-bright-border">
+                {/* Lucide Check, not a ✓ text glyph — the glyph rendered at a
+                    different weight and baseline to every other icon here. */}
+                <Check
+                  size={14}
+                  strokeWidth={3}
+                  aria-hidden="true"
+                  className="shrink-0 text-th-success-bright"
+                />
+                <span className="text-[12.5px] font-semibold text-th-success-bright">
                   {savingsHint} · Final price ₹{offer.finalPrice}
                 </span>
               </div>
@@ -433,8 +399,7 @@ const DiscountOffersStep: React.FC<DiscountOffersStepProps> = ({
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
       <StepHeader
-        kicker="Promotions"
-        title="Discount Offers"
+        kicker="Discount Offers"
         subtitle="Set up promotional offers to attract more bookings. All optional."
         extra={
           activeCount > 0 ? (

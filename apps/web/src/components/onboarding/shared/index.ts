@@ -1,4 +1,5 @@
 export { default as OnboardingLayout } from "./OnboardingLayout";
+export type { OnboardingPhase } from "./OnboardingLayout";
 export { default as BusinessDetailsStep } from "./BusinessDetailsStep";
 export { default as PersonalDetailsStep } from "./PersonalDetailsStep";
 export { default as TermsConditionsStep } from "./TermsConditionsStep";

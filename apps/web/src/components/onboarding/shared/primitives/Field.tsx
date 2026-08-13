@@ -10,6 +10,10 @@ interface FieldProps {
   right?: React.ReactNode;
   // Helper text shown below the input.
   help?: React.ReactNode;
+  // Associates the label with its control. Optional because most call sites
+  // render uncontrolled primitives that don't yet accept an id — pass it where
+  // the child does so screen readers announce the label on focus.
+  htmlFor?: string;
   children: React.ReactNode;
 }
 
@@ -20,24 +24,41 @@ const Field: React.FC<FieldProps> = ({
   error,
   right,
   help,
+  htmlFor,
   children,
 }) => (
-  <div className="flex flex-col gap-1.5">
-    <div className={`flex items-center ${right ? "justify-between" : "gap-2"} mb-0.5`}>
-      <label className="text-xs font-semibold text-th-warm-text-dark tracking-[0.03em] uppercase">
+  <div className="flex flex-col gap-2">
+    <div className={`flex items-baseline ${right ? "justify-between" : "gap-2"} gap-3`}>
+      <label
+        htmlFor={htmlFor}
+        className="text-[11.5px] font-bold text-th-warm-text-dark tracking-[0.06em] uppercase"
+      >
         {label}
-        {required && <span className="text-th-error-bright ml-[3px]">*</span>}
+        {required && (
+          <>
+            <span aria-hidden="true" className="text-th-error-bright ml-[3px]">
+              *
+            </span>
+            {/* The asterisk alone is colour-only signalling; this keeps the
+                requirement audible to screen readers. */}
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
       </label>
       {optional && !right && (
-        <span className="text-[10px] font-semibold text-th-warm-text-muted bg-th-warm-surface border border-th-warm-border rounded-full px-[7px] py-px">
+        <span className="text-[10px] font-semibold text-th-warm-text-muted tracking-[0.04em] uppercase">
           Optional
         </span>
       )}
       {right}
     </div>
     {children}
-    {help && <div className="text-[11px] text-th-warm-text-muted mt-[5px]">{help}</div>}
-    <ErrorMsg message={error} marginTop={2} />
+    {help && (
+      <div className="text-[12px] leading-[1.55] text-[color:var(--onb-text-secondary,#657477)]">
+        {help}
+      </div>
+    )}
+    <ErrorMsg message={error} marginTop={0} />
   </div>
 );
 

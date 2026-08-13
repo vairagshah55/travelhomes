@@ -9,6 +9,7 @@ import {
   Camera,
   UploadCloud,
   Sparkles,
+  GripVertical,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -54,8 +55,69 @@ interface DescriptionStepProps {
 const GALLERY_TARGET = 5;
 const GALLERY_MAX = 10;
 
-// Shared teal pill CTA — every "Add ___" action in this step uses the same
-// shape so they read as one design family instead of three different buttons.
+/**
+ * Drag-and-drop wiring for the upload targets.
+ *
+ * CONVENTIONS Rule 2 says visual state comes from CSS, not React state — this is
+ * the documented exception: there is no CSS selector for "a file is hovering over
+ * this element", so the highlight has to be driven by the drag events. The copy
+ * promises drag & drop, so the handlers have to be real.
+ */
+function useDropzone(onFiles: (files: FileList | null) => void) {
+  const [isDragging, setIsDragging] = React.useState(false);
+  const depth = React.useRef(0);
+
+  return {
+    isDragging,
+    handlers: {
+      onDragEnter: (e: React.DragEvent) => {
+        e.preventDefault();
+        depth.current += 1;
+        setIsDragging(true);
+      },
+      onDragOver: (e: React.DragEvent) => e.preventDefault(),
+      // Fires for every child element too, hence the depth counter.
+      onDragLeave: (e: React.DragEvent) => {
+        e.preventDefault();
+        depth.current -= 1;
+        if (depth.current <= 0) {
+          depth.current = 0;
+          setIsDragging(false);
+        }
+      },
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault();
+        depth.current = 0;
+        setIsDragging(false);
+        if (e.dataTransfer?.files?.length) onFiles(e.dataTransfer.files);
+      },
+    },
+  };
+}
+
+// Sub-heading for the blocks inside the Photos card. These aren't wrapped in
+// <Field>, so they carry the required marker themselves — same asterisk
+// treatment as Field so mandatory reads identically across the whole step.
+const SubLabel: React.FC<{ children: React.ReactNode; required?: boolean }> = ({
+  children,
+  required,
+}) => (
+  <p className="text-[11.5px] font-bold text-th-warm-text-dark uppercase tracking-[0.06em]">
+    {children}
+    {required && (
+      <>
+        <span aria-hidden="true" className="text-th-error-bright ml-[3px]">
+          *
+        </span>
+        <span className="sr-only"> (required)</span>
+      </>
+    )}
+  </p>
+);
+
+// Shared secondary CTA — every "Add ___" action in this step uses the same shape
+// so they read as one design family. Deliberately quiet: these sit next to the
+// primary Continue button, so an outlined teal pill, not a filled one.
 const PillCTA: React.FC<{
   icon?: React.ReactNode;
   label: string;
@@ -64,16 +126,13 @@ const PillCTA: React.FC<{
   children?: React.ReactNode;
   size?: "sm" | "md";
 }> = ({ icon, label, as = "button", onClick, children, size = "sm" }) => {
-  const padY = size === "md" ? "py-2" : "py-1.5";
-  const padX = size === "md" ? "px-4" : "px-[14px]";
-  const fontSize = size === "md" ? "text-[12.5px]" : "text-[12px]";
-
   const baseClass = cn(
-    "inline-flex items-center gap-1.5 font-bold text-th-brand bg-th-brand-soft border-[1.5px] border-th-brand-border-soft rounded-full cursor-pointer tracking-[0.01em] transition-colors duration-150 whitespace-nowrap",
-    "hover:bg-[rgba(59, 217, 218, 0.28)]",
-    padY,
-    padX,
-    fontSize,
+    "inline-flex items-center gap-1.5 font-bold text-th-brand tracking-[0.01em] whitespace-nowrap",
+    "bg-th-surface-0 border border-th-brand-border-soft rounded-full cursor-pointer",
+    "transition-[background-color,border-color,box-shadow] duration-150",
+    "hover:bg-th-brand-soft hover:border-th-brand",
+    "focus-within:ring-[3px] focus-within:ring-[color:var(--th-ring)]",
+    size === "md" ? "py-2 px-4 text-[12.5px]" : "py-[7px] px-3.5 text-[12px]",
   );
 
   if (as === "label") {
@@ -86,7 +145,14 @@ const PillCTA: React.FC<{
     );
   }
   return (
-    <button type="button" onClick={onClick} className={baseClass}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        baseClass,
+        "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color:var(--th-ring)]",
+      )}
+    >
       {icon}
       {label}
     </button>
@@ -117,7 +183,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   const sections = (
     <>
       <SectionCard
-        icon={<Type size={16} className="text-th-brand" strokeWidth={2.5} />}
+        icon={<Type size={17} className="text-th-brand" strokeWidth={2.2} />}
         title="Identity"
         subtitle="How your listing appears to guests"
       >
@@ -165,34 +231,38 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
       </SectionCard>
 
       <SectionCard
-        icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
+        icon={<ShieldCheck size={17} className="text-th-brand" strokeWidth={2.2} />}
         title="Rules & Regulations"
         subtitle="Guidelines guests must follow"
         action={
-          <PillCTA
-            icon={<Plus size={12} strokeWidth={2.5} />}
-            label="Add Rule"
-            onClick={onAddRule}
-          />
+          rules.length > 0 ? (
+            <PillCTA
+              icon={<Plus size={12} strokeWidth={2.5} />}
+              label="Add Rule"
+              onClick={onAddRule}
+            />
+          ) : undefined
         }
       >
-        <div className="flex flex-col gap-2">
-          {rules.map((rule, index) => (
-            <RuleRow
-              key={index}
-              index={index}
-              value={rule}
-              onChange={(v) => onUpdateRule(index, v)}
-              onRemove={() => onRemoveRule(index)}
-            />
-          ))}
-
-          {rules.length === 0 && <RulesEmptyState onAdd={onAddRule} />}
-        </div>
+        {rules.length === 0 ? (
+          <RulesEmptyState onAdd={onAddRule} />
+        ) : (
+          <div className="flex flex-col gap-2">
+            {rules.map((rule, index) => (
+              <RuleRow
+                key={index}
+                index={index}
+                value={rule}
+                onChange={(v) => onUpdateRule(index, v)}
+                onRemove={() => onRemoveRule(index)}
+              />
+            ))}
+          </div>
+        )}
       </SectionCard>
 
       <SectionCard
-        icon={<Camera size={16} className="text-th-brand" strokeWidth={2.5} />}
+        icon={<Camera size={17} className="text-th-brand" strokeWidth={2.2} />}
         title="Photos"
         subtitle="High quality photos get more bookings"
       >
@@ -207,7 +277,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             onRemove={() => onRemoveCover(0)}
           />
 
-          <div className="h-px bg-[#F0F0F0]" />
+          <div className="h-px bg-th-warm-border" />
 
           <GalleryBlock
             photos={photos}
@@ -224,14 +294,19 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   );
 
   if (embedded) {
-    return <div className="w-full flex flex-col gap-4">{sections}</div>;
+    // data-onboarding scopes the deep-teal form palette to this subtree so the
+    // component looks identical wherever it's hosted (see global.css).
+    return (
+      <div data-onboarding className="w-full flex flex-col gap-4">
+        {sections}
+      </div>
+    );
   }
   return (
-    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+    <div className="w-full flex flex-col gap-6">
       <StepHeader
         kicker="Caravan Details"
-        title="Tell guests about your caravan"
-        subtitle="Great photos and a clear description help guests choose you."
+        subtitle="A great first impression starts with the story of your stay — add the details that help travellers picture it."
       />
       <div className="w-full flex flex-col gap-4">{sections}</div>
     </div>
@@ -245,22 +320,23 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
 const RulesEmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
   <div
     className={cn(
-      "flex flex-col items-center justify-center gap-3",
-      "px-5 py-[26px] border-[1.5px] border-dashed border-th-brand-border-soft rounded-[14px]",
-      // Subtle teal-tinted background so the empty state feels intentional /
-      // inviting rather than a "you forgot something" grey panel.
-      "bg-th-brand-soft",
+      "flex flex-col items-center justify-center gap-3 text-center",
+      // Neutral at rest, matching the other empty states in this step
+      // (CoverDropzone, EmptySlot) — teal is reserved for hover/active, so a
+      // static panel that's never interacted with shouldn't sit in that color.
+      "px-5 py-8 border border-dashed border-th-warm-border-strong rounded-[14px]",
+      "bg-th-warm-surface",
     )}
   >
-    <div className="w-[42px] h-[42px] rounded-[13px] bg-th-surface-0 border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_2px_8px_rgba(59, 217, 218, 0.16)]">
-      <ShieldCheck size={18} className="text-th-brand" strokeWidth={2.2} />
+    <div className="w-11 h-11 rounded-[13px] bg-th-surface-0 border border-th-warm-border flex items-center justify-center shadow-[0_2px_8px_rgba(23,54,56,0.05)]">
+      <ShieldCheck size={19} className="text-th-brand" strokeWidth={2} />
     </div>
-    <div className="text-center">
-      <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">
-        No house rules yet
+    <div>
+      <p className="text-[13.5px] font-bold text-th-text-primary tracking-[-0.01em]">
+        Set expectations early
       </p>
-      <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">
-        Add a few so guests know what to expect.
+      <p className="text-[12.5px] leading-[1.55] text-[color:var(--onb-text-secondary,#657477)] mt-1 max-w-[34ch] mx-auto">
+        Add a few simple house rules so guests know what to expect before booking.
       </p>
     </div>
     <PillCTA
@@ -284,16 +360,26 @@ const RuleRow = ({
 }) => (
   <div
     className={cn(
-      "flex items-center gap-2.5 rounded-[13px] px-[10px] py-[6px] transition-all duration-150",
-      "bg-th-warm-surface border-[1.5px] border-transparent",
-      "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring)]",
+      // `group` is required for the group-focus-within: rules on the children
+      // below — without it they silently never applied.
+      "group flex items-center gap-2 rounded-[12px] pl-2.5 pr-1.5 py-1",
+      "bg-th-surface-0 border border-th-warm-border",
+      "transition-[border-color,box-shadow] duration-150",
+      "hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
+      "focus-within:border-th-brand focus-within:shadow-[0_0_0_3px_var(--th-ring)]",
     )}
   >
+    <GripVertical
+      size={13}
+      aria-hidden="true"
+      className="shrink-0 text-th-warm-border-strong opacity-0 sm:opacity-100 transition-colors duration-150"
+    />
     <span
       className={cn(
-        "w-6 h-6 rounded-full border-[1.5px] text-[10.5px] font-extrabold flex items-center justify-center shrink-0 transition-all duration-150",
-        "bg-th-warm-border border-transparent text-th-warm-text-muted",
-        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand",
+        "w-[22px] h-[22px] rounded-full text-[10.5px] font-extrabold shrink-0",
+        "flex items-center justify-center tabular-nums transition-colors duration-150",
+        "bg-th-warm-surface text-th-warm-text-muted",
+        "group-focus-within:bg-th-brand-soft group-focus-within:text-th-brand",
       )}
     >
       {index + 1}
@@ -302,17 +388,23 @@ const RuleRow = ({
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={`Rule ${index + 1}…`}
+      placeholder={`Rule ${index + 1} — e.g. No smoking inside`}
       maxLength={250}
-      className="flex-1 h-9 px-1 text-[13.5px] text-th-text-primary bg-transparent border-none outline-none font-[450]"
+      aria-label={`Rule ${index + 1}`}
+      className="flex-1 h-10 px-1 text-[14px] text-th-text-primary placeholder:text-th-warm-text-muted bg-transparent border-none outline-none font-normal"
     />
     <button
       type="button"
       onClick={onRemove}
       aria-label={`Remove rule ${index + 1}`}
-      className="w-7 h-7 rounded-[8px] border-none bg-transparent flex items-center justify-center cursor-pointer transition-all duration-150 shrink-0 hover:bg-[#fef2f2]"
+      className={cn(
+        "w-8 h-8 rounded-[9px] shrink-0 flex items-center justify-center cursor-pointer",
+        "bg-transparent border-none transition-colors duration-150",
+        "text-th-warm-text-muted hover:bg-th-error-bright-bg hover:text-th-error-bright",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-th-error-bright-soft",
+      )}
     >
-      <X size={13} className="text-th-warm-text-muted" />
+      <X size={14} />
     </button>
   </div>
 );
@@ -328,17 +420,15 @@ const CoverPhotoBlock: React.FC<{
   onRemove: () => void;
 }> = ({ file, error, onUpload, onRemove }) => (
   <div className="flex flex-col gap-3">
-    <div className="flex items-center justify-between">
+    <div className="flex items-start justify-between gap-3">
       <div>
-        <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
-          Cover Photo
-        </p>
-        <p className="text-[11.5px] text-th-warm-text-muted mt-0.5">
-          First image guests see — make it count
+        <SubLabel required>Cover Photo</SubLabel>
+        <p className="text-[12px] text-[color:var(--onb-text-secondary,#657477)] mt-0.5">
+          The first image guests see — make it count
         </p>
       </div>
       {file ? (
-        <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-th-success-bright bg-th-success-bright-bg border border-th-success-bright-border rounded-full px-[9px] py-[2px] pl-[7px]">
+        <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.06em] text-th-success-bright bg-th-success-bright-bg border border-th-success-bright-border rounded-full pl-1.5 pr-2 py-[3px] shrink-0">
           <Check size={10} strokeWidth={3} />
           Set
         </span>
@@ -360,23 +450,24 @@ const CoverPreview: React.FC<{
 }> = ({ file, onUpload, onRemove }) => {
   const src = useObjectURL(file);
   return (
-    <div className="group relative w-full h-[260px] overflow-hidden bg-gray-100 rounded-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.10)]">
+    <div className="group relative w-full h-[260px] overflow-hidden bg-th-warm-surface rounded-[16px] border border-th-warm-border">
+      {/* Blurred copy fills the letterbox so portrait shots don't sit on grey. */}
       <img
         src={src}
         alt=""
         aria-hidden="true"
-        className="absolute inset-0 w-full h-full object-cover opacity-[0.55] blur-[28px] scale-[1.15]"
+        className="absolute inset-0 w-full h-full object-cover opacity-[0.5] blur-[28px] scale-[1.15]"
       />
       <img src={src} alt="Cover" className="absolute inset-0 w-full h-full object-contain" />
-      <div className="absolute inset-0 flex items-center justify-center transition-all [transition-duration:250ms] bg-[linear-gradient(to_top,rgba(0,0,0,0.12),transparent_55%)] group-hover:bg-[linear-gradient(to_top,rgba(0,0,0,0.42),transparent_55%)]">
-        <label className="opacity-0 translate-y-[6px] group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200 inline-flex items-center gap-1.5 bg-[rgba(255,255,255,0.96)] backdrop-blur-[8px] text-th-text-primary text-[12.5px] font-bold px-[18px] py-[9px] rounded-full cursor-pointer shadow-[0_4px_16px_rgba(0,0,0,0.18)] tracking-[0.01em]">
+      <div className="absolute inset-0 flex items-center justify-center transition-colors duration-200 bg-[linear-gradient(to_top,rgba(10,28,28,0.14),transparent_55%)] group-hover:bg-[linear-gradient(to_top,rgba(10,28,28,0.44),transparent_55%)]">
+        <label className="opacity-0 translate-y-[6px] group-hover:opacity-100 group-hover:translate-y-0 focus-within:opacity-100 focus-within:translate-y-0 transition-[opacity,transform] duration-200 inline-flex items-center gap-1.5 bg-white/96 backdrop-blur-[8px] text-th-text-primary text-[12.5px] font-bold px-[18px] py-[9px] rounded-full cursor-pointer shadow-[0_4px_16px_rgba(10,28,28,0.18)] tracking-[0.01em]">
           <ImagePlus size={13} strokeWidth={2.5} />
           Change Photo
           <input
             type="file"
             accept="image/*"
             onChange={(e) => onUpload(e.target.files)}
-            className="hidden"
+            className="sr-only"
           />
         </label>
       </div>
@@ -384,7 +475,7 @@ const CoverPreview: React.FC<{
         type="button"
         onClick={onRemove}
         aria-label="Remove cover photo"
-        className="absolute top-[10px] right-[10px] w-[30px] h-[30px] rounded-full bg-[rgba(255,255,255,0.94)] backdrop-blur-[6px] border-none flex items-center justify-center cursor-pointer shadow-[0_2px_10px_rgba(0,0,0,0.15)]"
+        className="absolute top-2.5 right-2.5 w-[30px] h-[30px] rounded-full bg-white/94 backdrop-blur-[6px] border-none flex items-center justify-center cursor-pointer shadow-[0_2px_10px_rgba(10,28,28,0.16)] transition-colors hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-th-brand"
       >
         <X size={12} className="text-th-text-primary" />
       </button>
@@ -395,59 +486,66 @@ const CoverPreview: React.FC<{
 const CoverDropzone: React.FC<{
   error?: string;
   onUpload: (files: FileList | null) => void;
-}> = ({ error, onUpload }) => (
-  <div className="flex flex-col gap-1.5">
-    <label
-      className={cn(
-        "w-full flex flex-col items-center justify-center gap-3 cursor-pointer",
-        "h-[200px] rounded-[18px] border-2 border-dashed transition-all duration-200",
-        // Subtle radial highlight so the empty dropzone reads as a
-        // "drop here" target rather than a flat grey card.
-        "bg-th-warm-surface [background-image:radial-gradient(circle_at_50%_30%,rgba(59, 217, 218, 0.1),transparent_60%)]",
-        error
-          ? "border-th-error-bright-soft"
-          : "border-th-warm-border hover:border-th-brand hover:bg-th-brand-soft",
-      )}
-    >
-      <div
+}> = ({ error, onUpload }) => {
+  const { isDragging, handlers } = useDropzone(onUpload);
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        {...handlers}
         className={cn(
-          "w-14 h-14 rounded-[17px] bg-th-surface-0 border-[1.5px] flex items-center justify-center shadow-[0_4px_14px_rgba(0,0,0,0.06)] transition-all duration-200",
+          "group w-full flex flex-col items-center justify-center gap-3.5 cursor-pointer text-center",
+          "h-[220px] px-6 rounded-[16px] border border-dashed transition-all duration-200",
+          "focus-within:ring-[3px] focus-within:ring-[color:var(--th-ring)]",
           error
-            ? "border-th-warm-border"
-            : "border-th-warm-border group-hover:border-th-brand-border-soft",
+            ? "border-th-error-bright-soft bg-th-error-bright-bg"
+            : isDragging
+              ? "border-th-brand bg-th-brand-soft scale-[1.005]"
+              : "border-th-warm-border-strong bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
         )}
       >
-        <UploadCloud
-          size={24}
-          strokeWidth={2}
+        <div
           className={cn(
-            error
-              ? "text-th-warm-text-muted"
-              : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
+            "w-14 h-14 rounded-[16px] bg-th-surface-0 border flex items-center justify-center",
+            "shadow-[0_2px_10px_rgba(23,54,56,0.06)] transition-all duration-200",
+            isDragging
+              ? "border-th-brand-border-soft -translate-y-1"
+              : "border-th-warm-border group-hover:border-th-brand-border-soft group-hover:-translate-y-0.5",
           )}
+        >
+          <UploadCloud
+            size={24}
+            strokeWidth={1.9}
+            className={cn(
+              "transition-colors duration-200",
+              isDragging ? "text-th-brand" : "text-th-warm-text-muted group-hover:text-th-brand",
+            )}
+          />
+        </div>
+        <div>
+          <p className="text-[14px] font-bold text-th-text-primary tracking-[-0.01em]">
+            {isDragging ? "Drop to upload" : "Add your best caravan photo"}
+          </p>
+          <p className="text-[12.5px] text-[color:var(--onb-text-secondary,#657477)] mt-1">
+            Drag &amp; drop, or click to browse your device
+          </p>
+          <p className="text-[11px] text-th-warm-text-muted mt-2">
+            JPG, PNG or WEBP · landscape orientation works best
+          </p>
+        </div>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => onUpload(e.target.files)}
+          className="sr-only"
         />
-      </div>
-      <div className="text-center">
-        <p className="text-[13.5px] font-bold text-th-text-primary tracking-[-0.01em]">
-          Drop a photo here, or click to browse
-        </p>
-        <p className="text-[11px] text-th-warm-text-muted mt-[3px]">
-          JPG, PNG or WEBP · landscape orientation works best
-        </p>
-      </div>
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => onUpload(e.target.files)}
-        className="hidden"
-      />
-    </label>
-    <ErrorMsg message={error} />
-  </div>
-);
+      </label>
+      <ErrorMsg message={error} />
+    </div>
+  );
+};
 
 // ============================================================================
-// Gallery — 5-slot grid that doubles as the progress visualization
+// Gallery — cover-led asymmetric grid that doubles as the progress visualization
 // ============================================================================
 
 const GalleryBlock: React.FC<{
@@ -461,20 +559,19 @@ const GalleryBlock: React.FC<{
   const remainingMin = Math.max(0, GALLERY_TARGET - filled);
   const bonusPhotos = photos.slice(GALLERY_TARGET);
   const canAddBonus = photos.length < GALLERY_MAX;
+  const { isDragging, handlers } = useDropzone(onUpload);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.04em]">
-            Gallery Photos
-          </p>
+          <SubLabel required>Gallery Photos</SubLabel>
           <p
             className={cn(
-              "text-[11.5px] mt-0.5",
+              "text-[12px] mt-0.5",
               complete
                 ? "text-th-success-bright font-semibold"
-                : "text-th-warm-text-muted font-normal",
+                : "text-[color:var(--onb-text-secondary,#657477)]",
             )}
           >
             {complete ? (
@@ -484,10 +581,10 @@ const GalleryBlock: React.FC<{
               </>
             ) : (
               <>
-                <strong className="text-th-text-primary font-bold">
+                <strong className="text-th-text-primary font-bold tabular-nums">
                   {filled}/{GALLERY_TARGET}
                 </strong>{" "}
-                photos · {remainingMin} more recommended
+                added · {remainingMin} more required
               </>
             )}
           </p>
@@ -499,15 +596,25 @@ const GalleryBlock: React.FC<{
               multiple
               accept="image/*"
               onChange={(e) => onUpload(e.target.files)}
-              className="hidden"
+              className="sr-only"
             />
           </PillCTA>
         )}
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      {/* Slot 1 is a 2×2 hero so the grid reads as a photo layout rather than
+          five identical database boxes. */}
+      <div
+        {...handlers}
+        className={cn(
+          "grid grid-cols-4 grid-rows-2 gap-2 rounded-[14px] transition-all duration-200",
+          isDragging && "ring-[3px] ring-th-brand ring-offset-4 ring-offset-th-surface-0",
+        )}
+      >
         {Array.from({ length: GALLERY_TARGET }).map((_, idx) => {
           const photo = photos[idx];
+          const hero = idx === 0;
+          const spanClass = hero ? "col-span-2 row-span-2" : "";
           if (photo) {
             return (
               <GalleryThumb
@@ -515,20 +622,30 @@ const GalleryBlock: React.FC<{
                 photo={photo}
                 index={idx}
                 showIndex
+                className={spanClass}
                 onRemove={() => onRemove(idx)}
               />
             );
           }
-          return <EmptySlot key={`slot-${idx}`} index={idx} error={!!error} onUpload={onUpload} />;
+          return (
+            <EmptySlot
+              key={`slot-${idx}`}
+              index={idx}
+              hero={hero}
+              error={!!error}
+              className={spanClass}
+              onUpload={onUpload}
+            />
+          );
         })}
       </div>
 
       {bonusPhotos.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.06em]">
+          <p className="text-[10.5px] font-bold text-th-warm-text-muted uppercase tracking-[0.08em]">
             Bonus Photos · {bonusPhotos.length}
           </p>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
             {bonusPhotos.map((photo, i) => {
               const absoluteIdx = GALLERY_TARGET + i;
               return (
@@ -552,55 +669,75 @@ const GalleryBlock: React.FC<{
 
 const EmptySlot: React.FC<{
   index: number;
+  hero?: boolean;
   error: boolean;
+  className?: string;
   onUpload: (files: FileList | null) => void;
-}> = ({ index, error, onUpload }) => (
+}> = ({ index, hero, error, className, onUpload }) => (
   <label
     className={cn(
-      "relative aspect-square flex flex-col items-center justify-center gap-1.5 cursor-pointer",
-      "border-[1.5px] border-dashed rounded-[12px] transition-all duration-150",
+      "group relative flex flex-col items-center justify-center gap-1.5 cursor-pointer",
+      hero ? "aspect-auto" : "aspect-square",
+      "border border-dashed rounded-[12px] transition-all duration-150",
+      "focus-within:ring-[3px] focus-within:ring-[color:var(--th-ring)]",
       error
-        ? "border-th-error-bright-soft bg-th-warm-surface"
-        : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
+        ? "border-th-error-bright-soft bg-th-error-bright-bg"
+        : "border-th-warm-border-strong bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
+      className,
     )}
   >
-    <span className="absolute top-1.5 left-1.5 w-[17px] h-[17px] rounded-full bg-th-surface-0 border border-th-warm-border text-th-warm-text-muted text-[9.5px] font-extrabold flex items-center justify-center">
+    <span className="absolute top-1.5 left-1.5 w-[18px] h-[18px] rounded-full bg-th-surface-0 border border-th-warm-border text-th-warm-text-muted text-[9.5px] font-extrabold flex items-center justify-center tabular-nums">
       {index + 1}
     </span>
     <Plus
-      size={16}
+      size={hero ? 22 : 16}
       strokeWidth={2.5}
       className={cn(
-        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
+        "transition-colors duration-150",
+        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted group-hover:text-th-brand",
       )}
     />
     <span
       className={cn(
-        "text-[9.5px] font-bold tracking-[0.06em]",
-        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted [label:hover_&]:text-th-brand",
+        "text-[9.5px] font-bold tracking-[0.08em] transition-colors duration-150",
+        // The four small tiles are ~78px wide on a phone — the label would crowd
+        // the icon, so it only shows on the hero slot there.
+        hero ? "block" : "hidden sm:block",
+        error ? "text-th-warm-text-muted" : "text-th-warm-text-muted group-hover:text-th-brand",
       )}
     >
-      ADD
+      {hero ? "ADD PHOTOS" : "ADD"}
     </span>
     <input
       type="file"
       multiple
       accept="image/*"
       onChange={(e) => onUpload(e.target.files)}
-      className="hidden"
+      className="sr-only"
     />
   </label>
 );
 
 const BonusAddTile: React.FC<{ onUpload: (files: FileList | null) => void }> = ({ onUpload }) => (
-  <label className="aspect-square flex items-center justify-center cursor-pointer border-[1.5px] border-dashed border-th-warm-border bg-th-warm-surface rounded-[12px] transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft">
-    <Plus size={18} strokeWidth={2.5} className="text-th-warm-text-muted" />
+  <label
+    className={cn(
+      "group aspect-square flex items-center justify-center cursor-pointer rounded-[12px]",
+      "border border-dashed border-th-warm-border-strong bg-th-warm-surface",
+      "transition-all duration-150 hover:border-th-brand hover:bg-th-brand-soft",
+      "focus-within:ring-[3px] focus-within:ring-[color:var(--th-ring)]",
+    )}
+  >
+    <Plus
+      size={18}
+      strokeWidth={2.5}
+      className="text-th-warm-text-muted transition-colors duration-150 group-hover:text-th-brand"
+    />
     <input
       type="file"
       multiple
       accept="image/*"
       onChange={(e) => onUpload(e.target.files)}
-      className="hidden"
+      className="sr-only"
     />
   </label>
 );
@@ -609,15 +746,23 @@ const GalleryThumb: React.FC<{
   photo: string | File;
   index: number;
   showIndex?: boolean;
+  className?: string;
   onRemove: () => void;
-}> = ({ photo, index, showIndex, onRemove }) => {
+}> = ({ photo, index, showIndex, className, onRemove }) => {
   const src = useObjectURL(photo);
   return (
-    <div className="group relative aspect-square overflow-hidden rounded-[12px] transition-[box-shadow,transform] duration-150 shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:shadow-[0_6px_18px_rgba(0,0,0,0.16)] hover:scale-[1.02]">
+    <div
+      className={cn(
+        "group relative overflow-hidden rounded-[12px] bg-th-warm-surface",
+        "transition-[box-shadow,transform] duration-150",
+        "shadow-[0_1px_4px_rgba(23,54,56,0.07)] hover:shadow-[0_6px_18px_rgba(23,54,56,0.14)]",
+        className || "aspect-square",
+      )}
+    >
       <img src={src} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
 
       {showIndex && (
-        <span className="absolute top-1.5 left-1.5 min-w-[19px] h-[19px] px-[5px] rounded-full bg-[rgba(0,0,0,0.62)] backdrop-blur-[4px] text-th-text-inverse text-[10px] font-extrabold flex items-center justify-center tracking-[0.02em]">
+        <span className="absolute top-1.5 left-1.5 min-w-[19px] h-[19px] px-[5px] rounded-full bg-black/55 backdrop-blur-[4px] text-white text-[10px] font-extrabold flex items-center justify-center tracking-[0.02em] tabular-nums">
           {index + 1}
         </span>
       )}
@@ -626,9 +771,15 @@ const GalleryThumb: React.FC<{
         type="button"
         onClick={onRemove}
         aria-label={`Remove photo ${index + 1}`}
-        className="absolute top-[5px] right-[5px] w-[22px] h-[22px] rounded-full bg-[rgba(0,0,0,0.62)] backdrop-blur-[4px] border-none flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity duration-150"
+        className={cn(
+          "absolute top-1 right-1 w-[24px] h-[24px] rounded-full bg-black/55 backdrop-blur-[4px]",
+          "border-none flex items-center justify-center cursor-pointer",
+          // Always reachable by keyboard / on touch, where there is no hover.
+          "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100",
+          "transition-opacity duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+        )}
       >
-        <X size={10} className="text-th-text-inverse" />
+        <X size={11} className="text-white" />
       </button>
     </div>
   );

@@ -98,7 +98,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
               key={`custom-${idx}`}
               type="button"
               onClick={() => onRemoveCustomFeature(idx)}
-              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] cursor-pointer text-th-brand"
+              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] cursor-pointer text-th-brand"
             >
               <MoreHorizontal size={14} className="text-th-brand" />
               <span className="text-[13px] font-semibold tracking-[-0.01em]">{customFeature}</span>
@@ -122,9 +122,9 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 className={cn(
                   "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] text-th-brand"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] text-th-brand"
                     : isRecommended
-                      ? "border-th-brand-border-soft bg-[rgba(59, 217, 218, 0.08)] text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft"
+                      ? "border-th-brand-border-soft bg-[rgba(59,217,218,0.08)] text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft"
                       : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
@@ -159,7 +159,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 className={cn(
                   "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] text-th-brand"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] text-th-brand"
                     : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
@@ -183,7 +183,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
           {/* ── Inline custom input pill ── */}
           {customFeatures.length < 20 &&
             (showCustomFeaturesInput ? (
-              <div className="flex items-center gap-1.5 pl-[14px] pr-[6px] py-1 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)]">
+              <div className="flex items-center gap-1.5 pl-[14px] pr-[6px] py-1 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(59,217,218,0.4)]">
                 <input
                   ref={inputRef}
                   type="text"

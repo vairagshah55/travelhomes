@@ -58,7 +58,7 @@ const SectionCard = ({
 }) => (
   <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59, 217, 218, 0.5)] flex items-center justify-center shrink-0 text-th-brand">
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59,217,218,0.5)] flex items-center justify-center shrink-0 text-th-brand">
         {icon}
       </div>
       <div className="flex-1">
@@ -304,7 +304,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
             <div
               className={cn(
                 "flex items-center gap-1 px-[14px] h-[52px] border-r-[1.5px] shrink-0 transition-all duration-150",
-                "focus-within:border-r-[rgba(59, 217, 218, 0.5)] focus-within:bg-th-brand-soft",
+                "focus-within:border-r-[rgba(59,217,218,0.5)] focus-within:bg-th-brand-soft",
                 "border-r-th-warm-border bg-th-warm-surface",
               )}
             >

@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { submitOnboardingData } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
+import { compressImageToDataUrl } from "@/lib/imageCompression";
 import type { FormData } from "./caravanConfig";
 
 export interface SubmitCaravanCallbacks {
@@ -55,14 +56,19 @@ export async function submitCaravanOnboarding(
       ...(formData.perDayExcludes || []),
     ].filter((i) => i && i.trim());
 
+    // Gallery/cover photos are downscaled + re-encoded before base64 — there's
+    // no client-side size cap on these, so uncompressed phone-camera photos
+    // routinely exceed the server's onboarding payload limit. ID photos stay
+    // untouched: legibility of the document matters more than payload size,
+    // and handleUploadIDProof already caps that one at 5MB.
     const photosData: string[] = await Promise.all(
       ((formData.photos as any[]) || []).map((f: any) =>
-        typeof f === "string" ? Promise.resolve(f) : fileToDataUrl(f),
+        typeof f === "string" ? Promise.resolve(f) : compressImageToDataUrl(f),
       ),
     );
     const photosCoverImage: string[] = await Promise.all(
       ((formData.coverImage as any[]) || []).map((f: any) =>
-        typeof f === "string" ? Promise.resolve(f) : fileToDataUrl(f),
+        typeof f === "string" ? Promise.resolve(f) : compressImageToDataUrl(f),
       ),
     );
     const idPhotosData: string[] = await Promise.all(

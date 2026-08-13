@@ -1,6 +1,15 @@
 import React from "react";
-import { Plus, X, Check, IndianRupee, Car, Calendar } from "lucide-react";
+import { Plus, X, Check, IndianRupee, Car, Calendar, Info } from "lucide-react";
 import { ErrorMsg, StepHeader } from "../shared/primitives";
+// This step hand-rolls its price field instead of using StyledInput (it needs an
+// INR prefix and a trailing unit), so it borrows the shared shell classes to stay
+// in step with every other field in the flow. Without this it kept the old
+// grey-fill resting state and read as disabled.
+import {
+  iconShellClass,
+  iconShellFocusClass,
+  iconSlotClass,
+} from "../shared/primitives/IconInput";
 import { cn } from "@/lib/utils";
 
 type PriceField = "perKmIncludes" | "perKmExcludes" | "perDayIncludes" | "perDayExcludes";
@@ -35,15 +44,15 @@ const PriceInput = ({
 }) => (
   <div
     className={cn(
-      "group flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
-      error
-        ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-        : "border-transparent bg-th-warm-surface focus-within:border-th-brand focus-within:bg-th-surface-0 focus-within:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+      iconShellClass,
+      !error && iconShellFocusClass,
+      error &&
+        "border-th-error-bright-soft focus-within:shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
     )}
   >
-    <div className="flex items-center gap-1 px-3 h-[52px] border-r-[1.5px] border-th-warm-border bg-th-warm-surface group-focus-within:border-th-brand-border-soft group-focus-within:bg-th-brand-soft transition-all duration-150 flex-shrink-0">
-      <IndianRupee size={13} className="text-th-warm-text-muted group-focus-within:text-th-brand" />
-      <span className="text-[12px] font-bold text-th-warm-text-muted group-focus-within:text-th-brand">INR</span>
+    <div className={cn(iconSlotClass, "gap-1")}>
+      <IndianRupee size={13} />
+      <span className="text-[12px] font-bold">INR</span>
     </div>
     <input
       type="number"
@@ -51,10 +60,8 @@ const PriceInput = ({
       onChange={(e) => onChange(e.target.value)}
       placeholder="0"
       min="0"
-      className={cn(
-        "flex-1 h-[52px] px-4 text-[18px] font-bold tracking-[-0.02em] bg-transparent border-none outline-none",
-        value ? "text-th-text-primary" : "text-th-warm-text-muted",
-      )}
+      aria-label="Amount in rupees"
+      className="flex-1 h-[54px] px-4 text-[18px] font-bold tracking-[-0.02em] text-th-text-primary placeholder:text-th-warm-text-muted placeholder:font-normal bg-transparent border-none outline-none"
     />
     {value && Number(value) > 0 && (
       <span className="text-[11px] font-semibold text-th-brand pr-[14px] flex-shrink-0">
@@ -81,7 +88,17 @@ const ItemRow = ({
 }) => {
   const isInclude = type === "include";
   return (
-    <div className="flex items-center gap-2.5 rounded-[11px] px-[10px] py-[5px] pr-2 border-[1.5px] border-transparent bg-th-warm-surface focus-within:border-th-brand focus-within:bg-th-surface-0 focus-within:shadow-[0_0_0_3px_var(--th-ring)] transition-all duration-150">
+    <div
+      className={cn(
+        // Matches RuleRow in DescriptionStep: white at rest with a visible edge,
+        // teal border on hover, teal + ring on focus.
+        "flex items-center gap-2.5 rounded-[12px] px-[10px] py-[5px] pr-2",
+        "bg-th-surface-0 border border-th-warm-border",
+        "transition-[border-color,box-shadow] duration-150",
+        "hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
+        "focus-within:border-th-brand focus-within:shadow-[0_0_0_3px_var(--th-ring)]",
+      )}
+    >
       <div
         className={cn(
           "w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0",
@@ -91,7 +108,7 @@ const ItemRow = ({
         {isInclude ? (
           <Check size={11} className="text-th-success-bright" strokeWidth={2.5} />
         ) : (
-          <X size={11} color="#f87171" strokeWidth={2.5} />
+          <X size={11} className="text-th-error-bright" strokeWidth={2.5} />
         )}
       </div>
       <input
@@ -133,38 +150,64 @@ const ItemList = ({
   const isInclude = type === "include";
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <p
-          className={cn(
-            "text-[11px] font-bold uppercase tracking-[0.04em]",
-            error ? "text-th-error-bright" : isInclude ? "text-th-success-bright" : "text-[#f87171]",
-          )}
-        >
-          {isInclude ? "✓ Included" : "✕ Excluded"}
+      <div className="flex items-center justify-between gap-3">
+        {/* Neutral label with a small tinted icon chip. Green/red as the label
+            text itself shouted louder than the content it described, and the
+            raw ✓/✕ glyphs didn't match the Lucide icons used everywhere else. */}
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-th-warm-text-dark">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "w-[17px] h-[17px] rounded-full flex items-center justify-center shrink-0 border",
+              isInclude
+                ? "bg-th-success-bright-bg text-th-success-bright border-th-success-bright-border"
+                : "bg-th-error-bright-bg text-th-error-bright border-th-error-bright-soft",
+            )}
+          >
+            {isInclude ? <Check size={10} strokeWidth={3.5} /> : <X size={10} strokeWidth={3.5} />}
+          </span>
+          {isInclude ? "Included" : "Excluded"}
         </p>
-        <button
-          type="button"
-          onClick={() => onAdd(field)}
-          className="flex items-center gap-1 text-[11px] font-bold text-th-brand bg-transparent border-none cursor-pointer py-0.5"
-        >
-          <Plus size={11} strokeWidth={2.5} />
-          Add
-        </button>
+        {/* Redundant while the empty state is itself the add target. */}
+        {items.length > 0 && (
+          <button
+            type="button"
+            onClick={() => onAdd(field)}
+            className="flex items-center gap-1 text-[11px] font-bold text-th-brand bg-transparent border-none cursor-pointer py-0.5 rounded hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--th-ring)]"
+          >
+            <Plus size={11} strokeWidth={2.5} />
+            Add
+          </button>
+        )}
       </div>
 
       {items.length === 0 ? (
-        <div
+        // The empty state IS the button. Telling the host to "click Add" pointed
+        // them at a control elsewhere in the row when this panel — the thing they
+        // are already looking at — can take the click itself.
+        // Sized to its content, not full width. Four full-bleed dashed
+        // rectangles across this step was a lot of real estate spent on
+        // "nothing here yet" — and a full-width dashed box reads as a field you
+        // type into, whereas a pill reads as a button you press.
+        <button
+          type="button"
+          onClick={() => onAdd(field)}
           className={cn(
-            "px-[14px] py-[10px] rounded-[10px] border-[1.5px] border-dashed",
+            "group inline-flex items-center gap-1.5 self-start cursor-pointer text-[12.5px]",
+            "px-3.5 py-2 rounded-full border border-dashed",
+            "transition-colors duration-150",
+            "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color:var(--th-ring)]",
             error
-              ? "bg-th-error-bright-bg border-th-error-bright-soft"
-              : "bg-th-warm-surface border-th-warm-border",
+              ? "bg-th-error-bright-bg border-th-error-bright-soft text-th-error-bright font-medium"
+              : cn(
+                  "bg-th-surface-0 border-th-warm-border-strong text-th-warm-text-muted",
+                  "hover:border-th-brand hover:bg-th-brand-soft hover:text-th-brand",
+                ),
           )}
         >
-          <p className={cn("text-[12px]", error ? "text-th-error-bright" : "text-th-warm-text-muted")}>
-            {error ?? `No items yet — click Add`}
-          </p>
-        </div>
+          <Plus size={12} strokeWidth={2.5} aria-hidden="true" className="shrink-0" />
+          {error ?? (isInclude ? "Add what's included" : "Add what's not covered")}
+        </button>
       ) : (
         <div className="flex flex-col gap-1.5">
           {items.map((item, index) => (
@@ -280,7 +323,7 @@ const PriceCard = ({
 
       {hasValue && (
         <>
-          <div style={{ height: 1, backgroundColor: "#F0F0F0", margin: "18px 0" }} />
+          <div className="h-px bg-th-warm-border my-[18px]" />
           <div className="flex flex-col gap-4">
             <ItemList
               items={includes}
@@ -396,11 +439,20 @@ const PricingStep: React.FC<PricingStepProps> = ({
   }
 
   return (
-    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
+    <div className="w-full flex flex-col gap-6">
       <StepHeader
-        kicker="Pricing"
-        title="Pricing Details"
-        subtitle="Set your pricing for different travel modes. At least one is required."
+        kicker="Pricing Details"
+        subtitle="Set your pricing for different travel modes."
+        extra={
+          /* States the rule up front instead of letting the host discover it by
+             being blocked on Continue. Wording is kept identical to the message
+             in validateCaravanStep and submitCaravanOnboarding — if the rule
+             changes, all three have to change together. */
+          <p className="mt-3 inline-flex items-start gap-2 text-[12.5px] leading-[1.5] font-medium text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-[10px] px-3 py-2">
+            <Info size={14} strokeWidth={2.2} aria-hidden="true" className="shrink-0 mt-[1px]" />
+            At least one price (Per KM or Per Day) is required
+          </p>
+        }
       />
       {content}
     </div>

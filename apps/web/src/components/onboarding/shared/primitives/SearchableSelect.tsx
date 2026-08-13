@@ -111,15 +111,18 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
         disabled={disabled}
         onClick={() => !disabled && setOpen((o) => !o)}
         className={cn(
-          "w-full h-[52px] pl-4 pr-10 text-left text-sm rounded-[13px] border-[1.5px] outline-none font-normal tracking-[-0.005em]",
+          "w-full h-[54px] pl-4 pr-10 text-left text-[15px] rounded-[12px] border outline-none font-normal tracking-[-0.005em]",
           "transition-[background-color,border-color,box-shadow] duration-150",
-          "border-transparent",
           disabled
-            ? "bg-th-warm-surface text-th-warm-text-muted cursor-not-allowed"
-            : "cursor-pointer bg-th-warm-surface focus:bg-th-surface-0",
-          !disabled && (selectedLabel ? "text-th-text-primary" : "text-th-warm-text-muted"),
-          open && !error && "bg-th-surface-0 border-th-brand shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
-          !open && !disabled && !error && "focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+            ? // The one place the grey fill is correct — this control really is disabled.
+              "bg-th-warm-surface border-th-warm-border text-th-warm-text-muted cursor-not-allowed"
+            : cn(
+                "cursor-pointer bg-th-surface-0 border-th-warm-border-strong",
+                "hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
+                selectedLabel ? "text-th-text-primary" : "text-th-warm-text-muted",
+              ),
+          open && !error && "border-th-brand shadow-[0_0_0_3px_var(--th-ring)]",
+          !open && !disabled && !error && "focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
           error && "border-th-error-bright-soft",
         )}
       >
@@ -128,7 +131,8 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
       <svg
         className={cn(
-          "absolute right-[14px] top-[26px] -translate-y-1/2 pointer-events-none transition-transform duration-150 text-th-warm-text-muted",
+          // top is half the button height (54px) — keep these in sync.
+          "absolute right-[14px] top-[27px] -translate-y-1/2 pointer-events-none transition-transform duration-150 text-th-warm-text-muted",
           open && "rotate-180",
         )}
         width="16"

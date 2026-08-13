@@ -94,6 +94,104 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   ONBOARDING SCOPE — deep-teal accent palette
+   Applied via [data-onboarding] on OnboardingLayout's root.
+
+   Why scoped and not global: --th-brand is the *logo* cyan (#3bd9da)
+   and is a deliberate site-wide product decision (see the note above
+   its definition). But cyan-as-accent has two problems inside a long
+   form flow:
+
+     1. It fails contrast as text/iconography — #3bd9da on white is
+        1.7:1, far below the 4.5:1 AA floor. #0f7478 is 5.6:1.
+     2. It disagreed with the primary CTA, which already used the deep
+        teal --ds-deep. So the loudest colour sat on decoration and the
+        calm one on the action — exactly inverted.
+
+   Remapping the token family here re-tones all 9 steps at once instead
+   of touching ~20 step components. Follows the same route-group scoping
+   precedent as [data-brand="admin"].
+
+   Kept OUTSIDE @layer base on purpose. Tailwind flattens its @layer
+   directives rather than emitting real CSS cascade layers, so priority
+   here comes down to specificity + source order. [data-onboarding] and
+   :root are both (0,1,0), and Tailwind emits un-layered rules after the
+   base layer — verified in the build output, where this block lands well
+   after the :root and .dark definitions. Moving it inside @layer base
+   would place it alongside :root and the override would stop working.
+   ═══════════════════════════════════════════════════════════════ */
+[data-onboarding] {
+  /* Accent — deep teal. Reserved for CTAs, focus, active/selected
+     states and section icons. NOT for every border. */
+  --th-brand: #0f7478;
+  --th-brand-hover: #0a5559;
+  --th-brand-fg: #ffffff;
+  --th-brand-soft: #ddf4f2;
+  --th-brand-border-soft: #b9cecc;
+  --th-ring: rgba(15, 116, 120, 0.1);
+
+  /* Neutrals — every step of the ramp is WARM (R > G > B), matching the page.
+     This is the whole reason the flow used to look muddy, and it is easy to
+     reintroduce: the obvious-looking greys #f7f8fa / #f4f6f5 / #e1e5e3 are all
+     green-or-blue-biased (G is the highest channel), so dropping one in next to
+     a warm page reads as dinginess rather than as a neutral. Check the channel
+     order before changing any value here. */
+  --th-warm-surface: #f6f5f1;
+  --th-warm-border: #e4e2dc;
+  /* Resting input border. Lighter than the global #b3b0a4 because inputs
+     now rest on WHITE — a filled grey field reads as disabled, so the
+     border no longer has to compensate for the fill. */
+  --th-warm-border-strong: #d7d4cc;
+  --th-warm-text-dark: #173638;
+  --th-warm-text-muted: #8a9698;
+  --th-text-primary: #173638;
+
+  /* Primary CTA — the logo cyan itself.
+     Cyan is kept as a FILL and carries dark teal ink (#0a5559 on #3bd9da is
+     ~6:1, passes AA). It is deliberately NOT used as text/icon colour on white,
+     where it measures 1.7:1 — that's what --th-brand (deep teal) is for. Fill vs.
+     ink is the whole reason both tones coexist here. */
+  --onb-cta: #3bd9da;
+  --onb-cta-hover: #2bc7c8;
+  --onb-cta-ink: #0a5559;
+
+  /* Page background — clean white.
+     Cards are also white, so there is no page/card tonal step to separate them.
+     That job moves entirely to the border + a two-layer shadow (see
+     --onb-card-shadow), which is how white-on-white card systems work.
+
+     Tone inside the flow now comes only from --th-warm-surface: image
+     placeholders, dropzones and empty states read as recessed wells inside the
+     white cards. That is the one warm note left, so keep it warm.
+
+     If this ever needs to go back to a tinted page, the contrast to #fff must
+     clear ~1.15:1 or the cards vanish into it (#f8f7f2 is only 1.07:1 —
+     imperceptible; #efeeea is 1.16:1 and works). Changing this token alone is
+     not enough: --onb-card-shadow has to go back to a single soft layer too. */
+  --onb-page-bg: #ffffff;
+  --onb-text-secondary: #657477;
+  --onb-border-hover: #a9c5c2;
+  /* Card outline. Separate from --th-warm-border on purpose: that token is the
+     shared hairline for dividers and rule rows, and strengthening it globally
+     would make every divider in the flow heavy. This one only outlines cards.
+       #e4e2dc → 1.30:1 vs white — too soft to carry a card on its own
+       #dcd8ce → 1.42:1 vs white — reads as a definite edge, still not wireframe */
+  --onb-card-border: #dcd8ce;
+
+  /* Three layers, because the page is white and there is no tonal step to help.
+     A single diffuse blur on white has no edge and reads as a grey smudge, so:
+     1px for the crisp edge, a mid layer for close contact, and a wide negative-
+     spread layer for lift. Negative spread keeps the wide layer tucked under the
+     card instead of haloing out around it. */
+  --onb-card-shadow:
+    0 1px 2px rgba(23, 54, 56, 0.04), 0 4px 8px -2px rgba(23, 54, 56, 0.05),
+    0 12px 28px -6px rgba(23, 54, 56, 0.09);
+  --onb-card-shadow-hover:
+    0 1px 2px rgba(23, 54, 56, 0.05), 0 6px 12px -2px rgba(23, 54, 56, 0.07),
+    0 18px 36px -8px rgba(23, 54, 56, 0.12);
+}
+
+/* ═══════════════════════════════════════════════════════════════
    TRAVELHOMES DESIGN SYSTEM
    Standardized tokens · Modern aesthetic · Dark mode ready
    ═══════════════════════════════════════════════════════════════ */
@@ -199,6 +297,7 @@
     --th-warm-text-dark: #2c2c2a; /* GRAY_700 / GRAY_500 */
     --th-warm-text-muted: #888780; /* GRAY_400 */
     --th-warm-border: #d3d1c7; /* GRAY_200 */
+    --th-warm-border-strong: #b3b0a4; /* GRAY_300 — resting-state field borders, needs to read as "editable" at a glance */
     --th-warm-surface: #f7f8fa; /* SURFACE */
 
     --th-brand-soft: rgba(59, 217, 218, 0.14); /* TEAL_BG */
@@ -1215,31 +1314,38 @@
     background: var(--th-accent-subtle) !important;
     box-shadow: 0 4px 20px rgba(37, 99, 235, 0.12);
   }
-  /* Logo Cyan: primary CTA = #117479 ds-deep, navy hover. */
+  /* Primary CTA — deep teal fill, darker on hover (not a glow). The old
+     rgba(59,217,218,.4-.56) cyan glows read as neon against the warm page,
+     so the lift is now carried by a tinted shadow in the brand's own hue. */
   .onb-glow-shadow {
-    box-shadow: 0 4px 20px rgba(59, 217, 218, 0.4);
+    box-shadow: 0 4px 16px rgba(15, 116, 120, 0.2);
   }
   .onb-btn-primary {
-    background: var(--ds-deep);
-    color: #ffffff;
-    @apply font-semibold transition-all duration-200;
+    background: var(--onb-cta, #3bd9da);
+    color: var(--onb-cta-ink, #0a5559);
+    @apply font-bold transition-all duration-200;
   }
   .onb-btn-primary:hover:not(:disabled) {
-    background: var(--ds-navy);
+    background: var(--onb-cta-hover, #2bc7c8);
     transform: translateY(-1px);
-    box-shadow: 0 6px 24px rgba(59, 217, 218, 0.56);
+    box-shadow: 0 6px 16px rgba(59, 217, 218, 0.4);
   }
   .onb-btn-primary:active:not(:disabled) {
     transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(59, 217, 218, 0.3);
   }
   .onb-btn-primary:disabled {
-    opacity: 0.35;
+    opacity: 0.4;
     cursor: not-allowed;
   }
+  /* White so the nav sits on its own plane above the tinted page. Matching it to
+     the page background left the logo floating in a grey band with only a
+     hairline to suggest it was chrome at all — it read as unfinished rather than
+     as a fixed bar. */
   .onb-header {
-    @apply flex h-16 w-full z-30 fixed top-0 items-center justify-between px-6 lg:px-16;
-    background: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid var(--ds-pebble);
+    @apply flex h-16 w-full z-30 fixed top-0 items-center justify-between px-5 sm:px-6 lg:px-16;
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid var(--th-warm-border, #e4e2dc);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
   }
@@ -1250,10 +1356,34 @@
   }
   .onb-pill-selected {
     border-color: var(--ds-deep) !important;
-    background: var(--ds-sky) !important;
+    background: var(--th-brand-soft) !important;
   }
   .onb-pill-selected:hover {
-    box-shadow: 0 2px 12px rgba(59, 217, 218, 0.3);
+    box-shadow: 0 2px 10px rgba(15, 116, 120, 0.14);
+  }
+
+  /* Sticky footer nav — subtle top edge + blur, no hard white slab. */
+  .onb-footer {
+    @apply flex w-full z-30 fixed bottom-0 items-center justify-center;
+    background: rgba(255, 255, 255, 0.88);
+    border-top: 1px solid var(--th-warm-border, #e4e2dc);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Secondary / ghost CTA — pairs with .onb-btn-primary */
+  .onb-btn-secondary {
+    border: 1px solid var(--th-warm-border-strong, #d7d4cc);
+    color: var(--th-warm-text-dark, #173638);
+    background: #ffffff;
+    @apply font-semibold transition-all duration-200;
+  }
+  .onb-btn-secondary:hover:not(:disabled) {
+    border-color: var(--onb-border-hover, #a9c5c2);
+    background: var(--th-warm-surface, #f6f5f1);
+  }
+  .onb-btn-secondary:active:not(:disabled) {
+    transform: translateY(1px);
   }
 
   /* Congratulations */

@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { inputSurfaceClass, inputFocusClass } from "./StyledInput";
 
 interface StyledSelectProps {
   value: string;
@@ -22,14 +23,18 @@ const StyledSelect: React.FC<StyledSelectProps> = ({
       onChange={(e) => onChange?.(e.target.value)}
       disabled={disabled}
       className={cn(
-        "w-full h-[52px] pl-4 pr-10 text-sm rounded-[13px] border-[1.5px] outline-none appearance-none font-normal",
-        "transition-[background-color,border-color,box-shadow] duration-150",
-        "border-transparent",
+        "w-full h-[54px] pl-4 pr-10 text-[15px] rounded-[12px] outline-none appearance-none font-normal",
         disabled
-          ? "bg-th-warm-surface text-th-warm-text-muted cursor-not-allowed"
-          : "cursor-pointer bg-th-warm-surface focus:bg-th-surface-0",
-        !disabled && (value ? "text-th-text-primary" : "text-th-warm-text-muted"),
-        !error && !disabled && "focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
+          ? cn(
+              "border border-th-warm-border bg-th-warm-surface text-th-warm-text-muted",
+              "cursor-not-allowed",
+            )
+          : cn(
+              inputSurfaceClass,
+              "cursor-pointer",
+              value ? "text-th-text-primary" : "text-th-warm-text-muted",
+            ),
+        !error && !disabled && inputFocusClass,
         error && "border-th-error-bright-soft",
       )}
     >
@@ -41,6 +46,7 @@ const StyledSelect: React.FC<StyledSelectProps> = ({
       height="16"
       viewBox="0 0 16 16"
       fill="none"
+      aria-hidden="true"
     >
       <path
         d="M4 6l4 4 4-4"

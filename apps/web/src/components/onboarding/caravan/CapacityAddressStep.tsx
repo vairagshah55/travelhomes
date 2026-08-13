@@ -64,7 +64,7 @@ const CapacityRow = ({
       )}
     >
       <div className="flex items-center gap-3">
-        <div className="w-[38px] h-[38px] rounded-[11px] bg-th-surface-0 border-[1.5px] border-th-warm-border flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
+        <div className="w-[38px] h-[38px] rounded-[11px] bg-th-brand-soft border-[1.5px] border-th-brand-border-soft flex items-center justify-center shadow-[0_1px_4px_rgba(0,0,0,0.06)]">
           {icon}
         </div>
         <div>
@@ -126,7 +126,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
       >
         <div className="flex flex-col gap-3">
           <CapacityRow
-            icon={<Users size={16} className="text-th-warm-text-muted" />}
+            icon={<Users size={16} className="text-th-brand" />}
             label="Seating Capacity"
             description="Guests who can sit during the journey"
             value={seatingCapacity}
@@ -136,7 +136,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
             max={20}
           />
           <CapacityRow
-            icon={<BedDouble size={16} className="text-th-warm-text-muted" />}
+            icon={<BedDouble size={16} className="text-th-brand" />}
             label="Sleeping Capacity"
             description="Guests who can sleep overnight"
             value={sleepingCapacity}
@@ -266,8 +266,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
       <StepHeader
-        kicker="Setup"
-        title={<>Capacity &amp; Location</>}
+        kicker="Capacity & Location"
         subtitle="Set your caravan's capacity and where guests can find it."
       />
       <div className="w-full flex flex-col gap-4">{sections}</div>

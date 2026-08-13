@@ -14,6 +14,27 @@ interface IconInputProps {
   error?: boolean;
 }
 
+/**
+ * Shared shell for the icon-prefixed input/select pair. The leading icon sits
+ * on the same white surface as the field with only a hairline divider — the old
+ * grey-filled chip read as a disabled segment bolted onto the control.
+ */
+export const iconShellClass = cn(
+  "group flex items-center rounded-[12px] overflow-hidden border bg-th-surface-0",
+  "border-th-warm-border-strong transition-[border-color,box-shadow] duration-150",
+);
+
+export const iconShellFocusClass = cn(
+  "hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
+  "focus-within:border-th-brand focus-within:shadow-[0_0_0_3px_var(--th-ring)]",
+);
+
+export const iconSlotClass = cn(
+  "flex items-center px-3.5 h-[54px] border-r shrink-0 transition-colors duration-150",
+  "border-th-warm-border text-th-warm-text-muted",
+  "group-focus-within:text-th-brand group-focus-within:border-th-brand-border-soft",
+);
+
 const IconInput: React.FC<IconInputProps> = ({
   icon,
   value,
@@ -28,21 +49,12 @@ const IconInput: React.FC<IconInputProps> = ({
 }) => (
   <div
     className={cn(
-      "group flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
-      "bg-th-warm-surface border-transparent",
-      !error && "focus-within:bg-th-surface-0 focus-within:border-th-brand focus-within:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
-      error && "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
+      iconShellClass,
+      !error && iconShellFocusClass,
+      error && "border-th-error-bright-soft focus-within:shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
     )}
   >
-    <div
-      className={cn(
-        "flex items-center px-3 h-[52px] border-r-[1.5px] shrink-0 transition-all duration-150",
-        "bg-th-warm-surface border-th-warm-border text-th-warm-text-muted",
-        "group-focus-within:bg-th-brand-soft group-focus-within:border-th-brand-border-soft group-focus-within:text-th-brand",
-      )}
-    >
-      {icon}
-    </div>
+    <div className={iconSlotClass}>{icon}</div>
     <input
       type={type}
       value={value}
@@ -51,9 +63,8 @@ const IconInput: React.FC<IconInputProps> = ({
       maxLength={maxLength}
       inputMode={inputMode}
       className={cn(
-        "flex-1 h-[52px] px-[14px] text-sm bg-transparent border-none outline-none font-normal",
-        "placeholder:text-th-warm-text-muted",
-        value ? "text-th-text-primary" : "text-th-warm-text-muted",
+        "flex-1 h-[54px] px-[14px] text-[15px] bg-transparent border-none outline-none font-normal",
+        "text-th-text-primary placeholder:text-th-warm-text-muted",
         mono ? "font-mono tracking-[0.08em]" : "tracking-[-0.005em]",
       )}
     />

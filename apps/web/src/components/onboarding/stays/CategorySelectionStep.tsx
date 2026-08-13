@@ -37,7 +37,7 @@ const SectionCard = ({
 }) => (
   <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
     <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59, 217, 218, 0.5)] flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59,217,218,0.5)] flex items-center justify-center shrink-0 overflow-hidden">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
@@ -84,7 +84,7 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
 
         {totalSelected > 0 && (
           <div className="flex justify-center mt-1">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59, 217, 218, 0.4)] rounded-full px-3 py-[3px]">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-3 py-[3px]">
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                 <path
                   d="M2 5l2.5 2.5L8 3"
@@ -142,7 +142,7 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
               title={property.name}
               badge={
                 selectedInSection.length > 0 ? (
-                  <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59, 217, 218, 0.4)] rounded-full px-[9px] py-[1px]">
+                  <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-[9px] py-[1px]">
                     {selectedInSection.length}/{categories.length}
                   </span>
                 ) : undefined
@@ -179,7 +179,7 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                         className={cn(
                           "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                           selected
-                            ? "border-th-brand-border-soft bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] text-th-brand"
+                            ? "border-th-brand-border-soft bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] text-th-brand"
                             : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                         )}
                       >

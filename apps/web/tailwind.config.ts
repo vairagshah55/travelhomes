@@ -134,6 +134,7 @@ export default {
           "warm-text-dark":  "var(--th-warm-text-dark)",
           "warm-text-muted": "var(--th-warm-text-muted)",
           "warm-border":     "var(--th-warm-border)",
+          "warm-border-strong": "var(--th-warm-border-strong)",
           "warm-surface":    "var(--th-warm-surface)",
 
           "brand-soft":         "var(--th-brand-soft)",

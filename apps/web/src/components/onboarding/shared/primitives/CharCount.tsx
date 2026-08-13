@@ -6,19 +6,23 @@ interface CharCountProps {
   max: number;
 }
 
+/**
+ * Deliberately low-priority: plain tabular digits aligned to the label baseline.
+ * This used to be a bordered pill, which gave a passive counter the same visual
+ * weight as a status badge and cluttered every field header in the flow.
+ */
 const CharCount: React.FC<CharCountProps> = ({ value, max }) => {
   const pct = value / max;
-  const tone = pct >= 0.9 ? "danger" : pct >= 0.7 ? "warn" : "normal";
+  const nearLimit = pct >= 0.9;
   return (
     <span
       className={cn(
-        "text-[11px] font-semibold rounded-full px-2 py-0.5 border-[1px] transition-all duration-200",
-        tone === "danger" && "text-th-warn-bright bg-th-warn-bright-bg border-th-warn-bright-border",
-        tone === "warn" && "text-th-warm-text-dark bg-th-warm-surface border-th-warm-border",
-        tone === "normal" && "text-th-warm-text-muted bg-th-warm-surface border-th-warm-border",
+        "text-[11px] font-medium tabular-nums tracking-[0.01em] transition-colors duration-200",
+        nearLimit ? "text-th-warn-bright font-semibold" : "text-th-warm-text-muted",
       )}
     >
-      {value}/{max}
+      {value}
+      <span className="opacity-50">/{max}</span>
     </span>
   );
 };

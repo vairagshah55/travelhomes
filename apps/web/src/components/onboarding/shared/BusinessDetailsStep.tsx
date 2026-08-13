@@ -221,8 +221,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
       <StepHeader
-        kicker="Verification"
-        title="Business Details"
+        kicker="Business Details"
         subtitle="Tell us about your business for verification."
       />
 

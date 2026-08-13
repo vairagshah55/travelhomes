@@ -58,7 +58,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
       </div>
 
       {/* Card mirroring the real listing card */}
-      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(13, 69, 72,0.08)] border border-[#EBEBEB]">
+      <div className="rounded-2xl p-1.5 pb-3 bg-white shadow-[0_8px_30px_rgba(13,69,72,0.08)] border border-[#EBEBEB]">
         {/* Image */}
         <div className="relative">
           <div className="relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-th-warm-surface">
@@ -162,7 +162,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
           {/* Discount label */}
           {activeDiscount && activeDiscount.finalPrice > 0 && (
             <div className="pt-0.5">
-              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-[rgba(59, 217, 218, 0.5)]">
+              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.5)]">
                 {activeDiscount.label}
               </span>
             </div>

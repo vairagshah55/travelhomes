@@ -21,7 +21,11 @@ import {
   TermsConditionsStep,
   DiscountOffersStep,
 } from "@/components/onboarding/shared";
-import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
+import type {
+  CountryOption,
+  DiscountOffer,
+  OnboardingPhase,
+} from "@/components/onboarding/shared";
 
 // Caravan-specific step components
 import {
@@ -41,6 +45,18 @@ import { submitCaravanOnboarding } from "@/components/onboarding/caravan/submitC
 import { validateCaravanStep } from "@/components/onboarding/caravan/validateCaravanStep";
 import { loadCaravanDraft } from "@/components/onboarding/caravan/loadCaravanDraft";
 import { CaravanStepRenderer } from "@/components/onboarding/caravan/CaravanStepRenderer";
+
+/**
+ * Progress-rail grouping for the 8 content steps (step 8 is the terms hand-off
+ * and isn't counted). Mirrors CaravanStepRenderer's switch order:
+ * 0 Details · 1 Category · 2 Features · 3 Capacity | 4 Pricing · 5 Offers |
+ * 6 Business · 7 Personal. `steps` must sum to totalSteps - 1.
+ */
+const CARAVAN_PHASES: OnboardingPhase[] = [
+  { label: "Your caravan", steps: 4 },
+  { label: "Pricing", steps: 2 },
+  { label: "About you", steps: 2 },
+];
 
 const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   isoCode: c.isoCode,
@@ -622,12 +638,21 @@ const CaravanOnboarding = () => {
 
   // --- Render step content ---
 
+  // These two screens render outside OnboardingLayout, so they carry their own
+  // data-onboarding scope to pick up the same palette as the wizard.
   if (isStatusLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA]">
+      <div
+        data-onboarding
+        className="min-h-screen flex items-center justify-center bg-[color:var(--onb-page-bg,#efeeea)]"
+      >
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full border-2 border-[#3bd9da] border-t-transparent animate-spin" />
-          <p className="text-sm text-[#888780]">Loading…</p>
+          <div
+            role="status"
+            aria-label="Loading"
+            className="w-10 h-10 rounded-full border-2 border-th-brand border-t-transparent animate-spin"
+          />
+          <p className="text-sm text-th-warm-text-muted">Loading…</p>
         </div>
       </div>
     );
@@ -635,30 +660,41 @@ const CaravanOnboarding = () => {
 
   if (status === "pending") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F7F8FA] px-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E8E4DC] p-8 max-w-md w-full text-center">
-          <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-[#1a1a1a] mb-2">Application Under Review</h2>
-          <p className="text-sm text-[#888780] mb-4">
+      <div
+        data-onboarding
+        className="min-h-screen flex items-center justify-center bg-[color:var(--onb-page-bg,#efeeea)] px-4"
+      >
+        <div className="bg-th-surface-0 rounded-[18px] border border-[color:var(--onb-card-border)] shadow-[var(--onb-card-shadow)] p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-[16px] bg-th-warn-bright-bg border border-th-warn-bright-border flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-6 h-6 text-th-warn-bright" strokeWidth={2} />
+          </div>
+          <h2 className="font-serif text-[23px] font-normal text-th-text-primary tracking-[-0.02em] mb-2">
+            Application under review
+          </h2>
+          <p className="text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)] mb-5">
             Your camper van listing has been submitted and is being reviewed by our team. We'll
             notify you once it's approved.
           </p>
           {formData.name && (
-            <div className="inline-flex items-center gap-2 bg-[#F7F8FA] rounded-full px-4 py-2 mb-6">
-              <Home className="w-4 h-4 text-[#117479]" />
-              <span className="text-sm font-medium text-[#1a1a1a]">{formData.name}</span>
+            <div className="inline-flex items-center gap-2 bg-th-brand-soft border border-th-brand-border-soft rounded-full pl-3 pr-4 py-2 mb-6">
+              <Home className="w-4 h-4 text-th-brand shrink-0" strokeWidth={2} />
+              <span className="text-[13.5px] font-semibold text-th-text-primary">
+                {formData.name}
+              </span>
             </div>
           )}
           <div className="flex flex-col gap-3">
             <button
+              type="button"
               onClick={() => navigate("/dashboard")}
-              className="w-full bg-[#3BD9DA] text-white rounded-xl py-3 text-sm font-medium hover:bg-[#2BC7C8] transition-colors"
+              className="onb-btn-primary w-full rounded-full py-3.5 text-[14px]"
             >
               Go to Dashboard
             </button>
             <button
+              type="button"
               onClick={() => navigate("/onboarding")}
-              className="w-full border border-[#E8E4DC] text-[#1a1a1a] rounded-xl py-3 text-sm font-medium hover:bg-[#F7F8FA] transition-colors"
+              className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
             >
               Submit Another Service
             </button>
@@ -672,6 +708,7 @@ const CaravanOnboarding = () => {
     <OnboardingLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
+      phases={CARAVAN_PHASES}
       preview={
         currentStep <= 5 ? (
           <CaravanCardPreview

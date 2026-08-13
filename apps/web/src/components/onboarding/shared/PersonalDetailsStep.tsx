@@ -56,8 +56,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
       <StepHeader
-        kicker="Account"
-        title="Personal Details"
+        kicker="Personal Details"
         subtitle="Tell us a bit about yourself for account verification."
       />
 
@@ -226,7 +225,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 uploadHasError
                   ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
                   : idProofImage
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.24)]"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)]"
                     : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
               )}
             >

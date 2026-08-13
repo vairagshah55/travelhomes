@@ -314,7 +314,7 @@ const ServiceSelection = () => {
             key={shakeKey}
             onClick={handleContinue}
             className={cn(
-              "ss-cta-btn flex items-center justify-center gap-2 h-[52px] px-11 rounded-full border-none cursor-pointer text-[15px] font-bold tracking-[-0.01em] bg-th-brand text-th-text-inverse shadow-[0_8px_28px_rgba(59, 217, 218, 0.44)] w-fit",
+              "ss-cta-btn flex items-center justify-center gap-2 h-[52px] px-11 rounded-full border-none cursor-pointer text-[15px] font-bold tracking-[-0.01em] bg-th-brand text-th-text-inverse shadow-[0_8px_28px_rgba(59,217,218,0.44)] w-fit",
               showError && !selectedService && "ss-cta-shake",
             )}
           >
@@ -510,8 +510,8 @@ const ServiceCard = ({
     className={cn(
       "flex items-center gap-[18px] px-5 py-[17px] rounded-[16px] cursor-pointer select-none relative overflow-hidden transition-all duration-200",
       active
-        ? "border-2 border-th-brand bg-th-brand-soft shadow-[0_4px_24px_rgba(59, 217, 218, 0.44)]"
-        : "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(59, 217, 218, 0.08)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]",
+        ? "border-2 border-th-brand bg-th-brand-soft shadow-[0_4px_24px_rgba(59,217,218,0.44)]"
+        : "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(59,217,218,0.08)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]",
     )}
   >
     {/* Active tag */}
@@ -527,7 +527,7 @@ const ServiceCard = ({
         "w-[50px] h-[50px] rounded-[14px] flex-shrink-0 flex items-center justify-center transition-all duration-200",
         active
           ? "bg-th-brand text-th-text-inverse"
-          : "bg-[#F1EFE8] text-th-warm-text-muted hover:bg-[rgba(59, 217, 218, 0.2)] hover:text-th-brand",
+          : "bg-[#F1EFE8] text-th-warm-text-muted hover:bg-[rgba(59,217,218,0.2)] hover:text-th-brand",
       )}
     >
       {icon}

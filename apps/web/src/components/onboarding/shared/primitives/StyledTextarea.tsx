@@ -1,5 +1,6 @@
 import React from "react";
 import { cn } from "@/lib/utils";
+import { inputSurfaceClass, inputFocusClass } from "./StyledInput";
 
 interface StyledTextareaProps {
   value: string;
@@ -25,12 +26,13 @@ const StyledTextarea: React.FC<StyledTextareaProps> = ({
     maxLength={maxLength}
     rows={rows}
     className={cn(
-      "w-full px-4 py-[14px] text-[14.5px] rounded-[13px] border-[1.5px] outline-none resize-none font-normal tracking-[-0.005em] leading-[1.65]",
-      "transition-[background-color,border-color,box-shadow] duration-150",
-      "bg-th-warm-surface border-transparent text-th-text-primary",
-      "placeholder:text-th-warm-text-muted",
-      !error && "focus:bg-th-surface-0 focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
-      error && "border-th-error-bright shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
+      "w-full min-h-[140px] px-4 py-[14px] text-[15px] rounded-[12px] outline-none resize-none",
+      "font-normal tracking-[-0.005em] leading-[1.65]",
+      inputSurfaceClass,
+      "text-th-text-primary placeholder:text-th-warm-text-muted",
+      !error && inputFocusClass,
+      error &&
+        "border-th-error-bright-soft focus:border-th-error-bright focus:shadow-[0_0_0_3px_var(--th-error-bright-ring)]",
     )}
   />
 );

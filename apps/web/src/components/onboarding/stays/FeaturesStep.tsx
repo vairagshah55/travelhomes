@@ -118,7 +118,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             Features
           </p>
           {totalSelected > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59, 217, 218, 0.4)] rounded-full px-2.5 py-[2px]">
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-2.5 py-[2px]">
               {totalSelected} selected
             </span>
           )}
@@ -175,7 +175,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={`custom-${idx}`}
                 type="button"
                 onClick={() => handleRemoveCustom(idx)}
-                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] cursor-pointer text-th-brand"
+                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] cursor-pointer text-th-brand"
               >
                 <MoreHorizontal size={14} />
                 <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature}</span>
@@ -196,7 +196,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   className={cn(
                     "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                     isSelected
-                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)] text-th-brand"
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] text-th-brand"
                       : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                   )}
                 >
@@ -228,7 +228,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             {/* ── Inline custom input pill ── */}
             {customFeatures.length < 20 &&
               (showCustomFeaturesInput ? (
-                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)]">
+                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(59,217,218,0.4)]">
                   <input
                     ref={inputRef}
                     type="text"

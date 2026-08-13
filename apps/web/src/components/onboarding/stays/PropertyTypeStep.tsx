@@ -51,7 +51,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
             Properties
           </p>
           {selectedCount > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59, 217, 218, 0.4)] rounded-full px-2.5 py-[2px]">
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-2.5 py-[2px]">
               {selectedCount} selected
             </span>
           )}
@@ -71,7 +71,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-2.5 px-2.5 py-[18px] rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59, 217, 218, 0.4)]"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)]"
                     : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
