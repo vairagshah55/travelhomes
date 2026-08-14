@@ -7,14 +7,18 @@
  *   1. Ensures a Vendor row exists (creating one in `pending` if not, and
  *      flipping `rejected` → `pending` to allow resubmission).
  *   2. Normalizes any data: URL photos / covers / idPhotos to /uploads.
- *   3. Creates the type-specific onboarding doc with status='pending'.
+ *   3. Upserts the type-specific onboarding doc with status='pending' —
+ *      re-submitting while the previous one is pending/draft/rejected EDITS
+ *      that doc rather than adding another (see upsertOnboardingDoc).
  *   4. Syncs the user's Profile with personal + business fields from the
  *      submission (best-effort, logged on failure).
- *   5. Cancels prior pending/rejected Offers in the same category so the
- *      admin queue doesn't pile up duplicates.
- *   6. Creates a matching Offer (status='pending') referencing the
- *      onboarding doc via sourceId/sourceModel. On failure, deletes the
- *      onboarding doc so the two stay consistent (a hand-rolled saga).
+ *   5. Cancels the vendor's other pending/rejected Offers for the same
+ *      serviceType so the admin queue doesn't pile up duplicates.
+ *   6. Syncs the matching Offer (status='pending') referencing the onboarding
+ *      doc via sourceId/sourceModel — updating the linked offer in place on an
+ *      edit, creating one only when none exists. On failure it deletes the
+ *      onboarding doc, but only one this request created, so an edit can't
+ *      destroy an existing submission (a hand-rolled saga).
  *
  * Status promotion to vendor (User.role / Register.userType) happens on
  * admin approval, not here — we only mark User.status='active' so the
@@ -31,7 +35,12 @@ const Vendor = require("../../models/Vendor");
 const User = require("../../models/User");
 const Profile = require("../../models/Profile");
 const logger = require("../../shared/logger");
-const { BadRequestError, ForbiddenError, NotFoundError, ConflictError } = require("../../shared/errors");
+const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+} = require("../../shared/errors");
 
 const uploadsDir = path.join(process.cwd(), "uploads");
 try {
@@ -222,26 +231,108 @@ async function assertNoOtherPendingSubmission(userId, type) {
   }
 }
 
-async function cancelPreviousOffers(userId, categories) {
+// Statuses that mean "this submission is still the vendor's current draft".
+// Re-submitting while in one of these states is an EDIT of that submission,
+// which is exactly how the wizard presents it — see loadCaravanDraft, which
+// hydrates the form from a pending/draft/rejected doc but wipes it and starts
+// fresh once the doc is approved (an approved listing stays untouched, and the
+// next submit becomes an additional listing).
+const EDITABLE_STATUSES = ["pending", "draft", "rejected"];
+
+/**
+ * Reuse the vendor's in-flight submission for this service type, or start a new
+ * one if there isn't one.
+ *
+ * Every submit handler used to call `Model.create()` unconditionally, so a
+ * vendor who hit "Edit Details" on a pending submission and re-submitted got a
+ * SECOND pending document — and the admin review queue (which is a plain
+ * `find()`) listed the same caravan twice.
+ *
+ * Returns `{ doc, isNew }`; `isNew` matters because the offer-sync rollback may
+ * only delete a document this call created. Deleting a pre-existing one would
+ * throw away the vendor's submission.
+ */
+async function upsertOnboardingDoc(Model, user, vendor, fields) {
+  const existing = await Model.findOne({
+    userId: user._id,
+    status: { $in: EDITABLE_STATUSES },
+  }).sort({ createdAt: -1 });
+
+  if (!existing) {
+    const doc = await Model.create({
+      ...fields,
+      userId: user._id,
+      vendorId: vendor && vendor.vendorId,
+      status: "pending",
+    });
+    return { doc, isNew: true };
+  }
+
+  Object.assign(existing, fields);
+  existing.vendorId = (vendor && vendor.vendorId) || existing.vendorId;
+  existing.status = "pending";
+  // A resubmission is a fresh request for review; the old reason no longer
+  // applies and the wizard would otherwise keep showing it.
+  existing.rejectionReason = "";
+  await existing.save();
+  logger.info(
+    { model: Model.modelName, onboardingId: String(existing._id), userId: String(user._id) },
+    "[Onboarding] updated existing submission instead of creating a duplicate",
+  );
+  return { doc: existing, isNew: false };
+}
+
+/**
+ * Retire the vendor's other in-flight offers for this service type.
+ *
+ * This used to filter on `category`, comparing against hardcoded slugs
+ * (["caravan", "campervan", "camper-trailer", …]). For activities and stays the
+ * offer's category is a constant that happened to match, but a caravan offer
+ * stores the van type the vendor picked — "Camper Trailer", "Cargo Van", or
+ * free text — so the filter never matched and the previous pending offer was
+ * left pending. That is what put a duplicate caravan in the admin Pending tab.
+ *
+ * `serviceType` is set by this module rather than by the vendor, so it is a
+ * reliable key. The offer belonging to `exceptSourceId` is left alone because
+ * the caller is about to update it in place.
+ */
+async function cancelPreviousOffers(userId, serviceType, exceptSourceId) {
   try {
-    const filter = Array.isArray(categories) ? { $in: categories } : categories;
-    await Offer.updateMany(
-      { userId, category: filter, status: { $in: ["pending", "rejected"] } },
-      { status: "cancelled" },
-    );
+    const filter = {
+      userId,
+      serviceType,
+      status: { $in: ["pending", "rejected"] },
+    };
+    if (exceptSourceId) filter.sourceId = { $ne: exceptSourceId };
+    await Offer.updateMany(filter, { status: "cancelled" });
   } catch (err) {
     logger.warn({ err: err.message }, "[Onboarding] failed to cancel old offers");
   }
 }
 
-// Create the offer that mirrors the onboarding doc. On any failure the
-// caller MUST delete the onboarding doc so the pair stays consistent.
-async function createOfferForOnboarding(offerData, onboardingModel, onboardingId) {
+/**
+ * Point the onboarding doc's offer at the latest submitted values.
+ *
+ * Updates the offer already linked to this submission (sourceId + sourceModel)
+ * so an edit keeps one offer, and creates one only when none exists yet. On
+ * failure the onboarding doc is deleted to keep the pair consistent — but only
+ * when this request created it (`isNew`).
+ */
+async function syncOfferForOnboarding(offerData, onboardingModel, doc, isNew) {
   try {
+    const existing = await Offer.findOne({
+      sourceId: doc._id,
+      sourceModel: onboardingModel.modelName,
+    });
+    if (existing) {
+      Object.assign(existing, offerData);
+      await existing.save();
+      return;
+    }
     await Offer.create(offerData);
   } catch (err) {
-    logger.error({ err, onboardingId: String(onboardingId) }, "[Onboarding] offer creation failed");
-    await onboardingModel.findByIdAndDelete(onboardingId);
+    logger.error({ err, onboardingId: String(doc._id), isNew }, "[Onboarding] offer sync failed");
+    if (isNew) await onboardingModel.findByIdAndDelete(doc._id);
     throw new BadRequestError(`Failed to create Offer: ${err.message}`);
   }
 }
@@ -259,20 +350,17 @@ async function submitActivity(body, user) {
   }
   const strIdPhotos = await normalizeImageArray(body.idPhotos || [], "activity-id-photo");
 
-  const doc = await ActivityOnboarding.create({
+  const { doc, isNew } = await upsertOnboardingDoc(ActivityOnboarding, user, vendor, {
     ...body,
     photos: strPhotos,
     coverImage: strCoverImage,
     idPhotos: strIdPhotos,
-    userId: user._id,
-    vendorId: vendor && vendor.vendorId,
-    status: "pending",
   });
 
   await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "activity" });
-  await cancelPreviousOffers(user._id, "activity");
+  await cancelPreviousOffers(user._id, "activity", doc._id);
 
-  await createOfferForOnboarding(
+  await syncOfferForOnboarding(
     {
       name: doc.activityName || "Activity",
       category: "activity",
@@ -302,7 +390,8 @@ async function submitActivity(body, user) {
       sourceModel: "ActivityOnboarding",
     },
     ActivityOnboarding,
-    doc._id,
+    doc,
+    isNew,
   );
 
   return doc;
@@ -320,25 +409,16 @@ async function submitCaravan(body, user) {
       : [];
   const strCoverImage = await normalizeImageArray(rawCover, "caravan-cover");
 
-  const doc = await CaravanOnboarding.create({
+  const { doc, isNew } = await upsertOnboardingDoc(CaravanOnboarding, user, vendor, {
     ...body,
     photos: strPhotos,
     coverImage: strCoverImage,
-    userId: user._id,
-    vendorId: vendor && vendor.vendorId,
-    status: "pending",
   });
 
   await syncUserProfile(user.email, { ...body, type: "caravan" });
-  await cancelPreviousOffers(user._id, [
-    "caravan",
-    "campervan",
-    "camper-trailer",
-    "motorhome",
-    "rv",
-  ]);
+  await cancelPreviousOffers(user._id, "camper-van", doc._id);
 
-  await createOfferForOnboarding(
+  await syncOfferForOnboarding(
     {
       name: doc.name || "Caravan",
       category: doc.category || "caravan",
@@ -371,7 +451,8 @@ async function submitCaravan(body, user) {
       sourceModel: "CaravanOnboarding",
     },
     CaravanOnboarding,
-    doc._id,
+    doc,
+    isNew,
   );
 
   return doc;
@@ -395,17 +476,14 @@ async function submitStay(body, user) {
   const strImages = await normalizeImageArray(body.images || [], "stay-image");
   const strIdPhotos = await normalizeImageArray(body.idPhotos || [], "stay-id-photo");
 
-  const doc = await StayOnboarding.create({
+  const { doc, isNew } = await upsertOnboardingDoc(StayOnboarding, user, vendor, {
     ...body,
     images: strImages,
     idPhotos: strIdPhotos,
-    userId: user._id,
-    vendorId: vendor && vendor.vendorId,
-    status: "pending",
   });
 
   await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "stay" });
-  await cancelPreviousOffers(user._id, "stay");
+  await cancelPreviousOffers(user._id, "unique-stay", doc._id);
 
   const firstRoomPhotos =
     (doc.rooms && doc.rooms[0] && Array.isArray(doc.rooms[0].photos) && doc.rooms[0].photos) || [];
@@ -413,7 +491,7 @@ async function submitStay(body, user) {
     .map((p) => (typeof p === "string" ? p : String(p)))
     .filter((s) => typeof s === "string" && s.length > 0);
 
-  await createOfferForOnboarding(
+  await syncOfferForOnboarding(
     {
       name: doc.propertyName || (doc.selectedProperties && doc.selectedProperties[0]) || "Stay",
       category: "stay",
@@ -445,7 +523,8 @@ async function submitStay(body, user) {
       sourceModel: "StayOnboarding",
     },
     StayOnboarding,
-    doc._id,
+    doc,
+    isNew,
   );
 
   return doc;
