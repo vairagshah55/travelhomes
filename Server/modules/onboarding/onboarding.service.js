@@ -511,10 +511,19 @@ async function submitStay(body, user) {
   const strImages = await normalizeImageArray(body.images || [], "stay-image");
   const strIdPhotos = await normalizeImageArray(body.idPhotos || [], "stay-id-photo");
 
+  // The cover was the one image this flow never normalised (submitActivity and
+  // submitCaravan both do), so every stay doc stored a multi-megabyte base64
+  // string that then rode along on every /onboarding/mine and admin fetch.
+  const [strCoverImage] = await normalizeImageArray(
+    body.coverImage ? [body.coverImage] : [],
+    "stay-cover",
+  );
+
   const { doc, isNew } = await upsertOnboardingDoc(StayOnboarding, user, vendor, {
     ...body,
     images: strImages,
     idPhotos: strIdPhotos,
+    ...(strCoverImage ? { coverImage: strCoverImage } : {}),
   });
 
   await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "stay" });
