@@ -8,6 +8,12 @@ export interface LoadCaravanDraftOptions {
   setStatus: (v: string) => void;
   setRejectionReason: (v: string) => void;
   setIsStatusLoading: (v: boolean) => void;
+  // A pending submission of a DIFFERENT type — set when the vendor navigates
+  // straight to /onboarding/caravan while e.g. a stay listing is still
+  // awaiting admin action. Lets the page block with a clear message instead
+  // of silently starting a second listing (the backend rejects that submit
+  // anyway, but only after the whole wizard is filled out).
+  setCrossTypePending: (v: { type: string; doc: any } | null) => void;
   userDetails: any;
   /** sessionStorage key for the persisted form snapshot. */
   formStorageKey: string;
@@ -64,6 +70,7 @@ export async function loadCaravanDraft(opts: LoadCaravanDraftOptions): Promise<v
     setStatus,
     setRejectionReason,
     setIsStatusLoading,
+    setCrossTypePending,
     userDetails,
     formStorageKey,
     stepStorageKey,
@@ -71,6 +78,13 @@ export async function loadCaravanDraft(opts: LoadCaravanDraftOptions): Promise<v
   try {
     const data = await getOnboardingData();
     const caravanDoc = data?.type === "caravan" ? data?.doc : null;
+
+    if (data && data.type && data.type !== "caravan" && data.doc?.status === "pending") {
+      setCrossTypePending({ type: data.type, doc: data.doc });
+      setIsStatusLoading(false);
+      return;
+    }
+    setCrossTypePending(null);
 
     if (caravanDoc && caravanDoc.status === "approved") {
       try {

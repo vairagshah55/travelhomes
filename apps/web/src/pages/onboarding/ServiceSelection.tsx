@@ -53,6 +53,9 @@ const ServiceSelection = () => {
           setHasPendingApplication(true);
           setPendingServiceType(data.type);
           setPendingData(data.doc);
+          // The other cards are about to become disabled — land selection on
+          // the one service the vendor can actually continue with.
+          setSelectedService(data.type as ServiceType);
         } else {
           setHasPendingApplication(false);
           setPendingServiceType(null);
@@ -282,6 +285,7 @@ const ServiceSelection = () => {
                   tag={SERVICE_META[service].tag}
                   icon={SERVICE_ICONS[service]}
                   active={selectedService === service}
+                  disabled={hasPendingApplication && service !== pendingServiceType}
                   onClick={() => {
                     setSelectedService(service);
                     setShowError(false);
@@ -495,6 +499,7 @@ const ServiceCard = ({
   tag,
   icon,
   active,
+  disabled,
   onClick,
 }: {
   service: ServiceType;
@@ -503,22 +508,37 @@ const ServiceCard = ({
   tag: string;
   icon: React.ReactNode;
   active: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) => (
   <div
-    onClick={onClick}
+    onClick={disabled ? undefined : onClick}
+    aria-disabled={disabled || undefined}
     className={cn(
-      "flex items-center gap-[18px] px-5 py-[17px] rounded-[16px] cursor-pointer select-none relative overflow-hidden transition-all duration-200",
-      active
+      "flex items-center gap-[18px] px-5 py-[17px] rounded-[16px] select-none relative overflow-hidden transition-all duration-200",
+      disabled
+        ? "cursor-not-allowed border-[1.5px] border-th-warm-border bg-th-surface-0 opacity-50"
+        : "cursor-pointer",
+      !disabled && active
         ? "border-2 border-th-brand bg-th-brand-soft shadow-[0_4px_24px_rgba(59,217,218,0.44)]"
-        : "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(59,217,218,0.08)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]",
+        : "",
+      !disabled && !active
+        ? "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(59,217,218,0.08)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+        : "",
     )}
   >
-    {/* Active tag */}
-    {active && tag && (
-      <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-brand text-th-text-inverse">
-        {tag}
+    {/* Active tag / locked-while-pending badge */}
+    {disabled ? (
+      <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-warm-border text-th-warm-text-muted">
+        Pending review
       </span>
+    ) : (
+      active &&
+      tag && (
+        <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-brand text-th-text-inverse">
+          {tag}
+        </span>
+      )
     )}
 
     {/* Icon container */}

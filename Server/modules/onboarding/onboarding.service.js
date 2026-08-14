@@ -31,7 +31,7 @@ const Vendor = require("../../models/Vendor");
 const User = require("../../models/User");
 const Profile = require("../../models/Profile");
 const logger = require("../../shared/logger");
-const { BadRequestError, ForbiddenError, NotFoundError } = require("../../shared/errors");
+const { BadRequestError, ForbiddenError, NotFoundError, ConflictError } = require("../../shared/errors");
 
 const uploadsDir = path.join(process.cwd(), "uploads");
 try {
@@ -192,6 +192,36 @@ async function syncUserProfile(email, data) {
   }
 }
 
+const TYPE_LABELS = { activity: "activity", caravan: "caravan", stay: "unique stay" };
+
+// A vendor may only have one submission in flight at a time — resubmitting
+// the SAME type (editing a pending draft) is allowed and replaces it via
+// cancelPreviousOffers below, but starting a DIFFERENT type while one is
+// still awaiting admin action is blocked here so it can't be bypassed by
+// navigating straight to another /onboarding/<type> URL.
+async function findPendingSubmission(userId, excludingType) {
+  const [activity, caravan, stay] = await Promise.all([
+    excludingType === "activity" ? null : ActivityOnboarding.findOne({ userId, status: "pending" }),
+    excludingType === "caravan" ? null : CaravanOnboarding.findOne({ userId, status: "pending" }),
+    excludingType === "stay" ? null : StayOnboarding.findOne({ userId, status: "pending" }),
+  ]);
+  if (activity) return { type: "activity", doc: activity };
+  if (caravan) return { type: "caravan", doc: caravan };
+  if (stay) return { type: "stay", doc: stay };
+  return null;
+}
+
+async function assertNoOtherPendingSubmission(userId, type) {
+  const pending = await findPendingSubmission(userId, type);
+  if (pending) {
+    throw new ConflictError(
+      `You already have a ${TYPE_LABELS[pending.type]} listing pending review. ` +
+        `Please wait for admin approval or rejection before adding another service.`,
+      { pendingType: pending.type, pendingId: String(pending.doc._id) },
+    );
+  }
+}
+
 async function cancelPreviousOffers(userId, categories) {
   try {
     const filter = Array.isArray(categories) ? { $in: categories } : categories;
@@ -218,6 +248,7 @@ async function createOfferForOnboarding(offerData, onboardingModel, onboardingId
 
 // ─── Submit handlers ───────────────────────────────────────────────────
 async function submitActivity(body, user) {
+  await assertNoOtherPendingSubmission(user._id, "activity");
   const vendor = await ensureVendor(user);
 
   const strPhotos = await normalizeImageArray(body.photos || [], "activity-photo");
@@ -278,6 +309,7 @@ async function submitActivity(body, user) {
 }
 
 async function submitCaravan(body, user) {
+  await assertNoOtherPendingSubmission(user._id, "caravan");
   const vendor = await ensureVendor(user);
 
   const strPhotos = await normalizeImageArray(body.photos || [], "caravan-photo");
@@ -346,6 +378,7 @@ async function submitCaravan(body, user) {
 }
 
 async function submitStay(body, user) {
+  await assertNoOtherPendingSubmission(user._id, "stay");
   const vendor = await ensureVendor(user);
 
   // Per-room photo normalization comes first so room.photos lands as URLs
@@ -463,6 +496,13 @@ async function getMine(user) {
   ].filter((x) => x.doc);
 
   if (!submissions.length) return null;
+
+  // A still-pending submission always wins, even if a different type's latest
+  // doc is more recent — otherwise a newer approved/rejected doc in another
+  // category would hide an older pending one from the "one at a time" gate.
+  const pending = submissions.find((x) => x.doc.status === "pending");
+  if (pending) return pending;
+
   submissions.sort((a, b) => new Date(b.doc.createdAt) - new Date(a.doc.createdAt));
   return submissions[0];
 }

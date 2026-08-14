@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { Country } from "country-state-city";
 import { MoreHorizontal, Clock, Home } from "lucide-react";
@@ -67,7 +67,16 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
 
 const CaravanOnboarding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { updateUserType, isAuthenticated } = useAuth();
+  // Lets a vendor re-enter the wizard for a still-pending submission —
+  // loadCaravanDraft already hydrates formData from the pending doc, so once
+  // this is true the normal wizard renders pre-filled instead of the "under
+  // review" dead end. Resubmitting is safe: the backend cancels the previous
+  // offer and creates a fresh one (see cancelPreviousOffers in onboarding.service.js).
+  const [bypassPendingGate, setBypassPendingGate] = useState(
+    () => (location.state as any)?.autoEdit === true,
+  );
 
   const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
@@ -133,6 +142,9 @@ const CaravanOnboarding = () => {
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [isStatusLoading, setIsStatusLoading] = useState(true);
+  const [crossTypePending, setCrossTypePending] = useState<{ type: string; doc: any } | null>(
+    null,
+  );
 
   const { userDetails, loading: userDetailsLoading, updateUserDetails } = useUserDetails();
 
@@ -160,6 +172,7 @@ const CaravanOnboarding = () => {
       setStatus,
       setRejectionReason,
       setIsStatusLoading,
+      setCrossTypePending,
       userDetails,
       formStorageKey: FORM_STORAGE_KEY,
       stepStorageKey: "caravan_onboarding_step",
@@ -658,7 +671,47 @@ const CaravanOnboarding = () => {
     );
   }
 
-  if (status === "pending") {
+  if (crossTypePending) {
+    const otherLabel =
+      { activity: "activity", stay: "unique stay" }[crossTypePending.type] || "listing";
+    return (
+      <div
+        data-onboarding
+        className="min-h-screen flex items-center justify-center bg-[color:var(--onb-page-bg,#efeeea)] px-4"
+      >
+        <div className="bg-th-surface-0 rounded-[18px] border border-[color:var(--onb-card-border)] shadow-[var(--onb-card-shadow)] p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 rounded-[16px] bg-th-warn-bright-bg border border-th-warn-bright-border flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-6 h-6 text-th-warn-bright" strokeWidth={2} />
+          </div>
+          <h2 className="font-serif text-[23px] font-normal text-th-text-primary tracking-[-0.02em] mb-2">
+            You already have a listing pending review
+          </h2>
+          <p className="text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)] mb-5">
+            Your {otherLabel} listing is awaiting admin approval. You can add a caravan listing
+            once that's approved or rejected.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/onboarding/${crossTypePending.type}`)}
+              className="onb-btn-primary w-full rounded-full py-3.5 text-[14px]"
+            >
+              View {otherLabel} listing
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
+            >
+              Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === "pending" && !bypassPendingGate) {
     return (
       <div
         data-onboarding
@@ -686,8 +739,15 @@ const CaravanOnboarding = () => {
           <div className="flex flex-col gap-3">
             <button
               type="button"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => setBypassPendingGate(true)}
               className="onb-btn-primary w-full rounded-full py-3.5 text-[14px]"
+            >
+              Edit Details
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
             >
               Go to Dashboard
             </button>

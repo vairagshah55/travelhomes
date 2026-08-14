@@ -71,8 +71,9 @@ const OnboardingComplete = () => {
               onClick={() =>
                 navigate(
                   listingType
-                    ? `/onboarding/${listingType === "caravan" ? "caravan" : listingType === "activity" ? "activity" : "stays"}`
+                    ? `/onboarding/${listingType === "caravan" ? "caravan" : listingType === "activity" ? "activity" : "stay"}`
                     : "/onboarding/service-selection",
+                  { state: { autoEdit: true } },
                 )
               }
               className="h-11 px-8 text-sm border border-ds-pebble rounded-full hover:border-ds-slate transition-colors"
