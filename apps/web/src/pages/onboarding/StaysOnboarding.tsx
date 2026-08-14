@@ -44,6 +44,7 @@ import { useStayImageHandlers } from "@/components/onboarding/stays/useStayImage
 import { useStayFieldHandlers } from "@/components/onboarding/stays/useStayFieldHandlers";
 import { useStaySelectionHandlers } from "@/components/onboarding/stays/useStaySelectionHandlers";
 import {
+  StayCrossTypePendingScreen,
   StayStatusLoading,
   StayStatusScreen,
   StayRejectedBanner,
@@ -55,7 +56,6 @@ const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
   countryCode: c.isoCode,
   dialCode: c.phonecode,
 }));
-
 
 interface Room {
   id: string;
@@ -91,25 +91,38 @@ const StaysOnboarding = () => {
   const FORM_STORAGE_KEY = "stay_onboarding_form";
 
   // ─── Restore cached form snapshot (sessionStorage) ─────────────────────────
-  const _cached = (() => {
-    try {
-      const raw = sessionStorage.getItem(FORM_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      // Discard snapshots that contain NaN-sentinel values (corrupted by a
-      // previous bug where Number() conversions weren't guarded).
-      const numeric = ["guestCapacity", "numberOfRooms", "numberOfBeds", "numberOfBathrooms"];
-      const isCorrupted = numeric.some((k) => parsed[k] !== undefined && !isFinite(Number(parsed[k])));
-      if (isCorrupted) {
-        sessionStorage.removeItem(FORM_STORAGE_KEY);
-        sessionStorage.removeItem(STEP_STORAGE_KEY);
+  // useRef, not a bare IIFE: this only feeds the useState initialisers below, but
+  // as a plain expression in the component body it re-read and JSON.parse'd the
+  // whole snapshot on EVERY render. The snapshot holds the cover photo and the
+  // gallery as base64 data URLs (400KB-1MB each after compression, 2-6MB for a
+  // five-photo listing), so every keystroke in a House Rules field paid a
+  // multi-megabyte parse — the Listing Setup step became unusable once photos
+  // were attached. Reading once per mount is all that was ever needed.
+  const _cached = useRef<any>(undefined);
+  if (_cached.current === undefined) {
+    _cached.current = (() => {
+      try {
+        const raw = sessionStorage.getItem(FORM_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        // Discard snapshots that contain NaN-sentinel values (corrupted by a
+        // previous bug where Number() conversions weren't guarded).
+        const numeric = ["guestCapacity", "numberOfRooms", "numberOfBeds", "numberOfBathrooms"];
+        const isCorrupted = numeric.some(
+          (k) => parsed[k] !== undefined && !isFinite(Number(parsed[k])),
+        );
+        if (isCorrupted) {
+          sessionStorage.removeItem(FORM_STORAGE_KEY);
+          sessionStorage.removeItem(STEP_STORAGE_KEY);
+          return null;
+        }
+        return parsed;
+      } catch {
         return null;
       }
-      return parsed;
-    } catch {
-      return null;
-    }
-  })();
+    })();
+  }
+  const cached = _cached.current;
 
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = sessionStorage.getItem(STEP_STORAGE_KEY);
@@ -124,28 +137,30 @@ const StaysOnboarding = () => {
 
   // Form state
   const [selectedProperties, setSelectedProperties] = useState<string[]>(
-    _cached?.selectedProperties ?? [],
+    cached?.selectedProperties ?? [],
   );
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    _cached?.selectedCategories ?? [],
+    cached?.selectedCategories ?? [],
   );
-  const [stayType, setStayType] = useState<"entire" | "individual">(_cached?.stayType ?? "entire");
+  const [stayType, setStayType] = useState<"entire" | "individual">(cached?.stayType ?? "entire");
 
   // Rules and regulations state
   const [entireStayRules, setEntireStayRules] = useState<string[]>(
-    _cached?.entireStayRules ?? [""],
+    cached?.entireStayRules ?? [""],
   );
-  const [roomRules, setRoomRules] = useState<Record<string, string[]>>(_cached?.roomRules ?? {});
-  const [optionalRules, setOptionalRules] = useState<string[]>(_cached?.optionalRules ?? [""]);
+  const [roomRules, setRoomRules] = useState<Record<string, string[]>>(cached?.roomRules ?? {});
+  const [optionalRules, setOptionalRules] = useState<string[]>(cached?.optionalRules ?? [""]);
   // Use Number() + || fallback so NaN from stale sessionStorage is treated as 0,
   // not propagated into counter arithmetic (NaN + 1 = NaN, NaN > 1 = false → stuck).
-  const [guestCapacity, setGuestCapacity] = useState(Number(_cached?.guestCapacity) || 0);
-  const [numberOfRooms, setNumberOfRooms] = useState(Number(_cached?.numberOfRooms) || 1);
-  const [numberOfBeds, setNumberOfBeds] = useState(Number(_cached?.numberOfBeds) || 0);
-  const [numberOfBathrooms, setNumberOfBathrooms] = useState(Number(_cached?.numberOfBathrooms) || 0);
-  const [regularPrice, setRegularPrice] = useState(_cached?.regularPrice ?? "");
+  const [guestCapacity, setGuestCapacity] = useState(Number(cached?.guestCapacity) || 0);
+  const [numberOfRooms, setNumberOfRooms] = useState(Number(cached?.numberOfRooms) || 1);
+  const [numberOfBeds, setNumberOfBeds] = useState(Number(cached?.numberOfBeds) || 0);
+  const [numberOfBathrooms, setNumberOfBathrooms] = useState(
+    Number(cached?.numberOfBathrooms) || 0,
+  );
+  const [regularPrice, setRegularPrice] = useState(cached?.regularPrice ?? "");
   const [rooms, setRooms] = useState<Room[]>(
-    _cached?.rooms ?? [
+    cached?.rooms ?? [
       {
         id: "1",
         name: "",
@@ -162,9 +177,9 @@ const StaysOnboarding = () => {
 
   // Features state
   const [selectedFeatures, setSelectedFeatures] = useState<string[]>(
-    _cached?.selectedFeatures ?? [],
+    cached?.selectedFeatures ?? [],
   );
-  const [customFeatures, setCustomFeatures] = useState<string[]>(_cached?.customFeatures ?? []);
+  const [customFeatures, setCustomFeatures] = useState<string[]>(cached?.customFeatures ?? []);
   const [showCustomFeaturesInput, setShowCustomFeaturesInput] = useState(false);
   const [customFeatureInput, setCustomFeatureInput] = useState("");
   const [adminFeatures, setAdminFeatures] = useState<any[]>([]);
@@ -174,66 +189,138 @@ const StaysOnboarding = () => {
   const [subCategoriesMap, setSubCategoriesMap] = useState<Record<string, any[]>>({});
 
   // Discount state
-  const [firstUserDiscount, setFirstUserDiscount] = useState(_cached?.firstUserDiscount ?? true);
-  const [discountType, setDiscountType] = useState(_cached?.discountType ?? "percentage");
-  const [discountPercentage, setDiscountPercentage] = useState(_cached?.discountPercentage ?? "");
-  const [finalPrice, setFinalPrice] = useState(_cached?.finalPrice ?? "");
-  const [festivalOffers, setFestivalOffers] = useState(_cached?.festivalOffers ?? false);
-  const [weeklyOffers, setWeeklyOffers] = useState(_cached?.weeklyOffers ?? false);
-  const [specialOffers, setSpecialOffers] = useState(_cached?.specialOffers ?? false);
+  const [firstUserDiscount, setFirstUserDiscount] = useState(cached?.firstUserDiscount ?? true);
+  const [discountType, setDiscountType] = useState(cached?.discountType ?? "percentage");
+  const [discountPercentage, setDiscountPercentage] = useState(cached?.discountPercentage ?? "");
+  const [finalPrice, setFinalPrice] = useState(cached?.finalPrice ?? "");
+  const [festivalOffers, setFestivalOffers] = useState(cached?.festivalOffers ?? false);
+  const [weeklyOffers, setWeeklyOffers] = useState(cached?.weeklyOffers ?? false);
+  const [specialOffers, setSpecialOffers] = useState(cached?.specialOffers ?? false);
 
   // Business Details state
-  const [brandName, setBrandName] = useState(_cached?.brandName ?? "");
-  const [companyName, setCompanyName] = useState(_cached?.companyName ?? "");
-  const [gstNumber, setGstNumber] = useState(_cached?.gstNumber ?? "");
-  const [businessEmail, setBusinessEmail] = useState(_cached?.businessEmail ?? "");
-  const [businessPhone, setBusinessPhone] = useState(_cached?.businessPhone ?? "");
-  const [businessAddress, setBusinessAddress] = useState(_cached?.businessAddress ?? "");
-  const [locality, setLocality] = useState(_cached?.locality ?? "India");
-  const [state, setState] = useState(_cached?.state ?? "");
-  const [city, setCity] = useState(_cached?.city ?? "");
-  const [businessPincode, setBusinessPincode] = useState(_cached?.businessPincode ?? "");
-  const [personalPincode, setPersonalPincode] = useState(_cached?.personalPincode ?? "");
+  const [brandName, setBrandName] = useState(cached?.brandName ?? "");
+  const [companyName, setCompanyName] = useState(cached?.companyName ?? "");
+  const [gstNumber, setGstNumber] = useState(cached?.gstNumber ?? "");
+  const [businessEmail, setBusinessEmail] = useState(cached?.businessEmail ?? "");
+  const [businessPhone, setBusinessPhone] = useState(cached?.businessPhone ?? "");
+  const [businessAddress, setBusinessAddress] = useState(cached?.businessAddress ?? "");
+  const [locality, setLocality] = useState(cached?.locality ?? "India");
+  const [state, setState] = useState(cached?.state ?? "");
+  const [city, setCity] = useState(cached?.city ?? "");
+  const [businessPincode, setBusinessPincode] = useState(cached?.businessPincode ?? "");
+  const [personalPincode, setPersonalPincode] = useState(cached?.personalPincode ?? "");
 
   // Personal Details state
-  const [firstName, setFirstName] = useState(_cached?.firstName ?? "");
-  const [lastName, setLastName] = useState(_cached?.lastName ?? "");
-  const [personalCountry, setPersonalCountry] = useState(_cached?.personalCountry ?? "India");
-  const [personalState, setPersonalState] = useState(_cached?.personalState ?? "");
-  const [personalCity, setPersonalCity] = useState(_cached?.personalCity ?? "");
-  const [dateOfBirth, setDateOfBirth] = useState(_cached?.dateOfBirth ?? "");
-  const [maritalStatus, setMaritalStatus] = useState(_cached?.maritalStatus ?? "");
-  const [idProof, setIdProof] = useState(_cached?.idProof ?? "");
-  const [idProofImage, setIdProofImage] = useState<string | null>(_cached?.idProofImage ?? null);
-  const [images, setImages] = useState<(string | null)[]>(_cached?.images ?? Array(5).fill(null));
+  const [firstName, setFirstName] = useState(cached?.firstName ?? "");
+  const [lastName, setLastName] = useState(cached?.lastName ?? "");
+  const [personalCountry, setPersonalCountry] = useState(cached?.personalCountry ?? "India");
+  const [personalState, setPersonalState] = useState(cached?.personalState ?? "");
+  const [personalCity, setPersonalCity] = useState(cached?.personalCity ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(cached?.dateOfBirth ?? "");
+  const [maritalStatus, setMaritalStatus] = useState(cached?.maritalStatus ?? "");
+  const [idProof, setIdProof] = useState(cached?.idProof ?? "");
+  const [idProofImage, setIdProofImage] = useState<string | null>(cached?.idProofImage ?? null);
+  const [images, setImages] = useState<(string | null)[]>(cached?.images ?? Array(5).fill(null));
   const [entireStayImages, setEntireStayImages] = useState<string[]>(
-    _cached?.entireStayImages ?? [],
+    cached?.entireStayImages ?? [],
   );
-  const [coverImage, setCoverImage] = useState<string | null>(_cached?.coverImage ?? null);
+  const [coverImage, setCoverImage] = useState<string | null>(cached?.coverImage ?? null);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
   const [open, setOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Snapshot the current form to sessionStorage. We stringify once and use the
-  // result as the only effect dependency, so React doesn't have to track 42
-  // individual values and the deps array stays manageable.
-  const formSnapshotJson = JSON.stringify({
-    selectedProperties, selectedCategories, stayType, entireStayRules, roomRules,
-    optionalRules, guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms,
-    regularPrice, rooms, selectedFeatures, customFeatures, firstUserDiscount,
-    discountType, discountPercentage, finalPrice, festivalOffers, weeklyOffers,
-    specialOffers, brandName, companyName, gstNumber, businessEmail, businessPhone,
-    businessAddress, locality, state, city, businessPincode, personalPincode,
-    firstName, lastName, personalCountry, personalState, personalCity, dateOfBirth,
-    maritalStatus, idProof, idProofImage, images: images.filter(Boolean),
-    entireStayImages, coverImage,
-  });
+  // Snapshot the current form to sessionStorage so a mid-wizard refresh doesn't
+  // lose the draft.
+  //
+  // Building the object every render is cheap; serialising it is not. This used
+  // to `JSON.stringify` here in the component body and pass the resulting string
+  // as the effect's only dependency — clever for the deps array, brutal in
+  // practice: the cover photo and gallery are base64 data URLs, so every
+  // keystroke re-serialised 2-6MB and wrote it to sessionStorage synchronously.
+  // Combined with the parse on the read side, House Rules typing and gallery
+  // uploads stalled the main thread hard enough to look broken. Past the ~5MB
+  // quota, `setItem` also threw on every attempt and the draft silently wasn't
+  // saved at all.
+  const formSnapshot = {
+    selectedProperties,
+    selectedCategories,
+    stayType,
+    entireStayRules,
+    roomRules,
+    optionalRules,
+    guestCapacity,
+    numberOfRooms,
+    numberOfBeds,
+    numberOfBathrooms,
+    regularPrice,
+    rooms,
+    selectedFeatures,
+    customFeatures,
+    firstUserDiscount,
+    discountType,
+    discountPercentage,
+    finalPrice,
+    festivalOffers,
+    weeklyOffers,
+    specialOffers,
+    brandName,
+    companyName,
+    gstNumber,
+    businessEmail,
+    businessPhone,
+    businessAddress,
+    locality,
+    state,
+    city,
+    businessPincode,
+    personalPincode,
+    firstName,
+    lastName,
+    personalCountry,
+    personalState,
+    personalCity,
+    dateOfBirth,
+    maritalStatus,
+    idProof,
+    idProofImage,
+    images: images.filter(Boolean),
+    entireStayImages,
+    coverImage,
+  };
+  const formSnapshotRef = useRef(formSnapshot);
+  formSnapshotRef.current = formSnapshot;
+
+  // No dependency array on purpose: the timer is re-armed after every render and
+  // the cleanup cancels the previous one, so exactly one write happens once the
+  // user pauses — instead of one per keystroke.
   useEffect(() => {
-    try {
-      sessionStorage.setItem(FORM_STORAGE_KEY, formSnapshotJson);
-    } catch { /* quota exceeded — ignore */ }
-  }, [formSnapshotJson]);
+    const timer = setTimeout(() => {
+      const snapshot = formSnapshotRef.current;
+      try {
+        sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(snapshot));
+      } catch {
+        // Over quota — the photos are what blow it. Save everything else so a
+        // refresh still restores the typed fields; the vendor only re-picks
+        // images. Better than the previous behaviour, where one oversized
+        // gallery meant nothing at all was persisted.
+        try {
+          const light = {
+            ...snapshot,
+            coverImage: null,
+            entireStayImages: [],
+            images: [],
+            idProofImage: null,
+            rooms: snapshot.rooms.map((room) => ({ ...room, photos: [] })),
+          };
+          sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(light));
+        } catch {
+          /* still no room — leave the previous snapshot in place */
+        }
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  });
 
   const { userDetails, updateUserDetails } = useUserDetails();
   // Prevent loadExistingData from running more than once.
@@ -251,6 +338,13 @@ const StaysOnboarding = () => {
   // True while the initial data check is in-flight so we don't flash the
   // full form before knowing the submission is already pending/approved.
   const [isStatusLoading, setIsStatusLoading] = useState(true);
+  const [crossTypePending, setCrossTypePending] = useState<{ type: string; doc: any } | null>(null);
+  // Lets a vendor re-enter the wizard for a still-pending submission —
+  // loadStayDraft already hydrates the form from the pending doc, so once this
+  // is true the normal wizard renders pre-filled instead of the "under review"
+  // dead end. Resubmitting updates that submission rather than adding another
+  // (see upsertOnboardingDoc in Server/modules/onboarding/onboarding.service.js).
+  const [bypassPendingGate, setBypassPendingGate] = useState(false);
 
   const clearError = (field: string) => {
     setErrors((prev) => {
@@ -264,10 +358,10 @@ const StaysOnboarding = () => {
   const data = useCountriesData();
   const [countryOption, setCoutryOption] = useState("India");
   const [countryOption2, setCoutryOption2] = useState("India");
-  const [stateOption, setStateOption] = useState(_cached?.personalState ?? "");
-  const [stateOption2, setStateOption2] = useState(_cached?.state ?? "");
-  const [cityOption, setCityOptions] = useState(_cached?.personalCity ?? "");
-  const [cityOption2, setCityOptions2] = useState(_cached?.city ?? "");
+  const [stateOption, setStateOption] = useState(cached?.personalState ?? "");
+  const [stateOption2, setStateOption2] = useState(cached?.state ?? "");
+  const [cityOption, setCityOptions] = useState(cached?.personalCity ?? "");
+  const [cityOption2, setCityOptions2] = useState(cached?.city ?? "");
 
   useEffect(() => {
     setState(stateOption2);
@@ -354,19 +448,59 @@ const StaysOnboarding = () => {
         hasLoadedRef.current = true;
       },
       setters: {
-        setStatus, setRejectionReason, setSelectedProperties, setSelectedCategories,
-        setStayType, setGuestCapacity, setNumberOfRooms, setNumberOfBeds,
-        setNumberOfBathrooms, setRegularPrice, setRooms, setCoverImage,
-        setEntireStayImages, setImages, setSelectedFeatures, setEntireStayRules,
-        setRoomRules, setOptionalRules, setFirstUserDiscount, setDiscountType,
-        setDiscountPercentage, setFinalPrice, setFestivalOffers, setWeeklyOffers,
-        setSpecialOffers, setBrandName, setCompanyName, setGstNumber,
-        setBusinessEmail, setBusinessPhone, setBusinessAddress, setLocality,
-        setState, setStateOption2, setCity, setCityOptions2, setBusinessPincode,
-        setPersonalPincode, setFirstName, setLastName, setPersonalCountry,
-        setPersonalState, setStateOption, setPersonalCity, setCityOptions,
-        setDateOfBirth, setMaritalStatus, setIdProof, setIdProofImage,
-        setTermsAccepted, setCurrentStep, setIsStatusLoading,
+        setStatus,
+        setRejectionReason,
+        setSelectedProperties,
+        setSelectedCategories,
+        setStayType,
+        setGuestCapacity,
+        setNumberOfRooms,
+        setNumberOfBeds,
+        setNumberOfBathrooms,
+        setRegularPrice,
+        setRooms,
+        setCoverImage,
+        setEntireStayImages,
+        setImages,
+        setSelectedFeatures,
+        setEntireStayRules,
+        setRoomRules,
+        setOptionalRules,
+        setFirstUserDiscount,
+        setDiscountType,
+        setDiscountPercentage,
+        setFinalPrice,
+        setFestivalOffers,
+        setWeeklyOffers,
+        setSpecialOffers,
+        setBrandName,
+        setCompanyName,
+        setGstNumber,
+        setBusinessEmail,
+        setBusinessPhone,
+        setBusinessAddress,
+        setLocality,
+        setState,
+        setStateOption2,
+        setCity,
+        setCityOptions2,
+        setBusinessPincode,
+        setPersonalPincode,
+        setFirstName,
+        setLastName,
+        setPersonalCountry,
+        setPersonalState,
+        setStateOption,
+        setPersonalCity,
+        setCityOptions,
+        setDateOfBirth,
+        setMaritalStatus,
+        setIdProof,
+        setIdProofImage,
+        setTermsAccepted,
+        setCurrentStep,
+        setIsStatusLoading,
+        setCrossTypePending,
       },
     });
   }, [userDetails]);
@@ -422,7 +556,6 @@ const StaysOnboarding = () => {
     return getImageUrl(src);
   };
 
-
   const handleNext = () => {
     const hasCategoriesForSelection =
       currentStep === 1 &&
@@ -432,13 +565,44 @@ const StaysOnboarding = () => {
       });
 
     const { errors: newErrors, toastError } = validateStaysStep({
-      currentStep, selectedProperties, selectedCategories, stayType, guestCapacity,
-      numberOfRooms, numberOfBeds, numberOfBathrooms, regularPrice, entireStayRules,
-      coverImage, entireStayImages, rooms, selectedFeatures, firstUserDiscount,
-      festivalOffers, weeklyOffers, specialOffers, discountPercentage, finalPrice,
-      brandName, companyName, businessEmail, businessPhone, businessAddress, locality,
-      state, city, businessPincode, firstName, lastName, personalState, personalCity,
-      personalPincode, dateOfBirth, idProof, idProofImage, hasCategoriesForSelection,
+      currentStep,
+      selectedProperties,
+      selectedCategories,
+      stayType,
+      guestCapacity,
+      numberOfRooms,
+      numberOfBeds,
+      numberOfBathrooms,
+      regularPrice,
+      entireStayRules,
+      coverImage,
+      entireStayImages,
+      rooms,
+      selectedFeatures,
+      firstUserDiscount,
+      festivalOffers,
+      weeklyOffers,
+      specialOffers,
+      discountPercentage,
+      finalPrice,
+      brandName,
+      companyName,
+      businessEmail,
+      businessPhone,
+      businessAddress,
+      locality,
+      state,
+      city,
+      businessPincode,
+      firstName,
+      lastName,
+      personalState,
+      personalCity,
+      personalPincode,
+      dateOfBirth,
+      idProof,
+      idProofImage,
+      hasCategoriesForSelection,
     });
 
     if (toastError) {
@@ -468,19 +632,57 @@ const StaysOnboarding = () => {
   const handleComplete = () =>
     submitStayOnboarding(
       {
-        selectedProperties, selectedCategories, stayType, coverImage,
-        guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms,
-        regularPrice, rooms, selectedFeatures, entireStayRules, roomRules,
-        optionalRules, firstUserDiscount, discountType, discountPercentage,
-        finalPrice, festivalOffers, weeklyOffers, specialOffers, brandName,
-        companyName, gstNumber, businessEmail, businessPhone, businessAddress,
-        locality, state, city, businessPincode, personalPincode, firstName,
-        lastName, personalCountry, personalState, personalCity, dateOfBirth,
-        maritalStatus, idProof, idProofImage, images, entireStayImages,
+        selectedProperties,
+        selectedCategories,
+        stayType,
+        coverImage,
+        guestCapacity,
+        numberOfRooms,
+        numberOfBeds,
+        numberOfBathrooms,
+        regularPrice,
+        rooms,
+        selectedFeatures,
+        entireStayRules,
+        roomRules,
+        optionalRules,
+        firstUserDiscount,
+        discountType,
+        discountPercentage,
+        finalPrice,
+        festivalOffers,
+        weeklyOffers,
+        specialOffers,
+        brandName,
+        companyName,
+        gstNumber,
+        businessEmail,
+        businessPhone,
+        businessAddress,
+        locality,
+        state,
+        city,
+        businessPincode,
+        personalPincode,
+        firstName,
+        lastName,
+        personalCountry,
+        personalState,
+        personalCity,
+        dateOfBirth,
+        maritalStatus,
+        idProof,
+        idProofImage,
+        images,
+        entireStayImages,
       },
       {
-        setIsLoading, updateUserDetails, updateUserType, navigate,
-        stepStorageKey: STEP_STORAGE_KEY, formStorageKey: FORM_STORAGE_KEY,
+        setIsLoading,
+        updateUserDetails,
+        updateUserType,
+        navigate,
+        stepStorageKey: STEP_STORAGE_KEY,
+        formStorageKey: FORM_STORAGE_KEY,
       },
     );
 
@@ -608,70 +810,186 @@ const StaysOnboarding = () => {
   };
 
   const {
-    handleDiscountToggle, handleDiscountOfferChange, handleBusinessChange,
-    handleBusinessStateChange, handleBusinessCityChange, handlePersonalChange,
-    handlePersonalStateChange, handlePersonalCityChange, handleCategoryToggle,
+    handleDiscountToggle,
+    handleDiscountOfferChange,
+    handleBusinessChange,
+    handleBusinessStateChange,
+    handleBusinessCityChange,
+    handlePersonalChange,
+    handlePersonalStateChange,
+    handlePersonalCityChange,
+    handleCategoryToggle,
   } = useStayFieldHandlers({
-    firstUserDiscount, setFirstUserDiscount, festivalOffers, setFestivalOffers,
-    weeklyOffers, setWeeklyOffers, specialOffers, setSpecialOffers,
-    setDiscountType, setDiscountPercentage, setFinalPrice, setSelectedCategories,
-    setBrandName, setCompanyName, setGstNumber, setBusinessEmail, setBusinessPhone,
-    setBusinessAddress, setBusinessPincode, setStateOption2, setCityOptions2,
-    setFirstName, setLastName, setPersonalPincode, setDateOfBirth, setMaritalStatus,
-    setIdProof, setStateOption, setCityOptions, clearError,
+    firstUserDiscount,
+    setFirstUserDiscount,
+    festivalOffers,
+    setFestivalOffers,
+    weeklyOffers,
+    setWeeklyOffers,
+    specialOffers,
+    setSpecialOffers,
+    setDiscountType,
+    setDiscountPercentage,
+    setFinalPrice,
+    setSelectedCategories,
+    setBrandName,
+    setCompanyName,
+    setGstNumber,
+    setBusinessEmail,
+    setBusinessPhone,
+    setBusinessAddress,
+    setBusinessPincode,
+    setStateOption2,
+    setCityOptions2,
+    setFirstName,
+    setLastName,
+    setPersonalPincode,
+    setDateOfBirth,
+    setMaritalStatus,
+    setIdProof,
+    setStateOption,
+    setCityOptions,
+    clearError,
   });
 
   // ---------- Render ----------
 
   const stepApi = {
     // Step 0
-    selectedProperties, propertyTypes, togglePropertySelection, errors, setErrors,
+    selectedProperties,
+    propertyTypes,
+    togglePropertySelection,
+    errors,
+    setErrors,
     // Step 1
-    selectedCategories, getEffectiveCategories, handleCategoryToggle,
+    selectedCategories,
+    getEffectiveCategories,
+    handleCategoryToggle,
     // Step 2 — top-level capacity + price
-    stayType, setStayType, guestCapacity, numberOfRooms, numberOfBeds, numberOfBathrooms,
-    regularPrice, setRegularPrice, incrementValue, decrementValue,
-    setGuestCapacity, setNumberOfRooms, setNumberOfBeds, setNumberOfBathrooms,
+    stayType,
+    setStayType,
+    guestCapacity,
+    numberOfRooms,
+    numberOfBeds,
+    numberOfBathrooms,
+    regularPrice,
+    setRegularPrice,
+    incrementValue,
+    decrementValue,
+    setGuestCapacity,
+    setNumberOfRooms,
+    setNumberOfBeds,
+    setNumberOfBathrooms,
     // Step 2 — rules
-    entireStayRules, addEntireStayRule, removeEntireStayRule, updateEntireStayRule,
-    roomRules, addRoomRule, removeRoomRule, updateRoomRule,
+    entireStayRules,
+    addEntireStayRule,
+    removeEntireStayRule,
+    updateEntireStayRule,
+    roomRules,
+    addRoomRule,
+    removeRoomRule,
+    updateRoomRule,
     // Step 2 — images
-    coverImage, handleCoverImageUpload, removeCoverImage, renderImageSrc,
-    entireStayImages, setEntireStayImages, removeEntireStayImage, sliderRef,
+    coverImage,
+    handleCoverImageUpload,
+    removeCoverImage,
+    renderImageSrc,
+    entireStayImages,
+    setEntireStayImages,
+    removeEntireStayImage,
+    sliderRef,
     // Step 2 — rooms (individual)
-    rooms, expandedRoom, setExpandedRoom, addRoom, removeRoom, updateRoom,
-    handleRoomImageUpload, removeRoomImage, clearError,
+    rooms,
+    expandedRoom,
+    setExpandedRoom,
+    addRoom,
+    removeRoom,
+    updateRoom,
+    handleRoomImageUpload,
+    removeRoomImage,
+    clearError,
     // Step 3
-    selectedFeatures, toggleFeatureSelection, adminFeatures, customFeatures,
-    setCustomFeatures, setSelectedFeatures, showCustomFeaturesInput,
-    setShowCustomFeaturesInput, customFeatureInput, setCustomFeatureInput, featuresData,
+    selectedFeatures,
+    toggleFeatureSelection,
+    adminFeatures,
+    customFeatures,
+    setCustomFeatures,
+    setSelectedFeatures,
+    showCustomFeaturesInput,
+    setShowCustomFeaturesInput,
+    customFeatureInput,
+    setCustomFeatureInput,
+    featuresData,
     // Step 4
-    discountOffers, handleDiscountToggle, handleDiscountOfferChange,
+    discountOffers,
+    handleDiscountToggle,
+    handleDiscountOfferChange,
     // Step 5
-    brandName, companyName, gstNumber, businessEmail, businessPhone, businessAddress,
-    businessPincode, handleBusinessChange, selected, setSelected, open, setOpen,
-    countries, data, stateOption2, cityOption2, countryOption2,
-    handleBusinessStateChange, handleBusinessCityChange, mapSrcbusiness,
+    brandName,
+    companyName,
+    gstNumber,
+    businessEmail,
+    businessPhone,
+    businessAddress,
+    businessPincode,
+    handleBusinessChange,
+    selected,
+    setSelected,
+    open,
+    setOpen,
+    countries,
+    data,
+    stateOption2,
+    cityOption2,
+    countryOption2,
+    handleBusinessStateChange,
+    handleBusinessCityChange,
+    mapSrcbusiness,
     // Step 6
-    firstName, lastName, personalPincode, dateOfBirth, maritalStatus, idProof,
-    handlePersonalChange, stateOption, cityOption, countryOption,
-    handlePersonalStateChange, handlePersonalCityChange, idProofImage,
-    handleUploadIDProof, uploadError: error,
+    firstName,
+    lastName,
+    personalPincode,
+    dateOfBirth,
+    maritalStatus,
+    idProof,
+    handlePersonalChange,
+    stateOption,
+    cityOption,
+    countryOption,
+    handlePersonalStateChange,
+    handlePersonalCityChange,
+    idProofImage,
+    handleUploadIDProof,
+    uploadError: error,
     // Step 7
-    termsAccepted, setTermsAccepted,
+    termsAccepted,
+    setTermsAccepted,
   };
 
   const primaryPropertyName =
     propertyTypes.find((p) => p.id === selectedProperties[0])?.name ?? selectedProperties[0];
 
-  const activeDiscount = pickStayDiscount(
-    regularPrice,
-    finalPrice,
-    { firstUserDiscount, festivalOffers, weeklyOffers, specialOffers },
-  );
+  const activeDiscount = pickStayDiscount(regularPrice, finalPrice, {
+    firstUserDiscount,
+    festivalOffers,
+    weeklyOffers,
+    specialOffers,
+  });
 
   if (isStatusLoading) return <StayStatusLoading />;
-  if (status === "pending" || status === "approved") {
+  if (crossTypePending) {
+    return (
+      <StayCrossTypePendingScreen
+        pendingType={crossTypePending.type}
+        onViewPending={() => navigate(`/onboarding/${crossTypePending.type}`)}
+        onGoDashboard={() => navigate("/dashboard")}
+      />
+    );
+  }
+  // `approved` has no bypass: the backend treats an approved submission as a
+  // finished listing, so resubmitting would create a second one rather than
+  // edit it. Only a pending submission is editable in place.
+  if ((status === "pending" && !bypassPendingGate) || status === "approved") {
     return (
       <StayStatusScreen
         status={status}
@@ -679,6 +997,7 @@ const StaysOnboarding = () => {
         stayType={stayType}
         onGoDashboard={() => navigate("/")}
         onSubmitAnother={() => navigate("/onboarding/service-selection")}
+        onEdit={() => setBypassPendingGate(true)}
       />
     );
   }
@@ -697,7 +1016,9 @@ const StaysOnboarding = () => {
           <UniqueStayCardPreview
             propertyType={primaryPropertyName}
             coverImage={coverImage}
-            galleryCount={stayType === "entire" ? entireStayImages.length : (rooms[0]?.photos?.length ?? 0)}
+            galleryCount={
+              stayType === "entire" ? entireStayImages.length : (rooms[0]?.photos?.length ?? 0)
+            }
             city={cityOption2 || city}
             state={stateOption2 || state}
             regularPrice={regularPrice}

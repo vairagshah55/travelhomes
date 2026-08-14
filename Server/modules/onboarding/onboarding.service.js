@@ -205,7 +205,7 @@ const TYPE_LABELS = { activity: "activity", caravan: "caravan", stay: "unique st
 
 // A vendor may only have one submission in flight at a time — resubmitting
 // the SAME type (editing a pending draft) is allowed and replaces it via
-// cancelPreviousOffers below, but starting a DIFFERENT type while one is
+// supersedePreviousSubmissions below, but starting a DIFFERENT type while one is
 // still awaiting admin action is blocked here so it can't be bypassed by
 // navigating straight to another /onboarding/<type> URL.
 async function findPendingSubmission(userId, excludingType) {
@@ -282,21 +282,40 @@ async function upsertOnboardingDoc(Model, user, vendor, fields) {
   return { doc: existing, isNew: false };
 }
 
+// The onboarding collection behind each offer `serviceType`. Keyed on the
+// serviceType strings this module stamps on offers, not on the /onboarding/<x>
+// URL segment — they differ ("camper-van" vs "caravan").
+const ONBOARDING_MODEL_BY_SERVICE_TYPE = {
+  activity: ActivityOnboarding,
+  "camper-van": CaravanOnboarding,
+  "unique-stay": StayOnboarding,
+};
+
 /**
- * Retire the vendor's other in-flight offers for this service type.
+ * Retire the vendor's other in-flight submissions for this service type —
+ * both the offer (what the admin review queue lists) and the onboarding doc
+ * (what gates the vendor from starting another service type).
  *
- * This used to filter on `category`, comparing against hardcoded slugs
+ * The offer filter used to key on `category`, comparing against hardcoded slugs
  * (["caravan", "campervan", "camper-trailer", …]). For activities and stays the
  * offer's category is a constant that happened to match, but a caravan offer
  * stores the van type the vendor picked — "Camper Trailer", "Cargo Van", or
  * free text — so the filter never matched and the previous pending offer was
  * left pending. That is what put a duplicate caravan in the admin Pending tab.
- *
  * `serviceType` is set by this module rather than by the vendor, so it is a
- * reliable key. The offer belonging to `exceptSourceId` is left alone because
- * the caller is about to update it in place.
+ * reliable key.
+ *
+ * Cancelling only the offer left the pair inconsistent, and stranded the
+ * vendor: the superseded onboarding doc stayed "pending", so
+ * findPendingSubmission kept refusing every other service type, while the admin
+ * queue — which reads offers — had nothing left to approve or reject. There was
+ * no way out of that state from either side. Both halves are retired here so
+ * "pending" means the same thing in both collections.
+ *
+ * The submission identified by `exceptSourceId` (an onboarding doc _id) is left
+ * alone: it's the one the caller is submitting right now.
  */
-async function cancelPreviousOffers(userId, serviceType, exceptSourceId) {
+async function supersedePreviousSubmissions(userId, serviceType, exceptSourceId) {
   try {
     const filter = {
       userId,
@@ -307,6 +326,22 @@ async function cancelPreviousOffers(userId, serviceType, exceptSourceId) {
     await Offer.updateMany(filter, { status: "cancelled" });
   } catch (err) {
     logger.warn({ err: err.message }, "[Onboarding] failed to cancel old offers");
+  }
+
+  try {
+    const Model = ONBOARDING_MODEL_BY_SERVICE_TYPE[serviceType];
+    if (!Model) return;
+    const filter = { userId, status: "pending" };
+    if (exceptSourceId) filter._id = { $ne: exceptSourceId };
+    const res = await Model.updateMany(filter, { status: "cancelled" });
+    if (res.modifiedCount) {
+      logger.info(
+        { model: Model.modelName, userId: String(userId), count: res.modifiedCount },
+        "[Onboarding] superseded older pending submission(s)",
+      );
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, "[Onboarding] failed to supersede old submissions");
   }
 }
 
@@ -358,7 +393,7 @@ async function submitActivity(body, user) {
   });
 
   await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "activity" });
-  await cancelPreviousOffers(user._id, "activity", doc._id);
+  await supersedePreviousSubmissions(user._id, "activity", doc._id);
 
   await syncOfferForOnboarding(
     {
@@ -416,7 +451,7 @@ async function submitCaravan(body, user) {
   });
 
   await syncUserProfile(user.email, { ...body, type: "caravan" });
-  await cancelPreviousOffers(user._id, "camper-van", doc._id);
+  await supersedePreviousSubmissions(user._id, "camper-van", doc._id);
 
   await syncOfferForOnboarding(
     {
@@ -483,7 +518,7 @@ async function submitStay(body, user) {
   });
 
   await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "stay" });
-  await cancelPreviousOffers(user._id, "unique-stay", doc._id);
+  await supersedePreviousSubmissions(user._id, "unique-stay", doc._id);
 
   const firstRoomPhotos =
     (doc.rooms && doc.rooms[0] && Array.isArray(doc.rooms[0].photos) && doc.rooms[0].photos) || [];
@@ -497,7 +532,10 @@ async function submitStay(body, user) {
       category: "stay",
       description:
         (doc.description && String(doc.description).trim()) || "Auto-created from stay onboarding",
-      rules: [],
+      // The house rules the vendor typed. This passed `[]` and then a phantom
+      // `entireStayRules` key below — a field neither Offer nor StayOnboarding
+      // declares, so strict mode dropped it and no listing ever showed rules.
+      rules: doc.rules || [],
       features: doc.selectedFeatures || [],
       guestCapacity: doc.guestCapacity,
       numberOfBeds: doc.numberOfBeds,
@@ -512,7 +550,6 @@ async function submitStay(body, user) {
       numberOfBathrooms: doc.numberOfBathrooms,
       stayType: doc.stayType,
       rooms: doc.rooms,
-      entireStayRules: doc.entireStayRules,
       optionalRules: doc.optionalRules,
       serviceType: "unique-stay",
       photos: { coverUrl: strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
@@ -560,12 +597,37 @@ const attachStaySelfie = (id, imageData, user) =>
   attachSelfie(StayOnboarding, "stay-selfie", "images", id, imageData, user);
 
 // ─── Read endpoints ────────────────────────────────────────────────────
+/**
+ * The submission of one type that the wizard should act on: a pending one if
+ * there is any, otherwise the most recent doc.
+ *
+ * The pending query is deliberately separate from "newest doc". Asking only for
+ * the newest hid an older pending submission behind a newer approved one, e.g.
+ *
+ *   caravan  approved  created 18:15   ← what findOne().sort() returned
+ *   caravan  pending   created 17:50   ← what the submit guard found
+ *
+ * so `getMine` reported "caravan approved", ServiceSelection left the other
+ * services unlocked, the stay wizard rendered all eight steps — and only the
+ * final submit failed, with `assertNoOtherPendingSubmission` reporting the
+ * pending caravan the vendor was never shown. The gates and the guard have to
+ * agree on what counts as in-flight, and `findPendingSubmission` is the
+ * definition: any doc with status "pending".
+ *
+ * Exported for tests: `Model` only needs a `findOne(filter).sort(spec)` chain.
+ */
+async function findCurrentSubmission(Model, userId) {
+  const pending = await Model.findOne({ userId, status: "pending" }).sort({ createdAt: -1 });
+  if (pending) return pending;
+  return Model.findOne({ userId }).sort({ createdAt: -1 });
+}
+
 async function getMine(user) {
   const userId = user._id;
   const [activity, caravan, stay] = await Promise.all([
-    ActivityOnboarding.findOne({ userId }).sort({ createdAt: -1 }),
-    CaravanOnboarding.findOne({ userId }).sort({ createdAt: -1 }),
-    StayOnboarding.findOne({ userId }).sort({ createdAt: -1 }),
+    findCurrentSubmission(ActivityOnboarding, userId),
+    findCurrentSubmission(CaravanOnboarding, userId),
+    findCurrentSubmission(StayOnboarding, userId),
   ]);
 
   const submissions = [
@@ -623,6 +685,7 @@ module.exports = {
   attachCaravanSelfie,
   attachStaySelfie,
   getMine,
+  findCurrentSubmission, // exported for tests
   listActivities,
   listCaravans,
   listStays,

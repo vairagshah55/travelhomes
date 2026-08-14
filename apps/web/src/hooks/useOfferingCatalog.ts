@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { sortFeatureRows } from "@/lib/cmsFeatures";
 import { useFeatures } from "./useFeatures";
 
 const toNames = (data: any[] | undefined): string[] =>
@@ -10,22 +11,41 @@ const toNames = (data: any[] | undefined): string[] =>
  * the onboarding flows use (`useFeatures`) so create-via-onboarding and
  * edit-via-dashboard never drift apart.
  *
- * Camper-van categories + features come from the onboarding step components
- * themselves (CaravanCategoryStep, CaravanFeaturesStep) — no CMS feed needed
- * since those are hardcoded vehicle taxonomy. Stays and Activities are
- * CMS-driven so admins can tune the available options without code changes.
+ * Camper-van vehicle types and amenities are CMS-driven too. Both are also
+ * exposed as raw rows (`camperVanCategories` / `camperVanFeatures`), because
+ * CaravanCategoryStep and CaravanFeaturesStep render each row's description and
+ * uploaded icon rather than just its name. Everything CMS-backed means admins
+ * can tune the available options without code changes.
  */
 export function useOfferingCatalog() {
   const stayCatsQuery = useFeatures("Unique Stay", "category");
   const stayFeatsQuery = useFeatures("Unique Stay");
   const actCatsQuery = useFeatures("Activity", "category");
   const actFeatsQuery = useFeatures("Activity");
+  const vanCatsQuery = useFeatures("Camper Van", "category");
+  // No `type` filter — the endpoint would exclude legacy rows saved without one.
+  const vanFeatsQuery = useFeatures("Camper Van");
 
   const isLoading =
     stayCatsQuery.isLoading ||
     stayFeatsQuery.isLoading ||
     actCatsQuery.isLoading ||
-    actFeatsQuery.isLoading;
+    actFeatsQuery.isLoading ||
+    vanCatsQuery.isLoading ||
+    vanFeatsQuery.isLoading;
+
+  // `type` is absent on legacy feature rows, so treat "not a category" as a
+  // feature rather than requiring type === "feature". Memoised: a fresh array
+  // identity every render would defeat the memo below.
+  const vanFeatureRows = useMemo(
+    () =>
+      sortFeatureRows(
+        (vanFeatsQuery.data ?? []).filter(
+          (f: any) => f?.status === "enable" && f?.type !== "category" && f?.type !== "subcategory",
+        ),
+      ),
+    [vanFeatsQuery.data],
+  );
 
   return useMemo(
     () => ({
@@ -33,11 +53,21 @@ export function useOfferingCatalog() {
       categories: {
         "unique-stay": toNames(stayCatsQuery.data),
         activity: toNames(actCatsQuery.data),
+        "camper-van": toNames(sortFeatureRows(vanCatsQuery.data ?? [])),
       } as Record<string, string[]>,
       features: {
         "unique-stay": toNames(stayFeatsQuery.data),
         activity: toNames(actFeatsQuery.data),
+        "camper-van": vanFeatureRows.map((f: any) => String(f.name)),
       } as Record<string, string[]>,
+      /** Enabled Camper Van categories, unflattened — for CaravanCategoryStep. */
+      camperVanCategories: sortFeatureRows(
+        (vanCatsQuery.data ?? []).filter((f: any) => f?.status === "enable"),
+      ),
+      camperVanCategoriesLoading: vanCatsQuery.isLoading,
+      /** Enabled Camper Van amenities, unflattened — for CaravanFeaturesStep. */
+      camperVanFeatures: vanFeatureRows,
+      camperVanFeaturesLoading: vanFeatsQuery.isLoading,
     }),
     [
       isLoading,
@@ -45,6 +75,10 @@ export function useOfferingCatalog() {
       stayFeatsQuery.data,
       actCatsQuery.data,
       actFeatsQuery.data,
+      vanCatsQuery.data,
+      vanCatsQuery.isLoading,
+      vanFeatureRows,
+      vanFeatsQuery.isLoading,
     ],
   );
 }

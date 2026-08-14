@@ -1,4 +1,6 @@
 import React from "react";
+import { Home } from "lucide-react";
+import { SectionCard, StepHeader } from "../shared/primitives";
 import { cn, getImageUrl } from "@/lib/utils";
 
 interface PropertyType {
@@ -22,41 +24,31 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
   const selectedCount = selectedProperties.length;
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
-            Property Types
-          </span>
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-        </div>
-        <h1
-          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
-          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
-        >
-          Types of Property
-        </h1>
-        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
-          Select the property types you'd like to list.
-        </p>
-      </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Shared StepHeader — this step carried a copy of the same hand-rolled
+          centred, dash-flanked heading with its own inline clamp() size that
+          the caravan steps dropped when the shared header landed. The compact
+          variant (kicker, no title) is used for the same reason as caravan:
+          the progress rail already names the phase, so "Types of Property"
+          under "PROPERTY TYPES" was the third restatement in a row. */}
+      <StepHeader
+        kicker="Property Types"
+        subtitle="Select the property types you'd like to list."
+      />
 
       {/* ── Property grid ── */}
-      <div className="w-full bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
-        {/* Selected count badge */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-[12px] font-bold text-th-warm-text-dark uppercase tracking-[0.03em]">
-            Properties
-          </p>
-          {selectedCount > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-2.5 py-[2px]">
+      <SectionCard
+        icon={<Home size={16} className="text-th-brand" strokeWidth={2.5} />}
+        title="Properties"
+        subtitle="Pick every type this listing covers"
+        action={
+          selectedCount > 0 ? (
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-2.5 py-[2px] whitespace-nowrap">
               {selectedCount} selected
             </span>
-          )}
-        </div>
-
+          ) : undefined
+        }
+      >
         <div
           className="grid gap-2.5"
           style={{ gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))" }}
@@ -71,7 +63,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
                 className={cn(
                   "relative flex flex-col items-center justify-center gap-2.5 px-2.5 py-[18px] rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150",
                   selected
-                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)]"
+                    ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
                     : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
                 )}
               >
@@ -126,7 +118,7 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
             No property types available.
           </p>
         )}
-      </div>
+      </SectionCard>
     </div>
   );
 };

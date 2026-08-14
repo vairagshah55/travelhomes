@@ -162,7 +162,7 @@ const UniqueStayCardPreview: React.FC<UniqueStayCardPreviewProps> = ({
           {/* Discount label */}
           {activeDiscount && activeDiscount.finalPrice > 0 && (
             <div className="pt-0.5">
-              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.5)]">
+              <span className="inline-block text-[10.5px] font-semibold uppercase tracking-[0.06em] px-2 py-0.5 rounded-full text-th-brand bg-th-brand-soft border border-th-brand-border-soft">
                 {activeDiscount.label}
               </span>
             </div>

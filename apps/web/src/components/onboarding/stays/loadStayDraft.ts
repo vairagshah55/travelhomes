@@ -68,6 +68,12 @@ export interface StayDraftSetters {
   setTermsAccepted: (v: boolean) => void;
   setCurrentStep: (v: number) => void;
   setIsStatusLoading: (v: boolean) => void;
+  // A pending submission of a DIFFERENT type — set when the vendor navigates
+  // straight to /onboarding/stay while e.g. a caravan listing is still awaiting
+  // admin action. Lets the page block with a clear message instead of silently
+  // starting a second listing (the backend rejects that submit anyway, but only
+  // after the whole wizard is filled out). Mirrors loadCaravanDraft.
+  setCrossTypePending: (v: { type: string; doc: any } | null) => void;
 }
 
 export interface LoadStayDraftOptions {
@@ -87,6 +93,17 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
   const { setters: s, userDetails, stepStorageKey, markLoaded } = opts;
   try {
     const data = await getOnboardingData();
+
+    // Another service type is already in review — stop before hydrating this
+    // form. markLoaded() too, so the background userDetails refetch doesn't
+    // re-run the loader and clear the block.
+    if (data && data.type && data.type !== "stay" && data.doc?.status === "pending") {
+      markLoaded();
+      s.setCrossTypePending({ type: data.type, doc: data.doc });
+      s.setIsStatusLoading(false);
+      return;
+    }
+    s.setCrossTypePending(null);
 
     if (
       data &&
@@ -211,10 +228,21 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
       return;
     }
 
+    // No draft. Reveal the form now even if the profile hasn't arrived (or
+    // doesn't exist): every early return above clears this flag, but falling
+    // through with a falsy `userDetails` used to leave it true forever, so a
+    // brand-new vendor with no Profile row sat on the loading spinner and could
+    // never start a stay listing. loadCaravanDraft always clears it, which is
+    // why caravan never showed this.
+    //
+    // markLoaded() stays inside the branch on purpose: marking loaded here
+    // would latch the guard before the autofill ran, so the profile arriving a
+    // moment later would never be applied.
+    s.setIsStatusLoading(false);
+
     if (userDetails) {
       // No draft found — auto-fill from saved profile.
       markLoaded();
-      s.setIsStatusLoading(false);
       s.setFirstName(userDetails.firstName || "");
       s.setLastName(userDetails.lastName || "");
       s.setPersonalState(userDetails.state || "");

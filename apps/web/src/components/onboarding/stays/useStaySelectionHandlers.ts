@@ -61,26 +61,16 @@ export function useStaySelectionHandlers({
       return;
     }
     setSelectedFeatures((prev) =>
-      prev.includes(featureId)
-        ? prev.filter((id) => id !== featureId)
-        : [...prev, featureId],
+      prev.includes(featureId) ? prev.filter((id) => id !== featureId) : [...prev, featureId],
     );
   };
 
-  const incrementValue = (
-    value: number,
-    setter: (val: number) => void,
-    max: number = 20,
-  ) => {
+  const incrementValue = (value: number, setter: (val: number) => void, max: number = 20) => {
     const safe = isFinite(value) ? value : 0;
     if (safe < max) setter(safe + 1);
   };
 
-  const decrementValue = (
-    value: number,
-    setter: (val: number) => void,
-    min: number = 1,
-  ) => {
+  const decrementValue = (value: number, setter: (val: number) => void, min: number = 1) => {
     const safe = isFinite(value) ? value : 0;
     if (safe > min) setter(safe - 1);
   };
@@ -108,9 +98,7 @@ export function useStaySelectionHandlers({
   };
 
   const updateRoom = (id: string, field: keyof Room, value: any) =>
-    setRooms((prev) =>
-      prev.map((room) => (room.id === id ? { ...room, [field]: value } : room)),
-    );
+    setRooms((prev) => prev.map((room) => (room.id === id ? { ...room, [field]: value } : room)));
 
   return {
     togglePropertySelection,

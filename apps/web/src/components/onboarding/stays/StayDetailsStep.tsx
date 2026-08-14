@@ -1,6 +1,7 @@
 import React from "react";
 import EntireStayForm from "./EntireStayForm";
 import IndividualRoomForm from "./IndividualRoomForm";
+import { StepHeader } from "../shared/primitives";
 import { cn } from "@/lib/utils";
 
 interface Room {
@@ -78,26 +79,9 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
   const { stayType, setStayType } = props;
 
   return (
-    <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
-            Listing Setup
-          </span>
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-        </div>
-        <h1
-          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
-          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
-        >
-          Stay Details
-        </h1>
-        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
-          Configure your property listing details.
-        </p>
-      </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Shared StepHeader — see the note in PropertyTypeStep. */}
+      <StepHeader kicker="Listing Setup" subtitle="Configure your property listing details." />
 
       <div className="w-full flex flex-col gap-5">
         {/* ── Stay Type Selection ── */}
@@ -116,7 +100,7 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
                   className={cn(
                     "relative flex flex-col items-center gap-2 px-[14px] py-5 rounded-[16px] border-[1.5px] cursor-pointer transition-all duration-150 text-center",
                     selected
-                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)]"
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)]"
                       : "border-th-warm-border bg-th-warm-surface hover:border-th-brand hover:bg-th-brand-soft",
                   )}
                 >

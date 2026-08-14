@@ -7,6 +7,13 @@ interface StayStatusScreensProps {
   stayType: "entire" | "individual";
   onGoDashboard: () => void;
   onSubmitAnother: () => void;
+  /**
+   * Re-enter the wizard for a still-pending submission. Pending-only: the
+   * backend reuses a pending/draft/rejected submission on resubmit but treats an
+   * approved one as a finished listing, so offering "Edit" on an approved stay
+   * would quietly create a second listing instead of editing the live one.
+   */
+  onEdit?: () => void;
 }
 
 /**
@@ -35,6 +42,7 @@ export function StayStatusScreen({
   stayType,
   onGoDashboard,
   onSubmitAnother,
+  onEdit,
 }: StayStatusScreensProps) {
   const isPending = status === "pending";
 
@@ -55,38 +63,107 @@ export function StayStatusScreen({
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-[#0d4548]">
+          <h2 className="text-xl font-semibold text-th-text-primary">
             {isPending ? "Submission Under Review" : "Listing Approved!"}
           </h2>
           <p className="text-sm leading-relaxed text-th-warm-text-muted">
             {isPending
-              ? "Your stay listing has been submitted and is currently being reviewed by our team. You'll be notified once a decision is made."
+              ? "Your stay listing has been submitted and is currently being reviewed by our team. You can still edit the details while it's in review — resubmitting updates this listing rather than creating a new one."
               : "Your stay listing has been approved and is now live for guests to discover and book."}
           </p>
         </div>
 
         {primaryPropertyName && (
-          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-[rgba(59,217,218,0.4)]">
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-th-brand-soft text-th-brand border border-th-brand-border-soft">
             <Home className="w-4 h-4" />
             {stayType === "entire" ? `Entire ${primaryPropertyName}` : primaryPropertyName}
           </div>
         )}
 
+        {/* Buttons use the shared .onb-btn-* pair so this screen matches the
+            caravan pending screen and the wizard footer it sits in front of. */}
         <div className="w-full flex flex-col gap-3 pt-2">
+          {isPending && onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="onb-btn-primary w-full rounded-full py-3.5 text-[14px]"
+            >
+              Edit Details
+            </button>
+          )}
           <button
+            type="button"
             onClick={onGoDashboard}
-            className="w-full py-3 rounded-xl text-th-text-inverse text-sm font-semibold transition-opacity hover:opacity-90 bg-th-brand"
+            className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
           >
             Go to Dashboard
           </button>
           {isPending && (
             <button
+              type="button"
               onClick={onSubmitAnother}
-              className="w-full py-3 rounded-xl text-sm font-semibold transition-opacity hover:opacity-80 bg-transparent text-th-warm-text-muted border border-th-warm-border"
+              className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
             >
               Submit Another Service
             </button>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Shown when a DIFFERENT service type is already awaiting admin action.
+ *
+ * A vendor may only have one submission in review at a time — the backend
+ * enforces it in assertNoOtherPendingSubmission — but without this the vendor
+ * only found out after filling in the entire stay wizard and hitting submit.
+ * Mirrors the caravan flow's equivalent block.
+ */
+export function StayCrossTypePendingScreen({
+  pendingType,
+  onViewPending,
+  onGoDashboard,
+}: {
+  pendingType: string;
+  onViewPending: () => void;
+  onGoDashboard: () => void;
+}) {
+  const otherLabel = { activity: "activity", caravan: "caravan" }[pendingType] || "listing";
+
+  return (
+    <div
+      data-onboarding
+      className="min-h-screen flex items-center justify-center bg-[color:var(--onb-page-bg,#efeeea)] px-4"
+    >
+      <div className="bg-th-surface-0 rounded-[18px] border border-[color:var(--onb-card-border)] shadow-[var(--onb-card-shadow)] p-8 max-w-md w-full text-center">
+        <div className="w-14 h-14 rounded-[16px] bg-th-warn-bright-bg border border-th-warn-bright-border flex items-center justify-center mx-auto mb-4">
+          <Clock className="w-6 h-6 text-th-warn-bright" strokeWidth={2} />
+        </div>
+        <h2 className="font-serif text-[23px] font-normal text-th-text-primary tracking-[-0.02em] mb-2">
+          You already have a listing pending review
+        </h2>
+        <p className="text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)] mb-5">
+          Your {otherLabel} listing is awaiting admin approval. You can add a unique stay listing
+          once that's approved or rejected.
+        </p>
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onViewPending}
+            className="onb-btn-primary w-full rounded-full py-3.5 text-[14px]"
+          >
+            View {otherLabel} listing
+          </button>
+          <button
+            type="button"
+            onClick={onGoDashboard}
+            className="onb-btn-secondary w-full rounded-full py-3.5 text-[14px]"
+          >
+            Go to Dashboard
+          </button>
         </div>
       </div>
     </div>

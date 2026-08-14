@@ -24,9 +24,17 @@ const FeatureSchema = new Schema({
     type: String,
     default: ''
   },
-  icon: { 
-    type: String, 
+  icon: {
+    type: String,
     default: '' // URL or path to icon
+  },
+  // Display position in vendor-facing pickers (vehicle types, amenity pills).
+  // Lower first; rows without one sort after those with one, by createdAt. Kept
+  // separate from createdAt because Mongoose marks createdAt immutable, so a
+  // seeded list can't be re-ordered by rewriting timestamps.
+  sortOrder: {
+    type: Number,
+    default: null
   }
 }, {
   timestamps: true

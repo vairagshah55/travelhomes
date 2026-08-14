@@ -130,8 +130,25 @@ export const cmsService = {
     category: string;
     icon?: string;
     type?: string;
+    description?: string;
   }) => {
     const res = await api.post("/admin/cms/features", payload);
+    return res.data;
+  },
+  // Partial update — the server DTO is strict, so only send fields that exist
+  // on it (name / category / icon / type / description). Status has its own
+  // toggle endpoint.
+  updateFeature: async (
+    id: string,
+    payload: {
+      name?: string;
+      category?: string;
+      icon?: string;
+      type?: string;
+      description?: string;
+    },
+  ) => {
+    const res = await api.put(`/admin/cms/features/${id}`, payload);
     return res.data;
   },
   toggleFeature: async (id: string) => {

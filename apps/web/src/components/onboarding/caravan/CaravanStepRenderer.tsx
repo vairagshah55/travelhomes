@@ -34,9 +34,11 @@ export interface CaravanStepApi {
 
   // Step 1
   dynamicCategories: any[];
+  categoriesLoading?: boolean;
 
   // Step 2
   dynamicFeatures: any[];
+  featuresLoading?: boolean;
   customFeatures: { name: string; icon: any }[];
   showCustomFeaturesInput: boolean;
   setShowCustomFeaturesInput: (v: boolean) => void;
@@ -115,6 +117,7 @@ export function CaravanStepRenderer({ step, api }: { step: number; api: CaravanS
         <CategoryStep
           category={formData.category}
           dynamicCategories={api.dynamicCategories}
+          categoriesLoading={api.categoriesLoading}
           onSelect={(name) => setFormData((prev) => ({ ...prev, category: name }))}
         />
       );
@@ -123,6 +126,7 @@ export function CaravanStepRenderer({ step, api }: { step: number; api: CaravanS
         <FeaturesStep
           features={formData.features}
           dynamicFeatures={api.dynamicFeatures}
+          featuresLoading={api.featuresLoading}
           customFeatures={api.customFeatures}
           showCustomFeaturesInput={api.showCustomFeaturesInput}
           customFeatureInput={api.customFeatureInput}

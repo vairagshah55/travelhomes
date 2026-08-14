@@ -88,6 +88,23 @@ describe("cms.dto.featureBody", () => {
   });
 });
 
+describe("cms.dto.featureUpdateBody", () => {
+  it("accepts a partial edit", () => {
+    const parsed = dto.featureUpdateBody.parse({ name: "Motorhome" });
+    expect(parsed.name).toBe("Motorhome");
+    expect(parsed.category).toBeUndefined();
+  });
+  it("accepts an emptied description (clearing it)", () => {
+    expect(dto.featureUpdateBody.parse({ description: "" }).description).toBe("");
+  });
+  it("rejects an empty payload", () => {
+    expect(() => dto.featureUpdateBody.parse({})).toThrowError();
+  });
+  it("rejects unknown fields", () => {
+    expect(() => dto.featureUpdateBody.parse({ name: "X", status: "disable" })).toThrowError();
+  });
+});
+
 describe("cms.dto.roleBody", () => {
   it("accepts a name and feature list", () => {
     const parsed = dto.roleBody.parse({ name: "Manager", features: ["Dashboard"] });

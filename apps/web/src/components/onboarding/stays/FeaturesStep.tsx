@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, X, Search, MoreHorizontal } from "lucide-react";
+import { StepHeader } from "../shared/primitives";
 import { cn, getImageUrl } from "@/lib/utils";
 
 interface FeatureItem {
@@ -82,26 +83,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   const hasError = !!errors.features;
 
   return (
-    <div className="flex flex-col items-center gap-8 w-full max-w-2xl">
-      {/* ── Header ── */}
-      <div className="text-center space-y-2 pb-1">
-        <div className="flex items-center justify-center gap-2.5 mb-3">
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-          <span className="text-[10.5px] font-bold tracking-[0.13em] uppercase text-th-warm-text-muted">
-            Amenities
-          </span>
-          <div className="w-6 h-[3px] rounded-full bg-th-brand" />
-        </div>
-        <h1
-          className="font-serif text-[#0d4548] tracking-[-0.015em] leading-[1.15]"
-          style={{ fontSize: "clamp(24px, 3.6vw, 32px)", fontWeight: 400 }}
-        >
-          Amenities &amp; Features
-        </h1>
-        <p className="text-[14px] text-th-warm-text-dark leading-[1.6]">
-          Select everything your property offers — it helps guests decide.
-        </p>
-      </div>
+    <div className="w-full flex flex-col gap-6">
+      {/* Shared StepHeader — the caravan FeaturesStep uses the same kicker, so
+          the two flows now read identically at this step. */}
+      <StepHeader
+        kicker="Amenities"
+        subtitle="Select everything your property offers — it helps guests decide."
+      />
 
       {/* ── Feature card ── */}
       <div
@@ -118,7 +106,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             Features
           </p>
           {totalSelected > 0 && (
-            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-[rgba(59,217,218,0.4)] rounded-full px-2.5 py-[2px]">
+            <span className="text-[11px] font-bold text-th-brand bg-th-brand-soft border border-th-brand-border-soft rounded-full px-2.5 py-[2px]">
               {totalSelected} selected
             </span>
           )}
@@ -138,8 +126,9 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
               placeholder="Search features…"
               className={cn(
                 "w-full h-10 pl-9 pr-[34px] text-[13px] text-th-text-primary font-[450] rounded-[11px] outline-none transition-all duration-150",
-                "focus:bg-th-surface-0 focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
-                "bg-th-warm-surface border-[1.5px] border-transparent",
+                "focus:border-th-brand focus:shadow-[0_0_0_3px_var(--th-ring)]",
+                // White + visible border at rest; grey fill reads as disabled.
+                "bg-th-surface-0 border-[1.5px] border-th-warm-border-strong hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
               )}
             />
             {searchQuery && (
@@ -175,7 +164,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 key={`custom-${idx}`}
                 type="button"
                 onClick={() => handleRemoveCustom(idx)}
-                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] cursor-pointer text-th-brand"
+                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)] cursor-pointer text-th-brand"
               >
                 <MoreHorizontal size={14} />
                 <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature}</span>
@@ -196,7 +185,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                   className={cn(
                     "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
                     isSelected
-                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_rgba(59,217,218,0.4)] text-th-brand"
+                      ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)] text-th-brand"
                       : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                   )}
                 >
@@ -228,7 +217,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             {/* ── Inline custom input pill ── */}
             {customFeatures.length < 20 &&
               (showCustomFeaturesInput ? (
-                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_rgba(59,217,218,0.4)]">
+                <div className="flex items-center gap-1.5 py-1 pl-[14px] pr-1.5 rounded-full border-[1.5px] border-th-brand bg-th-surface-0 shadow-[0_0_0_3px_var(--th-ring)]">
                   <input
                     ref={inputRef}
                     type="text"

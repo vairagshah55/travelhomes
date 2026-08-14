@@ -10,6 +10,12 @@ interface SectionCardProps {
   // Whether the card's body is rendered with a default vertical-gap wrapper.
   // Used by shared/* steps which historically wrap children in `flex flex-col gap-4`.
   bodyGap?: boolean;
+  // Marks the whole section as mandatory. Needed where the requirement belongs
+  // to the section rather than to one labelled input — a cover photo, a photo
+  // gallery minimum, "at least one house rule" — so those cards can carry the
+  // same red asterisk `Field` puts on required inputs instead of the host only
+  // discovering the rule when Continue refuses to advance.
+  required?: boolean;
 }
 
 /**
@@ -24,6 +30,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
   action,
   children,
   bodyGap,
+  required,
 }) => (
   <section
     className={cn(
@@ -50,6 +57,15 @@ const SectionCard: React.FC<SectionCardProps> = ({
         <div className="min-w-0">
           <h2 className="text-[15px] font-bold text-th-text-primary tracking-[-0.015em] leading-tight">
             {title}
+            {required && (
+              <>
+                <span aria-hidden="true" className="text-th-error-bright ml-[3px]">
+                  *
+                </span>
+                {/* Matches Field: the asterisk alone is colour-only signalling. */}
+                <span className="sr-only"> (required)</span>
+              </>
+            )}
           </h2>
           {subtitle && (
             <p className="text-[12.5px] text-[color:var(--onb-text-secondary,#657477)] mt-0.5 leading-snug">

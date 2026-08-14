@@ -56,7 +56,7 @@ const StepHeader: React.FC<StepHeaderProps> = ({
           {kicker}
         </h1>
         {subtitle && (
-          <p className="mt-2 max-w-[54ch] text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)]">
+          <p className="mt-2 max-w-[54ch] text-pretty text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)]">
             {subtitle}
           </p>
         )}
@@ -75,8 +75,13 @@ const StepHeader: React.FC<StepHeaderProps> = ({
         {title}
       </h1>
 
+      {/* text-pretty, not just a measure cap. At 46ch the support line kept
+          breaking into a ragged first line plus a one-word orphan ("…add to /
+          TravelHomes." on desktop, "…offerings / later." on a phone), which
+          reads as a layout bug under a balanced serif title. text-wrap: pretty
+          lets the browser pull the last line up instead. */}
       {subtitle && (
-        <p className="mt-3.5 max-w-[46ch] text-[15px] leading-[1.65] text-[color:var(--onb-text-secondary,#657477)]">
+        <p className="mt-3.5 max-w-[46ch] text-pretty text-[15px] leading-[1.65] text-[color:var(--onb-text-secondary,#657477)]">
           {subtitle}
         </p>
       )}

@@ -58,6 +58,8 @@ export interface AddFeatureModalProps {
   onClose: () => void;
   onSubmit: (featureData: any) => void;
   type?: "feature" | "category" | "subcategory";
+  /** Present → the modal is in edit mode and prefills from this row. */
+  initialData?: Feature | null;
 }
 
 export interface AddJobModalProps {

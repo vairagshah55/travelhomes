@@ -1,12 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { GoChevronLeft } from "react-icons/go";
+import { ArrowRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../contexts/AuthContext";
-import { getOnboardingData, cmsPublicApi } from "../../lib/api";
+import { getOnboardingData } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { StepHeader } from "@/components/onboarding/shared/primitives";
+import LogoWebsite from "@/components/ui/LogoWebsite";
 import { cn } from "@/lib/utils";
-import { BrandLogo } from "@/components/BrandLogo";
+
+/**
+ * Step 1 of the vendor flow — pick a service, then enter that flow's wizard.
+ *
+ * Presentation follows the shared onboarding system rather than its own
+ * vocabulary. It previously hand-rolled everything the system already owns: a
+ * bespoke header with a three-node step rail, a `clamp()` heading, six local
+ * keyframes duplicating `.onb-fade-up`, two large blurred colour blobs, and
+ * cyan `rgba(59,217,218,.44)` glows on the CTA and the selected card. The blobs
+ * and glows are the two things the system explicitly moved away from (see the
+ * notes on `--onb-page-bg` and `.onb-glow-shadow` in global.css), so this page
+ * kept looking like the pre-revamp app after the rest of the flow was reworked
+ * — the same drift CategoryStep had before it adopted StepHeader.
+ *
+ * Chrome (`.onb-header` / `.onb-footer`), the selectable-card pattern, and the
+ * two-column content grid are all matched to OnboardingLayout + CategoryStep.
+ * This page is not a wizard step, so it composes those pieces directly instead
+ * of rendering OnboardingLayout, whose phase rail and Back/Next contract
+ * describe a multi-step form this screen isn't one of.
+ */
 
 type ServiceType = "caravan" | "stay" | "activity";
 
@@ -30,6 +51,27 @@ const SERVICE_META: Record<ServiceType, { title: string; description: string; ta
   },
 };
 
+/** Homepage-section key that gates each service (admin CMS → Home page). */
+const SECTION_KEY_BY_SERVICE: Record<ServiceType, string> = {
+  caravan: "camper-van",
+  stay: "unique-stays",
+  activity: "best-activity",
+};
+
+const ILLUSTRATION_BY_SERVICE: Record<ServiceType, string> = {
+  caravan:
+    "https://api.builder.io/api/v1/image/assets/TEMP/b0d5bf84a04251328fd3565624ad1b2b09a5cd43",
+  stay: "https://api.builder.io/api/v1/image/assets/TEMP/8e762f2f0679274541ddec18f7f1325791c712e7",
+  activity:
+    "https://api.builder.io/api/v1/image/assets/TEMP/ac3af7014c1557f3fdf25509200649edd541b7e3",
+};
+
+const SESSION_IDS: Record<ServiceType, { key: string; value: string }> = {
+  activity: { key: "activityID", value: "activity1" },
+  caravan: { key: "camperVanID", value: "camperVan2" },
+  stay: { key: "stayID", value: "stay3" },
+};
+
 const ServiceSelection = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -43,7 +85,6 @@ const ServiceSelection = () => {
   const [pendingServiceType, setPendingServiceType] = useState<string | null>(null);
   const [pendingData, setPendingData] = useState<any>(null);
   const [showError, setShowError] = useState(false);
-  const [shakeKey, setShakeKey] = useState(0);
 
   useEffect(() => {
     const checkPendingApp = async () => {
@@ -82,16 +123,11 @@ const ServiceSelection = () => {
   }, [homepageSections]);
 
   useEffect(() => {
-    const serviceMap: Record<string, string> = {
-      caravan: "camper-van",
-      stay: "unique-stays",
-      activity: "best-activity",
-    };
-    if (selectedService && visibleSections[serviceMap[selectedService]] === false) {
-      const availableService = Object.keys(serviceMap).find(
-        (key) => visibleSections[serviceMap[key]] !== false,
+    if (selectedService && visibleSections[SECTION_KEY_BY_SERVICE[selectedService]] === false) {
+      const availableService = (Object.keys(SECTION_KEY_BY_SERVICE) as ServiceType[]).find(
+        (key) => visibleSections[SECTION_KEY_BY_SERVICE[key]] !== false,
       );
-      setSelectedService(availableService ? (availableService as ServiceType) : null);
+      setSelectedService(availableService ?? null);
     }
   }, [visibleSections, selectedService]);
 
@@ -117,348 +153,278 @@ const ServiceSelection = () => {
     }
     if (!selectedService) {
       setShowError(true);
-      setShakeKey((k) => k + 1);
       toast.error("Please select a service to continue");
       return;
     }
     sessionStorage.setItem("onboardingType", selectedService);
-    if (selectedService === "activity") {
-      sessionStorage.setItem("activityID", "activity1");
-      sessionStorage.setItem("id", "activity1");
-    } else if (selectedService === "caravan") {
-      sessionStorage.setItem("camperVanID", "camperVan2");
-      sessionStorage.setItem("id", "camperVan2");
-    } else {
-      sessionStorage.setItem("stayID", "stay3");
-      sessionStorage.setItem("id", "stay3");
-    }
+    const { key, value } = SESSION_IDS[selectedService];
+    sessionStorage.setItem(key, value);
+    sessionStorage.setItem("id", value);
     navigate(`/onboarding/${selectedService}`);
   };
 
-  const getIllustrationImage = () => {
-    if (selectedService === "stay")
-      return "https://api.builder.io/api/v1/image/assets/TEMP/8e762f2f0679274541ddec18f7f1325791c712e7";
-    if (selectedService === "activity")
-      return "https://api.builder.io/api/v1/image/assets/TEMP/ac3af7014c1557f3fdf25509200649edd541b7e3";
-    return "https://api.builder.io/api/v1/image/assets/TEMP/b0d5bf84a04251328fd3565624ad1b2b09a5cd43";
-  };
-
-  const visibleServices: ServiceType[] = (["caravan", "stay", "activity"] as ServiceType[]).filter(
-    (s) => {
-      const keyMap: Record<ServiceType, string> = {
-        caravan: "camper-van",
-        stay: "unique-stays",
-        activity: "best-activity",
-      };
-      return visibleSections[keyMap[s]] !== false;
-    },
+  const visibleServices = (Object.keys(SECTION_KEY_BY_SERVICE) as ServiceType[]).filter(
+    (s) => visibleSections[SECTION_KEY_BY_SERVICE[s]] !== false,
   );
 
-  return (
-    <div className="min-h-screen overflow-hidden bg-th-surface-0 text-[#0d4548]">
-      {/* ─── Header ─────────────────────────────────────────────────────────── */}
-      <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-16 px-4 sm:px-8 lg:px-12 bg-white/97 backdrop-blur-[16px] border-b border-th-warm-border">
-        <BrandLogo size={36} />
+  const pendingTitle = pendingServiceType
+    ? SERVICE_META[pendingServiceType as ServiceType]?.title
+    : null;
 
-        {/* Step progress */}
-        <div className="hidden sm:flex items-center gap-2">
-          {[
-            { n: 1, label: "Select Service", done: true },
-            { n: 2, label: "Details", done: false },
-            { n: 3, label: "Verify", done: false },
-          ].map((step, i) => (
-            <React.Fragment key={step.n}>
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "w-[26px] h-[26px] rounded-full flex items-center justify-center text-[11px] font-bold transition-all duration-200",
-                    step.done ? "bg-th-brand" : "bg-[#F1EFE8]",
-                    step.done ? "text-[#0d4548]" : "text-th-warm-text-muted",
-                  )}
-                >
-                  {step.done ? (
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path
-                        d="M2.5 6L5 8.5L9.5 3.5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+  return (
+    <div
+      data-onboarding
+      className="relative min-h-screen font-sans flex flex-col bg-[color:var(--onb-page-bg,#efeeea)] text-th-text-primary"
+    >
+      {/* ─── Header ─────────────────────────────────────────────────────── */}
+      <div className="onb-header">
+        <LogoWebsite />
+        <span className="hidden sm:block text-[12px] font-semibold tracking-[0.02em] text-th-warm-text-muted">
+          Step <span className="text-th-text-primary">1</span> of 3
+        </span>
+      </div>
+
+      {/* ─── Content ────────────────────────────────────────────────────── */}
+      <div className="relative flex-1 overflow-y-auto pt-16 pb-28">
+        <div className="max-w-[1120px] mx-auto w-full px-5 sm:px-6 lg:px-10 py-7 sm:py-9">
+          <div className="onb-fade-up flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,1fr)_336px] lg:gap-10 lg:items-start">
+            <div className="w-full min-w-0 flex flex-col gap-6">
+              {/* Support copy is deliberately shorter than the original. StepHeader
+                  caps it at 46ch for readability, so "…add to TravelHomes." split
+                  the product name across two lines beneath a title that runs the
+                  full column width. Dropping "to TravelHomes" costs nothing — the
+                  host is already here. */}
+              <StepHeader
+                kicker="Select Service"
+                title="Which service are you offering?"
+                subtitle="Choose the type of listing you'd like to add. You can always expand your offerings later."
+                step={1}
+                totalSteps={3}
+              />
+
+              {/* Pending application notice */}
+              {hasPendingApplication && pendingData && (
+                <div className="flex items-start gap-3.5 rounded-[16px] border border-th-warn-bright-border bg-th-warn-bright-bg p-4 sm:p-[18px]">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] border border-th-warn-bright-border bg-th-surface-0">
+                    <Clock size={16} strokeWidth={2} className="text-th-warn-bright" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13.5px] font-bold tracking-[-0.01em] text-th-text-primary">
+                      Your {pendingTitle || "listing"} is under review
+                    </p>
+                    <p className="mt-1 text-[12.5px] leading-[1.55] text-[color:var(--onb-text-secondary,#657477)]">
+                      Submitted{" "}
+                      {new Date(pendingData.createdAt).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                      . Our team will review within 24–48 hours, and the other services stay locked
+                      until then.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── Service cards ─────────────────────────────────────── */}
+              {/* role=radio on buttons so the single-select nature and the
+                  checked state are announced. This was a plain div with an
+                  onClick and no keyboard path at all. */}
+              <div role="radiogroup" aria-label="Service type" className="flex flex-col gap-3">
+                {visibleServices.map((service, index) => {
+                  const meta = SERVICE_META[service];
+                  const selected = selectedService === service;
+                  const locked = hasPendingApplication && service !== pendingServiceType;
+                  return (
+                    <button
+                      key={service}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      disabled={locked}
+                      onClick={() => {
+                        setSelectedService(service);
+                        setShowError(false);
+                      }}
+                      // Stagger is computed per index, so it stays inline.
+                      style={{ animationDelay: `${index * 70}ms` }}
+                      className={cn(
+                        "onb-fade-up relative w-full flex items-center gap-4 px-[18px] py-4 rounded-[16px] border-[1.5px] text-left transition-all duration-150",
+                        "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color:var(--th-ring)]",
+                        locked
+                          ? "cursor-not-allowed border-th-warm-border bg-th-surface-0 opacity-55"
+                          : "cursor-pointer",
+                        !locked && selected
+                          ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
+                          : "",
+                        !locked && !selected
+                          ? "border-th-warm-border bg-th-surface-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-th-brand hover:bg-th-brand-soft"
+                          : "",
+                      )}
+                    >
+                      {/* Icon chip */}
+                      <span
+                        className={cn(
+                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] border-[1.5px] transition-all duration-150",
+                          selected && !locked
+                            ? "border-th-brand-border-soft bg-th-brand-soft text-th-brand"
+                            : "border-th-warm-border bg-th-warm-surface text-th-warm-text-muted",
+                        )}
+                      >
+                        {SERVICE_ICONS[service]}
+                      </span>
+
+                      {/* Text */}
+                      <span className="min-w-0 flex-1">
+                        <span className="mb-[3px] flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "text-[14px] font-bold tracking-[-0.01em] transition-colors duration-150",
+                              selected && !locked ? "text-th-brand" : "text-th-text-primary",
+                            )}
+                          >
+                            {meta.title}
+                          </span>
+                          {/* Quiet chip. The tag used to appear only once a card
+                              was selected, which is backwards — "Popular" is
+                              meant to inform the choice, not reward it. */}
+                          <span
+                            className={cn(
+                              "rounded-full border px-2 py-[1px] text-[9.5px] font-bold uppercase tracking-[0.08em]",
+                              locked
+                                ? "border-th-warn-bright-border bg-th-warn-bright-bg text-th-warn-bright"
+                                : "border-th-warm-border bg-th-warm-surface text-th-warm-text-muted",
+                            )}
+                          >
+                            {locked ? "Pending review" : meta.tag}
+                          </span>
+                        </span>
+                        <span className="block text-[12.5px] font-normal leading-[1.55] text-th-warm-text-dark">
+                          {meta.description}
+                        </span>
+                      </span>
+
+                      {/* Selection indicator */}
+                      <span
+                        className={cn(
+                          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-150",
+                          selected && !locked
+                            ? "border-th-brand bg-th-brand"
+                            : "border-th-warm-border bg-transparent",
+                        )}
+                      >
+                        {selected && !locked && (
+                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                            <path
+                              d="M2 5l2.5 2.5L8 3"
+                              stroke="currentColor"
+                              className="text-th-text-inverse"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Validation error. Replaces a shake animation on the CTA —
+                  the only shake keyframe in the codebase is bound to
+                  [data-animate-delta="negative"] for metric deltas, and a
+                  visible message is what a screen reader can act on anyway. */}
+              {showError && !selectedService && (
+                <p role="alert" className="text-[12.5px] font-medium text-th-error-bright">
+                  Please select a service to continue.
+                </p>
+              )}
+            </div>
+
+            {/* ─── Illustration aside ──────────────────────────────────── */}
+            {/* Mirrors OnboardingLayout's preview panel: a real card with the
+                system border + shadow. The previous version floated the image
+                over two 60–90px blurred colour blobs with absolutely-positioned
+                badges — the "uneven beige wash" the system removed. */}
+            <aside className="hidden lg:block lg:sticky lg:top-24">
+              <div className="overflow-hidden rounded-[18px] border border-[color:var(--onb-card-border)] bg-th-surface-0 shadow-[var(--onb-card-shadow)]">
+                {/* White, not the warm well the form fields use: these PNGs
+                    carry their own white background, so a tinted panel behind
+                    them renders as a white square inside a beige box. */}
+                <div className="flex items-center justify-center border-b border-th-warm-border bg-th-surface-0 px-6 py-7">
+                  {selectedService ? (
+                    <img
+                      key={selectedService}
+                      src={ILLUSTRATION_BY_SERVICE[selectedService]}
+                      alt=""
+                      className="onb-scale-in h-[236px] w-full object-contain"
+                    />
                   ) : (
-                    step.n
+                    <div className="h-[236px] w-full" />
                   )}
                 </div>
-                <span
-                  className={cn(
-                    "text-[12px] whitespace-nowrap",
-                    step.done
-                      ? "font-semibold text-[#0d4548]"
-                      : "font-normal text-th-warm-text-muted",
-                  )}
-                >
-                  {step.label}
-                </span>
+                <dl className="divide-y divide-th-warm-border">
+                  {[
+                    { term: "Verified hosts", detail: "Every host is identity-checked" },
+                    { term: "Quick setup", detail: "Most listings go live in minutes" },
+                  ].map((row) => (
+                    <div key={row.term} className="px-5 py-3.5">
+                      <dt className="text-[12.5px] font-bold tracking-[-0.01em] text-th-text-primary">
+                        {row.term}
+                      </dt>
+                      <dd className="mt-0.5 text-[12px] leading-[1.5] text-th-warm-text-muted">
+                        {row.detail}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
-              {i < 2 && <div className="w-7 h-px bg-th-warm-border" />}
-            </React.Fragment>
-          ))}
-        </div>
-      </header>
-
-      {/* ─── Main ────────────────────────────────────────────────────────────── */}
-      <div className="w-full max-w-7xl mx-auto flex max-lg:flex-col items-stretch min-h-screen pt-16 px-4 sm:px-8 lg:px-12">
-        {/* ── Left ── */}
-        <div className="w-full lg:w-[55%] flex flex-col justify-center py-12 lg:pr-16">
-          {/* Back */}
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1.5 w-fit mb-10 bg-transparent border-none p-0 cursor-pointer text-[13px] font-medium text-th-warm-text-muted transition-colors hover:text-[#0d4548]"
-          >
-            <GoChevronLeft size={17} />
-            Back to home
-          </button>
-
-          {/* Step label */}
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-8 h-[3px] rounded-full bg-th-brand" />
-            <span className="text-[11px] font-bold uppercase tracking-[0.13em] text-th-warm-text-muted">
-              Step 1 of 3
-            </span>
-          </div>
-
-          {/* Heading */}
-          <h1
-            className="mb-3 font-serif font-normal text-[#0d4548] leading-[1.12] tracking-[-0.015em]"
-            style={{ fontSize: "clamp(30px, 4.2vw, 42px)" }}
-          >
-            Which service are
-            <br className="hidden sm:block" /> you offering?
-          </h1>
-          <p className="mb-10 text-[15px] text-th-warm-text-dark leading-[1.65] max-w-[420px]">
-            Choose the type of listing you'd like to add to TravelHomes. You can always expand your
-            offerings later.
-          </p>
-
-          {/* ── Pending application banner ── */}
-          {hasPendingApplication && pendingData && (
-            <div className="mb-8 p-5 rounded-2xl flex items-start gap-3 bg-[#fffbeb] border border-[#fcd34d] border-[1.5px]">
-              <span className="text-xl mt-0.5">⏳</span>
-              <div className="flex-1">
-                <h3 className="font-semibold text-sm text-[#92400e]">
-                  Your{" "}
-                  {pendingServiceType
-                    ? SERVICE_META[pendingServiceType as ServiceType]?.title
-                    : "listing"}{" "}
-                  is under review
-                </h3>
-                <p className="text-xs mt-1 leading-relaxed text-[#b45309]">
-                  Submitted{" "}
-                  {new Date(pendingData.createdAt).toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                  . Our team will review within 24–48 hours.
-                </p>
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-3 py-1 rounded-full mt-3 bg-[#fef3c7] text-[#92400e]">
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse bg-[#f59e0b]" />
-                  Pending Review
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* ── Service cards ── */}
-          <div className="flex flex-col gap-3 mb-6">
-            {visibleServices.map((service, index) => (
-              <div
-                key={service}
-                className="ss-card-enter"
-                style={{ animationDelay: `${index * 70}ms` }}
-              >
-                <ServiceCard
-                  service={service}
-                  title={SERVICE_META[service].title}
-                  description={SERVICE_META[service].description}
-                  tag={SERVICE_META[service].tag}
-                  icon={SERVICE_ICONS[service]}
-                  active={selectedService === service}
-                  disabled={hasPendingApplication && service !== pendingServiceType}
-                  onClick={() => {
-                    setSelectedService(service);
-                    setShowError(false);
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-
-          {/* Validation error */}
-          {showError && !selectedService && (
-            <div className="flex items-center gap-2 mb-4">
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <circle cx="7" cy="7" r="6" stroke="#ef4444" strokeWidth="1.5" />
-                <path
-                  d="M7 4.5v2.5M7 9h.01"
-                  stroke="#ef4444"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <p className="text-[13px] font-medium text-th-error-bright">
-                Please select a service to continue
-              </p>
-            </div>
-          )}
-
-          {/* ── CTA ── */}
-          <button
-            key={shakeKey}
-            onClick={handleContinue}
-            className={cn(
-              "ss-cta-btn flex items-center justify-center gap-2 h-[52px] px-11 rounded-full border-none cursor-pointer text-[15px] font-bold tracking-[-0.01em] bg-th-brand text-th-text-inverse shadow-[0_8px_28px_rgba(59,217,218,0.44)] w-fit",
-              showError && !selectedService && "ss-cta-shake",
-            )}
-          >
-            Continue
-            <svg width="17" height="17" viewBox="0 0 17 17" fill="none" className="ss-cta-arrow">
-              <path
-                d="M6.5 4.5l4.5 4-4.5 4"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        </div>
-
-        {/* ── Right — Illustration ── */}
-        <div className="hidden lg:flex lg:w-[45%] items-center justify-center relative">
-          {/* Teal glow blobs — kept as inline style: dynamic blur values */}
-          <div
-            className="absolute pointer-events-none rounded-full bg-th-brand opacity-[0.07]"
-            style={{ width: 440, height: 440, filter: "blur(90px)" }}
-          />
-          <div
-            className="absolute pointer-events-none rounded-full bg-th-brand opacity-[0.05]"
-            style={{ width: 220, height: 220, top: "25%", right: "10%", filter: "blur(60px)" }}
-          />
-
-          {/* Illustration — kept as inline style: computed size from design spec */}
-          <img
-            key={selectedService}
-            src={getIllustrationImage()}
-            alt="Service illustration"
-            className="ss-img-fade relative z-10 object-contain"
-            style={{ width: 420, height: 420 }}
-          />
-
-          {/* Floating badge — bottom left */}
-          <div
-            className="absolute z-20 ss-badge-enter"
-            style={{ bottom: 80, left: 12, animationDelay: "350ms" }}
-          >
-            <div className="flex items-center gap-3 bg-th-surface-0 rounded-[14px] px-4 py-[11px] shadow-[0_8px_32px_rgba(0,0,0,0.09)] border border-th-warm-border">
-              <span className="text-[18px]">🛡️</span>
-              <div>
-                <p className="text-[12px] font-bold text-[#0d4548]">Verified Hosts</p>
-                <p className="text-[10px] text-th-warm-text-muted">Identity verified</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Floating badge — top right */}
-          <div
-            className="absolute z-20 ss-badge-enter"
-            style={{ top: 100, right: 12, animationDelay: "500ms" }}
-          >
-            <div className="flex items-center gap-3 bg-th-surface-0 rounded-[14px] px-4 py-[11px] shadow-[0_8px_32px_rgba(0,0,0,0.09)] border border-th-warm-border">
-              <span className="text-[18px]">⚡</span>
-              <div>
-                <p className="text-[12px] font-bold text-[#0d4548]">Quick Setup</p>
-                <p className="text-[10px] text-th-warm-text-muted">List in minutes</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Dot grid */}
-          <div className="absolute bottom-32 right-8 pointer-events-none opacity-[0.35]">
-            <DotGrid />
+            </aside>
           </div>
         </div>
       </div>
 
-      <style>{`
-        @keyframes ssCardEnter {
-          from { opacity: 0; transform: translateY(14px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .ss-card-enter {
-          animation: ssCardEnter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        @keyframes ssBadgeEnter {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        .ss-badge-enter {
-          animation: ssBadgeEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-        @keyframes ssImgFade {
-          from { opacity: 0; transform: scale(0.96); }
-          to   { opacity: 1; transform: scale(1); }
-        }
-        .ss-img-fade {
-          animation: ssImgFade 0.4s ease-out both;
-        }
-        .ss-cta-btn {
-          transition: transform 0.18s ease, box-shadow 0.18s ease;
-        }
-        .ss-cta-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 12px 36px rgba(59, 217, 218, 0.44) !important;
-        }
-        .ss-cta-btn:active {
-          transform: translateY(0);
-        }
-        .ss-cta-btn:hover .ss-cta-arrow {
-          transform: translateX(3px);
-        }
-        .ss-cta-arrow {
-          transition: transform 0.18s ease;
-        }
-        @keyframes ssCTAShake {
-          0%, 100% { transform: translateX(0); }
-          20%       { transform: translateX(-6px); }
-          40%       { transform: translateX(6px); }
-          60%       { transform: translateX(-4px); }
-          80%       { transform: translateX(4px); }
-        }
-        .ss-cta-shake {
-          animation: ssCTAShake 0.35s ease both;
-        }
-      `}</style>
+      {/* ─── Sticky footer nav ──────────────────────────────────────────── */}
+      <div className="onb-footer px-5 sm:px-6 lg:px-10 py-3.5">
+        <div className="max-w-[1120px] mx-auto w-full flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleBack}
+            className={cn(
+              "onb-btn-secondary h-12 px-5 sm:px-7 text-[14px] rounded-full",
+              "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[color:var(--th-ring)]",
+            )}
+          >
+            Back to home
+          </button>
+
+          <button
+            type="button"
+            onClick={handleContinue}
+            className={cn(
+              "onb-btn-primary h-12 px-6 sm:px-8 text-[14px] rounded-full whitespace-nowrap",
+              "inline-flex items-center gap-2",
+              "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2",
+              "focus-visible:ring-[color:var(--onb-cta-ink,#0a5559)] focus-visible:ring-offset-th-surface-0",
+            )}
+          >
+            Continue
+            <ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-/* ─── Dot grid decoration ────────────────────────────────────────────────── */
-const DotGrid = () => (
-  <svg width="72" height="72" viewBox="0 0 72 72" fill="none" className="text-th-brand">
-    {[0, 18, 36, 54].map((cy) =>
-      [0, 18, 36, 54].map((cx) => (
-        <circle key={`${cx}-${cy}`} cx={cx + 6} cy={cy + 6} r="2.5" fill="currentColor" />
-      )),
-    )}
-  </svg>
-);
-
 /* ─── Icons ─────────────────────────────────────────────────────────────── */
+/* Kept as bespoke line art: these are the three top-level services, and the
+   emoji CategoryStep uses for van sub-types would read as a downgrade here.
+   currentColor so the chip's selected/idle state drives them. */
 const SERVICE_ICONS: Record<ServiceType, React.ReactNode> = {
   caravan: (
-    <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
+    <svg width="26" height="26" viewBox="0 0 72 72" fill="none" aria-hidden="true">
       <path
         d="M20.2775 27.0794H17.079L14.833 31.6976H18.044M20.2775 27.0794L18.044 31.6976M20.2775 27.0794H20.1058H25.5673V31.6976H17.8598H18.044M20.9316 23.3385H56.4155C59.2758 23.3385 62.1639 25.6925 62.3676 29.041C62.3829 29.2921 62.3994 29.5414 62.4368 29.7903C62.606 30.9167 63.0833 34.3846 62.9874 37.0871C62.876 40.227 62.0026 45.0718 62.0026 45.0718H60.0586C60.0586 45.0718 59.507 42.6731 56.29 41.6713H49.1697C47.4599 42.3193 47.0788 43.4698 46.5027 45.0718H26.4908C26.4908 41.9787 23.4471 39.9396 20.9306 39.9396C18.414 39.9396 15.1787 42.1225 15.1787 45.0718H11.4467C4.8038 45.0718 13.696 27.6599 14.5791 26.1849L15.0134 25.5415H13.2876C13.6875 24.6675 14.5791 23.3497 20.9316 23.3385ZM23.7519 45.7797C23.7519 47.3713 22.4616 48.6616 20.8701 48.6616C19.2785 48.6616 17.9882 47.3713 17.9882 45.7797C17.9882 44.1881 19.2785 42.8979 20.8701 42.8979C22.4616 42.8979 23.7519 44.1881 23.7519 45.7797ZM55.9582 45.7797C55.9582 47.3713 54.668 48.6616 53.0764 48.6616C51.4848 48.6616 50.1945 47.3713 50.1945 45.7797C50.1945 44.1881 51.4848 42.8979 53.0764 42.8979C54.668 42.8979 55.9582 44.1881 55.9582 45.7797ZM28.7488 27.0794H33.367V31.6976H28.7488V27.0794ZM36.551 27.0794H41.1691V31.6976H36.551V27.0794ZM44.3508 27.0794H48.969V31.6976H44.3508V27.0794ZM52.1507 27.0794H56.7688V31.6976H52.1507V27.0794Z"
         stroke="currentColor"
@@ -469,7 +435,7 @@ const SERVICE_ICONS: Record<ServiceType, React.ReactNode> = {
     </svg>
   ),
   stay: (
-    <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
+    <svg width="26" height="26" viewBox="0 0 72 72" fill="none" aria-hidden="true">
       <path
         d="M9 51.0452V47.9745H10.2502L16.0895 39.0683M16.0895 39.0683C15.2047 41.9588 14.1578 44.9775 14.1578 47.9745L25.0808 52.1792H46.0121L57.5009 47.9745C57.5009 45.0245 56.5095 41.9955 55.5063 39.0683M16.0895 39.0683C19.2925 28.6048 27.04 19.8208 35.3485 19.8208C43.5963 19.8208 51.9944 28.8209 55.5063 39.0683M63 51.0452V47.9745H61.7498L55.5063 39.0683M31.4164 29.5564H35.1256C38.2921 29.5564 39.9162 30.8351 40.767 33.8851L44.1476 44.6971C44.5658 46.1962 43.4386 47.1449 41.8823 47.1449H29.62C28.0918 47.1449 26.9695 46.2461 27.3374 44.7628L31.4164 29.5564Z"
         stroke="currentColor"
@@ -480,7 +446,7 @@ const SERVICE_ICONS: Record<ServiceType, React.ReactNode> = {
     </svg>
   ),
   activity: (
-    <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
+    <svg width="26" height="26" viewBox="0 0 72 72" fill="none" aria-hidden="true">
       <path
         d="M22.323 42.9009H21.2793C20.0367 42.9009 19.0293 41.8936 19.0293 40.6509L19.0293 27.4377C19.0293 26.195 20.0367 25.1877 21.2793 25.1877H22.323M49.6768 25.2886H50.7205C51.9631 25.2886 52.9705 26.296 52.9705 27.5386V40.7519C52.9705 41.9945 51.9631 43.0019 50.7205 43.0019H49.6768M49.6768 43.0019V25.9768V24.3978C49.6768 23.5217 49.1759 22.7624 48.4449 22.3909M49.6768 43.0019V47.6C49.6768 48.403 49.2561 49.1077 48.6232 49.5059M23.5539 22.3913C22.8234 22.7631 22.323 23.522 22.323 24.3978V25.9775V43.0012V47.6C22.323 48.4025 22.7432 49.1069 23.3755 49.5052M23.5539 22.3913C24.0984 24.2641 25.8271 25.6327 27.8755 25.6327H44.1232C46.1718 25.6327 47.9006 24.2638 48.4449 22.3909M23.5539 22.3913C23.4378 21.9919 23.3755 21.5696 23.3755 21.1327V15.3803C23.3755 14.1376 24.3829 13.1303 25.6255 13.1303H46.3732C47.6158 13.1303 48.6232 14.1376 48.6232 15.3803V21.1327C48.6232 21.5694 48.561 21.9916 48.4449 22.3909M48.6232 49.5059V49.338C48.6232 48.0954 47.6158 47.088 46.3732 47.088H25.6255C24.3829 47.088 23.3755 48.0954 23.3755 49.338V49.5052M48.6232 49.5059V56.6197C48.6232 57.8624 47.6158 58.8697 46.3732 58.8697H25.6255C24.3829 58.8697 23.3755 57.8624 23.3755 56.6197V49.5052M29.084 20.8405V33.7384M42.4719 20.8405V33.7384M40.2441 44.5138V49.7389M31.7537 44.5138V49.7389M28.9379 19.151C29.2468 20.2135 30.2276 20.99 31.3897 20.99H40.6078C41.77 20.99 42.7509 20.2134 43.0597 19.1508"
         stroke="currentColor"
@@ -491,106 +457,5 @@ const SERVICE_ICONS: Record<ServiceType, React.ReactNode> = {
     </svg>
   ),
 };
-
-/* ─── Service Card ───────────────────────────────────────────────────────── */
-const ServiceCard = ({
-  title,
-  description,
-  tag,
-  icon,
-  active,
-  disabled,
-  onClick,
-}: {
-  service: ServiceType;
-  title: string;
-  description: string;
-  tag: string;
-  icon: React.ReactNode;
-  active: boolean;
-  disabled?: boolean;
-  onClick: () => void;
-}) => (
-  <div
-    onClick={disabled ? undefined : onClick}
-    aria-disabled={disabled || undefined}
-    className={cn(
-      "flex items-center gap-[18px] px-5 py-[17px] rounded-[16px] select-none relative overflow-hidden transition-all duration-200",
-      disabled
-        ? "cursor-not-allowed border-[1.5px] border-th-warm-border bg-th-surface-0 opacity-50"
-        : "cursor-pointer",
-      !disabled && active
-        ? "border-2 border-th-brand bg-th-brand-soft shadow-[0_4px_24px_rgba(59,217,218,0.44)]"
-        : "",
-      !disabled && !active
-        ? "border-[1.5px] border-th-warm-border bg-th-surface-0 shadow-[0_1px_4px_rgba(0,0,0,0.04)] hover:border-th-brand-border-soft hover:bg-[rgba(59,217,218,0.08)] hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
-        : "",
-    )}
-  >
-    {/* Active tag / locked-while-pending badge */}
-    {disabled ? (
-      <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-warm-border text-th-warm-text-muted">
-        Pending review
-      </span>
-    ) : (
-      active &&
-      tag && (
-        <span className="absolute top-2.5 right-2.5 text-[9px] font-extrabold uppercase tracking-[0.09em] px-[9px] py-[3px] rounded-full bg-th-brand text-th-text-inverse">
-          {tag}
-        </span>
-      )
-    )}
-
-    {/* Icon container */}
-    <div
-      className={cn(
-        "w-[50px] h-[50px] rounded-[14px] flex-shrink-0 flex items-center justify-center transition-all duration-200",
-        active
-          ? "bg-th-brand text-th-text-inverse"
-          : "bg-[#F1EFE8] text-th-warm-text-muted hover:bg-[rgba(59,217,218,0.2)] hover:text-th-brand",
-      )}
-    >
-      {icon}
-    </div>
-
-    {/* Text */}
-    <div className="flex-1 min-w-0">
-      <h3 className="text-[14px] font-bold text-[#0d4548] mb-1 leading-[1.3] tracking-[-0.01em]">
-        {title}
-      </h3>
-      <p
-        className={cn(
-          "text-[13px] leading-[1.55] m-0 transition-colors duration-200",
-          active ? "text-th-warm-text-dark" : "text-th-warm-text-muted",
-        )}
-      >
-        {description}
-      </p>
-    </div>
-
-    {/* Radio indicator */}
-    <div className="flex-shrink-0 ml-1">
-      <div
-        className={cn(
-          "w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center transition-all duration-200",
-          active ? "border-th-brand bg-th-brand" : "border-th-warm-border bg-th-surface-0",
-        )}
-      >
-        {active && (
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-            <path
-              d="M2 5.5L4.5 8L9 3"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="text-th-text-inverse"
-            />
-          </svg>
-        )}
-      </div>
-    </div>
-  </div>
-);
 
 export default ServiceSelection;

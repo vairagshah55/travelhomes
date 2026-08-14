@@ -54,17 +54,32 @@ const RoomCounter = ({
   value,
   onDecrement,
   onIncrement,
+  required,
 }: {
   icon: React.ReactNode;
   label: string;
   value: number;
   onDecrement: () => void;
   onIncrement: () => void;
+  // validateStaysStep requires each of these to be >= 1. Marked per row because
+  // the enclosing "Stats" block has no heading to carry a section-level
+  // asterisk, unlike EntireStayForm's "Property Details" card.
+  required?: boolean;
 }) => (
   <div className="flex items-center justify-between py-2.5">
     <div className="flex items-center gap-2.5">
       <span className="text-th-warm-text-muted">{icon}</span>
-      <span className="text-[13px] font-medium text-th-warm-text-dark">{label}</span>
+      <span className="text-[13px] font-medium text-th-warm-text-dark">
+        {label}
+        {required && (
+          <>
+            <span aria-hidden="true" className="text-th-error-bright ml-[3px]">
+              *
+            </span>
+            <span className="sr-only"> (required)</span>
+          </>
+        )}
+      </span>
     </div>
     <div className="flex items-center gap-3">
       <button
@@ -147,7 +162,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
       {/* ── Cover Photo ── */}
       <div className="bg-th-surface-0 border-[1.5px] border-[#EBEBEB] rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59,217,218,0.5)] flex items-center justify-center shrink-0 text-th-brand">
+          <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-th-brand-border-soft flex items-center justify-center shrink-0 text-th-brand">
             <ImagePlus size={16} strokeWidth={2.5} />
           </div>
           <div className="flex-1">
@@ -351,7 +366,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                         "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
                         errors[`room_${index}_name`]
                           ? "bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft"
-                          : "bg-th-warm-surface border-[1.5px] border-transparent",
+                          : "bg-th-surface-0 border-[1.5px] border-th-warm-border-strong hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
                       )}
                     />
                     <ErrorMsg message={errors[`room_${index}_name`]} />
@@ -382,7 +397,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                         "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
                         errors[`room_${index}_description`]
                           ? "bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft"
-                          : "bg-th-warm-surface border-[1.5px] border-transparent",
+                          : "bg-th-surface-0 border-[1.5px] border-th-warm-border-strong hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
                       )}
                     />
                     <div className="flex justify-between">
@@ -398,6 +413,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <RoomCounter
                       icon={<Users size={14} />}
                       label="Guest Capacity"
+                      required
                       value={room.guestCapacity}
                       onDecrement={() =>
                         updateRoom(
@@ -418,6 +434,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <RoomCounter
                       icon={<BedDouble size={14} />}
                       label="Beds"
+                      required
                       value={room.beds}
                       onDecrement={() =>
                         updateRoom(
@@ -434,6 +451,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                     <RoomCounter
                       icon={<Bath size={14} />}
                       label="Bathrooms"
+                      required
                       value={room.bathrooms}
                       onDecrement={() =>
                         updateRoom(
@@ -469,10 +487,10 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                         "flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
                         errors[`room_${index}_price`]
                           ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-                          : "border-transparent bg-th-warm-surface",
+                          : "border-th-warm-border-strong bg-th-surface-0 hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
                       )}
                     >
-                      <div className="flex items-center px-3 h-12 border-r-[1.5px] border-th-warm-border bg-th-warm-surface shrink-0">
+                      <div className="flex items-center px-3 h-12 border-r-[1.5px] border-th-warm-border bg-th-surface-0 shrink-0">
                         <IndianRupee size={13} className="text-th-warm-text-muted" />
                       </div>
                       <input
@@ -621,7 +639,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                           value={rule}
                           onChange={(e) => updateRoomRule(room.id, ruleIndex, e.target.value)}
                           className={cn(
-                            "flex-1 h-10 px-3 text-[13px] text-th-text-primary font-[450] bg-th-warm-surface border-[1.5px] border-transparent rounded-[11px] outline-none transition-all duration-150",
+                            "flex-1 h-10 px-3 text-[13px] text-th-text-primary font-[450] bg-th-surface-0 border-[1.5px] border-th-warm-border-strong hover:border-[color:var(--onb-border-hover,#a9c5c2)] rounded-[11px] outline-none transition-all duration-150",
                             "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
                           )}
                         />

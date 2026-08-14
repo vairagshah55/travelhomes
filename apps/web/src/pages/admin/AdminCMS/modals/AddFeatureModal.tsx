@@ -16,10 +16,21 @@ import type { AddFeatureModalProps } from "../types";
 const EMPTY = { name: "", icon: "", description: "" };
 
 const COPY = {
-  feature: { title: "New feature", nameLabel: "Feature name", cta: "Add feature" },
-  category: { title: "New category", nameLabel: "Category name", cta: "Add category" },
+  feature: {
+    title: "New feature",
+    editTitle: "Edit feature",
+    nameLabel: "Feature name",
+    cta: "Add feature",
+  },
+  category: {
+    title: "New category",
+    editTitle: "Edit category",
+    nameLabel: "Category name",
+    cta: "Add category",
+  },
   subcategory: {
     title: "New sub-category",
+    editTitle: "Edit sub-category",
     nameLabel: "Sub-category name",
     cta: "Add sub-category",
   },
@@ -30,15 +41,28 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
   onClose,
   onSubmit,
   type = "feature",
+  initialData,
 }) => {
   const [formData, setFormData] = useState(EMPTY);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const copy = COPY[type] ?? COPY.feature;
+  const isEdit = !!initialData;
 
+  // Keyed on isOpen so reopening always starts from the row being edited (or a
+  // blank form) rather than whatever the previous session left behind.
   useEffect(() => {
-    if (isOpen) setFormData(EMPTY);
-  }, [isOpen]);
+    if (!isOpen) return;
+    setFormData(
+      initialData
+        ? {
+            name: initialData.name || "",
+            icon: initialData.icon || "",
+            description: initialData.description || "",
+          }
+        : EMPTY,
+    );
+  }, [isOpen, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +94,9 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
         className="max-w-lg w-[calc(100vw-2rem)] p-0 gap-0 rounded-2xl overflow-hidden max-h-[92vh] flex flex-col"
       >
         <DialogHeader className="px-5 py-4 border-b border-app-border text-left">
-          <DialogTitle className="text-[15px] font-bold text-app-fg">{copy.title}</DialogTitle>
+          <DialogTitle className="text-[15px] font-bold text-app-fg">
+            {isEdit ? copy.editTitle : copy.title}
+          </DialogTitle>
           <DialogDescription className="text-[12.5px] text-app-fg-muted">
             Vendors pick from this list while creating a listing.
           </DialogDescription>
@@ -96,7 +122,7 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="One line shown alongside the category."
+                  placeholder="Shown under the category name while a vendor picks one."
                   className={TEXTAREA}
                 />
               </CmsField>
@@ -141,7 +167,7 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
               Cancel
             </button>
             <button type="submit" disabled={uploading} className={BTN_PRIMARY}>
-              {copy.cta}
+              {isEdit ? "Save changes" : copy.cta}
             </button>
           </footer>
         </form>

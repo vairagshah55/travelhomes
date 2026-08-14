@@ -69,35 +69,61 @@ const TABS = [
   },
 ];
 
-// Camper-van categories + features are kept inline — they describe vehicle
-// taxonomy that doesn't need admin tuning. Stays + Activities are CMS-driven
-// (see useOfferingCatalog) so admins can edit the available options without
-// shipping code.
+// Camper-van vehicle types are CMS-driven (CMS → Features → Camper Van →
+// Categories, same feed as caravan onboarding); this list is only the fallback
+// for when an admin hasn't added any yet. Camper-van features are still inline.
+// Keep in step with FALLBACK_CATEGORIES in onboarding/caravan/CategoryStep.tsx.
 const CAMPER_VAN_CATEGORIES = [
-  "Camper Trailer",
-  "Luxury RV",
-  "Basic Van",
-  "Adventure Vehicle",
-  "Panel Van",
-  "Cargo Van",
   "Motorhome",
-  "Campervan",
-  "Caravan",
+  "Campervan / Caravan",
+  "Travel Trailer",
+  "Off Road Caravan",
+  "Mini Caravan",
 ];
 
+// Fallback only, for a CMS with no Camper Van features yet. Keep in step with
+// FALLBACK_FEATURES in onboarding/caravan/FeaturesStep.tsx.
 const CAMPER_VAN_FEATURES = [
-  "Fan",
-  "AC",
-  "Kitchen",
-  "Water",
-  "Wifi",
-  "Solar",
+  "Air Conditioning",
+  "Heating",
+  "Sofa / Lounge Seating",
+  "Recliner Seats",
+  "Storage Cabinets",
+  "Double Bed",
+  "Single Beds",
+  "Bunk Beds",
+  "Sofa Cum Bed",
+  "Pillows",
+  "Blankets",
+  "Induction Stove / Gas Stove",
+  "Microwave",
+  "Refrigerator",
+  "Basic Kitchen Utensils",
+  "Bathroom",
   "Toilet",
-  "Shower",
-  "Fridge",
+  "Hot Water / Geyser",
+  "Wash Basin",
+  "Mirror",
+  "Toiletries",
   "TV",
-  "Music",
-  "GPS",
+  "Wi-Fi",
+  "Speaker",
+  "Charging Points",
+  "Generator",
+  "Power Backup",
+  "Exterior Lights",
+  "Drinking Water Facility",
+  "Fire Extinguisher",
+  "First Aid Kit",
+  "CCTV",
+  "GPS Tracking",
+  "Awning",
+  "Outdoor Kitchen",
+  "BBQ",
+  "Rooftop Terrace",
+  "Camping Chairs",
+  "Camping Table",
+  "Wheelchair Accessible",
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -470,18 +496,20 @@ const AddOfferings = () => {
     }
   };
 
-  // Camper-van uses the inline vehicle taxonomy; stays + activities come
-  // from the CMS via useOfferingCatalog (same source as the onboarding flows).
+  // All three tabs' categories come from the CMS via useOfferingCatalog (same
+  // source as the onboarding flows); camper-van falls back to the inline
+  // vehicle taxonomy until an admin adds Camper Van categories.
   const catalog = useOfferingCatalog();
-  const baseCategories = useMemo(
-    () =>
-      activeTab === "camper-van" ? CAMPER_VAN_CATEGORIES : catalog.categories[activeTab] || [],
-    [activeTab, catalog.categories],
-  );
-  const baseFeatures = useMemo(
-    () => (activeTab === "camper-van" ? CAMPER_VAN_FEATURES : catalog.features[activeTab] || []),
-    [activeTab, catalog.features],
-  );
+  const baseCategories = useMemo(() => {
+    const fromCms = catalog.categories[activeTab] || [];
+    if (activeTab !== "camper-van") return fromCms;
+    return fromCms.length ? fromCms : CAMPER_VAN_CATEGORIES;
+  }, [activeTab, catalog.categories]);
+  const baseFeatures = useMemo(() => {
+    const fromCms = catalog.features[activeTab] || [];
+    if (activeTab !== "camper-van") return fromCms;
+    return fromCms.length ? fromCms : CAMPER_VAN_FEATURES;
+  }, [activeTab, catalog.features]);
 
   // Defensive merge — keep any in-progress draft category/feature visible even
   // if it's not in the CMS list (e.g. user typed via Other / pasted a custom).
@@ -835,6 +863,8 @@ const AddOfferings = () => {
                       <CaravanCategoryStep
                         embedded
                         category={formData.category || null}
+                        dynamicCategories={catalog.camperVanCategories}
+                        categoriesLoading={catalog.camperVanCategoriesLoading}
                         onSelect={(name) => set("category", name)}
                       />
                     ) : catalogLoading ? (

@@ -166,8 +166,7 @@ export async function submitStayOnboarding(
     const roomCapacitySum =
       stayType === "individual"
         ? roomsWithPhotos.reduce(
-            (sum, r) =>
-              sum + (Number(r.guestCapacity) || Number((r as any).capacity) || 0),
+            (sum, r) => sum + (Number(r.guestCapacity) || Number((r as any).capacity) || 0),
             0,
           )
         : 0;
@@ -190,7 +189,17 @@ export async function submitStayOnboarding(
       regularPrice: effectiveRegularPrice,
       rooms: roomsWithPhotos,
       selectedFeatures,
-      entireStayRules: entireStayRules.filter((rule) => rule.trim() !== ""),
+      // `rules` and `images`, not `entireStayRules`/`entireStayImages`: those are
+      // the StayOnboarding schema's field names, and Mongoose strict mode
+      // silently DROPS anything else. Sending the wizard's own state names meant
+      // house rules were never stored, and the gallery only survived as
+      // rooms[0].photos (which is where the Offer takes its photos from) — so
+      // loadStayDraft, which reads doc.rules and doc.images, restored an empty
+      // rule list and a 0/5 gallery every time a vendor reopened a submission.
+      rules: entireStayRules.filter((rule) => rule.trim() !== ""),
+      // Individual-room listings keep their photos per room; only the
+      // entire-stay gallery has a top-level home.
+      images: stayType === "entire" ? entireStayGallery : [],
       roomRules,
       optionalRules: optionalRules.filter((rule) => rule.trim() !== ""),
       firstUserDiscount,

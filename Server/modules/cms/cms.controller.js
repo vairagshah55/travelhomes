@@ -114,6 +114,11 @@ const createFeature = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, data });
 });
 
+const updateFeature = asyncHandler(async (req, res) => {
+  const data = await service.updateFeature(req.validated.params.id, req.validated.body);
+  res.json({ success: true, data });
+});
+
 const toggleFeature = asyncHandler(async (req, res) => {
   const data = await service.toggleFeature(req.validated.params.id);
   res.json({ success: true, data });
@@ -194,6 +199,7 @@ module.exports = {
   removeTestimonial,
   listFeatures,
   createFeature,
+  updateFeature,
   toggleFeature,
   removeFeature,
   listRoles,

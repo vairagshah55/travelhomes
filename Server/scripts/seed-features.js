@@ -25,6 +25,11 @@ const FEATURES = [
   { name: 'Igloo',              category: 'Unique Stay', type: 'category', status: 'enable', description: '', icon: '/uploads/cms-1772084210338-xz6mrc.svg' },
   { name: 'Cottage',            category: 'Unique Stay', type: 'category', status: 'enable', description: '', icon: '/uploads/cms-1772084243350-8sldut.svg' },
 
+  // Camper Van categories (the "Vehicle Type" step) live in
+  // scripts/seed-caravan-categories.js, not here — this script deletes and
+  // reinserts every name it owns, which would drop the icons and wording an
+  // admin has since set on them.
+
   // ─── Unique Stay — features ──────────────────────────────
   { name: 'Popular Stays',      category: 'Unique Stay', type: 'feature', status: 'enable', description: '', icon: '/uploads/cms-1769595504711-3u3j73.svg' },
   { name: 'Standard Stay',      category: 'Unique Stay', type: 'feature', status: 'enable', description: '', icon: '/uploads/cms-1769595513926-9bgkmy.png' },

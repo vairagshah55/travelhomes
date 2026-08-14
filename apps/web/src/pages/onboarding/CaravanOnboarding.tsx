@@ -113,17 +113,39 @@ const CaravanOnboarding = () => {
     return defaultCaravanFormData;
   });
 
-  // Persist form data on every change (File objects are excluded — they can't be serialised)
+  // Persist the draft (File objects are excluded — they can't be serialised).
+  //
+  // Debounced, because the persisted photos are base64 data URLs of ~400KB-1MB
+  // each: writing on every `formData` change meant a multi-megabyte
+  // JSON.stringify plus a synchronous sessionStorage write per keystroke. The
+  // stays wizard had the same pattern and it made typing there feel broken once
+  // a gallery was attached.
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
   useEffect(() => {
-    try {
+    const timer = setTimeout(() => {
+      const current = formDataRef.current;
       const serialisable = {
-        ...formData,
-        photos: formData.photos.filter((p) => typeof p === "string"),
-        coverImage: formData.coverImage.filter((p) => typeof p === "string"),
-        idPhotos: formData.idPhotos.filter((p) => typeof p === "string"),
+        ...current,
+        photos: current.photos.filter((p) => typeof p === "string"),
+        coverImage: current.coverImage.filter((p) => typeof p === "string"),
+        idPhotos: current.idPhotos.filter((p) => typeof p === "string"),
       };
-      sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(serialisable));
-    } catch {}
+      try {
+        sessionStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(serialisable));
+      } catch {
+        // Over quota — keep the typed fields rather than losing the whole draft.
+        try {
+          sessionStorage.setItem(
+            FORM_STORAGE_KEY,
+            JSON.stringify({ ...serialisable, photos: [], coverImage: [], idPhotos: [] }),
+          );
+        } catch {
+          /* still no room — leave the previous snapshot in place */
+        }
+      }
+    }, 400);
+    return () => clearTimeout(timer);
   }, [formData]);
 
   const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
@@ -149,7 +171,7 @@ const CaravanOnboarding = () => {
   const { userDetails, loading: userDetailsLoading, updateUserDetails } = useUserDetails();
 
   // Camper Van features (cached + shared with other consumers).
-  const { data: camperVanFeatures } = useFeatures("Camper Van");
+  const { data: camperVanFeatures, isLoading: camperVanFeaturesLoading } = useFeatures("Camper Van");
   useEffect(() => {
     if (!camperVanFeatures) return;
     const enabled = camperVanFeatures.filter((f: any) => f.status === "enable");
@@ -807,7 +829,9 @@ const CaravanOnboarding = () => {
           removeCoverFile,
           clearError,
           dynamicCategories,
+          categoriesLoading: camperVanFeaturesLoading,
           dynamicFeatures,
+          featuresLoading: camperVanFeaturesLoading,
           customFeatures,
           showCustomFeaturesInput,
           setShowCustomFeaturesInput,

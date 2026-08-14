@@ -109,10 +109,7 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
       return { errors: {}, toastError: "Please select at least one property type" };
     }
   } else if (currentStep === 1) {
-    if (
-      hasCategoriesForSelection &&
-      (!selectedCategories || selectedCategories.length === 0)
-    ) {
+    if (hasCategoriesForSelection && (!selectedCategories || selectedCategories.length === 0)) {
       return { errors: {}, toastError: "Please select at least one category" };
     }
   } else if (currentStep === 2) {
@@ -146,10 +143,8 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
           if (room.guestCapacity <= 0)
             newErrors[`room_${i}_guestCapacity`] = "Guest capacity must be at least 1";
           if (room.beds <= 0) newErrors[`room_${i}_beds`] = "Add at least 1 bed";
-          if (room.bathrooms <= 0)
-            newErrors[`room_${i}_bathrooms`] = "Add at least 1 bathroom";
-          if (!room.price || room.price <= 0)
-            newErrors[`room_${i}_price`] = "Enter a valid price";
+          if (room.bathrooms <= 0) newErrors[`room_${i}_bathrooms`] = "Add at least 1 bathroom";
+          if (!room.price || room.price <= 0) newErrors[`room_${i}_price`] = "Enter a valid price";
         }
       }
     }

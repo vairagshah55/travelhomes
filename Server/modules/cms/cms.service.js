@@ -198,6 +198,12 @@ async function createFeature(body) {
   });
 }
 
+async function updateFeature(id, body) {
+  const updated = await Feature.findByIdAndUpdate(id, body, { new: true });
+  if (!updated) throw new NotFoundError("Feature", id);
+  return updated;
+}
+
 async function toggleFeature(id) {
   const f = await Feature.findById(id);
   if (!f) throw new NotFoundError("Feature", id);
@@ -316,6 +322,7 @@ module.exports = {
   // Features
   listFeatures,
   createFeature,
+  updateFeature,
   toggleFeature,
   removeFeature,
   // Roles

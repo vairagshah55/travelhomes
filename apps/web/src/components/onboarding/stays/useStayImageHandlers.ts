@@ -1,5 +1,6 @@
 import React from "react";
 import { toast } from "sonner";
+import { compressImageToDataUrl } from "@/lib/imageCompression";
 
 interface Room {
   id: string;
@@ -26,12 +27,35 @@ interface UseStayImageHandlersInput {
 
 const IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png"];
 
+/**
+ * Verbatim base64 — no downscaling. Only the ID proof uses this: legibility of
+ * the document matters more than payload size, and its own handler already caps
+ * it at 5MB. Every *photo* path goes through compressImageToDataUrl instead.
+ */
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.readAsDataURL(file);
   });
+}
+
+/**
+ * Photos are downscaled + re-encoded before base64.
+ *
+ * This flow stores data URLs in state at upload time, so an uncompressed
+ * phone-camera photo is already 6–10MB of base64 before submit runs. A stay
+ * needs a cover plus at least five gallery images per room, which sails past
+ * the server's 25MB /api/onboarding ceiling and returns "request entity too
+ * large". submitCaravanOnboarding fixed this for caravans; imageCompression's
+ * own header calls out "and friends", and this was the friend still on the raw
+ * FileReader.
+ *
+ * Falls back to the verbatim read if canvas encoding fails, so a decode error
+ * costs the host their compression, not their upload.
+ */
+function readPhotoAsDataUrl(file: File): Promise<string> {
+  return compressImageToDataUrl(file).catch(() => readFileAsDataUrl(file));
 }
 
 /**
@@ -62,7 +86,7 @@ export function useStayImageHandlers({
       toast.error("Please upload a valid image (JPEG/PNG)");
       return;
     }
-    readFileAsDataUrl(file).then((url) => setCoverImage(url));
+    readPhotoAsDataUrl(file).then((url) => setCoverImage(url));
   };
 
   const removeCoverImage = () => setCoverImage(null);
@@ -76,10 +100,7 @@ export function useStayImageHandlers({
       ),
     );
 
-  const handleRoomImageUpload = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    roomId: string,
-  ) => {
+  const handleRoomImageUpload = (event: React.ChangeEvent<HTMLInputElement>, roomId: string) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -89,7 +110,7 @@ export function useStayImageHandlers({
     }
     if (validFiles.length === 0) return;
 
-    Promise.all(validFiles.map(readFileAsDataUrl)).then((base64Images) => {
+    Promise.all(validFiles.map(readPhotoAsDataUrl)).then((base64Images) => {
       setRooms((prev) =>
         prev.map((room) =>
           room.id === roomId
@@ -107,7 +128,7 @@ export function useStayImageHandlers({
       toast.error("Only JPG and PNG images are allowed!");
       return;
     }
-    readFileAsDataUrl(file).then((url) => {
+    readPhotoAsDataUrl(file).then((url) => {
       const newImages = [...images];
       newImages[index] = url;
       setImages(newImages);
@@ -124,7 +145,7 @@ export function useStayImageHandlers({
       toast.error("Only JPG and PNG images are allowed!");
       return;
     }
-    readFileAsDataUrl(file).then((url) => {
+    readPhotoAsDataUrl(file).then((url) => {
       const newImages = [...entireStayImages];
       newImages[index] = url;
       setEntireStayImages(newImages);

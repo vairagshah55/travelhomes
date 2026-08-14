@@ -115,6 +115,23 @@ const featureBody = z
   })
   .strict();
 
+// Edit is a partial of the create body — the admin modal only ever sends the
+// fields it shows (name / icon / description). `category` and `type` stay
+// editable so a mis-filed entry can be moved without delete + recreate.
+// Status is intentionally absent: that has its own toggle endpoint.
+// `.description` allows "" so an admin can clear a description they no longer
+// want, which `.min(1)` on the create body would reject.
+const featureUpdateBody = z
+  .object({
+    name: z.string().trim().min(1).max(200).optional(),
+    category: z.string().trim().min(1).max(120).optional(),
+    icon: z.string().trim().max(500).optional(),
+    type: z.string().trim().max(60).optional(),
+    description: z.string().trim().max(2000).optional(),
+  })
+  .strict()
+  .refine((d) => Object.keys(d).length > 0, { message: "No fields to update" });
+
 // ─── Roles ─────────────────────────────────────────────────────────────
 const roleBody = z
   .object({
@@ -160,6 +177,7 @@ module.exports = {
   testimonialBody,
   featuresListQuery,
   featureBody,
+  featureUpdateBody,
   roleBody,
   pageKeyParams,
   pageUpdateBody,

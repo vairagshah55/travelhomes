@@ -11,6 +11,8 @@ import {
   Bath,
   ShieldCheck,
 } from "lucide-react";
+import { SectionCard as SharedSectionCard } from "../shared/primitives";
+import { compressImageToDataUrl } from "@/lib/imageCompression";
 import { cn } from "@/lib/utils";
 
 interface EntireStayFormProps {
@@ -42,34 +44,24 @@ interface EntireStayFormProps {
   clearError: (field: string) => void;
 }
 
-/* ─── Section card ────────────────────────────────────────────────────────── */
+/* This file used to define its own `SectionCard` too — another copy frozen at
+   the pre-revamp styling (1.5px warm border, rounded-20, a two-layer local
+   shadow, a 36px icon chip, 13px title). It now uses the shared primitive, so
+   these cards pick up --onb-card-border / --onb-card-shadow and match the
+   caravan steps. The old `trailing` slot is the shared `action` slot; a local
+   `SectionCard` wrapper keeps the call sites (and their `bodyGap` default)
+   unchanged. */
 const SectionCard = ({
-  icon,
-  title,
-  subtitle,
   trailing,
-  children,
+  ...rest
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
   trailing?: React.ReactNode;
+  required?: boolean;
   children: React.ReactNode;
-}) => (
-  <div className="bg-th-surface-0 border-[1.5px] border-th-warm-border rounded-[20px] p-[20px_22px_22px] shadow-[0_2px_12px_rgba(0,0,0,0.04),0_1px_3px_rgba(0,0,0,0.03)]">
-    <div className="flex items-center gap-3 mb-5">
-      <div className="w-9 h-9 rounded-[11px] bg-th-brand-soft border-[1.5px] border-[rgba(59,217,218,0.5)] flex items-center justify-center shrink-0 text-th-brand">
-        {icon}
-      </div>
-      <div className="flex-1">
-        <p className="text-[13px] font-bold text-th-text-primary tracking-[-0.01em]">{title}</p>
-        {subtitle && <p className="text-[11px] text-th-warm-text-muted mt-[1px]">{subtitle}</p>}
-      </div>
-      {trailing}
-    </div>
-    <div className="flex flex-col gap-4">{children}</div>
-  </div>
-);
+}) => <SharedSectionCard {...rest} action={trailing} bodyGap />;
 
 /* ─── Counter row ────────────────────────────────────────────────────────── */
 const Counter = ({
@@ -211,6 +203,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         icon={<Users size={16} strokeWidth={2.5} />}
         title="Property Details"
         subtitle="Capacity and room configuration"
+        required
       >
         <div className="flex flex-col gap-2.5">
           <Counter
@@ -281,6 +274,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         icon={<IndianRupee size={16} strokeWidth={2.5} />}
         title="Pricing"
         subtitle="How much guests pay per night"
+        required
       >
         <div className="flex flex-col gap-1.5">
           <label
@@ -298,14 +292,21 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
               "focus-within:shadow-[0_0_0_4px_var(--th-ring),0_1px_4px_rgba(0,0,0,0.06)]",
               errors.regularPrice
                 ? "border-th-error-bright-soft bg-th-error-bright-bg shadow-[0_0_0_3px_var(--th-error-bright-ring)]"
-                : "border-transparent bg-th-warm-surface",
+                : // White with a visible border at rest. A grey-filled field
+                  // reads as `disabled` — see the note on inputSurfaceClass in
+                  // StyledInput. The ladder is white+grey border (editable) →
+                  // teal border (hover) → teal border + ring (focused).
+                  "border-th-warm-border-strong bg-th-surface-0 hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
             )}
           >
             <div
               className={cn(
                 "flex items-center gap-1 px-[14px] h-[52px] border-r-[1.5px] shrink-0 transition-all duration-150",
-                "focus-within:border-r-[rgba(59,217,218,0.5)] focus-within:bg-th-brand-soft",
-                "border-r-th-warm-border bg-th-warm-surface",
+                "focus-within:border-r-th-brand-border-soft focus-within:bg-th-brand-soft",
+                // Same white surface as the field, divided only by the hairline
+                // — the grey chip read as a disabled segment bolted on (see
+                // iconSlotClass in IconInput).
+                "border-r-th-warm-border bg-th-surface-0",
               )}
             >
               <IndianRupee size={13} className="text-th-warm-text-muted" />
@@ -334,6 +335,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         icon={<ShieldCheck size={16} strokeWidth={2.5} />}
         title="House Rules"
         subtitle="Set expectations for your guests"
+        required
         trailing={
           errors.entireStayRules ? (
             <span className="text-[11px] font-semibold text-th-error-bright">
@@ -362,11 +364,13 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
                   clearError("entireStayRules");
                 }}
                 className={cn(
-                  "flex-1 h-11 px-[14px] text-[13px] text-th-text-primary bg-th-warm-surface rounded-[11px] outline-none font-[450] transition-all duration-150",
-                  "focus:border-th-brand focus:bg-th-surface-0 focus:shadow-[0_0_0_4px_var(--th-ring)]",
+                  "flex-1 h-11 px-[14px] text-[13px] text-th-text-primary rounded-[11px] outline-none font-[450] transition-all duration-150",
+                  "focus:border-th-brand focus:shadow-[0_0_0_4px_var(--th-ring)]",
                   errors.entireStayRules
-                    ? "border-[1.5px] border-th-error-bright-soft"
-                    : "border-[1.5px] border-transparent",
+                    ? "bg-th-error-bright-bg border-[1.5px] border-th-error-bright-soft"
+                    : // White + visible border at rest; a grey-filled field reads
+                      // as `disabled` (see inputSurfaceClass in StyledInput).
+                      "bg-th-surface-0 border-[1.5px] border-th-warm-border-strong hover:border-[color:var(--onb-border-hover,#a9c5c2)]",
                 )}
               />
               <button
@@ -394,6 +398,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         icon={<ImagePlus size={16} strokeWidth={2.5} />}
         title="Cover Photo"
         subtitle="First impression for guests"
+        required
         trailing={
           errors.coverImage ? (
             <span className="text-[11px] font-semibold text-th-error-bright">
@@ -468,6 +473,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         icon={<ImagePlus size={16} strokeWidth={2.5} />}
         title="Property Gallery"
         subtitle="Showcase your property"
+        required
         trailing={
           <span
             className={cn(
@@ -530,14 +536,21 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
                 ["image/jpeg", "image/jpg", "image/png"].includes(f.type),
               );
               if (!validFiles.length) return;
+              // Downscale + re-encode before base64. This gallery needs at
+              // least five images, and raw phone-camera photos pushed the
+              // /api/onboarding body past its 25MB ceiling — "request entity
+              // too large" on submit. Falls back to a verbatim read so a canvas
+              // decode failure costs compression, not the upload.
               Promise.all(
-                validFiles.map(
-                  (file) =>
-                    new Promise<string>((resolve) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(reader.result as string);
-                      reader.readAsDataURL(file);
-                    }),
+                validFiles.map((file) =>
+                  compressImageToDataUrl(file).catch(
+                    () =>
+                      new Promise<string>((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.readAsDataURL(file);
+                      }),
+                  ),
                 ),
               ).then((base64Images) => {
                 setEntireStayImages((prev) => [...prev, ...base64Images]);

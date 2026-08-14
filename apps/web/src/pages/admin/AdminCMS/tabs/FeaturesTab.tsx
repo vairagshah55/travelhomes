@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, ListTree, Plus, Sparkles, Trash2 } from "lucide-react";
+import { LayoutGrid, ListTree, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -51,6 +51,8 @@ export function FeaturesTab() {
   const [showFeatureModal, setShowFeatureModal] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Feature | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // Non-null → the open modal is editing this row instead of creating one.
+  const [editing, setEditing] = useState<Feature | null>(null);
 
   const [stayPropertyTypes, setStayPropertyTypes] = useState<Feature[]>([]);
   const [staySubCategories, setStaySubCategories] = useState<Feature[]>([]);
@@ -129,6 +131,7 @@ export function FeaturesTab() {
   };
 
   const handleAdd = async (data: any) => {
+    if (editing) return handleUpdate(data);
     try {
       const res: any = await cmsService.createFeature({
         ...data,
@@ -143,7 +146,33 @@ export function FeaturesTab() {
     }
   };
 
+  // Edit path for both the feature/category list and the sub-category list —
+  // the row already knows which one it came from, so `editing.id` is enough.
+  const handleUpdate = async (data: any) => {
+    if (!editing) return;
+    const id = editing.id;
+    const isSubCategory = featureType === "selection";
+    try {
+      const res: any = await cmsService.updateFeature(id, {
+        name: data.name,
+        icon: data.icon,
+        // Only categories expose a description field in the modal; sending it
+        // for a feature would blank whatever an earlier category edit stored.
+        ...(featureType === "category" ? { description: data.description || "" } : {}),
+      });
+      const updated = withId(res.data || res);
+      const patch = (prev: Feature[]) => prev.map((f) => (f.id === id ? updated : f));
+      if (isSubCategory) setStaySubCategories(patch);
+      else setFeatures(patch);
+      toast.success("Saved");
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.response?.data?.message || "Failed to save");
+    }
+  };
+
   const handleAddSubCategory = async (data: any) => {
+    if (editing) return handleUpdate(data);
     try {
       await cmsService.createFeature({
         name: data.name,
@@ -241,13 +270,10 @@ export function FeaturesTab() {
         },
       ];
 
-  const rowActions: RowAction<Feature>[] = [
-    { label: "Delete", icon: Trash2, variant: "danger", onClick: (f) => setPendingDelete(f) },
-  ];
-
   const addLabel = isCategoryMode ? "category" : isSelectionMode ? "sub-category" : "feature";
 
   const openAdd = () => {
+    setEditing(null);
     if (isSelectionMode) {
       if (!selectedStayProperty) {
         toast.error("Pick a property type first");
@@ -258,6 +284,23 @@ export function FeaturesTab() {
     }
     setShowFeatureModal(true);
   };
+
+  const openEdit = (f: Feature) => {
+    setEditing(f);
+    if (isSelectionMode) setShowSubCategoryModal(true);
+    else setShowFeatureModal(true);
+  };
+
+  const closeModals = () => {
+    setShowFeatureModal(false);
+    setShowSubCategoryModal(false);
+    setEditing(null);
+  };
+
+  const rowActions: RowAction<Feature>[] = [
+    { label: "Edit", icon: Pencil, onClick: openEdit },
+    { label: "Delete", icon: Trash2, variant: "danger", onClick: (f) => setPendingDelete(f) },
+  ];
 
   const modeItems = [
     { value: "feature" as const, label: "Features", icon: Sparkles },
@@ -353,16 +396,18 @@ export function FeaturesTab() {
 
       <AddFeatureModal
         isOpen={showFeatureModal}
-        onClose={() => setShowFeatureModal(false)}
+        onClose={closeModals}
         onSubmit={handleAdd}
         type={isSelectionMode ? "feature" : featureType}
+        initialData={editing}
       />
 
       <AddFeatureModal
         isOpen={showSubCategoryModal}
-        onClose={() => setShowSubCategoryModal(false)}
+        onClose={closeModals}
         onSubmit={handleAddSubCategory}
         type="subcategory"
+        initialData={editing}
       />
 
       <ConfirmModal

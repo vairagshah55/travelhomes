@@ -161,9 +161,7 @@ export function useStayFieldHandlers(input: UseStayFieldHandlersInput) {
 
   const handleCategoryToggle = (categoryKey: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(categoryKey)
-        ? prev.filter((id) => id !== categoryKey)
-        : [...prev, categoryKey],
+      prev.includes(categoryKey) ? prev.filter((id) => id !== categoryKey) : [...prev, categoryKey],
     );
   };
 

@@ -140,6 +140,11 @@ adminRouter.delete(
 // ─── Features ──────────────────────────────────────────────────────────
 adminRouter.get("/features", validate({ query: dto.featuresListQuery }), controller.listFeatures);
 adminRouter.post("/features", validate({ body: dto.featureBody }), controller.createFeature);
+adminRouter.put(
+  "/features/:id",
+  validate({ params: dto.idParams, body: dto.featureUpdateBody }),
+  controller.updateFeature,
+);
 adminRouter.patch(
   "/features/:id/toggle",
   validate({ params: dto.idParams }),

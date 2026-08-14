@@ -119,7 +119,10 @@ const CaravanOnboardingSchema = new Schema(
     // Status
     status: {
       type: String,
-      enum: ['draft', 'pending', 'approved', 'rejected'],
+      // 'cancelled' = superseded by a newer submission of the same type. Not a
+      // rejection (no admin acted) and not editable, so it stops gating the
+      // vendor — see supersedePreviousSubmissions in onboarding.service.js.
+      enum: ['draft', 'pending', 'approved', 'rejected', 'cancelled'],
       default: 'draft'
     },
     rejectionReason: String,

@@ -62,9 +62,10 @@ const TABS = [
   { key: "activity", label: "Activities", icon: <GiBinoculars size={16} /> },
 ];
 
-// Categories + features for unique-stay & activity tabs are now CMS-driven
-// via useOfferingCatalog() (see hooks/useOfferingCatalog.ts). Camper-van
-// uses the onboarding step components' own hardcoded taxonomy directly.
+// Categories for all three tabs are CMS-driven via useOfferingCatalog() (see
+// hooks/useOfferingCatalog.ts) — camper-van vehicle types included, rendered by
+// CaravanCategoryStep from the raw CMS rows. Camper-van *features* still come
+// from the onboarding step component's own hardcoded list.
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
@@ -825,6 +826,8 @@ const EditOfferings = () => {
                       <CaravanCategoryStep
                         embedded
                         category={formData.category || null}
+                        dynamicCategories={catalog.camperVanCategories}
+                        categoriesLoading={catalog.camperVanCategoriesLoading}
                         onSelect={(name) => set("category", name)}
                       />
                     ) : categories.length === 0 ? (
