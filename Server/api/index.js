@@ -149,8 +149,16 @@ const bookingDetailsRoutes = require("../modules/booking-details/booking-details
 const bookingsRouter = require("../modules/bookings/bookings.router");
 const calendarBookingRoutes = require("../modules/calendar-bookings/calendar-bookings.router");
 const campervansRoutes = require("../modules/campervans/campervans.router");
-const cmsRoutes = require("../modules/cms/cms.router");
-const cmsMediaRoutes = require("../modules/cms-media/cms-media.router");
+// Two routers, two trust boundaries — the public one exposes only the endpoints
+// the marketing site calls. See modules/cms/cms.router.js.
+const {
+  adminRouter: cmsAdminRoutes,
+  publicRouter: cmsPublicRoutes,
+} = require("../modules/cms/cms.router");
+const {
+  adminRouter: cmsMediaAdminRoutes,
+  publicRouter: cmsMediaPublicRoutes,
+} = require("../modules/cms-media/cms-media.router");
 const contactRoutes = require("../modules/contact/contact.router");
 const helpdeskRoutes = require("../modules/helpdesk/helpdesk.router");
 const managementRoutes = require("../modules/management/management.router");
@@ -263,10 +271,12 @@ app.use("/api/vendorchats", vendorChatsRoutes);
 app.use("/api/subscribers", subscribersRoutes);
 app.use("/api/notifications", notificationsRoutes);
 
-// Public CMS media (read-only for clients to fetch login/register images) - MUST be before /cms to take priority
-app.use("/api/cms/media", cmsMediaRoutes);
-// Public CMS routes for testimonials (list + create)
-app.use("/api/cms", cmsRoutes);
+// Public CMS media (read-only for clients to fetch login/register images; the
+// upload route requires a signed-in user) - MUST be before /cms to take priority
+app.use("/api/cms/media", cmsMediaPublicRoutes);
+// Public CMS routes — read-only, plus job applications and testimonial
+// submissions. Writes live on the admin mount below.
+app.use("/api/cms", cmsPublicRoutes);
 
 // Admin routes. The /api/admin requireJwt mount above only proves the caller
 // holds an admin token — `requireFeature` is what enforces the role's features,
@@ -291,7 +301,7 @@ app.use("/api/admin/blogs", requireFeature("manage_cms"), blogsRoutes);
 app.use("/api/admin/notifications", notificationsRoutes);
 
 // Admin CMS Media routes (upload/list/delete images for pages) - MUST be before /cms to take priority
-app.use("/api/admin/cms/media", requireFeature("manage_cms"), cmsMediaRoutes);
+app.use("/api/admin/cms/media", requireFeature("manage_cms"), cmsMediaAdminRoutes);
 // Admin CMS routes — flag the request so the router's testimonials filter
 // and contact upsert can short-circuit the admin/public branch instead of
 // sniffing baseUrl.
@@ -302,7 +312,7 @@ app.use(
     req.isAdminContext = true;
     next();
   },
-  cmsRoutes,
+  cmsAdminRoutes,
 );
 
 // Admin Dashboard & Analytics endpoints.
