@@ -84,7 +84,39 @@ async function loginSuperadmin({ email, password }) {
 }
 
 // ─── getMe (used by /api/admin/auth/me) ─────────────────────────────────────
-async function getMe(adminId) {
+//
+// Branches on the JWT `type` claim, the same way changePassword below does and
+// for the same reason: the two login flows put their subject in different
+// collections. This used to look the id up in AdminStaff only, so every token
+// minted by loginSuperadmin — whose `sub` is an `Admin._id` — came back 404
+// "Admin not found".
+//
+// That 404 is unhandled on the client too: the response interceptor in
+// services/api.ts only clears the session on 401, so a 404 fell through to
+// AdminAuthContext's catch, leaving `user` and `access` null. The panel then
+// bootstrapped straight into its error state and the admin could never get in,
+// even though the token itself was perfectly valid.
+async function getMe(adminId, type) {
+  if (type === "superadmin") {
+    const admin = await Admin.findById(adminId);
+    if (!admin) throw new NotFoundError("Admin");
+    return {
+      admin: {
+        // `name` is optional on the legacy Admin schema, and the SPA splits it
+        // into first/last for the header avatar — fall back to the email's
+        // local part so the panel doesn't render a blank identity.
+        name: admin.name || String(admin.email || "").split("@")[0],
+        email: admin.email,
+        role: admin.role,
+        // AdminStaff stores a "Active"/… string; Admin stores a boolean. Map it
+        // so the client sees one shape from both flows.
+        status: admin.isActive === false ? "Inactive" : "Active",
+        joinDate: admin.createdAt,
+        lastLogin: admin.lastLogin,
+      },
+    };
+  }
+
   const staff = await AdminStaff.findById(adminId);
   if (!staff) throw new NotFoundError("Admin");
   return {

@@ -32,7 +32,8 @@ const getMe = asyncHandler(async (req, res) => {
   if (!req.user?.sub) {
     throw new UnauthorizedError("Admin authentication required");
   }
-  const result = await service.getMe(req.user.sub);
+  // `type` decides which collection holds the subject — see service.getMe.
+  const result = await service.getMe(req.user.sub, req.user.type);
   // The SPA gates its nav and routes on this, so what it hides matches what
   // requireFeature would refuse. Resolved from the DB, not the token, so a
   // permission change applies on the next /me rather than the next login.
