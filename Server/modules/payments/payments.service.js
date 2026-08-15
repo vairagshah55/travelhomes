@@ -1,18 +1,33 @@
 /**
  * Payments service.
  *
- * The marquee feature here is `verifyRazorpayPayment` — the legacy controller
+ * The marquee feature here is `createBookingRecords` — the legacy controller
  * created Booking + BookingDetail + CalendarBooking + Payment in sequence
  * with no atomicity. If any one failed, the database was left inconsistent
- * (and money had already moved on Razorpay's side). This service runs all
+ * (and money had already moved on the gateway's side). This service runs all
  * four creates through `runSaga`, which uses a MongoDB transaction when
  * available and falls back to compensation otherwise.
+ *
+ * Two gateways live side by side. They differ in exactly one place — how a
+ * payment is *proven* — and share everything after that:
+ *
+ *   Razorpay  Checkout hands the browser an HMAC signature over
+ *             `order_id|payment_id`. Verifying it locally is proof.
+ *   Cashfree  Checkout hands the browser nothing signed, so the browser's
+ *             claim is worthless on its own. We ask Cashfree's API what
+ *             happened to the order and trust only that answer.
+ *
+ * Which one the SPA should drive is `getActiveGateway()`, backed by the
+ * PAYMENT_GATEWAY env var, so switching providers is a redeploy and not a
+ * code change.
  */
 const crypto = require("crypto");
 const mongoose = require("mongoose");
 const Razorpay = require("razorpay");
+const cashfree = require("./cashfree.client");
 
 const Payment = require("../../models/Payment");
+const PaymentSetting = require("../../models/PaymentSetting");
 const Notification = require("../../models/Notification");
 const Booking = require("../../models/Booking");
 const BookingDetail = require("../../models/BookingDetail");
@@ -45,6 +60,100 @@ function razorpayClient() {
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+const GATEWAYS = ["razorpay", "cashfree"];
+
+function isGatewayConfigured(gateway) {
+  return gateway === "cashfree"
+    ? cashfree.isConfigured()
+    : Boolean(env.RAZOR_KEY && env.RAZOR_SECRET);
+}
+
+/**
+ * The admin's choice wins; PAYMENT_GATEWAY is the fallback when no admin has
+ * ever picked one. Returns the source too, so the settings screen can say
+ * "inherited from env" rather than implying someone chose it.
+ */
+async function resolveGatewayName() {
+  // readyState 1 is "connected". Querying in any other state parks the call in
+  // mongoose's buffer until it times out — tens of seconds of a customer
+  // staring at a dead checkout button, when the env var is already a usable
+  // answer. Check first, and never wait long even when connected.
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const setting = await PaymentSetting.findOne({ key: "gateway" })
+        .select("gateway")
+        .maxTimeMS(2000)
+        .lean();
+      if (setting?.gateway && GATEWAYS.includes(setting.gateway)) {
+        return { gateway: setting.gateway, source: "admin" };
+      }
+    } catch (err) {
+      // A settings read must never take checkout down with it.
+      logger.warn({ err: err.message }, "payment gateway setting unreadable, falling back to env");
+    }
+  }
+  return { gateway: env.PAYMENT_GATEWAY, source: "env" };
+}
+
+/**
+ * Which gateway the SPA should drive, plus whatever that gateway needs the
+ * browser to know. Razorpay's checkout needs the public key id in the
+ * browser; Cashfree's needs only the mode (the session id comes per-order),
+ * so no Cashfree credential is ever shipped to the client.
+ */
+async function getActiveGateway() {
+  const { gateway } = await resolveGatewayName();
+  if (gateway === "cashfree") {
+    return {
+      gateway,
+      mode: env.CASHFREE_ENV === "PROD" ? "production" : "sandbox",
+      configured: cashfree.isConfigured(),
+    };
+  }
+  return {
+    gateway: "razorpay",
+    key: env.RAZOR_KEY || null,
+    configured: isGatewayConfigured("razorpay"),
+  };
+}
+
+/** Admin view: the current choice plus what else could be picked. */
+async function getGatewaySettings() {
+  const { gateway, source } = await resolveGatewayName();
+  return {
+    gateway,
+    source,
+    envDefault: env.PAYMENT_GATEWAY,
+    options: [
+      { id: "razorpay", label: "Razorpay", configured: isGatewayConfigured("razorpay") },
+      {
+        id: "cashfree",
+        label: "Cashfree",
+        configured: isGatewayConfigured("cashfree"),
+        mode: env.CASHFREE_ENV === "PROD" ? "production" : "sandbox",
+      },
+    ],
+  };
+}
+
+async function setActiveGateway({ gateway, updatedBy }) {
+  // Refuse to point checkout at a gateway with no credentials — the failure
+  // would otherwise surface to a customer mid-payment rather than here.
+  if (!isGatewayConfigured(gateway)) {
+    throw new BadRequestError(
+      `${gateway} has no API credentials configured on the server. Add them before switching.`,
+    );
+  }
+
+  await PaymentSetting.findOneAndUpdate(
+    { key: "gateway" },
+    { $set: { gateway, updatedBy: updatedBy || "" } },
+    { new: true, upsert: true },
+  );
+  logger.info({ gateway, updatedBy }, "payment gateway switched");
+  return getGatewaySettings();
 }
 
 // ─── Reads ──────────────────────────────────────────────────────────────────
@@ -213,32 +322,16 @@ async function createRazorpayOrder({ amount }) {
   return order;
 }
 
-// ─── verify Razorpay payment + saga create of 4 documents ───────────────────
-async function verifyRazorpayPayment({
-  razorpay_order_id,
-  razorpay_payment_id,
-  razorpay_signature,
-  booking,
-}) {
-  // 1) Verify HMAC signature against the Razorpay secret. This is the
-  //    integrity check — without it any client could trigger booking
-  //    creation by hitting this endpoint.
-  if (!env.RAZOR_SECRET) {
-    throw new AppError("RAZORPAY_NOT_CONFIGURED", 503, "Payment gateway is not configured.");
-  }
-
-  const expectedSign = crypto
-    .createHmac("sha256", env.RAZOR_SECRET)
-    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-    .digest("hex");
-
-  // Constant-time compare to avoid timing-side-channel signature recovery.
-  const sigBuf = Buffer.from(razorpay_signature, "utf8");
-  const expBuf = Buffer.from(expectedSign, "utf8");
-  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
-    throw new BadRequestError("Invalid signature");
-  }
-
+// ─── saga create of 4 documents, shared by every gateway ────────────────────
+/**
+ * Turns a *proven* payment into the four documents a booking is made of.
+ *
+ * Callers must have established that the money actually moved before getting
+ * here — this function takes that on trust. `transactionId` is the gateway's
+ * payment id and `gateway` names the provider, and both flow into the Payment
+ * document so refunds and reconciliation can find their way back.
+ */
+async function createBookingRecords({ booking, transactionId, gateway }) {
   // 2) Resolve the service to find vendorId + which model (Management or
   //    Offer) it lives in. These are read-only lookups — no harm if they
   //    happen outside the saga.
@@ -356,7 +449,7 @@ async function verifyRazorpayPayment({
             pendingAmount: 0,
             paymentMethod: "upi",
             paymentStatus: "paid",
-            transactionId: razorpay_payment_id,
+            transactionId,
             paidAt: new Date(),
             status: calendarStatus,
             phoneNumber: booking.clientPhone || "",
@@ -383,12 +476,12 @@ async function verifyRazorpayPayment({
             serviceId: booking.serviceId,
             amount: totalAmount,
             currency: "INR",
-            paymentMethod: "razorpay",
-            transactionId: razorpay_payment_id,
+            paymentMethod: gateway,
+            transactionId,
             status: "paid",
             paymentDate: new Date(),
-            paymentGateway: "razorpay",
-            gatewayTransactionId: razorpay_payment_id,
+            paymentGateway: gateway,
+            gatewayTransactionId: transactionId,
             description: `Payment for booking ${booking.bookingId || createdBooking.bookingId}`,
           });
           await doc.save(session ? { session } : undefined);
@@ -400,7 +493,7 @@ async function verifyRazorpayPayment({
         },
       },
     ],
-    { name: "razorpay-verify" },
+    { name: `${gateway}-verify` },
   );
 
   // 5) Notifications — best-effort, fire-and-forget. Failures here don't
@@ -431,6 +524,106 @@ async function verifyRazorpayPayment({
   return { bookingId: createdBooking.bookingId };
 }
 
+// ─── Razorpay: prove by local HMAC ──────────────────────────────────────────
+async function verifyRazorpayPayment({
+  razorpay_order_id,
+  razorpay_payment_id,
+  razorpay_signature,
+  booking,
+}) {
+  // Verify HMAC signature against the Razorpay secret. This is the integrity
+  // check — without it any client could trigger booking creation by hitting
+  // this endpoint.
+  if (!env.RAZOR_SECRET) {
+    throw new AppError("RAZORPAY_NOT_CONFIGURED", 503, "Payment gateway is not configured.");
+  }
+
+  const expectedSign = crypto
+    .createHmac("sha256", env.RAZOR_SECRET)
+    .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+    .digest("hex");
+
+  // Constant-time compare to avoid timing-side-channel signature recovery.
+  const sigBuf = Buffer.from(razorpay_signature, "utf8");
+  const expBuf = Buffer.from(expectedSign, "utf8");
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    throw new BadRequestError("Invalid signature");
+  }
+
+  return createBookingRecords({
+    booking,
+    transactionId: razorpay_payment_id,
+    gateway: "razorpay",
+  });
+}
+
+// ─── Cashfree: prove by asking Cashfree ─────────────────────────────────────
+async function createCashfreeOrder({ amount, customer, note }) {
+  // Our own order id, so verify can look the order up without trusting the
+  // browser to echo back whatever Cashfree generated.
+  const orderId = `th_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+
+  const order = await cashfree.createOrder({
+    orderId,
+    amount,
+    note,
+    customer: {
+      id: customer.id || `guest_${crypto.randomBytes(6).toString("hex")}`,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+    },
+  });
+
+  // Only what the browser needs. The session id is single-order and useless
+  // without Cashfree's own checkout, so it is safe to hand over.
+  return {
+    orderId: order.order_id,
+    paymentSessionId: order.payment_session_id,
+    amount: order.order_amount,
+    currency: order.order_currency,
+  };
+}
+
+async function verifyCashfreePayment({ cashfree_order_id, booking }) {
+  // The browser tells us *which* order to check and nothing more — the answer
+  // comes from Cashfree. A forged request buys an attacker a lookup of an
+  // order that was never paid, and a 400.
+  const payments = await cashfree.fetchOrderPayments(cashfree_order_id);
+  const settled = payments.find((p) => p.payment_status === "SUCCESS");
+  if (!settled) {
+    throw new BadRequestError("Payment not completed");
+  }
+
+  // Guard the amount too. Without this, a client could pay for a ₹1 order and
+  // post a booking blob claiming ₹50,000 — the payment would verify fine
+  // because it really did succeed, just not for the amount being claimed.
+  const paid = Number(settled.payment_amount);
+  const claimed = Number(booking.totalAmount);
+  if (!Number.isFinite(paid) || Math.abs(paid - claimed) > 0.01) {
+    throw new BadRequestError("Paid amount does not match the booking total");
+  }
+
+  const transactionId = String(settled.cf_payment_id);
+
+  // Cashfree can land here twice — the checkout callback and a return_url
+  // redirect both race to confirm the same order. Creating the booking twice
+  // would double-book the calendar, so the first one through wins and the
+  // second gets the same answer back.
+  const existing = await Payment.findOne({
+    paymentGateway: "cashfree",
+    gatewayTransactionId: transactionId,
+  })
+    .select("bookingId")
+    .lean();
+  if (existing) {
+    logger.info({ transactionId }, "cashfree-verify: replaying already-confirmed payment");
+    return { bookingId: existing.bookingId };
+  }
+
+  return createBookingRecords({ booking, transactionId, gateway: "cashfree" });
+}
+
 module.exports = {
   listPayments,
   getPaymentById,
@@ -438,6 +631,11 @@ module.exports = {
   updatePayment,
   removePayment,
   setStatus,
+  getActiveGateway,
+  getGatewaySettings,
+  setActiveGateway,
   createRazorpayOrder,
   verifyRazorpayPayment,
+  createCashfreeOrder,
+  verifyCashfreePayment,
 };

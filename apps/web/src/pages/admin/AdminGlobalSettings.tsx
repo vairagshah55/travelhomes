@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   AlertCircle,
+  Check,
+  CreditCard,
   Loader2,
   Mail,
   Pencil,
@@ -22,7 +24,11 @@ import {
 import AdminLayout from "@/components/admin/AdminLayout";
 import { MotionReveal } from "@/components/admin/MotionReveal";
 import { Switch } from "@/components/ui/switch";
-import { settingsService } from "@/services/api";
+import {
+  settingsService,
+  type PaymentGatewayId,
+  type PaymentGatewaySettings,
+} from "@/services/api";
 import { cn } from "@/lib/utils";
 
 import {
@@ -49,7 +55,7 @@ import {
  */
 
 // ─── Tabs ────────────────────────────────────────────────────────────────────
-type TabKey = "SEO" | "Approvals";
+type TabKey = "SEO" | "Approvals" | "Payments";
 
 const TABS: { key: TabKey; label: string; icon: LucideIcon; blurb: string }[] = [
   {
@@ -63,6 +69,12 @@ const TABS: { key: TabKey; label: string; icon: LucideIcon; blurb: string }[] = 
     label: "Approvals",
     icon: ShieldCheck,
     blurb: "Which checks a new account must clear before it goes live.",
+  },
+  {
+    key: "Payments",
+    label: "Payments",
+    icon: CreditCard,
+    blurb: "Which gateway takes money at checkout.",
   },
 ];
 
@@ -305,6 +317,48 @@ const AdminGlobalSettings: React.FC = () => {
 
   const requiredCount = APPROVALS.filter(({ key }) => approvals[key]).length;
 
+  // ── Payment gateway ────────────────────────────────────────────────────
+  const [gateway, setGateway] = useState<PaymentGatewaySettings | null>(null);
+  const [gatewayLoading, setGatewayLoading] = useState(true);
+  const [gatewayError, setGatewayError] = useState<string | null>(null);
+  const [switchingTo, setSwitchingTo] = useState<PaymentGatewayId | null>(null);
+
+  const loadGateway = useCallback(async () => {
+    try {
+      setGatewayLoading(true);
+      setGatewayError(null);
+      setGateway(await settingsService.getPaymentGateway());
+    } catch (e: any) {
+      setGatewayError(typeof e === "string" ? e : "Failed to load payment settings");
+    } finally {
+      setGatewayLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "Payments") return;
+    loadGateway();
+  }, [activeTab, loadGateway]);
+
+  /**
+   * Not optimistic, unlike the approval switches. This one redirects real
+   * money, and the server rejects a gateway whose credentials are missing —
+   * so we wait for its answer and render that, rather than showing a
+   * selection that may not have stuck.
+   */
+  const selectGateway = async (id: PaymentGatewayId) => {
+    if (id === gateway?.gateway || switchingTo) return;
+    setSwitchingTo(id);
+    try {
+      setGateway(await settingsService.updatePaymentGateway(id));
+      toast.success(`Checkout now uses ${id === "cashfree" ? "Cashfree" : "Razorpay"}.`);
+    } catch (e: any) {
+      toast.error(e?.error?.message || e?.message || "Failed to switch gateway.");
+    } finally {
+      setSwitchingTo(null);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────
   const current = TABS.find((t) => t.key === activeTab) ?? TABS[0];
   const TabIcon = current.icon;
@@ -532,6 +586,91 @@ const AdminGlobalSettings: React.FC = () => {
     </div>
   );
 
+  const renderPayments = () => (
+    <div className="space-y-4">
+      {gatewayError && <ErrorNote message={gatewayError} onRetry={loadGateway} />}
+
+      <CmsSection
+        icon={CreditCard}
+        title="Checkout gateway"
+        blurb="Every new booking payment goes through the gateway selected here. Payments already in flight finish on the gateway that started them."
+        aside={
+          !gatewayLoading &&
+          gateway?.source === "env" && (
+            <span className="text-[12px] font-semibold text-app-fg-muted">
+              inherited from server config
+            </span>
+          )
+        }
+        flush
+      >
+        <div className="divide-y divide-app-border">
+          {gatewayLoading
+            ? [0, 1].map((i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-4">
+                  <div className="h-3.5 w-40 rounded bg-app-surface-2 animate-pulse" />
+                  <div className="h-5 w-16 rounded-full bg-app-surface-2 animate-pulse" />
+                </div>
+              ))
+            : (gateway?.options ?? []).map((option) => {
+                const active = gateway?.gateway === option.id;
+                const busy = switchingTo === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => selectGateway(option.id)}
+                    disabled={!option.configured || switchingTo !== null}
+                    aria-pressed={active}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-4 text-left transition-colors",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent/40",
+                      option.configured
+                        ? "hover:bg-app-surface-2 cursor-pointer"
+                        : "opacity-60 cursor-not-allowed",
+                      active && "bg-app-accent-soft/40",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "grid place-items-center w-8 h-8 rounded-[10px] shrink-0",
+                        active ? "bg-app-accent text-white" : "bg-app-surface-2 text-app-fg-muted",
+                      )}
+                    >
+                      {busy ? (
+                        <Loader2 size={15} className="animate-spin" />
+                      ) : active ? (
+                        <Check size={15} strokeWidth={2.4} />
+                      ) : (
+                        <CreditCard size={15} strokeWidth={2.1} />
+                      )}
+                    </span>
+
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-semibold text-app-fg">
+                        {option.label}
+                        {option.mode === "sandbox" && option.configured && (
+                          <span className="ml-2 text-[11px] font-semibold text-app-fg-muted">
+                            test mode
+                          </span>
+                        )}
+                      </span>
+                      <span className="block mt-0.5 text-[12px] text-app-fg-muted">
+                        {!option.configured
+                          ? "No API credentials on the server — add them before selecting."
+                          : active
+                            ? "Live at checkout."
+                            : "Click to make this the checkout gateway."}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+        </div>
+      </CmsSection>
+    </div>
+  );
+
   return (
     <AdminLayout title="Global Settings">
       <MotionReveal delay={0}>
@@ -589,7 +728,11 @@ const AdminGlobalSettings: React.FC = () => {
           {/* Content */}
           <div className="px-5 py-5 min-h-[calc(100vh-16rem)]">
             <MotionReveal delay={0.06}>
-              {activeTab === "SEO" ? renderSeo() : renderApprovals()}
+              {activeTab === "SEO"
+                ? renderSeo()
+                : activeTab === "Approvals"
+                  ? renderApprovals()
+                  : renderPayments()}
             </MotionReveal>
           </div>
         </div>

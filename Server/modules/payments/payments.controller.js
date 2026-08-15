@@ -55,6 +55,35 @@ const verifyPayment = asyncHandler(async (req, res) => {
   res.json({ success: true, bookingId });
 });
 
+// Lets the SPA discover which checkout to load instead of hardcoding one.
+const getGateway = asyncHandler(async (req, res) => {
+  const data = await service.getActiveGateway();
+  res.json({ success: true, data });
+});
+
+const getGatewaySettings = asyncHandler(async (req, res) => {
+  const data = await service.getGatewaySettings();
+  res.json({ success: true, data });
+});
+
+const updateGateway = asyncHandler(async (req, res) => {
+  const data = await service.setActiveGateway({
+    gateway: req.validated.body.gateway,
+    updatedBy: req.user?.email || req.user?.sub || "",
+  });
+  res.json({ success: true, data });
+});
+
+const createCashfreeOrder = asyncHandler(async (req, res) => {
+  const data = await service.createCashfreeOrder(req.validated.body);
+  res.json({ success: true, data });
+});
+
+const verifyCashfreePayment = asyncHandler(async (req, res) => {
+  const { bookingId } = await service.verifyCashfreePayment(req.validated.body);
+  res.json({ success: true, bookingId });
+});
+
 module.exports = {
   list,
   getById,
@@ -62,6 +91,11 @@ module.exports = {
   update,
   remove,
   setStatus,
+  getGateway,
+  getGatewaySettings,
+  updateGateway,
   createOrder,
   verifyPayment,
+  createCashfreeOrder,
+  verifyCashfreePayment,
 };

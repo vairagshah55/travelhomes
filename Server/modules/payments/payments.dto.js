@@ -115,6 +115,38 @@ const verifyPaymentBody = z.object({
   booking: verifyPaymentBookingBlob,
 });
 
+// ─── PUT /api/admin/payments/gateway ────────────────────────────────────────
+const updateGatewayBody = z.object({
+  gateway: z.enum(["razorpay", "cashfree"]),
+});
+
+// ─── POST /api/payments/cashfree/create-order ───────────────────────────────
+// Cashfree rejects an order without customer_details, and its phone field is
+// mandatory — hence the extra shape versus the Razorpay equivalent. Amount is
+// in RUPEES here; Cashfree's API takes rupees, not paise.
+const createCashfreeOrderBody = z.object({
+  amount: z.number().positive().max(10_000_000),
+  customer: z.object({
+    id: z.string().trim().max(60).optional(),
+    name: z.string().trim().min(1).max(120),
+    email: z
+      .email()
+      .trim()
+      .max(254)
+      .transform((s) => s.toLowerCase()),
+    phone: z.string().trim().min(6).max(20),
+  }),
+  note: z.string().trim().max(200).optional(),
+});
+
+// ─── POST /api/payments/cashfree/verify-payment ─────────────────────────────
+// Only the order id — no signature, because Cashfree Checkout does not hand
+// the browser one. The service confirms the payment against Cashfree's API.
+const verifyCashfreePaymentBody = z.object({
+  cashfree_order_id: z.string().trim().min(1).max(120),
+  booking: verifyPaymentBookingBlob,
+});
+
 module.exports = {
   listQuery,
   getByIdParams,
@@ -126,4 +158,7 @@ module.exports = {
   updateStatusBody,
   createOrderBody,
   verifyPaymentBody,
+  updateGatewayBody,
+  createCashfreeOrderBody,
+  verifyCashfreePaymentBody,
 };

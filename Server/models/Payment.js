@@ -48,7 +48,7 @@ const PaymentSchema = new Schema({
   },
   paymentMethod: {
     type: String,
-    enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'cash', 'razorpay'],
+    enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'cash', 'razorpay', 'cashfree'],
     required: true
   },
   transactionId: {
@@ -80,7 +80,7 @@ const PaymentSchema = new Schema({
   },
   paymentGateway: {
     type: String,
-    enum: ['stripe', 'paypal', 'razorpay', 'square', 'manual'],
+    enum: ['stripe', 'paypal', 'razorpay', 'cashfree', 'square', 'manual'],
     default: 'stripe'
   },
   gatewayTransactionId: {

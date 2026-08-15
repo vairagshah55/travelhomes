@@ -74,9 +74,18 @@ const schema = z.object({
   GOOGLE_REDIRECT_URI: urlOptional,
   GOOGLE_CALLBACK_URL: urlOptional,
 
+  // Which gateway the checkout drives. Defaults to razorpay so an existing
+  // deployment that never sets this keeps behaving exactly as before.
+  PAYMENT_GATEWAY: z.enum(["razorpay", "cashfree"]).default("razorpay"),
+
   // Razorpay
   RAZOR_KEY: z.string().optional(),
   RAZOR_SECRET: z.string().optional(),
+
+  // Cashfree — TEST hits the sandbox host, PROD the live one.
+  CASHFREE_ENV: z.enum(["TEST", "PROD"]).default("TEST"),
+  CASHFREE_APP_ID: z.string().optional(),
+  CASHFREE_SECRET_KEY: z.string().optional(),
 
   // Twilio
   TWILIO_SID: z.string().optional(),
@@ -146,7 +155,15 @@ if (env.NODE_ENV === "production") {
   if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
     warnings.push("Google OAuth env vars missing — login via Google will fail.");
   }
-  if (!env.RAZOR_KEY || !env.RAZOR_SECRET) {
+  // Only the gateway actually in use has to be configured — the other one
+  // sitting empty is a normal state, not a misconfiguration.
+  if (env.PAYMENT_GATEWAY === "cashfree") {
+    if (!env.CASHFREE_APP_ID || !env.CASHFREE_SECRET_KEY) {
+      warnings.push("PAYMENT_GATEWAY=cashfree but Cashfree env vars missing — payments will fail.");
+    } else if (env.CASHFREE_ENV !== "PROD") {
+      warnings.push("PAYMENT_GATEWAY=cashfree with CASHFREE_ENV=TEST — no real money will move.");
+    }
+  } else if (!env.RAZOR_KEY || !env.RAZOR_SECRET) {
     warnings.push("Razorpay env vars missing — payments will fail.");
   }
   if (!env.SMTP_HOST && !env.MAIL_HOST && !env.EMAIL_HOST) {

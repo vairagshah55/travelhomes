@@ -13,10 +13,52 @@ Mounted at `/api/payments` and `/api/admin/payments`.
 | `PUT`    | `/api/payments/:id`                  | optional JWT                                           | Partial update with the same whitelist.                                                                                                                   |
 | `DELETE` | `/api/payments/:id`                  | optional JWT                                           | Delete.                                                                                                                                                   |
 | `PATCH`  | `/api/payments/:id/status`           | optional JWT                                           | Status change (`pending` / `paid` / `requested` / `processing` / `refunded`).                                                                             |
+| `GET`    | `/api/payments/gateway`              | none                                                   | Which gateway the checkout should drive, plus the public key it needs. Never returns a secret.                                                             |
+| `GET`    | `/api/payments/gateway/settings`     | admin (`manage_payments`)                              | Current selection + every option and whether it has credentials.                                                                                          |
+| `PUT`    | `/api/payments/gateway/settings`     | admin (`manage_payments`)                              | Switch the checkout gateway.                                                                                                                              |
 | `POST`   | `/api/payments/razor/create-order`   | none                                                   | Create a Razorpay order.                                                                                                                                  |
 | `POST`   | `/api/payments/razor/verify-payment` | none (HMAC-checked)                                    | Verify the payment + create Booking, BookingDetail, CalendarBooking, Payment **as a saga** — see below.                                                   |
+| `POST`   | `/api/payments/cashfree/create-order`| none                                                   | Create a Cashfree order; returns `payment_session_id` for the browser SDK.                                                                                 |
+| `POST`   | `/api/payments/cashfree/verify-payment` | none (confirmed against Cashfree's API)             | Same saga, after asking Cashfree whether the order was actually paid.                                                                                     |
 
-## The Razorpay verify saga (the bug we came here to fix)
+## Two gateways, one saga
+
+Razorpay and Cashfree both run through `createBookingRecords`. They differ in
+exactly one respect — **how a payment is proven** — and that difference is not
+cosmetic:
+
+| | Razorpay | Cashfree |
+| --- | --- | --- |
+| What the browser gets | an HMAC signature over `order_id\|payment_id` | nothing it can prove |
+| How the server verifies | recomputes the HMAC locally, `timingSafeEqual` | `GET /pg/orders/{id}/payments`, looks for `SUCCESS` |
+| Amount check | **none** (see below) | paid amount must match `booking.totalAmount` |
+| Replay protection | none | existing `gatewayTransactionId` returns the original booking |
+
+Because Cashfree's browser SDK hands back no signature, trusting the client's
+"it worked" would let anyone POST a booking into existence. The verify endpoint
+therefore takes only an order id and asks Cashfree what happened.
+
+> **Known gap, Razorpay side.** `verifyRazorpayPayment` proves that *a* payment
+> for that order succeeded, but never checks it was for the amount the booking
+> blob claims. A client can pay ₹1 and post a ₹50,000 booking. Closing it means
+> fetching the order from Razorpay and comparing — the same thing the Cashfree
+> path already does.
+
+### Choosing the gateway
+
+`PaymentSetting` (a singleton keyed `"gateway"`) holds the admin's choice;
+`PAYMENT_GATEWAY` is the fallback when no admin has picked one. Resolution
+skips the DB entirely unless mongoose is connected, and caps the query at 2s —
+a settings lookup must never be what makes a checkout hang.
+
+Switching is rejected for a gateway with no credentials configured, so the
+failure surfaces in the admin UI rather than to a customer mid-payment.
+In-flight payments finish on whichever gateway started them: the two
+`create-order` / `verify-payment` pairs stay independently reachable.
+
+Admin UI: **Global Settings → Payments**.
+
+## The verify saga (the bug we came here to fix)
 
 The legacy `razorPaymentVerify` did this on success:
 
@@ -74,4 +116,8 @@ their logs and upgrade.
 - Vendor scoping: vendors can only see payments whose `servicesNames`
   match offers they own.
 - Razorpay create-order returns the raw order object, not wrapped in
-  `{ success, data }` — clients depend on the raw shape.
+  `{ success, data }` — clients depend on the raw shape. (The Cashfree
+  equivalent is a new endpoint with no legacy callers, so it uses the normal
+  `{ success, data }` envelope.)
+- `PAYMENT_GATEWAY` defaults to `razorpay`, so a deployment that never sets it
+  behaves exactly as it did before Cashfree existed.

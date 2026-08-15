@@ -1,27 +1,50 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Create an axios instance with default config
 // Use env-configured base URL in dev/prod; default to relative '/api' for Vite proxy
-const baseURL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '') + '/api';
+const baseURL = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "") + "/api";
 export const api = axios.create({
   baseURL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // Admin Staff API services
 export const adminStaffService = {
-  getStaff: async (params: { search?: string; status?: 'Active' | 'Inactive'; role?: string; department?: string; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => {
-    const { data } = await api.get('/admin/staff', { params });
+  getStaff: async (
+    params: {
+      search?: string;
+      status?: "Active" | "Inactive";
+      role?: string;
+      department?: string;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {},
+  ) => {
+    const { data } = await api.get("/admin/staff", { params });
     return data; // { success, data: [], pagination }
   },
   getOne: async (id: string) => {
     const { data } = await api.get(`/admin/staff/${id}`);
     return data;
   },
-  create: async (payload: { firstName: string; lastName: string; email: string; phone: string; role: string; status?: 'Active' | 'Inactive'; department?: string; salary?: number; address?: any; emergencyContact?: any; password?: string; }) => {
-    const { data } = await api.post('/admin/staff', payload);
+  create: async (payload: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    role: string;
+    status?: "Active" | "Inactive";
+    department?: string;
+    salary?: number;
+    address?: any;
+    emergencyContact?: any;
+    password?: string;
+  }) => {
+    const { data } = await api.post("/admin/staff", payload);
     return data;
   },
   update: async (id: string, payload: any) => {
@@ -40,32 +63,57 @@ export const adminStaffService = {
     const { data } = await api.delete(`/admin/staff/${id}`);
     return data;
   },
-  bulkStatus: async (staffIds: string[], status: 'Active' | 'Inactive') => {
-    const { data } = await api.post('/admin/staff/bulk/status', { staffIds, status });
+  bulkStatus: async (staffIds: string[], status: "Active" | "Inactive") => {
+    const { data } = await api.post("/admin/staff/bulk/status", { staffIds, status });
     return data;
   },
   statsOverview: async () => {
-    const { data } = await api.get('/admin/staff/stats/overview');
+    const { data } = await api.get("/admin/staff/stats/overview");
     return data;
-  }
+  },
 };
 
 // Admin Roles API services
 export const adminRolesService = {
-  getRoles: async (params: { search?: string; isActive?: boolean; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => {
-    const { data } = await api.get('/admin/roles', { params });
+  getRoles: async (
+    params: {
+      search?: string;
+      isActive?: boolean;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {},
+  ) => {
+    const { data } = await api.get("/admin/roles", { params });
     return data;
   },
-  getAllRoles: async (params: { search?: string; isActive?: boolean; page?: number; limit?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' } = {}) => {
-    const { data } = await api.get('/admin/roles', { params });
+  getAllRoles: async (
+    params: {
+      search?: string;
+      isActive?: boolean;
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: "asc" | "desc";
+    } = {},
+  ) => {
+    const { data } = await api.get("/admin/roles", { params });
     return data;
   },
   getOne: async (id: string) => {
     const { data } = await api.get(`/admin/roles/${id}`);
     return data;
   },
-  create: async (payload: { name: string; description?: string; features?: string[]; permissions?: any[]; isActive?: boolean; createdBy?: string; }) => {
-    const { data } = await api.post('/admin/roles', payload);
+  create: async (payload: {
+    name: string;
+    description?: string;
+    features?: string[];
+    permissions?: any[];
+    isActive?: boolean;
+    createdBy?: string;
+  }) => {
+    const { data } = await api.post("/admin/roles", payload);
     return data;
   },
   update: async (id: string, payload: any) => {
@@ -81,20 +129,20 @@ export const adminRolesService = {
     return data;
   },
   getAvailableFeatures: async () => {
-    const { data } = await api.get('/admin/roles/features/available');
+    const { data } = await api.get("/admin/roles/features/available");
     return data;
   },
   statsOverview: async () => {
-    const { data } = await api.get('/admin/roles/stats/overview');
+    const { data } = await api.get("/admin/roles/stats/overview");
     return data;
-  }
+  },
 };
 
 // Admin Auth API services
 export const adminAuthService = {
   login: async (credentials: any) => {
     try {
-      const { data } = await api.post('/admin/auth/login', credentials);
+      const { data } = await api.post("/admin/auth/login", credentials);
       return data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -103,7 +151,7 @@ export const adminAuthService = {
   // Fallback demo login
   demoLogin: async (credentials: any) => {
     try {
-      const { data } = await api.post('/login', credentials);
+      const { data } = await api.post("/login", credentials);
       return data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -111,29 +159,29 @@ export const adminAuthService = {
   },
   getMe: async () => {
     try {
-      const { data } = await api.get('/admin/auth/me');
+      const { data } = await api.get("/admin/auth/me");
       return data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
-  }
+  },
 };
 
 // Add a request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken") || sessionStorage.getItem("adminToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     if (config.data instanceof FormData) {
-      delete config.headers['Content-Type'];
+      delete config.headers["Content-Type"];
     }
     return config;
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Add a response interceptor to handle 401 Unauthorized errors
@@ -142,16 +190,16 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Clear tokens
-      localStorage.removeItem('adminToken');
-      sessionStorage.removeItem('adminToken');
-      
+      localStorage.removeItem("adminToken");
+      sessionStorage.removeItem("adminToken");
+
       // Redirect to login if not already there
-      if (!window.location.pathname.includes('/admin/login')) {
-        window.location.href = '/admin/login';
+      if (!window.location.pathname.includes("/admin/login")) {
+        window.location.href = "/admin/login";
       }
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 // User API services
@@ -159,7 +207,7 @@ export const userService = {
   // Get all users with optional status filter
   getUsers: async (status?: string) => {
     try {
-      const response = await api.get('/admin/users', {
+      const response = await api.get("/admin/users", {
         params: { status },
       });
       return response.data;
@@ -181,7 +229,7 @@ export const userService = {
   // Create a new user
   createUser: async (userData: any) => {
     try {
-      const response = await api.post('/admin/users', userData);
+      const response = await api.post("/admin/users", userData);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -214,7 +262,7 @@ export const managementService = {
   // Get all management listings with optional status filter
   getManagementListings: async (status?: string) => {
     try {
-      const response = await api.get('/admin/management', {
+      const response = await api.get("/admin/management", {
         params: { status },
       });
       return response.data;
@@ -236,7 +284,7 @@ export const managementService = {
   // Create a new management listing
   createManagementListing: async (listingData: any) => {
     try {
-      const response = await api.post('/admin/management', listingData);
+      const response = await api.post("/admin/management", listingData);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -279,7 +327,7 @@ export const vendorService = {
   // Get vendors (with tab/status mapping)
   getVendors: async (status?: string) => {
     try {
-      const response = await api.get('/admin/vendors', { params: { status } });
+      const response = await api.get("/admin/vendors", { params: { status } });
 
       // Server returns { success: true, count: number, data: [...] }
       const responseData = response.data;
@@ -303,7 +351,7 @@ export const vendorService = {
   },
   createVendor: async (data: any) => {
     try {
-      const response = await api.post('/admin/vendors', data);
+      const response = await api.post("/admin/vendors", data);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -337,10 +385,18 @@ export const vendorService = {
 
 // Booking API services
 export const bookingService = {
-  getBookings: async (params: { tab?: string; serviceType?: string; search?: string; sortBy?: string; sortDir?: 'asc' | 'desc' } = {}) => {
+  getBookings: async (
+    params: {
+      tab?: string;
+      serviceType?: string;
+      search?: string;
+      sortBy?: string;
+      sortDir?: "asc" | "desc";
+    } = {},
+  ) => {
     try {
       // Use legacy list endpoint to avoid required date param on GET /bookings
-      const response = await api.get('/admin/bookings/legacy/all', { params });
+      const response = await api.get("/admin/bookings/legacy/all", { params });
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -356,7 +412,7 @@ export const bookingService = {
   },
   createBooking: async (data: any) => {
     try {
-      const response = await api.post('/admin/bookings', data);
+      const response = await api.post("/admin/bookings", data);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -390,9 +446,17 @@ export const bookingService = {
 
 // Payment API services
 export const paymentService = {
-  getPayments: async (params: { tab?: string; serviceType?: string; search?: string; sortBy?: string; sortDir?: 'asc' | 'desc' } = {}) => {
+  getPayments: async (
+    params: {
+      tab?: string;
+      serviceType?: string;
+      search?: string;
+      sortBy?: string;
+      sortDir?: "asc" | "desc";
+    } = {},
+  ) => {
     try {
-      const response = await api.get('/admin/payments', { params });
+      const response = await api.get("/admin/payments", { params });
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -408,7 +472,7 @@ export const paymentService = {
   },
   createPayment: async (data: any) => {
     try {
-      const response = await api.post('/admin/payments', data);
+      const response = await api.post("/admin/payments", data);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -442,9 +506,16 @@ export const paymentService = {
 
 // HelpDesk API services
 export const helpDeskService = {
-  getItems: async (params: { status?: 'Pending' | 'Resolved' | 'all'; search?: string; sortBy?: 'date' | 'status' | 'createdAt'; sortDir?: 'asc' | 'desc' } = {}) => {
+  getItems: async (
+    params: {
+      status?: "Pending" | "Resolved" | "all";
+      search?: string;
+      sortBy?: "date" | "status" | "createdAt";
+      sortDir?: "asc" | "desc";
+    } = {},
+  ) => {
     try {
-      const response = await api.get('/admin/helpdesk', { params });
+      const response = await api.get("/admin/helpdesk", { params });
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -460,7 +531,7 @@ export const helpDeskService = {
   },
   createItem: async (data: any) => {
     try {
-      const response = await api.post('/admin/helpdesk', data);
+      const response = await api.post("/admin/helpdesk", data);
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -482,7 +553,7 @@ export const helpDeskService = {
       throw error.response?.data || error.message;
     }
   },
-  updateStatus: async (id: string, status: 'Pending' | 'Resolved') => {
+  updateStatus: async (id: string, status: "Pending" | "Resolved") => {
     try {
       const response = await api.patch(`/admin/helpdesk/${id}/status`, { status });
       return response.data;
@@ -497,28 +568,42 @@ export const settingsService = {
   // SEO settings: page-based get/upsert
   getSeo: async (page: string) => {
     try {
-      const response = await api.get('/admin/settings/seo', { params: { page } });
+      const response = await api.get("/admin/settings/seo", { params: { page } });
       return response.data?.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
-  upsertSeo: async (payload: { page: string; metaKeywords?: string; metaTitle?: string; metaDescription?: string; socialTitle?: string; socialDescription?: string; faviconUrl?: string; logoUrl?: string; ogImageUrl?: string; }) => {
+  upsertSeo: async (payload: {
+    page: string;
+    metaKeywords?: string;
+    metaTitle?: string;
+    metaDescription?: string;
+    socialTitle?: string;
+    socialDescription?: string;
+    faviconUrl?: string;
+    logoUrl?: string;
+    ogImageUrl?: string;
+  }) => {
     try {
-      const response = await api.put('/admin/settings/seo', payload);
+      const response = await api.put("/admin/settings/seo", payload);
       return response.data?.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
-  uploadSeoAsset: async (page: string, type: 'favicon' | 'logo' | 'og' | 'logo_dark', file: File) => {
+  uploadSeoAsset: async (
+    page: string,
+    type: "favicon" | "logo" | "og" | "logo_dark",
+    file: File,
+  ) => {
     try {
       const form = new FormData();
-      form.append('page', page);
-      form.append('type', type);
-      form.append('image', file);
-      const response = await api.post('/admin/settings/seo/upload', form, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      form.append("page", page);
+      form.append("type", type);
+      form.append("image", file);
+      const response = await api.post("/admin/settings/seo/upload", form, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data?.data || response.data; // { url, page, type }
     } catch (error: any) {
@@ -527,17 +612,42 @@ export const settingsService = {
   },
 
   // System settings: userType-based get/update
-  getSystem: async (userType: 'Vendor' | 'User') => {
+  getSystem: async (userType: "Vendor" | "User") => {
     try {
-      const response = await api.get('/admin/settings/system', { params: { userType } });
+      const response = await api.get("/admin/settings/system", { params: { userType } });
       return response.data?.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
-  updateSystem: async (payload: { userType: 'Vendor' | 'User'; vendorApproval?: boolean; mobileApproval?: boolean; emailApproval?: boolean; phoneApproval?: boolean; }) => {
+  updateSystem: async (payload: {
+    userType: "Vendor" | "User";
+    vendorApproval?: boolean;
+    mobileApproval?: boolean;
+    emailApproval?: boolean;
+    phoneApproval?: boolean;
+  }) => {
     try {
-      const response = await api.put('/admin/settings/system', payload);
+      const response = await api.put("/admin/settings/system", payload);
+      return response.data?.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Payment gateway selection. Lives on the payments router rather than the
+  // settings one because the checkout reads the same record.
+  getPaymentGateway: async (): Promise<PaymentGatewaySettings> => {
+    try {
+      const response = await api.get("/admin/payments/gateway/settings");
+      return response.data?.data;
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  updatePaymentGateway: async (gateway: PaymentGatewayId): Promise<PaymentGatewaySettings> => {
+    try {
+      const response = await api.put("/admin/payments/gateway/settings", { gateway });
       return response.data?.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -545,15 +655,32 @@ export const settingsService = {
   },
 };
 
+export type PaymentGatewayId = "razorpay" | "cashfree";
+
+export interface PaymentGatewayOption {
+  id: PaymentGatewayId;
+  label: string;
+  /** False when the server holds no API credentials for it — cannot be selected. */
+  configured: boolean;
+  mode?: "sandbox" | "production";
+}
+
+export interface PaymentGatewaySettings {
+  gateway: PaymentGatewayId;
+  /** "admin" once someone has chosen; "env" while still inheriting PAYMENT_GATEWAY. */
+  source: "admin" | "env";
+  envDefault: PaymentGatewayId;
+  options: PaymentGatewayOption[];
+}
+
 // Admin Roles API services
 // export const adminRolesService = { ... } // Duplicate removed from here
 
-
 // Offers API services
 export const offersService = {
-  list: async (status?: 'pending' | 'approved' | 'cancelled' | 'modified') => {
+  list: async (status?: "pending" | "approved" | "cancelled" | "modified") => {
     try {
-      const response = await api.get('/offers', { params: status ? { status } : undefined });
+      const response = await api.get("/offers", { params: status ? { status } : undefined });
       return response.data; // { success, count, data }
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -569,7 +696,7 @@ export const offersService = {
   },
   create: async (payload: any) => {
     try {
-      const response = await api.post('/offers', payload);
+      const response = await api.post("/offers", payload);
       return response.data; // { success, data }
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -591,7 +718,7 @@ export const offersService = {
       throw error.response?.data || error.message;
     }
   },
-  setStatus: async (id: string, status: 'pending' | 'approved' | 'cancelled', reason?: string) => {
+  setStatus: async (id: string, status: "pending" | "approved" | "cancelled", reason?: string) => {
     try {
       const response = await api.patch(`/offers/${id}/status`, { status, reason });
       return response.data; // { success, data }
@@ -605,7 +732,7 @@ export const offersService = {
 export const dashboardService = {
   getOverview: async () => {
     try {
-      const response = await api.get('/admin/dashboard');
+      const response = await api.get("/admin/dashboard");
       return response.data; // { success, data: { stats, graphs, tickets } }
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -619,17 +746,17 @@ export const notificationsService = {
     try {
       // There is no dedicated /unread-count route — the list endpoint returns
       // `totalUnread` alongside the data. Ask for the unread slice only.
-      const response = await api.get('/admin/notifications', { params: { unreadOnly: true } });
+      const response = await api.get("/admin/notifications", { params: { unreadOnly: true } });
       return (response.data?.totalUnread ?? 0) as number;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
-  list: async (params: { filter?: 'all' | 'unread' } = {}) => {
+  list: async (params: { filter?: "all" | "unread" } = {}) => {
     try {
       // Backend expects ?unreadOnly=true|false (not a `filter` enum).
-      const response = await api.get('/admin/notifications', {
-        params: { unreadOnly: params.filter === 'unread' },
+      const response = await api.get("/admin/notifications", {
+        params: { unreadOnly: params.filter === "unread" },
       });
       return response.data;
     } catch (error: any) {
@@ -646,7 +773,7 @@ export const notificationsService = {
   },
   markAllRead: async () => {
     try {
-      const response = await api.put('/admin/notifications/read-all');
+      const response = await api.put("/admin/notifications/read-all");
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -666,20 +793,27 @@ export const notificationsService = {
 export const analyticsService = {
   getOverview: async () => {
     try {
-      const response = await api.get('/admin/adminAnalytics');
+      const response = await api.get("/admin/adminAnalytics");
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
   },
-  getReport: async (params: { tab: string; search?: string; sortBy?: string; page?: number; limit?: number; filters?: string }) => {
+  getReport: async (params: {
+    tab: string;
+    search?: string;
+    sortBy?: string;
+    page?: number;
+    limit?: number;
+    filters?: string;
+  }) => {
     try {
-      const response = await api.get('/admin/adminAnalyticsReport', { params });
+      const response = await api.get("/admin/adminAnalyticsReport", { params });
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error.message;
     }
-  }
+  },
 };
 
 export default api;

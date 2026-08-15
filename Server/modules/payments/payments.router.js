@@ -13,6 +13,7 @@ const express = require("express");
 
 const validate = require("../../shared/validate");
 const { requireJwt } = require("../../middleware/auth");
+const { requireFeature } = require("../../middleware/permissions");
 const controller = require("./payments.controller");
 const dto = require("./payments.dto");
 
@@ -23,13 +24,46 @@ router
   .get(requireJwt({ optional: true }), validate({ query: dto.listQuery }), controller.list)
   .post(validate({ body: dto.createPaymentBody }), controller.create);
 
-// Razorpay routes are static-prefix + must be declared BEFORE `/:id`
-// otherwise Express matches `razor` as an id.
+// Gateway routes are static-prefix + must be declared BEFORE `/:id`
+// otherwise Express matches `razor` / `cashfree` / `gateway` as an id.
+
+// Which checkout the SPA should load. Public and credential-free by design —
+// it returns Razorpay's public key id at most, never a secret.
+router.get("/gateway", controller.getGateway);
+
+// Admin gateway selection.
+//
+// This router is mounted twice — publicly at /api/payments and behind
+// requireJwt at /api/admin/payments — so these two routes carry their own
+// guard rather than relying on the mount. `requireFeature` resolves the acting
+// staff member from req.user, which the public mount never populates, so an
+// unauthenticated caller on /api/payments/gateway/settings gets a 401.
+const adminOnly = [requireJwt({ optional: true }), requireFeature("manage_payments")];
+
+router.get("/gateway/settings", ...adminOnly, controller.getGatewaySettings);
+router.put(
+  "/gateway/settings",
+  ...adminOnly,
+  validate({ body: dto.updateGatewayBody }),
+  controller.updateGateway,
+);
+
 router.post("/razor/create-order", validate({ body: dto.createOrderBody }), controller.createOrder);
 router.post(
   "/razor/verify-payment",
   validate({ body: dto.verifyPaymentBody }),
   controller.verifyPayment,
+);
+
+router.post(
+  "/cashfree/create-order",
+  validate({ body: dto.createCashfreeOrderBody }),
+  controller.createCashfreeOrder,
+);
+router.post(
+  "/cashfree/verify-payment",
+  validate({ body: dto.verifyCashfreePaymentBody }),
+  controller.verifyCashfreePayment,
 );
 
 router.patch(

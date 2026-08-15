@@ -110,6 +110,91 @@ describe("POST /api/payments/razor/verify-payment — validation", () => {
   });
 });
 
+describe("GET /api/payments/gateway", () => {
+  it("names the active gateway and never leaks a secret", async () => {
+    const res = await request(buildApp()).get("/api/payments/gateway");
+    expect(res.status).toBe(200);
+    expect(["razorpay", "cashfree"]).toContain(res.body.data.gateway);
+
+    // Razorpay's public key id may travel; nothing else may.
+    const serialised = JSON.stringify(res.body);
+    expect(serialised).not.toMatch(/cfsk_/);
+    expect(serialised).not.toMatch(/secret/i);
+  });
+});
+
+describe("gateway settings — admin only", () => {
+  it("refuses an unauthenticated read with 401", async () => {
+    const res = await request(buildApp()).get("/api/payments/gateway/settings");
+    expect(res.status).toBe(401);
+  });
+
+  it("refuses an unauthenticated switch with 401", async () => {
+    const res = await request(buildApp())
+      .put("/api/payments/gateway/settings")
+      .send({ gateway: "cashfree" });
+    expect(res.status).toBe(401);
+  });
+});
+
+describe("POST /api/payments/cashfree/create-order — validation", () => {
+  const customer = { name: "Alex", email: "alex@example.com", phone: "9876543210" };
+
+  it("rejects a missing customer with 422", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/create-order")
+      .send({ amount: 500 });
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects zero amount", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/create-order")
+      .send({ amount: 0, customer });
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects a malformed customer email", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/create-order")
+      .send({ amount: 500, customer: { ...customer, email: "not-an-email" } });
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects a too-short customer phone", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/create-order")
+      .send({ amount: 500, customer: { ...customer, phone: "12" } });
+    expect(res.status).toBe(422);
+  });
+});
+
+describe("POST /api/payments/cashfree/verify-payment — validation", () => {
+  const booking = {
+    userId: validId,
+    serviceId: "b".repeat(24),
+    serviceName: "unique-stay",
+    totalAmount: 1000,
+    clientName: "Alex",
+    checkInDate: "2026-06-01",
+    checkOutDate: "2026-06-05",
+  };
+
+  it("rejects a missing booking blob with 422", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/verify-payment")
+      .send({ cashfree_order_id: "th_123" });
+    expect(res.status).toBe(422);
+  });
+
+  it("rejects an empty order id with 422", async () => {
+    const res = await request(buildApp())
+      .post("/api/payments/cashfree/verify-payment")
+      .send({ cashfree_order_id: "", booking });
+    expect(res.status).toBe(422);
+  });
+});
+
 describe("payments router — central error envelope", () => {
   it("returns 404 for unknown sibling routes", async () => {
     const res = await request(buildApp()).get("/api/payments/unknown/path");

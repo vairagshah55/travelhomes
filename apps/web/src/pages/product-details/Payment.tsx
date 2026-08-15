@@ -15,6 +15,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";
+import { fetchGateway, startCheckout } from "@/lib/checkout";
 
 export default function PaymentPage() {
   const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
@@ -176,9 +177,13 @@ export default function PaymentPage() {
     setFormData({ ...formData, [field]: value });
   };
   const [inputDisabled, setInputesEnable] = useState(false);
+  // Guards the proceed button while a checkout is in flight — a second click
+  // would open a second order for the same booking.
+  const [paying, setPaying] = useState(false);
 
   // Proceed Logic
   const handleProceedClick = async () => {
+    if (paying) return;
     if (!isAuthenticated) {
       sessionStorage.setItem(
         "pending_booking",
@@ -270,16 +275,6 @@ export default function PaymentPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const loadRazorpay = () => {
-    return new Promise((resolve) => {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
-
   const handlePayment = async () => {
     if (!formData.name || !formData.name.trim()) {
       toast.error("Please enter your name");
@@ -294,102 +289,62 @@ export default function PaymentPage() {
       return;
     }
 
-    const res = await loadRazorpay();
+    setPaying(true);
+    try {
+      // The server owns the choice of gateway — asking on each attempt means
+      // a provider switch takes effect without shipping a new bundle.
+      const gateway = await fetchGateway(VITE_API_BASE_URL);
 
-    if (!res) {
-      toast.error("Razorpay SDK failed to load");
-      return;
+      const { bookingId } = await startCheckout({
+        baseUrl: VITE_API_BASE_URL,
+        gateway,
+        amount: bookingData.amountPaid,
+        note: `Booking for ${bookingData.propertyName || "Travel Homes"}`,
+        customer: {
+          id: user?.id,
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+        },
+        buildBooking: ({ gateway: name, transactionId }) => ({
+          ...bookingData,
+          clientName: formData.name,
+          clientEmail: formData.email,
+          clientPhone: formData.phone,
+          serviceName:
+            type === "van" ? "camper-van" : type === "activity" ? "activity" : "unique-stay",
+          numberOfGuests: editableBookingData.guests.adults + editableBookingData.guests.children,
+          checkInDate: editableBookingData.checkInDate,
+          checkOutDate: editableBookingData.checkOutDate,
+          totalAmount: bookingData.amountPaid,
+          baseAmount: bookingData.basePrice,
+          bookingStatus: "confirmed",
+          paymentDetails: {
+            amount: bookingData.amountPaid,
+            currency: "INR",
+            paymentMethod: name,
+            transactionId,
+            paymentStatus: "completed",
+            paidAt: new Date(),
+          },
+        }),
+      });
+
+      console.log("Payment confirmed, booking:", bookingId);
+      setShowSuccess(true);
+      setInputesEnable(true);
+    } catch (error) {
+      const message = error?.response?.data?.message || error?.message || "Unknown error";
+      // A dismissed checkout is a choice, not a failure to shout about.
+      if (message === "Payment cancelled") {
+        toast("Payment cancelled");
+      } else {
+        console.error("Error in payment handler:", error);
+        toast.error("Error processing payment: " + message);
+      }
+    } finally {
+      setPaying(false);
     }
-
-    // 1️⃣ Create order from backend
-    const orderResult = await axios.post(
-      `${VITE_API_BASE_URL}/api/payments/razor/create-order`,
-      { amount: bookingData.amountPaid }, // ₹500
-    );
-
-    const { id, amount, currency } = orderResult.data;
-
-    // 2️⃣ Razorpay options
-    const options = {
-      key: import.meta.env.VITE_RAZOR_KEY, // public key
-      amount: amount,
-      currency: currency,
-      name: "Travel Homes",
-      description: "Test Transaction",
-      order_id: id,
-      handler: async function (response) {
-        try {
-          const bookingPayload = {
-            ...bookingData,
-            clientName: formData.name,
-            clientEmail: formData.email,
-            clientPhone: formData.phone,
-            serviceName:
-              type === "van" ? "camper-van" : type === "activity" ? "activity" : "unique-stay",
-            numberOfGuests: editableBookingData.guests.adults + editableBookingData.guests.children,
-            checkInDate: editableBookingData.checkInDate,
-            checkOutDate: editableBookingData.checkOutDate,
-            totalAmount: bookingData.amountPaid,
-            baseAmount: bookingData.basePrice,
-            bookingStatus: "confirmed",
-            paymentDetails: {
-              amount: bookingData.amountPaid,
-              currency: "INR",
-              paymentMethod: "razorpay",
-              transactionId: response.razorpay_payment_id,
-              paymentStatus: "completed",
-              paidAt: new Date(),
-            },
-          };
-
-          console.log("Sending booking payload:", bookingPayload);
-
-          const verifyResult = await axios.post(
-            `${VITE_API_BASE_URL}/api/payments/razor/verify-payment`,
-            {
-              razorpay_signature: response.razorpay_signature,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              booking: bookingPayload,
-            },
-          );
-          console.log("Payment verification response:", verifyResult.data);
-          if (verifyResult.data.success) {
-            console.log("Payment successful! Opening success dialog");
-            setShowSuccess(true);
-            setInputesEnable(true);
-          } else {
-            console.error("Payment verification failed:", verifyResult.data);
-            toast.error(
-              "Payment verification failed: " + (verifyResult.data.message || "Unknown error"),
-            );
-          }
-        } catch (error) {
-          console.error("Error in payment handler:", error);
-          toast.error(
-            "Error processing payment: " + (error.response?.data?.message || error.message),
-          );
-        }
-        /*
-          response.razorpay_payment_id
-          response.razorpay_order_id
-          response.razorpay_signature
-          */
-
-        // Send to backend for verification
-      },
-      prefill: {
-        name: formData.name,
-        email: formData.email,
-        contact: formData.phone,
-      },
-      theme: {
-        color: "#3399cc",
-      },
-    };
-
-    const paymentObject = new window.Razorpay(options);
-    paymentObject.open();
   };
 
   return (
@@ -712,9 +667,14 @@ export default function PaymentPage() {
 
               <Button
                 onClick={handleProceedClick}
-                className="w-full relative z-10 px-6 py-3 rounded-[10px] mt-6 bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] dark:bg-white dark:text-black transition-colors"
+                disabled={paying}
+                className="w-full relative z-10 px-6 py-3 rounded-[10px] mt-6 bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] dark:bg-white dark:text-black transition-colors disabled:opacity-60"
               >
-                {isAuthenticated ? "Proceed to Payment" : "Login to Proceed"}
+                {paying
+                  ? "Processing…"
+                  : isAuthenticated
+                    ? "Proceed to Payment"
+                    : "Login to Proceed"}
               </Button>
             </div>
           </aside>
