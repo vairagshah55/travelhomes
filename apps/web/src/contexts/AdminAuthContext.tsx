@@ -153,9 +153,7 @@ function describeFailure(err: unknown): string {
     return "The server can't reach its database. Check the API log for the reason, then retry.";
   }
   return (
-    e?.error?.message ||
-    e?.message ||
-    "Couldn't load your account. The server may be unavailable."
+    e?.error?.message || e?.message || "Couldn't load your account. The server may be unavailable."
   );
 }
 
@@ -177,9 +175,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
     try {
       const resp = await adminAuthService.getMe();
+      const nextAccess = toAccess(resp?.access);
       setUser(toUser(resp?.admin));
-      setAccess(toAccess(resp?.access));
-      setError(null);
+      setAccess(nextAccess);
+      // A 2xx that carries no permission set is NOT success. Treating it as one
+      // set `error` to null while `access` stayed null, and AdminProtectedRoute's
+      // self-heal effect re-fetches on exactly that combination — so the panel
+      // hammered /me ~80x/second forever behind its loading spinner instead of
+      // reporting anything. Seen in production when the deployed API predates
+      // `access` being added to /me (d1632f2, 2026-07-27) while the frontend is
+      // newer than the self-heal effect (7e79f1c, 2026-07-31).
+      setError(
+        nextAccess
+          ? null
+          : "Signed in, but the server did not return your permissions. The API may be running an older version than this panel.",
+      );
     } catch (err) {
       // The api response interceptor already clears the token + redirects on
       // 401, so anything landing here is a transport or server failure. Record

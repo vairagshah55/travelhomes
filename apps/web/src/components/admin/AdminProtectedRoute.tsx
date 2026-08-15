@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AlertTriangle, LogOut, RotateCcw } from "lucide-react";
 import { useAuth } from "@/contexts/AdminAuthContext";
@@ -80,10 +80,26 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children, fea
    * flight, and the last attempt didn't fail outright. AuthProvider only fetches
    * /me on mount, so any path that plants a token afterwards (login, a second
    * tab, a manual token) would otherwise leave the guard with no fetch to
-   * resolve it. Gated on `!error` so a failing /me retries once, not forever.
+   * resolve it.
+   *
+   * The `!error` gate alone was NOT enough to make this "retry once, not
+   * forever": it only holds when a bad /me sets `error`. A 2xx whose body has no
+   * `access` left error null and access null, which is precisely this effect's
+   * trigger — so it re-fetched as fast as the network allowed (~80 req/s,
+   * measured) and the panel sat on its spinner. refresh() now reports that case
+   * as an error, and this ref bounds the retry to one attempt per token so no
+   * future response shape can turn the guard into a request loop again.
    */
+  const attemptedForToken = useRef<string | null>(null);
   useEffect(() => {
-    if (adminToken && !isLoading && !access && !error) void refresh();
+    if (!adminToken) {
+      attemptedForToken.current = null;
+      return;
+    }
+    if (isLoading || access || error) return;
+    if (attemptedForToken.current === adminToken) return;
+    attemptedForToken.current = adminToken;
+    void refresh();
   }, [adminToken, isLoading, access, error, refresh]);
 
   if (!adminToken) {
