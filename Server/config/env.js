@@ -112,6 +112,8 @@ const schema = z.object({
   EMAIL_PASSWORD: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   EMAIL_SENDER: z.string().optional(),
+  // Ops copy of new-booking alerts. Defaults to the sending mailbox.
+  ADMIN_ALERT_EMAIL: z.string().optional(),
 
   // Marketing
   FB_PAGE_ACCESS_TOKEN: z.string().optional(),

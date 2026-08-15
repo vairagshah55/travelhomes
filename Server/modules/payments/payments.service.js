@@ -39,6 +39,7 @@ const Vendor = require("../../models/Vendor");
 const env = require("../../config/env");
 const logger = require("../../shared/logger");
 const { runSaga } = require("../../shared/saga");
+const { notifyNewBooking, notifyPaymentReceived } = require("../../shared/bookingNotifications");
 const {
   AppError,
   BadRequestError,
@@ -496,28 +497,22 @@ async function createBookingRecords({ booking, transactionId, gateway }) {
     { name: `${gateway}-verify` },
   );
 
-  // 5) Notifications — best-effort, fire-and-forget. Failures here don't
-  //    invalidate the saga (it's already committed) and shouldn't fail the
-  //    HTTP response.
-  Notification.create({
-    type: "new_booking",
-    title: "New Booking Received",
-    message: `New booking ${createdBooking.bookingId} created by ${createdBooking.clientName}.`,
-    recipientRole: "admin",
-    referenceId: createdBooking._id,
-    referenceModel: "Booking",
-  }).catch((err) =>
-    logger.error({ err: err.message }, "verify-payment: booking notification failed"),
-  );
+  // 5) Tell everyone — guest, vendor and admin, bell and email. Fire and
+  //    forget: the saga has committed and the money has moved, so a dead SMTP
+  //    host must not turn a successful payment into a failed request. This
+  //    used to be two admin-only bells, which is why paying customers heard
+  //    nothing back and vendors never learned they'd been booked.
+  //
+  //    `propertyName` isn't a Booking field — it rides along on the request
+  //    blob and is what the guest actually recognises, so pass it through for
+  //    the email copy rather than falling back to "unique-stay". The notifier
+  //    only reads fields, so a plain object is enough.
+  const bookingForNotify = { ...createdBooking.toObject(), propertyName: booking.propertyName };
 
-  Notification.create({
-    type: "payment_received",
-    title: "Payment Received",
-    message: `Payment of ₹${createdPayment.amount} received from ${createdPayment.personName}.`,
-    recipientRole: "admin",
-    referenceId: createdPayment._id,
-    referenceModel: "Payment",
-  }).catch((err) =>
+  notifyNewBooking(bookingForNotify, { gateway }).catch((err) =>
+    logger.error({ err: err.message }, "verify-payment: booking notifications failed"),
+  );
+  notifyPaymentReceived(createdPayment, { gateway }).catch((err) =>
     logger.error({ err: err.message }, "verify-payment: payment notification failed"),
   );
 

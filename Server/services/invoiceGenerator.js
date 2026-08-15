@@ -72,12 +72,20 @@ class InvoiceGenerator {
       });
     };
 
+    // Every price in this product is rupees. Formatting them as USD printed a
+    // dollar sign on invoices that customers were being charged INR for.
     const formatCurrency = (amount) => {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: 'USD'
-      }).format(amount);
+        currency: 'INR',
+        maximumFractionDigits: 2
+      }).format(Number(amount) || 0);
     };
+
+    // Callers have handed this a Booking document whose field is
+    // `bookingStatus`, leaving `status` undefined — and an unguarded
+    // .toUpperCase() on it threw, so no invoice ever rendered.
+    const status = String(booking.status || 'confirmed');
 
     const calculateDays = () => {
       if (booking.startDate && booking.endDate) {
@@ -327,7 +335,7 @@ class InvoiceGenerator {
                     <h2>INVOICE</h2>
                     <p><strong>Invoice #:</strong> ${booking.bookingNumber}</p>
                     <p><strong>Date:</strong> ${formatDate(new Date())}</p>
-                    <p><strong>Status:</strong> <span class="status-badge status-${booking.status}">${booking.status.toUpperCase()}</span></p>
+                    <p><strong>Status:</strong> <span class="status-badge status-${status}">${status.toUpperCase()}</span></p>
                 </div>
             </div>
 
@@ -424,7 +432,7 @@ class InvoiceGenerator {
             <div class="payment-info">
                 <h3>💳 Payment Information</h3>
                 <p><strong>Payment Method:</strong> ${booking.paymentMethod}</p>
-                <p><strong>Payment Status:</strong> ${booking.status === 'confirmed' ? 'Paid' : 'Pending'}</p>
+                <p><strong>Payment Status:</strong> ${status === 'confirmed' ? 'Paid' : 'Pending'}</p>
                 ${booking.specialRequests ? `<p><strong>Special Requests:</strong> ${booking.specialRequests}</p>` : ''}
             </div>
 

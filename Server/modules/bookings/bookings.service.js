@@ -26,9 +26,9 @@ const mongoose = require("mongoose");
 const Booking = require("../../models/Booking");
 const Management = require("../../models/Management");
 const Offer = require("../../models/Offer");
-const Notification = require("../../models/Notification");
 const InvoiceGenerator = require("../../services/invoiceGenerator");
 const { sendEmail } = require("../../lib/email-sender/sender");
+const { notifyNewBooking } = require("../../shared/bookingNotifications");
 const env = require("../../config/env");
 const logger = require("../../shared/logger");
 const { NotFoundError } = require("../../shared/errors");
@@ -213,31 +213,20 @@ async function runConfirmationWorkflow(booking) {
   }
 }
 
-// Best-effort admin/vendor notifications. Failures are logged, never
-// surfaced — the booking creation must not depend on the notification side.
+// Best-effort notifications. Failures are logged, never surfaced — the
+// booking creation must not depend on the notification side.
+//
+// `sendGuestEmail: false` because this path runs its own confirmation
+// workflow below, which mails the guest and stamps `confirmationSent` on the
+// booking. The shared notifier covers everything that workflow doesn't: the
+// guest's bell, and both channels for the vendor and admin.
+//
+// The vendor lookup also moves into the shared notifier, which resolves the
+// owner from Offer as well as Management — this used to check Management
+// alone, so listings that live in Offer notified nobody.
 async function emitNewBookingNotifications(booking) {
   try {
-    await Notification.create({
-      type: "new_booking",
-      title: "New Booking Received",
-      message: `New booking ${booking.bookingId} created by ${booking.clientName}.`,
-      recipientRole: "admin",
-      referenceId: booking._id,
-      referenceModel: "Booking",
-    });
-
-    const service = await Management.findById(booking.serviceId);
-    if (service?.vendorId) {
-      await Notification.create({
-        type: "new_booking",
-        title: "New Booking for Your Service",
-        message: `You have received a new booking ${booking.bookingId} for your service "${service.brandName}".`,
-        recipientRole: "vendor",
-        recipientId: service.vendorId,
-        referenceId: booking._id,
-        referenceModel: "Booking",
-      });
-    }
+    await notifyNewBooking(booking, { sendGuestEmail: false });
   } catch (err) {
     logger.error({ err: err.message }, "failed to emit new-booking notification");
   }
