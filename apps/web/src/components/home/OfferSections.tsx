@@ -51,6 +51,7 @@ function OfferSection({
   sectionId,
   loading,
   error,
+  hasItems,
   children,
   viewAllHref,
 }: {
@@ -59,9 +60,17 @@ function OfferSection({
   sectionId?: string;
   loading: boolean;
   error: string | null;
+  /** Whether this section's own list has anything approved to show. */
+  hasItems: boolean;
   children: React.ReactNode;
   viewAllHref?: string;
 }) {
+  // Once the fetch has settled with nothing in this category, drop the whole
+  // section — otherwise the heading and its "View all" link sit above an empty
+  // strip. Kept after loading/error so the skeleton and the failure message
+  // still get a chance to render.
+  if (!loading && !error && !hasItems) return null;
+
   return (
     <ScrollReveal>
       <Section
@@ -106,6 +115,7 @@ export function OfferSections({
           sectionId="camper-van"
           loading={loadingOffers}
           error={offerError}
+          hasItems={caravanShown.length > 0}
           viewAllHref="/search?filter=camper-van"
         >
           <ResultCard
@@ -124,6 +134,7 @@ export function OfferSections({
           sectionId="unique-stays"
           loading={loadingOffers}
           error={offerError}
+          hasItems={stayShown.length > 0}
           viewAllHref="/search?filter=unique-stays"
         >
           <ResultCard
@@ -142,6 +153,7 @@ export function OfferSections({
           sectionId="activity"
           loading={loadingOffers}
           error={offerError}
+          hasItems={activityShown.length > 0}
           viewAllHref="/search?filter=activity"
         >
           <ResultCard
@@ -169,6 +181,7 @@ export function OfferSections({
               sectionId="unique-stays"
               loading={loadingOffers}
               error={offerError}
+              hasItems={stayPreview.length > 0}
               viewAllHref="/search?filter=unique-stays"
             >
               <ResultCard
@@ -186,6 +199,7 @@ export function OfferSections({
               sectionId="activity"
               loading={loadingOffers}
               error={offerError}
+              hasItems={activityPreview.length > 0}
               viewAllHref="/search?filter=activity"
             >
               <ResultCard
@@ -208,6 +222,7 @@ export function OfferSections({
               sectionId="camper-van"
               loading={loadingOffers}
               error={offerError}
+              hasItems={caravanPreview.length > 0}
               viewAllHref="/search?filter=camper-van"
             >
               <ResultCard
@@ -225,6 +240,7 @@ export function OfferSections({
               sectionId="activity"
               loading={loadingOffers}
               error={offerError}
+              hasItems={activityPreview.length > 0}
               viewAllHref="/search?filter=activity"
             >
               <ResultCard
@@ -247,6 +263,7 @@ export function OfferSections({
               sectionId="camper-van"
               loading={loadingOffers}
               error={offerError}
+              hasItems={caravanPreview.length > 0}
               viewAllHref="/search?filter=camper-van"
             >
               <ResultCard
@@ -264,6 +281,7 @@ export function OfferSections({
               sectionId="unique-stays"
               loading={loadingOffers}
               error={offerError}
+              hasItems={stayPreview.length > 0}
               viewAllHref="/search?filter=unique-stays"
             >
               <ResultCard

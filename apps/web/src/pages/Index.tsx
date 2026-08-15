@@ -392,41 +392,43 @@ export default function Index() {
           user={user}
         />
 
-        {/* Top Rated Stays */}
-        {homepageSections["top-rated-stays"] && (
-          <Section
-            title="Top Rated Stays"
-            subtitle="Consistently loved by guests across India"
-            className="py-8 md:py-12"
-          >
-            {loadingOffers ? (
-              <CardGridSkeleton count={4} />
-            ) : offerError ? (
-              <p className="text-red-500 text-center py-8">
-                Failed to load offers. Please try again later.
-              </p>
-            ) : (
-              <>
-                <ResultCard
-                  activeFilter="unique-stays"
-                  ResultstayShown={stayShown}
-                  ResultcaravanShown={[]}
-                  ResultactivityShown={[]}
-                />
-                {stayCards.length > stayShown.length && (
-                  <div className="mt-6 flex justify-center">
-                    <Button
-                      onClick={() => incPage("unique-stays")}
-                      className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
-                    >
-                      View more
-                    </Button>
-                  </div>
-                )}
-              </>
-            )}
-          </Section>
-        )}
+        {/* Top Rated Stays — hidden once the fetch settles with no approved
+            stays, so the heading never sits above an empty strip. */}
+        {homepageSections["top-rated-stays"] &&
+          (loadingOffers || offerError || stayShown.length > 0) && (
+            <Section
+              title="Top Rated Stays"
+              subtitle="Consistently loved by guests across India"
+              className="py-8 md:py-12"
+            >
+              {loadingOffers ? (
+                <CardGridSkeleton count={4} />
+              ) : offerError ? (
+                <p className="text-red-500 text-center py-8">
+                  Failed to load offers. Please try again later.
+                </p>
+              ) : (
+                <>
+                  <ResultCard
+                    activeFilter="unique-stays"
+                    ResultstayShown={stayShown}
+                    ResultcaravanShown={[]}
+                    ResultactivityShown={[]}
+                  />
+                  {stayCards.length > stayShown.length && (
+                    <div className="mt-6 flex justify-center">
+                      <Button
+                        onClick={() => incPage("unique-stays")}
+                        className="rounded-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white px-8 h-11 shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98]"
+                      >
+                        View more
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </Section>
+          )}
 
         <LatestArticles latestBlogs={latestBlogs} loadingBlogs={!blogsData} />
 
