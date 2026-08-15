@@ -93,6 +93,12 @@ export default {
           "border-focus":  "var(--th-border-focus)",
           "border-error":  "var(--th-border-error)",
 
+          /* Both already carry their own alpha, so they need no opacity
+             modifier — which matters: Tailwind 3 silently drops `/nn` on
+             var()-based colours. */
+          ring:            "var(--th-ring)",
+          overlay:         "var(--th-overlay)",
+
           success:         "var(--th-success)",
           "success-bg":    "var(--th-success-bg)",
           "success-text":  "var(--th-success-text)",
