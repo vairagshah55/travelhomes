@@ -152,7 +152,7 @@ export default function Index() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: faqsData } = useFaqs();
+  const { data: faqsData, isPending: faqsLoading } = useFaqs();
 
   const { data: blogsData } = useQuery({
     queryKey: ["homepage-blogs"],
@@ -433,6 +433,7 @@ export default function Index() {
         <FAQSection
           homepageSections={homepageSections}
           faqs={faqs}
+          isLoading={faqsLoading}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           visibleFAQTabs={visibleFAQTabs}
