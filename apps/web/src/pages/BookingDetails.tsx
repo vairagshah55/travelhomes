@@ -611,6 +611,7 @@ const BookingDetails = () => {
   return (
     <DashboardLayout
       title="Booking Details"
+      subtitle="Every reservation against your listings, with guest and payment detail."
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">

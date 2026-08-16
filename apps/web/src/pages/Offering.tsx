@@ -234,6 +234,13 @@ const Offering = () => {
     <>
       <DashboardLayout
         title="Offerings"
+        subtitle="Every camper van, stay and activity listed under this account, in every state."
+        headerActions={
+          <Button onClick={() => navigate("/offering/add")} className={cn(BTN_PRIMARY, "h-9")}>
+            <Plus size={15} strokeWidth={2.5} />
+            Add offering
+          </Button>
+        }
       >
         {/* pb clears the fixed MobileVendorNav on small screens. */}
         <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
@@ -287,15 +294,9 @@ const Offering = () => {
                     ? `${offers.length} of ${baseOffers.length} ${activeTab} shown`
                     : `${offers.length} ${activeTab} listing${offers.length === 1 ? "" : "s"}`
               }
-              aside={
-                <Button
-                  onClick={() => navigate("/offering/add")}
-                  className={cn(BTN_PRIMARY, "h-9")}
-                >
-                  <Plus size={15} strokeWidth={2.5} />
-                  Add offering
-                </Button>
-              }
+              /* The primary action moved up to the header band, where every
+                 console page keeps its primary action. Two "Add offering"
+                 buttons a few hundred pixels apart is worse than one. */
             />
 
             <div className="flex flex-col lg:flex-row lg:items-center gap-3 px-5 py-3">

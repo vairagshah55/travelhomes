@@ -348,6 +348,7 @@ const Notifications = () => {
   return (
     <DashboardLayout
       title="Notifications"
+      subtitle="Bookings, payouts, listing decisions and support replies."
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">

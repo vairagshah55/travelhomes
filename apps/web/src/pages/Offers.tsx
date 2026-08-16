@@ -332,6 +332,7 @@ const Offers = () => {
   return (
     <DashboardLayout
       title="Offers"
+      subtitle="Discounts and promotions running against your listings."
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
