@@ -1,24 +1,15 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  BarChart3,
   Bell,
-  Box,
-  CreditCard,
   ExternalLink,
-  FileText,
   HelpCircle,
-  Layers,
-  LayoutDashboard,
-  LifeBuoy,
   LogOut,
-  Megaphone,
   Monitor,
   Moon,
-  Settings,
+  Store,
   Sun,
   User,
-  Users2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +27,7 @@ import { useTheme } from "@/components/admin/ThemeProvider";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { featureForPath } from "@/lib/adminPermissions";
 import { PORTAL_VARS } from "@/components/admin/adminUI";
+import { ADMIN_ROUTES, type AdminRoute } from "@/components/admin/adminNav";
 
 interface AdminCommandPaletteProps {
   open: boolean;
@@ -43,29 +35,28 @@ interface AdminCommandPaletteProps {
 }
 
 /**
- * Color-coded icon chip — a soft, category-tinted tile with the icon in that
- * same hue. Because the palette renders in a portal where the `--tpl-*` icon
- * tokens don't resolve, the svg's color computes to `inherit`, so it picks up
- * this tile's inline color.
+ * Palette row glyph. Monochrome, matching the rail: this list is a ranked set
+ * of search results, and a column of nine different hues fights the ranking by
+ * making some rows louder than others for reasons unrelated to the query.
  */
-function PIcon({ icon: Icon, color }: { icon: LucideIcon; color: string }) {
+function PIcon({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <span
-      className="grid place-items-center size-8 rounded-lg shrink-0"
-      style={{ color, backgroundColor: `${color}1a` }}
-    >
-      <Icon />
+    <span className="grid place-items-center size-7 rounded-md shrink-0 bg-app-surface-2 text-app-fg-muted">
+      <Icon size={15} strokeWidth={1.9} />
     </span>
   );
 }
 
 /**
- * Global ⌘K command palette for the admin app. Fuzzy search across every
- * admin route plus quick actions (theme, notifications, sign out).
+ * Global ⌘K command palette for the admin app. Fuzzy search across every admin
+ * route plus quick actions (theme, notifications, sign out).
  *
- * Bound to ⌘K / Ctrl+K via a keydown listener mounted while `open` is
- * controlled by the parent so we don't trap focus when the user is typing
- * elsewhere.
+ * Routes come from `adminNav.ts` — the same definition the sidebar renders — so
+ * a new page appears in both at once. This file used to keep its own hand-typed
+ * list and had already fallen out of sync with the rail.
+ *
+ * Mounted once by AdminLayout; the ⌘K listener below is the only one in the
+ * shell.
  */
 export default function AdminCommandPalette({ open, onOpenChange }: AdminCommandPaletteProps) {
   const navigate = useNavigate();
@@ -90,18 +81,21 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
   };
 
   /**
-   * A navigate entry that vanishes when the role can't open the destination —
-   * the routes are gated, so offering them here would just bounce the user.
+   * Destinations the current role can actually open, kept in nav order and
+   * bucketed by section. Offering a gated route here would only bounce the
+   * user back where they came from.
    */
-  const navItem = (path: string, icon: typeof LayoutDashboard, color: string, label: string) => {
-    const feature = featureForPath(path);
-    if (feature && !can(feature)) return null;
-    return (
-      <CommandItem key={path} onSelect={() => go(path)}>
-        <PIcon icon={icon} color={color} /> <span>{label}</span>
-      </CommandItem>
-    );
-  };
+  const groups = useMemo(() => {
+    const buckets = new Map<string, AdminRoute[]>();
+    for (const route of ADMIN_ROUTES) {
+      const feature = featureForPath(route.path);
+      if (feature && !can(feature)) continue;
+      const list = buckets.get(route.group);
+      if (list) list.push(route);
+      else buckets.set(route.group, [route]);
+    }
+    return Array.from(buckets, ([heading, routes]) => ({ heading, routes }));
+  }, [can]);
 
   const handleLogout = () => {
     onOpenChange(false);
@@ -111,59 +105,42 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange} contentStyle={PORTAL_VARS}>
-      <CommandInput placeholder="Search routes, actions, settings…" />
+      <CommandInput placeholder="Search pages, actions and settings…" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
-        {(() => {
-          const items = [
-            navItem("/admin/dashboard", LayoutDashboard, "#0891B2", "Dashboard"),
-            navItem("/admin/management/listing", Layers, "#7C3AED", "Management · Listings"),
-            navItem("/admin/management/user", Users2, "#7C3AED", "Management · Users"),
-            navItem("/admin/management/vendor", Users2, "#7C3AED", "Management · Vendors"),
-            navItem("/admin/management/booking", Layers, "#7C3AED", "Management · Bookings"),
-            navItem("/admin/payments", CreditCard, "#2563EB", "Payments"),
-            navItem("/admin/help-desk", LifeBuoy, "#16A34A", "Help Desk"),
-          ].filter(Boolean);
-          return items.length ? <CommandGroup heading="Navigate">{items}</CommandGroup> : null;
-        })()}
-
-        <CommandSeparator />
-
-        {(() => {
-          const items = [
-            navItem("/admin/analytics", BarChart3, "#DB2777", "Analytics · Overview"),
-            navItem("/admin/analytics/report", BarChart3, "#DB2777", "Analytics · Reports"),
-            navItem("/admin/marketing", Megaphone, "#D97706", "Marketing"),
-          ].filter(Boolean);
-          return items.length ? <CommandGroup heading="Insights">{items}</CommandGroup> : null;
-        })()}
-
-        <CommandSeparator />
-
-        {(() => {
-          const items = [
-            navItem("/admin/cms", FileText, "#2563eb", "CMS"),
-            navItem("/admin/crm", Bell, "#0284C7", "CRM"),
-            navItem("/admin/plugins", Box, "#7C3AED", "Plugins"),
-            navItem("/admin/staff", Users2, "#059669", "Staff · All"),
-            navItem("/admin/staff/roles", Users2, "#059669", "Staff · Roles"),
-            navItem("/admin/global-settings", Settings, "#475569", "Settings"),
-          ].filter(Boolean);
-          return items.length ? <CommandGroup heading="Workspace">{items}</CommandGroup> : null;
-        })()}
+        {groups.map(({ heading, routes }, i) => (
+          <React.Fragment key={heading}>
+            {i > 0 && <CommandSeparator />}
+            <CommandGroup heading={heading}>
+              {routes.map((route) => (
+                <CommandItem
+                  key={route.path}
+                  value={`${heading} ${route.label}`}
+                  onSelect={() => go(route.path)}
+                >
+                  <PIcon icon={route.icon} />
+                  <span>{route.label}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </React.Fragment>
+        ))}
 
         <CommandSeparator />
 
         <CommandGroup heading="Account">
           <CommandItem onSelect={() => go("/admin/profile")}>
-            <PIcon icon={User} color="#475569" /> <span>Profile</span>
+            <PIcon icon={User} /> <span>Profile</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/notifications")}>
-            <PIcon icon={Bell} color="#D97706" /> <span>Notifications</span>
+            <PIcon icon={Bell} /> <span>Notifications</span>
           </CommandItem>
           <CommandItem onSelect={() => go("/admin/help")}>
-            <PIcon icon={HelpCircle} color="#0284C7" /> <span>Help &amp; support</span>
+            <PIcon icon={HelpCircle} /> <span>Help &amp; support</span>
+          </CommandItem>
+          <CommandItem onSelect={() => go("/dashboard")}>
+            <PIcon icon={Store} /> <span>Vendor console</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
@@ -171,10 +148,10 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               window.open("/", "_blank", "noopener,noreferrer");
             }}
           >
-            <PIcon icon={ExternalLink} color="#64748B" /> <span>Open public site</span>
+            <PIcon icon={ExternalLink} /> <span>Open public site</span>
           </CommandItem>
           <CommandItem onSelect={handleLogout}>
-            <PIcon icon={LogOut} color="#DC2626" /> <span>Sign out</span>
+            <PIcon icon={LogOut} /> <span>Sign out</span>
           </CommandItem>
         </CommandGroup>
 
@@ -187,7 +164,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <PIcon icon={Sun} color="#D97706" /> <span>Light mode</span>
+            <PIcon icon={Sun} /> <span>Light mode</span>
             <CommandShortcut>L</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -196,7 +173,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <PIcon icon={Moon} color="#4F46E5" /> <span>Dark mode</span>
+            <PIcon icon={Moon} /> <span>Dark mode</span>
             <CommandShortcut>D</CommandShortcut>
           </CommandItem>
           <CommandItem
@@ -205,7 +182,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
               onOpenChange(false);
             }}
           >
-            <PIcon icon={Monitor} color="#64748B" /> <span>System theme</span>
+            <PIcon icon={Monitor} /> <span>System theme</span>
             <CommandShortcut>S</CommandShortcut>
           </CommandItem>
         </CommandGroup>

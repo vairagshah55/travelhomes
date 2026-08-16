@@ -3,6 +3,7 @@ import { motion, MotionConfig } from "framer-motion";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminPageTitle from "./AdminPageTitle";
+import AdminCommandPalette from "./AdminCommandPalette";
 import { PAGE_CONTAINER } from "./adminUI";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 
@@ -45,20 +46,27 @@ export default function AdminLayout({
   children,
 }: AdminLayoutProps) {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   return (
     <MotionConfig reducedMotion="user">
       <div
         data-brand="admin"
+        data-admin-app=""
         className="flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
       >
         <AdminSidebar
           showMobileSidebar={showMobileSidebar}
           setShowMobileSidebar={setShowMobileSidebar}
+          onOpenPalette={() => setPaletteOpen(true)}
         />
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <AdminHeader title={title} onOpenMobileSidebar={() => setShowMobileSidebar(true)} />
+          <AdminHeader
+            title={title}
+            onOpenMobileSidebar={() => setShowMobileSidebar(true)}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
 
           <main className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg">
             {/* The band is INSIDE the scroller, not pinned: on a data-heavy
@@ -79,6 +87,11 @@ export default function AdminLayout({
         </div>
 
         <MobileBottomNav />
+
+        {/* One palette for the shell. It used to live inside AdminHeader, but
+            the rail's footer opens it too, and two mounted copies would mean
+            two ⌘K listeners racing each other. */}
+        <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </div>
     </MotionConfig>
   );

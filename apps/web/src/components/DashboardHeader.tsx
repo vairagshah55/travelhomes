@@ -112,7 +112,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
           </SheetContent>
         </Sheet>
 
-        {/* Title + breadcrumbs — breadcrumb type matches AdminPageTitle
+        {/* Title + breadcrumbs — breadcrumb type matches AdminHeader
             (12px / gray-400 / "/" separators) and hides below md so the
             84px bar never crowds on small screens. */}
         <div className="flex flex-col justify-center min-w-0">

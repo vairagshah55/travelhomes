@@ -59,8 +59,12 @@ const BookingManagement: React.FC = () => {
   const [filters, setFilters] = useState<ActiveFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
 
-  const [showBookingDetails, setShowBookingDetails] = useState(false);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  // The drawer walks the whole FILTERED result set, not just the current page —
+  // stepping to the next record shouldn't stop at a pagination boundary that
+  // exists for the table's benefit rather than the operator's. Index (not the
+  // row object) is the state, so prev/next is a ±1 and the position readout
+  // comes for free.
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   // Single confirm state drives the one shared ConfirmModal.
   const [confirm, setConfirm] = useState<{
@@ -106,9 +110,11 @@ const BookingManagement: React.FC = () => {
 
   const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
+  const selectedBooking = selectedIndex !== null ? (bookings[selectedIndex] ?? null) : null;
+
   const handleView = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setShowBookingDetails(true);
+    const index = bookings.findIndex((b) => b._id === booking._id);
+    if (index >= 0) setSelectedIndex(index);
   };
 
   const askDelete = (booking: Booking) =>
@@ -127,32 +133,29 @@ const BookingManagement: React.FC = () => {
     {
       key: "bookingId",
       header: "Booking ID",
-      cell: (b) => (
-        <button
-          onClick={() => handleView(b)}
-          className="font-semibold text-tpl-primary hover:underline"
-        >
-          {b.bookingId}
-        </button>
-      ),
+      // The whole row opens the drawer now, so the identifier is plain text
+      // rather than a link — a link inside a clickable row is two targets for
+      // one destination, and the underline invited a click that was already
+      // available anywhere on the row.
+      cell: (b) => <span className="font-semibold text-app-fg">{b.bookingId}</span>,
     },
     {
       key: "clientName",
       header: "Client Name",
-      cell: (b) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.clientName}</span>,
+      cell: (b) => <span className="text-app-fg-muted">{b.clientName}</span>,
     },
     {
       key: "serviceName",
       header: "Service Name",
       hideBelow: "md",
-      cell: (b) => <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{b.serviceName}</span>,
+      cell: (b) => <span className="text-app-fg-muted">{b.serviceName}</span>,
     },
     {
       key: "checkIn",
       header: "Check-in",
       hideBelow: "lg",
       cell: (b) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(b.checkIn)}</span>
+        <span className="text-app-fg-muted">{formatDate(b.checkIn)}</span>
       ),
     },
     {
@@ -160,7 +163,7 @@ const BookingManagement: React.FC = () => {
       header: "Check-out",
       hideBelow: "lg",
       cell: (b) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{formatDate(b.checkOut)}</span>
+        <span className="text-app-fg-muted">{formatDate(b.checkOut)}</span>
       ),
     },
     {
@@ -201,6 +204,8 @@ const BookingManagement: React.FC = () => {
                   onClear={() => setFilters({})}
                 />
               }
+              resultCount={query.isLoading ? undefined : bookings.length}
+              resultNoun="booking"
             />
           </div>
 
@@ -228,6 +233,7 @@ const BookingManagement: React.FC = () => {
               },
             }}
             rowActions={rowActions}
+            onRowClick={handleView}
             pagination={{
               currentPage,
               totalPages,
@@ -239,11 +245,18 @@ const BookingManagement: React.FC = () => {
         </div>
       </MotionReveal>
 
-      {showBookingDetails && selectedBooking && (
+      {selectedBooking && selectedIndex !== null && (
         <BookingDetailsPopup
-          isOpen={showBookingDetails}
-          onClose={() => setShowBookingDetails(false)}
+          isOpen
+          onClose={() => setSelectedIndex(null)}
           booking={selectedBooking}
+          position={{ index: selectedIndex + 1, total: bookings.length }}
+          onPrev={selectedIndex > 0 ? () => setSelectedIndex(selectedIndex - 1) : undefined}
+          onNext={
+            selectedIndex < bookings.length - 1
+              ? () => setSelectedIndex(selectedIndex + 1)
+              : undefined
+          }
         />
       )}
 

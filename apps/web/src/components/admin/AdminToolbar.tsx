@@ -49,8 +49,18 @@ interface AdminToolbarProps {
    */
   filterSlot?: React.ReactNode;
 
-  /** Right-aligned trailing content — typically a result count. */
+  /** Right-aligned trailing content — typically a secondary control. */
   trailing?: React.ReactNode;
+
+  /**
+   * Rows the current query matched. Rendered next to the controls as
+   * "248 bookings" so the active view is readable without counting rows or
+   * reading the pagination footer — the filters say what was asked for, this
+   * says what came back.
+   */
+  resultCount?: number;
+  /** Singular noun for the count, pluralised with a trailing "s". */
+  resultNoun?: string;
 
   className?: string;
 }
@@ -87,9 +97,16 @@ export function AdminToolbar({
   primaryAction,
   filterSlot,
   trailing,
+  resultCount,
+  resultNoun = "result",
   className = "",
 }: AdminToolbarProps) {
   const hasSelection = selectedCount > 0 && !!bulkActions?.length;
+
+  const countLabel =
+    typeof resultCount === "number"
+      ? `${resultCount.toLocaleString("en-IN")} ${resultNoun}${resultCount === 1 ? "" : "s"}`
+      : null;
 
   return (
     <div className={`relative ${className}`}>
@@ -229,8 +246,16 @@ export function AdminToolbar({
               {filterSlot}
             </div>
 
-            {(trailing || primaryAction) && (
+            {(countLabel || trailing || primaryAction) && (
               <div className="flex items-center gap-3 shrink-0">
+                {countLabel && (
+                  <span
+                    aria-live="polite"
+                    className="text-[12.5px] font-medium text-app-fg-muted tabular-nums whitespace-nowrap"
+                  >
+                    {countLabel}
+                  </span>
+                )}
                 {trailing}
                 {primaryAction}
               </div>

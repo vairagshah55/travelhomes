@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
+  ChevronRight,
   ChevronUp,
   HelpCircle,
   LogOut,
@@ -11,7 +12,7 @@ import {
   Settings,
   User as UserIcon,
 } from "lucide-react";
-import AdminCommandPalette from "./AdminCommandPalette";
+import { useAdminBreadcrumbs } from "./adminNav";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,9 +29,15 @@ import { MENU_ITEM, MENU_ITEM_DANGER, PORTAL_VARS } from "./adminUI";
 /**
  * Admin top bar.
  *
- * Layout: hamburger (mobile) → centered command-palette search → notifications
- * + account on the right. The page title lives in the content area
- * (AdminPageTitle), so the bar stays slim at the sidebar's 84px brand height.
+ * Layout: hamburger (mobile) → breadcrumb trail → search + notifications + help
+ * + account on the right. The page TITLE lives in the content area
+ * (AdminPageTitle); the bar carries location and utilities only, so it stays
+ * slim at the sidebar brand row's 56px.
+ *
+ * The breadcrumb sits here rather than in the page band because it answers
+ * "where am I in the product", which is chrome, while the band answers "what is
+ * this page and what can I do with it". It was previously drawn in both places
+ * on nested routes.
  *
  * The bar is white, so controls are defined by a hairline rather than a fill —
  * a grey pill on white reads as a smudge, and a white pill on white would be
@@ -48,12 +55,68 @@ const CTRL =
 interface AdminHeaderProps {
   title: string;
   onOpenMobileSidebar?: () => void;
+  onOpenPalette?: () => void;
 }
 
-export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderProps) {
+/**
+ * Location trail. Intermediate segments are links; the current page is plain
+ * text. Below `sm` only the last two crumbs render — a four-level trail wraps
+ * the bar onto a second line on a phone.
+ */
+function HeaderBreadcrumb() {
+  const crumbs = useAdminBreadcrumbs();
+  if (crumbs.length === 0) return null;
+
+  return (
+    <nav
+      aria-label="Breadcrumb"
+      className="flex items-center gap-0.5 min-w-0 text-[12.5px] font-medium text-app-fg-subtle"
+    >
+      {crumbs.map((crumb, i) => {
+        const isLast = i === crumbs.length - 1;
+        // Hide everything but the final two on narrow viewports.
+        const hideSmall = i < crumbs.length - 2;
+        return (
+          <React.Fragment key={crumb.href}>
+            {i > 0 && (
+              <ChevronRight
+                size={12}
+                strokeWidth={2.2}
+                aria-hidden
+                className={`shrink-0 opacity-40 ${hideSmall ? "hidden sm:block" : ""}`}
+              />
+            )}
+            {isLast ? (
+              <span
+                aria-current="page"
+                className="px-1 font-semibold text-app-fg truncate max-w-[220px]"
+              >
+                {crumb.label}
+              </span>
+            ) : (
+              <Link
+                to={crumb.href}
+                className={`px-1 py-0.5 rounded truncate max-w-[150px] hover:text-app-accent transition-colors ${
+                  hideSmall ? "hidden sm:block" : ""
+                }`}
+              >
+                {crumb.label}
+              </Link>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </nav>
+  );
+}
+
+export default function AdminHeader({
+  title,
+  onOpenMobileSidebar,
+  onOpenPalette,
+}: AdminHeaderProps) {
   const navigate = useNavigate();
   const { data: unreadCount = 0 } = useNotificationCount();
-  const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Sync the browser tab title with the current admin page. Restores the
   // default when leaving the admin (AdminHeader unmounts).
@@ -82,35 +145,47 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         <span className="sr-only">Toggle Sidebar</span>
       </button>
 
-      {/* Search anchors the LEFT of the bar, next to the rail — a centred
-          search on a wide monitor floats in the middle of nothing. */}
-      <motion.button
-        whileTap={{ scale: 0.99 }}
-        onClick={() => setPaletteOpen(true)}
-        className={`group hidden md:flex items-center gap-2 pl-2.5 pr-1.5 h-8 rounded-md w-[260px] shrink-0 text-[13px]
-          border border-[#e5e8ee] bg-[#f7f8fa] hover:bg-white hover:border-[#d3d8e0]
-          focus-visible:ring-2 focus-visible:ring-[#2563eb]/35 outline-none
-          transition-[background-color,border-color] duration-150`}
-        aria-label="Search (⌘K)"
-      >
-        <Search size={15} strokeWidth={2} className="text-[#9aa4b2] shrink-0" />
-        <span className="flex-1 text-left text-[#8a94a6]">Search…</span>
-        <kbd className="text-[10.5px] font-medium font-sans px-1.5 py-0.5 rounded border border-[#e5e8ee] bg-white text-[#9aa4b2] leading-none">
-          ⌘K
-        </kbd>
-      </motion.button>
+      {/* Left — where am I. Takes the free space so the utilities stay pinned
+          right regardless of trail length. */}
+      <div className="flex-1 min-w-0">
+        <HeaderBreadcrumb />
+      </div>
 
-      {/* Compact search trigger — icon only, below md. */}
-      <button
-        onClick={() => setPaletteOpen(true)}
-        className={`md:hidden grid place-items-center size-8 rounded-md shrink-0 ${CTRL}`}
-        aria-label="Search (⌘K)"
-      >
-        <Search size={17} />
-      </button>
+      {/* Right — search, then utilities, then identity. */}
+      <div className="flex items-center gap-1 shrink-0">
+        <motion.button
+          whileTap={{ scale: 0.99 }}
+          onClick={onOpenPalette}
+          className={`group hidden md:flex items-center gap-2 pl-2.5 pr-1.5 h-8 rounded-md w-[240px] shrink-0 text-[13px]
+            border border-[#e5e8ee] bg-[#f7f8fa] hover:bg-white hover:border-[#d3d8e0]
+            focus-visible:ring-2 focus-visible:ring-[#2563eb]/35 outline-none
+            transition-[background-color,border-color] duration-150`}
+          aria-label="Search (⌘K)"
+        >
+          <Search size={15} strokeWidth={2} className="text-[#9aa4b2] shrink-0" />
+          <span className="flex-1 text-left text-[#8a94a6]">Search anything…</span>
+          <kbd className="text-[10.5px] font-medium font-sans px-1.5 py-0.5 rounded border border-[#e5e8ee] bg-white text-[#9aa4b2] leading-none">
+            ⌘K
+          </kbd>
+        </motion.button>
 
-      {/* Right — notifications + account, pinned to the right edge. */}
-      <div className="flex items-center gap-1 shrink-0 ml-auto">
+        {/* Compact search trigger — icon only, below md. */}
+        <button
+          onClick={onOpenPalette}
+          className={`md:hidden grid place-items-center size-8 rounded-md shrink-0 ${CTRL}`}
+          aria-label="Search (⌘K)"
+        >
+          <Search size={17} />
+        </button>
+
+        <button
+          onClick={() => navigate("/admin/help")}
+          className={`hidden sm:grid place-items-center size-8 rounded-md shrink-0 ${CTRL}`}
+          aria-label="Help and support"
+        >
+          <HelpCircle size={17} strokeWidth={1.85} />
+        </button>
+
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/admin/notifications")}
@@ -140,8 +215,6 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
         {/* User info — avatar + truncated name + chevron */}
         <HeaderUserInfo />
       </div>
-
-      <AdminCommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </header>
   );
 }

@@ -1622,6 +1622,41 @@ body.admin-scope {
   background-color: rgba(37, 99, 235, 0.06);
 }
 
+/* ── Admin table density ──────────────────────────────────────────────────
+   Compact rows: ~40px instead of ~46px, which fits roughly two more records
+   on a laptop viewport. An admin table is read far more than it is admired,
+   and the row you want is usually the one just below the fold.
+
+   Scoped to [data-admin-app] — carried ONLY by the AdminLayout root — rather
+   than [data-brand="admin"], which the vendor console's shell also sets. The
+   admin is a lazy chunk in the same document as the rest of the app, so this
+   stylesheet is still live after navigating from /admin to a vendor route;
+   keying off the shared brand attribute would re-space the vendor console's
+   tables the moment someone had visited the admin in that session.
+
+   Header rows lose the grey fill at the same time: a filled header plus a
+   hairline plus uppercase tracking is three separators doing one job, and the
+   fill is what made the table read as a widget sitting on the card instead of
+   as the card's own content. */
+[data-admin-app] thead tr {
+  background-color: transparent;
+}
+[data-admin-app] thead th {
+  padding-top: 9px;
+  padding-bottom: 9px;
+  font-size: 11px;
+}
+[data-admin-app] tbody td {
+  padding-top: 9.5px;
+  padding-bottom: 9.5px;
+  font-size: 13px;
+}
+/* Numeric columns line up only if the glyphs are fixed-width. */
+[data-admin-app] tbody td.text-right,
+[data-admin-app] thead th.text-right {
+  font-variant-numeric: tabular-nums;
+}
+
 /* Sticky header — the scroll container is the wrapper inside <Table>, so the
    th itself sticks. Needs an opaque background or rows show through. */
 [data-brand="admin"] .admin-table-sticky thead th {
@@ -1645,6 +1680,14 @@ body.admin-scope {
 }
 .dark [data-brand="admin"] tbody tr:hover {
   background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Sticky header fill, admin only. Must sit AFTER the [data-brand="admin"]
+   sticky rule above: both selectors compute to the same specificity, so this
+   wins on source order alone. Placed earlier it silently lost and the header
+   kept the grey fill the rule above removes. */
+[data-admin-app] .admin-table-sticky thead th {
+  background-color: var(--tpl-card-bg);
 }
 
 /* ── Search input pill — ported from template's Header search box ─────
