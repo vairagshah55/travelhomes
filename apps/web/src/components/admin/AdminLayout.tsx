@@ -53,6 +53,11 @@ export default function AdminLayout({
       <div
         data-brand="admin"
         data-admin-app=""
+        /* Console surface marker, shared with the vendor shell. The table
+           rules it selects live in global.css (which the vendor console also
+           loads) rather than admin.css, so one <AdminDataTable> renders the
+           same way in both apps — see the block at the top of global.css. */
+        data-console="admin"
         className="flex h-screen bg-tpl-body-bg overflow-hidden font-plus-jakarta"
       >
         <AdminSidebar

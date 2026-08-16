@@ -55,6 +55,134 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   CONSOLE SURFACE — shared by /admin/* and the vendor dashboard
+   Marker: [data-console] on AdminLayout's root and on
+   DashboardLayoutShell. `admin` and `vendor` as values, so each can
+   tune its own ink without forking the rules.
+
+   WHY THIS LIVES HERE AND NOT IN admin.css: both consoles render the
+   same <AdminDataTable>, but admin.css is imported by AdminApp alone
+   (that import boundary is what keeps the admin theme off the public
+   bundle). While these rules lived there, the vendor console got the
+   raw shadcn table primitive — 48px headers, 16px bold header text,
+   p-4 cells — from the same component the admin renders at 40px rows.
+
+   THIS FILE IS LOADED BY THE PUBLIC SITE. Every rule below is gated
+   behind [data-console], which no public page carries, and nothing
+   here touches :root. Keep it that way.
+   ═══════════════════════════════════════════════════════════════ */
+[data-console] {
+  /* Defaults are the vendor's; admin.css overrides them with its own
+     tpl-* values so the admin renders exactly the pixels it did before. */
+  --console-rule: var(--surface-border);
+  --console-rule-soft: var(--surface-border);
+  --console-header-ink: var(--surface-fg-muted);
+  --console-cell-ink: var(--surface-fg);
+  --console-sticky-bg: var(--surface);
+  /* Row washes are mixed from the accent in scope, so the same rule reads
+     blue in the admin and cyan in the vendor console. The plain declaration
+     above each mix is the fallback for engines without color-mix(). */
+  --console-row-hover: rgba(17, 24, 39, 0.035);
+  --console-row-hover: color-mix(in srgb, var(--accent) 5%, transparent);
+  --console-row-active: rgba(17, 24, 39, 0.055);
+  --console-row-active: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+[data-console] thead tr {
+  background-color: transparent;
+  border-bottom: 1px solid var(--console-rule);
+}
+/* A quiet label row rather than a second heading competing with the page
+   title: the DATA is what should carry weight. */
+[data-console] thead th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--console-header-ink);
+  padding-top: 9px;
+  padding-bottom: 9px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+/* ~40px rows: roughly two more records on a laptop than the shadcn default,
+   and a console table is read far more than it is admired. */
+[data-console] tbody td {
+  font-size: 13px;
+  color: var(--console-cell-ink);
+  padding-top: 9.5px;
+  padding-bottom: 9.5px;
+  vertical-align: middle;
+}
+[data-console] tbody tr {
+  border-bottom: 1px solid var(--console-rule-soft);
+  transition: background-color 120ms ease;
+}
+[data-console] tbody tr:last-child {
+  border-bottom: 0;
+}
+[data-console] tbody tr:hover {
+  background-color: var(--console-row-hover);
+}
+/* Selected and keyboard-focused rows both read as a 3px accent edge plus a
+   faint wash, never a filled row: a fill at accent strength turns every
+   selected row into a button and drops the contrast of the text on it.
+   `:focus-visible` (not `:focus`) keeps the cursor a KEYBOARD affordance —
+   clicking a row also focuses it, so the drawer has somewhere to return
+   focus to, and a ring appearing under the pointer reads as a bug. */
+[data-console] tbody tr[data-state="selected"] {
+  background-color: var(--console-row-active);
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+[data-console] tbody tr:focus-visible {
+  outline: none;
+  background-color: var(--console-row-hover);
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+/* Numeric columns line up only if the glyphs are fixed-width. */
+[data-console] tbody td.text-right,
+[data-console] thead th.text-right {
+  font-variant-numeric: tabular-nums;
+}
+/* Sticky header. The scroll container is the wrapper inside <Table>, so the
+   th itself sticks; it needs an opaque fill or rows show through. */
+[data-console] .admin-table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--console-sticky-bg);
+  box-shadow: inset 0 -1px 0 0 var(--console-rule);
+}
+
+/* ── Vendor console tokens ────────────────────────────────────────────────
+   The `app-*` namespace above is one shared source of truth, and its
+   `--accent` is the NextAdmin purple. The admin re-points it to blue in
+   admin.css; the vendor console had nothing, so every shared component
+   spelled in `app-accent` (the table's sort headers, the active pagination
+   page, row-action hover) rendered PURPLE on vendor routes. Re-point it to
+   the vendor's action colour — the same darkened logo cyan `BRAND_VARS`
+   already uses, because #3BD9DA is 1.7:1 on white and is fill-only.
+
+   `--accent` collides with shadcn's own hsl-channel `--accent` app-wide; that
+   collision predates this block and is worked around with SELECT_ITEM (see
+   components/shared/Panel.tsx). Setting a hex here changes nothing about it. */
+[data-console="vendor"] {
+  --accent: #117479;
+  --accent-hover: #0d5c60;
+  --accent-soft: rgba(17, 116, 121, 0.09);
+  --accent-fg: #ffffff;
+  /* Page ground the white panels read against. Explicit rather than
+     `--surface-2`, whose dark value is a translucent white that would leave
+     the shell see-through. */
+  --console-page-bg: #f5f7fa;
+  background-color: var(--console-page-bg);
+}
+.dark [data-console="vendor"] {
+  --console-page-bg: #0f1416;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    DESIGN SYSTEM TOKENS  (designe.md)
    Blue primary · Warm sand · Teal accents · Airy neutrals
    ═══════════════════════════════════════════════════════════════ */

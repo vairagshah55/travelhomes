@@ -506,7 +506,7 @@ const Help = () => {
       <DashboardLayoutShell>
         <DashboardLayout
           title="Help"
-          contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
+          
         >
           {/* pb clears the fixed MobileVendorNav on small screens. */}
           <div className="pb-24 lg:pb-12">

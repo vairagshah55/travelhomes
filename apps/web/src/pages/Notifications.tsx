@@ -25,10 +25,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { AdminDetailDrawer } from "@/components/admin/AdminDetailDrawer";
+import { useTableUrlState } from "@/components/admin/useTableUrlState";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   BRAND_VARS,
+  CONSOLE_PORTAL_VARS,
   BTN_NEUTRAL,
   BTN_SOFT,
   CONTROL,
@@ -175,10 +177,20 @@ const bucketOf = (raw?: string): BucketKey => {
 const Notifications = () => {
   const queryClient = useQueryClient();
 
-  const [filter, setFilter] = useState<FilterKey>("all");
-  const [search, setSearch] = useState("");
+  /* Filter, search and the open notification live in `?tab=&q=&id=` — the same
+     hook the other console lists use, so "the payout notice I'm looking at" is
+     a link and a refresh does not drop you back to All. */
+  const {
+    tab: rawFilter,
+    setTab: setFilter,
+    q: search,
+    setQ: setSearch,
+    selectedId: openId,
+    setSelectedId: setOpenId,
+  } = useTableUrlState({ defaultTab: "all" });
+  const filter = rawFilter as FilterKey;
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [openNotif, setOpenNotif] = useState<NotifRow | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
   const [deleting, setDeleting] = useState(false);
 
@@ -323,12 +335,19 @@ const Notifications = () => {
   /** Falls back to "All" — a category filter disappears once its last row goes. */
   const activeRailItem = railItems.find((i) => i.key === filter) ?? railItems[0];
 
+  /* Derived from `?id=`: a notification that is deleted or filtered out closes
+     the drawer on its own instead of leaving a ghost record open. */
+  const openNotif = openId ? (visible.find((n) => rowId(n) === openId) ?? null) : null;
+  const setOpenNotif = (n: NotifRow | null) => setOpenId(n ? rowId(n) : null);
   const openMeta = openNotif ? metaFor(openNotif) : null;
+  /* Position within the list currently on screen, so the drawer can walk it
+     without closing — reading a queue of notifications is a sequence, and the
+     old dialog made it open/close/open/close. */
+  const openIndex = openNotif ? visible.findIndex((n) => rowId(n) === rowId(openNotif)) : -1;
 
   return (
     <DashboardLayout
       title="Notifications"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
@@ -789,52 +808,51 @@ const Notifications = () => {
         </div>
       </div>
 
-      {/* ── Notification detail ── */}
-      <Dialog open={!!openNotif} onOpenChange={(open) => !open && setOpenNotif(null)}>
-        <DialogContent
-          style={BRAND_VARS}
-          className="sm:max-w-[520px] p-0 gap-0 overflow-hidden rounded-[18px] bg-card border-border/70"
+      {/* ── Notification detail ─────────────────────────────────────────────
+          Was a centred Dialog over the list. The list is the context that makes
+          one notification mean anything ("is this the third failed payout this
+          week?"), so it opens beside it now — same fields, same delete action,
+          plus prev/next to walk the queue. */}
+      {openNotif && openMeta && (
+        <AdminDetailDrawer
+          open
+          onClose={() => setOpenNotif(null)}
+          portalStyle={CONSOLE_PORTAL_VARS}
+          eyebrow={openMeta.label}
+          title={openNotif.title}
+          subtitle={`${absolute(openNotif.createdAt)} · ${relative(openNotif.createdAt)}`}
+          media={
+            <span
+              className="grid place-items-center w-9 h-9 rounded-[10px]"
+              style={{ backgroundColor: `${openMeta.color}1f`, color: openMeta.color }}
+            >
+              <openMeta.icon size={16} strokeWidth={2.3} />
+            </span>
+          }
+          position={
+            openIndex >= 0 ? { index: openIndex + 1, total: visible.length } : undefined
+          }
+          onPrev={openIndex > 0 ? () => setOpenNotif(visible[openIndex - 1]) : undefined}
+          onNext={
+            openIndex >= 0 && openIndex < visible.length - 1
+              ? () => setOpenNotif(visible[openIndex + 1])
+              : undefined
+          }
+          footer={
+            <button
+              onClick={() => setPendingDelete([rowId(openNotif)])}
+              className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12.5px] font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-150"
+            >
+              <Trash2 size={14} strokeWidth={2.3} />
+              Delete
+            </button>
+          }
         >
-          {openNotif && openMeta && (
-            <>
-              <div className="px-6 pt-6 pb-4 border-b border-border/70">
-                <span
-                  className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11.5px] font-bold"
-                  style={{ backgroundColor: `${openMeta.color}1f`, color: openMeta.color }}
-                >
-                  <openMeta.icon size={12} strokeWidth={2.5} />
-                  {openMeta.label}
-                </span>
-                <DialogTitle className="mt-3 pr-8 text-left text-[18px] font-bold leading-6 tracking-[-0.01em] text-foreground">
-                  {openNotif.title}
-                </DialogTitle>
-                <p className="mt-1 text-[12px] tabular-nums text-muted-foreground">
-                  {absolute(openNotif.createdAt)} · {relative(openNotif.createdAt)}
-                </p>
-              </div>
-
-              <div className="px-6 py-5 max-h-[52vh] overflow-y-auto">
-                <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground/80">
-                  {openNotif.message}
-                </p>
-              </div>
-
-              <footer className={cn(PANEL_FOOTER, "px-6 justify-end gap-2")}>
-                <button
-                  onClick={() => setPendingDelete([rowId(openNotif)])}
-                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl text-[12.5px] font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-150"
-                >
-                  <Trash2 size={14} strokeWidth={2.3} />
-                  Delete
-                </button>
-                <Button variant="ghost" onClick={() => setOpenNotif(null)} className={BTN_NEUTRAL}>
-                  Close
-                </Button>
-              </footer>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+          <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap text-foreground/80">
+            {openNotif.message}
+          </p>
+        </AdminDetailDrawer>
+      )}
 
       {/* Deleting was previously silent and irreversible — confirm it. */}
       <ConfirmModal

@@ -1579,136 +1579,29 @@ body.admin-scope {
   line-height: 20px;
 }
 
-/* ── Data-table styling ───────────────────────────────────────────────────
-   Modern admin-table conventions: the header is a quiet label row (12px,
-   uppercase, muted, tracked) rather than a second heading competing with the
-   page title, and the DATA is what carries weight. Row height comes from 14px
-   vertical padding, which keeps ~10 rows on a laptop viewport without feeling
-   cramped. Applies to any <Table> primitive inside the admin shell.        */
-[data-brand="admin"] thead tr {
-  background-color: var(--tpl-gray-2);
-  border-bottom: 1px solid var(--tpl-stroke);
-}
-[data-brand="admin"] thead th {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--tpl-dark-5);
-  padding-top: 11px;
-  padding-bottom: 11px;
-  text-align: left;
-  vertical-align: middle;
-  white-space: nowrap;
-}
-[data-brand="admin"] tbody td {
-  font-size: 13.5px;
-  color: var(--tpl-dark-3);
-  padding-top: 14px;
-  padding-bottom: 14px;
-  vertical-align: middle;
-}
-[data-brand="admin"] tbody tr {
-  border-bottom: 1px solid var(--tpl-gray-3);
-}
-[data-brand="admin"] tbody tr:last-child {
-  border-bottom: 0;
-}
-[data-brand="admin"] tbody tr:hover {
-  background-color: var(--glass-bg-hover, rgba(37, 99, 235, 0.045));
-}
-/* Selected rows read as a soft blue wash, one step stronger than hover. */
-[data-brand="admin"] tbody tr[data-state="selected"] {
-  background-color: rgba(37, 99, 235, 0.06);
-}
+/* ── Data-table styling ─────────────────────────────────────────────
+   The table RULES now live in global.css under `[data-console]`, because the
+   vendor console imports the same <AdminDataTable> but never loads this
+   stylesheet — admin.css is imported by AdminApp alone, which is what keeps it
+   off the public bundle. Keeping the rules here meant the shared component
+   rendered as a compact console in one app and as the raw shadcn primitive
+   (48px headers, 16px bold header text) in the other.
 
-/* ── Admin table density ──────────────────────────────────────────────────
-   Compact rows: ~40px instead of ~46px, which fits roughly two more records
-   on a laptop viewport. An admin table is read far more than it is admired,
-   and the row you want is usually the one just below the fold.
-
-   Scoped to [data-admin-app] — carried ONLY by the AdminLayout root — rather
-   than [data-brand="admin"], which the vendor console's shell also sets. The
-   admin is a lazy chunk in the same document as the rest of the app, so this
-   stylesheet is still live after navigating from /admin to a vendor route;
-   keying off the shared brand attribute would re-space the vendor console's
-   tables the moment someone had visited the admin in that session.
-
-   Header rows lose the grey fill at the same time: a filled header plus a
-   hairline plus uppercase tracking is three separators doing one job, and the
-   fill is what made the table read as a widget sitting on the card instead of
-   as the card's own content. */
-[data-admin-app] thead tr {
-  background-color: transparent;
+   What stays here is only what is admin-SPECIFIC: the ink and rule colours,
+   fed to the shared rules as variables. Same pixels as before — the values are
+   the `tpl-*` ones this block has always used. */
+[data-brand="admin"] {
+  --console-rule: var(--tpl-stroke);
+  --console-rule-soft: var(--tpl-gray-3);
+  --console-header-ink: var(--tpl-dark-5);
+  --console-cell-ink: var(--tpl-dark-3);
+  --console-sticky-bg: var(--tpl-card-bg);
 }
-[data-admin-app] thead th {
-  padding-top: 9px;
-  padding-bottom: 9px;
-  font-size: 11px;
-}
-[data-admin-app] tbody td {
-  padding-top: 9.5px;
-  padding-bottom: 9.5px;
-  font-size: 13px;
-}
-/* Numeric columns line up only if the glyphs are fixed-width. */
-[data-admin-app] tbody td.text-right,
-[data-admin-app] thead th.text-right {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ── Row state: keyboard cursor + selection ───────────────────────────────
-   Both states are a 3px accent edge on the leading side plus a faint wash,
-   rather than a filled row. A fill at accent strength turns every selected
-   row into a button and drops the contrast of the text sitting on it; an edge
-   marks the row without touching what is written in it.
-
-   `:focus-visible` (not `:focus`) is what keeps this a KEYBOARD cursor —
-   clicking a row also focuses it (so the drawer has somewhere to return focus
-   to), and a ring appearing under the pointer on every click reads as a bug.
-
-   Admin-only: the vendor console shares these components but not this
-   stylesheet's [data-admin-app] root. */
-[data-admin-app] tbody tr:focus-visible {
-  outline: none;
-  background-color: rgba(37, 99, 235, 0.05);
-  box-shadow: inset 3px 0 0 0 var(--accent);
-}
-[data-admin-app] tbody tr[data-state="selected"] {
-  box-shadow: inset 3px 0 0 0 var(--accent);
-}
-
-/* Sticky header — the scroll container is the wrapper inside <Table>, so the
-   th itself sticks. Needs an opaque background or rows show through. */
-[data-brand="admin"] .admin-table-sticky thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background-color: var(--tpl-gray-2);
-  box-shadow: inset 0 -1px 0 0 var(--tpl-stroke);
-}
-.dark [data-brand="admin"] thead tr {
-  background-color: var(--tpl-dark-2);
-}
-.dark [data-brand="admin"] thead th {
-  color: #ffffff;
-}
-.dark [data-brand="admin"] tbody td {
-  color: var(--tpl-dark-7);
-}
-.dark [data-brand="admin"] tbody tr {
-  border-bottom-color: var(--tpl-stroke);
-}
-.dark [data-brand="admin"] tbody tr:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-}
-
-/* Sticky header fill, admin only. Must sit AFTER the [data-brand="admin"]
-   sticky rule above: both selectors compute to the same specificity, so this
-   wins on source order alone. Placed earlier it silently lost and the header
-   kept the grey fill the rule above removes. */
-[data-admin-app] .admin-table-sticky thead th {
-  background-color: var(--tpl-card-bg);
+.dark [data-brand="admin"] {
+  --console-header-ink: #ffffff;
+  --console-cell-ink: var(--tpl-dark-7);
+  --console-rule-soft: var(--tpl-stroke);
+  --console-row-hover: rgba(255, 255, 255, 0.03);
 }
 
 /* ── Search input pill — ported from template's Header search box ─────

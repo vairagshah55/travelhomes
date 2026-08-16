@@ -17,8 +17,11 @@ import {
 import DashboardLayout from "@/components/DashboardLayout";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
+import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
+import { useTableUrlState } from "@/components/admin/useTableUrlState";
 import {
   BRAND_VARS,
+  CONSOLE_PORTAL_VARS,
   ConfirmModal,
   Panel,
   PanelHead,
@@ -68,10 +71,22 @@ const Offers = () => {
   const { token: authToken } = useAuth();
   const token = authToken ?? undefined;
 
-  const [tab, setTab] = useState<TabKey>("all");
-  const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("latest");
-  const [page, setPage] = useState(1);
+  /* Tab, search, sort, page and the open record live in `?tab=&q=&sort=&page=&id=`,
+     the same hook the admin lists use. A refresh — or the redirect back from an
+     edit — used to drop you on page 1 of "All" with nothing selected. */
+  const {
+    tab: rawTab,
+    setTab,
+    q: search,
+    setQ: setSearch,
+    sort,
+    setSort,
+    page,
+    setPage,
+    selectedId: viewId,
+    setSelectedId: setViewId,
+  } = useTableUrlState({ defaultTab: "all", defaultSort: "latest" });
+  const tab = rawTab as TabKey;
 
   const [editing, setEditing] = useState<OfferDTO | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<OfferDTO | null>(null);
@@ -127,7 +142,18 @@ const Offers = () => {
   const safePage = Math.min(page, totalPages);
   const rows = visible.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
-  const resetPage = () => setPage(1);
+  /* Drawer position within the whole filtered set, not just the page on
+     screen — stepping to the next offering shouldn't stop at a pagination
+     boundary that exists for the table's benefit. */
+  const viewIndex = viewId ? visible.findIndex((o) => o._id === viewId) : -1;
+  const viewOffer = viewIndex >= 0 ? visible[viewIndex] : null;
+
+  /* No local resetPage(): setTab/setQ/setSort already drop `?page=`. Calling
+     both in one handler actively BROKE the write — react-router hands each
+     functional update the same current params, so the second call recomputed
+     from a base that never had the first call's change and silently discarded
+     it. The search box wrote `?q=` and the page reset wiped it in the same
+     tick. */
 
   /* ── Mutations ──────────────────────────────────────────────────────────
      Every write passes the token. The previous page called update / setStatus
@@ -273,7 +299,7 @@ const Offers = () => {
      approved, resume only from deactivated. The old menu offered Cancel on
      every row, which 403'd on anything already approved. ── */
   const rowActions: RowAction<OfferDTO>[] = [
-    { label: "View", icon: Eye, onClick: (o) => navigate(`/offering/${o._id}`) },
+    { label: "View", icon: Eye, onClick: (o) => setViewId(o._id ?? null) },
     { label: "Quick edit", icon: Pencil, onClick: (o) => setEditing(o) },
     {
       label: "Pause listing",
@@ -306,7 +332,6 @@ const Offers = () => {
   return (
     <DashboardLayout
       title="Offers"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
@@ -371,10 +396,7 @@ const Offers = () => {
             <TabStrip
               tabs={TABS.map((t) => ({ ...t, count: counts[t.key] }))}
               activeKey={tab}
-              onChange={(k) => {
-                setTab(k as TabKey);
-                resetPage();
-              }}
+              onChange={setTab}
               className="border-b-0"
             />
           </div>
@@ -382,17 +404,11 @@ const Offers = () => {
           <div className="px-5 py-3.5 border-y border-border/70">
             <AdminToolbar
               searchValue={search}
-              onSearchChange={(v) => {
-                setSearch(v);
-                resetPage();
-              }}
+              onSearchChange={setSearch}
               searchPlaceholder="Search name, category or city…"
               sortOptions={SORT_OPTIONS}
               sortValue={sort}
-              onSortChange={(v) => {
-                setSort(v);
-                resetPage();
-              }}
+              onSortChange={setSort}
             />
           </div>
 
@@ -413,7 +429,7 @@ const Offers = () => {
             rowActions={rowActions}
             rowBusy={(o) => busyIds.includes(o._id ?? "")}
             getRowId={(row, index) => row._id ?? String(index)}
-            onRowClick={(o) => navigate(`/offering/${o._id}`)}
+            onRowClick={(o) => setViewId(o._id ?? null)}
             pagination={
               visible.length > PER_PAGE
                 ? {
@@ -434,6 +450,24 @@ const Offers = () => {
           )}
         </Panel>
       </div>
+
+      {/* The same inspector the admin opens on a listing — one rendering of one
+          record, in whichever accent the console is wearing. */}
+      {viewOffer && (
+        <ViewDetailsPopup
+          isOpen
+          onClose={() => setViewId(null)}
+          listingData={viewOffer}
+          portalStyle={CONSOLE_PORTAL_VARS}
+          position={{ index: viewIndex + 1, total: visible.length }}
+          onPrev={viewIndex > 0 ? () => setViewId(visible[viewIndex - 1]._id ?? null) : undefined}
+          onNext={
+            viewIndex < visible.length - 1
+              ? () => setViewId(visible[viewIndex + 1]._id ?? null)
+              : undefined
+          }
+        />
+      )}
 
       <OfferEditDialog offer={editing} onClose={() => setEditing(null)} onSave={saveEdit} />
 

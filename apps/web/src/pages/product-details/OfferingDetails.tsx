@@ -287,6 +287,7 @@ const OfferingDetails = () => {
   return (
     <DashboardLayout
       title="Offering"
+      fillHeight
       contentClassName="flex-1 overflow-hidden flex flex-col pr-5 pb-5"
     >
       {/* Scrollable body — title moved into the hero banner below */}

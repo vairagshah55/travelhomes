@@ -38,6 +38,8 @@ import {
   BRAND_VARS,
   BTN_NEUTRAL,
   BTN_PRIMARY,
+  BTN_SOFT,
+  CONSOLE_PORTAL_VARS,
   CONTROL,
   Panel,
   PanelHead,
@@ -59,7 +61,19 @@ import {
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
+import {
+  AdminDetailDrawer,
+  DetailField,
+  DetailSection,
+} from "@/components/admin/AdminDetailDrawer";
 import { currencyINR, toAmount } from "@/utils/currency";
+
+/* Query params this page owns. */
+const URL_FILTERS: UrlFilterDef[] = [
+  { key: "when", type: "select" },
+  { key: "status", type: "select" },
+];
 
 const ITEMS_PER_PAGE = 15;
 
@@ -116,17 +130,39 @@ const BookingDetails = () => {
   const { user, token: authToken } = useAuth();
   const token = authToken ?? undefined;
 
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [timeFilter, setTimeFilter] = useState<"all" | "today" | "week" | "month">("all");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "confirmed" | "active" | "cancelled"
-  >("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
+  /* Tab, search, the two filters, page and the open record live in the URL —
+     the same hook the admin lists use, so a refresh (or coming back from the
+     edit panel) lands on the same screen instead of page 1 of "Upcoming". */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchQuery,
+    setQ: setSearchQuery,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId: detailId,
+    setSelectedId: setDetailId,
+  } = useTableUrlState({ filters: URL_FILTERS, defaultTab: "upcoming" });
+  const timeFilter = ((filters.when as string) || "all") as "all" | "today" | "week" | "month";
+  const statusFilter = ((filters.status as string) || "all") as
+    | "all"
+    | "pending"
+    | "confirmed"
+    | "active"
+    | "cancelled";
+  const setTimeFilter = (v: string) =>
+    setFilters({ ...filters, when: v === "all" ? "" : v });
+  const setStatusFilter = (v: string) =>
+    setFilters({ ...filters, status: v === "all" ? "" : v });
+  const setCurrentPage = setPage;
   const queryClient = useQueryClient();
 
-  // Panel states
-  const [detailOpen, setDetailOpen] = useState(false);
+  /* The DETAIL view is keyed by id (in `?id=`) rather than by a copy of the
+     row: the drawer steps through the filtered list, so it needs a position in
+     that list, and a row that disappears (filtered out, cancelled) should close
+     the drawer rather than leave a stale record on screen. */
   const [editOpen, setEditOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [saving, setSaving] = useState(false);
@@ -155,10 +191,9 @@ const BookingDetails = () => {
     status: "pending",
   });
 
-  // Reset to page 1 when tab or filter changes
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, timeFilter]);
+  /* The page-reset effect that used to live here is gone — setTab/setFilters
+     drop `?page=` themselves, and on mount the effect used to override a
+     deep-linked page number. */
 
   // ─── Data loading ──────────────────────────────────────────────────────────
   const bookingsKey = ["bookingDetails", "list", user?.id, token] as const;
@@ -296,6 +331,8 @@ const BookingDetails = () => {
 
   // ─── Pagination ────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(filteredBookings.length / ITEMS_PER_PAGE));
+  // A `?page=` carried over from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginatedRows = filteredBookings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
@@ -304,9 +341,18 @@ const BookingDetails = () => {
     timeFilter !== "all" || statusFilter !== "all" || searchQuery.trim().length > 0;
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
-  const handleView = (b: any) => {
-    setSelectedBooking(b);
-    setDetailOpen(true);
+  const handleView = (b: any) => setDetailId(b._id || b.id);
+
+  /* Drawer position within the FILTERED list, derived from the id — that is
+     what lets prev/next walk the list without closing, and what makes a row
+     that drops out of the filter close the drawer instead of going stale. */
+  const detailIndex = detailId
+    ? filteredBookings.findIndex((b) => (b._id || b.id) === detailId)
+    : -1;
+  const detailBooking = detailIndex >= 0 ? filteredBookings[detailIndex] : null;
+  const bookingIdAt = (i: number) => {
+    const row = filteredBookings[i];
+    return row ? row._id || row.id : null;
   };
 
   const handleEdit = (b: any, e?: React.MouseEvent) => {
@@ -565,7 +611,6 @@ const BookingDetails = () => {
   return (
     <DashboardLayout
       title="Booking Details"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
       <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
@@ -804,73 +849,71 @@ const BookingDetails = () => {
         </Panel>
       </div>
 
-      {/* ── Detail Panel ── */}
-      <SlidePanel
-        open={detailOpen}
-        onClose={() => setDetailOpen(false)}
-        title="Booking Detail"
-        icon={<Eye size={16} className="text-brand" />}
-      >
-        {selectedBooking && (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-[13px] font-bold text-brand tabular-nums">
-                {selectedBooking.id}
-              </span>
-              <StatusBadge status={selectedBooking.status} />
-            </div>
-            <InfoRow
-              icon={<User size={15} />}
-              label="Client Name"
-              value={selectedBooking.clientName}
-            />
-            <InfoRow
-              icon={<MapPin size={15} />}
-              label="Service"
-              value={selectedBooking.serviceName}
-            />
-            <InfoRow
-              icon={<Calendar size={15} />}
-              label="Check In"
-              value={selectedBooking.checkIn}
-            />
-            <InfoRow
-              icon={<Clock size={15} />}
-              label="Check Out"
-              value={selectedBooking.checkOut}
-            />
-            <InfoRow
-              icon={<Users size={15} />}
-              label="Guests"
-              value={String(selectedBooking.guests || "—")}
-            />
-            <InfoRow
-              icon={<IndianRupee size={15} />}
+      {/* ── Detail drawer ──────────────────────────────────────────────────
+          Was a hand-rolled <SlidePanel>: it slid in from the right, but it
+          rendered inline with `aria-modal` and no focus trap, so Tab walked
+          straight out of it into the table behind, and closing left focus on
+          <body>. This is the same drawer the admin console uses — focus trap,
+          focus returned to the originating row, and prev/next stepping the
+          filtered list. The EDIT panel below is still a SlidePanel: it is a
+          form, and editing was explicitly out of scope for this pass. */}
+      {detailBooking && (
+        <AdminDetailDrawer
+          open
+          onClose={() => setDetailId(null)}
+          portalStyle={CONSOLE_PORTAL_VARS}
+          eyebrow="Booking"
+          title={detailBooking.id}
+          subtitle={detailBooking.serviceName}
+          status={<StatusBadge status={detailBooking.status} />}
+          position={{ index: detailIndex + 1, total: filteredBookings.length }}
+          onPrev={detailIndex > 0 ? () => setDetailId(bookingIdAt(detailIndex - 1)) : undefined}
+          onNext={
+            detailIndex < filteredBookings.length - 1
+              ? () => setDetailId(bookingIdAt(detailIndex + 1))
+              : undefined
+          }
+          footer={
+            <button
+              type="button"
+              /* BTN_SOFT is sized for the shadcn <Button>, which supplies the
+                 flex base itself; on a raw <button> the icon and label stack. */
+              className={cn(BTN_SOFT, "inline-flex items-center justify-center")}
+              onClick={() => {
+                // One layer at a time: hand off to the edit panel rather than
+                // stacking it over the drawer.
+                const row = detailBooking;
+                setDetailId(null);
+                handleEdit(row);
+              }}
+            >
+              <Pencil size={14} /> Edit booking
+            </button>
+          }
+        >
+          <DetailSection title="Trip">
+            <DetailField label="Check in" value={detailBooking.checkIn} />
+            <DetailField label="Check out" value={detailBooking.checkOut} />
+            <DetailField label="Guests" value={String(detailBooking.guests || "")} />
+            <DetailField
               label="Price"
-              value={currencyINR(toAmount(selectedBooking.servicePrice))}
+              value={
+                <span className="tabular-nums">
+                  {currencyINR(toAmount(detailBooking.servicePrice))}
+                </span>
+              }
             />
-            <InfoRow
-              icon={<MapPin size={15} />}
-              label="Location"
-              value={selectedBooking.location}
-            />
-            {selectedBooking.contactEmail && (
-              <InfoRow
-                icon={<Mail size={15} />}
-                label="Email"
-                value={selectedBooking.contactEmail}
-              />
-            )}
-            {selectedBooking.contactPhone && (
-              <InfoRow
-                icon={<Phone size={15} />}
-                label="Phone"
-                value={selectedBooking.contactPhone}
-              />
-            )}
-          </div>
-        )}
-      </SlidePanel>
+            <DetailField label="Service" value={detailBooking.serviceName} full />
+            <DetailField label="Location" value={detailBooking.location} full />
+          </DetailSection>
+
+          <DetailSection title="Client">
+            <DetailField label="Name" value={detailBooking.clientName} />
+            <DetailField label="Phone" value={detailBooking.contactPhone} />
+            <DetailField label="Email" value={detailBooking.contactEmail} full />
+          </DetailSection>
+        </AdminDetailDrawer>
+      )}
 
       {/* ── Edit Panel ── */}
       <SlidePanel

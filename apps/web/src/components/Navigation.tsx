@@ -30,12 +30,12 @@ import {
    `BRAND_VARS` + the kit's tokens from `components/shared/Panel.tsx`, so
    `bg-brand` / `text-brand` resolve teal here exactly as they do inside a
    Panel, and the active row is the same sliding `layoutId` pill the Settings
-   and Notifications rails use. The surface stays faint teal (#f1f8f7 with a
-   #dce7e5 hairline) because DashboardHeader uses those exact values — rail and
-   header are one piece of chrome.
+   and Notifications rails use. Surface and hairline come from the `app-*`
+   console tokens (see the [data-console] block in global.css) — the same ones
+   DashboardHeader reads, so rail and header stay one piece of chrome.
 
    LAYOUT CONTRACT — three bands, exactly one of which scrolls:
-     1. brand row      (84px, fixed — lines up with the header)
+     1. brand row      (56px, fixed — lines up with the top bar)
      2. nav            (flex-1, the ONLY scroll container: Main Menu + Support
                         live inside it and move together)
      3. logout footer  (one row, fixed)
@@ -383,24 +383,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               aria-current={active ? "page" : undefined}
               aria-label={item.label}
               data-active-row={isAnchor ? "" : undefined}
-              style={
-                !active && item.color
-                  ? { backgroundColor: `${item.color}1f`, color: item.color }
-                  : undefined
-              }
               className={cn(
                 "relative grid place-items-center w-10 h-10 rounded-xl outline-none",
-                "transition-[background-color,color,box-shadow] duration-150",
+                "transition-[background-color,color] duration-150",
                 "focus-visible:ring-2 focus-visible:ring-brand/40",
                 active
-                  ? "bg-brand text-brand-fg shadow-[0_1px_2px_rgba(59,217,218,0.48),0_6px_16px_-8px_rgba(59,217,218,0.65)]"
-                  : "hover:brightness-95",
+                  ? "bg-brand/[0.1] text-brand"
+                  : "text-app-fg-subtle hover:bg-app-surface-2 hover:text-app-fg",
               )}
             >
-              <item.icon size={18} strokeWidth={2.1} />
+              <item.icon size={18} strokeWidth={active ? 2.3 : 1.9} />
               {/* unread dot — the count itself only fits in the tooltip */}
               {badge > 0 && !active && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#f23030] ring-2 ring-[#f1f8f7] dark:ring-[#0f1117]" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#f23030] ring-2 ring-app-surface" />
               )}
             </button>
             <CollapsedTooltip label={item.label} badge={badge} />
@@ -435,21 +430,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 "focus-visible:ring-2 focus-visible:ring-brand/40",
               )}
             >
+              {/* Monochrome, like the admin rail. The per-item `color` is still
+                  in SECTIONS (the mobile nav and a few badges read it) but is
+                  no longer painted here: nine hues in one rail was the
+                  strongest "bought template" signal left in the console, and
+                  it made the active row compete with eight inactive ones. */}
               <span
                 className={cn(
                   "grid place-items-center w-7 h-7 rounded-lg shrink-0",
-                  "transition-transform duration-150 group-hover:scale-[1.05]",
-                  active && "bg-brand text-brand-fg",
+                  "transition-colors duration-150",
+                  active ? "text-brand" : "text-app-fg-subtle group-hover:text-app-fg",
                 )}
-                style={
-                  active
-                    ? undefined
-                    : item.color
-                      ? { backgroundColor: `${item.color}1f`, color: item.color }
-                      : undefined
-                }
               >
-                <item.icon size={15} strokeWidth={2.1} />
+                <item.icon size={17} strokeWidth={active ? 2.3 : 1.9} />
               </span>
 
               <span
@@ -592,18 +585,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         style={{ ...BRAND_VARS, width: forceExpanded ? "100%" : isOpen ? 256 : 68 }}
+        /* Surface + hairline are the `app-*` tokens rather than the literal
+           #f1f8f7 / #dce7e5 pair, so the rail follows whatever the console
+           scope defines and stays in step with DashboardHeader, which used to
+           carry the same two literals. */
         className="
           relative flex flex-col h-full overflow-hidden
-          bg-[#f1f8f7] dark:bg-[#0f1117]
-          shadow-[inset_-1px_0_0_#dce7e5] dark:shadow-[inset_-1px_0_0_#1c1f26]
+          bg-app-surface
+          shadow-[inset_-1px_0_0_var(--surface-border)]
           transition-[width] duration-300 ease-in-out
         "
       >
-        {/* ─── Brand row — 84px so its bottom edge lines up with the header ─── */}
+        {/* ─── Brand row — 56px so its bottom edge lines up with the top bar ─── */}
         <div
           className={cn(
-            "flex items-center h-[84px] shrink-0 px-3.5",
-            "shadow-[inset_0_-1px_0_#dce7e5] dark:shadow-[inset_0_-1px_0_#1c1f26]",
+            "flex items-center h-14 shrink-0 px-3",
+            "shadow-[inset_0_-1px_0_var(--surface-border)]",
             !isOpen && "justify-center",
           )}
         >
@@ -656,7 +653,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   hairline is a divider inside the same scroller. */}
               <div
                 className={cn(
-                  "mt-3 pt-3 border-t border-[#dce7e5] dark:border-[#1c1f26]",
+                  "mt-3 pt-3 border-t border-app-border",
                   isOpen ? "mx-4" : "mx-3",
                 )}
               />
@@ -672,7 +669,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-hidden
             className={cn(
               "pointer-events-none absolute inset-x-0 top-0 h-6 transition-opacity duration-200",
-              "bg-gradient-to-b from-[#f1f8f7] dark:from-[#0f1117] to-transparent",
+              "bg-gradient-to-b from-app-surface to-transparent",
               edges.top ? "opacity-100" : "opacity-0",
             )}
           />
@@ -680,14 +677,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             aria-hidden
             className={cn(
               "pointer-events-none absolute inset-x-0 bottom-0 h-8 transition-opacity duration-200",
-              "bg-gradient-to-t from-[#f1f8f7] dark:from-[#0f1117] to-transparent",
+              "bg-gradient-to-t from-app-surface to-transparent",
               edges.bottom ? "opacity-100" : "opacity-0",
             )}
           />
         </div>
 
         {/* ─── Footer — logout only, so the scroller keeps the height ─── */}
-        <div className="shrink-0 py-2.5 shadow-[inset_0_1px_0_#dce7e5] dark:shadow-[inset_0_1px_0_#1c1f26]">
+        <div className="shrink-0 py-2.5 shadow-[inset_0_1px_0_var(--surface-border)]">
           {renderLogout()}
         </div>
       </div>

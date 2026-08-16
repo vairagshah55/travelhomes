@@ -30,6 +30,27 @@ export const BRAND_VARS = {
    vendor's cyan. They now live in components/admin/adminUI.ts as
    `PORTAL_VARS`, independent of this set. */
 
+/**
+ * Vendor token set for PORTALLED console surfaces — the shared drawer, and any
+ * Radix layer that renders components spelled in the `app-*` namespace.
+ *
+ * `BRAND_VARS` covers `bg-brand` / `text-brand`, but the shared console
+ * components (AdminDetailDrawer, AdminDataTable's menus) are written in
+ * `app-*`, whose `--accent` is the NextAdmin purple at `:root`. A portalled
+ * node sits on <body>, outside `[data-console="vendor"]` where global.css
+ * re-points it, so it has to be restated here or a vendor drawer opens purple.
+ *
+ * The surface vars are deliberately NOT restated: `:root` already provides the
+ * light values and `.dark` the dark ones, and both are correct on <body>.
+ */
+export const CONSOLE_PORTAL_VARS = {
+  ...BRAND_VARS,
+  "--accent": "#117479",
+  "--accent-hover": "#0d5c60",
+  "--accent-soft": "rgba(17, 116, 121, 0.09)",
+  "--accent-fg": "#ffffff",
+} as React.CSSProperties;
+
 /** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
 export const PANEL =
   "bg-card rounded-[18px] border border-border/70 " +

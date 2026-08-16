@@ -10,6 +10,7 @@ export { StatTile, StatTileSkeleton } from "./StatTile";
 export {
   ACTIVE_PILL,
   BRAND_VARS,
+  CONSOLE_PORTAL_VARS,
   PANEL,
   PANEL_FOOTER,
   CONTROL,

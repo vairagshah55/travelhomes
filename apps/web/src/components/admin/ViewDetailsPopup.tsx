@@ -8,7 +8,6 @@ import {
   AdminDetailDrawer,
   DetailField,
   DetailList,
-  DetailNote,
   DetailPhotos,
   DetailSection,
 } from "./AdminDetailDrawer";
@@ -44,6 +43,13 @@ interface ViewDetailsPopupProps {
   position?: { index: number; total: number };
   onPrev?: () => void;
   onNext?: () => void;
+  /**
+   * Token set for the portalled panel — defaults to the admin's blue. The
+   * vendor console renders this same inspector for its own offerings and
+   * passes `CONSOLE_PORTAL_VARS`, since a listing is a listing and forking it
+   * would give the two consoles two different renderings of one record.
+   */
+  portalStyle?: React.CSSProperties;
 }
 
 /* ── Value helpers (unchanged) ────────────────────────────────────────────── */
@@ -112,6 +118,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   position,
   onPrev,
   onNext,
+  portalStyle,
 }) => {
   if (!isOpen) return null;
 
@@ -188,6 +195,7 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
          a modal. 720px still fits the three-up overview and a four-across
          photo grid. */
       width="lg"
+      portalStyle={portalStyle}
       loading={isLoading || !listingData}
       media={
         photos[0] ? (

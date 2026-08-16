@@ -240,7 +240,6 @@ const Bookings = () => {
   return (
     <DashboardLayout
       title="Bookings"
-      contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
     >
       {/* Wider than the other console pages on purpose — this is a month ×
           resource grid, and squeezing it to max-w-6xl only adds scrolling.

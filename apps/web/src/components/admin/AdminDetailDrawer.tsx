@@ -54,6 +54,16 @@ interface AdminDetailDrawerProps {
   loading?: boolean;
   /** Fetch failed — replaces the body with the reason. */
   error?: string | null;
+  /**
+   * Token set for the portalled panel. Radix renders the sheet as a child of
+   * <body>, outside whichever console root is in scope, so the vars have to be
+   * restated on the panel itself — there is nothing to inherit from.
+   *
+   * Defaults to the admin's blue (`PORTAL_VARS`). The vendor console passes
+   * `CONSOLE_PORTAL_VARS` from components/shared/Panel.tsx; without it a vendor
+   * drawer opens in admin blue over a cyan page.
+   */
+  portalStyle?: React.CSSProperties;
   children: React.ReactNode;
 }
 
@@ -78,6 +88,7 @@ export function AdminDetailDrawer({
   media,
   loading = false,
   error = null,
+  portalStyle = PORTAL_VARS,
   children,
 }: AdminDetailDrawerProps) {
   const stepper =
@@ -108,7 +119,7 @@ export function AdminDetailDrawer({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side="right"
-        style={PORTAL_VARS}
+        style={portalStyle}
         onCloseAutoFocus={(event) => {
           const target = restoreRef.current;
           // Only take over when the origin is still on the page — a row that

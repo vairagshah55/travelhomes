@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Plus, Award, Search, ChevronDown, CheckCircle2, Clock, IndianRupee } from "lucide-react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ import {
   StatTileSkeleton,
 } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { CONSOLE_PORTAL_VARS } from "@/components/shared";
+import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +33,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { currencyINR } from "@/utils/currency";
+
+/* Query params this page owns. */
+const URL_FILTERS: UrlFilterDef[] = [{ key: "type", type: "select" }];
 
 const ITEMS_PER_PAGE = 12;
 
@@ -92,14 +98,25 @@ const CardSkeleton = () => (
 
 const Offering = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const initialTab = (searchParams.get("tab") as "approved" | "pending") || "approved";
-  const [activeTab, setActiveTab] = useState<"approved" | "pending">(initialTab);
-  const [page, setPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "camper-van" | "unique-stay" | "activity">(
-    "all",
-  );
+  /* The page already honoured `?tab=` on mount, one way. It is two-way now, and
+     search, type, page and the open record ride along in the same place — the
+     shared hook the admin lists use. */
+  const {
+    tab: rawTab,
+    setTab: setActiveTab,
+    q: searchQuery,
+    setQ: setSearchQuery,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId: viewId,
+    setSelectedId: setViewId,
+  } = useTableUrlState({ filters: URL_FILTERS, defaultTab: "approved" });
+  const activeTab = rawTab as "approved" | "pending";
+  const typeFilter = (filters.type as string) || "all";
+  const setTypeFilter = (value: string) =>
+    setFilters(value === "all" ? {} : { type: value });
   const { user, token: authToken } = useAuth();
   const queryClient = useQueryClient();
   const token = authToken ?? undefined;
@@ -113,9 +130,6 @@ const Offering = () => {
   } | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    setPage(1);
-  }, [activeTab]);
   const enabled = !!user?.id;
 
   const approvedQuery = useQuery<OfferDTO[]>({
@@ -163,9 +177,10 @@ const Offering = () => {
     });
   }, [baseOffers, typeFilter, searchQuery]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, typeFilter]);
+  /* The page-reset effect that used to sit here is gone: the URL hook resets
+     `?page=` inside setQ/setFilters/setTab. As an effect it also ran on MOUNT,
+     which meant a deep link like `?q=camper&page=2` snapped back to page 1
+     before the operator saw it. */
 
   const stats = useMemo(() => {
     const revenue = approvedOffers.reduce((sum, o) => sum + Number(o.regularPrice || 0), 0);
@@ -179,6 +194,10 @@ const Offering = () => {
   const totalPages = Math.ceil(offers.length / ITEMS_PER_PAGE);
   const paginated = offers.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
   const hasActiveQuery = typeFilter !== "all" || searchQuery.trim().length > 0;
+
+  /* Position within the whole filtered set, so prev/next crosses page edges. */
+  const viewIndex = viewId ? offers.findIndex((o) => o._id === viewId) : -1;
+  const viewOffer = viewIndex >= 0 ? offers[viewIndex] : null;
 
   const onDelete = (id: string) => {
     const listing = offers.find((o) => o._id === id);
@@ -215,7 +234,6 @@ const Offering = () => {
     <>
       <DashboardLayout
         title="Offerings"
-        contentClassName="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
       >
         {/* pb clears the fixed MobileVendorNav on small screens. */}
         <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
@@ -412,7 +430,7 @@ const Offering = () => {
                     listing={listing}
                     onDelete={onDelete}
                     onEdit={onEdit}
-                    onCardClick={(id) => navigate(`/offering/${id}`)}
+                    onCardClick={(id) => setViewId(id)}
                   />
                 ))}
               </motion.div>
@@ -428,6 +446,23 @@ const Offering = () => {
           )}
         </div>
       </DashboardLayout>
+      {/* Same inspector the admin opens on a listing, in the vendor's accent. */}
+      {viewOffer && (
+        <ViewDetailsPopup
+          isOpen
+          onClose={() => setViewId(null)}
+          listingData={viewOffer}
+          portalStyle={CONSOLE_PORTAL_VARS}
+          position={{ index: viewIndex + 1, total: offers.length }}
+          onPrev={viewIndex > 0 ? () => setViewId(offers[viewIndex - 1]._id ?? null) : undefined}
+          onNext={
+            viewIndex < offers.length - 1
+              ? () => setViewId(offers[viewIndex + 1]._id ?? null)
+              : undefined
+          }
+        />
+      )}
+
       <ConfirmModal
         open={!!confirm}
         onClose={() => !deleting && setConfirm(null)}

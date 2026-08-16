@@ -334,7 +334,9 @@ const VendorChat = () => {
   return (
     <DashboardLayout
       title="Messages"
-      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden p-4 lg:p-6 bg-muted/40 dark:bg-transparent"
+      /* Owns its own height: the shell stops scrolling for this page. */
+      fillHeight
+      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden p-4 lg:p-6"
     >
       {/* The two panes own their scrolling — the page itself never scrolls, so
           the composer stays put like a real chat client. */}

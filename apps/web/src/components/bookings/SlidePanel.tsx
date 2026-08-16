@@ -62,8 +62,14 @@ export const SlidePanel = ({
 
       {/* Panel */}
       <div
-        role="dialog"
-        aria-modal="true"
+        /* The panel stays mounted and slides on a transform, so the dialog role
+           has to be conditional: advertised while closed it left a permanent
+           `aria-modal` dialog in the accessibility tree, which a screen reader
+           reads as "there is a modal open" on every page that mounts one. It
+           also collided with the real drawer now used for the detail view —
+           two dialogs, one of them a ghost. */
+        role={open ? "dialog" : undefined}
+        aria-modal={open ? true : undefined}
         aria-hidden={!open}
         style={{ ...BRAND_VARS, width, maxWidth: "100vw" }}
         className={cn(
