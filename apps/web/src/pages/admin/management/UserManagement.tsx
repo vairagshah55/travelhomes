@@ -30,13 +30,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import AdminLayout from "@/components/admin/AdminLayout";
+import UserDetailsPopup from "@/components/admin/UserDetailsPopup";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import {
   AdminFilterBar,
-  type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
@@ -48,6 +48,7 @@ import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { userSchema, type UserFormValues, USER_STATUS_OPTIONS } from "./userSchema";
 import { BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 const TABS = [
   { key: "all-users", label: "All Users" },
@@ -67,6 +68,15 @@ const SORT_OPTIONS = [
 
 const ITEMS_PER_PAGE = 10;
 
+/* Query params this page owns. Declared at module scope: useTableUrlState needs
+   key/type before `filterDefs` exists, since those options are derived from the
+   loaded users. */
+const URL_FILTERS: UrlFilterDef[] = [
+  { key: "status", type: "select" },
+  { key: "location", type: "select" },
+  { key: "joined", type: "date-range" },
+];
+
 /* Metric row shown on the "All Users" tab. Counts are derived from the list
    already in hand — no extra request, and they stay in step with the table. */
 const STAT_DEFS = [
@@ -80,14 +90,32 @@ const UserManagement = () => {
   // The route only checks *view* on manage_users; a role can hold view without
   // create/edit/delete, so the write affordances are gated separately.
   const access = useFeatureAccess(ADMIN_FEATURES.users);
-  const [activeTab, setActiveTab] = useState("all-users");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("userSince");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const [detailsUser, setDetailsUser] = useState<User | null>(null);
+  /* View state lives in the URL — tab, search, sort, page, filters and the open
+     record — so a refresh or a pasted link lands on the same screen. Selection
+     stays in React state: it is a transient act, not a place. */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchTerm,
+    setQ: setSearchTerm,
+    sort: sortBy,
+    setSort: setSortBy,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId,
+    setSelectedId,
+    hasActiveQuery,
+    clearQuery,
+  } = useTableUrlState({
+    filters: URL_FILTERS,
+    defaultTab: "all-users",
+    defaultSort: "userSince",
+  });
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [formState, setFormState] = useState<{ mode: "add" | "edit"; user?: User } | null>(null);
   const [confirm, setConfirm] = useState<{
     title: string;
@@ -100,8 +128,9 @@ const UserManagement = () => {
   const { query, createUser, updateUser, deleteUser } = useUsers(activeTab);
   const users = query.data ?? [];
 
+  // Page resets are handled by the URL hook; what still has to be dropped is a
+  // selection made against a list that no longer exists.
   useEffect(() => {
-    setCurrentPage(1);
     setSelectedIds([]);
   }, [activeTab, searchTerm, sortBy, filters]);
 
@@ -170,12 +199,19 @@ const UserManagement = () => {
     });
   }, [users, searchTerm, sortBy, filters]);
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  // A `?page=` carried over from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
-  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
+
+  /* The drawer walks the full filtered set rather than the current page. The id
+     is what persists (in `?id=`); the index is derived from it, so a record
+     that drops out of the list closes the drawer instead of going stale. */
+  const detailsIndex = selectedId ? filtered.findIndex((u) => u._id === selectedId) : -1;
+  const detailsUser = detailsIndex >= 0 ? filtered[detailsIndex] : null;
 
   const askDelete = (user: User) =>
     setConfirm({
@@ -265,7 +301,7 @@ const UserManagement = () => {
   ];
 
   const rowActions: RowAction<User>[] = [
-    { label: "View", icon: Eye, onClick: (u) => setDetailsUser(u) },
+    { label: "View", icon: Eye, onClick: (u) => setSelectedId(u._id) },
     ...(access.canEdit
       ? [
           {
@@ -360,29 +396,41 @@ const UserManagement = () => {
             }
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
             noResultsDescription="Try different keywords or remove filters."
-            noResultsAction={{
-              label: "Clear filters",
-              onClick: () => {
-                setSearchTerm("");
-                setFilters({});
-              },
-            }}
+            noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
             selectable={!isSubscribers && access.canDelete}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
             rowActions={isSubscribers ? undefined : rowActions}
+            /* Subscriber rows are an email and a date — there is no record
+               behind them to open. */
+            onRowClick={isSubscribers ? undefined : (u) => setSelectedId(u._id)}
             pagination={{
               currentPage,
               totalPages,
               pageSize: ITEMS_PER_PAGE,
               totalItems: filtered.length,
-              onPageChange: setCurrentPage,
+              onPageChange: setPage,
             }}
           />
         </div>
       </MotionReveal>
 
-      <UserDetailsDialog user={detailsUser} onClose={() => setDetailsUser(null)} />
+      {detailsUser && (
+        <UserDetailsPopup
+          isOpen
+          onClose={() => setSelectedId(null)}
+          user={detailsUser}
+          position={{ index: detailsIndex + 1, total: filtered.length }}
+          onPrev={
+            detailsIndex > 0 ? () => setSelectedId(filtered[detailsIndex - 1]._id) : undefined
+          }
+          onNext={
+            detailsIndex < filtered.length - 1
+              ? () => setSelectedId(filtered[detailsIndex + 1]._id)
+              : undefined
+          }
+        />
+      )}
 
       <UserFormDialog
         state={formState}
@@ -417,41 +465,9 @@ const UserManagement = () => {
   );
 };
 
-/* ── Read-only details dialog ───────────────────────────────────────────── */
-function UserDetailsDialog({ user, onClose }: { user: User | null; onClose: () => void }) {
-  const rows: Array<[string, React.ReactNode]> = user
-    ? [
-        ["User ID", user.userId],
-        ["Name", user.name],
-        ["User Since", formatDate(user.userSince)],
-        ["Booked Services", user.bookedServices || "0"],
-        ["Location", user.location],
-        ["Status", <StatusBadge key="s" status={user.status} />],
-        ["Email", user.email],
-        ["Phone", user.phone],
-      ]
-    : [];
-
-  return (
-    <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>User Details</DialogTitle>
-        </DialogHeader>
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-          {rows.map(([label, value]) => (
-            <div key={label} className="space-y-1 min-w-0">
-              <dt className="text-[12px] font-semibold text-tpl-dark-5 dark:text-tpl-dark-6">
-                {label}
-              </dt>
-              <dd className="text-[14px] text-tpl-dark dark:text-white truncate">{value}</dd>
-            </div>
-          ))}
-        </dl>
-      </DialogContent>
-    </Dialog>
-  );
-}
+/* The page-local read-only dialog that used to live here was deleted: it was a
+   second, slightly different rendering of a user record. `UserDetailsPopup`
+   (now a drawer) is the one, and it is also what the analytics report opens. */
 
 /* ── Add/Edit form dialog — shadcn Dialog + react-hook-form + zod ────────── */
 function UserFormDialog({

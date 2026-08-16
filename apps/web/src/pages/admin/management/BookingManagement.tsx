@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Eye, Trash2, CalendarX, SearchX } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import BookingDetailsPopup from "@/components/admin/BookingDetailsPopup";
@@ -8,7 +8,6 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import {
   AdminFilterBar,
-  type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
@@ -18,6 +17,7 @@ import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { formatDate } from "@/utils/formateTime";
 import { CARD_FLUSH } from "@/components/admin/adminUI";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 const TABS = [
   { key: "all-bookings", label: "All Bookings" },
@@ -40,6 +40,11 @@ const SERVICE_TYPE_OPTIONS = [
 
 const ITEMS_PER_PAGE = 15;
 
+/* Which query params this page owns. Declared at module scope because
+   useTableUrlState needs the key/type pairs before the data (and therefore the
+   full FilterDefinition list, whose options are derived) exists. */
+const URL_FILTERS: UrlFilterDef[] = [{ key: "serviceType", type: "select" }];
+
 /**
  * Maps the AdminToolbar sort dropdown value to the backend sort field.
  * The toolbar stores values that already match backend fields for bookings,
@@ -53,18 +58,29 @@ function mapSortValue(val: string): string {
 
 const BookingManagement: React.FC = () => {
   const access = useFeatureAccess(ADMIN_FEATURES.bookings);
-  const [activeTab, setActiveTab] = useState("all-bookings");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("bookingId");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
 
-  // The drawer walks the whole FILTERED result set, not just the current page —
-  // stepping to the next record shouldn't stop at a pagination boundary that
-  // exists for the table's benefit rather than the operator's. Index (not the
-  // row object) is the state, so prev/next is a ±1 and the position readout
-  // comes for free.
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  /* Tab, search, sort, page and the open record all live in the URL, so a
+     refresh restores the exact view and the address bar is shareable. */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchTerm,
+    setQ: setSearchTerm,
+    sort: sortBy,
+    setSort: setSortBy,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId,
+    setSelectedId,
+    hasActiveQuery,
+    clearQuery,
+  } = useTableUrlState({
+    filters: URL_FILTERS,
+    defaultTab: "all-bookings",
+    defaultSort: "bookingId",
+  });
 
   // Single confirm state drives the one shared ConfirmModal.
   const [confirm, setConfirm] = useState<{
@@ -88,11 +104,6 @@ const BookingManagement: React.FC = () => {
 
   const bookings = query.data ?? [];
 
-  // Reset page whenever any query-influencing state changes.
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchTerm, sortBy, filters]);
-
   const filterDefs: FilterDefinition[] = [
     {
       key: "serviceType",
@@ -103,19 +114,23 @@ const BookingManagement: React.FC = () => {
   ];
 
   const totalPages = Math.max(1, Math.ceil(bookings.length / ITEMS_PER_PAGE));
+  // A `?page=` deep-linked from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginated = bookings.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
+  /* The drawer walks the whole FILTERED result set, not just the current page —
+     stepping to the next record shouldn't stop at a pagination boundary that
+     exists for the table's benefit rather than the operator's. The id is the
+     source of truth (it survives a refresh); the index is derived, so prev/next
+     is a ±1 and the position readout comes for free. A record that drops out of
+     the list closes the drawer on its own rather than showing a stale record. */
+  const selectedIndex = selectedId ? bookings.findIndex((b) => b._id === selectedId) : -1;
+  const selectedBooking = selectedIndex >= 0 ? bookings[selectedIndex] : null;
 
-  const selectedBooking = selectedIndex !== null ? (bookings[selectedIndex] ?? null) : null;
-
-  const handleView = (booking: Booking) => {
-    const index = bookings.findIndex((b) => b._id === booking._id);
-    if (index >= 0) setSelectedIndex(index);
-  };
+  const handleView = (booking: Booking) => setSelectedId(booking._id);
 
   const askDelete = (booking: Booking) =>
     setConfirm({
@@ -225,13 +240,7 @@ const BookingManagement: React.FC = () => {
             emptyDescription="Bookings will appear here once guests make reservations."
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching bookings"}
             noResultsDescription="Try different keywords or remove filters."
-            noResultsAction={{
-              label: "Clear filters",
-              onClick: () => {
-                setSearchTerm("");
-                setFilters({});
-              },
-            }}
+            noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
             rowActions={rowActions}
             onRowClick={handleView}
             pagination={{
@@ -239,22 +248,24 @@ const BookingManagement: React.FC = () => {
               totalPages,
               pageSize: ITEMS_PER_PAGE,
               totalItems: bookings.length,
-              onPageChange: setCurrentPage,
+              onPageChange: setPage,
             }}
           />
         </div>
       </MotionReveal>
 
-      {selectedBooking && selectedIndex !== null && (
+      {selectedBooking && (
         <BookingDetailsPopup
           isOpen
-          onClose={() => setSelectedIndex(null)}
+          onClose={() => setSelectedId(null)}
           booking={selectedBooking}
           position={{ index: selectedIndex + 1, total: bookings.length }}
-          onPrev={selectedIndex > 0 ? () => setSelectedIndex(selectedIndex - 1) : undefined}
+          onPrev={
+            selectedIndex > 0 ? () => setSelectedId(bookings[selectedIndex - 1]._id) : undefined
+          }
           onNext={
             selectedIndex < bookings.length - 1
-              ? () => setSelectedIndex(selectedIndex + 1)
+              ? () => setSelectedId(bookings[selectedIndex + 1]._id)
               : undefined
           }
         />

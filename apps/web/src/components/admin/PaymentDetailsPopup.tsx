@@ -1,5 +1,15 @@
 import React from "react";
-import { X } from "lucide-react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { AdminDetailDrawer, DetailField, DetailSection } from "./AdminDetailDrawer";
+
+/**
+ * Payment inspector.
+ *
+ * Was a centred overlay of `text-base font-bold` labels over smaller values —
+ * the label outweighing the value it describes. Now a right-side drawer on the
+ * shared tokens, so the payments table stays visible while a transaction is
+ * being read, and the amount and transaction id are tabular.
+ */
 
 interface PaymentDetailsPopupProps {
   isOpen: boolean;
@@ -14,81 +24,70 @@ interface PaymentDetailsPopupProps {
     paymentMode?: string;
     transactionId?: string;
   };
+  /** Walk the filtered list without closing. */
+  position?: { index: number; total: number };
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-const PaymentDetailsPopup: React.FC<PaymentDetailsPopupProps> = ({ isOpen, onClose, payment }) => {
-  if (!isOpen) return null;
-
+const PaymentDetailsPopup: React.FC<PaymentDetailsPopupProps> = ({
+  isOpen,
+  onClose,
+  payment,
+  position,
+  onPrev,
+  onNext,
+}) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
+    <AdminDetailDrawer
+      open={isOpen}
+      onClose={onClose}
+      eyebrow="Payment"
+      title={payment.paymentId || "Payment"}
+      subtitle={payment.businessName || undefined}
+      status={payment.status ? <StatusBadge status={payment.status} /> : undefined}
+      position={position}
+      onPrev={onPrev}
+      onNext={onNext}
+    >
+      <DetailSection title="Transaction">
+        <DetailField
+          label="Amount"
+          value={
+            payment.amount ? (
+              <span className="tabular-nums">{payment.amount}</span>
+            ) : (
+              ""
+            )
+          }
+        />
+        <DetailField label="Payment mode" value={payment.paymentMode} />
+        <DetailField
+          label="Transaction ID"
+          value={
+            payment.transactionId ? (
+              <span className="break-all tabular-nums">{payment.transactionId}</span>
+            ) : (
+              ""
+            )
+          }
+          full
+        />
+      </DetailSection>
 
-      {/* Modal */}
-      <div className="relative bg-white rounded-xl p-5 sm:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-xl">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-6 right-6 p-1 rounded-full bg-gray-200 hover:bg-gray-300 transition-colors"
-        >
-          <X className="w-4 h-4 text-black" />
-        </button>
+      <DetailSection title="Payer">
+        <DetailField label="Business name" value={payment.businessName} />
+        <DetailField label="Person name" value={payment.personName} />
+      </DetailSection>
 
-        {/* Header */}
-        <div className="mb-7 pr-8">
-          <h2 className="text-2xl font-bold text-black">Payment Details</h2>
-        </div>
-
-        {/* Content */}
-        <div className="space-y-9">
-          {/* First Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Payment ID</label>
-              <p className="text-sm font-normal text-gray-700">{payment.paymentId}</p>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Business Name</label>
-              <p className="text-sm font-normal text-gray-700">{payment.businessName}</p>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Person Name</label>
-              <p className="text-sm font-normal text-gray-700">{payment.personName}</p>
-            </div>
-          </div>
-
-          {/* Second Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Services ID</label>
-              <p className="text-sm font-normal text-gray-700">{payment.servicesId}</p>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Status</label>
-              <p className="text-sm font-normal text-gray-700">{payment.status}</p>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Amount</label>
-              <p className="text-sm font-normal text-gray-700">{payment.amount || "N/A"}</p>
-            </div>
-          </div>
-
-          {/* Third Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-9">
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Payment Mode</label>
-              <p className="text-sm font-normal text-gray-700">{payment.paymentMode || "N/A"}</p>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-base font-bold text-gray-800">Transaction ID</label>
-              <p className="text-sm font-normal text-gray-700 break-all">
-                {payment.transactionId || "N/A"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <DetailSection title="Service">
+        <DetailField label="Services ID" value={payment.servicesId} />
+        <DetailField
+          label="Status"
+          value={payment.status ? <StatusBadge status={payment.status} /> : ""}
+        />
+      </DetailSection>
+    </AdminDetailDrawer>
   );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Search, Filter, MoreHorizontal, X } from "lucide-react";
+import { Search, Filter, MoreHorizontal } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import HelpDeskPopup from "@/components/admin/HelpDeskPopup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -350,84 +344,22 @@ const AdminHelpDesk: React.FC = () => {
         </div>
       </div>
 
-      {/* Help Desk Details Dialog */}
-      <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-3xl w-[calc(100%-2rem)] sm:w-full p-5 sm:p-8 max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="space-y-7">
-            <DialogTitle className="text-2xl font-bold text-dashboard-heading font-geist tracking-tight">
-              Help Desk
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedItem && (
-            <div className="space-y-9">
-              {/* First Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Name
-                  </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.vendorName || selectedItem.name || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Email / Company
-                  </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px] break-words">
-                    {selectedItem.companyName || selectedItem.email || "N/A"}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Date
-                  </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {formatDate(selectedItem.date || selectedItem.createdAt || new Date())}
-                  </p>
-                </div>
-              </div>
-
-              {/* Second Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Status
-                  </label>
-                  <p className="text-sm text-dashboard-text font-poppins">{selectedItem.status}</p>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Subject
-                  </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.subject}
-                  </p>
-                </div>
-                <div className="space-y-3">
-                  <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                    Phone
-                  </label>
-                  <p className="text-sm text-dashboard-body font-plus-jakarta tracking-[0.2px]">
-                    {selectedItem.phoneNumber || "N/A"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Message */}
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-dashboard-text font-geist tracking-[0.16px]">
-                  Description
-                </label>
-                <p className="text-sm text-dashboard-body font-plus-jakarta leading-6 tracking-[0.16px]">
-                  {selectedItem.message || selectedItem.description || "N/A"}
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Ticket detail — the shared drawer, the same one the dashboard's
+          recent-tickets widget opens. The page-local dialog that used to live
+          here rendered the same record with a different type scale. */}
+      <HelpDeskPopup
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        ticket={
+          selectedItem
+            ? {
+                ...selectedItem,
+                date: String(selectedItem.date ?? ""),
+                createdAt: String(selectedItem.createdAt ?? ""),
+              }
+            : null
+        }
+      />
     </AdminLayout>
   );
 };

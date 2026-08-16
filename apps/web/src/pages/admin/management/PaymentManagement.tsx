@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Eye, SearchX, Trash2, CreditCard } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import PaymentDetailsPopup from "@/components/admin/PaymentDetailsPopup";
@@ -8,7 +8,6 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import {
   AdminFilterBar,
-  type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
@@ -17,6 +16,7 @@ import { usePayments, type PaymentData } from "@/hooks/admin/usePayments";
 import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { CARD_FLUSH } from "@/components/admin/adminUI";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 const TABS = [
   { key: "payment-received", label: "Payment Received" },
@@ -38,16 +38,35 @@ const SERVICE_TYPE_OPTIONS = [
 
 const ITEMS_PER_PAGE = 15;
 
+/* Query params this page owns. */
+const URL_FILTERS: UrlFilterDef[] = [{ key: "serviceType", type: "select" }];
+
 const PaymentManagement: React.FC = () => {
   const access = useFeatureAccess(ADMIN_FEATURES.payments);
-  const [activeTab, setActiveTab] = useState("payment-received");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("paymentId");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const [showPaymentDetails, setShowPaymentDetails] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentData | null>(null);
+  /* Tab, search, sort, page, filters and the open record live in the URL, so
+     "the failed payment I'm looking at" is a link. */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchTerm,
+    setQ: setSearchTerm,
+    sort: sortBy,
+    setSort: setSortBy,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId,
+    setSelectedId,
+    hasActiveQuery,
+    clearQuery,
+  } = useTableUrlState({
+    filters: URL_FILTERS,
+    defaultTab: "payment-received",
+    defaultSort: "paymentId",
+  });
+
   const [confirm, setConfirm] = useState<{
     title: string;
     description: string;
@@ -68,10 +87,6 @@ const PaymentManagement: React.FC = () => {
 
   const payments = query.data ?? [];
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchTerm, sortBy, filters]);
-
   const filterDefs: FilterDefinition[] = [
     {
       key: "serviceType",
@@ -82,17 +97,19 @@ const PaymentManagement: React.FC = () => {
   ];
 
   // The data is already filtered server-side; client-side slice for pagination only.
-  const totalPages = Math.ceil(payments.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(payments.length / ITEMS_PER_PAGE));
+  // A `?page=` carried over from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginated = useMemo(
     () => payments.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
     [payments, currentPage],
   );
-  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
-  const handleView = (payment: PaymentData) => {
-    setSelectedPayment(payment);
-    setShowPaymentDetails(true);
-  };
+  /* `?id=` is the open record; the index is derived so prev/next is a ±1. */
+  const selectedIndex = selectedId ? payments.findIndex((p) => p._id === selectedId) : -1;
+  const selectedPayment = selectedIndex >= 0 ? payments[selectedIndex] : null;
+
+  const handleView = (payment: PaymentData) => setSelectedId(payment._id);
 
   const askDelete = (payment: PaymentData) =>
     setConfirm({
@@ -109,15 +126,10 @@ const PaymentManagement: React.FC = () => {
   const columns: ColumnDef<PaymentData>[] = [
     {
       key: "paymentId",
+      // Plain text: the whole row opens the drawer, so a link here would be a
+      // second target for the same destination.
       header: "Payment ID",
-      cell: (p) => (
-        <button
-          onClick={() => handleView(p)}
-          className="font-semibold text-tpl-primary hover:underline"
-        >
-          {p.paymentId}
-        </button>
-      ),
+      cell: (p) => <span className="font-semibold text-app-fg tabular-nums">{p.paymentId}</span>,
     },
     {
       key: "businessName",
@@ -199,38 +211,36 @@ const PaymentManagement: React.FC = () => {
             emptyDescription="Payment records appear here once transactions are processed."
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching payments"}
             noResultsDescription="Try different keywords or remove filters."
-            noResultsAction={{
-              label: "Clear filters",
-              onClick: () => {
-                setSearchTerm("");
-                setFilters({});
-              },
-            }}
+            noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
             rowActions={rowActions}
+            onRowClick={handleView}
             pagination={{
               currentPage,
               totalPages,
               pageSize: ITEMS_PER_PAGE,
               totalItems: payments.length,
-              onPageChange: setCurrentPage,
+              onPageChange: setPage,
             }}
           />
         </div>
       </MotionReveal>
 
-      <PaymentDetailsPopup
-        isOpen={showPaymentDetails}
-        onClose={() => setShowPaymentDetails(false)}
-        payment={
-          selectedPayment ?? {
-            paymentId: "",
-            businessName: "",
-            personName: "",
-            servicesId: "",
-            status: "",
+      {selectedPayment && (
+        <PaymentDetailsPopup
+          isOpen
+          onClose={() => setSelectedId(null)}
+          payment={selectedPayment}
+          position={{ index: selectedIndex + 1, total: payments.length }}
+          onPrev={
+            selectedIndex > 0 ? () => setSelectedId(payments[selectedIndex - 1]._id) : undefined
           }
-        }
-      />
+          onNext={
+            selectedIndex < payments.length - 1
+              ? () => setSelectedId(payments[selectedIndex + 1]._id)
+              : undefined
+          }
+        />
+      )}
 
       <ConfirmModal
         open={!!confirm}

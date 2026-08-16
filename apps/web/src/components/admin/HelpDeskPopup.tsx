@@ -1,98 +1,105 @@
 import React from "react";
-import { X } from "lucide-react";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  AdminDetailDrawer,
+  DetailField,
+  DetailNote,
+  DetailSection,
+} from "./AdminDetailDrawer";
+
+/**
+ * Support-ticket inspector.
+ *
+ * Was a centred overlay carrying its own font stack (`font-geist`,
+ * `font-plus-jakarta`, `font-poppins` in one panel) and literal `#2A2A2A`
+ * inks. Now a right-side drawer on the shared tokens.
+ *
+ * The shape is deliberately loose: the dashboard's "recent tickets" widget and
+ * the help-desk page hold the same record under different keys (`vendorName`
+ * vs `name`, `message` vs `description`), and both render through here rather
+ * than each keeping its own dialog.
+ */
+
+export interface HelpDeskTicket {
+  vendorName?: string;
+  name?: string;
+  email?: string;
+  companyName?: string;
+  phoneNumber?: string;
+  date?: string;
+  createdAt?: string;
+  status?: string;
+  subject?: string;
+  message?: string;
+  description?: string;
+}
 
 interface HelpDeskPopupProps {
   isOpen: boolean;
   onClose: () => void;
-  ticket?: {
-    vendorName: string;
-    email: string;
-    date: string;
-    status: string;
-    subject: string;
-    message: string;
-  };
+  ticket?: HelpDeskTicket | null;
+  /** Walk the filtered list without closing. */
+  position?: { index: number; total: number };
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({ isOpen, onClose, ticket }) => {
+const formatDate = (value?: string) => {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? value
+    : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+};
+
+const HelpDeskPopup: React.FC<HelpDeskPopupProps> = ({
+  isOpen,
+  onClose,
+  ticket,
+  position,
+  onPrev,
+  onNext,
+}) => {
   if (!isOpen || !ticket) return null;
 
+  const requester = ticket.vendorName || ticket.name || "Unknown sender";
+  const body = ticket.message || ticket.description || "";
+
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl p-5 sm:p-8 w-full max-w-[774px] max-h-[90vh] overflow-y-auto relative">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-6 right-6 w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center hover:bg-gray-300 transition-colors"
-        >
-          <X size={16} className="text-black" />
-        </button>
+    <AdminDetailDrawer
+      open={isOpen}
+      onClose={onClose}
+      eyebrow="Support ticket"
+      title={ticket.subject || "No subject"}
+      subtitle={requester}
+      status={ticket.status ? <StatusBadge status={ticket.status} /> : undefined}
+      position={position}
+      onPrev={onPrev}
+      onNext={onNext}
+    >
+      <DetailSection title="Sender">
+        <DetailField label="Name" value={requester} />
+        <DetailField label="Phone" value={ticket.phoneNumber} />
+        <DetailField label="Email / company" value={ticket.companyName || ticket.email} full />
+      </DetailSection>
 
-        {/* Header */}
-        <h2 className="text-2xl font-bold text-[#131313] font-geist mb-7 pr-8">Help Desk</h2>
+      <DetailSection title="Ticket">
+        <DetailField label="Raised" value={formatDate(ticket.date || ticket.createdAt)} />
+        <DetailField
+          label="Status"
+          value={ticket.status ? <StatusBadge status={ticket.status} /> : ""}
+        />
+        <DetailField label="Subject" value={ticket.subject} full />
+      </DetailSection>
 
-        {/* Content */}
-        <div className="space-y-9">
-          {/* First Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-10">
-            <div>
-              <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-                Vendor Name
-              </div>
-              <div className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                {ticket.vendorName}
-              </div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-                Email
-              </div>
-              <div className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                {ticket.email}
-              </div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-                Date
-              </div>
-              <div className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                {ticket.date}
-              </div>
-            </div>
-          </div>
-
-          {/* Second Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-10">
-            <div>
-              <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-                Status
-              </div>
-              <div className="text-sm text-[#212121] font-poppins leading-[30px]">
-                {ticket.status}
-              </div>
-            </div>
-            <div>
-              <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-                Subject
-              </div>
-              <div className="text-sm text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.2px]">
-                {ticket.subject}
-              </div>
-            </div>
-          </div>
-
-          {/* Message Section */}
-          <div className="flex-1">
-            <div className="text-base font-bold text-[#212121] font-geist mb-3 leading-[18px] tracking-[0.16px]">
-              Message
-            </div>
-            <div className="text-xs text-[#2A2A2A] font-plus-jakarta leading-6 tracking-[0.16px]">
-              {ticket.message}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <DetailSection title="Message">
+        {body ? (
+          <DetailNote>{body}</DetailNote>
+        ) : (
+          <DetailField label="Message" value="" full />
+        )}
+      </DetailSection>
+    </AdminDetailDrawer>
   );
 };
 

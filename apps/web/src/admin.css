@@ -1657,6 +1657,27 @@ body.admin-scope {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Row state: keyboard cursor + selection ───────────────────────────────
+   Both states are a 3px accent edge on the leading side plus a faint wash,
+   rather than a filled row. A fill at accent strength turns every selected
+   row into a button and drops the contrast of the text sitting on it; an edge
+   marks the row without touching what is written in it.
+
+   `:focus-visible` (not `:focus`) is what keeps this a KEYBOARD cursor —
+   clicking a row also focuses it (so the drawer has somewhere to return focus
+   to), and a ring appearing under the pointer on every click reads as a bug.
+
+   Admin-only: the vendor console shares these components but not this
+   stylesheet's [data-admin-app] root. */
+[data-admin-app] tbody tr:focus-visible {
+  outline: none;
+  background-color: rgba(37, 99, 235, 0.05);
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+[data-admin-app] tbody tr[data-state="selected"] {
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+
 /* Sticky header — the scroll container is the wrapper inside <Table>, so the
    th itself sticks. Needs an opaque background or rows show through. */
 [data-brand="admin"] .admin-table-sticky thead th {

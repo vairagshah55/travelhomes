@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   ArrowDown,
@@ -131,6 +131,26 @@ interface AdminDataTableProps<T> {
   stickyHeader?: boolean;
   /** CSS height cap for the scroll area, e.g. "60vh" or "480px". */
   maxBodyHeight?: string;
+
+  /**
+   * Row-level keyboard navigation: `j`/`k` and ↑/↓ to move, Enter to open, `x`
+   * to select, Escape to clear the selection. Rows carry a roving tabIndex, so
+   * Tab reaches the list once and the arrow keys take over from there.
+   */
+  enableKeyboardNav?: boolean;
+}
+
+/** Keys must never fire while the operator is typing into something. */
+function isTypingTarget(el: EventTarget | null): boolean {
+  const node = el as HTMLElement | null;
+  if (!node || !node.tagName) return false;
+  const tag = node.tagName.toLowerCase();
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    tag === "select" ||
+    node.isContentEditable === true
+  );
 }
 
 const hideBelowClass: Record<NonNullable<ColumnDef<unknown>["hideBelow"]>, string> = {
@@ -191,6 +211,7 @@ export function AdminDataTable<T>({
   className = "",
   stickyHeader = true,
   maxBodyHeight,
+  enableKeyboardNav = true,
 }: AdminDataTableProps<T>) {
   const rowId = (row: T, index: number): string =>
     getRowId
@@ -230,11 +251,120 @@ export function AdminDataTable<T>({
     }
   };
 
+  /* ── Keyboard navigation ────────────────────────────────────────────────
+     One row at a time is tabbable (roving tabIndex), so Tab moves *to* the
+     list rather than through every row in it, and j/k walk it from there.
+     The index is remembered across pagination so returning to a page puts
+     the cursor back where it was rather than at the top. */
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState(0);
+  const navigable = enableKeyboardNav && !isLoading && !isError && data.length > 0;
+
+  // Clamp when the page shrinks — a stale index would leave no tabbable row.
+  useEffect(() => {
+    setFocusedIndex((i) => (data.length ? Math.min(i, data.length - 1) : 0));
+  }, [data.length]);
+
+  const focusRow = useCallback(
+    (index: number, total: number) => {
+      if (!total) return;
+      const clamped = Math.max(0, Math.min(index, total - 1));
+      setFocusedIndex(clamped);
+      const el = containerRef.current?.querySelector<HTMLTableRowElement>(
+        `tr[data-row-index="${clamped}"]`,
+      );
+      el?.focus();
+      // `nearest` keeps a mid-list row still instead of yanking it to centre.
+      el?.scrollIntoView({ block: "nearest" });
+    },
+    [],
+  );
+
+  /**
+   * `j` / `k` with nothing focused enter the table at the remembered row. Arrow
+   * keys are deliberately NOT bound here — at document level they are the
+   * page's scroll, and stealing them would break the one thing every user
+   * expects. Inside the table (where the handler below runs) they work.
+   */
+  useEffect(() => {
+    if (!navigable) return;
+    const onDocKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "j" && e.key !== "k") return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      const active = document.activeElement;
+      // Something else owns focus — including another table on the same page,
+      // whose handler will have called preventDefault before this one runs.
+      if (active && active !== document.body && active !== document.documentElement) return;
+      e.preventDefault();
+      focusRow(focusedIndex, data.length);
+    };
+    document.addEventListener("keydown", onDocKeyDown);
+    return () => document.removeEventListener("keydown", onDocKeyDown);
+  }, [navigable, focusedIndex, data.length, focusRow]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!navigable || isTypingTarget(e.target)) return;
+    const onRow = (e.target as HTMLElement)?.tagName === "TR";
+
+    switch (e.key) {
+      case "j":
+      case "ArrowDown":
+        e.preventDefault();
+        focusRow(onRow ? focusedIndex + 1 : focusedIndex, data.length);
+        break;
+      case "k":
+      case "ArrowUp":
+        e.preventDefault();
+        focusRow(onRow ? focusedIndex - 1 : focusedIndex, data.length);
+        break;
+      case "Home":
+        if (!onRow) return;
+        e.preventDefault();
+        focusRow(0, data.length);
+        break;
+      case "End":
+        if (!onRow) return;
+        e.preventDefault();
+        focusRow(data.length - 1, data.length);
+        break;
+      case "Enter": {
+        // Only from the row itself: Enter on the row-actions trigger belongs to
+        // the menu, and on a link belongs to the link.
+        if (!onRow || !onRowClick) return;
+        const row = data[focusedIndex];
+        if (!row || rowBusy?.(row)) return;
+        e.preventDefault();
+        onRowClick(row);
+        break;
+      }
+      case "x": {
+        if (!onRow || !selectable || !onSelectionChange) return;
+        const row = data[focusedIndex];
+        if (!row) return;
+        e.preventDefault();
+        toggleRow(rowId(row, focusedIndex));
+        break;
+      }
+      case "Escape": {
+        // Only meaningful when there is a selection to drop; otherwise Escape
+        // belongs to whatever layer is above (a drawer, a menu).
+        if (!selectedIds.length || !onSelectionChange) return;
+        e.preventDefault();
+        onSelectionChange([]);
+        break;
+      }
+      default:
+        break;
+    }
+  };
+
   return (
     /* maxBodyHeight is a runtime string, so it can't be a Tailwind arbitrary
        value (those are extracted at build time). It rides in as a CSS custom
        property that a static class then reads. */
     <div
+      ref={containerRef}
+      onKeyDown={handleKeyDown}
       className={className}
       style={
         maxBodyHeight
@@ -384,9 +514,24 @@ export function AdminDataTable<T>({
               return (
                 <TableRow
                   key={id}
+                  data-row-index={index}
                   data-state={selected ? "selected" : undefined}
                   aria-busy={busy || undefined}
-                  onClick={onRowClick && !busy ? () => onRowClick(row) : undefined}
+                  aria-selected={selectable ? selected : undefined}
+                  /* Roving tabIndex: exactly one row is in the tab order, so
+                     Tab reaches the list and j/k walk it. */
+                  tabIndex={navigable ? (index === focusedIndex ? 0 : -1) : undefined}
+                  onFocus={() => setFocusedIndex(index)}
+                  onClick={
+                    onRowClick && !busy
+                      ? (e) => {
+                          // Focus the row before opening so the drawer's focus
+                          // trap has somewhere to return focus to on close.
+                          e.currentTarget.focus();
+                          onRowClick(row);
+                        }
+                      : undefined
+                  }
                   className={`group/row ${onRowClick && !busy ? "cursor-pointer" : ""} ${
                     busy ? "opacity-60 transition-opacity" : ""
                   }`}

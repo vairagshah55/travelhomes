@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Search, SlidersHorizontal, X, type LucideIcon } from "lucide-react";
 import {
   Select,
@@ -62,6 +62,13 @@ interface AdminToolbarProps {
   /** Singular noun for the count, pluralised with a trailing "s". */
   resultNoun?: string;
 
+  /**
+   * `/` anywhere on the page focuses this search box (the convention in every
+   * console-shaped tool). Turn it off for a second toolbar on the same route —
+   * two fields racing for one key is worse than none.
+   */
+  searchHotkey?: boolean;
+
   className?: string;
 }
 
@@ -99,9 +106,40 @@ export function AdminToolbar({
   trailing,
   resultCount,
   resultNoun = "result",
+  searchHotkey = true,
   className = "",
 }: AdminToolbarProps) {
   const hasSelection = selectedCount > 0 && !!bulkActions?.length;
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  /* `/` jumps to search from anywhere on the page — but not while the operator
+     is already typing somewhere, and not when a dialog or drawer is open over
+     the list (Radix marks the rest of the page aria-hidden / inert while a
+     modal layer holds focus, so stealing focus back would fight the trap). */
+  useEffect(() => {
+    if (!searchHotkey) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey || e.defaultPrevented) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select" || el?.isContentEditable) return;
+      const input = searchRef.current;
+      if (!input || input.closest("[aria-hidden='true']") || input.closest("[inert]")) return;
+      e.preventDefault();
+      input.focus();
+      input.select();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [searchHotkey]);
+
+  /** Escape clears a term, or steps out of the field when it is already empty. */
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== "Escape") return;
+    e.stopPropagation();
+    if (searchValue) onSearchChange("");
+    else e.currentTarget.blur();
+  };
 
   const countLabel =
     typeof resultCount === "number"
@@ -177,10 +215,12 @@ export function AdminToolbar({
                   aria-hidden
                 />
                 <input
+                  ref={searchRef}
                   type="text"
                   role="searchbox"
                   value={searchValue}
                   onChange={(e) => onSearchChange(e.target.value)}
+                  onKeyDown={onSearchKeyDown}
                   placeholder={searchPlaceholder}
                   className={`h-9 w-full pl-9 pr-8 rounded-lg border border-app-border bg-app-surface
                     text-[13px] text-app-fg placeholder:text-app-fg-subtle
@@ -191,7 +231,7 @@ export function AdminToolbar({
                 {/* Explicit clear: `type="search"` renders a native ✕ in
                     WebKit but nothing in Firefox, so the affordance was
                     inconsistent across browsers. */}
-                {searchValue && (
+                {searchValue ? (
                   <button
                     onClick={() => onSearchChange("")}
                     className={`absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-5 rounded text-app-fg-subtle hover:text-app-fg hover:bg-app-surface-2 transition-colors ${FOCUS_RING}`}
@@ -199,6 +239,17 @@ export function AdminToolbar({
                   >
                     <X size={13} />
                   </button>
+                ) : (
+                  searchHotkey && (
+                    /* The shortcut has to be discoverable to be worth having.
+                       Hidden on touch widths, where there is no key to press. */
+                    <kbd
+                      aria-hidden
+                      className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 sm:grid place-items-center h-5 min-w-[20px] px-1.5 rounded border border-app-border bg-app-surface-2 text-[10.5px] font-semibold text-app-fg-subtle"
+                    >
+                      /
+                    </kbd>
+                  )
                 )}
               </div>
 

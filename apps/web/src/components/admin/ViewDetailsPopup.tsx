@@ -1,47 +1,52 @@
 import React from "react";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { getImageUrl } from "@/lib/adminUtils";
-import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatINR } from "@/utils/formatCurrency";
+import { BTN_DANGER_SOFT, BTN_PRIMARY, EYEBROW } from "./adminUI";
+import {
+  AdminDetailDrawer,
+  DetailField,
+  DetailList,
+  DetailNote,
+  DetailPhotos,
+  DetailSection,
+} from "./AdminDetailDrawer";
+
+/**
+ * Listing inspector.
+ *
+ * Was a 5xl centred modal — the widest surface in the admin — sitting on top of
+ * the listings table with its own grey/white palette and a teal pricing panel
+ * left over from an earlier skin. It is now the widest drawer (`xl`), which is
+ * still narrower than the modal was but keeps the queue of pending listings
+ * visible beside it: reviewing a submission is a comparison task, and the row
+ * above ("is this the third caravan from this vendor today?") is context the
+ * modal deleted.
+ *
+ * Every section, fallback chain and conditional from the modal is preserved —
+ * only the container and the styling changed. Approve / Reject move to the
+ * drawer footer, where they stay pinned instead of scrolling away below a
+ * photo gallery.
+ */
 
 interface ViewDetailsPopupProps {
   isOpen: boolean;
   onClose: () => void;
   listingData?: any;
-  /** While the full listing is being fetched, show the loader (the row passed
-   *  in is only a summary, so we wait for all details before rendering). */
+  /** While the full listing is being fetched, the drawer body shimmers. */
   isLoading?: boolean;
   onApprove?: () => void;
   onReject?: () => void;
   /** Approve request is in flight — spins the button and blocks both actions. */
   isApproving?: boolean;
+  /** Walk the filtered list without closing. */
+  position?: { index: number; total: number };
+  onPrev?: () => void;
+  onNext?: () => void;
 }
 
-/* ── Small presentational helpers ─────────────────────────────────────────── */
-const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div>
-    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-1">{label}</h4>
-    <p className="text-sm text-gray-800 break-words">{value}</p>
-  </div>
-);
-
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="space-y-3 border-t border-gray-100 pt-6">
-    <h3 className="text-base font-bold text-gray-900">{title}</h3>
-    {children}
-  </div>
-);
-
-const BulletList = ({ items }: { items: string[] }) => (
-  <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
-    {items.map((item, idx) => (
-      <li key={idx}>{item}</li>
-    ))}
-  </ul>
-);
-
-/* ── Value helpers ────────────────────────────────────────────────────────── */
+/* ── Value helpers (unchanged) ────────────────────────────────────────────── */
 const has = (v: any) => v !== undefined && v !== null && v !== "";
 const uniq = (arr: string[]) => Array.from(new Set(arr));
 
@@ -88,6 +93,14 @@ const DISCOUNT_SLOTS: [string, string][] = [
   ["special", "Special"],
 ];
 
+/** Labelled block for free-form groups that aren't label/value pairs. */
+const Block = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="col-span-full space-y-2">
+    <h4 className={EYEBROW}>{title}</h4>
+    {children}
+  </div>
+);
+
 const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   isOpen,
   onClose,
@@ -96,21 +109,13 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   onApprove,
   onReject,
   isApproving = false,
+  position,
+  onPrev,
+  onNext,
 }) => {
   if (!isOpen) return null;
 
-  if (isLoading || !listingData) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl w-full max-w-5xl mx-4 relative max-h-[90vh] flex flex-col items-center justify-center p-20">
-          <Loader2 className="h-12 w-12 animate-spin text-[#2563eb] mb-4" />
-          <p className="text-gray-600">Loading listing details…</p>
-        </div>
-      </div>
-    );
-  }
-
-  const d = listingData;
+  const d = listingData ?? {};
   const photos = getPhotos(d);
 
   const rules = toArray(d.rules || d.rulesAndRegulations || d.policies?.rules);
@@ -146,13 +151,13 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   // Property / capacity details (render only what's present)
   const propertyDetails = (
     [
-      ["Seating Capacity", d.seatingCapacity],
-      ["Sleeping Capacity", d.sleepingCapacity],
-      ["Guest Capacity", d.guestCapacity ?? d.personCapacity ?? d.maxParticipants],
-      ["No. of Beds", d.numberOfBeds],
-      ["No. of Rooms", d.numberOfRooms],
-      ["No. of Bathrooms", d.numberOfBathrooms],
-      ["Stay Type", d.stayType],
+      ["Seating capacity", d.seatingCapacity],
+      ["Sleeping capacity", d.sleepingCapacity],
+      ["Guest capacity", d.guestCapacity ?? d.personCapacity ?? d.maxParticipants],
+      ["No. of beds", d.numberOfBeds],
+      ["No. of rooms", d.numberOfRooms],
+      ["No. of bathrooms", d.numberOfBathrooms],
+      ["Stay type", d.stayType],
       ["Duration", d.timeDuration || d.duration],
     ] as [string, any][]
   ).filter(([, v]) => has(v));
@@ -164,382 +169,294 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
     ...(d.discounts?.[key] || {}),
   })).filter((x) => x.enabled);
 
-  const createdAt = d.createdAt ? new Date(d.createdAt).toLocaleDateString() : null;
+  const createdAt = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-IN") : null;
+  const place = [d.locality, d.city, d.state].filter(Boolean).join(", ");
+
+  const hasBusiness = d.businessDetails || d.brandName || d.businessEmail || d.businessName;
+  const hasPersonal = d.personalDetails || d.personName || d.firstName;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-5xl relative h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center hover:bg-gray-200 transition-colors"
-          aria-label="Close"
-        >
-          <X size={18} className="text-gray-600" />
-        </button>
-
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
-          {/* Header */}
-          <div className="border-b border-gray-200 pb-4 mb-6 pr-10">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-2xl font-bold text-[#2563eb]">Listing Details</h2>
-              {has(d.status) && <StatusBadge status={d.status} />}
-            </div>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-gray-500">
-              {has(d.vendorId) && <span>Vendor ID: {d.vendorId}</span>}
-              {createdAt && <span>Created: {createdAt}</span>}
-              {has(d._id) && <span>ID: {d._id}</span>}
-            </div>
-          </div>
-
-          <div className="space-y-8 font-plus-jakarta text-[#2A2A2A]">
-            {/* Name & Category */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-b border-gray-100 pb-6">
-              <Field label="Name" value={d.name || d.title || "N/A"} />
-              <Field label="Category" value={d.category || "N/A"} />
-            </div>
-
-            {/* Description */}
-            {has(d.description) && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">Description</h3>
-                <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap">
-                  {d.description}
-                </p>
-              </div>
-            )}
-
-            {/* Rejection reason */}
-            {has(d.rejectionReason) && (
-              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                <h4 className="text-xs font-bold text-red-700 uppercase tracking-wide mb-1">
-                  Rejection / Cancellation Reason
-                </h4>
-                <p className="text-sm text-red-800">{d.rejectionReason}</p>
-              </div>
-            )}
-
-            {/* Business Details */}
-            {(d.businessDetails || d.brandName || d.businessEmail || d.businessName) && (
-              <Section title="Business Details">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field
-                    label="Business Name"
-                    value={d.businessDetails?.name || d.brandName || d.businessName || "N/A"}
-                  />
-                  <Field
-                    label="Email"
-                    value={d.businessDetails?.email || d.businessEmail || d.email || "N/A"}
-                  />
-                  <Field
-                    label="Phone"
-                    value={
-                      d.businessDetails?.phone ||
-                      d.businessPhone ||
-                      d.phone ||
-                      d.phoneNumber ||
-                      "N/A"
-                    }
-                  />
-                  <Field
-                    label="GST Number"
-                    value={d.businessDetails?.gst || d.gstNumber || "N/A"}
-                  />
-                  {(d.businessDetails?.address || d.businessAddress) && (
-                    <div className="md:col-span-2">
-                      <Field
-                        label="Business Address"
-                        value={d.businessDetails?.address || d.businessAddress}
-                      />
-                    </div>
-                  )}
-                </div>
-              </Section>
-            )}
-
-            {/* Personal Details */}
-            {(d.personalDetails || d.personName || d.firstName) && (
-              <Section title="Personal Details">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field
-                    label="Full Name"
-                    value={
-                      d.personalDetails?.name ||
-                      d.personName ||
-                      (d.firstName ? `${d.firstName} ${d.lastName || ""}` : "N/A")
-                    }
-                  />
-                  <Field
-                    label="Date of Birth"
-                    value={
-                      d.personalDetails?.dob || d.dateOfBirth
-                        ? new Date(d.personalDetails?.dob || d.dateOfBirth).toLocaleDateString()
-                        : "N/A"
-                    }
-                  />
-                  <Field
-                    label="Marital Status"
-                    value={
-                      <span className="capitalize">
-                        {d.personalDetails?.maritalStatus || d.maritalStatus || "N/A"}
-                      </span>
-                    }
-                  />
-                  {(d.personalDetails?.idProof || d.idProof) && (
-                    <Field
-                      label="ID Proof"
-                      value={
-                        <a
-                          href={getImageUrl(d.personalDetails?.idProof || d.idProof)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[#2563eb] hover:underline"
-                        >
-                          View Document
-                        </a>
-                      }
-                    />
-                  )}
-                  {(d.personalDetails?.address || d.personalAddress) && (
-                    <div className="md:col-span-2">
-                      <Field
-                        label="Personal Address"
-                        value={d.personalDetails?.address || d.personalAddress}
-                      />
-                    </div>
-                  )}
-                </div>
-              </Section>
-            )}
-
-            {/* Property / capacity details */}
-            {propertyDetails.length > 0 && (
-              <Section title="Property & Capacity">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {propertyDetails.map(([label, value]) => (
-                    <Field key={label} label={label} value={String(value)} />
-                  ))}
-                </div>
-              </Section>
-            )}
-
-            {/* Caravan pricing */}
-            {hasCaravanPricing && (
-              <Section title="Caravan Pricing">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {has(d.perDayCharge) && (
-                    <Field label="Per Day Charge" value={`₹${d.perDayCharge}`} />
-                  )}
-                  {has(d.perKmCharge) && (
-                    <Field label="Per Km Charge" value={`₹${d.perKmCharge}`} />
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
-                  {perDayInc.length > 0 && (
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                        Per Day Includes
-                      </h4>
-                      <BulletList items={perDayInc} />
-                    </div>
-                  )}
-                  {perDayExc.length > 0 && (
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                        Per Day Excludes
-                      </h4>
-                      <BulletList items={perDayExc} />
-                    </div>
-                  )}
-                  {perKmInc.length > 0 && (
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                        Per Km Includes
-                      </h4>
-                      <BulletList items={perKmInc} />
-                    </div>
-                  )}
-                  {perKmExc.length > 0 && (
-                    <div className="space-y-1">
-                      <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wide">
-                        Per Km Excludes
-                      </h4>
-                      <BulletList items={perKmExc} />
-                    </div>
-                  )}
-                </div>
-              </Section>
-            )}
-
-            {/* Rules */}
-            {rules.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">Rules &amp; Regulation</h3>
-                <BulletList items={rules} />
-              </div>
-            )}
-
-            {/* Photos */}
-            {photos.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-bold text-gray-900">Uploaded Photos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 h-96">
-                  <div
-                    className="h-full bg-gray-100 rounded-lg bg-cover bg-center cursor-pointer hover:opacity-95 transition-opacity border border-gray-200"
-                    style={{ backgroundImage: `url(${photos[0]})` }}
-                    onClick={() => window.open(photos[0], "_blank")}
-                  />
-                  <div className="grid grid-cols-2 gap-4 h-full">
-                    {photos.slice(1, 5).map((photo, index) => (
-                      <div
-                        key={index}
-                        className="bg-gray-100 rounded-lg bg-cover bg-center cursor-pointer hover:opacity-95 transition-opacity border border-gray-200"
-                        style={{ backgroundImage: `url(${photo})` }}
-                        onClick={() => window.open(photo, "_blank")}
-                      />
-                    ))}
-                  </div>
-                </div>
-                {photos.length > 5 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-4">
-                    {photos.slice(5).map((photo, index) => (
-                      <div
-                        key={index + 5}
-                        className="h-32 bg-gray-100 rounded-lg bg-cover bg-center cursor-pointer hover:opacity-95 transition-opacity border border-gray-200"
-                        style={{ backgroundImage: `url(${photo})` }}
-                        onClick={() => window.open(photo, "_blank")}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Features */}
-            {features.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">
-                  {d.category ? `${d.category} Features` : "Features"}
-                </h3>
-                <p className="text-sm text-gray-700 leading-relaxed">{features.join(", ")}</p>
-              </div>
-            )}
-
-            {/* Expectations (activities) */}
-            {expectations.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">What to Expect</h3>
-                <BulletList items={expectations} />
-              </div>
-            )}
-
-            {/* Address */}
-            {has(address) && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">Address</h3>
-                <p className="text-sm text-gray-700 leading-relaxed">{address}</p>
-              </div>
-            )}
-
-            {/* Includes / Excludes */}
-            {includes.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">Above price includes</h3>
-                <BulletList items={includes} />
-              </div>
-            )}
-            {excludes.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="text-sm font-bold text-gray-900">Above price excludes</h3>
-                <BulletList items={excludes} />
-              </div>
-            )}
-
-            {/* Pricing */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 bg-[#f0fdfa] p-4 rounded-lg border border-teal-100">
-              {has(regPrice) && (
-                <div>
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Regular Price
-                  </h3>
-                  <p className="text-sm font-semibold text-gray-900">
-                    {formatINR(Number(regPrice))}{" "}
-                    <span className="font-normal text-gray-500">{perNightOrPerson}</span>
-                  </p>
-                </div>
-              )}
-              {has(finPrice) && (
-                <div>
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-                    Final Price
-                  </h3>
-                  <p className="text-lg font-bold text-[#2563eb]">{formatINR(Number(finPrice))}</p>
-                </div>
-              )}
-            </div>
-
-            {/* Discounts (real schema: discounts.{firstUser,festival,weekly,special}) */}
-            {activeDiscounts.length > 0 && (
-              <Section title="Discount Offers">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {activeDiscounts.map((disc) => (
-                    <div key={disc.key} className="rounded-lg border border-gray-200 p-4 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-gray-900">{disc.label}</span>
-                        <span className="text-[11px] font-semibold uppercase tracking-wide text-[#2563eb] bg-[#2563eb1f] px-2 py-0.5 rounded-full">
-                          {disc.type || "percentage"}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Field
-                          label="Value"
-                          value={
-                            has(disc.value)
-                              ? disc.type === "fixed"
-                                ? `₹${disc.value}`
-                                : `${disc.value}%`
-                              : "—"
-                          }
-                        />
-                        <Field
-                          label="Final Price"
-                          value={has(disc.finalPrice) ? `₹${disc.finalPrice}` : "—"}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            )}
-          </div>
-        </div>
-
-        {/* Action Buttons Footer */}
-        {(onReject || onApprove) && (
-          <div className="p-4 border-t border-gray-200 flex justify-end gap-3 bg-white rounded-b-xl">
+    <AdminDetailDrawer
+      open={isOpen}
+      onClose={onClose}
+      eyebrow="Listing"
+      title={d.name || d.title || "Listing details"}
+      subtitle={[d.category, place].filter(Boolean).join(" · ") || undefined}
+      status={has(d.status) ? <StatusBadge status={d.status} /> : undefined}
+      /* `lg`, not `xl`: at 920px the panel swallowed the review queue it is
+         meant to be read against, which is the whole reason this stopped being
+         a modal. 720px still fits the three-up overview and a four-across
+         photo grid. */
+      width="lg"
+      loading={isLoading || !listingData}
+      media={
+        photos[0] ? (
+          <img
+            src={photos[0]}
+            alt=""
+            className="w-11 h-11 rounded-lg object-cover ring-1 ring-black/[0.06]"
+          />
+        ) : undefined
+      }
+      position={position}
+      onPrev={onPrev}
+      onNext={onNext}
+      footer={
+        onReject || onApprove ? (
+          <>
             {onReject && (
-              <Button
-                variant="destructive"
-                onClick={onReject}
-                disabled={isApproving}
-                className="rounded-full px-6"
-              >
+              <button onClick={onReject} disabled={isApproving} className={BTN_DANGER_SOFT}>
                 Reject
-              </Button>
+              </button>
             )}
             {onApprove && (
-              <Button
-                className="bg-green-600 hover:bg-green-700 text-white rounded-full px-6 gap-2"
-                onClick={onApprove}
-                disabled={isApproving}
-              >
-                {isApproving && <Loader2 size={16} className="animate-spin" />}
+              <button onClick={onApprove} disabled={isApproving} className={BTN_PRIMARY}>
+                {isApproving && <Loader2 size={15} className="animate-spin" />}
                 {isApproving ? "Approving…" : "Approve"}
-              </Button>
+              </button>
             )}
+          </>
+        ) : undefined
+      }
+    >
+      <DetailSection title="Overview" columns={3}>
+        <DetailField label="Name" value={d.name || d.title} />
+        <DetailField label="Category" value={d.category} />
+        <DetailField label="Vendor ID" value={d.vendorId} />
+        <DetailField label="Created" value={createdAt ?? ""} />
+        <DetailField label="Listing ID" value={d._id} />
+        <DetailField label="Address" value={address} full />
+        {has(d.description) && (
+          <Block title="Description">
+            <p className="text-[13px] leading-relaxed text-app-fg whitespace-pre-wrap">
+              {d.description}
+            </p>
+          </Block>
+        )}
+        {has(d.rejectionReason) && (
+          <div className="col-span-full rounded-lg border border-red-200 bg-red-50 px-3.5 py-3 dark:border-red-500/30 dark:bg-red-500/10">
+            <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-red-700 dark:text-red-300 mb-1">
+              Rejection / cancellation reason
+            </h4>
+            <p className="text-[13px] leading-relaxed text-red-800 dark:text-red-200">
+              {d.rejectionReason}
+            </p>
           </div>
         )}
-      </div>
-    </div>
+      </DetailSection>
+
+      <DetailSection title="Pricing" columns={3}>
+        <DetailField
+          label={`Regular price · ${perNightOrPerson}`}
+          value={
+            has(regPrice) ? (
+              <span className="tabular-nums">{formatINR(Number(regPrice))}</span>
+            ) : (
+              ""
+            )
+          }
+        />
+        <DetailField
+          label="Final price"
+          value={
+            has(finPrice) ? (
+              <span className="text-[15px] font-bold text-app-fg tabular-nums">
+                {formatINR(Number(finPrice))}
+              </span>
+            ) : (
+              ""
+            )
+          }
+        />
+        {includes.length > 0 && (
+          <Block title="Price includes">
+            <DetailList items={includes} />
+          </Block>
+        )}
+        {excludes.length > 0 && (
+          <Block title="Price excludes">
+            <DetailList items={excludes} />
+          </Block>
+        )}
+      </DetailSection>
+
+      {activeDiscounts.length > 0 && (
+        <DetailSection title="Discount offers">
+          {activeDiscounts.map((disc) => (
+            <div
+              key={disc.key}
+              className="col-span-1 rounded-lg border border-app-border bg-app-surface-2/50 px-3.5 py-3 space-y-2.5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13px] font-bold text-app-fg">{disc.label}</span>
+                <span className="rounded-full bg-app-accent-soft px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.05em] text-app-accent">
+                  {disc.type || "percentage"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <DetailField
+                  label="Value"
+                  value={
+                    has(disc.value)
+                      ? disc.type === "fixed"
+                        ? `₹${disc.value}`
+                        : `${disc.value}%`
+                      : ""
+                  }
+                />
+                <DetailField
+                  label="Final price"
+                  value={has(disc.finalPrice) ? `₹${disc.finalPrice}` : ""}
+                />
+              </div>
+            </div>
+          ))}
+        </DetailSection>
+      )}
+
+      {hasCaravanPricing && (
+        <DetailSection title="Caravan pricing" columns={4}>
+          <DetailField
+            label="Per day charge"
+            value={has(d.perDayCharge) ? <span className="tabular-nums">₹{d.perDayCharge}</span> : ""}
+          />
+          <DetailField
+            label="Per km charge"
+            value={has(d.perKmCharge) ? <span className="tabular-nums">₹{d.perKmCharge}</span> : ""}
+          />
+          {perDayInc.length > 0 && (
+            <Block title="Per day includes">
+              <DetailList items={perDayInc} />
+            </Block>
+          )}
+          {perDayExc.length > 0 && (
+            <Block title="Per day excludes">
+              <DetailList items={perDayExc} />
+            </Block>
+          )}
+          {perKmInc.length > 0 && (
+            <Block title="Per km includes">
+              <DetailList items={perKmInc} />
+            </Block>
+          )}
+          {perKmExc.length > 0 && (
+            <Block title="Per km excludes">
+              <DetailList items={perKmExc} />
+            </Block>
+          )}
+        </DetailSection>
+      )}
+
+      {propertyDetails.length > 0 && (
+        <DetailSection title="Property & capacity" columns={4}>
+          {propertyDetails.map(([label, value]) => (
+            <DetailField key={label} label={label} value={String(value)} />
+          ))}
+        </DetailSection>
+      )}
+
+      {photos.length > 0 && (
+        <DetailSection title={`Photos (${photos.length})`}>
+          <DetailPhotos photos={photos} label="listing photo" />
+        </DetailSection>
+      )}
+
+      {(features.length > 0 || rules.length > 0 || expectations.length > 0) && (
+        <DetailSection title="Details">
+          {features.length > 0 && (
+            <Block title={d.category ? `${d.category} features` : "Features"}>
+              <p className="text-[13px] leading-relaxed text-app-fg">{features.join(", ")}</p>
+            </Block>
+          )}
+          {expectations.length > 0 && (
+            <Block title="What to expect">
+              <DetailList items={expectations} />
+            </Block>
+          )}
+          {rules.length > 0 && (
+            <Block title="Rules & regulations">
+              <DetailList items={rules} />
+            </Block>
+          )}
+        </DetailSection>
+      )}
+
+      {hasBusiness && (
+        <DetailSection title="Business details">
+          <DetailField
+            label="Business name"
+            value={d.businessDetails?.name || d.brandName || d.businessName}
+          />
+          <DetailField
+            label="Email"
+            value={d.businessDetails?.email || d.businessEmail || d.email}
+          />
+          <DetailField
+            label="Phone"
+            value={d.businessDetails?.phone || d.businessPhone || d.phone || d.phoneNumber}
+          />
+          <DetailField label="GST number" value={d.businessDetails?.gst || d.gstNumber} />
+          <DetailField
+            label="Business address"
+            value={d.businessDetails?.address || d.businessAddress}
+            full
+          />
+        </DetailSection>
+      )}
+
+      {hasPersonal && (
+        <DetailSection title="Personal details">
+          <DetailField
+            label="Full name"
+            value={
+              d.personalDetails?.name ||
+              d.personName ||
+              (d.firstName ? `${d.firstName} ${d.lastName || ""}`.trim() : "")
+            }
+          />
+          <DetailField
+            label="Date of birth"
+            value={
+              d.personalDetails?.dob || d.dateOfBirth
+                ? new Date(d.personalDetails?.dob || d.dateOfBirth).toLocaleDateString("en-IN")
+                : ""
+            }
+          />
+          <DetailField
+            label="Marital status"
+            value={
+              d.personalDetails?.maritalStatus || d.maritalStatus ? (
+                <span className="capitalize">
+                  {d.personalDetails?.maritalStatus || d.maritalStatus}
+                </span>
+              ) : (
+                ""
+              )
+            }
+          />
+          {(d.personalDetails?.idProof || d.idProof) && (
+            <DetailField
+              label="ID proof"
+              value={
+                <a
+                  href={getImageUrl(d.personalDetails?.idProof || d.idProof)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-app-accent hover:underline"
+                >
+                  View document
+                </a>
+              }
+            />
+          )}
+          <DetailField
+            label="Personal address"
+            value={d.personalDetails?.address || d.personalAddress}
+            full
+          />
+        </DetailSection>
+      )}
+    </AdminDetailDrawer>
   );
 };
 

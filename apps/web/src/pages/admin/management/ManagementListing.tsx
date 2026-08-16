@@ -27,7 +27,6 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import {
   AdminFilterBar,
-  type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
@@ -42,6 +41,7 @@ import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { BTN_NEUTRAL, BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 /* ── Tab definitions ────────────────────────────────────────────────────── */
 const TABS = [
@@ -61,6 +61,16 @@ const SORT_OPTIONS = [
 
 const ITEMS_PER_PAGE = 10;
 
+/* Query params this page owns. Module scope, because useTableUrlState needs the
+   key/type pairs before `filterDefs` — whose options are derived from the
+   loaded listings — can be built. */
+const URL_FILTERS: UrlFilterDef[] = [
+  { key: "vendor", type: "select" },
+  { key: "brandName", type: "select" },
+  { key: "serviceName", type: "select" },
+  { key: "location", type: "select" },
+];
+
 /* Metric row. Each figure is computed from the listings already fetched for
    the active tab — deriving them costs nothing and, unlike a second endpoint,
    can never disagree with the table underneath it. */
@@ -77,12 +87,30 @@ const ManagementListing = () => {
      on canEdit; only Delete needs canDelete. */
   const access = useFeatureAccess(ADMIN_FEATURES.inventory);
 
-  /* ── Tab / search / sort / filter / page state ── */
-  const [activeTab, setActiveTab] = useState("pending");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("default");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
+  /* ── Tab / search / sort / filter / page / open-record state, in the URL ──
+     A review queue is the case that most needs this: "the listing I'm asking
+     you about" is now a link, and a refresh after an approve keeps the tab,
+     the filters and the page it happened on. */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchTerm,
+    setQ: setSearchTerm,
+    sort: sortBy,
+    setSort: setSortBy,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId,
+    setSelectedId,
+    hasActiveQuery,
+    clearQuery,
+  } = useTableUrlState({
+    filters: URL_FILTERS,
+    defaultTab: "pending",
+    defaultSort: "default",
+  });
 
   /* ── Modal state ── */
   const [showManagementForm, setShowManagementForm] = useState(false);
@@ -90,8 +118,10 @@ const ManagementListing = () => {
   // FormOffer is ManagementForm's Offer shape (required by initialData prop).
   const [selectedOffer, setSelectedOffer] = useState<FormOffer | null>(null);
 
-  const [showViewDetails, setShowViewDetails] = useState(false);
-  const [viewOffer, setViewOffer] = useState<Offer | null>(null);
+  /* The full listing, fetched per record — the table row is a summary that
+     omits most detail fields. Keyed by id so a response that arrives after the
+     operator has stepped on is discarded rather than rendered. */
+  const [viewDetail, setViewDetail] = useState<{ id: string; data: Offer } | null>(null);
   const [isViewLoading, setIsViewLoading] = useState(false);
 
   // Reject / cancel reason flow
@@ -135,11 +165,6 @@ const ManagementListing = () => {
   const isRowBusy = (o: Offer) => o._id === statusPendingId || o._id === deletePendingId;
   const isStatusPending = (o: Offer, status: "pending" | "approved" | "cancelled") =>
     o._id === statusPendingId && statusPendingTo === status;
-
-  /* ── Reset page when tab / search / sort / filters change ── */
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab, searchTerm, sortBy, filters]);
 
   /* ── Derived filter options from loaded data ── */
   const brandNameOptions = useMemo(() => {
@@ -286,11 +311,24 @@ const ManagementListing = () => {
   }, [offers, searchTerm, sortBy, filters, vendorNameFor]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  // A `?page=` carried over from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
-  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
+
+  /* Drawer position within the whole filtered set — `?id=` is the source of
+     truth and the index is derived from it, so prev/next walk the review queue
+     without closing and a listing that leaves the tab (because it was just
+     approved) closes the drawer instead of going stale. */
+  const viewIndex = selectedId ? filtered.findIndex((o) => o._id === selectedId) : -1;
+  const viewRow = viewIndex >= 0 ? filtered[viewIndex] : null;
+  const viewOffer: Offer | null = viewRow
+    ? viewDetail?.id === viewRow._id
+      ? { ...viewRow, ...viewDetail.data }
+      : viewRow
+    : null;
 
   /* ── Handlers ── */
 
@@ -312,25 +350,37 @@ const ManagementListing = () => {
     }
   };
 
-  // View details popup — the table rows are summaries that omit most detail
-  // fields, so fetch the FULL listing by id before rendering so every section
-  // (business/personal details, rules, includes/excludes, gallery, capacity…)
-  // is populated.
-  const handleView = async (offer: Offer) => {
-    setViewOffer(offer); // seed with the summary we already have
-    setShowViewDetails(true);
-    try {
-      setIsViewLoading(true);
-      const res = await offersService.get(offer._id);
-      const full = res?.data ?? res;
-      if (full) setViewOffer((prev) => ({ ...(prev as Offer), ...full }));
-    } catch (e) {
-      console.error("Failed to load listing details", e);
-      toast.error("Couldn't load the full listing details.");
-    } finally {
-      setIsViewLoading(false);
-    }
-  };
+  // Opening a listing is just setting `?id=` — the fetch below follows from it,
+  // which is what lets prev/next inside the drawer load each record too.
+  const handleView = (offer: Offer) => setSelectedId(offer._id);
+
+  /* The table rows are summaries that omit most detail fields, so the FULL
+     listing is fetched by id (same `offersService.get` call as before, moved
+     behind the selection) and every section — business/personal details, rules,
+     includes/excludes, gallery, capacity — is populated. The summary row seeds
+     the drawer meanwhile, so its header is right from the first frame. */
+  useEffect(() => {
+    if (!viewRow) return;
+    const id = viewRow._id;
+    let cancelled = false;
+    setIsViewLoading(true);
+    offersService
+      .get(id)
+      .then((res: any) => {
+        const full = res?.data ?? res;
+        if (!cancelled && full) setViewDetail({ id, data: full });
+      })
+      .catch((e: unknown) => {
+        console.error("Failed to load listing details", e);
+        if (!cancelled) toast.error("Couldn't load the full listing details.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsViewLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [viewRow?._id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Open ManagementForm for add
   const handleAddNew = () => {
@@ -498,7 +548,12 @@ const ManagementListing = () => {
         if (!o.vendorId) return <span className="text-app-fg-subtle">—</span>;
         return (
           <button
-            onClick={() => handleVendorClick(o.vendorId || "")}
+            onClick={(e) => {
+              // The row itself opens the listing drawer; the vendor cell is the
+              // one place inside it that goes somewhere else.
+              e.stopPropagation();
+              handleVendorClick(o.vendorId || "");
+            }}
             className="group/v flex items-center gap-2.5 text-left min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-app-accent/35"
             title={name ? `${name} · ${o.vendorId}` : o.vendorId}
           >
@@ -701,21 +756,16 @@ const ManagementListing = () => {
             emptyDescription="Listings appear here once vendors submit them for review."
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching listings"}
             noResultsDescription="Try different keywords or remove filters."
-            noResultsAction={{
-              label: "Clear filters",
-              onClick: () => {
-                setSearchTerm("");
-                setFilters({});
-              },
-            }}
+            noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
             rowActions={rowActions}
             rowBusy={isRowBusy}
+            onRowClick={handleView}
             pagination={{
               currentPage,
               totalPages,
               pageSize: ITEMS_PER_PAGE,
               totalItems: filtered.length,
-              onPageChange: setCurrentPage,
+              onPageChange: setPage,
             }}
           />
         </section>
@@ -723,36 +773,41 @@ const ManagementListing = () => {
 
       {/* ── Popups — props & flows preserved exactly from original ── */}
 
-      <ViewDetailsPopup
-        isOpen={showViewDetails}
-        onClose={() => setShowViewDetails(false)}
-        listingData={viewOffer}
-        isLoading={isViewLoading}
-        isApproving={!!viewOffer && isStatusPending(viewOffer, "approved")}
-        onApprove={
-          viewOffer?.status !== "approved"
-            ? () => {
-                // Stay open until the server confirms — closing first left the
-                // admin with no idea whether the approve landed.
-                if (viewOffer) {
+      {viewOffer && (
+        <ViewDetailsPopup
+          isOpen
+          onClose={() => setSelectedId(null)}
+          listingData={viewOffer}
+          isLoading={isViewLoading && viewDetail?.id !== viewOffer._id}
+          isApproving={isStatusPending(viewOffer, "approved")}
+          position={{ index: viewIndex + 1, total: filtered.length }}
+          onPrev={viewIndex > 0 ? () => setSelectedId(filtered[viewIndex - 1]._id) : undefined}
+          onNext={
+            viewIndex < filtered.length - 1
+              ? () => setSelectedId(filtered[viewIndex + 1]._id)
+              : undefined
+          }
+          onApprove={
+            viewOffer.status !== "approved"
+              ? () => {
+                  // Stay open until the server confirms — closing first left the
+                  // admin with no idea whether the approve landed.
                   handleStatusChange(viewOffer, "approved", {
-                    onSuccess: () => setShowViewDetails(false),
+                    onSuccess: () => setSelectedId(null),
                   });
                 }
-              }
-            : undefined
-        }
-        onReject={
-          viewOffer?.status !== "rejected" && viewOffer?.status !== "cancelled"
-            ? () => {
-                if (viewOffer) {
+              : undefined
+          }
+          onReject={
+            viewOffer.status !== "rejected" && viewOffer.status !== "cancelled"
+              ? () => {
                   handleStatusChange(viewOffer, "cancelled");
-                  setShowViewDetails(false);
+                  setSelectedId(null);
                 }
-              }
-            : undefined
-        }
-      />
+              : undefined
+          }
+        />
+      )}
 
       <ManagementForm
         isOpen={showManagementForm}

@@ -20,7 +20,6 @@ import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminToolbar } from "@/components/admin/AdminToolbar";
 import {
   AdminFilterBar,
-  type ActiveFilters,
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
@@ -32,6 +31,7 @@ import { vendorSchema, type VendorFormValues } from "./vendorSchema";
 import { vendorService } from "@/services/api";
 import { BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
+import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 const TABS = [
   { key: "all-vendors", label: "All Vendors" },
@@ -59,6 +59,14 @@ const STATUS_OPTIONS = [
 
 const ITEMS_PER_PAGE = 10;
 
+/* Query params this page owns — see the note in UserManagement for why these
+   are declared at module scope rather than read off `filterDefs`. */
+const URL_FILTERS: UrlFilterDef[] = [
+  { key: "status", type: "select" },
+  { key: "location", type: "select" },
+  { key: "registered", type: "date-range" },
+];
+
 /* Metric row for the "All Vendors" tab, derived from the loaded list. */
 const STAT_DEFS = [
   { key: "total", title: "Total Vendors", icon: Store, color: "#2563eb" },
@@ -71,15 +79,35 @@ const VendorManagement = () => {
   // View on manage_vendors opens the page; create/edit/delete are separate
   // grants, so the write affordances are gated on their own flags.
   const access = useFeatureAccess(ADMIN_FEATURES.vendors);
-  const [activeTab, setActiveTab] = useState("all-vendors");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("brandName");
-  const [filters, setFilters] = useState<ActiveFilters>({});
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const [showVendorDetails, setShowVendorDetails] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  /* Tab, search, sort, page, filters and the open record live in the URL. */
+  const {
+    tab: activeTab,
+    setTab: setActiveTab,
+    q: searchTerm,
+    setQ: setSearchTerm,
+    sort: sortBy,
+    setSort: setSortBy,
+    page,
+    setPage,
+    filters,
+    setFilters,
+    selectedId,
+    setSelectedId,
+    hasActiveQuery,
+    clearQuery,
+  } = useTableUrlState({
+    filters: URL_FILTERS,
+    defaultTab: "all-vendors",
+    defaultSort: "brandName",
+  });
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  /* The table row is a summary; the drawer shows the full record, which needs
+     its own fetch. Keyed by id so a stale response for a vendor the operator
+     has already stepped past is discarded rather than rendered. */
+  const [vendorDetail, setVendorDetail] = useState<{ id: string; data: Vendor } | null>(null);
+  const [isVendorLoading, setIsVendorLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   // Confirm state: a single configurable dialog drives ban / delete / bulk delete.
   const [confirm, setConfirm] = useState<{
@@ -93,8 +121,9 @@ const VendorManagement = () => {
   const { query, createVendor, setStatus, deleteVendor } = useVendors(activeTab);
   const vendors = query.data ?? [];
 
+  // The URL hook resets the page; a selection made against the previous list
+  // still has to be dropped.
   useEffect(() => {
-    setCurrentPage(1);
     setSelectedIds([]);
   }, [activeTab, searchTerm, sortBy, filters]);
 
@@ -158,22 +187,43 @@ const VendorManagement = () => {
     });
   }, [vendors, searchTerm, sortBy, filters]);
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  // A `?page=` carried over from a longer list can outrun a narrower one.
+  const currentPage = Math.min(page, totalPages);
   const paginated = filtered.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE,
   );
-  const hasActiveQuery = !!searchTerm.trim() || Object.keys(filters).length > 0;
 
-  const handleView = async (vendor: Vendor) => {
-    try {
-      const res = await vendorService.getVendor(vendor._id || vendor.vendorId);
-      setSelectedVendor(res?.data || res || vendor);
-    } catch {
-      setSelectedVendor(vendor);
-    }
-    setShowVendorDetails(true);
-  };
+  /* Drawer position within the whole filtered set — `?id=` is the source of
+     truth, the index is derived from it. */
+  const detailsIndex = selectedId ? filtered.findIndex((v) => v._id === selectedId) : -1;
+  const detailsRow = detailsIndex >= 0 ? filtered[detailsIndex] : null;
+
+  /* Same request as before, moved behind the id so prev/next re-fetch too. The
+     row already in hand seeds the drawer, so the header renders immediately and
+     only the body waits. */
+  useEffect(() => {
+    if (!detailsRow) return;
+    let cancelled = false;
+    setIsVendorLoading(true);
+    vendorService
+      .getVendor(detailsRow._id || detailsRow.vendorId)
+      .then((res: any) => {
+        if (!cancelled) setVendorDetail({ id: detailsRow._id, data: res?.data || res || detailsRow });
+      })
+      .catch(() => {
+        if (!cancelled) setVendorDetail({ id: detailsRow._id, data: detailsRow });
+      })
+      .finally(() => {
+        if (!cancelled) setIsVendorLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [detailsRow?._id, detailsRow?.vendorId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleView = (vendor: Vendor) => setSelectedId(vendor._id);
 
   const askBan = (vendor: Vendor) =>
     setConfirm({
@@ -217,15 +267,10 @@ const VendorManagement = () => {
   const columns: ColumnDef<Vendor>[] = [
     {
       key: "vendorId",
+      // The whole row opens the drawer, so the identifier is plain text: a link
+      // inside a clickable row is two targets for one destination.
       header: "Vendor ID",
-      cell: (v) => (
-        <button
-          onClick={() => handleView(v)}
-          className="font-semibold text-tpl-primary hover:underline"
-        >
-          {v.vendorId}
-        </button>
-      ),
+      cell: (v) => <span className="font-semibold text-app-fg">{v.vendorId}</span>,
     },
     {
       key: "photo",
@@ -355,33 +400,42 @@ const VendorManagement = () => {
             emptyDescription="Vendors appear here once they register and submit for verification."
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"}
             noResultsDescription="Try different keywords or remove filters."
-            noResultsAction={{
-              label: "Clear filters",
-              onClick: () => {
-                setSearchTerm("");
-                setFilters({});
-              },
-            }}
+            noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
             selectable={access.canDelete}
             selectedIds={selectedIds}
             onSelectionChange={setSelectedIds}
             rowActions={rowActions}
+            onRowClick={handleView}
             pagination={{
               currentPage,
               totalPages,
               pageSize: ITEMS_PER_PAGE,
               totalItems: filtered.length,
-              onPageChange: setCurrentPage,
+              onPageChange: setPage,
             }}
           />
         </div>
       </MotionReveal>
 
-      <VendorDetailsPopup
-        isOpen={showVendorDetails}
-        onClose={() => setShowVendorDetails(false)}
-        vendor={selectedVendor}
-      />
+      {detailsRow && (
+        <VendorDetailsPopup
+          isOpen
+          onClose={() => setSelectedId(null)}
+          /* Seeded with the row until the full record arrives, so the header
+             and status are correct from the first frame. */
+          vendor={vendorDetail?.id === detailsRow._id ? vendorDetail.data : detailsRow}
+          isLoading={isVendorLoading && vendorDetail?.id !== detailsRow._id}
+          position={{ index: detailsIndex + 1, total: filtered.length }}
+          onPrev={
+            detailsIndex > 0 ? () => setSelectedId(filtered[detailsIndex - 1]._id) : undefined
+          }
+          onNext={
+            detailsIndex < filtered.length - 1
+              ? () => setSelectedId(filtered[detailsIndex + 1]._id)
+              : undefined
+          }
+        />
+      )}
 
       <AddVendorDialog
         open={showAddModal}
