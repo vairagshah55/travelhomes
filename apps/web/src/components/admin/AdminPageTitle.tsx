@@ -85,7 +85,12 @@ export default function AdminPageTitle({ title, subtitle, actions, tabs }: Admin
             </Link>
             {crumbs.slice(0, -1).map((crumb) => (
               <React.Fragment key={crumb.href}>
-                <ChevronRight size={12} strokeWidth={2.2} className="shrink-0 opacity-45" aria-hidden />
+                <ChevronRight
+                  size={12}
+                  strokeWidth={2.2}
+                  className="shrink-0 opacity-45"
+                  aria-hidden
+                />
                 <Link
                   to={crumb.href}
                   className="px-1 py-0.5 rounded truncate max-w-[180px] hover:text-app-accent transition-colors"

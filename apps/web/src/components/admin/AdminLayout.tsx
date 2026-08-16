@@ -64,12 +64,7 @@ export default function AdminLayout({
             {/* The band is INSIDE the scroller, not pinned: on a data-heavy
                 page the rows are what you want on screen, and a second sticky
                 strip under the top bar eats a third of a laptop viewport. */}
-            <AdminPageTitle
-              title={title}
-              subtitle={subtitle}
-              actions={headerActions}
-              tabs={tabs}
-            />
+            <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} tabs={tabs} />
 
             <motion.div
               key={title}

@@ -622,7 +622,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               className="shrink-0 text-app-fg-subtle group-hover:text-red-600 transition-colors"
             />
             <span
-              className={cn("flex-1 text-[13.5px] font-medium whitespace-nowrap", reveal(!railOpen))}
+              className={cn(
+                "flex-1 text-[13.5px] font-medium whitespace-nowrap",
+                reveal(!railOpen),
+              )}
             >
               Sign out
             </span>
