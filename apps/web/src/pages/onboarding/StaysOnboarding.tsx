@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { cmsPublicApi } from "@/lib/api";
@@ -414,6 +414,14 @@ const StaysOnboarding = () => {
   // Top-level Unique Stay features + categories (shared cache).
   const { data: stayFeatures } = useFeatures("Unique Stay");
   const { data: stayCategories } = useFeatures("Unique Stay", "category");
+  /**
+   * Categories that apply to any stay, regardless of property type
+   * ("Beach Stays", "Pet-Friendly Stays", …). Stored flat against
+   * "Unique Stay" rather than duplicated beneath all 20 property types — see
+   * Server/scripts/seed-stay-taxonomy.js. Type-specific subcategories still
+   * work and are merged on top in getEffectiveCategories.
+   */
+  const { data: sharedStayCategories } = useFeatures("Unique Stay", "subcategory");
 
   useEffect(() => {
     if (!stayFeatures) return;
@@ -557,11 +565,41 @@ const StaysOnboarding = () => {
     }
   };
 
-  const getEffectiveCategories = (propertyId: string) => {
-    // Prioritize dynamic categories from Admin
-    const dynamic = subCategoriesMap[propertyId];
-    if (dynamic && dynamic.length > 0) return dynamic;
+  /** Flat, type-agnostic category list from the CMS. */
+  const sharedCategoryOptions = useMemo(
+    () =>
+      ((sharedStayCategories as any[]) ?? [])
+        .filter((f: any) => f.status === "enable")
+        .map((f: any) => ({
+          id: String(f.name).toLowerCase().replace(/\s+/g, "-"),
+          name: f.name,
+          icon: f.icon,
+        })),
+    [sharedStayCategories],
+  );
 
+  /**
+   * Categories offered for a property type: the shared list plus any
+   * type-specific subcategories an admin has defined, deduped by name.
+   *
+   * Union rather than "type-specific wins": a couple of property types already
+   * have one-off subcategories, and letting those replace the list would show
+   * two options for Cottage and thirty-one for everything else.
+   */
+  const getEffectiveCategories = (propertyId: string) => {
+    const typeSpecific = subCategoriesMap[propertyId] ?? [];
+    const merged = [...sharedCategoryOptions];
+    const seen = new Set(merged.map((c) => c.name.toLowerCase()));
+    for (const c of typeSpecific) {
+      if (!seen.has(String(c.name).toLowerCase())) {
+        seen.add(String(c.name).toLowerCase());
+        merged.push(c);
+      }
+    }
+    if (merged.length > 0) return merged;
+
+    // Nothing from the CMS yet — fall back to the bundled map, then to a
+    // single option named after the property type, so the step is never empty.
     const hardcoded = propertyCategories[propertyId];
     if (hardcoded && hardcoded.length > 0) return hardcoded;
 
