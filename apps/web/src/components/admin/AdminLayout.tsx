@@ -3,32 +3,45 @@ import { motion, MotionConfig } from "framer-motion";
 import AdminSidebar from "./AdminSidebar";
 import AdminHeader from "./AdminHeader";
 import AdminPageTitle from "./AdminPageTitle";
+import { PAGE_CONTAINER } from "./adminUI";
 import { MobileBottomNav } from "@/components/admin/MobileBottomNav";
 
 interface AdminLayoutProps {
   title: string;
-  /** Optional context strip rendered under the title — e.g. "Welcome back, Vairag" */
+  /** One line under the title saying what this page is for. */
   subtitle?: string;
-  /** Primary action button(s) rendered on the right of the header */
+  /** Primary + secondary actions, rendered right of the title. */
   headerActions?: React.ReactNode;
+  /**
+   * Tab strip for the page. Rendered flush with the header band's bottom edge
+   * rather than inside the content, so switching tabs visibly swaps the whole
+   * body below instead of something nested in a card.
+   */
+  tabs?: React.ReactNode;
   children: React.ReactNode;
 }
 
 /**
  * Admin shell. Owns:
  *   - Persistent sidebar (collapsible on desktop, drawer on mobile)
- *   - Sticky top header (breadcrumb + title + page-level actions)
+ *   - Slim sticky top bar (search + account)
+ *   - A full-bleed page-header band (title / description / actions / tabs)
  *   - Scrollable content area
  *   - Mobile bottom nav
  *
+ * The three horizontal bands — 56px top bar, white header band, grey content —
+ * are what give a page its structure. Everything used to sit on one flat grey
+ * field, so the eye had no order to follow.
+ *
  * `data-brand="admin"` swaps CSS-var brand tokens for shared primitives in
- * components/shared/, so anything that uses `bg-brand`/`text-brand` renders
- * the admin blue palette inside this subtree.
+ * components/shared/, so anything using `bg-brand`/`text-brand` renders the
+ * admin blue palette inside this subtree.
  */
 export default function AdminLayout({
   title,
   subtitle,
   headerActions,
+  tabs,
   children,
 }: AdminLayoutProps) {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
@@ -47,18 +60,27 @@ export default function AdminLayout({
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <AdminHeader title={title} onOpenMobileSidebar={() => setShowMobileSidebar(true)} />
 
-          <motion.main
-            key={title}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg dark:bg-tpl-body-bg"
-          >
-            <div className="px-4 py-5 sm:px-6 md:px-6 lg:px-8 2xl:px-10 sm:py-6 md:py-7 2xl:py-10 pb-20 lg:pb-8">
-              <AdminPageTitle title={title} subtitle={subtitle} actions={headerActions} />
+          <main className="flex-1 overflow-y-auto overflow-x-hidden bg-tpl-body-bg">
+            {/* The band is INSIDE the scroller, not pinned: on a data-heavy
+                page the rows are what you want on screen, and a second sticky
+                strip under the top bar eats a third of a laptop viewport. */}
+            <AdminPageTitle
+              title={title}
+              subtitle={subtitle}
+              actions={headerActions}
+              tabs={tabs}
+            />
+
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className={`${PAGE_CONTAINER} px-4 sm:px-6 lg:px-8 py-5 sm:py-6 pb-24 lg:pb-10`}
+            >
               {children}
-            </div>
-          </motion.main>
+            </motion.div>
+          </main>
         </div>
 
         <MobileBottomNav />

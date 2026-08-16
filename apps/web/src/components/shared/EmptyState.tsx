@@ -26,22 +26,38 @@ export function EmptyState({
   className = "",
 }: EmptyStateProps) {
   return (
-    <div className={`flex flex-col items-center justify-center text-center py-14 px-6 ${className}`}>
-      <div className="w-14 h-14 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mb-4">
-        <Icon size={24} strokeWidth={1.6} className="text-gray-400 dark:text-gray-500" />
+    <div
+      className={`flex flex-col items-center justify-center text-center py-16 px-6 ${className}`}
+    >
+      {/* Concentric rings rather than a flat disc — the icon reads as placed on
+          the surface instead of stamped into it, which is what stops an empty
+          table from looking like a failed render. */}
+      <div className="relative mb-4">
+        <span
+          aria-hidden
+          className="absolute inset-0 -m-3 rounded-full bg-muted/40 dark:bg-white/[0.03]"
+        />
+        <span className="relative grid place-items-center w-14 h-14 rounded-full bg-muted dark:bg-white/[0.06] ring-1 ring-border/60">
+          <Icon size={23} strokeWidth={1.6} className="text-muted-foreground/70" />
+        </span>
       </div>
-      <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white mb-1.5">{title}</h3>
+
+      <h3 className="text-[15px] font-bold tracking-[-0.01em] text-foreground mb-1.5">{title}</h3>
       {description && (
-        <p className="text-[13px] text-gray-500 dark:text-gray-400 max-w-md mb-5 leading-relaxed">
+        <p className="text-[13px] text-muted-foreground max-w-sm mb-5 leading-relaxed">
           {description}
         </p>
       )}
       {(actionLabel || secondaryLabel) && (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {actionLabel && onAction && (
             <button
               onClick={onAction}
-              className="bg-brand hover:bg-brand-hover text-brand-fg rounded-full px-5 h-9 text-[13px] font-semibold transition-colors duration-150 shadow-sm hover:shadow-md"
+              className="bg-brand hover:bg-brand-hover text-brand-fg rounded-xl px-4 h-10 text-[13px] font-semibold
+                shadow-[0_1px_2px_hsl(var(--brand)/0.24),0_6px_16px_-6px_hsl(var(--brand)/0.45)]
+                hover:shadow-[0_2px_4px_hsl(var(--brand)/0.28),0_10px_22px_-6px_hsl(var(--brand)/0.5)]
+                active:translate-y-px transition-[background-color,box-shadow,transform] duration-150
+                outline-none focus-visible:ring-4 focus-visible:ring-brand/20"
             >
               {actionLabel}
             </button>
@@ -49,7 +65,10 @@ export function EmptyState({
           {secondaryLabel && onSecondary && (
             <button
               onClick={onSecondary}
-              className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-full px-5 h-9 text-[13px] font-semibold transition-colors duration-150"
+              className="bg-card border border-border text-foreground/80 hover:bg-muted rounded-xl px-4 h-10
+                text-[13px] font-semibold active:translate-y-px
+                transition-[background-color,transform] duration-150
+                outline-none focus-visible:ring-4 focus-visible:ring-brand/20"
             >
               {secondaryLabel}
             </button>

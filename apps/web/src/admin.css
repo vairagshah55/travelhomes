@@ -1207,53 +1207,55 @@
   --th-font-display:
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
 
-  /* Primary CTA → navy #117479 (dark, so fills carry WHITE text). */
-  --dashboard-primary: 183 76% 27%; /* #117479 */
-  --dashboard-primary-hover: 183 76% 30%; /* #128086 */
-  /* Text — black on white */
-  --dashboard-heading: 0 0% 0%;
-  --dashboard-body: 185 8% 20%;
-  --dashboard-title: 185 8% 20%;
-  --dashboard-text: 0 0% 0%;
-  /* Surfaces — white / near-white */
-  --dashboard-bg: 180 15% 98%; /* #F7F8FA */
-  --dashboard-stroke: 183 10% 91%; /* #E4E7EB */
-  --dashboard-neutral-06: 183 10% 71%; /* #9ca3af */
-  --dashboard-neutral-07: 185 8% 46%; /* #6b7280 */
-  /* Booking ID link → navy (dark, reads on white) */
-  --booking-link: 183 76% 27%;
-  --sidebar-primary: 183 76% 27%;
-  --sidebar-ring: 180 68% 54%;
+  /* Primary CTA → blue-600 #2563EB (5.17:1 on white, so fills carry WHITE text). */
+  --dashboard-primary: 221 83% 53%; /* #2563EB */
+  --dashboard-primary-hover: 224 76% 48%; /* #1D4ED8 */
+  /* Text — slate ink on white */
+  --dashboard-heading: 217 33% 11%; /* #121926 */
+  --dashboard-body: 217 19% 27%; /* #364152 */
+  --dashboard-title: 217 19% 27%;
+  --dashboard-text: 217 33% 11%;
+  /* Surfaces — cool near-white */
+  --dashboard-bg: 214 33% 97%; /* #F5F7FA */
+  --dashboard-stroke: 216 25% 91%; /* #E3E8EF */
+  --dashboard-neutral-06: 216 15% 65%; /* #9AA4B2 */
+  --dashboard-neutral-07: 216 12% 47%; /* #697586 */
+  /* Booking ID link → blue (reads on white) */
+  --booking-link: 221 83% 53%;
+  --sidebar-primary: 221 83% 53%;
+  --sidebar-ring: 217 91% 60%;
 }
 
 [data-brand="admin"] {
-  /* Brand → deep teal #117479 (dark, so fills carry WHITE text). Harmonises
-     with the bright-teal graphite chrome — one teal family across the app. */
-  --tpl-primary: #117479;
-  --tpl-primary-hover: #0d5c60;
-  --tpl-primary-soft: rgba(59, 217, 218, 0.16);
-  --tpl-primary-soft-2: rgba(59, 217, 218, 0.28);
+  /* Brand → blue-600 #2563EB (5.17:1 on white, so fills carry WHITE text).
+     Admin-only: the public site and the vendor console stay on the logo cyan
+     (see global.css). Nothing here leaks past the AdminLayout root. */
+  --tpl-primary: #2563eb;
+  --tpl-primary-hover: #1d4ed8;
+  --tpl-primary-soft: rgba(37, 99, 235, 0.08);
+  --tpl-primary-soft-2: rgba(37, 99, 235, 0.16);
 
-  /* Neutrals — light surface */
-  --tpl-body-bg: #f9fafb; /* page bg */
+  /* Neutrals — cool slate ramp (Untitled-UI "gray modern"), which reads
+     cleaner under a blue accent than the warm grays it replaces. */
+  --tpl-body-bg: #f7f8fa; /* page bg — white cards read against it */
   --tpl-card-bg: #ffffff;
-  --tpl-stroke: #e6ebf1;
+  --tpl-stroke: #e5e8ee;
 
-  --tpl-gray-1: #f9fafb;
-  --tpl-gray-2: #f3f4f6;
-  --tpl-gray-3: #e5e7eb;
-  --tpl-gray-4: #d1d5db;
-  --tpl-gray-5: #9ca3af;
-  --tpl-gray-6: #6b7280;
-  --tpl-gray-7: #374151;
-  --tpl-dark: #101828;
-  --tpl-dark-2: #1f2a37;
-  --tpl-dark-3: #374151;
-  --tpl-dark-4: #4b5563;
-  --tpl-dark-5: #6b7280;
-  --tpl-dark-6: #9ca3af;
-  --tpl-dark-7: #d1d5db;
-  --tpl-dark-8: #e5e7eb;
+  --tpl-gray-1: #fafbfc;
+  --tpl-gray-2: #f5f7fa;
+  --tpl-gray-3: #eef2f6;
+  --tpl-gray-4: #cdd5e0;
+  --tpl-gray-5: #9aa4b2;
+  --tpl-gray-6: #697586;
+  --tpl-gray-7: #364152;
+  --tpl-dark: #121926;
+  --tpl-dark-2: #202939;
+  --tpl-dark-3: #364152;
+  --tpl-dark-4: #4b5565;
+  --tpl-dark-5: #697586;
+  --tpl-dark-6: #9aa4b2;
+  --tpl-dark-7: #cdd5e0;
+  --tpl-dark-8: #e3e8ef;
 
   /* Status */
   --tpl-green: #22ad5c;
@@ -1268,78 +1270,128 @@
   --tpl-yellow-soft: #fffbeb;
   --tpl-orange: #f59460;
 
-  /* Shadows */
-  --tpl-shadow-1: 0 1px 2px 0 rgba(16, 24, 40, 0.04), 0 6px 20px -8px rgba(16, 24, 40, 0.1);
-  --tpl-shadow-2: 0 2px 4px 0 rgba(16, 24, 40, 0.05), 0 12px 28px -10px rgba(16, 24, 40, 0.14);
-  --tpl-shadow-card: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
-  --tpl-shadow-card-2: 0 10px 24px -8px rgba(16, 24, 40, 0.12);
+  /* Shadows — deliberately almost nothing. Resting surfaces are separated by a
+     hairline border, not a drop shadow; shadow is reserved for things that
+     genuinely float above the page (menus, dialogs, popovers). Soft glows under
+     every card are what make an admin read as a consumer app. */
+  --tpl-shadow-1: 0 1px 2px 0 rgba(18, 25, 38, 0.04);
+  --tpl-shadow-2: 0 1px 2px 0 rgba(18, 25, 38, 0.04), 0 4px 12px -6px rgba(18, 25, 38, 0.08);
+  --tpl-shadow-3: 0 8px 24px -6px rgba(18, 25, 38, 0.12), 0 2px 6px -2px rgba(18, 25, 38, 0.06);
+  --tpl-shadow-card: 0 1px 2px 0 rgba(18, 25, 38, 0.04);
+  --tpl-shadow-card-2: 0 4px 12px -6px rgba(18, 25, 38, 0.08);
+  /* Focus ring — one definition, used by every interactive control. */
+  --tpl-focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.18);
 
-  /* Radii */
+  /* Radii — 10px. Large radii (16–18px) read friendly-consumer; pro tools sit
+     between 6 and 10, which is what keeps dense UI looking engineered. */
   --tpl-radius-card: 10px;
 
-  /* ── Admin-scoped brand overrides → cyan #3BD9DA · black · white ──
+  /* ── Admin-scoped brand overrides → blue #2563EB · slate · white ──
      admin.css loads after global.css (via AdminApp), so these win over
-     global.css's blue [data-brand="admin"] tokens. */
-  /* shadcn semantic — navy primary/ring, WHITE text on navy fills */
-  --primary: 183 76% 27%;
+     global.css's cyan tokens inside the admin shell only. */
+  /* shadcn semantic — blue primary/ring, WHITE text on blue fills */
+  --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
-  --ring: 180 68% 54%;
+  --ring: 217 91% 60%;
   /* shared primitives (bg-brand / text-brand / EmptyState / TabStrip) */
-  --brand: 183 76% 27%;
-  --brand-hover: 183 76% 22%;
+  --brand: 221 83% 53%;
+  --brand-hover: 224 76% 48%;
   --brand-fg: 0 0% 100%;
-  --brand-subtle: 174 45% 94%;
+  --brand-subtle: 214 100% 97%; /* #EFF6FF */
   /* app/surface semantic layer (AdminStatCard, app-accent) */
   --surface: #ffffff;
-  --surface-2: #f1f3f5;
-  --surface-border: #e4e7eb;
-  --surface-fg: #101828;
-  --surface-fg-muted: #55585e;
-  --surface-fg-subtle: #6e7278;
-  --accent: #117479;
-  --accent-hover: #0d5c60;
-  --accent-soft: rgba(59, 217, 218, 0.2);
+  --surface-2: #f5f7fa;
+  --surface-border: #e3e8ef;
+  --surface-fg: #121926;
+  --surface-fg-muted: #697586;
+  --surface-fg-subtle: #9aa4b2;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
   --accent-fg: #ffffff;
 
-  /* Glass / teal utility tokens — LIGHT content values (teal tints).
-     The graphite chrome scope below redefines these for the sidebar/header. */
-  --glass-bg: rgba(0, 0, 0, 0.03);
-  --glass-bg-hover: rgba(59, 217, 218, 0.12);
-  --glass-border: rgba(0, 0, 0, 0.08);
-  --glass-border-strong: rgba(0, 0, 0, 0.14);
+  /* Glass / accent utility tokens — LIGHT content values (blue tints).
+     The chrome scope below redefines these for the sidebar/header.
+     The `--teal-*` names are legacy and now hold blue values; they are kept
+     so the ~40 existing consumers don't all need renaming. */
+  --glass-bg: rgba(18, 25, 38, 0.03);
+  --glass-bg-hover: rgba(37, 99, 235, 0.045);
+  --glass-border: rgba(18, 25, 38, 0.08);
+  --glass-border-strong: rgba(18, 25, 38, 0.14);
   --glass-header: rgba(255, 255, 255, 0.85);
-  --teal-glass: rgba(59, 217, 218, 0.2);
-  --teal-border: rgba(59, 217, 218, 0.6);
-  --teal-subtle: rgba(59, 217, 218, 0.14);
-  --shadow-teal: 0 0 0 1px rgba(59, 217, 218, 0.65);
-  --search-focus-ring: rgba(59, 217, 218, 0.4);
+  --teal-glass: rgba(37, 99, 235, 0.1);
+  --teal-border: rgba(37, 99, 235, 0.45);
+  --teal-subtle: rgba(37, 99, 235, 0.07);
+  --shadow-teal: 0 0 0 1px rgba(37, 99, 235, 0.5);
+  --search-focus-ring: rgba(37, 99, 235, 0.18);
+}
+
+/* ── Portalled admin surfaces ─────────────────────────────────────────────
+   Radix renders dialogs, select menus, popovers and dropdowns as direct
+   children of <body>, outside the [data-brand="admin"] root — so none of the
+   tokens above reach them and every one would fall back to the public site's
+   palette. `body.admin-scope` is added while the admin sub-app is mounted (see
+   useAdminPortalScope in AdminApp.tsx); CSS variables inherit, so anything
+   portalled into <body> picks these up with no per-dialog `style` prop.
+
+   It is keyed on the class, NOT on `:root`, because admin is a lazy chunk in
+   the same document as the public site: its stylesheet stays loaded after you
+   navigate back out, and a `:root` block would repaint the public pages.
+
+   Admin content itself is unaffected — [data-brand="admin"] (0,1,0 + attr)
+   outranks this on the same variables. Keep the two in sync. */
+body.admin-scope {
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 217 91% 60%;
+
+  --brand: 221 83% 53%;
+  --brand-hover: 224 76% 48%;
+  --brand-fg: 0 0% 100%;
+  --brand-subtle: 214 100% 97%;
+
+  --surface: #ffffff;
+  --surface-2: #f5f7fa;
+  --surface-border: #e3e8ef;
+  --surface-fg: #121926;
+  --surface-fg-muted: #697586;
+  --surface-fg-subtle: #9aa4b2;
+  --accent-hover: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.08);
+  --accent-fg: #ffffff;
+
+  /* `--accent` is deliberately NOT set here. It collides with shadcn's own
+     hsl-channel `--accent` (see the note in adminUI.ts); overriding it at body
+     level with a hex would break `bg-accent` for every portalled shadcn
+     component. Components that need the accent fill use `bg-app-accent`, and
+     PORTAL_VARS still sets it inline where an `app-accent` class is used. */
 }
 
 /* ── Clean LIGHT chrome (sidebar + header) — white rail + white header,
-   hairline #e6ebf1 borders, deep-cyan #117479 accent. Applied by
-   data-admin-skin="teal" (marker name kept for continuity) on the AdminSidebar
-   and AdminHeader roots. The chrome shares the CONTENT's teal accent, so rail +
-   header + content read as one continuous light surface. Scoped to these two
-   subtrees only. NOTE: the chrome roots no longer carry a `dark` class. */
+   hairline borders, blue #2563EB accent. Applied by data-admin-skin="teal"
+   (marker name kept for continuity with the existing JSX) on the AdminSidebar
+   and AdminHeader roots. The chrome sits one step BRIGHTER than the content
+   (#ffffff rail vs #f5f7fa page), which is what separates them — the border is
+   only a hairline. Scoped to these two subtrees; the roots carry no `dark`. */
 [data-admin-skin="teal"] {
-  --tpl-body-bg: #f1f8f7; /* faint teal tint — softer than stark white */
-  --tpl-card-bg: #f1f8f7;
-  --tpl-dark-2: #f1f8f7;
-  --tpl-stroke: #dce7e5;
-  --tpl-dark: #101828; /* primary text */
-  --tpl-dark-3: #344054;
-  --tpl-dark-4: #475467;
-  --tpl-dark-5: #667085; /* muted text (group labels, roles) */
-  --tpl-dark-6: #475467; /* secondary text (sub-items) */
-  --tpl-gray-2: #f2f4f7;
-  --tpl-gray-3: #eceff3;
-  --tpl-primary: #117479; /* active-nav text + accent → deep teal */
-  --glass-header: #f1f8f7;
-  --glass-bg: rgba(16, 24, 40, 0.03);
-  --glass-bg-hover: rgba(16, 24, 40, 0.05);
-  --teal-glass: rgba(59, 217, 218, 0.2); /* active pill / sub-item active fill */
-  --teal-border: rgba(59, 217, 218, 0.6);
-  --sidebar-primary: 183 76% 27%;
+  --tpl-body-bg: #ffffff;
+  --tpl-card-bg: #ffffff;
+  --tpl-dark-2: #ffffff;
+  --tpl-stroke: #e3e8ef;
+  --tpl-dark: #121926; /* primary text */
+  --tpl-dark-3: #364152;
+  --tpl-dark-4: #4b5565;
+  --tpl-dark-5: #697586; /* muted text (group labels, roles) */
+  --tpl-dark-6: #4b5565; /* secondary text (sub-items) */
+  --tpl-gray-2: #f5f7fa;
+  --tpl-gray-3: #eef2f6;
+  --tpl-primary: #2563eb; /* active-nav text + accent → blue */
+  --glass-header: rgba(255, 255, 255, 0.88);
+  --glass-bg: rgba(18, 25, 38, 0.03);
+  --glass-bg-hover: rgba(18, 25, 38, 0.05);
+  --teal-glass: rgba(37, 99, 235, 0.08); /* active pill / sub-item active fill */
+  --teal-border: rgba(37, 99, 235, 0.4);
+  --sidebar-primary: 221 83% 53%;
 }
 
 /* ── Flat light chrome — white rail + header separated from the content only by
@@ -1527,38 +1579,57 @@
   line-height: 20px;
 }
 
-/* ── Table styling — ported from the NextAdmin InvoiceTable pattern ──────
-   Template default: light-blue tinted header row (#F7F9FC), bigger non-
-   uppercase text in dark color, generous py-4 cells. Applies to any
-   <Table> primitive inside the admin shell.                              */
+/* ── Data-table styling ───────────────────────────────────────────────────
+   Modern admin-table conventions: the header is a quiet label row (12px,
+   uppercase, muted, tracked) rather than a second heading competing with the
+   page title, and the DATA is what carries weight. Row height comes from 14px
+   vertical padding, which keeps ~10 rows on a laptop viewport without feeling
+   cramped. Applies to any <Table> primitive inside the admin shell.        */
 [data-brand="admin"] thead tr {
   background-color: var(--tpl-gray-2);
   border-bottom: 1px solid var(--tpl-stroke);
 }
 [data-brand="admin"] thead th {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--tpl-dark);
-  padding-top: 16px;
-  padding-bottom: 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tpl-dark-5);
+  padding-top: 11px;
+  padding-bottom: 11px;
   text-align: left;
   vertical-align: middle;
+  white-space: nowrap;
 }
 [data-brand="admin"] tbody td {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--tpl-dark-3);
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 14px;
+  padding-bottom: 14px;
   vertical-align: middle;
 }
 [data-brand="admin"] tbody tr {
-  border-bottom: 1px solid var(--tpl-stroke);
+  border-bottom: 1px solid var(--tpl-gray-3);
 }
 [data-brand="admin"] tbody tr:last-child {
   border-bottom: 0;
 }
 [data-brand="admin"] tbody tr:hover {
-  background-color: var(--glass-bg-hover, rgba(87, 80, 241, 0.03));
+  background-color: var(--glass-bg-hover, rgba(37, 99, 235, 0.045));
+}
+/* Selected rows read as a soft blue wash, one step stronger than hover. */
+[data-brand="admin"] tbody tr[data-state="selected"] {
+  background-color: rgba(37, 99, 235, 0.06);
+}
+
+/* Sticky header — the scroll container is the wrapper inside <Table>, so the
+   th itself sticks. Needs an opaque background or rows show through. */
+[data-brand="admin"] .admin-table-sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: var(--tpl-gray-2);
+  box-shadow: inset 0 -1px 0 0 var(--tpl-stroke);
 }
 .dark [data-brand="admin"] thead tr {
   background-color: var(--tpl-dark-2);
@@ -1610,15 +1681,7 @@
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-/* Focus ring for non-search inputs: subtle purple, no double-outline */
-[data-brand="admin"] input:not([type="search"]):focus-visible,
-[data-brand="admin"] select:focus-visible,
-[data-brand="admin"] textarea:focus-visible {
-  outline: 2px solid var(--tpl-primary);
-  outline-offset: 1px;
-}
-
-/* Selection color matches template purple */
+/* Selection color matches the admin blue */
 [data-brand="admin"] ::selection {
   background-color: var(--tpl-primary-soft-2);
   color: var(--tpl-dark);
@@ -1633,18 +1696,24 @@
   display: none;
 }
 
-main::-webkit-scrollbar {
-  width: 5px;
+/* Scoped to the admin shell — an unscoped `main::-webkit-scrollbar` rule here
+   would also restyle the public site, which imports its own stylesheet. */
+[data-brand="admin"] main::-webkit-scrollbar {
+  width: 10px;
 }
-main::-webkit-scrollbar-track {
+[data-brand="admin"] main::-webkit-scrollbar-track {
   background: transparent;
 }
-main::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
+[data-brand="admin"] main::-webkit-scrollbar-thumb {
+  background: #cdd5e0;
+  border-radius: 9999px;
+  /* Inset the thumb from the gutter edge so it reads as a floating pill. */
+  border: 3px solid transparent;
+  background-clip: content-box;
 }
-main::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+[data-brand="admin"] main::-webkit-scrollbar-thumb:hover {
+  background: #9aa4b2;
+  background-clip: content-box;
 }
 
 /* Admin (57facets) gets a dark/teal scrollbar — scoped so the public site keeps
@@ -1656,16 +1725,61 @@ main::-webkit-scrollbar-thumb:hover {
   background: #3bd9da;
 }
 
-/* Smooth focus outline on buttons and inputs — scoped to the admin shell.
-   Portaled content (dialogs, popovers, command palette) lives outside this
-   scope so it can opt into its own focus styling. Previously this was a
-   global rule which leaked an ocean-blue outline onto the cmdk search input. */
+/* Focus treatment for the admin shell — a soft 3px blue halo rather than a
+   hard 2px outline, which is what makes keyboard focus read as designed
+   rather than as a browser default. Scoped to the admin shell; portaled
+   content (dialogs, popovers, command palette) lives outside it and opts into
+   its own styling. Previously an unscoped rule leaked onto the cmdk input. */
 [data-brand="admin"] button:focus-visible,
+[data-brand="admin"] a:focus-visible,
+[data-brand="admin"] [role="button"]:focus-visible,
 [data-brand="admin"] input:focus-visible,
 [data-brand="admin"] select:focus-visible,
 [data-brand="admin"] textarea:focus-visible {
-  outline: 2px solid hsl(var(--dashboard-primary));
+  outline: 2px solid transparent;
   outline-offset: 2px;
+  box-shadow: var(--tpl-focus-ring);
+  border-radius: 8px;
+}
+/* Controls that already own a radius keep it — the rule above would otherwise
+   square off pills and circles while focused. */
+[data-brand="admin"] .rounded-full:focus-visible {
+  border-radius: 9999px;
+}
+[data-brand="admin"] .rounded-xl:focus-visible {
+  border-radius: 12px;
+}
+
+/* ── Skeleton shimmer ─────────────────────────────────────────────────────
+   A travelling highlight instead of `animate-pulse`. Pulse fades the whole
+   block toward the background, which on a slow connection reads as content
+   flickering out rather than loading in. Reduced-motion falls back to a
+   static tint — no animation, but the placeholder is still visible. */
+@keyframes admin-shimmer {
+  from {
+    background-position: 180% 0;
+  }
+  to {
+    background-position: -80% 0;
+  }
+}
+.admin-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(18, 25, 38, 0.055) 45%,
+    rgba(18, 25, 38, 0.055) 55%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  animation: admin-shimmer 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-shimmer {
+    animation: none;
+    background-image: none;
+  }
 }
 
 /* Consistent link-style interactions */

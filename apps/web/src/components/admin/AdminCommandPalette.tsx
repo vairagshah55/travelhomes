@@ -35,6 +35,7 @@ import {
 import { useTheme } from "@/components/admin/ThemeProvider";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { featureForPath } from "@/lib/adminPermissions";
+import { PORTAL_VARS } from "@/components/admin/adminUI";
 
 interface AdminCommandPaletteProps {
   open: boolean;
@@ -109,7 +110,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} contentStyle={PORTAL_VARS}>
       <CommandInput placeholder="Search routes, actions, settings…" />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
@@ -142,7 +143,7 @@ export default function AdminCommandPalette({ open, onOpenChange }: AdminCommand
 
         {(() => {
           const items = [
-            navItem("/admin/cms", FileText, "#117479", "CMS"),
+            navItem("/admin/cms", FileText, "#2563eb", "CMS"),
             navItem("/admin/crm", Bell, "#0284C7", "CRM"),
             navItem("/admin/plugins", Box, "#7C3AED", "Plugins"),
             navItem("/admin/staff", Users2, "#059669", "Staff · All"),

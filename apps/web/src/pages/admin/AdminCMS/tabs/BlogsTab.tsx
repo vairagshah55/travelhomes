@@ -339,13 +339,14 @@ export function BlogsTab() {
             Add blog
           </button>
         }
-      />
-
-      <AdminFilterBar
-        filters={FILTER_DEFS}
-        activeFilters={filters}
-        onApply={setFilters}
-        onClear={() => setFilters({})}
+        filterSlot={
+          <AdminFilterBar
+            filters={FILTER_DEFS}
+            activeFilters={filters}
+            onApply={setFilters}
+            onClear={() => setFilters({})}
+          />
+        }
       />
 
       <TableFrame>

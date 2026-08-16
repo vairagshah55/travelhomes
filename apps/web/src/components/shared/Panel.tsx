@@ -24,27 +24,11 @@ export const BRAND_VARS = {
   "--ring": "180 68% 54%",
 } as React.CSSProperties;
 
-/**
- * The `app-*` surface/accent layer for the ADMIN area, for the same reason as
- * BRAND_VARS: those vars are declared on `[data-brand="admin"]` (AdminLayout's
- * root), and Radix portals dialogs / select popovers to <body> — outside it. In
- * a portal `app-accent` would otherwise fall back to global.css's `:root`, which
- * is purple. Spread this onto any portalled content that uses `app-*` classes.
- * Values mirror the admin block in admin.css.
- */
-export const ADMIN_APP_VARS = {
-  ...BRAND_VARS,
-  "--surface": "#ffffff",
-  "--surface-2": "#f1f3f5",
-  "--surface-border": "#e4e7eb",
-  "--surface-fg": "#101828",
-  "--surface-fg-muted": "#55585e",
-  "--surface-fg-subtle": "#6e7278",
-  "--accent": "#117479",
-  "--accent-hover": "#0d5c60",
-  "--accent-soft": "rgba(59, 217, 218, 0.2)",
-  "--accent-fg": "#ffffff",
-} as React.CSSProperties;
+/* The admin area's portal vars used to live here too, as `ADMIN_APP_VARS` —
+   built by spreading BRAND_VARS above. That coupling broke the moment admin
+   moved to a blue accent: admin dropdowns and dialogs kept opening in the
+   vendor's cyan. They now live in components/admin/adminUI.ts as
+   `PORTAL_VARS`, independent of this set. */
 
 /** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
 export const PANEL =
@@ -102,11 +86,16 @@ export const BTN_SOFT =
 export const BTN_NEUTRAL =
   "h-9 px-4 rounded-xl border-0 shadow-none bg-muted text-foreground/80 " +
   "hover:bg-muted/70 text-[12.5px] font-semibold gap-1.5";
+/* The glow is spelled in `hsl(var(--brand)/…)` rather than a literal hex so it
+   follows whichever brand is in scope — cyan on vendor routes, blue inside the
+   admin shell. A literal here is also how the previous values silently broke:
+   Tailwind drops any arbitrary value containing a space. */
 export const BTN_PRIMARY =
   "h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 " +
-  "shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-6px_rgba(59, 217, 218, 0.65)] " +
-  "hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.56),0_8px_20px_-6px_rgba(59, 217, 218, 0.65)] " +
-  "transition-shadow duration-150";
+  "shadow-[0_1px_2px_hsl(var(--brand)/0.24),0_6px_16px_-6px_hsl(var(--brand)/0.45)] " +
+  "hover:shadow-[0_2px_4px_hsl(var(--brand)/0.28),0_10px_22px_-6px_hsl(var(--brand)/0.5)] " +
+  "active:translate-y-px " +
+  "transition-[box-shadow,transform,background-color] duration-150";
 
 export const Panel = ({
   className,

@@ -31,6 +31,7 @@ import { CareerTab } from "./AdminCMS/tabs/CareerTab";
 import { HomePageTab } from "./AdminCMS/tabs/HomePageTab";
 import { BlogsTab } from "./AdminCMS/tabs/BlogsTab";
 import { FeaturesTab } from "./AdminCMS/tabs/FeaturesTab";
+import { CARD_FLUSH } from "@/components/admin/adminUI";
 
 /**
  * The auth pages whose hero collage is CMS-managed. Each one stores five
@@ -375,9 +376,12 @@ const AdminCMS = () => {
   const TabIcon = current.icon;
 
   return (
-    <AdminLayout title="CMS">
+    <AdminLayout
+      title="CMS"
+      subtitle="Content shown on the public site — pages, banners, FAQs and testimonials."
+    >
       <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
+        <div className={CARD_FLUSH}>
           {/* Panel head — mirrors PanelHead in the shared kit. */}
           <header className="flex items-start gap-3 px-5 pt-4 pb-3.5 border-b border-app-border">
             <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-app-accent-soft text-app-accent shrink-0">

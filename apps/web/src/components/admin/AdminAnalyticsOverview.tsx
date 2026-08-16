@@ -16,6 +16,7 @@ import {
 import { analyticsService } from "@/services/api";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
 import { formatINR } from "@/utils/formatCurrency";
+import { CARD } from "@/components/admin/adminUI";
 
 /**
  * Analytics Overview — aggregate KPI strip + per-service performance cards.
@@ -37,7 +38,7 @@ interface CatStats {
 }
 
 const SERVICES: { key: string; label: string; color: string; icon: LucideIcon }[] = [
-  { key: "camper-van", label: "Camper Van", color: "#117479", icon: Tent },
+  { key: "camper-van", label: "Camper Van", color: "#2563eb", icon: Tent },
   { key: "unique-stay", label: "Unique Stay", color: "#a855f7", icon: Home },
   { key: "activity", label: "Activity", color: "#f59e0b", icon: Compass },
 ];
@@ -95,7 +96,7 @@ const AdminAnalyticsOverview = () => {
     iconColor: string;
     nav?: string;
   }[] = [
-    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#117479" },
+    { title: "Total Impressions", value: totals.impressions, icon: Eye, iconColor: "#2563eb" },
     { title: "Total Clicks", value: totals.clicks, icon: MousePointerClick, iconColor: "#3b82f6" },
     { title: "Avg. CTR", value: `${ctr.toFixed(1)}%`, icon: TrendingUp, iconColor: "#22c55e" },
     {
@@ -212,7 +213,7 @@ function ServiceCard({
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.25, ease: "easeOut" }}
-      className="flex flex-col gap-5 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] p-5"
+      className={`flex flex-col gap-5 ${CARD} p-5`}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-3">

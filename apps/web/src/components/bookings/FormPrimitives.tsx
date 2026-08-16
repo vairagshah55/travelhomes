@@ -29,8 +29,8 @@ export const NO_SERVICE_SENTINEL = "No Service Available";
  */
 export const SELECT_ITEM_CLASS =
   "cursor-pointer text-[#131313] " +
-  "focus:bg-[rgba(59, 217, 218, 0.2)] focus:text-[#117479] " +
-  "data-[highlighted]:bg-[rgba(59, 217, 218, 0.2)] data-[highlighted]:text-[#117479]";
+  "focus:bg-[rgba(59,217,218,0.2)] focus:text-[#117479] " +
+  "data-[highlighted]:bg-[rgba(59,217,218,0.2)] data-[highlighted]:text-[#117479]";
 
 /* ─── Section header ──────────────────────────────────────────────────────── */
 export const SectionHeader = ({
@@ -136,7 +136,7 @@ export const tealBtn = (
       // Kit BTN_PRIMARY geometry + a logo-cyan glow.
       "inline-flex items-center gap-1.5 h-10 px-5 rounded-xl border-0 bg-brand hover:bg-brand-hover",
       "text-[13px] font-semibold text-brand-fg transition-[background-color,box-shadow] duration-150",
-      "shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-6px_rgba(59, 217, 218, 0.65)]",
+      "shadow-[0_1px_2px_rgba(59,217,218,0.48),0_6px_16px_-6px_rgba(59,217,218,0.65)]",
       disabled ? "cursor-not-allowed opacity-45 shadow-none" : "cursor-pointer",
     )}
   >

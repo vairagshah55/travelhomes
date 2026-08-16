@@ -47,7 +47,7 @@ export const StatTile = ({
       className={cn(
         PANEL,
         "group p-4 transition-[transform,box-shadow] duration-200",
-        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.28),0_14px_32px_-16px_rgba(59, 217, 218, 0.65)]",
+        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_hsl(var(--brand)/0.16),0_14px_32px_-16px_hsl(var(--brand)/0.4)]",
       )}
     >
       <span

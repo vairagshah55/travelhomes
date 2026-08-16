@@ -65,13 +65,14 @@ import { formatINR } from "@/utils/formatCurrency";
 import { useDashboard } from "@/hooks/admin/useDashboard";
 import { adminKeys } from "@/hooks/admin/queryKeys";
 import { api } from "@/services/api";
+import { CARD, CARD_FLUSH } from "@/components/admin/adminUI";
 
 // ─── Chart card — template-style (white card, rounded-[10px], shadow-1) ──────
 const DashboardChart = ({
   title,
   data,
   type = "area",
-  color = "#117479",
+  color = "#2563eb",
   dataKey = "value",
   loading = false,
 }: {
@@ -85,7 +86,9 @@ const DashboardChart = ({
   const gradId = `grad_${title.replace(/\s+/g, "_")}`;
   const isEmpty = !loading && (!data || data.length === 0);
   return (
-    <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 pt-5 pb-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.28),0_14px_32px_-16px_rgba(59, 217, 218, 0.65)]">
+    <div
+      className={`${CARD} px-5 pt-5 pb-4 transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(37,99,235,0.16),0_14px_32px_-16px_rgba(37,99,235,0.45)]`}
+    >
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">{title}</h3>
         <span className="text-[12px] font-medium px-2.5 py-1 bg-tpl-gray-2 dark:bg-white/5 rounded-full text-tpl-dark-5 dark:text-tpl-dark-6">
@@ -199,7 +202,7 @@ const AdminDashboard = () => {
         title: "Active Vendors",
         value: String(d.stats?.vendors?.active ?? 0),
         icon: Wallet,
-        iconColor: "#117479",
+        iconColor: "#2563eb",
         navigate: "/management/vendor",
       },
       {
@@ -304,10 +307,7 @@ const AdminDashboard = () => {
           <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4 2xl:grid-cols-4 2xl:gap-7">
             {isLoading
               ? Array.from({ length: 8 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] p-4 animate-pulse"
-                  >
+                  <div key={i} className={`${CARD} p-4 animate-pulse`}>
                     <div className="w-9 h-9 rounded-[10px] bg-tpl-gray-2 dark:bg-white/5" />
                     <div className="mt-5 space-y-2">
                       <div className="h-7 w-20 rounded bg-tpl-gray-2 dark:bg-white/5" />
@@ -350,7 +350,7 @@ const AdminDashboard = () => {
                 title="Revenue Generated"
                 data={graphs.revenue}
                 type="area"
-                color="#117479"
+                color="#2563eb"
                 dataKey="total"
                 loading={isLoading}
               />
@@ -372,7 +372,10 @@ const AdminDashboard = () => {
                 title="Active Users"
                 data={graphs.users}
                 type="bar"
-                color="#2660A0"
+                /* Violet, not the old #2660A0 — that steel blue now sits a few
+                   degrees from the brand blue used by the Revenue chart above
+                   it, so the two cards read as the same series. */
+                color="#8155FF"
                 dataKey="count"
                 loading={isLoading}
               />
@@ -395,7 +398,7 @@ const AdminDashboard = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden"
+            className={CARD_FLUSH}
           >
             <div className="px-5 pt-4 pb-3.5 border-b border-app-border flex items-center justify-between flex-wrap gap-3">
               <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-app-fg">

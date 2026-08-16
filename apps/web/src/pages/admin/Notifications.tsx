@@ -27,6 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
+import { CARD } from "@/components/admin/adminUI";
 
 interface Notification {
   _id: string;
@@ -201,8 +202,11 @@ const Notifications = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <AdminLayout title="Notifications">
-      <main className="flex-1 p-5 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-auto">
+    <AdminLayout
+      title="Notifications"
+      subtitle="Everything the platform has flagged for your attention."
+    >
+      <main className={`flex-1 p-5 ${CARD} overflow-auto`}>
         {/* Filter Tabs and Mark as Read */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-dashboard-stroke pb-4 mb-5">
           <div className="flex items-center">

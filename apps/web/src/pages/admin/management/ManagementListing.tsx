@@ -10,8 +10,12 @@ import {
   SearchX,
   Plus,
   Loader2,
+  Image as ImageIcon,
+  IndianRupee,
+  Layers,
+  RefreshCw,
+  Store,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import AdminLayout from "@/components/admin/AdminLayout";
 import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
 import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
@@ -36,6 +40,8 @@ import { vendorService, offersService } from "@/services/api";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
+import { BTN_NEUTRAL, BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
 
 /* ── Tab definitions ────────────────────────────────────────────────────── */
 const TABS = [
@@ -54,6 +60,16 @@ const SORT_OPTIONS = [
 ];
 
 const ITEMS_PER_PAGE = 10;
+
+/* Metric row. Each figure is computed from the listings already fetched for
+   the active tab — deriving them costs nothing and, unlike a second endpoint,
+   can never disagree with the table underneath it. */
+const STAT_DEFS = [
+  { key: "listings", title: "Listings", icon: PackageOpen, color: "#2563eb" },
+  { key: "vendors", title: "Vendors", icon: Store, color: "#7c3aed" },
+  { key: "categories", title: "Categories", icon: Layers, color: "#0891b2" },
+  { key: "avgPrice", title: "Avg price", icon: IndianRupee, color: "#059669" },
+] as const;
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 const ManagementListing = () => {
@@ -154,6 +170,26 @@ const ManagementListing = () => {
       offers.map((o) => [o.city, o.locality, o.state].filter(Boolean).join(", ")).filter(Boolean),
     );
     return Array.from(set).map((v) => ({ value: v, label: v }));
+  }, [offers]);
+
+  const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label ?? "All";
+
+  /* Metric-row figures, all derived from `offers` (the active tab's data). */
+  const stats = useMemo(() => {
+    const priced = offers
+      .map((o) => Number(o.regularPrice))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    const avg = priced.length
+      ? Math.round(priced.reduce((sum, n) => sum + n, 0) / priced.length)
+      : 0;
+    return {
+      listings: String(offers.length),
+      vendors: String(new Set(offers.map((o) => o.vendorId).filter(Boolean)).size),
+      categories: String(new Set(offers.map((o) => o.category).filter(Boolean)).size),
+      // A formatted string, so AdminStatCard renders it as-is instead of
+      // count-up animating a rupee figure digit by digit.
+      avgPrice: avg ? formatINR(avg) : "—",
+    };
   }, [offers]);
 
   const filterDefs: FilterDefinition[] = [
@@ -411,84 +447,96 @@ const ManagementListing = () => {
     });
   };
 
-  /* ── Columns ── */
+  /* ── Columns ────────────────────────────────────────────────────────────
+     Six columns of equally-weighted grey text is what made this read as a
+     spreadsheet. Name, category and location are ONE thing — the listing — so
+     they now share a single media cell: thumbnail, name in full-strength ink,
+     category and place as muted metadata beneath. Everything else drops to
+     supporting weight, which leaves exactly two things scannable per row: what
+     the listing is, and what state it's in. */
   const columns: ColumnDef<Offer>[] = [
+    {
+      key: "name",
+      header: "Listing",
+      className: "min-w-[260px]",
+      cell: (o) => {
+        const place = [o.locality, o.city, o.state].filter(Boolean).join(", ");
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            {o.photos?.coverUrl ? (
+              <img
+                src={getImageUrl(o.photos.coverUrl as string)}
+                alt=""
+                loading="lazy"
+                className="w-10 h-10 rounded-lg object-cover shrink-0 ring-1 ring-black/[0.06]"
+              />
+            ) : (
+              <div className="grid place-items-center w-10 h-10 rounded-lg shrink-0 bg-app-surface-2 ring-1 ring-black/[0.04]">
+                <ImageIcon size={15} className="text-app-fg-subtle/70" strokeWidth={1.8} />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-semibold text-app-fg truncate leading-tight">
+                {o.name || "Untitled listing"}
+              </p>
+              <p className="mt-0.5 text-[12px] text-app-fg-subtle truncate leading-tight">
+                {o.category || "Uncategorised"}
+                {place && <span className="mx-1.5 opacity-40">·</span>}
+                {place}
+              </p>
+            </div>
+          </div>
+        );
+      },
+    },
     {
       key: "vendorId",
       header: "Vendor",
+      hideBelow: "md",
       cell: (o) => {
         const name = vendorNameFor(o.vendorId);
-        if (!o.vendorId) {
-          return <span className="text-tpl-dark-4 dark:text-tpl-dark-6">—</span>;
-        }
+        if (!o.vendorId) return <span className="text-app-fg-subtle">—</span>;
         return (
           <button
             onClick={() => handleVendorClick(o.vendorId || "")}
-            className="text-left hover:underline"
+            className="group/v flex items-center gap-2.5 text-left min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-app-accent/35"
             title={name ? `${name} · ${o.vendorId}` : o.vendorId}
           >
-            <span className="block font-semibold text-tpl-primary">{name || o.vendorId}</span>
-            {name && (
-              <span className="block text-xs text-tpl-dark-4 dark:text-tpl-dark-6">
-                {o.vendorId}
+            <span className="grid place-items-center w-7 h-7 rounded-full shrink-0 bg-app-accent-soft text-app-accent text-[10.5px] font-bold uppercase">
+              {(name || o.vendorId).slice(0, 2)}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[13px] font-medium text-app-fg truncate leading-tight group-hover/v:text-app-accent transition-colors">
+                {name || o.vendorId}
               </span>
-            )}
+              {name && (
+                <span className="block text-[11.5px] text-app-fg-subtle truncate leading-tight tabular-nums">
+                  {o.vendorId}
+                </span>
+              )}
+            </span>
           </button>
         );
       },
     },
     {
-      key: "name",
-      header: "Name",
-      cell: (o) => (
-        <div className="flex items-center gap-3">
-          {o.photos?.coverUrl ? (
-            <img
-              src={getImageUrl(o.photos.coverUrl as string)}
-              alt="cover"
-              className="w-10 h-10 rounded object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded bg-tpl-gray-3 dark:bg-white/10 flex-shrink-0" />
-          )}
-          <span className="font-medium text-tpl-dark dark:text-white text-sm">{o.name}</span>
-        </div>
-      ),
-    },
-    {
-      key: "category",
-      header: "Category",
-      hideBelow: "md",
-      cell: (o) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6">{o.category || "—"}</span>
-      ),
-    },
-    {
       key: "regularPrice",
       header: "Price",
-      hideBelow: "md",
+      hideBelow: "sm",
+      align: "right",
       cell: (o) => (
-        <span className="font-medium text-tpl-dark dark:text-white">
+        <span className="text-[13px] font-semibold text-app-fg tabular-nums">
           {o.regularPrice != null ? formatINR(Number(o.regularPrice)) : "—"}
-        </span>
-      ),
-    },
-    {
-      key: "location",
-      header: "Location",
-      hideBelow: "lg",
-      cell: (o) => (
-        <span className="text-tpl-dark-4 dark:text-tpl-dark-6 text-sm">
-          {[o.locality, o.city, o.state].filter(Boolean).join(", ") || "—"}
         </span>
       ),
     },
     {
       key: "status",
       header: "Status",
+      className: "w-[130px]",
       cell: (o) =>
         isRowBusy(o) ? (
-          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-tpl-dark-4 dark:text-tpl-dark-6">
+          <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-app-fg-subtle">
             <Loader2 size={13} className="animate-spin" />
             Updating…
           </span>
@@ -559,73 +607,118 @@ const ManagementListing = () => {
 
   /* ── Render ── */
   return (
-    <AdminLayout title="Listing Management">
-      <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
-          <div className="p-5 space-y-5">
-            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+    <AdminLayout
+      title="Listings"
+      subtitle="Vehicles, stays and activities submitted by vendors — review, approve and publish."
+      headerActions={
+        <>
+          <button
+            onClick={() => query.refetch()}
+            disabled={query.isFetching}
+            className={BTN_NEUTRAL}
+            aria-label="Refresh listings"
+          >
+            <RefreshCw size={15} className={query.isFetching ? "animate-spin" : undefined} />
+            Refresh
+          </button>
+          {access.canCreate && (
+            <button onClick={handleAddNew} className={BTN_PRIMARY}>
+              <Plus size={15} strokeWidth={2.4} /> Create listing
+            </button>
+          )}
+        </>
+      }
+      tabs={
+        <TabStrip
+          variant="flush"
+          tabs={TABS.map((t) => (t.key === activeTab ? { ...t, count: offers.length } : t))}
+          activeKey={activeTab}
+          onChange={setActiveTab}
+        />
+      }
+    >
+      {/* ── Metrics ─────────────────────────────────────────────────────────
+          Every figure is derived from the listings already loaded for the
+          selected tab — no extra request and nothing invented. The hint under
+          each says which tab it describes, so "12" is never mistaken for a
+          platform-wide total. */}
+      <div className={`${STAT_GRID} mb-5`}>
+        {STAT_DEFS.map((stat, i) => (
+          <AdminStatCard
+            key={stat.key}
+            title={stat.title}
+            value={stats[stat.key]}
+            icon={stat.icon}
+            iconColor={stat.color}
+            hint={`in ${activeTabLabel}`}
+            delay={i * 0.04}
+          />
+        ))}
+      </div>
 
+      <MotionReveal delay={0}>
+        <section className={CARD_FLUSH}>
+          {/* Toolbar is the card's HEADER — a recessed band on the card rather
+              than another floating row. That is what makes search/filter read
+              as belonging to this table instead of to the page. */}
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-app-border">
             <AdminToolbar
+              className="flex-1 min-w-0"
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
-              searchPlaceholder="Search listings…"
+              searchPlaceholder="Search listings, vendors, places…"
               sortOptions={SORT_OPTIONS}
               sortValue={sortBy}
               onSortChange={setSortBy}
-              primaryAction={
-                access.canCreate ? (
-                  <Button
-                    onClick={handleAddNew}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
-                  >
-                    <Plus size={16} /> Add Listing
-                  </Button>
-                ) : undefined
+              filterSlot={
+                <AdminFilterBar
+                  filters={filterDefs}
+                  activeFilters={filters}
+                  onApply={setFilters}
+                  onClear={() => setFilters({})}
+                />
+              }
+              trailing={
+                <span className="text-[12px] text-app-fg-subtle tabular-nums whitespace-nowrap">
+                  {filtered.length === offers.length
+                    ? `${filtered.length} listing${filtered.length === 1 ? "" : "s"}`
+                    : `${filtered.length} of ${offers.length}`}
+                </span>
               }
             />
-
-            <AdminFilterBar
-              filters={filterDefs}
-              activeFilters={filters}
-              onApply={setFilters}
-              onClear={() => setFilters({})}
-            />
-
-            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-              <AdminDataTable<Offer>
-                columns={columns}
-                data={paginated}
-                isLoading={query.isLoading}
-                isError={query.isError}
-                errorMessage="Failed to load listings."
-                onRetry={() => query.refetch()}
-                hasActiveQuery={hasActiveQuery}
-                emptyIcon={hasActiveQuery ? SearchX : PackageOpen}
-                emptyTitle="No listings yet"
-                emptyDescription="Listings appear here once vendors submit them for review."
-                noResultsTitle={
-                  searchTerm ? `No results for "${searchTerm}"` : "No matching listings"
-                }
-                noResultsDescription="Try different keywords or remove filters."
-                noResultsAction={{
-                  label: "Clear filters",
-                  onClick: () => {
-                    setSearchTerm("");
-                    setFilters({});
-                  },
-                }}
-                rowActions={rowActions}
-                rowBusy={isRowBusy}
-                pagination={{
-                  currentPage,
-                  totalPages,
-                  totalItems: filtered.length,
-                  onPageChange: setCurrentPage,
-                }}
-              />
-            </div>
           </div>
-        </div>
+
+          <AdminDataTable<Offer>
+            columns={columns}
+            data={paginated}
+            isLoading={query.isLoading}
+            isError={query.isError}
+            errorMessage="Failed to load listings."
+            onRetry={() => query.refetch()}
+            hasActiveQuery={hasActiveQuery}
+            emptyIcon={hasActiveQuery ? SearchX : PackageOpen}
+            emptyTitle={`No ${activeTabLabel.toLowerCase()} listings`}
+            emptyDescription="Listings appear here once vendors submit them for review."
+            noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching listings"}
+            noResultsDescription="Try different keywords or remove filters."
+            noResultsAction={{
+              label: "Clear filters",
+              onClick: () => {
+                setSearchTerm("");
+                setFilters({});
+              },
+            }}
+            rowActions={rowActions}
+            rowBusy={isRowBusy}
+            pagination={{
+              currentPage,
+              totalPages,
+              pageSize: ITEMS_PER_PAGE,
+              totalItems: filtered.length,
+              onPageChange: setCurrentPage,
+            }}
+          />
+        </section>
       </MotionReveal>
 
       {/* ── Popups — props & flows preserved exactly from original ── */}

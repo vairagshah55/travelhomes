@@ -3,15 +3,19 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminAnalyticsOverview from "@/components/admin/AdminAnalyticsOverview";
 import AdminAnalyticsReport from "@/components/admin/AdminAnalyticsReport";
 import { MotionReveal } from "@/components/admin/MotionReveal";
+import { CARD, CARD_FLUSH } from "@/components/admin/adminUI";
 
 const AdminAnalytics = () => {
   const [activeTab, setActiveTab] = useState<"analytics" | "report">("analytics");
 
   return (
-    <AdminLayout title="Analytics">
+    <AdminLayout
+      title="Analytics"
+      subtitle="Traffic, bookings and revenue trends across every service category."
+    >
       <div className="space-y-6">
         {/* Toolbar — title + Overview/Report segmented control */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] px-5 py-4">
+        <div className={`flex flex-wrap items-center justify-between gap-3 ${CARD} px-5 py-4`}>
           <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight truncate">
             {activeTab === "analytics" ? "Analytics Overview" : "Analytics Report"}
           </h2>
@@ -44,7 +48,7 @@ const AdminAnalytics = () => {
           </MotionReveal>
         ) : (
           <MotionReveal delay={0}>
-            <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
+            <div className={CARD_FLUSH}>
               <AdminAnalyticsReport />
             </div>
           </MotionReveal>

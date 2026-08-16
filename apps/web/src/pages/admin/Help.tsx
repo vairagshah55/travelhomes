@@ -7,6 +7,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import LogoWebsite from "@/components/admin/LogoWebsite";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { helpDeskService } from "@/services/api";
+import { CARD } from "@/components/admin/adminUI";
 
 const Help = () => {
   const { user } = useAuth();
@@ -56,8 +57,11 @@ const Help = () => {
   const greetingName = user?.name?.split(" ")[0] || "there";
 
   return (
-    <AdminLayout title="Help">
-      <main className="px-4 sm:px-6 lg:px-10 py-6 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)]">
+    <AdminLayout
+      title="Help"
+      subtitle="Guides for running the admin panel, plus how to reach support."
+    >
+      <main className={`px-4 sm:px-6 lg:px-10 py-6 ${CARD} `}>
         <div className="flex w-full justify-center items-center my-5">
           <LogoWebsite />
         </div>

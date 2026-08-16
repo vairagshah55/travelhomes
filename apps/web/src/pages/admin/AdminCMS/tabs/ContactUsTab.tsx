@@ -407,13 +407,14 @@ export function ContactUsTab({
             searchValue={search}
             onSearchChange={setSearch}
             searchPlaceholder="Search name, email or message…"
-          />
-
-          <AdminFilterBar
-            filters={FILTER_DEFS}
-            activeFilters={filters}
-            onApply={setFilters}
-            onClear={() => setFilters({})}
+            filterSlot={
+              <AdminFilterBar
+                filters={FILTER_DEFS}
+                activeFilters={filters}
+                onApply={setFilters}
+                onClear={() => setFilters({})}
+              />
+            }
           />
 
           <TableFrame>

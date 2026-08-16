@@ -434,13 +434,14 @@ export function CareerTab() {
             searchValue={appSearch}
             onSearchChange={setAppSearch}
             searchPlaceholder="Search applicants…"
-          />
-
-          <AdminFilterBar
-            filters={APPLICATION_FILTERS}
-            activeFilters={appFilters}
-            onApply={setAppFilters}
-            onClear={() => setAppFilters({})}
+            filterSlot={
+              <AdminFilterBar
+                filters={APPLICATION_FILTERS}
+                activeFilters={appFilters}
+                onApply={setAppFilters}
+                onClear={() => setAppFilters({})}
+              />
+            }
           />
 
           <TableFrame>

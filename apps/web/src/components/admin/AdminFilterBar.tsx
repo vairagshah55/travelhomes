@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,6 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  BTN_PRIMARY,
+  BTN_SM,
+  COUNT_BUBBLE,
+  FOCUS_RING,
+  INPUT_SM,
+  LABEL,
+  PORTAL_VARS,
+  SELECT_ITEM,
+} from "./adminUI";
 
 export type FilterValue = string | string[];
 
@@ -68,7 +79,10 @@ export function AdminFilterBar({
   const toggleMulti = (key: string, value: string) =>
     setDraft((d) => {
       const cur = Array.isArray(d[key]) ? (d[key] as string[]) : [];
-      return { ...d, [key]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value] };
+      return {
+        ...d,
+        [key]: cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value],
+      };
     });
 
   const apply = () => {
@@ -111,40 +125,52 @@ export function AdminFilterBar({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
-            className="relative inline-flex items-center gap-2 h-10 px-4 rounded-full border border-app-border bg-app-surface-2 text-[13px] font-medium text-app-fg hover:opacity-80 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2"
+            className={`relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border bg-app-surface text-[13px] font-medium transition-[background-color,border-color] duration-150 ${FOCUS_RING} ${
+              count > 0
+                ? "border-app-accent/40 text-app-accent"
+                : "border-app-border text-app-fg hover:bg-app-surface-2 hover:border-app-fg-subtle/40"
+            }`}
             aria-label={count > 0 ? `Filters, ${count} active` : "Filters"}
           >
             <SlidersHorizontal size={15} />
             Filters
             {count > 0 && (
-              <span className="grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-app-accent text-app-accent-fg text-[10px] font-bold leading-none">
-                {count}
-              </span>
+              <span className={`${COUNT_BUBBLE} bg-app-accent text-app-accent-fg`}>{count}</span>
             )}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-80 p-0">
-          <div className="px-4 py-3 border-b border-app-border">
-            <h4 className="text-[14px] font-semibold text-app-fg">Filters</h4>
+        {/* Radix portals popovers to <body>, outside the admin root — without
+            these vars every `app-*` class inside falls back to the global
+            (cyan) values. */}
+        <PopoverContent
+          align="start"
+          sideOffset={8}
+          style={PORTAL_VARS}
+          className="w-[340px] p-0 rounded-2xl border-app-border bg-app-surface shadow-[0_2px_4px_rgba(18,25,38,0.04),0_16px_32px_-12px_rgba(18,25,38,0.18)]"
+        >
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-app-border">
+            <h4 className="text-[13.5px] font-bold text-app-fg">Filters</h4>
+            {count > 0 && (
+              <span className="text-[11.5px] font-semibold text-app-accent">{count} active</span>
+            )}
           </div>
-          <div className="max-h-[340px] overflow-y-auto px-4 py-3 space-y-4">
+
+          <div className="max-h-[360px] overflow-y-auto px-4 py-4 space-y-4">
             {filters.map((def) => (
               <div key={def.key} className="space-y-1.5">
-                <label className="text-[12px] font-semibold text-app-fg-muted">
-                  {def.label}
-                </label>
+                <label className={LABEL}>{def.label}</label>
 
                 {def.type === "select" && (
                   <Select
                     value={(draft[def.key] as string) || ""}
                     onValueChange={(v) => setDraftValue(def.key, v)}
                   >
-                    <SelectTrigger className="h-9 text-sm">
+                    <SelectTrigger className={`${INPUT_SM} justify-between`}>
                       <SelectValue placeholder={`Any ${def.label.toLowerCase()}`} />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent style={PORTAL_VARS} className="rounded-xl border-app-border">
                       {def.options?.map((o) => (
-                        <SelectItem key={o.value} value={o.value}>
+                        <SelectItem key={o.value} value={o.value} className={SELECT_ITEM}>
                           {o.label}
                         </SelectItem>
                       ))}
@@ -153,12 +179,20 @@ export function AdminFilterBar({
                 )}
 
                 {def.type === "multi-select" && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-0.5">
                     {def.options?.map((o) => {
-                      const checked = Array.isArray(draft[def.key]) && (draft[def.key] as string[]).includes(o.value);
+                      const checked =
+                        Array.isArray(draft[def.key]) &&
+                        (draft[def.key] as string[]).includes(o.value);
                       return (
-                        <label key={o.value} className="flex items-center gap-2 cursor-pointer">
-                          <Checkbox checked={checked} onCheckedChange={() => toggleMulti(def.key, o.value)} />
+                        <label
+                          key={o.value}
+                          className="flex items-center gap-2.5 cursor-pointer rounded-lg -mx-2 px-2 py-1.5 hover:bg-app-surface-2 transition-colors"
+                        >
+                          <Checkbox
+                            checked={checked}
+                            onCheckedChange={() => toggleMulti(def.key, o.value)}
+                          />
                           <span className="text-[13px] text-app-fg">{o.label}</span>
                         </label>
                       );
@@ -172,19 +206,25 @@ export function AdminFilterBar({
                       type="date"
                       value={(draft[def.key] as string[])?.[0] || ""}
                       onChange={(e) =>
-                        setDraftValue(def.key, [e.target.value, (draft[def.key] as string[])?.[1] || ""])
+                        setDraftValue(def.key, [
+                          e.target.value,
+                          (draft[def.key] as string[])?.[1] || "",
+                        ])
                       }
-                      className="h-9 flex-1 rounded-md border border-app-border bg-transparent px-2 text-[13px] text-app-fg"
+                      className={`${INPUT_SM} flex-1`}
                       aria-label={`${def.label} from`}
                     />
-                    <span className="text-app-fg-subtle">–</span>
+                    <span className="text-app-fg-subtle shrink-0">–</span>
                     <input
                       type="date"
                       value={(draft[def.key] as string[])?.[1] || ""}
                       onChange={(e) =>
-                        setDraftValue(def.key, [(draft[def.key] as string[])?.[0] || "", e.target.value])
+                        setDraftValue(def.key, [
+                          (draft[def.key] as string[])?.[0] || "",
+                          e.target.value,
+                        ])
                       }
-                      className="h-9 flex-1 rounded-md border border-app-border bg-transparent px-2 text-[13px] text-app-fg"
+                      className={`${INPUT_SM} flex-1`}
                       aria-label={`${def.label} to`}
                     />
                   </div>
@@ -192,44 +232,50 @@ export function AdminFilterBar({
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
+
+          <div className="flex items-center justify-between gap-2 px-4 py-3 border-t border-app-border bg-app-surface-2/60 rounded-b-2xl">
             <button
               onClick={() => setDraft({})}
-              className="text-[13px] font-medium text-app-fg-muted hover:text-app-fg"
+              className={`rounded-lg px-2 h-9 text-[12.5px] font-semibold text-app-fg-muted hover:text-app-fg transition-colors ${FOCUS_RING}`}
             >
               Reset
             </button>
-            <button
-              onClick={apply}
-              className="rounded-full bg-app-accent px-4 h-9 text-[13px] font-semibold text-app-accent-fg hover:bg-app-accent-hover transition-colors"
-            >
+            <button onClick={apply} className={`${BTN_PRIMARY} ${BTN_SM}`}>
               Apply filters
             </button>
           </div>
         </PopoverContent>
       </Popover>
 
-      {/* Active filter pills */}
-      {pills.map((pill, i) => (
-        <span
-          key={`${pill.def.key}-${pill.value ?? i}`}
-          className="inline-flex items-center gap-1.5 rounded-full bg-app-accent-soft text-app-accent px-3 h-8 text-[12px] font-medium"
-        >
-          {pill.label}
-          <button
-            onClick={() => removePill(pill.def, pill.value)}
-            className="hover:text-app-fg"
-            aria-label={`Remove ${pill.label}`}
+      {/* Active filter pills — each removable on its own, so narrowing a search
+          doesn't mean clearing everything and starting again. */}
+      <AnimatePresence initial={false}>
+        {pills.map((pill, i) => (
+          <motion.span
+            key={`${pill.def.key}-${pill.value ?? i}`}
+            layout
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.13, ease: "easeOut" }}
+            className="inline-flex items-center gap-1 rounded-full bg-app-accent-soft text-app-accent pl-3 pr-1 h-8 text-[12px] font-semibold"
           >
-            <X size={13} />
-          </button>
-        </span>
-      ))}
+            {pill.label}
+            <button
+              onClick={() => removePill(pill.def, pill.value)}
+              className={`grid place-items-center w-5 h-5 rounded-full hover:bg-app-accent/20 transition-colors ${FOCUS_RING}`}
+              aria-label={`Remove filter ${pill.label}`}
+            >
+              <X size={12} strokeWidth={2.6} />
+            </button>
+          </motion.span>
+        ))}
+      </AnimatePresence>
 
-      {count > 0 && (
+      {count > 1 && (
         <button
           onClick={onClear}
-          className="text-[12px] font-medium text-app-fg-muted hover:text-app-fg underline-offset-2 hover:underline"
+          className={`rounded-lg px-1.5 h-8 text-[12px] font-semibold text-app-fg-muted hover:text-app-fg underline-offset-2 hover:underline transition-colors ${FOCUS_RING}`}
         >
           Clear all
         </button>

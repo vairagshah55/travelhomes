@@ -1,7 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Eye, Edit, Trash2, Users2, SearchX } from "lucide-react";
+import {
+  Plus,
+  Eye,
+  Edit,
+  Trash2,
+  Users2,
+  UserCheck,
+  UserMinus,
+  UserX,
+  SearchX,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +46,8 @@ import { useUsers, type User } from "@/hooks/admin/useUsers";
 import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { userSchema, type UserFormValues, USER_STATUS_OPTIONS } from "./userSchema";
+import { BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
 
 const TABS = [
   { key: "all-users", label: "All Users" },
@@ -54,6 +66,15 @@ const SORT_OPTIONS = [
 ];
 
 const ITEMS_PER_PAGE = 10;
+
+/* Metric row shown on the "All Users" tab. Counts are derived from the list
+   already in hand — no extra request, and they stay in step with the table. */
+const STAT_DEFS = [
+  { key: "total", title: "Total Users", icon: Users2, color: "#2563eb" },
+  { key: "active", title: "Active", icon: UserCheck, color: "#12b76a" },
+  { key: "inactive", title: "Inactive", icon: UserMinus, color: "#f59e0b" },
+  { key: "banned", title: "Banned", icon: UserX, color: "#f04438" },
+] as const;
 
 const UserManagement = () => {
   // The route only checks *view* on manage_users; a role can hold view without
@@ -88,6 +109,16 @@ const UserManagement = () => {
     const set = new Set(users.map((u) => u.location).filter((l) => l && l !== "-"));
     return Array.from(set).map((loc) => ({ value: loc, label: loc }));
   }, [users]);
+
+  const counts = useMemo(
+    () => ({
+      total: users.length,
+      active: users.filter((u) => u.status === "active").length,
+      inactive: users.filter((u) => u.status === "inactive").length,
+      banned: users.filter((u) => u.status === "banned").length,
+    }),
+    [users],
+  );
 
   const filterDefs: FilterDefinition[] = [
     { key: "status", label: "Status", type: "select", options: USER_STATUS_OPTIONS },
@@ -249,13 +280,42 @@ const UserManagement = () => {
       : []),
   ];
 
-  return (
-    <AdminLayout title="User Management">
-      <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
-          <div className="p-5 space-y-5">
-            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+  const canAdd = !isSubscribers && access.canCreate;
 
+  return (
+    <AdminLayout
+      title="User Management"
+      subtitle="Everyone registered on TravelHomes — review accounts, verification state and booking activity."
+      tabs={<TabStrip variant="flush" tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />}
+      headerActions={
+        canAdd ? (
+          <button onClick={() => setFormState({ mode: "add" })} className={BTN_PRIMARY}>
+            <Plus size={16} /> Add User
+          </button>
+        ) : undefined
+      }
+    >
+      {/* The stat row is rendered only on "All Users". On a pre-filtered tab
+          the same four counts would be read as totals when they only describe
+          that slice — "Active: 0" on the Banned tab is worse than no card. */}
+      {activeTab === "all-users" && (
+        <div className={`${STAT_GRID} mb-5 md:mb-6`}>
+          {STAT_DEFS.map((stat, i) => (
+            <AdminStatCard
+              key={stat.title}
+              title={stat.title}
+              value={String(counts[stat.key])}
+              icon={stat.icon}
+              iconColor={stat.color}
+              delay={i * 0.05}
+            />
+          ))}
+        </div>
+      )}
+
+      <MotionReveal delay={0}>
+        <div className={CARD_FLUSH}>
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-app-border">
             <AdminToolbar
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
@@ -270,65 +330,55 @@ const UserManagement = () => {
                   : []
               }
               onClearSelection={() => setSelectedIds([])}
-              primaryAction={
-                isSubscribers || !access.canCreate ? undefined : (
-                  <Button
-                    onClick={() => setFormState({ mode: "add" })}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
-                  >
-                    <Plus size={16} /> Add User
-                  </Button>
+              filterSlot={
+                isSubscribers ? undefined : (
+                  <AdminFilterBar
+                    filters={filterDefs}
+                    activeFilters={filters}
+                    onApply={setFilters}
+                    onClear={() => setFilters({})}
+                  />
                 )
               }
             />
-
-            {!isSubscribers && (
-              <AdminFilterBar
-                filters={filterDefs}
-                activeFilters={filters}
-                onApply={setFilters}
-                onClear={() => setFilters({})}
-              />
-            )}
-
-            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-              <AdminDataTable<User>
-                columns={isSubscribers ? subscriberColumns : userColumns}
-                data={paginated}
-                isLoading={query.isLoading}
-                isError={query.isError}
-                errorMessage="Failed to load users."
-                onRetry={() => query.refetch()}
-                hasActiveQuery={hasActiveQuery}
-                emptyIcon={hasActiveQuery ? SearchX : Users2}
-                emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
-                emptyDescription={
-                  isSubscribers
-                    ? "Newsletter subscribers will appear here."
-                    : "Users appear here once they register."
-                }
-                noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
-                noResultsDescription="Try different keywords or remove filters."
-                noResultsAction={{
-                  label: "Clear filters",
-                  onClick: () => {
-                    setSearchTerm("");
-                    setFilters({});
-                  },
-                }}
-                selectable={!isSubscribers && access.canDelete}
-                selectedIds={selectedIds}
-                onSelectionChange={setSelectedIds}
-                rowActions={isSubscribers ? undefined : rowActions}
-                pagination={{
-                  currentPage,
-                  totalPages,
-                  totalItems: filtered.length,
-                  onPageChange: setCurrentPage,
-                }}
-              />
-            </div>
           </div>
+
+          <AdminDataTable<User>
+            columns={isSubscribers ? subscriberColumns : userColumns}
+            data={paginated}
+            isLoading={query.isLoading}
+            isError={query.isError}
+            errorMessage="Failed to load users."
+            onRetry={() => query.refetch()}
+            hasActiveQuery={hasActiveQuery}
+            emptyIcon={hasActiveQuery ? SearchX : Users2}
+            emptyTitle={isSubscribers ? "No subscribers yet" : "No users yet"}
+            emptyDescription={
+              isSubscribers
+                ? "Newsletter subscribers will appear here."
+                : "Users appear here once they register."
+            }
+            noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching users"}
+            noResultsDescription="Try different keywords or remove filters."
+            noResultsAction={{
+              label: "Clear filters",
+              onClick: () => {
+                setSearchTerm("");
+                setFilters({});
+              },
+            }}
+            selectable={!isSubscribers && access.canDelete}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            rowActions={isSubscribers ? undefined : rowActions}
+            pagination={{
+              currentPage,
+              totalPages,
+              pageSize: ITEMS_PER_PAGE,
+              totalItems: filtered.length,
+              onPageChange: setCurrentPage,
+            }}
+          />
         </div>
       </MotionReveal>
 
@@ -519,11 +569,7 @@ function UserFormDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="bg-tpl-primary hover:bg-tpl-primary/90 text-white"
-            >
+            <Button type="submit" disabled={isSaving} className={BTN_PRIMARY}>
               {isSaving ? "Saving…" : state?.mode === "edit" ? "Update User" : "Add User"}
             </Button>
           </DialogFooter>

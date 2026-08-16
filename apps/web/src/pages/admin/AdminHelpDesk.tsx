@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { helpDeskService } from "@/services/api";
+import { CARD } from "@/components/admin/adminUI";
 
 interface HelpDeskItem {
   _id: string;
@@ -117,10 +118,13 @@ const AdminHelpDesk: React.FC = () => {
   };
 
   return (
-    <AdminLayout title="Help Desk">
+    <AdminLayout
+      title="Help Desk"
+      subtitle="Support tickets raised by users and vendors, oldest first."
+    >
       <div className="flex-1">
         <div className="p-5">
-          <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] h-full flex flex-col">
+          <div className={`${CARD} h-full flex flex-col`}>
             {/* Content Header */}
             <div className="px-6 py-5 border-b border-tpl-stroke">
               <h2 className="text-[18px] font-bold text-tpl-dark dark:text-white tracking-tight">

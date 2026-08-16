@@ -134,7 +134,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
-                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#3bd9da] focus:ring-[#3bd9da]"
+                  className="mt-1 h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#2563eb] focus:ring-[#2563eb]"
                   placeholder="Enter admin email"
                   required
                 />
@@ -150,7 +150,7 @@ const AdminLogin = () => {
                     type={showPassword ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#3bd9da] focus:ring-[#3bd9da] pr-12"
+                    className="h-12 bg-white border-gray-300 text-black placeholder:text-gray-400 focus:border-[#2563eb] focus:ring-[#2563eb] pr-12"
                     placeholder="Enter admin password"
                     required
                   />
@@ -172,7 +172,7 @@ const AdminLogin = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 text-[#117479] bg-white border-gray-300 rounded focus:ring-[#3bd9da]"
+                  className="w-4 h-4 text-[#2563eb] bg-white border-gray-300 rounded focus:ring-[#2563eb]"
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-700">
                   Keep me signed in
@@ -183,7 +183,14 @@ const AdminLogin = () => {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 bg-gradient-to-r from-[#117479] to-[#0d5c60] hover:from-[#0d5c60] hover:to-[#117479] text-white rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+              /* Solid fill rather than a gradient — a two-stop sweep on the one
+                 button of a sign-in screen reads as decoration, and it reversed
+                 direction on hover, which made the button look like it flipped. */
+              className="w-full h-12 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl font-semibold
+                shadow-[0_1px_2px_rgba(37,99,235,0.24),0_8px_20px_-6px_rgba(37,99,235,0.5)]
+                hover:shadow-[0_2px_4px_rgba(37,99,235,0.28),0_12px_26px_-6px_rgba(37,99,235,0.55)]
+                active:translate-y-px transition-[background-color,box-shadow,transform] duration-150
+                disabled:opacity-70 disabled:pointer-events-none"
             >
               {isLoading ? (
                 <div className="flex items-center gap-2">

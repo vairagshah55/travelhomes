@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { pluginsApi, type PluginDto } from "@/services/plugins";
+import { CARD } from "@/components/admin/adminUI";
 
 interface LicenseDetailsModalProps {
   isOpen: boolean;
@@ -209,7 +210,7 @@ const AdminPlugins: React.FC = () => {
   }, [plugins, searchTerm]);
 
   return (
-    <AdminLayout title="Plugins">
+    <AdminLayout title="Plugins" subtitle="Third-party integrations and the credentials they need.">
       <div className="flex-1 p-5 space-y-8">
         {/* Search Section */}
         <div className="flex items-center gap-5">
@@ -228,7 +229,7 @@ const AdminPlugins: React.FC = () => {
         </div>
 
         {/* Table */}
-        <div className="flex flex-col items-center gap-3 bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden overflow-x-auto">
+        <div className={`flex flex-col items-center gap-3 ${CARD} overflow-hidden overflow-x-auto`}>
           {/* Table Header — template InvoiceTable style: light-blue tint, text-base bold dark */}
           <div className="flex items-center w-full bg-[#F7F9FC] dark:bg-tpl-dark-2 border-b border-tpl-stroke">
             <div className="flex max-md:mx-5 items-center gap-2.5 px-4 py-4 flex-1">

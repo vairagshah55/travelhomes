@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AdminAuthContext";
 import { getInitials } from "@/utils/getInitials";
 import { useNotificationCount } from "@/hooks/admin/useNotifications";
+import { MENU_ITEM, MENU_ITEM_DANGER, PORTAL_VARS } from "./adminUI";
 
 /**
  * Admin top bar.
@@ -31,19 +32,18 @@ import { useNotificationCount } from "@/hooks/admin/useNotifications";
  * + account on the right. The page title lives in the content area
  * (AdminPageTitle), so the bar stays slim at the sidebar's 84px brand height.
  *
- * Controls are white pills on the faint-teal bar rather than grey-on-grey: the
- * chrome surface is #f1f8f7, so a grey control reads as a smudge. White + a
- * #dce7e5 hairline gives every control the same silhouette, and hover/focus
- * moves that hairline to teal instead of swapping fills.
+ * The bar is white, so controls are defined by a hairline rather than a fill —
+ * a grey pill on white reads as a smudge, and a white pill on white would be
+ * invisible without the border. Hover and focus move that hairline to blue and
+ * tint the glyph, instead of swapping the fill, so nothing shifts weight as the
+ * cursor crosses the bar.
  */
 
-/** Shared silhouette for the 44px circular controls (search, bell). */
+/** Shared silhouette for the 32px square controls (search, bell). */
 const CTRL =
-  "border border-[#dce7e5] bg-white text-[#475467] shadow-[0_1px_2px_rgba(16,24,40,0.04)] " +
-  "hover:border-[#3bd9da]/35 hover:text-[#117479] hover:shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)] " +
-  "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 " +
-  "focus-visible:ring-offset-[#f1f8f7] outline-none " +
-  "transition-[color,border-color,box-shadow] duration-200";
+  "text-[#4b5565] hover:text-[#121926] hover:bg-[#f0f2f6] " +
+  "focus-visible:ring-2 focus-visible:ring-[#2563eb]/35 outline-none " +
+  "transition-[color,background-color] duration-150";
 
 interface AdminHeaderProps {
   title: string;
@@ -65,64 +65,59 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
   }, [title]);
 
   return (
+    /* 56px, not 84px. The bar carries three small controls; at 84 it was mostly
+       empty and pushed the page's real heading a third of the way down the
+       screen. Utility chrome should be quiet and thin — the page owns the
+       vertical budget. */
     <header
       data-admin-skin="teal"
-      className="sticky top-0 z-30 flex items-center justify-between gap-4 px-4 md:px-5 2xl:px-10 h-[84px] bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0 shadow-tpl-1"
+      className="sticky top-0 z-30 flex items-center gap-3 px-3 md:px-4 h-14 bg-[var(--glass-header)] backdrop-blur-xl border-b border-tpl-stroke shrink-0"
     >
-      {/* Left — mobile menu button only. The page title now lives in the
-          content area (AdminPageTitle); the empty flex-1 balances the right
-          cluster so the search stays centered. */}
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <button
-          onClick={onOpenMobileSidebar}
-          className={`lg:hidden grid place-items-center size-11 rounded-full shrink-0 ${CTRL}`}
-          aria-label="Open sidebar"
-        >
-          <Menu size={20} />
-          <span className="sr-only">Toggle Sidebar</span>
-        </button>
-      </div>
+      <button
+        onClick={onOpenMobileSidebar}
+        className={`lg:hidden grid place-items-center size-8 rounded-md shrink-0 ${CTRL}`}
+        aria-label="Open sidebar"
+      >
+        <Menu size={18} />
+        <span className="sr-only">Toggle Sidebar</span>
+      </button>
 
-      {/* Center — search, truly centered between the flex-1 spacer (left) and
-          the flex-1 account cluster (right). */}
+      {/* Search anchors the LEFT of the bar, next to the rail — a centred
+          search on a wide monitor floats in the middle of nothing. */}
       <motion.button
         whileTap={{ scale: 0.99 }}
         onClick={() => setPaletteOpen(true)}
-        className={`group hidden xl:flex items-center gap-2.5 pl-4 pr-2 h-11 rounded-full w-[340px] shrink-0 text-[14px] font-medium ${CTRL}`}
+        className={`group hidden md:flex items-center gap-2 pl-2.5 pr-1.5 h-8 rounded-md w-[260px] shrink-0 text-[13px]
+          border border-[#e5e8ee] bg-[#f7f8fa] hover:bg-white hover:border-[#d3d8e0]
+          focus-visible:ring-2 focus-visible:ring-[#2563eb]/35 outline-none
+          transition-[background-color,border-color] duration-150`}
         aria-label="Search (⌘K)"
       >
-        <Search
-          size={18}
-          strokeWidth={2}
-          className="text-[#98a2b3] group-hover:text-[#117479] transition-colors"
-        />
-        <span className="flex-1 text-left text-[#667085] group-hover:text-[#475467] transition-colors">
-          Search…
-        </span>
-        <span className="text-[11px] font-mono px-1.5 py-1 rounded-md bg-[#f1f8f7] border border-[#e3ecea] text-[#98a2b3] leading-none group-hover:border-[#3bd9da]/25 group-hover:text-[#117479] transition-colors">
+        <Search size={15} strokeWidth={2} className="text-[#9aa4b2] shrink-0" />
+        <span className="flex-1 text-left text-[#8a94a6]">Search…</span>
+        <kbd className="text-[10.5px] font-medium font-sans px-1.5 py-0.5 rounded border border-[#e5e8ee] bg-white text-[#9aa4b2] leading-none">
           ⌘K
-        </span>
+        </kbd>
       </motion.button>
 
-      {/* Compact search trigger — icon only, below xl. */}
+      {/* Compact search trigger — icon only, below md. */}
       <button
         onClick={() => setPaletteOpen(true)}
-        className={`xl:hidden grid place-items-center size-11 rounded-full shrink-0 ${CTRL}`}
+        className={`md:hidden grid place-items-center size-8 rounded-md shrink-0 ${CTRL}`}
         aria-label="Search (⌘K)"
       >
-        <Search size={18} />
+        <Search size={17} />
       </button>
 
       {/* Right — notifications + account, pinned to the right edge. */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0 flex-1 justify-end">
-        {/* Notifications — circular button with red ping dot */}
+      <div className="flex items-center gap-1 shrink-0 ml-auto">
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/admin/notifications")}
-          className={`relative grid place-items-center size-11 rounded-full ${CTRL}`}
+          className={`relative grid place-items-center size-8 rounded-md ${CTRL}`}
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
-          <Bell size={18} strokeWidth={1.75} />
+          <Bell size={17} strokeWidth={1.85} />
           <AnimatePresence>
             {unreadCount > 0 && (
               <motion.span
@@ -130,9 +125,8 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0, opacity: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#f23030] text-white text-[10px] font-bold leading-none ring-2 ring-[#f1f8f7]"
+                className="absolute top-0.5 right-0.5 grid place-items-center min-w-[15px] h-[15px] px-1 rounded-full bg-[#f23030] text-white text-[9.5px] font-bold leading-none ring-2 ring-white"
               >
-                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#f23030] opacity-60" />
                 {unreadCount > 99 ? "99+" : unreadCount}
               </motion.span>
             )}
@@ -141,7 +135,7 @@ export default function AdminHeader({ title, onOpenMobileSidebar }: AdminHeaderP
 
         {/* Hairline between the utility controls and identity — the two are
             different kinds of thing and the bar has no other structure. */}
-        <span aria-hidden className="hidden md:block w-px h-7 bg-tpl-stroke mx-0.5" />
+        <span aria-hidden className="hidden md:block w-px h-5 bg-tpl-stroke mx-1.5" />
 
         {/* User info — avatar + truncated name + chevron */}
         <HeaderUserInfo />
@@ -172,103 +166,89 @@ function HeaderUserInfo() {
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      {/* The account control is a pill, not a bare avatar: it sits next to two
-          44px circular buttons, so it needs the same hit area and hover
-          feedback or it reads as decoration. */}
       <DropdownMenuTrigger
-        className={`group cursor-pointer shrink-0 flex items-center gap-2.5 h-11 pl-1 pr-1 lg:pr-3 rounded-full
-          border transition-[background-color,border-color,box-shadow] duration-200 outline-none
-          focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]
-          ${
-            isOpen
-              ? "bg-white border-[#3bd9da]/35 shadow-[0_2px_8px_-2px_rgba(59, 217, 218, 0.5)]"
-              : "bg-transparent border-transparent hover:bg-white hover:border-[#dce7e5]"
-          }`}
+        className={`group cursor-pointer shrink-0 flex items-center gap-2 h-8 pl-1 pr-1 lg:pr-2 rounded-md
+          transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[#2563eb]/35
+          ${isOpen ? "bg-[#f0f2f6]" : "hover:bg-[#f0f2f6]"}`}
       >
         <span className="sr-only">My Account</span>
-        <figure className="flex items-center gap-2.5">
-          <Avatar className="size-9 ring-2 ring-white shadow-[0_2px_6px_-2px_rgba(59, 217, 218, 0.65)]">
-            <AvatarFallback className="bg-[#117479] text-white text-[13px] font-bold">
+        <figure className="flex items-center gap-2">
+          <Avatar className="size-6">
+            <AvatarFallback className="bg-[#2563eb] text-white text-[10.5px] font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
-          {/* Name + chevron hidden below lg (1024px) so the 84px bar never
-              overflows on mid-size viewports. */}
-          <figcaption className="hidden lg:flex items-center gap-1 font-medium text-tpl-dark">
+          {/* Name + chevron hidden below lg so the bar never overflows on
+              mid-size viewports. */}
+          <figcaption className="hidden lg:flex items-center gap-0.5 font-medium text-[#364152]">
             {isLoading ? (
-              <span className="w-20 h-3 rounded bg-tpl-gray-3 animate-pulse" />
+              <span className="w-16 h-3 rounded bg-tpl-gray-3 animate-pulse" />
             ) : (
-              <span className="max-w-24 truncate text-[14px]">{name}</span>
+              <span className="max-w-24 truncate text-[13px]">{name}</span>
             )}
             <ChevronUp
-              size={16}
-              strokeWidth={1.75}
-              className={`text-[#98a2b3] transition-transform duration-200 ${isOpen ? "rotate-0" : "rotate-180"}`}
+              size={13}
+              strokeWidth={2}
+              className={`text-[#9aa4b2] transition-transform duration-200 ${isOpen ? "rotate-0" : "rotate-180"}`}
               aria-hidden
             />
           </figcaption>
         </figure>
       </DropdownMenuTrigger>
 
+      {/* Radix portals this to <body>, outside the admin root, so it carries
+          its own token vars — otherwise every `app-*` class below falls back to
+          the global palette and the menu renders in the public site's colours. */}
       <DropdownMenuContent
         align="end"
         sideOffset={10}
-        className="min-w-[264px] rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg p-0 overflow-hidden"
+        style={PORTAL_VARS}
+        className="min-w-[268px] rounded-xl border border-app-border bg-app-surface p-0 overflow-hidden shadow-[0_2px_4px_rgba(18,25,38,0.04),0_16px_32px_-12px_rgba(18,25,38,0.18)]"
       >
         {/* Identity row — solid brand avatar, name, muted email */}
         <div className="flex items-center gap-3 px-4 py-3.5">
           <Avatar className="size-11 shrink-0">
-            <AvatarFallback className="bg-[#117479] text-white text-[14px] font-bold">
+            <AvatarFallback className="bg-app-accent text-app-accent-fg text-[14px] font-bold">
               {initials}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <div className="text-[14px] font-semibold text-gray-900 dark:text-white leading-tight truncate">
+            <div className="text-[14px] font-semibold text-app-fg leading-tight truncate">
               {name}
             </div>
             {email && (
-              <div className="text-[12.5px] text-gray-500 dark:text-gray-400 leading-tight truncate mt-0.5">
+              <div className="text-[12.5px] text-app-fg-muted leading-tight truncate mt-0.5">
                 {email}
               </div>
             )}
           </div>
         </div>
 
-        <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700 m-0" />
+        <DropdownMenuSeparator className="bg-app-border m-0" />
 
         <div className="p-1.5">
-          <DropdownMenuItem
-            onSelect={() => navigate("/admin/profile")}
-            className="gap-2.5 px-2.5 py-2 cursor-pointer text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700/60 focus:text-gray-900 dark:focus:text-white rounded-lg"
-          >
-            <UserIcon size={17} className="text-gray-400 dark:text-gray-500" />
-            <span className="text-[13.5px] font-medium">View profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => navigate("/admin/global-settings")}
-            className="gap-2.5 px-2.5 py-2 cursor-pointer text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700/60 focus:text-gray-900 dark:focus:text-white rounded-lg"
-          >
-            <Settings size={17} className="text-gray-400 dark:text-gray-500" />
-            <span className="text-[13.5px] font-medium">Account Settings</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => navigate("/admin/help")}
-            className="gap-2.5 px-2.5 py-2 cursor-pointer text-gray-700 dark:text-gray-200 focus:bg-gray-100 dark:focus:bg-gray-700/60 focus:text-gray-900 dark:focus:text-white rounded-lg"
-          >
-            <HelpCircle size={17} className="text-gray-400 dark:text-gray-500" />
-            <span className="text-[13.5px] font-medium">Help &amp; support</span>
-          </DropdownMenuItem>
+          {[
+            { icon: UserIcon, label: "View profile", to: "/admin/profile" },
+            { icon: Settings, label: "Account settings", to: "/admin/global-settings" },
+            { icon: HelpCircle, label: "Help & support", to: "/admin/help" },
+          ].map((item) => (
+            <DropdownMenuItem
+              key={item.to}
+              onSelect={() => navigate(item.to)}
+              className={MENU_ITEM}
+            >
+              <item.icon size={16} className="shrink-0 text-app-fg-subtle" />
+              {item.label}
+            </DropdownMenuItem>
+          ))}
         </div>
 
-        <DropdownMenuSeparator className="bg-gray-200 dark:bg-gray-700 m-0" />
+        <DropdownMenuSeparator className="bg-app-border m-0" />
 
         <div className="p-1.5">
-          <DropdownMenuItem
-            onSelect={handleLogout}
-            className="gap-2.5 px-2.5 py-2 cursor-pointer text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-900/20 focus:text-red-700 dark:focus:text-red-300 rounded-lg"
-          >
-            <LogOut size={17} />
-            <span className="text-[13.5px] font-medium">Log out</span>
+          <DropdownMenuItem onSelect={handleLogout} className={MENU_ITEM_DANGER}>
+            <LogOut size={16} className="shrink-0" />
+            Log out
           </DropdownMenuItem>
         </div>
       </DropdownMenuContent>

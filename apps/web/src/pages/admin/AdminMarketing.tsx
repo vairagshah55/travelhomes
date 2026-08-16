@@ -260,7 +260,10 @@ const AdminMarketing = () => {
   };
 
   return (
-    <AdminLayout title="Marketing">
+    <AdminLayout
+      title="Marketing"
+      subtitle="Campaigns, coupons and promotional placements across the platform."
+    >
       <div className="flex-1">
         {/* Content Header */}
         <div className="bg-app-surface rounded-t-[18px] border border-b-0 border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04)] border-b border-app-border min-h-[60px] flex items-center justify-between px-5">

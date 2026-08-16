@@ -16,6 +16,7 @@ import { MotionReveal } from "@/components/admin/MotionReveal";
 import { usePayments, type PaymentData } from "@/hooks/admin/usePayments";
 import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
+import { CARD_FLUSH } from "@/components/admin/adminUI";
 
 const TABS = [
   { key: "payment-received", label: "Payment Received" },
@@ -156,12 +157,14 @@ const PaymentManagement: React.FC = () => {
   ];
 
   return (
-    <AdminLayout title="Payment Management">
+    <AdminLayout
+      title="Payment Management"
+      subtitle="Transactions, payouts and refunds across all bookings."
+      tabs={<TabStrip variant="flush" tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />}
+    >
       <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
-          <div className="p-5 space-y-5">
-            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
-
+        <div className={CARD_FLUSH}>
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-app-border">
             <AdminToolbar
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
@@ -169,48 +172,49 @@ const PaymentManagement: React.FC = () => {
               sortOptions={SORT_OPTIONS}
               sortValue={sortBy}
               onSortChange={setSortBy}
+              filterSlot={
+                <AdminFilterBar
+                  filters={filterDefs}
+                  activeFilters={filters}
+                  onApply={setFilters}
+                  onClear={() => setFilters({})}
+                />
+              }
             />
-
-            <AdminFilterBar
-              filters={filterDefs}
-              activeFilters={filters}
-              onApply={setFilters}
-              onClear={() => setFilters({})}
-            />
-
-            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-              <AdminDataTable<PaymentData>
-                columns={columns}
-                data={paginated}
-                isLoading={query.isLoading}
-                isError={query.isError}
-                errorMessage="Failed to load payments."
-                onRetry={() => query.refetch()}
-                hasActiveQuery={hasActiveQuery}
-                emptyIcon={hasActiveQuery ? SearchX : CreditCard}
-                emptyTitle="No payment records yet"
-                emptyDescription="Payment records appear here once transactions are processed."
-                noResultsTitle={
-                  searchTerm ? `No results for "${searchTerm}"` : "No matching payments"
-                }
-                noResultsDescription="Try different keywords or remove filters."
-                noResultsAction={{
-                  label: "Clear filters",
-                  onClick: () => {
-                    setSearchTerm("");
-                    setFilters({});
-                  },
-                }}
-                rowActions={rowActions}
-                pagination={{
-                  currentPage,
-                  totalPages,
-                  totalItems: payments.length,
-                  onPageChange: setCurrentPage,
-                }}
-              />
-            </div>
           </div>
+
+          <AdminDataTable<PaymentData>
+            /* 15 rows a page runs past the fold on a laptop, so the body
+                   scrolls in place and the header stays put. */
+            maxBodyHeight="calc(100vh - 22rem)"
+            columns={columns}
+            data={paginated}
+            isLoading={query.isLoading}
+            isError={query.isError}
+            errorMessage="Failed to load payments."
+            onRetry={() => query.refetch()}
+            hasActiveQuery={hasActiveQuery}
+            emptyIcon={hasActiveQuery ? SearchX : CreditCard}
+            emptyTitle="No payment records yet"
+            emptyDescription="Payment records appear here once transactions are processed."
+            noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching payments"}
+            noResultsDescription="Try different keywords or remove filters."
+            noResultsAction={{
+              label: "Clear filters",
+              onClick: () => {
+                setSearchTerm("");
+                setFilters({});
+              },
+            }}
+            rowActions={rowActions}
+            pagination={{
+              currentPage,
+              totalPages,
+              pageSize: ITEMS_PER_PAGE,
+              totalItems: payments.length,
+              onPageChange: setCurrentPage,
+            }}
+          />
         </div>
       </MotionReveal>
 

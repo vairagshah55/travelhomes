@@ -163,7 +163,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpe
               <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-dashboard-primary hover:bg-[#128086] text-white py-3 px-8 rounded-full text-base font-geist transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full bg-dashboard-primary hover:bg-[#1d4ed8] text-white py-3 px-8 rounded-full text-base font-geist transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {submitting ? "Saving…" : "Re-set Password"}
               </Button>

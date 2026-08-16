@@ -869,7 +869,10 @@ const AdminStaff = () => {
   const isDeleting = staffHook.deleteStaff.isPending || rolesHook.deleteRole.isPending;
 
   return (
-    <AdminLayout title="Staff">
+    <AdminLayout
+      title="Staff"
+      subtitle="Admin accounts and the roles that decide what each of them can reach."
+    >
       <div className="flex-1 px-5 py-6">
         {activeTab === "staff" && (
           <StaffList

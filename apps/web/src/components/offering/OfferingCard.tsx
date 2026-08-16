@@ -68,7 +68,7 @@ export const OfferingCard = ({
         PANEL,
         "group flex flex-col overflow-hidden cursor-pointer outline-none",
         "transition-[transform,box-shadow] duration-200",
-        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59, 217, 218, 0.28),0_18px_40px_-20px_rgba(59, 217, 218, 0.65)]",
+        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59,217,218,0.28),0_18px_40px_-20px_rgba(59,217,218,0.65)]",
         "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
       )}
     >

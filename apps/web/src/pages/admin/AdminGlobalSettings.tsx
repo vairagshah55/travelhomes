@@ -30,6 +30,7 @@ import {
   type PaymentGatewaySettings,
 } from "@/services/api";
 import { cn } from "@/lib/utils";
+import { CARD_FLUSH } from "@/components/admin/adminUI";
 
 import {
   BTN_NEUTRAL,
@@ -672,9 +673,12 @@ const AdminGlobalSettings: React.FC = () => {
   );
 
   return (
-    <AdminLayout title="Global Settings">
+    <AdminLayout
+      title="Global Settings"
+      subtitle="Platform-wide configuration: branding, contact details, commission and policies."
+    >
       <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
+        <div className={CARD_FLUSH}>
           {/* Panel head — states which surface you're editing. */}
           <header className="flex items-start gap-3 px-5 pt-4 pb-3.5 border-b border-app-border">
             <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-app-accent-soft text-app-accent shrink-0">

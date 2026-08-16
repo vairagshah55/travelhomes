@@ -170,7 +170,7 @@ export function BookingWidget({
         </div>
 
         <Button
-          className="w-full bg-[#3BD9DA] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#2BC7C8] shadow-[0_4px_16px_rgba(59, 217, 218, 0.5)] hover:shadow-[0_6px_20px_rgba(13, 69, 72,0.35)] transition-all mb-6"
+          className="w-full bg-[#3BD9DA] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#2BC7C8] shadow-[0_4px_16px_rgba(59,217,218,0.5)] hover:shadow-[0_6px_20px_rgba(13,69,72,0.35)] transition-all mb-6"
           onClick={onReserve}
         >
           Reserve

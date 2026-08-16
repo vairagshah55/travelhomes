@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { MotionReveal } from "@/components/admin/MotionReveal";
-import { ADMIN_APP_VARS } from "@/components/shared/Panel";
 import {
   Select,
   SelectContent,
@@ -26,6 +25,7 @@ import {
 import { crmService } from "@/services/crm";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { CARD_FLUSH, PORTAL_VARS } from "@/components/admin/adminUI";
 
 const MESSAGE_MAX = 1000;
 
@@ -124,9 +124,12 @@ const AdminCRM: React.FC = () => {
   };
 
   return (
-    <AdminLayout title="CRM">
+    <AdminLayout
+      title="CRM"
+      subtitle="Enquiries and contact requests captured from the public site."
+    >
       <MotionReveal className="max-w-4xl">
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
+        <div className={CARD_FLUSH}>
           {/* Panel head — mirrors PanelHead in the shared kit. */}
           <header className="flex items-start gap-3 px-5 pt-4 pb-3.5 border-b border-app-border">
             <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-app-accent-soft text-app-accent shrink-0">
@@ -235,7 +238,7 @@ const AdminCRM: React.FC = () => {
                   {/* Radix portals this to <body>, outside AdminLayout, so the
                       `app-*` vars have to come along or the highlight resolves to
                       the global purple. */}
-                  <SelectContent style={ADMIN_APP_VARS}>
+                  <SelectContent style={PORTAL_VARS}>
                     {SERVICE_TYPES.map((s) => (
                       <SelectItem
                         key={s.value}
@@ -302,7 +305,7 @@ const AdminCRM: React.FC = () => {
                   "inline-flex items-center gap-2 h-10 px-5 rounded-xl",
                   "bg-app-accent text-app-accent-fg text-[13px] font-semibold",
                   "transition-[background-color,box-shadow] duration-150 hover:bg-app-accent-hover",
-                  "shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-6px_rgba(59, 217, 218, 0.65)]",
+                  "shadow-[0_1px_2px_rgba(37,99,235,0.24),0_6px_16px_-6px_rgba(37,99,235,0.45)]",
                   "disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed",
                 )}
               >

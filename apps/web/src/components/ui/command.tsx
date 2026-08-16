@@ -21,16 +21,29 @@ const Command = React.forwardRef<
 ));
 Command.displayName = CommandPrimitive.displayName;
 
-interface CommandDialogProps extends DialogProps {}
+interface CommandDialogProps extends DialogProps {
+  /**
+   * CSS custom properties for the portalled surface. The dialog renders under
+   * `<body>`, outside whatever route root defines the theme, so token-based
+   * classes inside it resolve against `:root` unless the caller passes its own
+   * vars down. The admin palette passes `PORTAL_VARS`.
+   */
+  contentStyle?: React.CSSProperties;
+}
 
-const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+const CommandDialog = ({ children, contentStyle, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       {/* gap-0 neutralizes DialogContent's default gap-4 between children.
           The [&>button]:hidden hides the built-in DialogPrimitive.Close X
-          button — cmdk users dismiss via overlay click, ESC, or selection. */}
-      <DialogContent className="overflow-hidden p-0 gap-0 rounded-[10px] border-tpl-stroke shadow-tpl-2 max-w-[640px] [&>button]:hidden">
-        <Command className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-tpl-dark-5 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-1 [&_[cmdk-input-wrapper]_svg]:h-[18px] [&_[cmdk-input-wrapper]_svg]:w-[18px] [&_[cmdk-input]]:h-12 [&_[cmdk-input]]:text-[14px] [&_[cmdk-item]]:gap-3 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]]:rounded-md [&_[cmdk-item]_svg]:h-[18px] [&_[cmdk-item]_svg]:w-[18px] [&_[cmdk-item]_svg]:shrink-0 [&_[cmdk-item]_svg]:text-tpl-dark-5">
+          button — cmdk users dismiss via overlay click, ESC, or selection.
+          Styling is spelled in the `app-*` namespace rather than `tpl-*`,
+          because only the former is carried in by `contentStyle`. */}
+      <DialogContent
+        style={contentStyle}
+        className="overflow-hidden p-0 gap-0 rounded-2xl border-app-border bg-app-surface max-w-[640px] [&>button]:hidden"
+      >
+        <Command className="bg-app-surface text-app-fg [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-app-fg-subtle [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-1 [&_[cmdk-input-wrapper]_svg]:h-[18px] [&_[cmdk-input-wrapper]_svg]:w-[18px] [&_[cmdk-input]]:h-12 [&_[cmdk-input]]:text-[14px] [&_[cmdk-item]]:gap-3 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]_svg]:h-[18px] [&_[cmdk-item]_svg]:w-[18px] [&_[cmdk-item]_svg]:shrink-0">
           {children}
         </Command>
       </DialogContent>
@@ -42,12 +55,12 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center gap-3 border-b border-tpl-stroke px-4" cmdk-input-wrapper="">
-    <Search className="h-[18px] w-[18px] shrink-0 text-tpl-dark-5" />
+  <div className="flex items-center gap-3 border-b border-app-border px-4" cmdk-input-wrapper="">
+    <Search className="h-[18px] w-[18px] shrink-0 text-app-fg-subtle" />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        "flex h-12 w-full bg-transparent text-[14px] text-tpl-dark outline-none placeholder:text-tpl-dark-5 disabled:cursor-not-allowed disabled:opacity-50",
+        "flex h-12 w-full bg-transparent text-[14px] text-app-fg outline-none placeholder:text-app-fg-subtle disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -114,7 +127,10 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-3 rounded-md px-3 py-2 text-[14px] text-gray-800 outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-[#117479]/[0.07] data-[selected=true]:text-gray-900 data-[disabled=true]:opacity-50",
+      // The highlight is spelled in `app-accent` rather than shadcn's own
+      // `bg-accent`: that token is declared twice app-wide in incompatible
+      // formats, so it drops out and leaves the selected row unpainted.
+      "relative flex cursor-pointer select-none items-center gap-3 rounded-lg px-3 py-2 text-[14px] text-app-fg outline-none data-[disabled=true]:pointer-events-none data-[selected=true]:bg-app-accent-soft data-[selected=true]:text-app-accent data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}

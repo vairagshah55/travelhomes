@@ -2,67 +2,34 @@ import React from "react";
 import { motion } from "framer-motion";
 import { AlertCircle, Image as ImageIcon, Loader2, Upload, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ADMIN_APP_VARS } from "@/components/shared/Panel";
+import {
+  BTN_NEUTRAL as KIT_BTN_NEUTRAL,
+  BTN_PRIMARY as KIT_BTN_PRIMARY,
+  BTN_SECONDARY,
+  BTN_SM,
+  INPUT,
+  PORTAL_VARS,
+  SELECT_ITEM as KIT_SELECT_ITEM,
+  TEXTAREA as KIT_TEXTAREA,
+} from "@/components/admin/adminUI";
 import { getImageUrl } from "@/lib/adminUtils";
 
 /* ── Tokens ───────────────────────────────────────────────────────────────────
-   The CMS panel body lives inside AdminLayout, so the `app-*` namespace (the
-   same one AdminToolbar / AdminDataTable / AdminStatCard use) resolves to the
-   admin teal values. Every control here is spelled in those tokens rather than
-   literal grays, which is what let the old tab bodies drift away from the rest
-   of the admin. */
-
-const CONTROL_BASE =
-  "w-full rounded-xl border border-app-border bg-app-surface-2 text-[13.5px] text-app-fg " +
-  "placeholder:text-app-fg-muted/70 outline-none " +
-  "transition-[background-color,border-color,box-shadow] duration-150 " +
-  "focus:bg-app-surface focus:border-app-accent focus:ring-4 focus:ring-app-accent/20 " +
-  "disabled:opacity-60 disabled:cursor-not-allowed";
+   These used to be defined here, in parallel with an almost-identical set in
+   components/shared/Panel.tsx — which is exactly how the CMS tabs drifted to
+   their own control heights and shadows. They are now thin aliases over the
+   canonical kit in components/admin/adminUI.ts, kept only so the existing
+   import sites in this folder read unchanged. Prefer importing from adminUI
+   directly in new code. */
 
 /** Inset field that lifts to the card surface on focus. */
-export const CONTROL = `${CONTROL_BASE} h-11 px-3.5`;
-export const TEXTAREA = `${CONTROL_BASE} px-3.5 py-3 leading-6 resize-none`;
-
-export const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 h-10 px-5 rounded-xl shrink-0 " +
-  "bg-app-accent text-app-accent-fg text-[13px] font-semibold " +
-  "transition-[background-color,box-shadow] duration-150 hover:bg-app-accent-hover " +
-  "shadow-[0_1px_2px_rgba(59, 217, 218, 0.48),0_6px_16px_-6px_rgba(59, 217, 218, 0.65)] " +
-  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/25 " +
-  "disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed";
-
-/* Secondary actions read as tinted fills — a hairline outline pill on a white
-   card is close to invisible (same call the vendor Panel kit makes). */
-export const BTN_SOFT =
-  "inline-flex items-center justify-center gap-1.5 h-9 px-3.5 rounded-xl shrink-0 " +
-  "bg-app-accent-soft text-app-accent text-[12.5px] font-semibold " +
-  "transition-colors duration-150 hover:bg-app-accent/[0.16] " +
-  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20 " +
-  "disabled:opacity-50 disabled:cursor-not-allowed";
-
-export const BTN_NEUTRAL =
-  "inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-xl shrink-0 " +
-  "bg-app-surface-2 text-app-fg/80 text-[12.5px] font-semibold " +
-  "transition-colors duration-150 hover:bg-app-border/70 " +
-  "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20 " +
-  "disabled:opacity-50 disabled:cursor-not-allowed";
-
-/**
- * Highlight styling for dropdown rows. `--accent` is declared twice in
- * incompatible formats app-wide, so shadcn's own `focus:bg-accent` drops out and
- * highlighted rows render white-on-white — see the note on SELECT_ITEM in
- * components/shared/Panel.tsx. Spelled in `app-*` here to match this page.
- */
-export const SELECT_ITEM =
-  "cursor-pointer focus:bg-app-accent-soft focus:text-app-accent " +
-  "data-[highlighted]:bg-app-accent-soft data-[highlighted]:text-app-accent";
-
-/**
- * Radix portals dialogs/popovers to <body>, outside AdminLayout — so neither the
- * `app-*` surface vars nor the teal `--brand` reach them and `app-accent` would
- * resolve to the global purple. Put this on every DialogContent / SelectContent.
- */
-export const DIALOG_VARS = ADMIN_APP_VARS;
+export const CONTROL = INPUT;
+export const TEXTAREA = KIT_TEXTAREA;
+export const BTN_PRIMARY = KIT_BTN_PRIMARY;
+export const BTN_SOFT = `${BTN_SECONDARY} ${BTN_SM}`;
+export const BTN_NEUTRAL = `${KIT_BTN_NEUTRAL} ${BTN_SM}`;
+export const SELECT_ITEM = KIT_SELECT_ITEM;
+export const DIALOG_VARS = PORTAL_VARS;
 
 /* ── Layout ──────────────────────────────────────────────────────────────── */
 

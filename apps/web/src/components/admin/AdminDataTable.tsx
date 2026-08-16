@@ -1,11 +1,11 @@
 import React from "react";
 import {
   AlertCircle,
-  ChevronDown,
+  ArrowDown,
+  ArrowUp,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
-  ChevronUp,
   Inbox,
   Loader2,
   MoreHorizontal,
@@ -27,6 +27,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/shared/EmptyState";
+import {
+  BTN_PRIMARY,
+  FOCUS_RING,
+  MENU_ITEM,
+  MENU_ITEM_DANGER,
+  PORTAL_VARS,
+  SKELETON,
+} from "./adminUI";
 
 export interface ColumnDef<T> {
   key: string;
@@ -68,6 +76,8 @@ interface PaginationState {
   totalPages: number;
   totalItems?: number;
   onPageChange: (page: number) => void;
+  /** Rows per page, used only to render the "showing X–Y" range. */
+  pageSize?: number;
 }
 
 interface AdminDataTableProps<T> {
@@ -108,6 +118,19 @@ interface AdminDataTableProps<T> {
   onRowClick?: (row: T) => void;
   skeletonRows?: number;
   className?: string;
+
+  /**
+   * Pins the header row while the body scrolls.
+   *
+   * Only has an effect together with `maxBodyHeight`. The table already sits in
+   * an `overflow-auto` wrapper (needed so wide tables scroll sideways on
+   * mobile), and a sticky `thead` sticks to its nearest scrolling ancestor —
+   * which is that wrapper, not the page. With no height cap the wrapper never
+   * scrolls vertically, so the header has nothing to stick against.
+   */
+  stickyHeader?: boolean;
+  /** CSS height cap for the scroll area, e.g. "60vh" or "480px". */
+  maxBodyHeight?: string;
 }
 
 const hideBelowClass: Record<NonNullable<ColumnDef<unknown>["hideBelow"]>, string> = {
@@ -122,6 +145,10 @@ const alignClass: Record<NonNullable<ColumnDef<unknown>["align"]>, string> = {
   center: "text-center",
 };
 
+/* Skeleton cells vary in width per column so a loading table has the silhouette
+   of real data. A grid of identical bars reads as a broken layout. */
+const SKELETON_WIDTHS = ["w-24", "w-32", "w-20", "w-28", "w-16", "w-24", "w-20"];
+
 /**
  * Generic admin data table. Renders sortable headers, optional row selection +
  * per-row action menu, and owns the loading-skeleton / empty / no-results /
@@ -130,6 +157,10 @@ const alignClass: Record<NonNullable<ColumnDef<unknown>["align"]>, string> = {
  * Sorting and pagination are controlled: provide `sortState`/`onSortChange` and
  * `pagination` and the parent decides whether to sort/page client- or
  * server-side. Omit them for a plain table over pre-sliced `data`.
+ *
+ * Visual conventions (header case, row height, hover and selected washes) live
+ * in the `[data-brand="admin"]` table rules in admin.css rather than here, so
+ * the same JSX renders correctly in the vendor console too.
  */
 export function AdminDataTable<T>({
   columns,
@@ -158,6 +189,8 @@ export function AdminDataTable<T>({
   onRowClick,
   skeletonRows = 8,
   className = "",
+  stickyHeader = true,
+  maxBodyHeight,
 }: AdminDataTableProps<T>) {
   const rowId = (row: T, index: number): string =>
     getRowId
@@ -198,8 +231,23 @@ export function AdminDataTable<T>({
   };
 
   return (
-    <div className={className}>
-      <Table>
+    /* maxBodyHeight is a runtime string, so it can't be a Tailwind arbitrary
+       value (those are extracted at build time). It rides in as a CSS custom
+       property that a static class then reads. */
+    <div
+      className={className}
+      style={
+        maxBodyHeight
+          ? ({ "--admin-table-max-h": maxBodyHeight } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <Table
+        className={stickyHeader && maxBodyHeight ? "admin-table-sticky" : undefined}
+        containerClassName={
+          maxBodyHeight ? "overflow-y-auto max-h-[var(--admin-table-max-h)]" : undefined
+        }
+      >
         <TableHeader>
           <TableRow>
             {selectable && (
@@ -218,26 +266,43 @@ export function AdminDataTable<T>({
               return (
                 <TableHead
                   key={col.key}
+                  aria-sort={
+                    isSorted
+                      ? sortState!.sortDir === "asc"
+                        ? "ascending"
+                        : "descending"
+                      : sortable
+                        ? "none"
+                        : undefined
+                  }
                   className={`${col.className ?? ""} ${col.align ? alignClass[col.align] : ""} ${
                     col.hideBelow ? hideBelowClass[col.hideBelow] : ""
                   }`}
                 >
                   {sortable ? (
+                    /* The chevron holds its slot at 40% opacity when unsorted,
+                       so headers don't reflow by a few pixels on every sort. */
                     <button
                       onClick={() => handleSort(col.key)}
-                      className="inline-flex items-center gap-1 hover:text-app-accent transition-colors focus-visible:outline-none focus-visible:underline"
+                      className={`group/sort -mx-1.5 inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 uppercase tracking-[0.04em] hover:bg-app-accent-soft hover:text-app-accent transition-colors ${FOCUS_RING}`}
                       aria-label={`Sort by ${col.header}`}
                     >
                       {col.header}
-                      {isSorted ? (
-                        sortState!.sortDir === "asc" ? (
-                          <ChevronUp size={14} />
+                      <span className="grid place-items-center w-3.5 shrink-0">
+                        {isSorted ? (
+                          sortState!.sortDir === "asc" ? (
+                            <ArrowUp size={12} strokeWidth={2.6} className="text-app-accent" />
+                          ) : (
+                            <ArrowDown size={12} strokeWidth={2.6} className="text-app-accent" />
+                          )
                         ) : (
-                          <ChevronDown size={14} />
-                        )
-                      ) : (
-                        <ChevronsUpDown size={13} className="opacity-40" />
-                      )}
+                          <ChevronsUpDown
+                            size={12}
+                            strokeWidth={2.2}
+                            className="opacity-40 group-hover/sort:opacity-90 transition-opacity"
+                          />
+                        )}
+                      </span>
                     </button>
                   ) : (
                     col.header
@@ -245,19 +310,27 @@ export function AdminDataTable<T>({
                 </TableHead>
               );
             })}
-            {hasActions && <TableHead className="w-16 text-right pr-4">Actions</TableHead>}
+            {hasActions && (
+              <TableHead className="w-16 text-right pr-4">
+                <span className="sr-only">Actions</span>
+              </TableHead>
+            )}
           </TableRow>
         </TableHeader>
 
         <TableBody>
           {isLoading ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
-              <TableRow key={`sk-${i}`} className="animate-pulse">
+              <TableRow key={`sk-${i}`}>
                 {Array.from({ length: totalCols }).map((__, j) => (
                   <TableCell key={j}>
                     <div
-                      className={`h-3 rounded bg-app-surface-2 ${
-                        j === 0 ? "w-28" : j === totalCols - 1 ? "w-8 ml-auto" : "w-20"
+                      className={`h-3.5 ${SKELETON} ${
+                        j === 0 && selectable
+                          ? "w-4"
+                          : j === totalCols - 1 && hasActions
+                            ? "w-6 ml-auto"
+                            : SKELETON_WIDTHS[j % SKELETON_WIDTHS.length]
                       }`}
                     />
                   </TableCell>
@@ -265,18 +338,15 @@ export function AdminDataTable<T>({
               </TableRow>
             ))
           ) : isError ? (
-            <TableRow>
-              <TableCell colSpan={totalCols} className="py-12">
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={totalCols} className="py-14">
                 <div className="flex flex-col items-center text-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 grid place-items-center">
                     <AlertCircle size={22} className="text-red-500" />
                   </div>
                   <p className="text-[13px] text-app-fg-muted max-w-sm">{errorMessage}</p>
                   {onRetry && (
-                    <button
-                      onClick={onRetry}
-                      className="rounded-xl bg-app-accent px-4 h-9 text-[12.5px] font-semibold text-app-accent-fg hover:bg-app-accent-hover transition-colors"
-                    >
+                    <button onClick={onRetry} className={BTN_PRIMARY}>
                       Try again
                     </button>
                   )}
@@ -284,7 +354,7 @@ export function AdminDataTable<T>({
               </TableCell>
             </TableRow>
           ) : data.length === 0 ? (
-            <TableRow>
+            <TableRow className="hover:bg-transparent">
               <TableCell colSpan={totalCols} className="p-0">
                 {hasActiveQuery ? (
                   <EmptyState
@@ -317,7 +387,7 @@ export function AdminDataTable<T>({
                   data-state={selected ? "selected" : undefined}
                   aria-busy={busy || undefined}
                   onClick={onRowClick && !busy ? () => onRowClick(row) : undefined}
-                  className={`${onRowClick && !busy ? "cursor-pointer" : ""} ${
+                  className={`group/row ${onRowClick && !busy ? "cursor-pointer" : ""} ${
                     busy ? "opacity-60 transition-opacity" : ""
                   }`}
                 >
@@ -347,8 +417,17 @@ export function AdminDataTable<T>({
                       {visibleActions.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
+                            {/* Fades up on row hover so a long table isn't a
+                                column of dots, but stays fully visible on
+                                touch and for keyboard focus. */}
                             <button
-                              className="p-1.5 rounded-md text-app-fg-muted hover:text-app-accent hover:bg-app-accent-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent disabled:pointer-events-none"
+                              className={`grid place-items-center w-8 h-8 rounded-lg text-app-fg-subtle
+                                opacity-60 group-hover/row:opacity-100 focus-visible:opacity-100
+                                data-[state=open]:opacity-100 data-[state=open]:bg-app-accent-soft
+                                data-[state=open]:text-app-accent
+                                hover:bg-app-accent-soft hover:text-app-accent
+                                transition-[opacity,background-color,color] duration-150
+                                disabled:pointer-events-none ${FOCUS_RING}`}
                               aria-label={busy ? "Updating row" : "Row actions"}
                               disabled={busy}
                             >
@@ -359,7 +438,12 @@ export function AdminDataTable<T>({
                               )}
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuContent
+                            align="end"
+                            sideOffset={6}
+                            style={PORTAL_VARS}
+                            className="w-48 p-1.5 rounded-xl border-app-border bg-app-surface shadow-[0_2px_4px_rgba(18,25,38,0.04),0_16px_32px_-12px_rgba(18,25,38,0.18)]"
+                          >
                             {visibleActions.map((action) => {
                               const actionLoading = action.loading?.(row) ?? false;
                               const actionDisabled =
@@ -377,16 +461,16 @@ export function AdminDataTable<T>({
                                     }
                                     action.onClick(row);
                                   }}
-                                  className={`gap-2 ${actionDisabled ? "cursor-not-allowed" : "cursor-pointer"} ${
-                                    action.variant === "danger"
-                                      ? "text-red-600 dark:text-red-400 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-500/10"
-                                      : ""
-                                  }`}
+                                  className={`${
+                                    action.variant === "danger" ? MENU_ITEM_DANGER : MENU_ITEM
+                                  } ${actionDisabled ? "cursor-not-allowed opacity-50" : ""}`}
                                 >
                                   {actionLoading ? (
                                     <Loader2 size={15} className="animate-spin" />
                                   ) : (
-                                    action.icon && <action.icon size={15} />
+                                    action.icon && (
+                                      <action.icon size={15} className="shrink-0 opacity-70" />
+                                    )
                                   )}
                                   {action.label}
                                 </DropdownMenuItem>
@@ -411,37 +495,112 @@ export function AdminDataTable<T>({
   );
 }
 
-/* ── Dark-aware pagination footer (the shared Pagination is light-only) ───── */
-function TablePagination({ currentPage, totalPages, totalItems, onPageChange }: PaginationState) {
+/* ── Pagination ───────────────────────────────────────────────────────────
+   Numbered pages rather than prev/next alone: on a 40-page table, "Next" is
+   the only way forward and jumping to the end takes 39 clicks. */
+
+/** Page numbers around the current one, with `null` marking an ellipsis gap. */
+function pageWindow(current: number, total: number): Array<number | null> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages: Array<number | null> = [1];
+  const from = Math.max(2, current - 1);
+  const to = Math.min(total - 1, current + 1);
+
+  if (from > 2) pages.push(null);
+  for (let p = from; p <= to; p++) pages.push(p);
+  if (to < total - 1) pages.push(null);
+  pages.push(total);
+
+  return pages;
+}
+
+function TablePagination({
+  currentPage,
+  totalPages,
+  totalItems,
+  onPageChange,
+  pageSize,
+}: PaginationState) {
+  const pages = pageWindow(currentPage, totalPages);
+
+  const arrow =
+    "grid place-items-center w-9 h-9 rounded-lg border border-app-border text-app-fg-muted " +
+    "hover:bg-app-surface-2 hover:text-app-fg disabled:opacity-40 disabled:pointer-events-none " +
+    `transition-colors ${FOCUS_RING}`;
+
+  // Range readout — more useful than a bare page number when scanning a list.
+  let range: string | null = null;
+  if (typeof totalItems === "number" && pageSize) {
+    const first = (currentPage - 1) * pageSize + 1;
+    const last = Math.min(currentPage * pageSize, totalItems);
+    range = `${first.toLocaleString("en-IN")}–${last.toLocaleString("en-IN")} of ${totalItems.toLocaleString("en-IN")}`;
+  } else if (typeof totalItems === "number") {
+    range = `${totalItems.toLocaleString("en-IN")} total`;
+  }
+
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-4 border-t border-app-border">
-      <span className="text-[12.5px] text-app-fg-muted">
-        {typeof totalItems === "number"
-          ? `${totalItems.toLocaleString("en-IN")} total`
-          : `Page ${currentPage} of ${totalPages}`}
-      </span>
-      <div className="flex items-center gap-2">
+    <nav
+      aria-label="Pagination"
+      className="flex flex-wrap items-center justify-between gap-3 px-4 py-3.5 border-t border-app-border"
+    >
+      <p className="text-[12.5px] text-app-fg-muted tabular-nums">
+        {range ?? `Page ${currentPage} of ${totalPages}`}
+      </p>
+
+      <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-app-border text-[12.5px] font-semibold text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className={arrow}
           aria-label="Previous page"
         >
-          <ChevronLeft size={15} /> Prev
+          <ChevronLeft size={16} />
         </button>
-        <span className="text-[12.5px] font-semibold text-app-fg px-2 tabular-nums">
+
+        {/* Numbers collapse below sm — at that width they wrap into a second
+            row and push the arrows off the edge. */}
+        <div className="hidden sm:flex items-center gap-1">
+          {pages.map((page, i) =>
+            page === null ? (
+              <span
+                key={`gap-${i}`}
+                aria-hidden
+                className="grid place-items-center w-9 h-9 text-app-fg-subtle text-[13px]"
+              >
+                …
+              </span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => onPageChange(page)}
+                aria-current={page === currentPage ? "page" : undefined}
+                className={`grid place-items-center min-w-[36px] h-9 px-2 rounded-lg text-[13px] font-semibold tabular-nums transition-colors ${FOCUS_RING} ${
+                  page === currentPage
+                    ? "bg-app-accent text-app-accent-fg"
+                    : "text-app-fg-muted hover:bg-app-surface-2 hover:text-app-fg"
+                }`}
+              >
+                {page}
+              </button>
+            ),
+          )}
+        </div>
+
+        <span className="sm:hidden px-2 text-[12.5px] font-semibold text-app-fg tabular-nums">
           {currentPage} / {totalPages}
         </span>
+
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
-          className="inline-flex items-center gap-1 h-9 px-3 rounded-xl border border-app-border text-[12.5px] font-semibold text-app-fg hover:bg-app-surface-2 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className={arrow}
           aria-label="Next page"
         >
-          Next <ChevronRight size={15} />
+          <ChevronRight size={16} />
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
 

@@ -1,6 +1,5 @@
 import React from "react";
 import { Search, SlidersHorizontal, X, type LucideIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -8,8 +7,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BRAND_VARS, SELECT_ITEM } from "@/components/shared/Panel";
 import { motion, AnimatePresence } from "framer-motion";
+import { COUNT_BUBBLE, FOCUS_RING, PORTAL_VARS, SELECT_ITEM } from "./adminUI";
 
 export interface ToolbarBulkAction {
   label: string;
@@ -41,14 +40,37 @@ interface AdminToolbarProps {
   // Right-side primary action — e.g. "Add User"
   primaryAction?: React.ReactNode;
 
+  /**
+   * Filter control rendered inline with search and sort — normally an
+   * `<AdminFilterBar/>`. It lives here rather than as a sibling below so the
+   * whole query-building row reads as one group; rendered separately, the
+   * Filters button ended up on its own line, detached from the search it
+   * narrows.
+   */
+  filterSlot?: React.ReactNode;
+
+  /** Right-aligned trailing content — typically a result count. */
+  trailing?: React.ReactNode;
+
   className?: string;
 }
 
+/** Shared silhouette for the toolbar's non-search controls. */
+const CONTROL =
+  "h-9 rounded-lg border border-app-border bg-app-surface text-[13px] font-medium text-app-fg " +
+  "hover:border-app-fg-subtle/40 hover:bg-app-surface-2 " +
+  "transition-[background-color,border-color,box-shadow] duration-150 " +
+  FOCUS_RING;
+
 /**
  * Standard management-page toolbar: search + sort + filter trigger on the left,
- * a primary action on the right, and an animated bulk-action bar that slides in
- * when rows are selected. Replaces the ad-hoc search/sort/filter rows duplicated
- * across the management pages.
+ * a primary action on the right, and a bulk-action bar that slides in when rows
+ * are selected. Replaces the ad-hoc search/sort/filter rows that used to be
+ * duplicated across the management pages.
+ *
+ * The bulk bar REPLACES the controls row rather than stacking above it. Both at
+ * once pushed the table down by ~56px on every selection, so the row you just
+ * clicked moved out from under the cursor.
  */
 export function AdminToolbar({
   searchValue,
@@ -63,33 +85,42 @@ export function AdminToolbar({
   bulkActions,
   onClearSelection,
   primaryAction,
+  filterSlot,
+  trailing,
   className = "",
 }: AdminToolbarProps) {
   const hasSelection = selectedCount > 0 && !!bulkActions?.length;
 
   return (
-    <div className={`flex flex-col gap-3 ${className}`}>
-      <AnimatePresence>
-        {hasSelection && (
+    <div className={`relative ${className}`}>
+      <AnimatePresence mode="wait" initial={false}>
+        {hasSelection ? (
           <motion.div
-            initial={{ opacity: 0, y: -6 }}
+            key="bulk"
+            initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.15 }}
-            className="flex flex-wrap items-center gap-2 rounded-xl bg-app-accent-soft px-3 py-2"
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-app-accent/25 bg-app-accent-soft px-2.5 py-1.5 min-h-[40px]"
           >
-            <span className="text-[12.5px] font-semibold text-app-accent">
-              {selectedCount} selected
+            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-app-accent">
+              <span className={`${COUNT_BUBBLE} bg-app-accent text-app-accent-fg`} aria-hidden>
+                {selectedCount}
+              </span>
+              selected
             </span>
-            <div className="flex flex-wrap items-center gap-1.5">
+
+            <div aria-hidden className="w-px h-5 bg-app-accent/20 mx-1" />
+
+            <div className="flex flex-wrap items-center gap-1">
               {bulkActions!.map((action) => (
                 <button
                   key={action.label}
                   onClick={action.onClick}
-                  className={`inline-flex items-center gap-1.5 rounded-md px-2.5 h-8 text-[13px] font-medium transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 h-8 text-[13px] font-semibold transition-colors ${FOCUS_RING} ${
                     action.variant === "danger"
                       ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
-                      : "text-app-fg hover:bg-app-surface-2"
+                      : "text-app-accent hover:bg-app-accent/[0.12]"
                   }`}
                 >
                   {action.icon && <action.icon size={15} />}
@@ -97,79 +128,116 @@ export function AdminToolbar({
                 </button>
               ))}
             </div>
+
             {onClearSelection && (
               <button
                 onClick={onClearSelection}
-                className="ml-auto inline-flex items-center gap-1 text-[12px] font-medium text-app-fg-muted hover:text-app-fg"
+                className={`ml-auto inline-flex items-center gap-1 rounded-lg px-2 h-8 text-[12.5px] font-medium text-app-fg-muted hover:text-app-fg hover:bg-app-surface/60 transition-colors ${FOCUS_RING}`}
                 aria-label="Clear selection"
               >
                 <X size={14} /> Clear
               </button>
             )}
           </motion.div>
+        ) : (
+          <motion.div
+            key="controls"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex flex-wrap items-center justify-between gap-2 min-h-[40px]"
+          >
+            <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+              {/* Search — a plain input rather than the shadcn one, because the
+                  admin.css `input[type="search"]` pill rule would otherwise
+                  fight this component's own geometry. Grows to fill the row so
+                  the toolbar reads as one bar, not three floating widgets. */}
+              <div className="relative flex-1 min-w-[180px] sm:max-w-sm">
+                <Search
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-app-fg-subtle"
+                  aria-hidden
+                />
+                <input
+                  type="text"
+                  role="searchbox"
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className={`h-9 w-full pl-9 pr-8 rounded-lg border border-app-border bg-app-surface
+                    text-[13px] text-app-fg placeholder:text-app-fg-subtle
+                    focus:border-app-accent focus:ring-[3px] focus:ring-app-accent/18
+                    focus:outline-none transition-[border-color,box-shadow] duration-150`}
+                  aria-label={searchPlaceholder}
+                />
+                {/* Explicit clear: `type="search"` renders a native ✕ in
+                    WebKit but nothing in Firefox, so the affordance was
+                    inconsistent across browsers. */}
+                {searchValue && (
+                  <button
+                    onClick={() => onSearchChange("")}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 grid place-items-center w-5 h-5 rounded text-app-fg-subtle hover:text-app-fg hover:bg-app-surface-2 transition-colors ${FOCUS_RING}`}
+                    aria-label="Clear search"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort */}
+              {sortOptions?.length && onSortChange ? (
+                <Select value={sortValue} onValueChange={onSortChange}>
+                  <SelectTrigger className={`${CONTROL} w-[150px] px-3`}>
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  {/* Radix portals this to <body>, outside the admin root, so it
+                      needs its own token vars; SELECT_ITEM works around the
+                      duplicated `--accent` that renders highlighted rows
+                      white-on-white. See adminUI.ts. */}
+                  <SelectContent style={PORTAL_VARS} className="rounded-xl border-app-border">
+                    {sortOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value} className={SELECT_ITEM}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+
+              {/* Filter trigger */}
+              {onFilterOpen && (
+                <button
+                  onClick={onFilterOpen}
+                  className={`${CONTROL} relative inline-flex items-center gap-2 px-3.5 ${
+                    filterActiveCount > 0 ? "border-app-accent/40 text-app-accent" : ""
+                  }`}
+                  aria-label={
+                    filterActiveCount > 0 ? `Filters, ${filterActiveCount} active` : "Filters"
+                  }
+                >
+                  <SlidersHorizontal size={15} />
+                  Filters
+                  {filterActiveCount > 0 && (
+                    <span className={`${COUNT_BUBBLE} bg-app-accent text-app-accent-fg`}>
+                      {filterActiveCount}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {filterSlot}
+            </div>
+
+            {(trailing || primaryAction) && (
+              <div className="flex items-center gap-3 shrink-0">
+                {trailing}
+                {primaryAction}
+              </div>
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative">
-            <Search
-              size={15}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-app-fg-subtle"
-            />
-            <Input
-              type="search"
-              value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              className="h-10 w-full sm:w-64 pl-9 rounded-xl text-[13px]"
-              aria-label={searchPlaceholder}
-            />
-          </div>
-
-          {/* Sort */}
-          {sortOptions?.length && onSortChange ? (
-            <Select value={sortValue} onValueChange={onSortChange}>
-              <SelectTrigger className="h-10 w-44 text-[13px] rounded-xl border-app-border bg-app-surface-2">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              {/* Radix portals this to <body>, outside any page root, so it needs
-                  its own BRAND_VARS; SELECT_ITEM works around the duplicated
-                  `--accent` token that renders highlighted rows white-on-white.
-                  See the note on SELECT_ITEM in components/shared/Panel.tsx. */}
-              <SelectContent style={BRAND_VARS}>
-                {sortOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className={SELECT_ITEM}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : null}
-
-          {/* Filter trigger */}
-          {onFilterOpen && (
-            <button
-              onClick={onFilterOpen}
-              className="relative inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border border-app-border bg-app-surface-2 text-[13px] font-semibold text-app-fg transition-colors hover:bg-app-surface focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20"
-              aria-label={
-                filterActiveCount > 0 ? `Filters, ${filterActiveCount} active` : "Filters"
-              }
-            >
-              <SlidersHorizontal size={15} />
-              Filters
-              {filterActiveCount > 0 && (
-                <span className="grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-app-accent text-app-accent-fg text-[10px] font-bold leading-none">
-                  {filterActiveCount}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
-
-        {primaryAction && <div className="flex items-center gap-2">{primaryAction}</div>}
-      </div>
     </div>
   );
 }

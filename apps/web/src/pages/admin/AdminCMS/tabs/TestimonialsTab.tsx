@@ -209,13 +209,14 @@ export function TestimonialsTab() {
         sortOptions={SORT_OPTIONS}
         sortValue={sortKey}
         onSortChange={setSortKey}
-      />
-
-      <AdminFilterBar
-        filters={FILTER_DEFS}
-        activeFilters={filters}
-        onApply={setFilters}
-        onClear={() => setFilters({})}
+        filterSlot={
+          <AdminFilterBar
+            filters={FILTER_DEFS}
+            activeFilters={filters}
+            onApply={setFilters}
+            onClear={() => setFilters({})}
+          />
+        }
       />
 
       <TableFrame>

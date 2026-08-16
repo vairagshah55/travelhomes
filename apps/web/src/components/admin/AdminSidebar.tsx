@@ -69,7 +69,7 @@ interface NavSection {
 const SECTIONS: NavSection[] = [
   {
     items: [
-      { icon: LayoutDashboard, label: "Dashboard", color: "#3BD9DA", path: "/admin/dashboard" },
+      { icon: LayoutDashboard, label: "Dashboard", color: "#2563EB", path: "/admin/dashboard" },
     ],
   },
   {
@@ -148,8 +148,8 @@ const reveal = (hidden: boolean) =>
 const SectionLabel = ({ hidden, children }: { hidden: boolean; children: React.ReactNode }) => (
   <p
     className={cn(
-      "px-2 mb-1.5 h-4 text-[10.5px] font-bold uppercase tracking-[0.07em]",
-      "text-tpl-dark-5 whitespace-nowrap",
+      "px-2.5 mb-1 h-4 text-[10.5px] font-semibold uppercase tracking-[0.08em]",
+      "text-app-fg-subtle whitespace-nowrap",
       reveal(hidden),
     )}
   >
@@ -189,20 +189,26 @@ function NavRow({
   return (
     /* Two hit targets in one visual row: the row navigates, the chevron only
        folds. Nested <button>s are invalid HTML, so they're siblings inside a
-       positioned wrapper that carries the pill + hover wash. */
-    <div className="group relative flex items-center rounded-xl">
+       positioned wrapper that carries the pill + hover wash.
+
+       Icons are MONOCHROME — they inherit the row's text colour and turn blue
+       with it when active. The per-item `color` field is no longer painted:
+       nine different icon hues in a 240px rail is the single strongest "stock
+       template" signal, and it also made the active row compete with eight
+       inactive ones for attention rather than standing out from them. */
+    <div className="group relative flex items-center rounded-lg">
       {/* Sliding active pill — a single shared element animates between rows
           (framer layoutId). */}
       {isActive && (
         <motion.span
           layoutId={pillId}
-          className="absolute inset-0 rounded-xl bg-[rgba(59, 217, 218, 0.18)] shadow-[inset_3px_0_0_0_#3bd9da]"
-          transition={{ type: "spring", stiffness: 520, damping: 42 }}
+          className="absolute inset-0 rounded-lg bg-app-accent-soft"
+          transition={{ type: "spring", stiffness: 620, damping: 46 }}
         />
       )}
       {/* Hover wash for inactive rows */}
       {!isActive && (
-        <span className="absolute inset-0 rounded-xl bg-transparent group-hover:bg-[rgba(16,24,40,0.045)] transition-colors duration-200" />
+        <span className="absolute inset-0 rounded-lg bg-transparent group-hover:bg-[rgba(18,25,38,0.045)] transition-colors duration-150" />
       )}
 
       <button
@@ -210,34 +216,22 @@ function NavRow({
         title={item.label}
         aria-current={isActive ? "page" : undefined}
         data-active-row={anchor ? "" : undefined}
-        className="relative z-10 flex-1 min-w-0 flex items-center gap-3 h-11 pl-2 pr-1 rounded-xl text-left text-[14px] font-medium text-[#475467] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f1f8f7]"
+        className={cn(
+          "relative z-10 flex-1 min-w-0 flex items-center gap-2.5 h-9 pl-2.5 pr-1 rounded-lg",
+          "text-left text-[13.5px] cursor-pointer outline-none",
+          "focus-visible:ring-2 focus-visible:ring-app-accent/35",
+          isActive ? "font-semibold text-app-accent" : "font-medium text-[#4b5565]",
+        )}
       >
-        {/* Icon tile — inverts on active (solid teal + white glyph). Fixed
-            position so it never shifts between collapsed/expanded. */}
-        <span
-          className="grid place-items-center w-9 h-9 rounded-lg shrink-0 transition-all duration-200 group-hover:scale-[1.06]"
-          style={
-            isActive
-              ? {
-                  backgroundColor: "#117479",
-                  color: "#fff",
-                  boxShadow: "0 5px 14px -3px rgba(59, 217, 218, 0.65)",
-                }
-              : { backgroundColor: `${item.color}1f`, color: item.color }
-          }
-        >
-          <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
-        </span>
-
-        <span
+        <item.icon
+          size={17}
+          strokeWidth={isActive ? 2.2 : 1.9}
           className={cn(
-            "flex-1 truncate tracking-[-0.01em] transition-transform duration-200",
-            isActive
-              ? "text-[#117479] font-semibold"
-              : "group-hover:translate-x-0.5 group-hover:text-[#101828]",
-            reveal(collapsed),
+            "shrink-0 transition-colors duration-150",
+            isActive ? "text-app-accent" : "text-app-fg-subtle group-hover:text-[#364152]",
           )}
-        >
+        />
+        <span className={cn("flex-1 truncate tracking-[-0.005em]", reveal(collapsed))}>
           {item.label}
         </span>
       </button>
@@ -248,15 +242,15 @@ function NavRow({
           aria-expanded={expanded}
           aria-label={`${expanded ? "Collapse" : "Expand"} ${item.label}`}
           className={cn(
-            "relative z-10 shrink-0 grid place-items-center w-6 h-11 mr-1 rounded-lg outline-none",
-            "text-tpl-dark-5/70 hover:text-[#101828] transition-colors",
-            "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
+            "relative z-10 shrink-0 grid place-items-center w-6 h-9 mr-1 rounded-md outline-none",
+            "text-app-fg-subtle hover:text-[#121926] transition-colors",
+            "focus-visible:ring-2 focus-visible:ring-app-accent/35",
             reveal(collapsed),
           )}
         >
           <ChevronRight
-            size={13}
-            strokeWidth={2.4}
+            size={12}
+            strokeWidth={2.6}
             className={cn("transition-transform duration-200", expanded && "rotate-90")}
           />
         </button>
@@ -354,45 +348,32 @@ function SidebarBody({
                         transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
                         className="overflow-hidden"
                       >
-                        <ul className="mt-1 mb-1 ml-[26px] mr-1 space-y-0.5 border-l border-tpl-stroke pl-3">
+                        {/* Sub-items hang off a guide rail aligned with the
+                            parent's icon, so the group reads as one unit. */}
+                        <ul className="mt-0.5 mb-1 ml-[19px] mr-1 space-y-px border-l border-tpl-stroke pl-2.5">
                           {item.children!.map((sub, subIndex) => {
                             const subActive = isActive(sub.path);
                             return (
                               <motion.li
                                 key={sub.path}
-                                initial={{ x: -6, opacity: 0 }}
+                                initial={{ x: -4, opacity: 0 }}
                                 animate={{ x: 0, opacity: 1 }}
-                                transition={{ delay: subIndex * 0.04, duration: 0.15 }}
+                                transition={{ delay: subIndex * 0.03, duration: 0.13 }}
                               >
                                 <button
                                   onClick={() => onNavigate(sub.path)}
                                   aria-current={subActive ? "page" : undefined}
                                   data-active-row={subActive ? "" : undefined}
                                   className={cn(
-                                    "group/sub w-full flex items-center gap-2 h-8 px-2.5 rounded-lg",
-                                    "text-left select-none outline-none transition-colors duration-150",
-                                    "focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
+                                    "w-full flex items-center h-8 px-2.5 rounded-md",
+                                    "text-left text-[12.5px] select-none outline-none transition-colors duration-150",
+                                    "focus-visible:ring-2 focus-visible:ring-app-accent/35",
                                     subActive
-                                      ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479]"
-                                      : "text-tpl-dark-6 hover:bg-[rgba(16,24,40,0.045)] hover:text-tpl-dark",
+                                      ? "bg-app-accent-soft text-app-accent font-semibold"
+                                      : "text-[#4b5565] font-medium hover:bg-[rgba(18,25,38,0.045)] hover:text-[#121926]",
                                   )}
                                 >
-                                  <span
-                                    className={cn(
-                                      "w-1 h-1 rounded-full shrink-0 transition-colors duration-150",
-                                      subActive
-                                        ? "bg-[#117479]"
-                                        : "bg-tpl-dark-5/40 group-hover/sub:bg-tpl-dark-5",
-                                    )}
-                                  />
-                                  <span
-                                    className={cn(
-                                      "flex-1 truncate text-[12.5px]",
-                                      subActive ? "font-semibold" : "font-medium",
-                                    )}
-                                  >
-                                    {sub.label}
-                                  </span>
+                                  <span className="flex-1 truncate">{sub.label}</span>
                                 </button>
                               </motion.li>
                             );
@@ -521,14 +502,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         <SheetContent
           side="left"
           data-admin-skin="teal"
-          className="w-[290px] p-0 bg-tpl-card-bg border-r border-tpl-stroke sm:max-w-[290px]"
+          className="w-[264px] p-0 bg-tpl-card-bg border-r border-tpl-stroke sm:max-w-[264px]"
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-          <div className="flex flex-col h-full py-6 px-4">
+          <div className="flex flex-col h-full py-4 px-3">
             <div className="px-1 pb-2 shrink-0">
               <LogoWebsite />
             </div>
-            <nav className="flex-1 mt-5 overflow-y-auto scrollbar-hide">
+            <nav className="flex-1 mt-3 overflow-y-auto scrollbar-hide">
               {/* The desktop rail stays mounted (hidden by CSS) while the
                   drawer is open. Two live `layoutId`s of the same name make
                   framer animate one pill between the two trees, so the drawer
@@ -557,20 +538,20 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           "hidden lg:flex flex-col h-screen shrink-0 overflow-hidden",
           "bg-tpl-card-bg border-r border-tpl-stroke",
           "transition-[width] duration-300 ease-out",
-          railOpen ? "w-[290px]" : "w-[76px]",
+          railOpen ? "w-[248px]" : "w-[64px]",
           className,
         )}
       >
-        {/* Brand row — 84px so its bottom edge lines up with the header. The
+        {/* Brand row — 56px so its bottom edge lines up with the header. The
             mark stays fixed; the wordmark + pin reveal on expand. */}
-        <div className="flex items-center gap-2.5 h-[84px] shrink-0 pl-[18px] pr-3 border-b border-tpl-stroke">
+        <div className="flex items-center gap-2.5 h-14 shrink-0 pl-3.5 pr-2.5 border-b border-tpl-stroke">
           <button
             onClick={() => navigate("/admin/dashboard")}
-            className="flex items-center gap-2.5 min-w-0 outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40"
+            className="flex items-center gap-2 min-w-0 outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-app-accent/35"
             aria-label="TravelHomes admin home"
           >
-            <AdminBrandMark size={34} />
-            <BrandLogo variant="name" size={17} decorative className={cn(reveal(!railOpen))} />
+            <AdminBrandMark size={26} />
+            <BrandLogo variant="name" size={14} decorative className={cn(reveal(!railOpen))} />
           </button>
 
           <button
@@ -578,15 +559,15 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
             title={pinned ? "Unpin sidebar" : "Pin sidebar open"}
             aria-pressed={pinned}
             className={cn(
-              "ml-auto shrink-0 grid place-items-center w-7 h-7 rounded-lg outline-none",
-              "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#3bd9da]/40",
+              "ml-auto shrink-0 grid place-items-center w-7 h-7 rounded-md outline-none",
+              "transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-app-accent/35",
               pinned
-                ? "bg-[rgba(59, 217, 218, 0.18)] text-[#117479] hover:bg-[rgba(59, 217, 218, 0.32)]"
-                : "text-tpl-dark-5/70 hover:text-tpl-dark-5 hover:bg-[rgba(16,24,40,0.05)]",
+                ? "text-app-accent bg-app-accent-soft"
+                : "text-app-fg-subtle hover:text-[#364152] hover:bg-[rgba(18,25,38,0.05)]",
               reveal(!railOpen),
             )}
           >
-            {pinned ? <Pin size={13} strokeWidth={2.3} /> : <PinOff size={13} strokeWidth={2.3} />}
+            {pinned ? <Pin size={12} strokeWidth={2.4} /> : <PinOff size={12} strokeWidth={2.4} />}
           </button>
         </div>
 
@@ -595,7 +576,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
           <nav
             ref={scrollRef}
             aria-label="Admin navigation"
-            className="h-full px-3 pt-4 pb-3 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-hide"
+            className="h-full px-2.5 pt-3 pb-3 overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-hide"
           >
             <SidebarBody
               collapsed={!railOpen}
@@ -627,22 +608,21 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
 
         {/* Footer — sign out */}
-        <div className="shrink-0 px-3 py-2.5 border-t border-tpl-stroke">
+        <div className="shrink-0 px-2.5 py-2 border-t border-tpl-stroke">
           <button
             onClick={handleLogout}
             title="Sign out"
-            className="group w-full flex items-center gap-3 h-10 pl-2 pr-3 rounded-xl text-left select-none outline-none
-              text-tpl-dark-5 hover:bg-red-50 hover:text-red-600
-              focus-visible:ring-2 focus-visible:ring-red-500/40 transition-colors duration-150"
+            className="group w-full flex items-center gap-2.5 h-9 pl-2.5 pr-3 rounded-lg text-left select-none outline-none
+              text-[#4b5565] hover:bg-red-50 hover:text-red-600
+              focus-visible:ring-2 focus-visible:ring-red-500/35 transition-colors duration-150"
           >
-            <span className="grid place-items-center w-9 h-9 rounded-lg shrink-0 bg-red-500/[0.09] text-red-500 transition-transform duration-150 group-hover:scale-[1.06]">
-              <LogOut size={17} strokeWidth={2} />
-            </span>
+            <LogOut
+              size={17}
+              strokeWidth={1.9}
+              className="shrink-0 text-app-fg-subtle group-hover:text-red-600 transition-colors"
+            />
             <span
-              className={cn(
-                "flex-1 text-[13.5px] font-medium whitespace-nowrap",
-                reveal(!railOpen),
-              )}
+              className={cn("flex-1 text-[13.5px] font-medium whitespace-nowrap", reveal(!railOpen))}
             >
               Sign out
             </span>

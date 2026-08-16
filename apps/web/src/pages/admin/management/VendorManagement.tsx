@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Eye, Ban, Trash2, Store, SearchX } from "lucide-react";
+import { Plus, Eye, Ban, BadgeCheck, Clock, Trash2, Store, SearchX } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,8 @@ import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
 import { vendorSchema, type VendorFormValues } from "./vendorSchema";
 import { vendorService } from "@/services/api";
+import { BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
+import { AdminStatCard } from "@/components/admin/AdminStatCard";
 
 const TABS = [
   { key: "all-vendors", label: "All Vendors" },
@@ -56,6 +58,14 @@ const STATUS_OPTIONS = [
 ];
 
 const ITEMS_PER_PAGE = 10;
+
+/* Metric row for the "All Vendors" tab, derived from the loaded list. */
+const STAT_DEFS = [
+  { key: "total", title: "Total Vendors", icon: Store, color: "#2563eb" },
+  { key: "approved", title: "Approved", icon: BadgeCheck, color: "#12b76a" },
+  { key: "pending", title: "Pending Approval", icon: Clock, color: "#f59e0b" },
+  { key: "banned", title: "Banned", icon: Ban, color: "#f04438" },
+] as const;
 
 const VendorManagement = () => {
   // View on manage_vendors opens the page; create/edit/delete are separate
@@ -92,6 +102,16 @@ const VendorManagement = () => {
   const locationOptions = useMemo(() => {
     const set = new Set(vendors.map((v) => v.location).filter(Boolean));
     return Array.from(set).map((loc) => ({ value: loc, label: loc }));
+  }, [vendors]);
+
+  const counts = useMemo(() => {
+    const by = (s: string) => vendors.filter((v) => v.status?.toLowerCase() === s).length;
+    return {
+      total: vendors.length,
+      approved: by("approved"),
+      pending: by("pending"),
+      banned: by("banned"),
+    };
   }, [vendors]);
 
   const filterDefs: FilterDefinition[] = [
@@ -265,12 +285,38 @@ const VendorManagement = () => {
   ];
 
   return (
-    <AdminLayout title="Vendor Management">
-      <MotionReveal delay={0}>
-        <div className="bg-app-surface rounded-[18px] border border-app-border shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)] overflow-hidden">
-          <div className="p-5 space-y-5">
-            <TabStrip tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />
+    <AdminLayout
+      title="Vendor Management"
+      subtitle="Partners who list on TravelHomes — approve applications, track KYC and manage account status."
+      tabs={<TabStrip variant="flush" tabs={TABS} activeKey={activeTab} onChange={setActiveTab} />}
+      headerActions={
+        access.canCreate ? (
+          <button onClick={() => setShowAddModal(true)} className={BTN_PRIMARY}>
+            <Plus size={16} /> Add Vendor
+          </button>
+        ) : undefined
+      }
+    >
+      {/* Counts describe the whole vendor list, so they're only shown on the
+          unfiltered tab — see the same note in UserManagement. */}
+      {activeTab === "all-vendors" && (
+        <div className={`${STAT_GRID} mb-5 md:mb-6`}>
+          {STAT_DEFS.map((stat, i) => (
+            <AdminStatCard
+              key={stat.title}
+              title={stat.title}
+              value={String(counts[stat.key])}
+              icon={stat.icon}
+              iconColor={stat.color}
+              delay={i * 0.05}
+            />
+          ))}
+        </div>
+      )}
 
+      <MotionReveal delay={0}>
+        <div className={CARD_FLUSH}>
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-app-border">
             <AdminToolbar
               searchValue={searchTerm}
               onSearchChange={setSearchTerm}
@@ -285,61 +331,49 @@ const VendorManagement = () => {
                   : []
               }
               onClearSelection={() => setSelectedIds([])}
-              primaryAction={
-                access.canCreate ? (
-                  <Button
-                    onClick={() => setShowAddModal(true)}
-                    className="h-10 rounded-full bg-tpl-primary hover:bg-tpl-primary/90 text-white gap-2"
-                  >
-                    <Plus size={16} /> Add Vendor
-                  </Button>
-                ) : undefined
+              filterSlot={
+                <AdminFilterBar
+                  filters={filterDefs}
+                  activeFilters={filters}
+                  onApply={setFilters}
+                  onClear={() => setFilters({})}
+                />
               }
             />
-
-            <AdminFilterBar
-              filters={filterDefs}
-              activeFilters={filters}
-              onApply={setFilters}
-              onClear={() => setFilters({})}
-            />
-
-            <div className="border border-tpl-stroke dark:border-white/10 rounded-xl overflow-hidden">
-              <AdminDataTable<Vendor>
-                columns={columns}
-                data={paginated}
-                isLoading={query.isLoading}
-                isError={query.isError}
-                errorMessage="Failed to load vendors."
-                onRetry={() => query.refetch()}
-                hasActiveQuery={hasActiveQuery}
-                emptyIcon={hasActiveQuery ? SearchX : Store}
-                emptyTitle="No vendors yet"
-                emptyDescription="Vendors appear here once they register and submit for verification."
-                noResultsTitle={
-                  searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"
-                }
-                noResultsDescription="Try different keywords or remove filters."
-                noResultsAction={{
-                  label: "Clear filters",
-                  onClick: () => {
-                    setSearchTerm("");
-                    setFilters({});
-                  },
-                }}
-                selectable={access.canDelete}
-                selectedIds={selectedIds}
-                onSelectionChange={setSelectedIds}
-                rowActions={rowActions}
-                pagination={{
-                  currentPage,
-                  totalPages,
-                  totalItems: filtered.length,
-                  onPageChange: setCurrentPage,
-                }}
-              />
-            </div>
           </div>
+
+          <AdminDataTable<Vendor>
+            columns={columns}
+            data={paginated}
+            isLoading={query.isLoading}
+            isError={query.isError}
+            errorMessage="Failed to load vendors."
+            onRetry={() => query.refetch()}
+            hasActiveQuery={hasActiveQuery}
+            emptyIcon={hasActiveQuery ? SearchX : Store}
+            emptyTitle="No vendors yet"
+            emptyDescription="Vendors appear here once they register and submit for verification."
+            noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching vendors"}
+            noResultsDescription="Try different keywords or remove filters."
+            noResultsAction={{
+              label: "Clear filters",
+              onClick: () => {
+                setSearchTerm("");
+                setFilters({});
+              },
+            }}
+            selectable={access.canDelete}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            rowActions={rowActions}
+            pagination={{
+              currentPage,
+              totalPages,
+              pageSize: ITEMS_PER_PAGE,
+              totalItems: filtered.length,
+              onPageChange: setCurrentPage,
+            }}
+          />
         </div>
       </MotionReveal>
 
@@ -460,11 +494,7 @@ function AddVendorDialog({
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={isSaving}
-              className="bg-tpl-primary hover:bg-tpl-primary/90 text-white"
-            >
+            <Button type="submit" disabled={isSaving} className={BTN_PRIMARY}>
               {isSaving ? "Saving…" : "Save Vendor"}
             </Button>
           </DialogFooter>
