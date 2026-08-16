@@ -174,11 +174,24 @@ const OfferSchema = new Schema(
   }
 );
 
-// Index for better query performance
-// OfferSchema.index({ status: 1 });
-// OfferSchema.index({ category: 1 });
-// OfferSchema.index({ city: 1, state: 1 });
-// OfferSchema.index({ averageRating: -1 });
-// OfferSchema.index({ regularPrice: 1 });
+/**
+ * Indexes.
+ *
+ * Offer is the catalog collection every browse / search / admin-listing surface
+ * reads from, and `status` is on essentially every query — modules/offers
+ * `buildListFilter` pins `status: "approved"` for public traffic, and
+ * modules/management `list` filters by status too. These were commented out, so
+ * each of those queries (plus the matching `countDocuments`) was a full
+ * collection scan followed by an in-memory sort.
+ *
+ * Compound rather than single-field: MongoDB can only use one index per query,
+ * so pairing the `status` equality with the sort key lets the same index satisfy
+ * both the filter and the ordering, and keeps the sort from spilling to memory.
+ */
+OfferSchema.index({ status: 1, createdAt: -1 }); // default listing + newest-first
+OfferSchema.index({ status: 1, averageRating: -1, ratingsCount: -1 }); // sort=rating
+OfferSchema.index({ status: 1, regularPrice: 1 }); // sort=price_asc / price_desc
+OfferSchema.index({ category: 1 });
+OfferSchema.index({ city: 1, state: 1 });
 
 module.exports = mongoose.model('Offer', OfferSchema);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { PhoneIcon } from "lucide-react";

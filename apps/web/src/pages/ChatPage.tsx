@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getImageUrl } from "@/lib/utils";

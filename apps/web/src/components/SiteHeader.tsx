@@ -30,6 +30,7 @@ import { CgLoadbarDoc } from "react-icons/cg";
 import { cmsPublicApi } from "@/lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
 import { CamperVanIcon, HomeIcon, RocketIcon } from "./site-header/icons";
+import { useIsApprovedVendor } from "@/hooks/useProfile";
 
 interface SiteHeaderProps {
   variant?: "transparent" | "white";
@@ -56,6 +57,8 @@ export default function SiteHeader({
   const { pathname } = useLocation();
   const isSearchPage = pathname === "/search";
   const { user, updateUserType, logout, refreshUser } = useAuth();
+  // Server-backed, not the localStorage snapshot — see useIsApprovedVendor.
+  const canSwitchToVendor = useIsApprovedVendor(user?.email, user?.vendorStatus);
 
   const [showFilterButtons, setShowFilterButtons] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -323,7 +326,22 @@ export default function SiteHeader({
           boxShadow: isScrolled ? "0 1px 8px rgba(0, 0, 0, 0.08)" : "0 0 0 rgba(0, 0, 0, 0)",
         }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-[backdrop-filter] duration-500 ease-in-out ${
+        /**
+         * z-[60], above the page's other fixed chrome (MobileUserNav, the
+         * sticky hero search, mobile booking bars — all z-50).
+         *
+         * `position: fixed` + a z-index makes this a stacking context, and the
+         * account dropdown lives inside it. That means the dropdown's own
+         * z-[120]/z-[130] only order it WITHIN this header — at page level the
+         * whole menu can never outrank the header's own z-index. At z-50 it tied
+         * with those other fixed widgets, and a tie is won by whatever comes
+         * later in the DOM, so they painted over the open menu and clipped
+         * "Switch to Vendor" / "Logout".
+         *
+         * Modals and dialogs sit at z-[100] and still cover the header, which is
+         * what we want.
+         */
+        className={`fixed top-0 left-0 right-0 z-[60] transition-[backdrop-filter] duration-500 ease-in-out ${
           isScrolled ? "backdrop-blur-md" : "backdrop-blur-none"
         }`}
       >
@@ -1124,7 +1142,7 @@ export default function SiteHeader({
                           </button>
                         );
                       })}
-                      {(user.vendorStatus === "approved" || user.vendorStatus === "active") && (
+                      {canSwitchToVendor && (
                         <button
                           onClick={() => {
                             setIsMobileMenuOpen(false);

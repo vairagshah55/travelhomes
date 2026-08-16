@@ -9,7 +9,7 @@
  * and a backdrop that is only a backdrop where it isn't the panel.
  */
 import React, { useEffect, useState } from "react";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { Download, X, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LogoWebsite from "@/components/ui/LogoWebsite";

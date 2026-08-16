@@ -59,6 +59,7 @@ import {
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { currencyINR, toAmount } from "@/utils/currency";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -268,8 +269,11 @@ const BookingDetails = () => {
       }
       if (b.status === "active") activeCount += 1;
       if (b.status !== "cancelled") {
-        const price = Number((b.servicePrice || "").replace(/[^\d.]/g, "")) || 0;
-        revenue += price;
+        // `servicePrice` is a Number on raw BookingDetail rows and a "₹ 5000"
+        // string on mapped Booking rows — the list endpoint returns both in one
+        // array. Calling .replace() on it threw for every vendor whose list
+        // included a BookingDetail row, taking the whole page down.
+        revenue += toAmount(b.servicePrice);
       }
     }
     return { total: visibleBookings.length, today: todayCount, active: activeCount, revenue };
@@ -289,12 +293,6 @@ const BookingDetails = () => {
     });
   }, [visibleBookings, activeTab, timeFilter, statusFilter, searchQuery]);
 
-  const currencyINR = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(n);
 
   // ─── Pagination ────────────────────────────────────────────────────────────
   const totalPages = Math.max(1, Math.ceil(filteredBookings.length / ITEMS_PER_PAGE));
@@ -338,7 +336,10 @@ const BookingDetails = () => {
       checkOutDate: co.date,
       checkOutTime: co.time,
       locationFrom: loc[0] || "",
-      servicePrice: b.servicePrice || "",
+      // Digits only: the field's onChange strips non-digits and the save sends
+      // that back, so seeding it with the raw "₹ 5000" string showed a value
+      // the input itself would never produce.
+      servicePrice: b.servicePrice ? String(toAmount(b.servicePrice)) : "",
       guests: String(b.guests || 1),
       status: b.status || "pending",
     });
@@ -448,7 +449,7 @@ const BookingDetails = () => {
         const w = window.open("", "_blank");
         if (w) {
           w.document.write(
-            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#117479}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${d.servicePrice || ""}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
+            `<html><head><title>Invoice ${d.bookingId || id}</title><style>body{font-family:sans-serif;padding:40px;color:#333}h1{color:#117479}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{border:1px solid #e4e4e4;padding:12px;text-align:left}th{background:#F7F8FA;font-size:12px;text-transform:uppercase;color:#6b6b6b}@media print{body{padding:20px}}</style></head><body><h1>Travel Homes — Invoice</h1><p><strong>Booking:</strong> ${d.bookingId || id} | <strong>Date:</strong> ${new Date().toLocaleDateString()}</p><table><tr><th>Guest</th><td>${d.clientName || ""}</td><th>Service</th><td>${d.serviceName || ""}</td></tr><tr><th>Check-in</th><td>${d.checkIn || ""}</td><th>Check-out</th><td>${d.checkOut || ""}</td></tr><tr><th>Guests</th><td>${d.guests || ""}</td><th>Price</th><td>${currencyINR(toAmount(d.servicePrice))}</td></tr><tr><th>Status</th><td>${d.status || ""}</td><th>Location</th><td>${d.location || ""}</td></tr></table><p style="text-align:center;color:#9a9a9a;margin-top:40px">Thank you for choosing Travel Homes!</p><script>window.onload=function(){window.print()}</script></body></html>`,
           );
           w.document.close();
         }
@@ -846,7 +847,7 @@ const BookingDetails = () => {
             <InfoRow
               icon={<IndianRupee size={15} />}
               label="Price"
-              value={selectedBooking.servicePrice}
+              value={currencyINR(toAmount(selectedBooking.servicePrice))}
             />
             <InfoRow
               icon={<MapPin size={15} />}

@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+
 import { authApi, vendorAuthApi, userProfileApi } from "../lib/api";
+import { fetchProfile, refetchProfile, invalidateProfile } from "../hooks/useProfile";
 
 interface User {
   id: string;
@@ -53,7 +56,8 @@ interface AuthContextType {
   completeOnboarding: () => void;
   updateUserType: (userType: "user" | "vendor") => Promise<void>;
   updateUser: (data: Partial<User>) => void;
-  refreshUser: () => Promise<void>;
+  /** @param force bypass the shared profile cache (used by the tab-focus listener). */
+  refreshUser: (force?: boolean) => Promise<void>;
   lastRegisterId?: string | null;
   authenticateAfterRegister: (u: {
     id?: string;
@@ -95,6 +99,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // AuthProvider is mounted inside QueryClientProvider (see App.tsx), so the
+  // shared profile cache is reachable from here.
+  const queryClient = useQueryClient();
+
   const [user, setUser] = useState<User | null>(() => {
     try {
       const stored =
@@ -161,29 +169,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Auto-refresh user profile when tab regains focus (picks up admin approval, etc.)
-  const refreshUserRef = React.useRef<() => Promise<void>>();
+  const refreshUserRef = React.useRef<(force?: boolean) => Promise<void>>();
 
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && isAuthenticated && user?.email) {
-        refreshUserRef.current?.();
+        // force: the point of this listener is to catch changes made while
+        // the tab was in the background, so it must not read from cache.
+        refreshUserRef.current?.(true);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [isAuthenticated, user?.email]);
 
-  // Refresh user profile on initial app load to pick up vendorStatus changes
+  /**
+   * Refresh the profile once per signed-in session, to pick up changes an admin
+   * made while the user was away (vendor approval being the one that matters).
+   *
+   * The dependency array was `[]`, which reads `isAuthenticated` from the FIRST
+   * render only. That's fine when the page loads with credentials already in
+   * storage, but not when the session begins *during* this mount — the Google
+   * redirect lands on /oauth-redirect unauthenticated, then authenticates a
+   * moment later. The condition was false at first render, the effect never
+   * re-ran, and the refresh simply never happened for that whole session. So a
+   * Google sign-in that dropped `vendorStatus` (see authenticateAfterRegister)
+   * had nothing to repair it, and the profile menu stayed wrong until the user
+   * happened to switch tabs and trigger the visibilitychange listener above.
+   *
+   * Depending on the auth state fixes that; the ref keeps it to once per
+   * session rather than once per email change.
+   */
+  const didInitialRefresh = React.useRef(false);
   useEffect(() => {
-    if (isAuthenticated && user?.email) {
-      // Small delay to let the app render first, then refresh in background
-      const t = setTimeout(() => refreshUserRef.current?.(), 500);
-      return () => clearTimeout(t);
+    if (!isAuthenticated || !user?.email) {
+      // Signed out — re-arm so the next sign-in refreshes again.
+      didInitialRefresh.current = false;
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (didInitialRefresh.current) return;
+    didInitialRefresh.current = true;
+    // Small delay to let the app render first, then refresh in background.
+    const t = setTimeout(() => refreshUserRef.current?.(), 500);
+    return () => clearTimeout(t);
+  }, [isAuthenticated, user?.email]);
 
-  const login = async (
+  const login = useCallback(async (
     email: string,
     password: string,
     rememberMe: boolean = true,
@@ -259,7 +290,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return false;
-  };
+  }, []);
 
   // const loginWithGoogle = async (): Promise<boolean> => {
   //   try {
@@ -289,7 +320,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   //   }
   // };
 
-  const loginWithGoogle = async (): Promise<boolean> => {
+  const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
       // Store current location for redirect after auth
       sessionStorage.setItem("auth_redirect", window.location.pathname);
@@ -301,9 +332,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Google OAuth error:", error);
       return false;
     }
-  };
+  }, []);
 
-  const handleGoogleCallback = async (
+  const handleGoogleCallback = useCallback(async (
     code: string,
   ): Promise<{ success: boolean; message?: string }> => {
     try {
@@ -341,9 +372,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Google callback error:", error);
       return { success: false, message: error.message || "Google login failed" };
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setIsAuthenticated(false);
     setNeedsOnboarding(false);
@@ -355,9 +386,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     sessionStorage.removeItem("travel_onboarding_complete");
     sessionStorage.removeItem("travel_auth_token");
     setToken(null);
-  };
+  }, []);
 
-  const register = async (
+  const register = useCallback(async (
     data: RegisterData,
   ): Promise<{ ok: boolean; registerId?: string; code?: number; message?: string }> => {
     try {
@@ -384,9 +415,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log(`Code otp-- ${code}: ${msg}`);
       return { ok: false, code, message: msg };
     }
-  };
+  }, []);
 
-  const verifyOTP = async (otp: string): Promise<boolean> => {
+  const verifyOTP = useCallback(async (otp: string): Promise<boolean> => {
     try {
       if (!lastRegisterId) return false;
       const resp = await authApi.verifyRegisterOtp(lastRegisterId, otp);
@@ -394,7 +425,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       return false;
     }
-  };
+  }, [lastRegisterId]);
 
   // const authenticateAfterRegister = (u: Partial<User> & { email: string }) => {
   //   const newUser: User = {
@@ -416,21 +447,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   //   localStorage.setItem('travel_auth_user', JSON.stringify(newUser));
   //   localStorage.setItem('travel_onboarding_complete', 'true');
   // };
-  const authenticateAfterRegister = (u: Partial<User> & { email: string }) => {
-    console.log("Authenticating user after register:", u); // Debug log
-
+  const authenticateAfterRegister = useCallback((u: Partial<User> & { email: string }) => {
+    /**
+     * Spread `u` first, then normalise — do NOT rebuild from a field whitelist.
+     *
+     * This used to list the fields to keep, and `vendorStatus` wasn't on the
+     * list. Both Google sign-in paths pass it in (see OAuthRedirect and
+     * AuthCallback, which read `userData.vendorStatus` straight off the auth
+     * response), so an approved vendor who signed in with Google landed with
+     * `vendorStatus: undefined` — and every `vendorStatus === "approved"` gate
+     * in the UI, including "Switch to Vendor" in the profile menu, stayed
+     * hidden. `mobileVerified` / `emailVerified` were dropped the same way.
+     */
     const newUser: User = {
+      ...(u as User),
       id: u.id || "reg",
       email: u.email,
       firstName: u.firstName || "",
       lastName: u.lastName || "",
       userType: ((u.userType as any)?.toLowerCase() as "user" | "vendor") || "user",
-      photo: u.photo,
-      phoneNumber: u.phoneNumber,
-      state: u.state,
-      city: u.city,
-      idProof: u.idProof,
-      dateOfBirth: u.dateOfBirth,
     };
 
     // Update state
@@ -451,18 +486,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Also store token if available (token should already be stored)
     console.log("User authenticated successfully:", newUser);
     console.log("isAuthenticated set to:", true);
-  };
+  }, []);
 
-  const completeOnboarding = () => {
+  const completeOnboarding = useCallback(() => {
     setNeedsOnboarding(false);
     if (localStorage.getItem("travel_auth_user")) {
       localStorage.setItem("travel_onboarding_complete", "true");
     } else {
       sessionStorage.setItem("travel_onboarding_complete", "true");
     }
-  };
+  }, []);
 
-  const updateUserType = async (userType: "user" | "vendor") => {
+  const updateUserType = useCallback(async (userType: "user" | "vendor") => {
     if (user) {
       const updatedUser = { ...user, userType };
       setUser(updatedUser);
@@ -476,13 +511,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Also try to update on server so it persists
       try {
         await userProfileApi.upsert({ email: user.email, userType });
+        // The write changed the stored profile; drop the shared entry so the
+        // next reader sees the new userType instead of the cached one.
+        invalidateProfile(queryClient, user.email);
       } catch (error) {
         console.error("Failed to update userType on server:", error);
       }
     }
-  };
+  }, [user, queryClient]);
 
-  const updateUser = (data: Partial<User>) => {
+  const updateUser = useCallback((data: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
@@ -492,103 +530,147 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));
       }
     }
-  };
+  }, [user]);
 
-  const refreshUser = async () => {
-    if (!user?.email) return;
-    try {
-      const res = await userProfileApi.get(user.email);
-      console.log("[AUTH] refreshUser response:", {
-        vendorStatus: res?.data?.vendorStatus,
-        userType: res?.data?.userType,
-      });
-      if (res?.success && res.data) {
-        const p = res.data;
+  /**
+   * Re-read the profile and fold any server-side changes into `user`.
+   *
+   * @param force  bypass the shared profile cache. The tab-focus listener
+   *   passes `true` — its whole purpose is to notice a change that happened
+   *   while the tab was in the background. The mount-time call leaves it false
+   *   so it dedupes against whatever the mounted page already fetched, instead
+   *   of issuing a second identical request 500ms later.
+   *
+   * This used to be a raw `fetch` with no cache at all, which is why one page
+   * load produced three identical `/api/profile` requests.
+   */
+  const refreshUser = useCallback(
+    async (force = false) => {
+      if (!user?.email) return;
+      try {
+        const p = force
+          ? await refetchProfile(queryClient, user.email)
+          : await fetchProfile(queryClient, user.email);
 
-        // If we recently updated userType locally, don't let the server overwrite it
-        // until enough time has passed for the server to have the updated value
-        const isRecentlyUpdated = Date.now() - lastUserTypeUpdateAt.current < 10000; // 10 seconds
-        let effectiveUserType = isRecentlyUpdated
-          ? user.userType
-          : (p as any).userType || user.userType;
+        if (p) {
+          // If we recently updated userType locally, don't let the server overwrite it
+          // until enough time has passed for the server to have the updated value
+          const isRecentlyUpdated = Date.now() - lastUserTypeUpdateAt.current < 10000; // 10 seconds
+          let effectiveUserType = isRecentlyUpdated
+            ? user.userType
+            : (p as any).userType || user.userType;
 
-        // Auto-promote to vendor if admin has approved
-        const vs = (p as any).vendorStatus;
-        if ((vs === "approved" || vs === "active") && effectiveUserType !== "vendor") {
-          effectiveUserType = "vendor";
+          // Auto-promote to vendor if admin has approved
+          const vs = (p as any).vendorStatus;
+          if ((vs === "approved" || vs === "active") && effectiveUserType !== "vendor") {
+            effectiveUserType = "vendor";
+          }
+
+          // Use `??` (not `||`) and fall back to the existing value for every
+          // field. The API sometimes omits fields like `photo` from refetches —
+          // without these fallbacks each background refresh would overwrite
+          // them with `undefined`, then the next refresh might restore them,
+          // causing the avatar / verification badges / phone number to flicker
+          // (a visible "blink" across the whole user-profile sidebar).
+          const updatedUser: User = {
+            ...user,
+            firstName: p.firstName ?? user.firstName,
+            lastName: p.lastName ?? user.lastName,
+            userType: effectiveUserType,
+            vendorStatus: (p as any).vendorStatus ?? user.vendorStatus,
+            photo: p.photo ?? user.photo,
+            phoneNumber: p.phoneNumber ?? user.phoneNumber,
+            mobileVerified: p.mobileVerified ?? user.mobileVerified,
+            emailVerified: p.emailVerified ?? user.emailVerified,
+            state: p.state ?? user.state,
+            city: p.city ?? user.city,
+            idProof: p.idProof ?? user.idProof,
+            dateOfBirth: p.dateOfBirth ?? user.dateOfBirth,
+          };
+
+          // Skip the setUser when the refetch returned identical values. Without
+          // this guard, the 500ms-after-mount and visibility-change refreshes
+          // build a new object reference every time and force every context
+          // consumer to repaint — causing a visible "jerk" on pages like
+          // UserProfile that key visuals (avatar, name) off `user`.
+          const hasChanged = (Object.keys(updatedUser) as (keyof User)[]).some(
+            (k) => updatedUser[k] !== user[k],
+          );
+          if (!hasChanged) return;
+
+          setUser(updatedUser);
+          if (localStorage.getItem("travel_auth_user")) {
+            localStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));
+          } else {
+            sessionStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));
+          }
         }
-
-        // Use `??` (not `||`) and fall back to the existing value for every
-        // field. The API sometimes omits fields like `photo` from refetches —
-        // without these fallbacks each background refresh would overwrite
-        // them with `undefined`, then the next refresh might restore them,
-        // causing the avatar / verification badges / phone number to flicker
-        // (a visible "blink" across the whole user-profile sidebar).
-        const updatedUser: User = {
-          ...user,
-          firstName: p.firstName ?? user.firstName,
-          lastName: p.lastName ?? user.lastName,
-          userType: effectiveUserType,
-          vendorStatus: (p as any).vendorStatus ?? user.vendorStatus,
-          photo: p.photo ?? user.photo,
-          phoneNumber: p.phoneNumber ?? user.phoneNumber,
-          mobileVerified: p.mobileVerified ?? user.mobileVerified,
-          emailVerified: p.emailVerified ?? user.emailVerified,
-          state: p.state ?? user.state,
-          city: p.city ?? user.city,
-          idProof: p.idProof ?? user.idProof,
-          dateOfBirth: p.dateOfBirth ?? user.dateOfBirth,
-        };
-
-        // Skip the setUser when the refetch returned identical values. Without
-        // this guard, the 500ms-after-mount and visibility-change refreshes
-        // build a new object reference every time and force every context
-        // consumer to repaint — causing a visible "jerk" on pages like
-        // UserProfile that key visuals (avatar, name) off `user`.
-        const hasChanged = (Object.keys(updatedUser) as (keyof User)[]).some(
-          (k) => updatedUser[k] !== user[k],
-        );
-        if (!hasChanged) return;
-
-        setUser(updatedUser);
-        if (localStorage.getItem("travel_auth_user")) {
-          localStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));
-        } else {
-          sessionStorage.setItem("travel_auth_user", JSON.stringify(updatedUser));
-        }
+      } catch (error) {
+        console.error("Failed to refresh user profile:", error);
       }
-    } catch (error) {
-      console.error("Failed to refresh user profile:", error);
-    }
-  };
-
-  // Keep ref in sync so the visibilitychange listener always calls the latest version
-  refreshUserRef.current = refreshUser;
-
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated,
-        needsOnboarding,
-        login,
-        loginWithGoogle,
-        handleGoogleCallback,
-        logout,
-        register,
-        verifyOTP,
-        completeOnboarding,
-        updateUserType,
-        updateUser,
-        refreshUser,
-        lastRegisterId,
-        authenticateAfterRegister,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    },
+    [user, queryClient],
   );
+
+  // Keep the ref in sync so the visibilitychange listener always calls the
+  // latest version. In an effect, not the render body — assigning to a ref
+  // during render is a side effect, which React 18's concurrent renderer is
+  // allowed to run more than once or throw away.
+  useEffect(() => {
+    refreshUserRef.current = refreshUser;
+  }, [refreshUser]);
+
+  /**
+   * Memoised provider value.
+   *
+   * AuthProvider wraps the entire router, so this object's identity is what
+   * decides whether every `useAuth()` consumer in the app re-renders. As a bare
+   * object literal it was a new identity on every render — and the provider
+   * re-renders on the 500ms-after-mount refresh and on every tab focus, so a
+   * simple tab switch pushed a fresh context value to the whole tree. (The
+   * `hasChanged` guard inside refreshUser was fighting the same symptom from
+   * the other end.)
+   */
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      isAuthenticated,
+      needsOnboarding,
+      login,
+      loginWithGoogle,
+      handleGoogleCallback,
+      logout,
+      register,
+      verifyOTP,
+      completeOnboarding,
+      updateUserType,
+      updateUser,
+      refreshUser,
+      lastRegisterId,
+      authenticateAfterRegister,
+    }),
+    [
+      user,
+      token,
+      isAuthenticated,
+      needsOnboarding,
+      lastRegisterId,
+      login,
+      loginWithGoogle,
+      handleGoogleCallback,
+      logout,
+      register,
+      verifyOTP,
+      completeOnboarding,
+      updateUserType,
+      updateUser,
+      refreshUser,
+      authenticateAfterRegister,
+    ],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

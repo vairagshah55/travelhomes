@@ -38,13 +38,8 @@ import {
   updateBooking,
   useEditBookingErrors,
 } from "@/components/bookings";
+import { currencyINR } from "@/utils/currency";
 
-const currencyINR = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
 
 const prettyDate = (d?: Date | null) =>
   d && !Number.isNaN(new Date(d).getTime())

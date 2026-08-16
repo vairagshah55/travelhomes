@@ -1,4 +1,5 @@
 const twilio = require('twilio');
+const logger = require('../shared/logger');
 const accountSid = process.env.TWILIO_SID;
 const authToken = process.env.TWILIO_TOKEN;
 
@@ -10,7 +11,7 @@ let smsStatus = {
 const twiliosms = async (to, message) => {
   try {
     if (!accountSid || !authToken || !accountSid.startsWith('AC')) {
-      console.log('Twilio credentials not configured, simulating SMS send');
+      logger.warn('twilio credentials not configured — simulating SMS send');
       smsStatus.send = true;
       smsStatus.message = 'Otp sent successfully (simulated)!';
       return;
@@ -25,11 +26,11 @@ const twiliosms = async (to, message) => {
 
     smsStatus.send = true;
     smsStatus.message = 'Otp sent successfully!';
-    console.log('SMS sent successfully:', result.sid); 
+    logger.info({ sid: result.sid }, 'sms sent'); 
   } catch (err) {
     smsStatus.send = false;
     smsStatus.message = `Otp not sent: ${err.message}`;
-    console.error('SMS Error:', err);
+    logger.error({ err: err.message }, 'sms send failed');
   }
 };
 

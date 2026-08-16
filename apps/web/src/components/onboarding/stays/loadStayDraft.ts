@@ -80,8 +80,97 @@ export interface LoadStayDraftOptions {
   setters: StayDraftSetters;
   userDetails: any;
   stepStorageKey: string;
+  /** Needed to wipe a finished draft — see the `approved` branch in the loader. */
+  formStorageKey: string;
   /** Sets the "already loaded" guard so background refetches don't re-apply the draft. */
   markLoaded: () => void;
+}
+
+/**
+ * Personal + business fields carried over from the vendor's profile.
+ *
+ * Reused by both the "no draft" and "previous listing already approved" paths,
+ * which need identical autofill.
+ */
+function autofillFromProfile(s: StayDraftSetters, userDetails: any): void {
+  if (!userDetails) return;
+
+  s.setFirstName(userDetails.firstName || "");
+  s.setLastName(userDetails.lastName || "");
+  s.setPersonalState(userDetails.state || "");
+  s.setStateOption(userDetails.state || "");
+  s.setPersonalCity(userDetails.city || "");
+  s.setCityOptions(userDetails.city || "");
+  s.setPersonalPincode(userDetails.personalPincode || "");
+  s.setPersonalCountry(userDetails.country || "India");
+  if (userDetails.dateOfBirth) {
+    s.setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split("T")[0]);
+  }
+  s.setMaritalStatus(userDetails.maritalStatus || "");
+  s.setIdProof(userDetails.idProof || "");
+  if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
+    s.setIdProofImage(userDetails.idPhotos[0]);
+  }
+
+  s.setBrandName(userDetails.business?.brandName || "");
+  s.setCompanyName(userDetails.business?.legalCompanyName || "");
+  s.setGstNumber(userDetails.business?.gstNumber || "");
+  s.setBusinessEmail(userDetails.business?.email || "");
+  s.setBusinessPhone(userDetails.business?.phoneNumber || "");
+  s.setBusinessAddress(userDetails.business?.address || "");
+  s.setLocality(userDetails.business?.locality || "India");
+  s.setState(userDetails.business?.state || "");
+  s.setStateOption2(userDetails.business?.state || "");
+  s.setCity(userDetails.business?.city || "");
+  s.setCityOptions2(userDetails.business?.city || "");
+  s.setBusinessPincode(userDetails.business?.pincode || "");
+}
+
+/**
+ * Reset every listing-specific field to the value StaysOnboarding's `useState`
+ * defaults use.
+ *
+ * Needed because those states are seeded from the sessionStorage snapshot during
+ * the first render — before this loader runs — so clearing storage alone leaves
+ * the already-populated state on screen. Personal/business fields are excluded:
+ * those are re-applied from the profile by `autofillFromProfile`.
+ */
+function resetListingFields(s: StayDraftSetters): void {
+  s.setSelectedProperties([]);
+  s.setSelectedCategories([]);
+  s.setStayType("entire");
+  s.setGuestCapacity(0);
+  s.setNumberOfRooms(1);
+  s.setNumberOfBeds(0);
+  s.setNumberOfBathrooms(0);
+  s.setRegularPrice("");
+  s.setRooms([
+    {
+      id: "1",
+      name: "",
+      description: "",
+      photos: [],
+      guestCapacity: 1,
+      beds: 1,
+      bathrooms: 1,
+      price: 5934,
+    },
+  ]);
+  s.setCoverImage(null);
+  s.setEntireStayImages([]);
+  s.setImages(Array(5).fill(null));
+  s.setSelectedFeatures([]);
+  s.setEntireStayRules([""]);
+  s.setRoomRules({});
+  s.setOptionalRules([""]);
+  s.setFirstUserDiscount(true);
+  s.setDiscountType("percentage");
+  s.setDiscountPercentage("");
+  s.setFinalPrice("");
+  s.setFestivalOffers(false);
+  s.setWeeklyOffers(false);
+  s.setSpecialOffers(false);
+  s.setTermsAccepted(false);
 }
 
 /**
@@ -90,9 +179,15 @@ export interface LoadStayDraftOptions {
  * + business fields from the saved user profile.
  */
 export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
-  const { setters: s, userDetails, stepStorageKey, markLoaded } = opts;
+  const { setters: s, userDetails, stepStorageKey, formStorageKey, markLoaded } = opts;
   try {
     const data = await getOnboardingData();
+    // `byType.stay` is this wizard's own latest doc. Falling back to the
+    // top-level `doc` keeps this working against an older server response, but
+    // that value is only the stay when no other type has a newer submission —
+    // which is exactly how an approved stay stayed invisible behind a
+    // more-recently-approved caravan.
+    const stayDoc = data?.byType?.stay ?? (data?.type === "stay" ? data?.doc : null);
 
     // Another service type is already in review — stop before hydrating this
     // form. markLoaded() too, so the background userDetails refetch doesn't
@@ -105,13 +200,42 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
     }
     s.setCrossTypePending(null);
 
-    if (
-      data &&
-      data.type === "stay" &&
-      data.doc &&
-      ["pending", "draft", "rejected", "approved"].includes(data.doc.status)
-    ) {
-      const doc = data.doc;
+    /**
+     * The previous stay listing is already approved — start a NEW one.
+     *
+     * "approved" used to be in the hydration list below, so an approved listing
+     * was loaded straight back into the wizard: every field pre-filled, the step
+     * restored to the end, and no way to begin a fresh listing. The vendor's
+     * next submit would then create a second listing that was a copy of the
+     * first, because the server only reuses a doc whose status is in
+     * EDITABLE_STATUSES = ["pending","draft","rejected"] (see
+     * modules/onboarding/onboarding.service.js) — approved is deliberately not
+     * one of them.
+     *
+     * loadCaravanDraft and loadActivityDraft already did this; stay was the
+     * outlier.
+     */
+    if (stayDoc && stayDoc.status === "approved") {
+      // Clearing storage matters for the NEXT mount; the current render already
+      // seeded its state from that snapshot, which is why the reset below runs.
+      try {
+        sessionStorage.removeItem(formStorageKey);
+        sessionStorage.removeItem(stepStorageKey);
+      } catch {}
+      markLoaded();
+      resetListingFields(s);
+      autofillFromProfile(s, userDetails);
+      s.setStatus("");
+      s.setRejectionReason("");
+      s.setCurrentStep(0);
+      s.setIsStatusLoading(false);
+      return;
+    }
+
+    // Keyed off this wizard's own doc, not the cross-type winner — a rejected
+    // stay sitting behind a newer caravan needs to open for editing.
+    if (stayDoc && ["pending", "draft", "rejected"].includes(stayDoc.status)) {
+      const doc = stayDoc;
       markLoaded();
       s.setIsStatusLoading(false);
 
@@ -243,36 +367,7 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
     if (userDetails) {
       // No draft found — auto-fill from saved profile.
       markLoaded();
-      s.setFirstName(userDetails.firstName || "");
-      s.setLastName(userDetails.lastName || "");
-      s.setPersonalState(userDetails.state || "");
-      s.setStateOption(userDetails.state || "");
-      s.setPersonalCity(userDetails.city || "");
-      s.setCityOptions(userDetails.city || "");
-      s.setPersonalPincode(userDetails.personalPincode || "");
-
-      s.setPersonalCountry(userDetails.country || "India");
-      if (userDetails.dateOfBirth) {
-        s.setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split("T")[0]);
-      }
-      s.setMaritalStatus(userDetails.maritalStatus || "");
-      s.setIdProof(userDetails.idProof || "");
-      if (userDetails.idPhotos && userDetails.idPhotos.length > 0) {
-        s.setIdProofImage(userDetails.idPhotos[0]);
-      }
-
-      s.setBrandName(userDetails.business?.brandName || "");
-      s.setCompanyName(userDetails.business?.legalCompanyName || "");
-      s.setGstNumber(userDetails.business?.gstNumber || "");
-      s.setBusinessEmail(userDetails.business?.email || "");
-      s.setBusinessPhone(userDetails.business?.phoneNumber || "");
-      s.setBusinessAddress(userDetails.business?.address || "");
-      s.setLocality(userDetails.business?.locality || "India");
-      s.setState(userDetails.business?.state || "");
-      s.setStateOption2(userDetails.business?.state || "");
-      s.setCity(userDetails.business?.city || "");
-      s.setCityOptions2(userDetails.business?.city || "");
-      s.setBusinessPincode(userDetails.business?.pincode || "");
+      autofillFromProfile(s, userDetails);
     }
   } catch {
     markLoaded();

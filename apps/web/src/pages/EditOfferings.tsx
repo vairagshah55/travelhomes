@@ -316,7 +316,8 @@ const EditOfferings = () => {
       features: p.features.includes(f) ? p.features.filter((x) => x !== f) : [...p.features, f],
     }));
 
-  const locationData = useCountriesData();
+  // Only the selected country's states/cities are fetched (see useCountriesData).
+  const locationData = useCountriesData(formData.locality || "India");
   const mapQuery =
     `${formData.address || ""} ${formData.city || ""} ${formData.state || ""} ${formData.pincode || ""} India`.trim();
   const mapSrc = `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`;

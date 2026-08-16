@@ -4,7 +4,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
-import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { FaUserTie } from "react-icons/fa6";
@@ -21,8 +20,14 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
+  COUNTRY_OPTIONS,
+  DEFAULT_COUNTRY_OPTION,
 } from "@/components/onboarding/shared";
-import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
+import type {
+  CountryOption,
+  DiscountOffer,
+  OnboardingPhase,
+} from "@/components/onboarding/shared";
 
 // Activity-specific step components
 import {
@@ -43,12 +48,22 @@ interface ActivityType {
   icon: string;
 }
 
-const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
-  name: c.name,
-  countryCode: c.isoCode,
-  dialCode: c.phonecode,
-}));
+const countries = COUNTRY_OPTIONS;
+
+/**
+ * Named phases for the progress rail — see the note on STAY_PHASES.
+ *
+ * `steps` must sum to `totalSteps - 1` (9 - 1 = 8). Step order in
+ * ActivityStepRenderer:
+ *   0 Type · 1 Features · 2 Details
+ *   3 Pricing · 4 Inclusions/exclusions · 5 Discounts
+ *   6 Business · 7 Personal   (8 Terms — excluded)
+ */
+const ACTIVITY_PHASES: OnboardingPhase[] = [
+  { label: "Your activity", steps: 3 },
+  { label: "Pricing", steps: 3 },
+  { label: "About you", steps: 2 },
+];
 
 const ActivityOnboarding = () => {
   const navigate = useNavigate();
@@ -75,8 +90,6 @@ const ActivityOnboarding = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const data = useCountriesData();
-  const [countriesData, setCountriesData] = useState<any[]>([]); // For country-state-city data
   const photoCarouselRef = React.useRef<HTMLDivElement>(null);
 
   const { userDetails, updateUserDetails } = useUserDetails();
@@ -181,6 +194,11 @@ const ActivityOnboarding = () => {
     } catch {}
     return defaultFormData;
   });
+
+  // Business and personal addresses can sit in different countries, so both are
+  // hydrated. Only these countries' states/cities are fetched — see
+  // useCountriesData; the full dataset is never downloaded.
+  const data = useCountriesData([formData.businessLocality, formData.personalLocality]);
 
   useEffect(() => {
     try {
@@ -748,6 +766,7 @@ const ActivityOnboarding = () => {
     <OnboardingLayout
       currentStep={currentStep}
       totalSteps={9}
+      phases={ACTIVITY_PHASES}
       isLoading={isLoading}
       canProceed={canProceed()}
       termsAccepted={formData.termsAccepted}

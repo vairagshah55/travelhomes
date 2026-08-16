@@ -115,6 +115,16 @@ const schema = z.object({
   // Ops copy of new-booking alerts. Defaults to the sending mailbox.
   ADMIN_ALERT_EMAIL: z.string().optional(),
 
+  // Company identity printed on customer invoices. These were hardcoded
+  // placeholders ("Travel Dashboard Inc., 123 Travel Street, Adventure City, AC
+  // 12345", a +1 555 phone number) inside the invoice template — set them for
+  // real before invoices go to customers.
+  COMPANY_NAME: z.string().default("Travel Homes"),
+  COMPANY_ADDRESS: z.string().optional(),
+  COMPANY_EMAIL: z.string().optional(),
+  COMPANY_PHONE: z.string().optional(),
+  COMPANY_GSTIN: z.string().optional(),
+
   // Marketing
   FB_PAGE_ACCESS_TOKEN: z.string().optional(),
 

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { API_BASE_URL } from "@/lib/api";
 import { FaLinkedin, FaTwitter, FaShareAlt } from "react-icons/fa";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { getImageUrl } from "@/lib/utils";
 import { Loader } from "@/components/ui/Loader";
 

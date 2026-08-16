@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+const logger = require('../shared/logger');
+
 /**
  * Create a Nodemailer transporter using environment variables.
  * Supports connection by URL, service/auth, or host/port/auth.
@@ -37,18 +39,18 @@ function createTransport() {
     if (secureEnv === 'tls' && port === 587) {
       config.requireTLS = true;
     }
-    console.log(`[MAILER] Configured with Host: ${host}, Port: ${port}, User: ${user}`);
+    logger.info({ host, port, user }, '[mailer] configured');
     return nodemailer.createTransport(config);
   }
-  console.warn('[MAILER] No email configuration found. OTP emails will not be sent.');
+  logger.warn('[mailer] no email configuration found — OTP emails will not be sent');
   return {
     async sendMail({ to, subject, text, html }) {
-      console.warn('===========================================================');
-      console.warn('[MAILER MOCK] Email Service Not Configured. Email Simulation:');
-      console.warn(`[MAILER MOCK] To: ${to}`);
-      console.warn(`[MAILER MOCK] Subject: ${subject}`);
-      console.warn('[MAILER MOCK] Body Preview:', text || html);
-      console.warn('===========================================================');
+      // Dev fallback when SMTP isn't configured — one structured record instead
+      // of a six-line banner, so it's greppable and survives log shipping.
+      logger.warn(
+        { to, subject, bodyPreview: String(text || html || '').slice(0, 500) },
+        '[mailer] MOCK — email service not configured, message not actually sent',
+      );
       return { messageId: `mock-${Date.now()}` };
     },
   };
@@ -128,11 +130,11 @@ async function sendOtpEmail(to, otp) {
   try {
     const info = await transporter.sendMail({ from, to, subject, text, html });
     if (info && 'messageId' in info) {
-      console.log(`[MAILER] OTP Email sent successfully to ${to} (messageId: ${info.messageId})`);
+      logger.info({ to, messageId: info.messageId }, '[mailer] otp email sent');
     }
     return info;
   } catch (err) {
-    console.error('[MAILER] Failed to send OTP email to', to, ':', err.message);
+    logger.error({ to, err: err.message }, '[mailer] failed to send otp email');
     throw err;
   }
 }
@@ -172,11 +174,11 @@ async function sendRejectionEmail(to, serviceName, reason) {
   try {
     const info = await transporter.sendMail({ from, to, subject, text, html });
     if (info && 'messageId' in info) {
-      console.log(`[MAILER] Rejection Email sent successfully to ${to} (messageId: ${info.messageId})`);
+      logger.info({ to, messageId: info.messageId }, '[mailer] rejection email sent');
     }
     return info;
   } catch (err) {
-    console.error('[MAILER] Failed to send Rejection email to', to, ':', err.message);
+    logger.error({ to, err: err.message }, '[mailer] failed to send rejection email');
     // Don't throw, just log, so we don't block the controller response if mail fails
     return null;
   }
@@ -216,11 +218,11 @@ async function sendApprovalEmail(to, serviceName) {
   try {
     const info = await transporter.sendMail({ from, to, subject, text, html });
     if (info && 'messageId' in info) {
-      console.log(`[MAILER] Approval Email sent successfully to ${to} (messageId: ${info.messageId})`);
+      logger.info({ to, messageId: info.messageId }, '[mailer] approval email sent');
     }
     return info;
   } catch (err) {
-    console.error('[MAILER] Failed to send Approval email to', to, ':', err.message);
+    logger.error({ to, err: err.message }, '[mailer] failed to send approval email');
     return null;
   }
 }
@@ -302,11 +304,11 @@ async function sendJobApplicationStatusEmail(to, applicantName, jobTitle, status
   try {
     const info = await transporter.sendMail({ from, to, subject, text, html });
     if (info && 'messageId' in info) {
-      console.log(`[MAILER] Job Application Status Email sent successfully to ${to} (messageId: ${info.messageId})`);
+      logger.info({ to, messageId: info.messageId }, '[mailer] job application status email sent');
     }
     return info;
   } catch (err) {
-    console.error('[MAILER] Failed to send Job Application Status email to', to, ':', err.message);
+    logger.error({ to, err: err.message }, '[mailer] failed to send job application status email');
     return null;
   }
 }

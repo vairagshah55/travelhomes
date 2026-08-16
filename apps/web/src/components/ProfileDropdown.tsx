@@ -10,6 +10,7 @@ import {
   UserCog,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useIsApprovedVendor } from "@/hooks/useProfile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -115,7 +116,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   // stock-photo fallback — the initials AvatarFallback covers the empty case.
   const photoUrl = user?.photo || userImage || "";
 
-  const canSwitchToVendor = user?.vendorStatus === "approved" || user?.vendorStatus === "active";
+  // Server-backed rather than the localStorage snapshot — see useIsApprovedVendor.
+  const canSwitchToVendor = useIsApprovedVendor(user?.email, user?.vendorStatus);
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>

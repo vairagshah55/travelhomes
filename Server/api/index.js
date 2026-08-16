@@ -20,6 +20,7 @@ const googleAuthRoutes = require("../modules/google-auth/google-auth.router");
 const logger = require("../shared/logger");
 const requestId = require("../shared/requestId");
 const { notFoundHandler, errorHandler } = require("../shared/errorMiddleware");
+const { closeBrowser: closeInvoiceBrowser } = require("../services/invoiceGenerator");
 
 const app = express();
 const serverio = http.createServer(app);
@@ -132,9 +133,6 @@ app.use("/uploads", express.static(uploadsDir));
 const invoicesDir = path.join(process.cwd(), "invoices");
 app.use("/invoices", express.static(invoicesDir));
 
-// Import ALL routes
-const usersRouter = require("../modules/users/users.router");
-
 // Import all migrated routes
 const activitiesRoutes = require("../modules/activities/activities.router");
 const adminAnalyticsRoutes = require("../modules/admin-analytics/admin-analytics.router");
@@ -211,7 +209,7 @@ app.use("/api", requireDatabase);
 // Layered auth owns POST /google; google-auth owns GET /google + GET /google/callback.
 app.use("/api/auth", authModuleRouter);
 app.use("/api/auth", googleAuthRoutes);
-app.use("/api/user", usersRouter);
+app.use("/api/user", usersRoutes);
 
 // Vendor (and user) login + password reset + account update.
 // Rate limiters and validation are built into the module router.
@@ -329,13 +327,10 @@ app.use("/api/admin/adminAnalytics", requireFeature("view_analytics"));
 app.use("/api/admin/adminAnalyticsReport", requireFeature("view_analytics"));
 app.use("/api/admin", adminAnalyticsRoutes);
 
-// Admin contact routes (protected) — the CMS "Contact Us" inbox.
-app.use(
-  "/api/admin/contact",
-  requireJwt({ adminOnly: true }),
-  requireFeature("manage_cms"),
-  contactRoutes,
-);
+// Admin contact routes — the CMS "Contact Us" inbox. The admin JWT gate is
+// already applied to the whole /api/admin mount above, so only the feature
+// check is needed here; re-running requireJwt just verified the same token twice.
+app.use("/api/admin/contact", requireFeature("manage_cms"), contactRoutes);
 
 //root route
 app.get("/", (req, res) => {
@@ -345,6 +340,13 @@ app.get("/", (req, res) => {
 // 404 + central error handler — must be the LAST middleware registered.
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Socket logging goes through pino at debug level rather than console.log.
+// console.log here wrote a line to stdout for every join and every message —
+// unstructured, unredacted (the send_message payload was logged verbatim), and
+// synchronous. `logger.debug` is off by default in production and redacts the
+// fields shared/logger.js is configured to hide.
+const socketLog = logger.child({ component: "socket" });
 
 io.on("connection", (socket) => {
   // When a user selects a chat, they join a specific room
@@ -356,24 +358,23 @@ io.on("connection", (socket) => {
   socket.on("join_identity", (identityId) => {
     if (identityId) {
       socket.join(identityId);
-      console.log(`Socket ${socket.id} joined identity room: ${identityId}`);
+      socketLog.debug({ socketId: socket.id, identityId }, "joined identity room");
     }
   });
 
   socket.on("join_all_user_rooms", (chatIds) => {
     if (Array.isArray(chatIds)) {
       chatIds.forEach((id) => socket.join(id));
-      console.log(`User joined ${chatIds.length} rooms for background updates`);
+      socketLog.debug({ socketId: socket.id, rooms: chatIds.length }, "joined background rooms");
     }
   });
 
   // Listen for message from client
   socket.on("send_message", (data) => {
-    console.log(`[Socket] send_message received:`, {
-      chatId: data.chatId,
-      recipientId: data.recipientId,
-      senderId: data.senderId,
-    });
+    socketLog.debug(
+      { chatId: data.chatId, recipientId: data.recipientId, senderId: data.senderId },
+      "send_message received",
+    );
 
     // Broadcast the message ONLY to people in that specific chatId room
     if (data.chatId) {
@@ -382,7 +383,7 @@ io.on("connection", (socket) => {
 
     // Also broadcast to the recipient directly if they are not in the chat room yet
     if (data.recipientId) {
-      console.log(`[Socket] Broadcasting to recipient room: ${data.recipientId}`);
+      socketLog.debug({ recipientId: data.recipientId }, "broadcasting to recipient room");
       io.to(data.recipientId).emit("receive_message", data);
     }
 
@@ -393,7 +394,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("User Disconnected", socket.id);
+    socketLog.debug({ socketId: socket.id }, "disconnected");
   });
 });
 
@@ -403,5 +404,30 @@ serverio.listen(env.PORT, () => {
     `Travel Dashboard Server running`,
   );
 });
+
+/**
+ * Graceful shutdown.
+ *
+ * The invoice generator now keeps one headless Chromium alive and reuses it
+ * across invoices instead of launching one per PDF. That process is a child of
+ * this one, so it has to be closed explicitly — otherwise a restart leaks a
+ * Chromium (~300MB) every time.
+ */
+let shuttingDown = false;
+for (const signal of ["SIGTERM", "SIGINT"]) {
+  process.on(signal, async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, "shutting down");
+    try {
+      await closeInvoiceBrowser();
+    } catch (err) {
+      logger.warn({ err: err.message }, "invoice browser close failed");
+    }
+    serverio.close(() => process.exit(0));
+    // Don't hang forever on a stuck keep-alive connection.
+    setTimeout(() => process.exit(0), 10_000).unref();
+  });
+}
 
 module.exports = app;

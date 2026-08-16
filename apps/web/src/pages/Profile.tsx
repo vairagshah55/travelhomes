@@ -51,6 +51,8 @@ import { cn } from "@/lib/utils";
 import { userProfileApi } from "@/lib/api";
 import { useAuth } from "@/contexts/AuthContext";
 import { SocialIcon } from "./Profile/SocialIcon";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile, invalidateProfile } from "@/hooks/useProfile";
 
 /** `yyyy-mm-dd` is what the date input needs; nobody wants to read it. Declared
  *  above the schema below because the field definitions reference it directly. */
@@ -330,25 +332,35 @@ const Profile = () => {
     if (!email && user?.email) setEmail(user.email);
   }, [user, email]);
 
-  // Fetch profile when email changes
+  // Profile data comes from the shared `["profile", email]` cache rather than a
+  // private fetch — AuthContext, useUserDetails and UserProfileEdit read the
+  // same entry, so mounting this page no longer issues a duplicate request.
+  const queryClient = useQueryClient();
+  const { data: fetchedProfile, isError: profileError } = useProfile(email);
+
+  useEffect(() => {
+    if (email) localStorage.setItem("profileEmail", email);
+  }, [email]);
+
   useEffect(() => {
     if (!email) return;
-    localStorage.setItem("profileEmail", email);
-    (async () => {
-      try {
-        const json = await userProfileApi.get(email);
-        const data: Record<string, any> = json?.data || {};
-        // Format date for input
-        if (data.dateOfBirth) {
-          data.dateOfBirth = new Date(data.dateOfBirth).toISOString().split("T")[0];
-        }
-        setProfile((prev) => ({ ...prev, ...data }));
-        updateUser(data);
-      } catch {
-        setProfile((prev) => ({ ...prev, email }));
-      }
-    })();
-  }, [email]);
+    if (profileError) {
+      setProfile((prev) => ({ ...prev, email }));
+      return;
+    }
+    if (!fetchedProfile) return;
+
+    const data: Record<string, any> = { ...fetchedProfile };
+    // Format date for input
+    if (data.dateOfBirth) {
+      data.dateOfBirth = new Date(data.dateOfBirth).toISOString().split("T")[0];
+    }
+    setProfile((prev) => ({ ...prev, ...data }));
+    updateUser(data);
+    // `updateUser` is stable enough for this sync; re-running on its identity
+    // would loop, since updateUser sets the very state this reads from.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [email, fetchedProfile, profileError]);
 
   const setPersonalField = (key: string, value: string) =>
     setProfile((prev: any) => ({ ...prev, [key]: value }));
@@ -388,6 +400,9 @@ const Profile = () => {
       }
       setProfile((prev) => ({ ...prev, ...data }));
       updateUser(data);
+      // Keep the shared cache in step with the write, or every other consumer
+      // keeps rendering the pre-save values until the entry goes stale.
+      invalidateProfile(queryClient, email);
       setIsEditing(false);
       toast.success("Profile saved");
     } catch (e: any) {
@@ -415,6 +430,7 @@ const Profile = () => {
       if (newUrl) {
         setProfile((p) => ({ ...p, photo: newUrl }));
         updateUser({ photo: newUrl });
+        invalidateProfile(queryClient, email);
       }
       toast.success("Photo updated");
     } catch (err: any) {
@@ -447,6 +463,7 @@ const Profile = () => {
     try {
       setSavingSocial(true);
       await userProfileApi.upsert({ email, socialProfiles: next } as any);
+      invalidateProfile(queryClient, email);
       toast.success(message);
     } catch (e: any) {
       setProfile((prev: any) => ({ ...prev, socialProfiles: previous })); // roll back

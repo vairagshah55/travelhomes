@@ -59,6 +59,7 @@ import {
   VendorAnalyticsCounts,
 } from "../lib/api";
 import { formatDate, isFuture, isPast } from "date-fns";
+import { currencyINR, toAmount } from "@/utils/currency";
 
 /** How many bookings the dashboard shows before deferring to /bookings. */
 const RECENT_LIMIT = 8;
@@ -559,7 +560,10 @@ const Dashboard = () => {
                 {(
                   [
                     ["Service", selected.serviceName],
-                    ["Price", `₹${selected.servicePrice}`],
+                    // `servicePrice` is already "₹ 5000" on mapped rows and a
+                    // bare Number on raw BookingDetail rows, so interpolating
+                    // it into "₹{…}" rendered "₹₹ 5000" for half the list.
+                    ["Price", currencyINR(toAmount(selected.servicePrice))],
                     ["Check in", formatDate(selected.checkIn, "dd MMM yyyy")],
                     ["Check out", formatDate(selected.checkOut, "dd MMM yyyy")],
                     ["Guests", String(selected.guests)],

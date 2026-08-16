@@ -1,6 +1,6 @@
 import React from "react";
 import { Star } from "lucide-react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 interface Review {

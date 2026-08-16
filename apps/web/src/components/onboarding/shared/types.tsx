@@ -1,9 +1,36 @@
+import { COUNTRIES } from "@/data/countries";
+
 export type CountryOption = {
   isoCode: string;
   name: string;
   countryCode?: string;
   dialCode?: string;
 };
+
+/**
+ * Country options for the onboarding pickers.
+ *
+ * All three onboarding flows previously built this list themselves from
+ * `Country.getAllCountries()` — three byte-identical copies, and a 331 KB
+ * `country-state-city` chunk to produce three fields per country. Sourced from
+ * the generated bundled list now (see data/countries.ts).
+ */
+export const COUNTRY_OPTIONS: CountryOption[] = COUNTRIES.map((c) => ({
+  isoCode: c.iso2,
+  name: c.name,
+  countryCode: c.iso2,
+  dialCode: c.phonecode,
+}));
+
+/**
+ * Default selection for the onboarding country pickers.
+ *
+ * Was `countries[100]`, which resolved to India only by virtue of its position
+ * in `country-state-city`'s ordering. Looked up by ISO code now so a change to
+ * the underlying list can't silently swap the default to another country.
+ */
+export const DEFAULT_COUNTRY_OPTION: CountryOption =
+  COUNTRY_OPTIONS.find((c) => c.isoCode === "IN") ?? COUNTRY_OPTIONS[0];
 
 export interface DiscountOffer {
   enabled: boolean;

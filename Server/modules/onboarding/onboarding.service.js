@@ -443,14 +443,26 @@ async function submitCaravan(body, user) {
       ? [body.coverImage]
       : [];
   const strCoverImage = await normalizeImageArray(rawCover, "caravan-cover");
+  /**
+   * ID photos have to be normalised like every other image.
+   *
+   * This line was missing — `photos` and `coverImage` were written to /uploads
+   * but `idPhotos` fell through the `...body` spread below as raw
+   * `data:image/...;base64,...` strings and was stored inline in MongoDB.
+   * Caravan onboarding documents reached 2.8 MB each (activity, which does
+   * normalise, averages 0.05 MB), and GET /api/onboarding/mine returns the
+   * whole document — which is why that endpoint took ~20s.
+   */
+  const strIdPhotos = await normalizeImageArray(body.idPhotos || [], "caravan-id-photo");
 
   const { doc, isNew } = await upsertOnboardingDoc(CaravanOnboarding, user, vendor, {
     ...body,
     photos: strPhotos,
     coverImage: strCoverImage,
+    idPhotos: strIdPhotos,
   });
 
-  await syncUserProfile(user.email, { ...body, type: "caravan" });
+  await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "caravan" });
   await supersedePreviousSubmissions(user._id, "camper-van", doc._id);
 
   await syncOfferForOnboarding(
@@ -651,10 +663,33 @@ async function getMine(user) {
   // doc is more recent — otherwise a newer approved/rejected doc in another
   // category would hide an older pending one from the "one at a time" gate.
   const pending = submissions.find((x) => x.doc.status === "pending");
-  if (pending) return pending;
 
   submissions.sort((a, b) => new Date(b.doc.createdAt) - new Date(a.doc.createdAt));
-  return submissions[0];
+  const current = pending || submissions[0];
+
+  /**
+   * `byType` alongside the winning submission.
+   *
+   * The single `{ type, doc }` answer is what drives the "one service at a time"
+   * gate, so it must stay. But each wizard also needs ITS OWN latest doc, and
+   * with only the winner it can't get one: a vendor whose caravan was approved
+   * today and whose stay was approved two days ago asks the stay wizard to load,
+   * and is told the current submission is a caravan. The stay page then can't
+   * tell "you have an approved stay, start a fresh one" from "you have no stay
+   * at all" — and a REJECTED stay hidden behind a newer caravan could never be
+   * opened for editing either.
+   *
+   * Additive on purpose: `type` and `doc` are unchanged, so the cross-type
+   * pending block and the caravan/activity loaders keep working as they are.
+   */
+  return {
+    ...(current || {}),
+    byType: {
+      activity: activity || null,
+      caravan: caravan || null,
+      stay: stay || null,
+    },
+  };
 }
 
 const listActivities = () => ActivityOnboarding.find().sort({ createdAt: -1 }).limit(100);

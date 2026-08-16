@@ -669,7 +669,8 @@ const AddOfferings = () => {
   };
 
   // Location data for SearchableSelect
-  const locationData = useCountriesData();
+  // Only the selected country's states/cities are fetched (see useCountriesData).
+  const locationData = useCountriesData(formData.locality || "India");
   const locationCountry = useMemo(
     () => locationData.find((c: any) => c.name === (formData.locality || "India")),
     [locationData, formData.locality],

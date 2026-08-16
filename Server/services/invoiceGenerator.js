@@ -1,33 +1,75 @@
-
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const path = require('path');
 
+const env = require('../config/env');
+const logger = require('../shared/logger');
+
+/**
+ * Shared headless browser.
+ *
+ * Every invoice used to `puppeteer.launch()` its own Chromium and close it
+ * again — roughly 1-2s of startup and ~300MB RSS per invoice, paid inline
+ * inside the booking request. One instance is launched lazily on first use and
+ * reused; only the page is per-invoice.
+ */
+let browserPromise = null;
+
+function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer
+      .launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+      .then((browser) => {
+        // If Chromium dies (OOM-killed, crashed), drop the cached promise so the
+        // next invoice launches a fresh one instead of reusing a dead handle.
+        browser.on('disconnected', () => {
+          browserPromise = null;
+        });
+        return browser;
+      })
+      .catch((err) => {
+        browserPromise = null;
+        throw err;
+      });
+  }
+  return browserPromise;
+}
+
+/** Close the shared browser — for graceful shutdown and tests. */
+async function closeBrowser() {
+  if (!browserPromise) return;
+  const pending = browserPromise;
+  browserPromise = null;
+  try {
+    const browser = await pending;
+    await browser.close();
+  } catch {
+    /* already gone */
+  }
+}
+
 class InvoiceGenerator {
-  
+
   /**
    * Generate PDF invoice for booking
    * @param {Object} bookingData - Complete booking information with user and service details
    * @returns {Promise<Buffer>} PDF buffer
    */
   async generateInvoice(bookingData) {
-    let browser;
-    
+    let page;
+
     try {
-      // Launch browser
-      browser = await puppeteer.launch({
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-      
-      const page = await browser.newPage();
-      
+      const browser = await getBrowser();
+      page = await browser.newPage();
+
       // Generate HTML content
       const htmlContent = this.generateInvoiceHTML(bookingData);
-      
-      // Set content and generate PDF
-      await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-      
+
+      // The document is fully self-contained (inline CSS, no remote assets), so
+      // there is no network to idle on — `networkidle0` just added a fixed
+      // ~500ms wait to every invoice.
+      await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+
       const pdfBuffer = await page.pdf({
         format: 'A4',
         printBackground: true,
@@ -38,16 +80,15 @@ class InvoiceGenerator {
           right: '20px'
         }
       });
-      
+
       return pdfBuffer;
-      
+
     } catch (error) {
-      console.error('Error generating PDF invoice:', error);
+      logger.error({ err: error.message }, 'invoice PDF generation failed');
       throw new Error('Failed to generate invoice PDF');
     } finally {
-      if (browser) {
-        await browser.close();
-      }
+      // Close the page, not the browser — the browser is shared.
+      if (page) await page.close().catch(() => {});
     }
   }
 
@@ -99,10 +140,31 @@ class InvoiceGenerator {
     };
 
     const days = calculateDays();
-    const baseAmount = booking.totalAmount;
-    const taxRate = 0.1; // 10% tax
-    const taxAmount = baseAmount * taxRate;
-    const totalAmount = baseAmount + taxAmount;
+
+    /**
+     * The invoice total must equal what the customer was actually charged.
+     *
+     * This used to take `booking.totalAmount` as a subtotal, add a hardcoded
+     * 10% "tax", and print the sum as the Total — so the invoice claimed a
+     * figure 10% higher than the payment the customer actually made, against a
+     * tax line the platform never levied or collected. Nothing else in the
+     * codebase computes tax, and the Payment record stores the charged amount
+     * only.
+     *
+     * If GST does need to appear here it has to come from real per-booking
+     * numbers (rate depends on the service type and tariff slab), not a
+     * constant — so the fabricated line is gone rather than guessed at.
+     */
+    const totalAmount = Number(booking.totalAmount) || 0;
+
+    // Company identity — configured, not hardcoded. See COMPANY_* in config/env.js.
+    const company = {
+      name: env.COMPANY_NAME,
+      address: env.COMPANY_ADDRESS || '',
+      email: env.COMPANY_EMAIL || env.EMAIL_SENDER || '',
+      phone: env.COMPANY_PHONE || '',
+      gstin: env.COMPANY_GSTIN || '',
+    };
 
     return `
     <!DOCTYPE html>
@@ -327,9 +389,9 @@ class InvoiceGenerator {
             <!-- Header -->
             <div class="invoice-header">
                 <div class="company-info">
-                    <h1>Travel Dashboard</h1>
+                    <h1>${company.name}</h1>
                     <p>Your Premium Travel Experience Partner</p>
-                    <p>📧 support@traveldashboard.com | 📞 +1 (555) 123-4567</p>
+                    <p>${[company.email && `📧 ${company.email}`, company.phone && `📞 ${company.phone}`].filter(Boolean).join(' | ')}</p>
                 </div>
                 <div class="invoice-details">
                     <h2>INVOICE</h2>
@@ -349,10 +411,10 @@ class InvoiceGenerator {
                 </div>
                 <div class="billing-info">
                     <h3>Service Provider:</h3>
-                    <p><strong>Travel Dashboard Inc.</strong></p>
-                    <p>123 Travel Street</p>
-                    <p>Adventure City, AC 12345</p>
-                    <p>📧 billing@traveldashboard.com</p>
+                    <p><strong>${company.name}</strong></p>
+                    ${company.address ? `<p>${company.address}</p>` : ''}
+                    ${company.email ? `<p>📧 ${company.email}</p>` : ''}
+                    ${company.gstin ? `<p>GSTIN: ${company.gstin}</p>` : ''}
                 </div>
             </div>
 
@@ -406,22 +468,14 @@ class InvoiceGenerator {
                         </td>
                         <td>${days} day${days > 1 ? 's' : ''}</td>
                         <td>${booking.guests}</td>
-                        <td>${formatCurrency(baseAmount / days)}</td>
-                        <td>${formatCurrency(baseAmount)}</td>
+                        <td>${formatCurrency(totalAmount / days)}</td>
+                        <td>${formatCurrency(totalAmount)}</td>
                     </tr>
                 </tbody>
             </table>
 
             <!-- Total Section -->
             <div class="total-section">
-                <div class="total-row">
-                    <span>Subtotal:</span>
-                    <span>${formatCurrency(baseAmount)}</span>
-                </div>
-                <div class="total-row">
-                    <span>Tax (10%):</span>
-                    <span>${formatCurrency(taxAmount)}</span>
-                </div>
                 <div class="total-row final">
                     <span>Total Amount:</span>
                     <span>${formatCurrency(totalAmount)}</span>
@@ -438,8 +492,8 @@ class InvoiceGenerator {
 
             <!-- Footer -->
             <div class="footer">
-                <p><strong>Thank you for choosing Travel Dashboard!</strong></p>
-                <p>For any questions about this invoice, please contact us at support@traveldashboard.com</p>
+                <p><strong>Thank you for choosing ${company.name}!</strong></p>
+                ${company.email ? `<p>For any questions about this invoice, please contact us at ${company.email}</p>` : ''}
                 <p>This is a computer-generated invoice and does not require a signature.</p>
                 <p style="margin-top: 15px;">Generated on ${formatDate(new Date())} | Invoice #${booking.bookingNumber}</p>
             </div>
@@ -477,4 +531,13 @@ class InvoiceGenerator {
   }
 }
 
-module.exports
+/**
+ * This line was a bare `module.exports` — an expression statement, not an
+ * assignment — so the module exported the default empty object. Every caller
+ * did `new InvoiceGenerator()`, got "InvoiceGenerator is not a constructor",
+ * and swallowed it in a try/catch: booking confirmation emails went out with no
+ * invoice attached and the only trace was a log line.
+ */
+module.exports = InvoiceGenerator;
+module.exports.InvoiceGenerator = InvoiceGenerator;
+module.exports.closeBrowser = closeBrowser;

@@ -3,9 +3,7 @@ import "./styles/tokens.css";
 import "./styles/animations.css";
 
 import React, { lazy, Suspense, useLayoutEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster as HotToaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
@@ -133,21 +131,12 @@ const App = () => {
       <ThemeProvider defaultTheme="light" storageKey="travel-dashboard-theme">
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <HotToaster
-              position="top-center"
-              toastOptions={{
-                duration: 4000,
-                className: "motion-hot-toast",
-                success: {
-                  className: "motion-hot-toast motion-hot-toast-success",
-                },
-                error: {
-                  className: "motion-hot-toast motion-hot-toast-error",
-                },
-              }}
-            />
+            {/* Single toaster. The app previously mounted three side by side
+                (shadcn/Radix + sonner + react-hot-toast), shipping all three in
+                the initial bundle and giving the same app three different toast
+                visual languages. shadcn's useToast now delegates to sonner —
+                see hooks/use-toast.ts. */}
+            <Sonner position="top-center" toastOptions={{ className: "motion-hot-toast" }} />
             <BrowserRouter>
               <ScrollToTop />
               <SEOMeta />

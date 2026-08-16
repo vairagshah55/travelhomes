@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cmsPublicApi } from "../lib/api";
 import { getImageUrl } from "@/lib/utils";
 
@@ -34,50 +35,41 @@ function ShimmerImage({ src, alt, className }: { src: string; alt: string; class
   );
 }
 
+const DEFAULT_IMAGES = [
+  "https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641",
+  "https://api.builder.io/api/v1/image/assets/TEMP/c3d61f456ed7d675a05311cbee859a54922fae15?width=641",
+  "https://api.builder.io/api/v1/image/assets/TEMP/35e201b656cfa241c03e3280e3bf67ec0b0f6d87?width=641",
+  "https://api.builder.io/api/v1/image/assets/TEMP/b9c3c4635b522e51c991a0b4dc045218d6d9168a?width=641",
+  "https://api.builder.io/api/v1/image/assets/TEMP/76e92c1f16f6a4fc58280175233debd228ea6fb4?width=641",
+];
+
 const Gallery: React.FC<GalleryProps> = ({ page = "Login" }) => {
-  const [images, setImages] = useState<string[]>([
-    "https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641",
-    "https://api.builder.io/api/v1/image/assets/TEMP/c3d61f456ed7d675a05311cbee859a54922fae15?width=641",
-    "https://api.builder.io/api/v1/image/assets/TEMP/35e201b656cfa241c03e3280e3bf67ec0b0f6d87?width=641",
-    "https://api.builder.io/api/v1/image/assets/TEMP/b9c3c4635b522e51c991a0b4dc045218d6d9168a?width=641",
-    "https://api.builder.io/api/v1/image/assets/TEMP/76e92c1f16f6a4fc58280175233debd228ea6fb4?width=641",
-  ]);
-
-  const fetchImages = React.useCallback(async () => {
-    try {
+  // This panel decorates the login / register / forgot-password screens. It used
+  // to re-fetch on a 5-second setInterval for as long as the tab stayed open —
+  // ~720 requests an hour per idle visitor, on the app's busiest unauthenticated
+  // pages, for images that change only when an admin edits the CMS. One cached
+  // read on mount is enough.
+  const { data: images = DEFAULT_IMAGES } = useQuery({
+    queryKey: ["cms-media", "gallery", page],
+    queryFn: async () => {
       const response = await cmsPublicApi.listMedia({ page });
-      if (response.success && response.data.length > 0) {
-        const sortedMedia = [...response.data].sort((a, b) => (a.position || 0) - (b.position || 0));
-        const urls = sortedMedia.map(item => {
-          const separator = item.url.includes('?') ? '&' : '?';
-          return `${item.url}${separator}t=${Date.now()}`;
-        });
-        if (urls.length > 0) {
-          const defaults = [
-            "https://api.builder.io/api/v1/image/assets/TEMP/b85a174d73e23c66bc3315c90718740d54f6a815?width=641",
-            "https://api.builder.io/api/v1/image/assets/TEMP/c3d61f456ed7d675a05311cbee859a54922fae15?width=641",
-            "https://api.builder.io/api/v1/image/assets/TEMP/35e201b656cfa241c03e3280e3bf67ec0b0f6d87?width=641",
-            "https://api.builder.io/api/v1/image/assets/TEMP/b9c3c4635b522e51c991a0b4dc045218d6d9168a?width=641",
-            "https://api.builder.io/api/v1/image/assets/TEMP/76e92c1f16f6a4fc58280175233debd228ea6fb4?width=641",
-          ];
-          const finalImages = [...urls];
-          while (finalImages.length < 5) {
-            finalImages.push(defaults[finalImages.length]);
-          }
-          setImages(finalImages.slice(0, 5));
-        }
-      }
-    }
-     catch (error) {
-      console.error("Failed to fetch gallery images:", error);
-    }
-  }, [page]);
+      if (!response.success || !response.data.length) return DEFAULT_IMAGES;
 
-  useEffect(() => {
-    fetchImages();
-    const interval = setInterval(fetchImages, 5000);
-    return () => clearInterval(interval);
-  }, [page, fetchImages]);
+      const urls = [...response.data]
+        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        // Cache-bust once per fetch (not per render) so a CMS image swap is
+        // picked up on the next load without re-downloading on every paint.
+        .map((item) => `${item.url}${item.url.includes("?") ? "&" : "?"}t=${Date.now()}`);
+      if (!urls.length) return DEFAULT_IMAGES;
+
+      // Pad to five tiles so the layout never collapses.
+      const finalImages = [...urls];
+      while (finalImages.length < 5) finalImages.push(DEFAULT_IMAGES[finalImages.length]);
+      return finalImages.slice(0, 5);
+    },
+    staleTime: 10 * 60_000,
+    placeholderData: DEFAULT_IMAGES,
+  });
 
   return (
     <div className="hidden lg:flex w-1/2 gap-4 mt-6">

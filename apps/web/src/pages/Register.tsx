@@ -22,6 +22,7 @@ import {
   PhoneCountry,
   FormData,
   PHONE_COUNTRIES,
+  DEFAULT_PHONE_COUNTRY,
   DOB_MONTHS,
   DOB_YEARS,
   validateRegisterField as validate,
@@ -62,7 +63,7 @@ const Register = () => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   /* ── Step 1 – Phone country picker ───────────────────── */
-  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry | null>(PHONE_COUNTRIES[100]);
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry | null>(DEFAULT_PHONE_COUNTRY);
   const [phoneDropdownOpen, setPhoneDropdownOpen] = useState(false);
   const [phoneSearch, setPhoneSearch] = useState("");
   const phoneDropdownRef = useRef<HTMLDivElement>(null);
@@ -76,8 +77,9 @@ const Register = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   /* ── Step 3 – Location ────────────────────────────────── */
-  const locationData = useCountriesData();
   const [country, setCountry] = useState("India");
+  // Only the selected country's states/cities are fetched (see useCountriesData).
+  const locationData = useCountriesData(country);
   const [state, setState] = useState("");
   const [city, setCity] = useState("");
   const [stateOpen, setStateOpen] = useState(false);

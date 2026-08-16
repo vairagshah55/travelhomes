@@ -15,14 +15,6 @@ const HelpDesk = require("../../models/HelpDesk");
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Parse "₹6,000.50" -> 6000.5; safe against any odd Payment.amount shapes.
-function parseAmount(val) {
-  if (val == null) return 0;
-  const cleaned = String(val).replace(/[^0-9.-]/g, "");
-  const num = Number(cleaned);
-  return Number.isFinite(num) ? num : 0;
-}
-
 function sixMonthsAgo() {
   const d = new Date();
   d.setMonth(d.getMonth() - 6);
@@ -60,7 +52,7 @@ async function getStats() {
     bookingsUpcoming,
     bookingsPast,
     bookingsCancelled,
-    paidPayments,
+    revenueRows,
     latestTickets,
     monthlyRevenue,
     monthlyUsers,
@@ -78,7 +70,25 @@ async function getStats() {
     Booking.countDocuments({ bookingStatus: "confirmed" }),
     Booking.countDocuments({ bookingStatus: "completed" }),
     Booking.countDocuments({ bookingStatus: "cancelled" }),
-    Payment.find({ status: "completed" }).lean(),
+    // Total revenue, summed in the database.
+    //
+    // This used to be `Payment.find({ status: "completed" }).lean()` followed by
+    // a JS `.reduce()` — every completed payment the company has ever taken was
+    // deserialised into the Node heap on each dashboard load, so memory and
+    // latency grew with transaction volume forever.
+    //
+    // `$convert` rather than `$toDouble`: `parseAmount` tolerated legacy string
+    // amounts like "₹6,000.50", and `$toDouble` throws on those. `onError: 0`
+    // keeps the pipeline's failure mode identical to the old parser's.
+    Payment.aggregate([
+      { $match: { status: "completed" } },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: { $convert: { input: "$amount", to: "double", onError: 0, onNull: 0 } } },
+        },
+      },
+    ]),
     HelpDesk.find(
       {},
       {
@@ -123,7 +133,7 @@ async function getStats() {
     ]),
   ]);
 
-  const revenueTotal = paidPayments.reduce((sum, p) => sum + parseAmount(p.amount), 0);
+  const revenueTotal = revenueRows[0]?.total ?? 0;
 
   const graphs = {
     revenue: formatMonthlyData(monthlyRevenue, "total"),

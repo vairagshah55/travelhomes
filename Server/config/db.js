@@ -19,7 +19,16 @@ let mongoStatus = {
 
 // Connection options
 const options = {
-  autoIndex: true, // Build indexes
+  /**
+   * Index building is a development convenience, not a production one.
+   *
+   * With `autoIndex: true` Mongoose issues a `createIndexes` for every schema on
+   * every boot. On a large collection that stalls startup while the server
+   * verifies indexes it almost certainly already has, and an accidental new
+   * index definition can trigger a foreground build against live traffic.
+   * Production gets its indexes from a deploy step; dev still gets them for free.
+   */
+  autoIndex: env.NODE_ENV !== "production",
   maxPoolSize: 10, // Maintain up to 10 socket connections
   serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
   socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity

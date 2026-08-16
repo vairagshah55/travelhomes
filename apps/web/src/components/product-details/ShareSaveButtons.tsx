@@ -1,7 +1,7 @@
 import React from "react";
 import { Heart } from "lucide-react";
 import { RiShareCircleFill } from "react-icons/ri";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 interface ShareSaveButtonsProps {
   isAuthenticated: boolean;

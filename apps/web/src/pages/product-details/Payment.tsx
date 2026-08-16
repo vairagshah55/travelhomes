@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { X, Download } from "lucide-react";
@@ -580,8 +580,8 @@ export default function PaymentPage() {
                     </option>
                     {data
                       .find((country: any) => country.name === "India")
-                      ?.states.find((state: any) => state.name === formData.state)
-                      ?.cities.map((city: any, idx: number) => (
+                      ?.states?.find((state: any) => state.name === formData.state)
+                      ?.cities?.map((city: any, idx: number) => (
                         <option key={idx} value={city.name} disabled={inputDisabled}>
                           {city.name}
                         </option>

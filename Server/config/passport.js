@@ -1,4 +1,5 @@
 const passport = require('passport');
+const logger = require('../shared/logger');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
@@ -27,7 +28,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log('Google profile received:', profile.emails[0].value);
+        logger.debug({ email: profile.emails[0].value }, 'google profile received');
         
         // Check if user already exists
         let user = await User.findOne({ email: profile.emails[0].value });
@@ -57,13 +58,13 @@ passport.use(
           });
 
           await user.save();
-          console.log('New user created:', user.email);
+          logger.info({ email: user.email }, 'new user created via google');
         } else {
           // Update existing user with Google ID if not set
           if (!user.googleId) {
             user.googleId = profile.id;
             await user.save();
-            console.log('Updated user with Google ID:', user.email);
+            logger.info({ email: user.email }, 'linked google id to existing user');
           }
         }
 
@@ -76,7 +77,7 @@ passport.use(
 
         return done(null, userObj);
       } catch (error) {
-        console.error('Google strategy error:', error);
+        logger.error({ err: error }, 'google strategy error');
         return done(error, null);
       }
     }

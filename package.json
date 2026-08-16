@@ -18,6 +18,7 @@
     "build:web": "npm --prefix apps/web run build",
     "typecheck": "npm --prefix apps/web run typecheck",
     "typecheck:web": "npm --prefix apps/web run typecheck",
+    "build:locations": "node scripts/build-location-data.mjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

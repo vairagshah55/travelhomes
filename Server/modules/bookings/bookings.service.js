@@ -59,26 +59,41 @@ async function listForUser(userId) {
     .sort({ createdAt: -1 })
     .lean();
 
-  for (const booking of bookings) {
-    if (!booking.serviceId || typeof booking.serviceId !== "object") {
-      try {
-        const offer = await Offer.findById(booking.serviceId).lean();
+  // Legacy bookings predate `serviceModel`, so `.populate()` can't resolve them
+  // and they need a manual lookup. This used to run 1-2 queries per unresolved
+  // booking, in series, on the user's "My Trips" page; now it's two batched
+  // queries regardless of how many rows need patching. Offer still wins over
+  // Management when an id somehow exists in both, as before.
+  const unresolved = bookings.filter(
+    (b) => b.serviceId && typeof b.serviceId !== "object" && mongoose.Types.ObjectId.isValid(b.serviceId),
+  );
+
+  if (unresolved.length) {
+    try {
+      const ids = [...new Set(unresolved.map((b) => String(b.serviceId)))];
+      const [offers, mgmts] = await Promise.all([
+        Offer.find({ _id: { $in: ids } }).lean(),
+        Management.find({ _id: { $in: ids } }).lean(),
+      ]);
+      const offerMap = new Map(offers.map((o) => [String(o._id), o]));
+      const mgmtMap = new Map(mgmts.map((m) => [String(m._id), m]));
+
+      for (const booking of unresolved) {
+        const key = String(booking.serviceId);
+        const offer = offerMap.get(key);
         if (offer) {
           booking.serviceId = offer;
           booking.serviceModel = "Offer";
-        } else {
-          const mgmt = await Management.findById(booking.serviceId).lean();
-          if (mgmt) {
-            booking.serviceId = mgmt;
-            booking.serviceModel = "Management";
-          }
+          continue;
         }
-      } catch (err) {
-        logger.debug(
-          { err: err.message, bookingId: booking._id },
-          "manual serviceId fallback failed",
-        );
+        const mgmt = mgmtMap.get(key);
+        if (mgmt) {
+          booking.serviceId = mgmt;
+          booking.serviceModel = "Management";
+        }
       }
+    } catch (err) {
+      logger.debug({ err: err.message }, "manual serviceId fallback failed");
     }
   }
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,10 +32,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpe
           padding: "16px",
           boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
         },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
-        },
       });
       return;
     }
@@ -51,10 +47,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpe
           borderRadius: "12px",
           padding: "16px",
           boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
         },
       });
       return;
@@ -77,10 +69,6 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ isOpen, onOpe
         borderRadius: "12px",
         padding: "16px",
         boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#10B981",
       },
     });
   };

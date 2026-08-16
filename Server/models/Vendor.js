@@ -68,9 +68,23 @@ const VendorSchema = new Schema({
   timestamps: true
 });
 
-// Compound index for dashboard queries
-// VendorSchema.index({ status: 1, brandName: 1 });
-// VendorSchema.index({ location: 1 });
+/**
+ * Indexes.
+ *
+ * `email` is the hottest lookup in the codebase — `Vendor.findOne({ email })`
+ * runs on every offers listing (applyOwnerFilter + the impression-tracking
+ * self-exclusion in `list`), on offer create/read, on onboarding, and three
+ * times in vendor-chats. It had no index at all, so each of those was a
+ * collection scan.
+ *
+ * Deliberately NOT unique: vendor-auth's `Vendor.updateMany({ email })` on
+ * email change assumes several vendor rows can share an address, and a unique
+ * index would reject existing data.
+ */
+VendorSchema.index({ email: 1 });
+
+// Admin dashboard: filter by status, list alphabetically.
+VendorSchema.index({ status: 1, brandName: 1 });
 
 const Vendor = mongoose.models.Vendor || mongoose.model('Vendor', VendorSchema);
 module.exports = Vendor;

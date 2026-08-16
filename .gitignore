@@ -58,3 +58,6 @@ Thumbs.db
 # Server runtime artifacts
 Server/uploads/
 Server/invoices/
+
+# Build artifacts / archives
+*.zip

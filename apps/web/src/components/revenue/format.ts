@@ -26,12 +26,12 @@ export const inrCompact = (n: number) => {
  * builds `servicePrice` as `` `₹ ${b.totalAmount}` ``. Rendering that inside
  * another "₹ {amount}" template produced "₹ ₹ 5000", so pull the number back
  * out and let the UI own the currency symbol.
+ *
+ * Lives in utils/currency now — the same endpoint also returns raw
+ * BookingDetail rows where the field is a Number, so this is needed well
+ * outside the revenue page. Re-exported here so existing imports keep working.
  */
-export const toAmount = (v: unknown): number => {
-  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  const n = Number(String(v ?? "").replace(/[^\d.-]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-};
+export { toAmount } from "@/utils/currency";
 
 /**
  * The API sends dates as "DD/MM/YYYY" (`formatDDMMYYYY` in

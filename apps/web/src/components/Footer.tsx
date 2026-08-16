@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { settingsApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { logoSrc as brandLogoSrc } from "@/lib/brand";

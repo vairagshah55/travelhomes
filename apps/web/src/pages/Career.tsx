@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { SearchIcon } from "lucide-react";
@@ -86,10 +86,6 @@ const Career = () => {
           padding: "16px",
           boxShadow: "0 10px 25px -5px rgba(16, 185, 129, 0.4)",
         },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#10B981",
-        },
       });
       setShowModal(false);
       form.reset();
@@ -104,10 +100,6 @@ const Career = () => {
           borderRadius: "12px",
           padding: "16px",
           boxShadow: "0 10px 25px -5px rgba(239, 68, 68, 0.4)",
-        },
-        iconTheme: {
-          primary: "#fff",
-          secondary: "#EF4444",
         },
       });
     } finally {

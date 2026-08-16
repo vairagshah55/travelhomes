@@ -4,7 +4,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { toast } from "sonner";
-import { Country } from "country-state-city";
 import { submitOnboardingData, getOnboardingData, offersApi } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { useCountriesData } from "@/hooks/useCountriesData";
@@ -19,8 +18,14 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
+  COUNTRY_OPTIONS,
+  DEFAULT_COUNTRY_OPTION,
 } from "@/components/onboarding/shared";
-import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
+import type {
+  CountryOption,
+  DiscountOffer,
+  OnboardingPhase,
+} from "@/components/onboarding/shared";
 
 // Stays-specific step components
 import {
@@ -50,12 +55,28 @@ import {
   StayRejectedBanner,
 } from "@/components/onboarding/stays/StayStatusScreens";
 
-const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
-  name: c.name,
-  countryCode: c.isoCode,
-  dialCode: c.phonecode,
-}));
+const countries = COUNTRY_OPTIONS;
+
+/**
+ * Named phases for the progress rail.
+ *
+ * Caravan passed these and stay didn't, so the stay wizard fell back to
+ * OnboardingLayout's unlabelled single-group rail — a row of anonymous ticks
+ * with no indication of what the remaining steps cover. Same three-part
+ * vocabulary as CARAVAN_PHASES so the two flows read alike.
+ *
+ * `steps` must sum to `totalSteps - 1` (the terms hand-off isn't a content
+ * step). ProgressRail validates that and falls back to one unnamed bar on a
+ * mismatch rather than mis-highlighting, so keep this in sync with the step
+ * order in StaysStepRenderer:
+ *   0 Property type · 1 Category · 2 Stay details · 3 Features
+ *   4 Discounts · 5 Business · 6 Personal   (7 Terms — excluded)
+ */
+const STAY_PHASES: OnboardingPhase[] = [
+  { label: "Your stay", steps: 4 },
+  { label: "Pricing", steps: 1 },
+  { label: "About you", steps: 2 },
+];
 
 interface Room {
   id: string;
@@ -226,7 +247,7 @@ const StaysOnboarding = () => {
   );
   const [coverImage, setCoverImage] = useState<string | null>(cached?.coverImage ?? null);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
+  const [selected, setSelected] = useState<CountryOption | null>(DEFAULT_COUNTRY_OPTION);
   const [open, setOpen] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -355,9 +376,12 @@ const StaysOnboarding = () => {
   };
 
   const [fileName, setFileName] = useState("");
-  const data = useCountriesData();
   const [countryOption, setCoutryOption] = useState("India");
   const [countryOption2, setCoutryOption2] = useState("India");
+  // Personal and business addresses can sit in different countries, so both are
+  // hydrated. Only these countries' states/cities are fetched — see
+  // useCountriesData; the full dataset is never downloaded.
+  const data = useCountriesData([countryOption, countryOption2]);
   const [stateOption, setStateOption] = useState(cached?.personalState ?? "");
   const [stateOption2, setStateOption2] = useState(cached?.state ?? "");
   const [cityOption, setCityOptions] = useState(cached?.personalCity ?? "");
@@ -444,6 +468,7 @@ const StaysOnboarding = () => {
     loadStayDraft({
       userDetails,
       stepStorageKey: STEP_STORAGE_KEY,
+      formStorageKey: FORM_STORAGE_KEY,
       markLoaded: () => {
         hasLoadedRef.current = true;
       },
@@ -1006,6 +1031,7 @@ const StaysOnboarding = () => {
     <OnboardingLayout
       currentStep={currentStep}
       totalSteps={totalSteps}
+      phases={STAY_PHASES}
       isLoading={isLoading}
       canProceed={canProceed()}
       termsAccepted={termsAccepted}

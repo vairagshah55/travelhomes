@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { Country } from "country-state-city";
 import { MoreHorizontal, Clock, Home } from "lucide-react";
 import { cmsPublicApi } from "@/lib/api";
 import { getImageUrl } from "@/lib/utils";
@@ -20,6 +19,8 @@ import {
   PersonalDetailsStep,
   TermsConditionsStep,
   DiscountOffersStep,
+  COUNTRY_OPTIONS,
+  DEFAULT_COUNTRY_OPTION,
 } from "@/components/onboarding/shared";
 import type {
   CountryOption,
@@ -58,12 +59,7 @@ const CARAVAN_PHASES: OnboardingPhase[] = [
   { label: "About you", steps: 2 },
 ];
 
-const countries: CountryOption[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
-  name: c.name,
-  countryCode: c.isoCode,
-  dialCode: c.phonecode,
-}));
+const countries = COUNTRY_OPTIONS;
 
 const CaravanOnboarding = () => {
   const navigate = useNavigate();
@@ -148,7 +144,7 @@ const CaravanOnboarding = () => {
     return () => clearTimeout(timer);
   }, [formData]);
 
-  const [selected, setSelected] = useState<CountryOption | null>(countries[100]);
+  const [selected, setSelected] = useState<CountryOption | null>(DEFAULT_COUNTRY_OPTION);
   const [open, setOpen] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -156,7 +152,14 @@ const CaravanOnboarding = () => {
   const [isLoading, setIsLoading] = useState(false);
   const totalSteps = 9;
   const completedSteps = currentStep;
-  const data = useCountriesData();
+  // The caravan flow captures three addresses (vehicle, business, personal),
+  // each with its own country. Only these countries' states/cities are fetched
+  // — see useCountriesData; the full dataset is never downloaded.
+  const data = useCountriesData([
+    formData.locality,
+    formData.businessLocality,
+    formData.personalLocality,
+  ]);
   const [idProofImage, setIdProofImage] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [dynamicCategories, setDynamicCategories] = useState<any[]>([]);

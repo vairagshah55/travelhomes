@@ -32,26 +32,124 @@ const { BadRequestError, NotFoundError } = require("../../shared/errors");
 
 const toObjectId = (id) => new mongoose.Types.ObjectId(id);
 
-async function enrichVendor(vendor) {
-  if (!vendor) return null;
-  const data = vendor.toObject ? vendor.toObject() : { ...vendor };
-  const vendorIdStr = data.vendorId;
-  if (!vendorIdStr) return data;
+/**
+ * Enrich a batch of Vendor docs with brandName / personName from their most
+ * recent onboarding row.
+ *
+ * The single-doc version fired 3 queries per vendor, and every caller ran it in
+ * a loop — a 50-message page from one vendor cost 50 × (1 + 3) = 200 sequential
+ * round trips. This resolves any number of vendors in 3 queries total.
+ *
+ * Preference order (stay > activity > caravan) and field precedence are
+ * unchanged.
+ */
+async function enrichVendors(vendors) {
+  const list = vendors.filter(Boolean).map((v) => (v.toObject ? v.toObject() : { ...v }));
+  const vendorIds = [...new Set(list.map((v) => v.vendorId).filter(Boolean))];
+  if (!vendorIds.length) return list;
 
-  const [stay, activity, caravan] = await Promise.all([
-    StayOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }).lean(),
-    ActivityOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }).lean(),
-    CaravanOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }).lean(),
+  // Sorted newest-first with "first write wins" per vendor, reproducing the
+  // original `findOne(...).sort({ createdAt: -1 })`.
+  const mostRecentByVendor = (docs) => {
+    const map = new Map();
+    for (const d of docs) if (!map.has(d.vendorId)) map.set(d.vendorId, d);
+    return map;
+  };
+  const load = (Model) =>
+    Model.find({ vendorId: { $in: vendorIds } })
+      .sort({ createdAt: -1 })
+      .lean();
+
+  const [stays, activities, caravans] = await Promise.all([
+    load(StayOnboarding),
+    load(ActivityOnboarding),
+    load(CaravanOnboarding),
   ]);
+  const stayMap = mostRecentByVendor(stays);
+  const activityMap = mostRecentByVendor(activities);
+  const caravanMap = mostRecentByVendor(caravans);
 
-  const source = stay || activity || caravan;
-  if (source) {
+  for (const data of list) {
+    if (!data.vendorId) continue;
+    const source =
+      stayMap.get(data.vendorId) ||
+      activityMap.get(data.vendorId) ||
+      caravanMap.get(data.vendorId);
+    if (!source) continue;
     data.brandName = source.brandName || source.businessName || data.brandName;
     if (source.firstName || source.lastName) {
       data.personName = `${source.firstName || ""} ${source.lastName || ""}`.trim();
     }
   }
-  return data;
+  return list;
+}
+
+async function enrichVendor(vendor) {
+  if (!vendor) return null;
+  const [enriched] = await enrichVendors([vendor]);
+  return enriched ?? null;
+}
+
+/**
+ * Replace polymorphic `refId` / `senderId` values with display objects, for any
+ * number of participants across any number of conversations, in 3 queries
+ * (+3 for vendor enrichment) rather than 1-4 per participant.
+ *
+ * `refs` is a list of `{ kind, id, apply(displayObject) }` — the caller decides
+ * where the resolved object gets written back.
+ */
+async function resolveRefs(refs) {
+  if (!refs.length) return;
+
+  const idsFor = (kind) => [
+    ...new Set(refs.filter((r) => r.kind === kind && r.id).map((r) => String(r.id))),
+  ];
+  const userIds = idsFor("User");
+  const vendorIds = idsFor("Vendor");
+  const registerIds = idsFor("Register");
+
+  const [users, vendorDocs, registers] = await Promise.all([
+    userIds.length ? User.find({ _id: { $in: userIds } }).select("name photo email").lean() : [],
+    vendorIds.length ? Vendor.find({ _id: { $in: vendorIds } }).lean() : [],
+    registerIds.length
+      ? Register.find({ _id: { $in: registerIds } })
+          .select("firstName lastName email")
+          .lean()
+      : [],
+  ]);
+
+  const vendors = await enrichVendors(vendorDocs);
+
+  const userMap = new Map(users.map((u) => [String(u._id), u]));
+  const vendorMap = new Map(vendors.map((v) => [String(v._id), v]));
+  const registerMap = new Map(registers.map((r) => [String(r._id), r]));
+
+  for (const ref of refs) {
+    const key = String(ref.id);
+    if (ref.kind === "User") {
+      const u = userMap.get(key);
+      if (u) ref.apply({ _id: u._id, name: u.name, photo: u.photo, email: u.email });
+    } else if (ref.kind === "Vendor") {
+      const v = vendorMap.get(key);
+      if (v) {
+        ref.apply({
+          _id: v._id,
+          name: v.brandName || v.personName,
+          photo: v.photo,
+          email: v.email,
+        });
+      }
+    } else if (ref.kind === "Register") {
+      const r = registerMap.get(key);
+      if (r) {
+        ref.apply({
+          _id: r._id,
+          name: `${r.firstName} ${r.lastName}`.trim(),
+          email: r.email,
+        });
+      }
+    }
+  }
 }
 
 async function getChatProfile({ email, type }) {
@@ -172,41 +270,31 @@ async function sendMessage(
 // is a polymorphic ref (User|Vendor) that mongoose can't auto-populate, and
 // vendors need enrichment from onboarding rows.
 async function populateSenders(messages) {
-  for (const msg of messages) {
-    if (msg.senderKind === "User") {
-      const u = await User.findById(msg.senderId).select("name photo email").lean();
-      if (u) {
-        msg.senderId = { _id: u._id, name: u.name, photo: u.photo, email: u.email };
-      }
-    } else if (msg.senderKind === "Vendor") {
-      const doc = await Vendor.findById(msg.senderId);
-      const v = await enrichVendor(doc);
-      if (v) {
-        msg.senderId = {
-          _id: v._id,
-          name: v.brandName || v.personName,
-          photo: v.photo,
-          email: v.email,
-        };
-      }
-    }
-  }
+  await resolveRefs(
+    messages.map((msg) => ({
+      kind: msg.senderKind,
+      id: msg.senderId,
+      apply: (display) => {
+        msg.senderId = display;
+      },
+    })),
+  );
 }
 
 async function getMessages(conversationId, { page, limit }) {
-  const messages = await VendorChatMessage.find({
-    conversationId: toObjectId(conversationId),
-  })
-    .sort({ timestamp: -1 })
-    .skip((page - 1) * limit)
-    .limit(limit)
-    .lean();
+  const filter = { conversationId: toObjectId(conversationId) };
+
+  // The page and its total are independent — no reason to pay for them in series.
+  const [messages, total] = await Promise.all([
+    VendorChatMessage.find(filter)
+      .sort({ timestamp: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    VendorChatMessage.countDocuments(filter),
+  ]);
 
   await populateSenders(messages);
-
-  const total = await VendorChatMessage.countDocuments({
-    conversationId: toObjectId(conversationId),
-  });
 
   return {
     data: messages.reverse(),
@@ -241,34 +329,19 @@ async function listConversations({ participantKind, participantId }) {
     .sort({ lastActivity: -1 })
     .lean();
 
-  for (const conv of conversations) {
-    for (const p of conv.participants) {
-      if (p.kind === "User") {
-        const u = await User.findById(p.refId).select("name photo email").lean();
-        if (u) p.refId = { _id: u._id, name: u.name, photo: u.photo, email: u.email };
-      } else if (p.kind === "Vendor") {
-        const doc = await Vendor.findById(p.refId);
-        const v = await enrichVendor(doc);
-        if (v) {
-          p.refId = {
-            _id: v._id,
-            name: v.brandName || v.personName,
-            photo: v.photo,
-            email: v.email,
-          };
-        }
-      } else if (p.kind === "Register") {
-        const r = await Register.findById(p.refId).select("firstName lastName email").lean();
-        if (r) {
-          p.refId = {
-            _id: r._id,
-            name: `${r.firstName} ${r.lastName}`.trim(),
-            email: r.email,
-          };
-        }
-      }
-    }
-  }
+  // One batched resolve across every participant of every conversation. This
+  // was a nested loop issuing 1-4 queries per participant.
+  await resolveRefs(
+    conversations.flatMap((conv) =>
+      conv.participants.map((p) => ({
+        kind: p.kind,
+        id: p.refId,
+        apply: (display) => {
+          p.refId = display;
+        },
+      })),
+    ),
+  );
 
   return conversations;
 }
@@ -287,23 +360,19 @@ async function getConversationById(conversationId) {
   const conversation = await VendorChatConversation.findById(conversationId).lean();
   if (!conversation) throw new NotFoundError("Conversation", conversationId);
 
-  for (const p of conversation.participants) {
-    if (p.kind === "User") {
-      const u = await User.findById(p.refId).select("name photo email").lean();
-      if (u) p.refId = { _id: u._id, name: u.name, photo: u.photo, email: u.email };
-    } else if (p.kind === "Vendor") {
-      const doc = await Vendor.findById(p.refId);
-      const v = await enrichVendor(doc);
-      if (v) {
-        p.refId = {
-          _id: v._id,
-          name: v.brandName || v.personName,
-          photo: v.photo,
-          email: v.email,
-        };
-      }
-    }
-  }
+  // Note: no Register branch here, matching the original — this endpoint only
+  // resolved User and Vendor participants.
+  await resolveRefs(
+    conversation.participants
+      .filter((p) => p.kind === "User" || p.kind === "Vendor")
+      .map((p) => ({
+        kind: p.kind,
+        id: p.refId,
+        apply: (display) => {
+          p.refId = display;
+        },
+      })),
+  );
 
   return conversation;
 }

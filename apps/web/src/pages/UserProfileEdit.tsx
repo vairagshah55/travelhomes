@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { userProfileApi } from "../lib/api";
 import { getImageUrl } from "@/lib/utils";
 import { getInitials } from "@/utils/getInitials";
+import { useQueryClient } from "@tanstack/react-query";
+import { useProfile, invalidateProfile } from "@/hooks/useProfile";
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
 
@@ -536,58 +538,59 @@ const UserProfileEdit = () => {
     return () => URL.revokeObjectURL(objectUrl);
   }, [photoFile]);
 
-  // Load saved profile by email. `loading` is tied to this fetch (was
-  // previously gated by a fake 2-second setTimeout that ignored fetch
-  // progress — so fast loads still made users wait, and slow loads showed
-  // an empty form).
+  // Read from the shared `["profile", email]` cache instead of this page's own
+  // fetch — AuthContext, useUserDetails and pages/Profile read the same entry,
+  // so opening this page no longer repeats a request another caller just made.
+  const queryClient = useQueryClient();
+  const {
+    data: savedProfile,
+    isPending: profilePending,
+    isError: profileFailed,
+  } = useProfile(user?.email);
+
+  // `loading` stays tied to the fetch (it was once gated by a fake 2-second
+  // setTimeout that ignored fetch progress — fast loads still waited, slow
+  // loads showed an empty form).
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      if (!user?.email) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
+    if (!user?.email) {
+      setLoading(false);
+      return;
+    }
+    if (profilePending) return;
+
+    if (profileFailed) {
+      setLoading(false);
+      return;
+    }
+
+    const p: Record<string, any> = savedProfile || {};
+    const firstName = p.firstName || user.firstName || "";
+    const lastName = p.lastName || user.lastName || "";
+
+    let dob = p.dateOfBirth || user.dateOfBirth || "";
+    if (dob && dob !== "-") {
       try {
-        const res = await userProfileApi.get(user.email);
-        const p: Record<string, any> = res.data || {};
-
-        const firstName = p.firstName || user.firstName || "";
-        const lastName = p.lastName || user.lastName || "";
-
-        let dob = p.dateOfBirth || user.dateOfBirth || "";
-        if (dob && dob !== "-") {
-          try {
-            dob = new Date(dob).toISOString().split("T")[0];
-          } catch {
-            // Keep original if parsing fails.
-          }
-        } else {
-          dob = "";
-        }
-
-        if (cancelled) return;
-        setFormData({
-          name: [firstName, lastName].filter(Boolean).join(" ").trim(),
-          firstName,
-          lastName,
-          phoneNumber: p.phoneNumber || user.phoneNumber || "",
-          email: p.email || user.email || "",
-          dateOfBirth: dob,
-          state: p.state || user.state || "",
-          city: p.city || user.city || "",
-          photo: p.photo || user.photo || "",
-        });
-      } catch (err) {
-        console.error("Failed to load profile", err);
-      } finally {
-        if (!cancelled) setLoading(false);
+        dob = new Date(dob).toISOString().split("T")[0];
+      } catch {
+        // Keep original if parsing fails.
       }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.email]);
+    } else {
+      dob = "";
+    }
+
+    setFormData({
+      name: [firstName, lastName].filter(Boolean).join(" ").trim(),
+      firstName,
+      lastName,
+      phoneNumber: p.phoneNumber || user.phoneNumber || "",
+      email: p.email || user.email || "",
+      dateOfBirth: dob,
+      state: p.state || user.state || "",
+      city: p.city || user.city || "",
+      photo: p.photo || user.photo || "",
+    });
+    setLoading(false);
+  }, [user, savedProfile, profilePending, profileFailed]);
 
   const handleChange = (field: keyof EditFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -642,6 +645,9 @@ const UserProfileEdit = () => {
 
       const updatedProfile = { ...payload, photo: photoUrl };
       updateUser(updatedProfile);
+      // Both the upsert and the photo upload landed — drop the shared entry so
+      // the profile page reads the saved values rather than the cached ones.
+      invalidateProfile(queryClient, payload.email);
       window.dispatchEvent(new CustomEvent("profileUpdated", { detail: updatedProfile }));
       toast.success("Profile updated successfully!");
       navigate("/user-profile");

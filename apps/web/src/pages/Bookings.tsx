@@ -41,6 +41,7 @@ import {
   CalendarGrid,
   DateNavigation,
 } from "@/components/bookings";
+import { currencyINR } from "@/utils/currency";
 
 /* ── Filter dropdown trigger ─────────────────────────────────────────────── */
 const FilterPill: React.FC<{
@@ -229,12 +230,6 @@ const Bookings = () => {
     return { total: filteredBookings.length, revenue, pending, today: todayCount };
   }, [filteredBookings]);
 
-  const currencyINR = (n: number) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(n);
 
   const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString("en-IN", {
     month: "long",

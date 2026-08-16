@@ -1,4 +1,4 @@
-import { Country } from "country-state-city";
+import { COUNTRIES } from "@/data/countries";
 
 export type PhoneCountry = { isoCode: string; name: string; dialCode?: string };
 
@@ -15,11 +15,22 @@ export interface FormData {
   city: string;
 }
 
-export const PHONE_COUNTRIES: PhoneCountry[] = Country.getAllCountries().map((c) => ({
-  isoCode: c.isoCode,
+export const PHONE_COUNTRIES: PhoneCountry[] = COUNTRIES.map((c) => ({
+  isoCode: c.iso2,
   name: c.name,
   dialCode: c.phonecode,
 }));
+
+/**
+ * Default dial code for the phone picker.
+ *
+ * This used to be `PHONE_COUNTRIES[100]`, which happened to be India only
+ * because that was its position in `country-state-city`'s ordering. Looked up
+ * by ISO code now so it can't silently become a different country when the
+ * underlying list changes.
+ */
+export const DEFAULT_PHONE_COUNTRY: PhoneCountry =
+  PHONE_COUNTRIES.find((c) => c.isoCode === "IN") ?? PHONE_COUNTRIES[0];
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const PWD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;

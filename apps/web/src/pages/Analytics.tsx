@@ -45,13 +45,8 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { currencyINR } from "@/utils/currency";
 
-const currencyINR = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
 
 const PERIODS = [
   { value: "daily", label: "Daily" },

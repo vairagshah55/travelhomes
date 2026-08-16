@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Footer from "../components/Footer";
 import MobileUserNav from "@/components/MobileUserNav";
@@ -101,6 +101,10 @@ const SECTION_DEFAULTS: Record<string, boolean> = {
 
 const PAGE_SIZE = 12;
 
+// Stable identities for the "still loading" case — see the note at their use.
+const EMPTY_CATEGORY_MAP: Record<string, any> = Object.freeze({});
+const EMPTY_OFFERS: OfferDTO[] = [];
+
 export default function Index() {
   const { user } = useAuth();
 
@@ -178,14 +182,19 @@ export default function Index() {
   /* ── Derived data ─────────────────────────────────────────────────────────── */
   const homepageSections = useMemo<Record<string, boolean>>(() => {
     if (!Array.isArray(sectionsData) || !sectionsData.length) return SECTION_DEFAULTS;
-    return sectionsData.reduce(
-      (acc: Record<string, boolean>, s: any) => ({ ...acc, [s.sectionKey]: s.isVisible }),
-      { ...SECTION_DEFAULTS },
-    );
+    // Mutate the accumulator rather than spreading it — `{ ...acc }` per element
+    // allocates a new object each step, which is O(n²) for no benefit here.
+    const acc: Record<string, boolean> = { ...SECTION_DEFAULTS };
+    for (const s of sectionsData as any[]) acc[s.sectionKey] = s.isVisible;
+    return acc;
   }, [sectionsData]);
 
-  const categoryMap = categoryMapData ?? {};
-  const offers = offersResponse?.data ?? [];
+  // Frozen module-level fallbacks, not fresh `?? {}` / `?? []` literals.
+  // A new object identity on every render silently invalidated every useMemo
+  // below that lists them as a dependency — the memoisation looked correct but
+  // never once hit while these queries were still loading.
+  const categoryMap = categoryMapData ?? EMPTY_CATEGORY_MAP;
+  const offers = offersResponse?.data ?? EMPTY_OFFERS;
   const faqs = (faqsData as PublicFaq[]) ?? [];
   const latestBlogs = (blogsData as BlogDTO[]) ?? [];
   const testimonials = testimonialsData ?? DEFAULT_TESTIMONIALS;
@@ -251,7 +260,9 @@ export default function Index() {
   }, [activeFilter, loadingOffers]);
 
   /* ── Category normaliser ──────────────────────────────────────────────────── */
-  const getNormCategory = (cat?: string, serviceType?: string) => {
+  // useCallback so the card memos below have a stable dependency; without it
+  // every render produced a new function and re-ran the whole mapping.
+  const getNormCategory = useCallback((cat?: string, serviceType?: string) => {
     const s = String(serviceType || "").toLowerCase();
     if (s === "camper-van") return "caravan" as const;
     if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
@@ -272,9 +283,9 @@ export default function Index() {
       return "unique-stays" as const;
     if (["activity", "activities", "trekking", "tour"].includes(cc)) return "activity" as const;
     return "unique-stays" as const;
-  };
+  }, [categoryMap]);
 
-  const mapOfferToCard = (o: OfferDTO): CardItem => {
+  const mapOfferToCard = useCallback((o: OfferDTO): CardItem => {
     const ncat = getNormCategory(o.category, o.serviceType);
     const route =
       ncat === "caravan"
@@ -301,38 +312,57 @@ export default function Index() {
         .filter(Boolean)
         .slice(0, 5),
     };
-  };
+  }, [getNormCategory]);
 
-  const approved = offers.filter((o) => o.status === "approved");
-  const caravanCards = useMemo(
-    () =>
-      approved
-        .filter((o) => getNormCategory(o.category, o.serviceType) === "caravan")
-        .map(mapOfferToCard),
-    [approved, categoryMap],
-  );
-  const stayCards = useMemo(
-    () =>
-      approved
-        .filter((o) => getNormCategory(o.category, o.serviceType) === "unique-stays")
-        .map(mapOfferToCard),
-    [approved, categoryMap],
-  );
-  const activityCards = useMemo(
-    () =>
-      approved
-        .filter((o) => getNormCategory(o.category, o.serviceType) === "activity")
-        .map(mapOfferToCard),
-    [approved, categoryMap],
-  );
+  /**
+   * Bucket the approved offers by category.
+   *
+   * `approved` used to be a bare `offers.filter(...)` in the render body, so it
+   * was a new array identity on every render and the three `useMemo`s that
+   * depended on it never hit. This page re-renders on every IntersectionObserver
+   * scroll-highlight change and every hero ResizeObserver tick, so three full
+   * filter+map passes over the whole catalog were running during scroll.
+   *
+   * Now memoised, and a single pass buckets all three categories at once instead
+   * of walking the catalog three times.
+   */
+  const approved = useMemo(() => offers.filter((o) => o.status === "approved"), [offers]);
+
+  const { caravanCards, stayCards, activityCards } = useMemo(() => {
+    const buckets: Record<string, CardItem[]> = {
+      caravan: [],
+      "unique-stays": [],
+      activity: [],
+    };
+    for (const o of approved) {
+      const bucket = buckets[getNormCategory(o.category, o.serviceType)];
+      if (bucket) bucket.push(mapOfferToCard(o));
+    }
+    return {
+      caravanCards: buckets.caravan,
+      stayCards: buckets["unique-stays"],
+      activityCards: buckets.activity,
+    };
+  }, [approved, getNormCategory, mapOfferToCard]);
 
   const caravanTotal = Math.max(1, Math.ceil(caravanCards.length / PAGE_SIZE));
   const stayTotal = Math.max(1, Math.ceil(stayCards.length / PAGE_SIZE));
   const activityTotal = Math.max(1, Math.ceil(activityCards.length / PAGE_SIZE));
 
-  const caravanShown = caravanCards.slice(0, pages.caravan * PAGE_SIZE);
-  const stayShown = stayCards.slice(0, pages["unique-stays"] * PAGE_SIZE);
-  const activityShown = activityCards.slice(0, pages.activity * PAGE_SIZE);
+  // Memoised because these are passed straight into <OfferSections> — a fresh
+  // slice on every scroll-highlight render would re-render the whole card grid.
+  const caravanShown = useMemo(
+    () => caravanCards.slice(0, pages.caravan * PAGE_SIZE),
+    [caravanCards, pages.caravan],
+  );
+  const stayShown = useMemo(
+    () => stayCards.slice(0, pages["unique-stays"] * PAGE_SIZE),
+    [stayCards, pages],
+  );
+  const activityShown = useMemo(
+    () => activityCards.slice(0, pages.activity * PAGE_SIZE),
+    [activityCards, pages.activity],
+  );
 
   const incPage = (k: "caravan" | "unique-stays" | "activity") =>
     setPages((p) => ({
@@ -343,11 +373,15 @@ export default function Index() {
       ),
     }));
 
-  const visibleFAQTabs = [
-    { id: "unique-stays", label: "Unique Stays", isVisible: homepageSections["unique-stays"] },
-    { id: "activities", label: "Activities", isVisible: homepageSections["best-activity"] },
-    { id: "caravan", label: "Caravan", isVisible: homepageSections["camper-van"] },
-  ].filter((t) => t.isVisible);
+  const visibleFAQTabs = useMemo(
+    () =>
+      [
+        { id: "unique-stays", label: "Unique Stays", isVisible: homepageSections["unique-stays"] },
+        { id: "activities", label: "Activities", isVisible: homepageSections["best-activity"] },
+        { id: "caravan", label: "Caravan", isVisible: homepageSections["camper-van"] },
+      ].filter((t) => t.isVisible),
+    [homepageSections],
+  );
 
   /* ── Render ───────────────────────────────────────────────────────────────── */
   return (

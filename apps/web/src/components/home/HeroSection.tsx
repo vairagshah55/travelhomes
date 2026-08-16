@@ -301,7 +301,10 @@ export function HeroSection({
       <div className="relative flex-1 flex flex-col overflow-visible">
         <SiteHeader
           variant="transparent"
-          className="fixed w-full z-50"
+          // Must match SiteHeader's own z-[60] — see the note on its root
+          // element. Passing z-50 here re-tied the header with the page's other
+          // fixed widgets and let them paint over the open account menu.
+          className="fixed w-full z-[60]"
           activeFilter={activeFilter}
           onFilterChange={(f) => setActiveFilter(f as FilterType)}
           heroHeight={heroHeight}

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { ArrowRight, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "../../contexts/AuthContext";
-import { getOnboardingData } from "../../lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
+import { useOnboardingStatus } from "@/hooks/useOnboardingStatus";
 import { StepHeader } from "@/components/onboarding/shared/primitives";
 import LogoWebsite from "@/components/ui/LogoWebsite";
 import { cn } from "@/lib/utils";
@@ -81,36 +81,34 @@ const ServiceSelection = () => {
     "unique-stays": true,
     "best-activity": true,
   });
-  const [hasPendingApplication, setHasPendingApplication] = useState(false);
-  const [pendingServiceType, setPendingServiceType] = useState<string | null>(null);
-  const [pendingData, setPendingData] = useState<any>(null);
   const [showError, setShowError] = useState(false);
 
+  /**
+   * Whether a submission is already under review.
+   *
+   * This used to live in three `useState`s seeded to "no pending application",
+   * populated by an uncached fetch in an effect. Because the initial state was
+   * a definite answer rather than "unknown", the page painted every card
+   * unlocked with Caravan pre-selected, and only flipped to the locked state
+   * with its "under review" banner once `/api/onboarding/mine` came back —
+   * seconds later, since that endpoint was returning multi-megabyte documents.
+   * The vendor could click Continue during that window and be dropped into a
+   * flow the server then refuses.
+   *
+   * Derived from the shared query now, so "still loading" is representable and
+   * the render can wait for it (see `statusPending` below).
+   */
+  const { data: submission, isPending: statusPending } = useOnboardingStatus(!!user);
+
+  const pendingServiceType = submission?.doc?.status === "pending" ? submission.type : null;
+  const hasPendingApplication = !!pendingServiceType;
+  const pendingData = hasPendingApplication ? submission?.doc : null;
+
+  // Land the selection on the one service the vendor can actually continue
+  // with, once we know there is one.
   useEffect(() => {
-    const checkPendingApp = async () => {
-      try {
-        const data = await getOnboardingData();
-        if (data && data.doc && data.doc.status === "pending") {
-          setHasPendingApplication(true);
-          setPendingServiceType(data.type);
-          setPendingData(data.doc);
-          // The other cards are about to become disabled — land selection on
-          // the one service the vendor can actually continue with.
-          setSelectedService(data.type as ServiceType);
-        } else {
-          setHasPendingApplication(false);
-          setPendingServiceType(null);
-          setPendingData(null);
-        }
-      } catch (e) {
-        console.error("Failed to check onboarding status", e);
-        setHasPendingApplication(false);
-        setPendingServiceType(null);
-        setPendingData(null);
-      }
-    };
-    checkPendingApp();
-  }, [user]);
+    if (pendingServiceType) setSelectedService(pendingServiceType as ServiceType);
+  }, [pendingServiceType]);
 
   const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
@@ -131,22 +129,22 @@ const ServiceSelection = () => {
     }
   }, [visibleSections, selectedService]);
 
+  // Reads the same cached submission as above rather than firing a second
+  // request for the identical endpoint.
   useEffect(() => {
-    if (user?.vendorStatus === "rejected") {
-      const checkPrevious = async () => {
-        const data = await getOnboardingData();
-        if (data?.type) {
-          toast.info("Please update your rejected application");
-          navigate(`/onboarding/${data.type}`);
-        }
-      };
-      checkPrevious();
+    if (user?.vendorStatus !== "rejected") return;
+    if (statusPending) return;
+    if (submission?.type) {
+      toast.info("Please update your rejected application");
+      navigate(`/onboarding/${submission.type}`);
     }
-  }, [user, navigate]);
+  }, [user, navigate, submission, statusPending]);
 
   const handleBack = () => navigate("/");
 
   const handleContinue = () => {
+    // Don't let anyone through the gate before we know whether it's shut.
+    if (statusPending) return;
     if (hasPendingApplication && selectedService !== pendingServiceType) {
       toast.error("Your vendor application is pending approval. You cannot create a new service.");
       return;
@@ -170,6 +168,15 @@ const ServiceSelection = () => {
   const pendingTitle = pendingServiceType
     ? SERVICE_META[pendingServiceType as ServiceType]?.title
     : null;
+
+  /** Formatted submission date, or null when the timestamp is missing/unparseable. */
+  const submittedOn = useMemo(() => {
+    if (!pendingData?.createdAt) return null;
+    const d = new Date(pendingData.createdAt);
+    return Number.isNaN(d.getTime())
+      ? null
+      : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  }, [pendingData?.createdAt]);
 
   return (
     <div
@@ -213,13 +220,11 @@ const ServiceSelection = () => {
                       Your {pendingTitle || "listing"} is under review
                     </p>
                     <p className="mt-1 text-[12.5px] leading-[1.55] text-[color:var(--onb-text-secondary,#657477)]">
-                      Submitted{" "}
-                      {new Date(pendingData.createdAt).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                      . Our team will review within 24–48 hours, and the other services stay locked
+                      {/* `createdAt` isn't guaranteed — an unguarded
+                          `new Date(undefined)` rendered the literal string
+                          "Invalid Date" in the middle of the sentence. */}
+                      {submittedOn ? `Submitted ${submittedOn}. ` : ""}
+                      Our team will review within 24–48 hours, and the other services stay locked
                       until then.
                     </p>
                   </div>
@@ -231,7 +236,24 @@ const ServiceSelection = () => {
                   checked state are announced. This was a plain div with an
                   onClick and no keyboard path at all. */}
               <div role="radiogroup" aria-label="Service type" className="flex flex-col gap-3">
-                {visibleServices.map((service, index) => {
+                {/* Until the pending check resolves we don't know which cards are
+                    locked, so render placeholders rather than an interactive
+                    "everything is available" state we may be about to retract. */}
+                {statusPending
+                  ? visibleServices.map((service) => (
+                      <div
+                        key={service}
+                        aria-hidden
+                        className="flex w-full items-center gap-4 rounded-[16px] border-[1.5px] border-th-warm-border bg-th-surface-0 px-[18px] py-4"
+                      >
+                        <span className="h-12 w-12 shrink-0 animate-pulse rounded-[14px] bg-th-warm-surface" />
+                        <span className="min-w-0 flex-1 space-y-2">
+                          <span className="block h-3.5 w-40 animate-pulse rounded bg-th-warm-surface" />
+                          <span className="block h-3 w-full max-w-[280px] animate-pulse rounded bg-th-warm-surface" />
+                        </span>
+                      </div>
+                    ))
+                  : visibleServices.map((service, index) => {
                   const meta = SERVICE_META[service];
                   const selected = selectedService === service;
                   const locked = hasPendingApplication && service !== pendingServiceType;
@@ -326,9 +348,9 @@ const ServiceSelection = () => {
                           </svg>
                         )}
                       </span>
-                    </button>
-                  );
-                })}
+                      </button>
+                      );
+                    })}
               </div>
 
               {/* Validation error. Replaces a shake animation on the CTA —
@@ -402,14 +424,19 @@ const ServiceSelection = () => {
           <button
             type="button"
             onClick={handleContinue}
+            // Disabled until the pending check resolves: the vendor could
+            // otherwise continue into a service the server is about to refuse.
+            disabled={statusPending}
+            aria-busy={statusPending}
             className={cn(
               "onb-btn-primary h-12 px-6 sm:px-8 text-[14px] rounded-full whitespace-nowrap",
               "inline-flex items-center gap-2",
+              "disabled:cursor-not-allowed disabled:opacity-60",
               "focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2",
               "focus-visible:ring-[color:var(--onb-cta-ink,#0a5559)] focus-visible:ring-offset-th-surface-0",
             )}
           >
-            Continue
+            {statusPending ? "Checking…" : "Continue"}
             <ArrowRight size={15} strokeWidth={2.5} aria-hidden="true" />
           </button>
         </div>

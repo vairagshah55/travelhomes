@@ -178,7 +178,15 @@ export interface BookingDetailDTO {
   id: string;
   clientName: string;
   serviceName: string;
-  servicePrice: string;
+  /**
+   * Either a number or a pre-formatted "₹ 5000" string, depending on which row
+   * it came from: GET /api/bookingDetails concatenates raw BookingDetail
+   * documents (schema type Number) with Booking rows mapped through
+   * `mapBookingToRow`, which formats it as a string. Declaring this `string`
+   * was a lie that hid a crash — `.replace` on a number — from the type
+   * checker. Read it through `toAmount()` from utils/currency.
+   */
+  servicePrice: string | number;
   checkIn: string;
   checkOut: string;
   guests: number;

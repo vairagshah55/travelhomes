@@ -17,6 +17,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/utils";
 import { getInitials } from "@/utils/getInitials";
+import { useIsApprovedVendor } from "@/hooks/useProfile";
 
 interface UserDropdownProps {
   onSwitchToVendor: () => void;
@@ -24,6 +25,8 @@ interface UserDropdownProps {
 
 const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
   const { user, logout, updateUser, refreshUser } = useAuth();
+  // Server-backed, not the localStorage snapshot — see useIsApprovedVendor.
+  const canSwitchToVendor = useIsApprovedVendor(user?.email, user?.vendorStatus);
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -191,10 +194,24 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 z-[110] bg-black/45 backdrop-blur-[2px] sm:bg-black/25 sm:backdrop-blur-[1px]"
           />
+          {/**
+           * Height budget: the menu scrolls its NAV LIST, never the whole panel.
+           *
+           * The panel itself was the scroll container, capped at
+           * `min(360px, calc(100vh - 200px))`. On a short window that second
+           * term wins — at 430px tall it resolves to ~230px — so the panel
+           * clipped and everything after "Help" (Switch to Vendor, Logout) sat
+           * below the fold, reachable only by scrolling inside a popover that
+           * gives no hint it scrolls. It read as "those items don't exist".
+           *
+           * Identity header and the action footer are pinned; only the nav list
+           * between them scrolls, so the primary actions are always on screen
+           * no matter the viewport.
+           */}
           <div
             role="menu"
             className="bg-white z-[120] flex flex-col overflow-hidden
-              sm:absolute sm:left-[14px] sm:right-auto sm:top-full sm:mt-3 sm:w-64 sm:rounded-2xl sm:shadow-2xl sm:border sm:border-gray-100 sm:max-h-[min(360px,calc(100vh-200px))] sm:overflow-y-auto
+              sm:absolute sm:left-[14px] sm:right-auto sm:top-full sm:mt-3 sm:w-64 sm:rounded-2xl sm:shadow-2xl sm:border sm:border-gray-100 sm:max-h-[calc(100vh-96px)]
               fixed top-0 left-0 w-full h-full sm:h-auto"
           >
             {/* ── Mobile-only: "List your offering" CTA + close ── */}
@@ -218,11 +235,11 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
               </button>
             </div>
 
-            {/* ── Identity header — name + email only.
+            {/* ── Identity header — name + email only. Pinned (shrink-0).
               The avatar is intentionally NOT repeated here: it's already shown
               in the trigger pill above (same visual moment). Showing it twice
               adds no information and steals ~36px of menu height. ── */}
-            <div className="px-3.5 py-2.5 border-b border-gray-100">
+            <div className="shrink-0 px-3.5 py-2.5 border-b border-gray-100">
               <p className="text-[13px] font-semibold text-gray-900 leading-tight truncate">
                 {fullName}
               </p>
@@ -233,8 +250,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
               )}
             </div>
 
-            {/* ── Primary nav ── */}
-            <div className="p-1 flex-1 sm:flex-none">
+            {/* ── Primary nav — the only scrollable region ── */}
+            <div className="p-1 flex-1 min-h-0 overflow-y-auto">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -261,34 +278,36 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
               })}
             </div>
 
-            {/* ── Switch to Vendor (if vendor) ── */}
-            {(user?.vendorStatus === "approved" || user?.vendorStatus === "active") && (
-              <>
-                <div className="h-px bg-gray-100 mx-1.5" />
-                <div className="p-1">
-                  <button
-                    role="menuitem"
-                    onClick={handleSwitchToVendor}
-                    className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-[#117479] hover:bg-[#e6fafa] transition-colors"
-                  >
-                    <ArrowUpRight size={14} strokeWidth={2} className="shrink-0" />
-                    Switch to Vendor
-                  </button>
-                </div>
-              </>
-            )}
+            {/* ── Action footer — pinned, so these are reachable at any
+                viewport height without scrolling the menu. ── */}
+            <div className="shrink-0 bg-white">
+              {canSwitchToVendor && (
+                <>
+                  <div className="h-px bg-gray-100 mx-1.5" />
+                  <div className="p-1">
+                    <button
+                      role="menuitem"
+                      onClick={handleSwitchToVendor}
+                      className="group w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-[#117479] hover:bg-[#e6fafa] transition-colors"
+                    >
+                      <ArrowUpRight size={14} strokeWidth={2} className="shrink-0" />
+                      Switch to Vendor
+                    </button>
+                  </div>
+                </>
+              )}
 
-            {/* ── Logout ── */}
-            <div className="h-px bg-gray-100 mx-1.5" />
-            <div className="p-1">
-              <button
-                role="menuitem"
-                onClick={handleLogout}
-                className="group w-full flex items-center gap-2.5 px-2.5 py-1 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
-                Logout
-              </button>
+              <div className="h-px bg-gray-100 mx-1.5" />
+              <div className="p-1">
+                <button
+                  role="menuitem"
+                  onClick={handleLogout}
+                  className="group w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] font-medium text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={14} strokeWidth={1.75} className="shrink-0" />
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </>

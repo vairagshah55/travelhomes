@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 import { Button } from "../../components/ui/button";
 import Header, { HomeHeader } from "../../components/Header";
 import Footer from "../../components/Footer";

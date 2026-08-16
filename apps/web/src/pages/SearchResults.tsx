@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
@@ -53,6 +53,10 @@ import {
 } from "./SearchResults/searchHelpers";
 
 type FilterType = "camper-van" | "unique-stays" | "activity";
+
+// Stable identity for the "no results yet" case, so the memo chain below isn't
+// invalidated by a fresh `[]` literal on every render while the query loads.
+const EMPTY_RESULTS: any[] = [];
 
 export default function SearchResults() {
   const navigate = useNavigate();
@@ -249,7 +253,6 @@ export default function SearchResults() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Get results title based on active filter
 
@@ -281,28 +284,54 @@ export default function SearchResults() {
       return list.filter((o) => getNormCategory(o.category, o.serviceType) === want);
     },
   });
-  const serverItems = searchQuery.data ?? [];
-  // Mirror useQuery's loading state into the existing setIsLoading state so
-  // the rest of the page (which reads isLoading from useState) renders the
-  // skeleton without changes.
-  useEffect(() => {
-    setIsLoading(searchQuery.isLoading || searchQuery.isFetching);
-  }, [searchQuery.isLoading, searchQuery.isFetching]);
+  // Derived straight from the query rather than mirrored into useState via an
+  // effect — the mirror cost an extra render on every fetch transition and
+  // could only ever lag the real value.
+  const isLoading = searchQuery.isLoading || searchQuery.isFetching;
 
-  // Use server data
-  const dataToUse = Array.isArray(serverItems) ? serverItems : [];
+  const dataToUse = useMemo(
+    () => (Array.isArray(searchQuery.data) ? searchQuery.data : EMPTY_RESULTS),
+    [searchQuery.data],
+  );
 
-  const filteredItems = filterSearchItems(dataToUse, {
-    activeFilter,
-    priceRange,
-    selectedTypes,
-    selectedCategories,
-    selectedFacilities,
-    sleepRange,
-    seatRange,
-  });
-  const sortedItems = sortSearchItems(filteredItems, sortBy);
-  const computedItems = sortedItems.map((doc: any) => mapOfferToCard(doc, activeFilter));
+  /**
+   * Filter → sort → map, memoised.
+   *
+   * This chain walks the whole result set three times and used to run on EVERY
+   * render. With ~30 pieces of state in this component — six dropdown-open
+   * booleans, a sticky-scroll flag, search text — that meant opening a dropdown
+   * or scrolling re-filtered and re-sorted the entire catalog and rebuilt every
+   * card object, so nothing downstream could stay referentially stable either.
+   */
+  const filteredItems = useMemo(
+    () =>
+      filterSearchItems(dataToUse, {
+        activeFilter,
+        priceRange,
+        selectedTypes,
+        selectedCategories,
+        selectedFacilities,
+        sleepRange,
+        seatRange,
+      }),
+    [
+      dataToUse,
+      activeFilter,
+      priceRange,
+      selectedTypes,
+      selectedCategories,
+      selectedFacilities,
+      sleepRange,
+      seatRange,
+    ],
+  );
+
+  const sortedItems = useMemo(() => sortSearchItems(filteredItems, sortBy), [filteredItems, sortBy]);
+
+  const computedItems = useMemo(
+    () => sortedItems.map((doc: any) => mapOfferToCard(doc, activeFilter)),
+    [sortedItems, activeFilter],
+  );
 
   const getResultsTitle = () => {
     const count = computedItems.length;
@@ -311,7 +340,10 @@ export default function SearchResults() {
 
   const itemsPerPage = 10;
   const totalPages = Math.ceil(computedItems.length / itemsPerPage);
-  const paginatedItems = computedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage);
+  const paginatedItems = useMemo(
+    () => computedItems.slice((page - 1) * itemsPerPage, page * itemsPerPage),
+    [computedItems, page],
+  );
 
   const ratingOptions = ["1+", "2+", "3+", "4+", "5+"];
 

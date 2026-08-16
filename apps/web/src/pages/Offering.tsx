@@ -29,6 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { currencyINR } from "@/utils/currency";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -88,12 +89,6 @@ const CardSkeleton = () => (
   </div>
 );
 
-const currencyINR = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
 
 const Offering = () => {
   const navigate = useNavigate();
