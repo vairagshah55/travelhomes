@@ -65,15 +65,34 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
         }
       />
 
-      {/* ── Sections per property type ── */}
+      {/**
+       * One flat list, not a section per property type.
+       *
+       * Categories are orthogonal to property type — a "Beach Stay" or a
+       * "Pet-Friendly Stay" can be a villa or a cottage — so they're stored once
+       * against "Unique Stay" (see Server/scripts/seed-stay-taxonomy.js).
+       * Rendering the old per-type sections against that shared list repeated
+       * the identical 31 chips under every property the vendor had picked, each
+       * with its own independent checkbox, which made "Beach Stays" look like
+       * three different answers.
+       *
+       * Deduped union across the selected types, so any type-specific
+       * subcategory an admin defined still appears — exactly once.
+       */}
       <div className="w-full flex flex-col gap-4">
-        {selectedProperties.map((propertyId) => {
-          const property = propertyTypes.find((p) => p.id === propertyId);
-          const categories = getEffectiveCategories(propertyId);
+        {(() => {
+          const categories: Category[] = [];
+          const seen = new Set<string>();
+          for (const propertyId of selectedProperties) {
+            for (const category of getEffectiveCategories(propertyId)) {
+              const key = category.name.toLowerCase();
+              if (seen.has(key)) continue;
+              seen.add(key);
+              categories.push(category);
+            }
+          }
 
-          if (!property) return null;
-
-          const sectionKeys = categories.map((c) => `${propertyId}-${c.id}`);
+          const sectionKeys = categories.map((c) => c.id);
           const selectedInSection = sectionKeys.filter((k) => selectedCategories.includes(k));
           const allSelected =
             sectionKeys.length > 0 && selectedInSection.length === sectionKeys.length;
@@ -92,19 +111,8 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
 
           return (
             <SectionCard
-              key={propertyId}
-              icon={
-                property.icon ? (
-                  <img
-                    src={getImageUrl(property.icon)}
-                    alt={property.name}
-                    className="w-[18px] h-[18px] object-contain"
-                  />
-                ) : (
-                  <span className="text-base">🏠</span>
-                )
-              }
-              title={property.name}
+              icon={<span className="text-base">🏷️</span>}
+              title="Categories"
               bodyGap
               action={
                 <div className="flex items-center gap-2.5 shrink-0">
@@ -128,13 +136,13 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
               {categories.length === 0 ? (
                 <div className="flex items-center justify-center py-7 rounded-[13px] border-2 border-dashed border-th-warm-border">
                   <p className="text-[13px] text-th-warm-text-muted">
-                    No categories available for this property type
+                    No categories available yet
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2.5">
                   {categories.map((category) => {
-                    const categoryKey = `${propertyId}-${category.id}`;
+                    const categoryKey = category.id;
                     const selected = selectedCategories.includes(categoryKey);
 
                     return (
@@ -190,7 +198,7 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
               )}
             </SectionCard>
           );
-        })}
+        })()}
       </div>
     </div>
   );

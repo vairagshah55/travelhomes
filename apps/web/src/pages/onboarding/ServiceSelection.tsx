@@ -256,6 +256,9 @@ const ServiceSelection = () => {
                   : visibleServices.map((service, index) => {
                   const meta = SERVICE_META[service];
                   const selected = selectedService === service;
+                  // The one service actually awaiting admin action…
+                  const isPendingService = hasPendingApplication && service === pendingServiceType;
+                  // …versus the ones blocked *because* of it.
                   const locked = hasPendingApplication && service !== pendingServiceType;
                   return (
                     <button
@@ -309,16 +312,23 @@ const ServiceSelection = () => {
                           </span>
                           {/* Quiet chip. The tag used to appear only once a card
                               was selected, which is backwards — "Popular" is
-                              meant to inform the choice, not reward it. */}
+                              meant to inform the choice, not reward it.
+
+                              `locked` means "a DIFFERENT service is in review",
+                              so labelling locked cards "Pending review" put that
+                              badge on the two services that aren't under review
+                              and left the one that is showing "Trending". The
+                              three states are distinct and now read that way. */}
                           <span
                             className={cn(
                               "rounded-full border px-2 py-[1px] text-[9.5px] font-bold uppercase tracking-[0.08em]",
-                              locked
+                              isPendingService
                                 ? "border-th-warn-bright-border bg-th-warn-bright-bg text-th-warn-bright"
                                 : "border-th-warm-border bg-th-warm-surface text-th-warm-text-muted",
+                              locked && "opacity-80",
                             )}
                           >
-                            {locked ? "Pending review" : meta.tag}
+                            {isPendingService ? "In review" : locked ? "Locked" : meta.tag}
                           </span>
                         </span>
                         <span className="block text-[12.5px] font-normal leading-[1.55] text-th-warm-text-dark">
