@@ -54,6 +54,7 @@ import {
   CategoryStep as CaravanCategoryStep,
   CapacityAddressStep as CaravanCapacityAddressStep,
 } from "@/components/onboarding/caravan";
+import { STAY_AMENITY_NAMES } from "@/components/onboarding/stays/stayConfig";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
 import { SearchableSelect } from "@/components/onboarding/shared/primitives";
 
@@ -507,8 +508,13 @@ const AddOfferings = () => {
   }, [activeTab, catalog.categories]);
   const baseFeatures = useMemo(() => {
     const fromCms = catalog.features[activeTab] || [];
-    if (activeTab !== "camper-van") return fromCms;
-    return fromCms.length ? fromCms : CAMPER_VAN_FEATURES;
+    if (fromCms.length) return fromCms;
+    // Fallbacks for a CMS that hasn't been seeded for this service type. Without
+    // the unique-stay entry a vendor adding a stay from the console reached the
+    // Features step and saw an empty grid.
+    if (activeTab === "camper-van") return CAMPER_VAN_FEATURES;
+    if (activeTab === "unique-stay") return STAY_AMENITY_NAMES;
+    return fromCms;
   }, [activeTab, catalog.features]);
 
   // Defensive merge — keep any in-progress draft category/feature visible even

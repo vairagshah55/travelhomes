@@ -62,9 +62,28 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
     return allStandardFeatures.filter((f) => f.label.toLowerCase().includes(q));
   }, [allStandardFeatures, searchQuery]);
 
+  /**
+   * Values that are selected but match nothing on offer — a saved draft from
+   * before the amenity list changed, or an admin feature that has since been
+   * deleted in CMS.
+   *
+   * They have to render. `selectedFeatures` is submitted verbatim, so a value
+   * with no pill behind it is invisible AND unremovable: the vendor cannot see
+   * it, cannot untick it, and it still ships to the listing and shows up in the
+   * public amenity grid. Rendering them as removable chips (the same treatment
+   * custom amenities get, which is what they effectively are now) makes the
+   * step honest about everything it is about to save.
+   */
+  const orphanFeatures = useMemo(() => {
+    const known = new Set(allStandardFeatures.map((f) => f.value));
+    const custom = new Set(customFeatures);
+    return selectedFeatures.filter((v) => !known.has(v) && !custom.has(v));
+  }, [selectedFeatures, allStandardFeatures, customFeatures]);
+
   const totalSelected =
     allStandardFeatures.filter((f) => selectedFeatures.includes(f.value)).length +
-    customFeatures.length;
+    customFeatures.length +
+    orphanFeatures.length;
 
   const handleAddCustom = () => {
     const trimmed = customFeatureInput.trim();
@@ -213,6 +232,24 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                 </button>
               );
             })}
+
+            {/* Carried over from an older saved draft — see `orphanFeatures`.
+                Rendered AFTER the catalog, not before it: these are leftovers,
+                and putting a lowercase legacy slug at the head of a tidy
+                alphabet of amenities reads as a rendering fault. */}
+            {orphanFeatures.map((feature) => (
+              <button
+                key={`orphan-${feature}`}
+                type="button"
+                onClick={() => toggleFeatureSelection(feature)}
+                title="Saved earlier — click to remove"
+                className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)] cursor-pointer text-th-brand"
+              >
+                <MoreHorizontal size={14} />
+                <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature}</span>
+                <X size={12} />
+              </button>
+            ))}
 
             {/* ── Inline custom input pill ── */}
             {customFeatures.length < 20 &&
