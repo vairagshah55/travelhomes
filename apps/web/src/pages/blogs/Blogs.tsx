@@ -2,10 +2,19 @@ import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Clock, Newspaper, RefreshCw, Search, X } from "lucide-react";
+import { ArrowUpRight, Newspaper, RefreshCw, Search, X } from "lucide-react";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import {
+  ArticleMeta,
+  Byline,
+  CategoryChip,
+  Cover,
+  toArticle,
+  type Article,
+  type BlogDTO,
+} from "@/components/site/article";
 import {
   ActionButton,
   CONTAINER,
@@ -15,8 +24,7 @@ import {
   Shimmer,
 } from "@/components/site/kit";
 import { API_BASE_URL } from "@/lib/api";
-import { logoSrc } from "@/lib/brand";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 /**
  * Editorial index for /blogs.
@@ -42,185 +50,6 @@ import { cn, getImageUrl } from "@/lib/utils";
  * filter pill, the eyebrow dot), which is the pairing the design system signs
  * off on.
  */
-
-type BlogDTO = {
-  _id: string;
-  title: string;
-  slug: string;
-  category?: string;
-  description?: string;
-  content?: string;
-  coverImage?: string;
-  authorName?: string;
-  authorImg?: string;
-  authorRole?: string;
-  createdAt?: string;
-};
-
-type Article = {
-  id: string;
-  href: string;
-  title: string;
-  category: string;
-  description: string;
-  author: string;
-  authorImg?: string;
-  authorRole: string;
-  image?: string;
-  date?: Date;
-  readMinutes: number;
-};
-
-const dateFormatter = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-});
-
-/** ~200 wpm over the body copy, tags stripped. Always at least a minute. */
-function readingMinutes(html?: string, fallback?: string): number {
-  const text = String(html || fallback || "").replace(/<[^>]*>/g, " ");
-  const words = text.trim().split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.round(words / 200));
-}
-
-function initialsOf(name?: string): string {
-  const parts = String(name || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-  if (!parts.length) return "TH";
-  return (parts[0][0] + (parts[1]?.[0] ?? "")).toUpperCase();
-}
-
-function toArticle(b: BlogDTO): Article {
-  const created = b.createdAt ? new Date(b.createdAt) : undefined;
-  return {
-    id: b._id,
-    href: `/blogsDetials?slug=${b.slug}`,
-    title: b.title,
-    category: (b.category || "").trim() || "Journal",
-    description: (b.description || "").trim(),
-    author: (b.authorName || "").trim() || "TravelHomes",
-    authorImg: b.authorImg,
-    authorRole: (b.authorRole || "").trim(),
-    image: b.coverImage,
-    date: created && !Number.isNaN(created.getTime()) ? created : undefined,
-    readMinutes: readingMinutes(b.content, b.description),
-  };
-}
-
-/* ── Pieces ─────────────────────────────────────────────────────────────── */
-
-/**
- * Cover with a stable aspect ratio and a graceful failure. Uploaded covers are
- * base64 data URLs today and file paths tomorrow — `getImageUrl` handles both.
- *
- * The fallback used to be `/blog1.jpg`, which does not exist in the repo: a post
- * with a dead cover swapped one broken image for another. It now degrades to a
- * branded placeholder built from tokens plus the real logo mark, so a missing
- * cover still holds its aspect ratio and still looks deliberate.
- */
-const Cover = ({ src, alt, className }: { src?: string; alt: string; className?: string }) => {
-  const [failed, setFailed] = useState(false);
-  const usable = !!getImageUrl(src) && !failed;
-
-  if (!usable) {
-    return (
-      <div
-        role="img"
-        aria-label={alt}
-        className={cn("grid h-full w-full place-items-center bg-th-surface-2", className)}
-      >
-        <img
-          src={logoSrc("mark", "black")}
-          alt=""
-          aria-hidden
-          draggable={false}
-          className="h-10 w-10 opacity-15"
-        />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={getImageUrl(src)}
-      alt={alt}
-      loading="lazy"
-      onError={() => setFailed(true)}
-      className={cn(
-        "h-full w-full object-cover transition-transform duration-500 ease-th-out",
-        "motion-safe:group-hover:scale-[1.04]",
-        className,
-      )}
-    />
-  );
-};
-
-const CategoryChip = ({ label }: { label: string }) => (
-  <span className="inline-flex items-center rounded-th-full bg-th-accent-subtle px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-th-accent">
-    {label}
-  </span>
-);
-
-const MetaDot = () => (
-  <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-th-text-placeholder" />
-);
-
-const Byline = ({ article, size = "sm" }: { article: Article; size?: "sm" | "lg" }) => {
-  const [failed, setFailed] = useState(false);
-  const avatar = size === "lg" ? "h-11 w-11" : "h-9 w-9";
-  const showAvatar = article.authorImg && !failed;
-
-  return (
-    <div className="flex items-center gap-3">
-      {showAvatar ? (
-        <img
-          src={getImageUrl(article.authorImg)}
-          alt=""
-          onError={() => setFailed(true)}
-          className={cn(avatar, "shrink-0 rounded-full object-cover ring-1 ring-th-border")}
-        />
-      ) : (
-        <span
-          className={cn(
-            avatar,
-            "grid shrink-0 place-items-center rounded-full bg-th-brand text-[12px] font-bold text-th-brand-fg",
-          )}
-        >
-          {initialsOf(article.author)}
-        </span>
-      )}
-      <div className="min-w-0">
-        <p
-          className={cn(
-            "truncate font-semibold text-th-text-primary",
-            size === "lg" ? "text-[14.5px]" : "text-[13.5px]",
-          )}
-        >
-          {article.author}
-        </p>
-        {article.authorRole && (
-          <p className="truncate text-[12px] text-th-text-muted">{article.authorRole}</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const ArticleMeta = ({ article }: { article: Article }) => (
-  <div className="flex items-center gap-2 text-[12px] text-th-text-muted">
-    {article.date && (
-      <time dateTime={article.date.toISOString()}>{dateFormatter.format(article.date)}</time>
-    )}
-    {article.date && <MetaDot />}
-    <span className="inline-flex items-center gap-1">
-      <Clock size={12} strokeWidth={2} />
-      {article.readMinutes} min read
-    </span>
-  </div>
-);
 
 /* ── Featured ───────────────────────────────────────────────────────────── */
 
