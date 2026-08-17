@@ -1,218 +1,468 @@
-import React, { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
-import Header from "@/components/Header";
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { z } from "zod";
+import { CheckCircle2, Mail, MapPin, Phone } from "lucide-react";
+
 import Footer from "@/components/Footer";
-import { PhoneIcon } from "lucide-react";
-import { MdOutlineMail } from "react-icons/md";
-import { FiMapPin } from "react-icons/fi";
+import Header from "@/components/Header";
+import {
+  ActionButton,
+  CONTAINER,
+  Eyebrow,
+  FaqList,
+  Reveal,
+  SECTION_Y,
+  SectionHead,
+  SiteSection,
+  SkelLine,
+} from "@/components/site/kit";
+import { useFaqs } from "@/hooks/useFaqs";
 import { cmsPublicApi } from "@/lib/api";
-import { getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+
+/**
+ * /contact
+ *
+ * ── The headline fix ──────────────────────────────────────────────────────
+ * The form did nothing. There was no `onSubmit`, no field state and no request:
+ * a visitor filled in five fields, pressed "Send Message", and the browser
+ * reloaded the page with the values in the query string. The `validate()`
+ * helper and the `errors` state existed but were never called or read, and the
+ * character counter was the literal string "0/1000".
+ *
+ * `cmsPublicApi.submitContact` → `POST /api/contact` already existed and was
+ * unused, so wiring it up is connecting existing infrastructure, not new API
+ * work. The schema below mirrors `Server/modules/contact/contact.dto.js` so the
+ * client rejects what the server would reject.
+ *
+ * ── The other fix ────────────────────────────────────────────────────────
+ * Contact details fell back to `support@travelhomes.com`, `+91 - 872XXXXXXX`
+ * and "123 Avenue Lane, Suite 100, Bucks, Los Angeles" whenever the CMS row was
+ * empty — placeholder contact information shown to real visitors, including a
+ * phone number with X's in it. Now a channel renders only when the CMS actually
+ * has it, and the whole block is skeletoned while that fetch is in flight.
+ */
+
+const MESSAGE_MAX = 1000;
+
+/* Mirrors contact.dto.js `submitBody`. Phone keeps the 10-digit intent from the
+   old dead `validate()` helper; the server only bounds its length. */
+const contactSchema = z.object({
+  firstName: z.string().trim().min(1, "Please enter your first name").max(80),
+  lastName: z.string().trim().max(80).optional(),
+  email: z.string().trim().min(1, "Please enter your email").email("Please enter a valid email address").max(254),
+  phone: z
+    .string()
+    .trim()
+    .max(40)
+    .optional()
+    .refine((v) => !v || v.replace(/\D/g, "").length >= 10, "Please enter a valid phone number"),
+  message: z.string().trim().min(1, "Please tell us what you need").max(MESSAGE_MAX),
+});
+
+type ContactValues = z.infer<typeof contactSchema>;
+
+/* ── Field primitives ─────────────────────────────────────────────────────── */
+
+const labelCls = "block text-[13px] font-semibold text-th-text-secondary";
+
+const fieldCls = (invalid?: boolean) =>
+  cn(
+    "h-12 w-full rounded-th-lg border bg-th-surface-0 px-4 text-[15px] text-th-text-primary outline-none",
+    "transition-[border-color,box-shadow] duration-150",
+    "placeholder:text-th-text-placeholder",
+    invalid
+      ? "border-th-border-error focus:ring-4 focus:ring-[color:var(--th-ring-error)]"
+      : "border-th-border hover:border-th-border-hover focus:border-th-border-focus focus:ring-4 focus:ring-[color:var(--th-ring)]",
+  );
+
+/** Error text is `role="alert"` so it's announced, and reserves no space when
+    absent — the fields sit on a rhythm rather than jumping as errors appear. */
+const FieldError = ({ msg }: { msg?: string }) =>
+  msg ? (
+    <p role="alert" className="mt-1.5 text-[12.5px] font-medium text-th-error-text">
+      {msg}
+    </p>
+  ) : null;
+
+/* ── Contact channels ─────────────────────────────────────────────────────── */
+
+const Channel = ({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  href?: string;
+}) => {
+  const body = (
+    <>
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-th-accent-subtle text-th-accent transition-colors duration-200 group-hover:bg-th-accent group-hover:text-th-accent-fg">
+        <Icon size={18} strokeWidth={2} aria-hidden />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[12px] font-bold uppercase tracking-[0.12em] text-th-text-muted">
+          {label}
+        </span>
+        <span className="mt-1 block break-words text-[15px] font-medium leading-snug text-th-text-primary">
+          {value}
+        </span>
+      </span>
+    </>
+  );
+
+  return (
+    <li className="border-t border-th-border py-5 first:border-t-0 first:pt-0">
+      {href ? (
+        <a
+          href={href}
+          className="group flex items-start gap-4 rounded-th-sm outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--th-ring)]"
+        >
+          {body}
+        </a>
+      ) : (
+        <div className="group flex items-start gap-4">{body}</div>
+      )}
+    </li>
+  );
+};
+
+const ChannelSkeleton = () => (
+  <li className="border-t border-th-border py-5 first:border-t-0 first:pt-0">
+    <div className="flex items-start gap-4">
+      <SkelLine w="w-11" h="h-11" />
+      <div className="flex-1 space-y-2">
+        <SkelLine w="w-20" h="h-3" />
+        <SkelLine w="w-44" h="h-4" />
+      </div>
+    </div>
+  </li>
+);
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
 
 const Contact = () => {
-  const [contactInfo, setContactInfo] = useState({
-    email: "support@travelhomes.com",
-    phone: "+91 - 872XXXXXXX",
-    address: "123 Avenue Lane, Suite 100, Bucks, Los Angeles",
-    city: "",
-    state: "",
-    pincode: "",
-    image: "",
-  });
-
-  const [errors, setErrors] = useState<{ email?: string; phone?: string }>({});
-
-  // Fetch the public contact-info row once. Updating local state from the
-  // fetched data is kept inside an effect so user edits aren't clobbered
-  // on subsequent re-renders.
-  const { data: contactData } = useQuery({
+  const { data: contact, isLoading: contactLoading } = useQuery({
     queryKey: ["cms", "contact", "public"],
     queryFn: async () => {
       try {
         return await cmsPublicApi.getContact();
       } catch (err) {
+        // Swallowed on purpose: the page is still useful without the sidebar,
+        // and the form is the primary action. Never surfaced to the visitor.
         console.error("Failed to fetch contact info", err);
         return null;
       }
     },
   });
 
-  useEffect(() => {
-    if (contactData) {
-      setContactInfo((prev) => ({ ...prev, ...contactData }));
-    }
-  }, [contactData]);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    formState: { errors },
+  } = useForm<ContactValues>({
+    resolver: zodResolver(contactSchema),
+    mode: "onBlur",
+    defaultValues: { firstName: "", lastName: "", email: "", phone: "", message: "" },
+  });
 
-  const validate = (email: string, phone: string) => {
-    const newErrors: { email?: string; phone?: string } = {};
-    // Basic email regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
+  const submit = useMutation({
+    mutationFn: (values: ContactValues) =>
+      cmsPublicApi.submitContact({
+        firstName: values.firstName,
+        lastName: values.lastName ?? "",
+        email: values.email,
+        phone: values.phone ?? "",
+        message: values.message,
+      }),
+  });
 
-    // Phone validation: Allow +, -, spaces, and digits, min 10 chars
-    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/; // Basic allowed chars
-    const digits = phone.replace(/\D/g, ""); // Extract digits
-    if (phone && (!phoneRegex.test(phone) || digits.length < 10)) {
-      newErrors.phone = "Please enter a valid phone number";
-    }
+  const messageLength = watch("message")?.length ?? 0;
 
-    return newErrors;
-  };
+  /* Only render a channel the CMS actually filled in. */
+  const address = [contact?.address, contact?.city, contact?.state]
+    .filter((p) => typeof p === "string" && p.trim())
+    .join(", ");
+  const fullAddress = contact?.pincode ? `${address} - ${contact.pincode}` : address;
+
+  const channels = [
+    contact?.email && {
+      icon: Mail,
+      label: "Email",
+      value: contact.email as string,
+      href: `mailto:${contact.email}`,
+    },
+    contact?.phone && {
+      icon: Phone,
+      label: "Phone",
+      value: contact.phone as string,
+      href: `tel:${String(contact.phone).replace(/\s/g, "")}`,
+    },
+    address && { icon: MapPin, label: "Office", value: fullAddress },
+  ].filter(Boolean) as { icon: React.ElementType; label: string; value: string; href?: string }[];
+
+  const { data: faqs = [] } = useFaqs();
+  const shownFaqs = faqs.slice(0, 6);
 
   return (
-    <div className=" h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-200 transition-colors">
-      <Header variant="transparent" className="fixed top-0 w-full z-50" />
+    <div className="flex min-h-screen flex-col bg-th-surface-0">
+      <Header />
 
-      {/* Contact Section */}
+      {/* ── Hero + form ──────────────────────────────────────────────────────
+          One band, 5/7 split: the form is the page's job, so it gets the wider
+          column and sits beside the hero instead of below a separate title. */}
+      <section className={`${SECTION_Y} border-b border-th-border bg-th-surface-1`}>
+        <div className={CONTAINER}>
+          <div className="grid gap-12 lg:grid-cols-12 lg:gap-16">
+            {/* Left — context */}
+            <Reveal className="lg:col-span-5">
+              <Eyebrow>Contact us</Eyebrow>
+              <h1 className="mt-5 font-display text-[38px] leading-[1.05] tracking-[-0.03em] text-th-text-primary sm:text-[50px]">
+                Let's talk.
+              </h1>
+              <p className="mt-5 max-w-md text-[16px] leading-relaxed text-th-text-muted">
+                Questions about a booking, hosting, or something that went wrong — send it over and
+                a real person will read it.
+              </p>
 
-      <section className="px-4 sm:px-6 lg:px-10 mt-20 py-10 lg:py-20">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 max-w-7xl mx-auto items-center">
-          {/* Contact Form */}
-          <div className="bg-white dark:bg-black rounded-2xl shadow-xl p-6 sm:p-8 lg:p-10 w-full">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-4">Let's Connect!</h2>
+              <ul className="mt-10">
+                {contactLoading ? (
+                  <>
+                    <ChannelSkeleton />
+                    <ChannelSkeleton />
+                    <ChannelSkeleton />
+                  </>
+                ) : channels.length ? (
+                  channels.map((c) => <Channel key={c.label} {...c} />)
+                ) : (
+                  /* No fabricated fallback address or +91-872XXXXXXX here. If
+                     the CMS has nothing, the form is the way to reach us and
+                     saying so is more honest than inventing an office. */
+                  <li className="border-t border-th-border pt-5 text-[14.5px] leading-relaxed text-th-text-muted">
+                    The form is the fastest way to reach us — we'll reply to the email address you
+                    give us.
+                  </li>
+                )}
+              </ul>
 
-            <p className="mb-6 text-sm text-gray-500 dark:text-white">
-              Or just reach out manually at{" "}
-              <span className="font-medium text-black dark:text-white">
-                {contactInfo.email || "support@travelhomes.com"}
-              </span>
-            </p>
-
-            <form className="space-y-5">
-              {/* Name */}
-              <div className="flex flex-col md:flex-row gap-4">
-                <input
-                  name="firstName"
-                  required
-                  type="text"
-                  placeholder="First Name"
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm"
-                />
-
-                <input
-                  name="lastName"
-                  type="text"
-                  placeholder="Last Name"
-                  className="w-full border border-gray-300 rounded-lg p-3 text-sm"
-                />
+              {/* Expectation-setting, and it keeps this column from running
+                  empty when the CMS has no contact row. Deliberately no
+                  "we reply within N hours" — nothing in the product guarantees
+                  one, so promising it here would be inventing a commitment. */}
+              <div className="mt-10 rounded-th-2xl bg-th-surface-0 p-6">
+                <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-th-text-muted">
+                  What happens next
+                </p>
+                <ol className="mt-4 space-y-3">
+                  {[
+                    "Your message lands with our support team.",
+                    "We reply to the email address you gave us.",
+                    "Writing about a trip? Add the booking details and we can look it up straight away.",
+                  ].map((step, i) => (
+                    <li key={i} className="flex gap-3">
+                      <span
+                        aria-hidden
+                        className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full bg-th-accent-subtle text-[11px] font-bold tabular-nums text-th-accent"
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="text-[14px] leading-relaxed text-th-text-muted">{step}</span>
+                    </li>
+                  ))}
+                </ol>
               </div>
+            </Reveal>
 
-              {/* Email */}
-              <input
-                name="email"
-                required
-                type="email"
-                placeholder="E-mail"
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm"
-              />
+            {/* Right — form */}
+            <Reveal delay={120} className="lg:col-span-7">
+              <div className="rounded-th-3xl border border-th-border bg-th-surface-0 p-6 shadow-th-lg sm:p-9">
+                {submit.isSuccess ? (
+                  /* Success replaces the form rather than toasting over it —
+                     a toast leaves a filled-in form on screen, which reads as
+                     "nothing happened, try again". */
+                  <div className="flex flex-col items-center py-10 text-center sm:py-16">
+                    <span className="grid h-14 w-14 place-items-center rounded-full bg-th-success-bg text-th-success">
+                      <CheckCircle2 size={28} strokeWidth={2} aria-hidden />
+                    </span>
+                    <h2 className="mt-6 font-display text-[26px] leading-snug text-th-text-primary">
+                      Message sent.
+                    </h2>
+                    <p className="mt-3 max-w-sm text-[14.5px] leading-relaxed text-th-text-muted">
+                      Thanks for getting in touch. We've got your message and will reply to the
+                      email address you gave us.
+                    </p>
+                    <ActionButton
+                      type="button"
+                      tone="outline"
+                      className="mt-8"
+                      onClick={() => {
+                        submit.reset();
+                        reset();
+                      }}
+                    >
+                      Send another message
+                    </ActionButton>
+                  </div>
+                ) : (
+                  <form
+                    noValidate
+                    onSubmit={handleSubmit((values) => submit.mutate(values))}
+                    className="space-y-5"
+                  >
+                    <div>
+                      <h2 className="font-display text-[24px] leading-snug text-th-text-primary">
+                        Send us a message
+                      </h2>
+                      <p className="mt-1.5 text-[13.5px] text-th-text-muted">
+                        Fields marked with an asterisk are required.
+                      </p>
+                    </div>
 
-              {/* Phone */}
-              <input
-                name="phone"
-                type="tel"
-                placeholder="Phone Number"
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm"
-              />
+                    <div className="grid gap-5 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="firstName" className={labelCls}>
+                          First name <span aria-hidden className="text-th-error-text">*</span>
+                        </label>
+                        <input
+                          id="firstName"
+                          autoComplete="given-name"
+                          aria-invalid={!!errors.firstName}
+                          {...register("firstName")}
+                          className={cn("mt-1.5", fieldCls(!!errors.firstName))}
+                        />
+                        <FieldError msg={errors.firstName?.message} />
+                      </div>
 
-              {/* Message */}
-              <textarea
-                name="message"
-                required
-                placeholder="Message"
-                rows={4}
-                maxLength={1000}
-                className="w-full border border-gray-300 rounded-lg p-3 text-sm"
-              />
+                      <div>
+                        <label htmlFor="lastName" className={labelCls}>
+                          Last name
+                        </label>
+                        <input
+                          id="lastName"
+                          autoComplete="family-name"
+                          {...register("lastName")}
+                          className={cn("mt-1.5", fieldCls(!!errors.lastName))}
+                        />
+                        <FieldError msg={errors.lastName?.message} />
+                      </div>
+                    </div>
 
-              {/* Counter */}
-              <div className="flex justify-end text-xs text-gray-400">
-                <span>0/1000</span>
+                    <div>
+                      <label htmlFor="email" className={labelCls}>
+                        Email <span aria-hidden className="text-th-error-text">*</span>
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="email"
+                        aria-invalid={!!errors.email}
+                        {...register("email")}
+                        className={cn("mt-1.5", fieldCls(!!errors.email))}
+                      />
+                      <FieldError msg={errors.email?.message} />
+                    </div>
+
+                    <div>
+                      <label htmlFor="phone" className={labelCls}>
+                        Phone <span className="font-normal text-th-text-muted">(optional)</span>
+                      </label>
+                      <input
+                        id="phone"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        aria-invalid={!!errors.phone}
+                        {...register("phone")}
+                        className={cn("mt-1.5", fieldCls(!!errors.phone))}
+                      />
+                      <FieldError msg={errors.phone?.message} />
+                    </div>
+
+                    <div>
+                      <div className="flex items-baseline justify-between gap-3">
+                        <label htmlFor="message" className={labelCls}>
+                          Message <span aria-hidden className="text-th-error-text">*</span>
+                        </label>
+                        {/* A real counter this time. */}
+                        <span
+                          className={cn(
+                            "text-[12px] tabular-nums",
+                            messageLength > MESSAGE_MAX - 50
+                              ? "font-semibold text-th-warning-text"
+                              : "text-th-text-muted",
+                          )}
+                        >
+                          {messageLength}/{MESSAGE_MAX}
+                        </span>
+                      </div>
+                      <textarea
+                        id="message"
+                        rows={5}
+                        maxLength={MESSAGE_MAX}
+                        aria-invalid={!!errors.message}
+                        {...register("message")}
+                        className={cn(
+                          "mt-1.5 resize-y py-3",
+                          fieldCls(!!errors.message),
+                          "h-auto min-h-[132px]",
+                        )}
+                      />
+                      <FieldError msg={errors.message?.message} />
+                    </div>
+
+                    {/* One friendly line. No status codes, no error object. */}
+                    {submit.isError && (
+                      <p
+                        role="alert"
+                        className="rounded-th-lg border border-th-border-error bg-th-error-bg px-4 py-3 text-[13.5px] font-medium text-th-error-text"
+                      >
+                        We couldn't send that just now. Check your connection and try again.
+                      </p>
+                    )}
+
+                    <ActionButton
+                      type="submit"
+                      disabled={submit.isPending}
+                      className="w-full sm:w-auto sm:min-w-[190px]"
+                      withArrow={!submit.isPending}
+                    >
+                      {submit.isPending ? "Sending…" : "Send message"}
+                    </ActionButton>
+                  </form>
+                )}
               </div>
-
-              {/* Button */}
-              <button
-                type="submit"
-                className="w-full bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white py-3 rounded-lg font-medium transition"
-              >
-                Send Message
-              </button>
-            </form>
-          </div>
-
-          {/* Image */}
-          <div className="rounded-2xl overflow-hidden shadow-xl w-full h-[300px] sm:h-[400px] lg:h-[550px]">
-            <img
-              src={contactInfo.image ? getImageUrl(contactInfo.image) : "/contact.jpg"}
-              alt="Contact Us"
-              className="object-cover w-full h-full"
-            />
+            </Reveal>
           </div>
         </div>
       </section>
 
-      {/* Contact Info Section */}
-      <section className="px-4 sm:px-6 lg:px-10 py-12 lg:py-16 bg-white dark:bg-black">
-        <div className=" max-w-7xl mx-auto items-cente text-start mb-10">
-          <button className="px-5 py-1.5 border border-gray-300 rounded-full text-sm mb-3">
-            Reach Out to Us
-          </button>
-
-          <h3 className="text-2xl md:text-3xl font-semibold">We’d love to hear from you!</h3>
-        </div>
-
-        {/* Cards */}
-        <div className=" max-w-7xl mx-auto items-cente grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Email */}
-          <div className="p-6 border rounded-xl shadow-md hover:shadow-lg transition">
-            <div className="text-3xl mb-3">
-              <MdOutlineMail />
+      {/* ── FAQ ──────────────────────────────────────────────────────────────
+          Real CMS FAQs. Rendered only when there are some — an empty accordion
+          under a heading is worse than no section. */}
+      {shownFaqs.length > 0 && (
+        <SiteSection tone="light">
+          <div className="grid gap-10 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-4">
+              <SectionHead
+                eyebrow="Before you write"
+                title="Answers to the usual questions"
+                lead="Worth a scan — it might save you the message."
+              />
             </div>
-            <h4 className="font-bold mb-1">Email</h4>
-
-            <p className="text-sm text-gray-500 mb-2 dark:text-white">
-              We will connect with you in real time!
-            </p>
-
-            <p className="text-sm font-medium break-all">
-              {contactInfo.email || "support@travelhomes.com"}
-            </p>
-          </div>
-
-          {/* Phone */}
-          <div className="p-6 border rounded-xl shadow-md hover:shadow-lg transition">
-            <div className="text-3xl mb-3">
-              <PhoneIcon />
+            <div className="lg:col-span-8">
+              <FaqList items={shownFaqs} />
             </div>
-            <h4 className="font-bold mb-1">Call</h4>
-
-            <p className="text-sm text-gray-500 mb-2 dark:text-white">
-              We will connect with you in real time!
-            </p>
-
-            <p className="text-sm font-medium">{contactInfo.phone || "+91 - 872XXXXXXX"}</p>
           </div>
-
-          {/* Address */}
-          <div className="p-6 border rounded-xl shadow-md hover:shadow-lg transition">
-            <div className="text-3xl mb-3">
-              <FiMapPin />
-            </div>
-            <h4 className="font-bold mb-1">Address</h4>
-
-            <p className="text-sm text-gray-500 mb-2 dark:text-white">
-              We will connect with you in real time!
-            </p>
-
-            <p className="text-sm font-medium">
-              {contactInfo.address
-                ? `${contactInfo.address}${contactInfo.city ? `, ${contactInfo.city}` : ""}${contactInfo.state ? `, ${contactInfo.state}` : ""}${contactInfo.pincode ? ` - ${contactInfo.pincode}` : ""}`
-                : "123 Avenue Lane, Suite 100, Bucks, Los Angeles"}
-            </p>
-          </div>
-        </div>
-      </section>
+        </SiteSection>
+      )}
 
       <Footer />
     </div>

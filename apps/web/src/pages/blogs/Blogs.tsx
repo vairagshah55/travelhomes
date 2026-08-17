@@ -6,7 +6,16 @@ import { ArrowUpRight, Clock, Newspaper, RefreshCw, Search, X } from "lucide-rea
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import {
+  ActionButton,
+  CONTAINER,
+  Eyebrow,
+  Notice,
+  RetryButton,
+  Shimmer,
+} from "@/components/site/kit";
 import { API_BASE_URL } from "@/lib/api";
+import { logoSrc } from "@/lib/brand";
 import { cn, getImageUrl } from "@/lib/utils";
 
 /**
@@ -22,6 +31,16 @@ import { cn, getImageUrl } from "@/lib/utils";
  * outgrows 50 posts, at which point the endpoint needs real paging.
  *
  * Styling follows CONVENTIONS.md: `th-*` tokens, Tailwind classes, CSS hover.
+ * The local `Notice` and skeleton pieces now come from `components/site/kit`,
+ * shared with /about, /contact and /hostwithus.
+ *
+ * ── Accent colour ────────────────────────────────────────────────────────
+ * This page used `text-th-brand` for the eyebrow, card-title hover and "Read
+ * story". `--th-brand` is the logo cyan (#3bd9da), which measures ~1.7:1 as ink
+ * on white — it looked washed out because it *was* failing WCAG AA. Accent text
+ * is now `text-th-accent` (#128086, ~4.9:1). Cyan stays as a fill (the active
+ * filter pill, the eyebrow dot), which is the pairing the design system signs
+ * off on.
  */
 
 type BlogDTO = {
@@ -51,8 +70,6 @@ type Article = {
   date?: Date;
   readMinutes: number;
 };
-
-const FALLBACK_COVER = "/blog1.jpg";
 
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
   day: "numeric",
@@ -95,20 +112,46 @@ function toArticle(b: BlogDTO): Article {
 
 /* ── Pieces ─────────────────────────────────────────────────────────────── */
 
-/** Cover with a stable aspect ratio and a graceful failure. Uploaded covers are
-    base64 data URLs today and file paths tomorrow — `getImageUrl` handles both,
-    and a dead one falls back rather than showing a broken-image glyph. */
+/**
+ * Cover with a stable aspect ratio and a graceful failure. Uploaded covers are
+ * base64 data URLs today and file paths tomorrow — `getImageUrl` handles both.
+ *
+ * The fallback used to be `/blog1.jpg`, which does not exist in the repo: a post
+ * with a dead cover swapped one broken image for another. It now degrades to a
+ * branded placeholder built from tokens plus the real logo mark, so a missing
+ * cover still holds its aspect ratio and still looks deliberate.
+ */
 const Cover = ({ src, alt, className }: { src?: string; alt: string; className?: string }) => {
   const [failed, setFailed] = useState(false);
+  const usable = !!getImageUrl(src) && !failed;
+
+  if (!usable) {
+    return (
+      <div
+        role="img"
+        aria-label={alt}
+        className={cn("grid h-full w-full place-items-center bg-th-surface-2", className)}
+      >
+        <img
+          src={logoSrc("mark", "black")}
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="h-10 w-10 opacity-15"
+        />
+      </div>
+    );
+  }
+
   return (
     <img
-      src={failed ? FALLBACK_COVER : getImageUrl(src)}
+      src={getImageUrl(src)}
       alt={alt}
       loading="lazy"
       onError={() => setFailed(true)}
       className={cn(
         "h-full w-full object-cover transition-transform duration-500 ease-th-out",
-        "group-hover:scale-[1.04]",
+        "motion-safe:group-hover:scale-[1.04]",
         className,
       )}
     />
@@ -116,7 +159,7 @@ const Cover = ({ src, alt, className }: { src?: string; alt: string; className?:
 };
 
 const CategoryChip = ({ label }: { label: string }) => (
-  <span className="inline-flex items-center rounded-th-full bg-th-accent-subtle px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-th-brand">
+  <span className="inline-flex items-center rounded-th-full bg-th-accent-subtle px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-th-accent">
     {label}
   </span>
 );
@@ -189,7 +232,7 @@ const FeaturedCard = ({ article }: { article: Article }) => (
     <div className="grid lg:grid-cols-2">
       <div className="relative aspect-[16/10] overflow-hidden lg:aspect-auto lg:min-h-[380px]">
         <Cover src={article.image} alt={article.title} />
-        <span className="absolute left-4 top-4 inline-flex items-center rounded-th-full bg-th-text-primary/85 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-th-text-inverse backdrop-blur-sm">
+        <span className="absolute left-4 top-4 inline-flex items-center rounded-th-full bg-black/70 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-th-text-inverse backdrop-blur-sm">
           Featured
         </span>
       </div>
@@ -201,7 +244,7 @@ const FeaturedCard = ({ article }: { article: Article }) => (
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-th-text-primary transition-colors duration-200 group-hover:text-th-brand sm:text-[32px]">
+          <h2 className="text-[26px] font-bold leading-[1.15] tracking-[-0.02em] text-th-text-primary transition-colors duration-200 group-hover:text-th-accent sm:text-[32px]">
             {article.title}
           </h2>
           {article.description && (
@@ -213,7 +256,7 @@ const FeaturedCard = ({ article }: { article: Article }) => (
 
         <div className="flex items-center justify-between gap-4 border-t border-th-border pt-5">
           <Byline article={article} size="lg" />
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[13.5px] font-semibold text-th-brand">
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[13.5px] font-semibold text-th-accent">
             Read story
             <ArrowUpRight
               size={16}
@@ -255,7 +298,7 @@ const ArticleCard = ({ article, index }: { article: Article; index: number }) =>
           <ArticleMeta article={article} />
         </div>
 
-        <h3 className="line-clamp-2 text-[17px] font-bold leading-snug tracking-[-0.01em] text-th-text-primary transition-colors duration-200 group-hover:text-th-brand">
+        <h3 className="line-clamp-2 text-[17px] font-bold leading-snug tracking-[-0.01em] text-th-text-primary transition-colors duration-200 group-hover:text-th-accent">
           {article.title}
         </h3>
 
@@ -275,41 +318,42 @@ const ArticleCard = ({ article, index }: { article: Article; index: number }) =>
 
 /* ── States ─────────────────────────────────────────────────────────────── */
 
+/** Mirrors ArticleCard's real geometry so the grid doesn't reflow on load.
+    `Shimmer` replaces the flat `animate-pulse` blocks — same footprint, but it
+    sweeps, and it stops sweeping under `prefers-reduced-motion`. */
 const CardSkeleton = () => (
   <div className="overflow-hidden rounded-th-2xl border border-th-border bg-th-surface-0">
-    <div className="aspect-[16/10] animate-pulse bg-th-surface-2" />
+    <Shimmer className="aspect-[16/10] w-full" />
     <div className="space-y-3 p-5">
-      <div className="h-4 w-24 animate-pulse rounded-th-full bg-th-surface-2" />
-      <div className="h-4 w-full animate-pulse rounded-th-sm bg-th-surface-2" />
-      <div className="h-4 w-4/5 animate-pulse rounded-th-sm bg-th-surface-2" />
+      <Shimmer className="h-4 w-24 rounded-th-full" />
+      <Shimmer className="h-4 w-full rounded-th-sm" />
+      <Shimmer className="h-4 w-4/5 rounded-th-sm" />
       <div className="flex items-center gap-3 pt-3">
-        <div className="h-9 w-9 animate-pulse rounded-full bg-th-surface-2" />
-        <div className="h-3 w-28 animate-pulse rounded-th-sm bg-th-surface-2" />
+        <Shimmer className="h-9 w-9 rounded-full" />
+        <Shimmer className="h-3 w-28 rounded-th-sm" />
       </div>
     </div>
   </div>
 );
 
-const Notice = ({
-  icon: Icon,
-  title,
-  body,
-  action,
-}: {
-  icon: React.ElementType;
-  title: string;
-  body: string;
-  action?: React.ReactNode;
-}) => (
-  <div className="rounded-th-2xl border border-dashed border-th-border bg-th-surface-1 px-6 py-16 text-center">
-    <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-th-accent-subtle text-th-brand">
-      <Icon size={22} strokeWidth={2} />
-    </span>
-    <h3 className="text-[16px] font-bold text-th-text-primary">{title}</h3>
-    <p className="mx-auto mt-1.5 max-w-md text-[13.5px] leading-relaxed text-th-text-muted">
-      {body}
-    </p>
-    {action && <div className="mt-5 flex justify-center">{action}</div>}
+/** Featured-slot placeholder. The featured story is the tallest thing on the
+    page, so without one the grid skeleton snapped down the moment data landed. */
+const FeaturedSkeleton = () => (
+  <div className="overflow-hidden rounded-th-3xl border border-th-border bg-th-surface-0">
+    <div className="grid lg:grid-cols-2">
+      <Shimmer className="aspect-[16/10] w-full lg:aspect-auto lg:min-h-[380px]" />
+      <div className="space-y-4 p-6 sm:p-9 lg:p-11">
+        <Shimmer className="h-5 w-28 rounded-th-full" />
+        <Shimmer className="h-8 w-full rounded-th-sm" />
+        <Shimmer className="h-8 w-3/4 rounded-th-sm" />
+        <Shimmer className="h-4 w-full rounded-th-sm" />
+        <Shimmer className="h-4 w-5/6 rounded-th-sm" />
+        <div className="flex items-center gap-3 pt-6">
+          <Shimmer className="h-11 w-11 rounded-full" />
+          <Shimmer className="h-3.5 w-32 rounded-th-sm" />
+        </div>
+      </div>
+    </div>
   </div>
 );
 
@@ -370,14 +414,13 @@ export default function Blog() {
           aria-hidden
           className="pointer-events-none absolute -right-24 -top-32 h-[420px] w-[420px] rounded-full bg-th-accent-subtle blur-3xl"
         />
-        <div className="relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 md:py-20">
+        <div className={cn(CONTAINER, "relative py-14 md:py-20")}>
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="mb-3 inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-[0.14em] text-th-brand">
-                <span className="h-1.5 w-1.5 rounded-full bg-th-logo" />
-                The Journal
-              </p>
-              <h1 className="text-[34px] font-bold leading-[1.08] tracking-[-0.03em] text-th-text-primary sm:text-[46px]">
+              <Eyebrow className="mb-4">The Journal</Eyebrow>
+              {/* `font-display` (DM Serif Display), matching the masthead voice
+                  on /about, /contact and /hostwithus. */}
+              <h1 className="font-display text-[38px] leading-[1.05] tracking-[-0.03em] text-th-text-primary sm:text-[52px]">
                 Stories from the road
               </h1>
               <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-th-text-muted sm:text-[16px]">
@@ -395,7 +438,7 @@ export default function Blog() {
                 <Search
                   size={17}
                   strokeWidth={2}
-                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-th-text-placeholder transition-colors group-focus-within:text-th-brand"
+                  className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-th-text-placeholder transition-colors group-focus-within:text-th-accent"
                 />
                 <input
                   id="blog-search"
@@ -421,7 +464,7 @@ export default function Blog() {
         </div>
       </section>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6 md:py-14">
+      <main className={cn(CONTAINER, "flex-1 py-10 md:py-14")}>
         {/* ── Filter bar ── */}
         {categories.length > 0 && (
           <div className="mb-8 flex flex-wrap items-center gap-x-3 gap-y-3 border-b border-th-border pb-6">
@@ -478,29 +521,25 @@ export default function Blog() {
           </div>
         )}
 
-        {/* ── Body ── */}
+        {/* ── Body ──
+            The skeleton mirrors the loaded layout — one featured slot above a
+            three-up grid — so the page doesn't visibly re-arrange itself the
+            moment the articles land. */}
         {isLoading ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
+          <div className="space-y-10">
+            <FeaturedSkeleton />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
           </div>
         ) : isError ? (
           <Notice
             icon={RefreshCw}
             title="Couldn't load the journal"
             body="The articles didn't come back from the server. Check your connection and try again."
-            action={
-              <button
-                type="button"
-                onClick={() => void refetch()}
-                disabled={isFetching}
-                className="inline-flex h-10 items-center gap-2 rounded-th-full bg-th-brand px-5 text-[13.5px] font-semibold text-th-brand-fg transition-colors hover:bg-th-brand-hover disabled:opacity-60"
-              >
-                <RefreshCw size={15} className={cn(isFetching && "animate-spin")} />
-                {isFetching ? "Retrying…" : "Try again"}
-              </button>
-            }
+            action={<RetryButton onClick={() => void refetch()} busy={isFetching} />}
           />
         ) : articles.length === 0 ? (
           <Notice
@@ -514,13 +553,13 @@ export default function Blog() {
             title={search ? `No results for "${search.trim()}"` : "Nothing in this category"}
             body="Try a different keyword, or browse everything we've published."
             action={
-              <button
+              <ActionButton
                 type="button"
                 onClick={clearFilters}
-                className="inline-flex h-10 items-center gap-2 rounded-th-full bg-th-brand px-5 text-[13.5px] font-semibold text-th-brand-fg transition-colors hover:bg-th-brand-hover"
+                className="h-10 px-5 text-[13.5px]"
               >
-                <X size={15} /> Clear filters
-              </button>
+                <X size={15} aria-hidden /> Clear filters
+              </ActionButton>
             }
           />
         ) : (

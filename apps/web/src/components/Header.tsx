@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Menu, X } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import UserDropdown from "./UserDropdown";
 import { CgLoadbarDoc } from "react-icons/cg";
 import LogoWebsite from "./ui/LogoWebsite";
@@ -70,6 +72,18 @@ function RocketIcon({ className }: { className?: string }) {
   );
 }
 
+/* The public site's own pages. Previously the desktop nav slot was an empty
+   `<div className="hidden lg:flex …" />` and there was no mobile menu at all, so
+   /about, /hostwithus, /blogs and /contact were reachable only from the footer.
+   Declared once and rendered into both the desktop row and the mobile sheet so
+   the two can't drift apart. */
+const SITE_NAV = [
+  { to: "/about", label: "About" },
+  { to: "/hostwithus", label: "Host with us" },
+  { to: "/blogs", label: "Journal" },
+  { to: "/contact", label: "Contact" },
+] as const;
+
 function Header({
   variant = "white",
   className = "",
@@ -78,6 +92,8 @@ function Header({
 }: HeaderProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeFilterHeader, setActiveFilterHeader] = useState<FilterType>(
     (searchParams.get("filter") as FilterType) || "unique-stays",
@@ -94,6 +110,23 @@ function Header({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  /* Close on navigation, and hold the page still while the panel is open —
+     without the scroll lock the page behind the overlay scrolls under the
+     drawer on iOS. */
+  useEffect(() => setMenuOpen(false), [location.pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   const handleSwitchToVendor = () => navigate("/dashboard");
 
@@ -126,11 +159,31 @@ function Header({
           <LogoWebsite />
         </div>
 
-        {/* Nav Items */}
-        <div className="hidden lg:flex items-center gap-10 flex-1 justify-center" />
+        {/* Nav Items — the underline grows from the label rather than the whole
+            cell, so the hover target and the indicator agree. */}
+        <div className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+          {SITE_NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative py-1.5 text-sm font-medium outline-none transition-colors duration-150",
+                  "after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:origin-left after:rounded-full after:bg-th-logo after:transition-transform after:duration-200 after:ease-th-out",
+                  "focus-visible:ring-4 focus-visible:ring-[color:var(--th-ring)] rounded-th-sm",
+                  isActive
+                    ? "text-th-text-primary dark:text-white after:scale-x-100"
+                    : "text-th-text-muted hover:text-th-text-primary dark:text-gray-400 dark:hover:text-white after:scale-x-0 hover:after:scale-x-100",
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Button
             className="hidden md:flex bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] rounded-full px-4 md:px-4 h-10 shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
             onClick={() => navigate("/onboarding/service-selection")}
@@ -144,7 +197,7 @@ function Header({
           {user ? (
             <UserDropdown onSwitchToVendor={handleSwitchToVendor} />
           ) : (
-            <Link to="/register">
+            <Link to="/register" className="max-sm:hidden">
               <Button
                 className={`${
                   isTransparent
@@ -156,8 +209,83 @@ function Header({
               </Button>
             </Link>
           )}
+
+          {/* 44px touch target, per the mobile guidance the footer links already follow. */}
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="site-mobile-menu"
+            className="grid h-11 w-11 place-items-center rounded-full text-th-text-primary outline-none transition-colors hover:bg-th-surface-2 focus-visible:ring-4 focus-visible:ring-[color:var(--th-ring)] dark:text-white dark:hover:bg-white/10 lg:hidden"
+          >
+            {menuOpen ? <X size={22} strokeWidth={2.2} /> : <Menu size={22} strokeWidth={2.2} />}
+          </button>
         </div>
       </nav>
+
+      {/* ── Mobile menu ──────────────────────────────────────────────────────
+          Hand-rolled rather than the Radix Sheet: Sheet renders in a portal at
+          `fixed inset-y-0`, which on the pages that pass `fixed` to this header
+          stacked a second overlay context and fought the header's own z-50.
+          A sibling panel under the header needs neither. */}
+      {menuOpen && (
+      <div id="site-mobile-menu" className="fixed inset-0 top-0 z-40 lg:hidden">
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden
+          onClick={() => setMenuOpen(false)}
+          className="absolute inset-0 h-full w-full cursor-default bg-th-overlay backdrop-blur-[2px] motion-safe:animate-th-fade-in"
+        />
+        <div className="absolute inset-x-0 top-0 max-h-[100dvh] overflow-y-auto border-b border-th-border bg-th-surface-0 pb-6 pt-[68px] shadow-th-xl motion-safe:animate-th-fade-down dark:border-gray-800 dark:bg-gray-900">
+          <div className="flex flex-col px-4 sm:px-6">
+            {SITE_NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={() => setMenuOpen(false)}
+                className={({ isActive }) =>
+                  cn(
+                    "flex min-h-[52px] items-center justify-between border-b border-th-border text-[17px] font-medium outline-none transition-colors dark:border-gray-800",
+                    isActive
+                      ? "text-th-accent dark:text-th-logo"
+                      : "text-th-text-primary hover:text-th-accent dark:text-white",
+                  )
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+
+            <div className="mt-6 flex flex-col gap-3">
+              <Button
+                className="h-12 w-full rounded-full bg-[#3BD9DA] text-[15px] font-semibold text-white hover:bg-[#2BC7C8]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate("/onboarding/service-selection");
+                }}
+              >
+                <CgLoadbarDoc size={18} />
+                List your offering
+              </Button>
+              {!user && (
+                <Button
+                  variant="outline"
+                  className="h-12 w-full rounded-full border-th-border-hover text-[15px] font-semibold"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/register");
+                  }}
+                >
+                  Register
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
     </>
   );
 }
