@@ -82,7 +82,7 @@ export const DateNavigation = ({
             <ChevronDown size={14} className="text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" style={BRAND_VARS} className="w-56 p-3">
+        <DropdownMenuContent align="start" style={BRAND_VARS} data-console-portal="" className="w-56 p-3">
           <p className="mb-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
             Month
           </p>

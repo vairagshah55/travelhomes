@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import {
   BadgeCheck,
   CircleSlash,
-  Clock3,
   Eye,
   PauseCircle,
   Pencil,
+  Percent,
   PlayCircle,
+  Plus,
   Tag,
   Trash2,
   XCircle,
@@ -21,10 +22,10 @@ import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
 import { useTableUrlState } from "@/components/admin/useTableUrlState";
 import {
   BRAND_VARS,
-  CONSOLE_PORTAL_VARS,
+  BTN_PRIMARY,
+  BTN_RAW,
   ConfirmModal,
   Panel,
-  PanelHead,
   StatTile,
   StatTileSkeleton,
   StatusBadge,
@@ -63,6 +64,60 @@ const PER_PAGE = 10;
 const priceOf = (o: OfferDTO) => {
   const n = Number(o.regularPrice);
   return Number.isFinite(n) ? n : 0;
+};
+
+/* ── Promotions ───────────────────────────────────────────────────────────────
+   Each offering carries a `discounts` sub-doc with four independently-toggled
+   slots. The page never read it: a "promotions" screen was rendering name,
+   category, price and status — the same five facts as /offering — so there was
+   no way to answer the questions it exists for. Which promotions are running?
+   How deep is the discount? Which live listings have none at all?
+
+   Everything below reads the record already in hand. No new request. */
+
+const SLOT_LABELS = {
+  firstUser: "First booking",
+  festival: "Festival",
+  weekly: "Weekly",
+  special: "Special",
+} as const;
+
+type SlotKey = keyof typeof SLOT_LABELS;
+
+export interface ActivePromo {
+  key: SlotKey;
+  label: string;
+  /** Percentage off, derived from either a % or a fixed-amount slot. */
+  percent: number;
+}
+
+/** The slots a vendor has switched on, with each one's effective discount. */
+const activePromos = (o: OfferDTO): ActivePromo[] => {
+  const base = priceOf(o);
+  const out: ActivePromo[] = [];
+  for (const key of Object.keys(SLOT_LABELS) as SlotKey[]) {
+    const slot = o.discounts?.[key];
+    if (!slot?.enabled) continue;
+    const raw = Number(slot.value);
+    if (!Number.isFinite(raw) || raw <= 0) continue;
+    // A fixed slot stores rupees off; a percentage slot stores the percentage.
+    // Both are shown as a percentage so four promotions can be compared at a
+    // glance — "₹500 off" and "20% off" are not comparable side by side.
+    const percent =
+      slot.type === "fixed" ? (base > 0 ? Math.round((raw / base) * 100) : 0) : Math.round(raw);
+    if (percent > 0) out.push({ key, label: SLOT_LABELS[key], percent });
+  }
+  return out;
+};
+
+/** Deepest discount on an offering, counting the flat `discountPrice` too. */
+const bestDiscount = (o: OfferDTO): number => {
+  const base = priceOf(o);
+  const flat =
+    base > 0 && o.discountPrice && Number(o.discountPrice) < base
+      ? Math.round(((base - Number(o.discountPrice)) / base) * 100)
+      : 0;
+  return Math.max(flat, ...activePromos(o).map((p) => p.percent), 0);
 };
 
 const Offers = () => {
@@ -108,17 +163,24 @@ const Offers = () => {
     [offers],
   );
 
-  const stats = useMemo(
-    () => ({
-      total: serverTotal,
-      approved: counts.approved,
+  const stats = useMemo(() => {
+    const live = offers.filter((o) => o.status === "approved");
+    const promoted = live.filter((o) => bestDiscount(o) > 0);
+    const deepest = promoted.reduce((max, o) => Math.max(max, bestDiscount(o)), 0);
+    return {
+      /* Deliberately NOT four counts of the same list sliced four ways, which
+         is what this row used to be (total / approved / pending / inactive —
+         three of them already visible as tab counts a few pixels below). Each
+         card now answers a different question, and the last one is the only
+         genuinely actionable number on the page. */
+      promoted: promoted.length,
+      deepest,
+      live: live.length,
+      unpromoted: live.length - promoted.length,
       pending: counts.pending,
-      inactive: offers.filter((o) =>
-        ["cancelled", "deactivated", "blocked", "rejected"].includes(o.status),
-      ).length,
-    }),
-    [offers, counts, serverTotal],
-  );
+      total: serverTotal,
+    };
+  }, [offers, counts, serverTotal]);
 
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -255,37 +317,85 @@ const Offers = () => {
       ),
     },
     {
-      key: "category",
-      header: "Category",
+      key: "promotions",
+      header: "Promotions",
       hideBelow: "sm",
-      cell: (o) => <span className="text-[12.5px] text-muted-foreground">{o.category || "—"}</span>,
+      cell: (o) => {
+        const promos = activePromos(o);
+        if (promos.length === 0) {
+          return (
+            <span className="text-[12px] text-muted-foreground/70">
+              {o.status === "approved" ? "None running" : "—"}
+            </span>
+          );
+        }
+        return (
+          <span className="flex flex-wrap items-center gap-1">
+            {/* Two chips, then a count. Four slot names side by side pushed the
+                price column off a laptop, and the fourth chip carries almost no
+                information once you know how many are running. */}
+            {promos.slice(0, 2).map((p) => (
+              <span
+                key={p.key}
+                className="inline-flex items-center gap-1 h-[22px] px-2 rounded-full bg-brand/[0.09] text-brand text-[11px] font-semibold whitespace-nowrap"
+              >
+                {p.label}
+                <span className="tabular-nums opacity-80">{p.percent}%</span>
+              </span>
+            ))}
+            {promos.length > 2 && (
+              <span className="text-[11px] font-semibold tabular-nums text-muted-foreground">
+                +{promos.length - 2}
+              </span>
+            )}
+          </span>
+        );
+      },
     },
     {
       key: "regularPrice",
       header: "Price",
       hideBelow: "md",
-      cell: (o) => (
-        <span className="whitespace-nowrap">
-          <span className="text-[12.5px] font-semibold tabular-nums text-foreground">
-            {inr(o.regularPrice)}
-          </span>
-          {o.discountPrice ? (
-            <span className="ml-1.5 text-[11px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-              {inr(o.discountPrice)}
+      className: "text-right",
+      cell: (o) => {
+        const off = bestDiscount(o);
+        return (
+          <span className="block whitespace-nowrap text-right">
+            <span
+              className={
+                off > 0
+                  ? "text-[12.5px] tabular-nums text-muted-foreground line-through"
+                  : "text-[12.5px] font-semibold tabular-nums text-foreground"
+              }
+            >
+              {inr(o.regularPrice)}
             </span>
-          ) : null}
-        </span>
-      ),
+            {off > 0 && (
+              <span className="ml-1.5 text-[12.5px] font-bold tabular-nums text-foreground">
+                {o.discountPrice
+                  ? inr(o.discountPrice)
+                  : inr(Math.round(priceOf(o) * (1 - off / 100)))}
+              </span>
+            )}
+          </span>
+        );
+      },
     },
     {
-      key: "location",
-      header: "Location",
+      key: "discount",
+      header: "Best offer",
       hideBelow: "lg",
-      cell: (o) => (
-        <span className="text-[12.5px] text-muted-foreground truncate">
-          {[o.locality, o.city, o.state].filter(Boolean).join(", ") || "—"}
-        </span>
-      ),
+      className: "text-right",
+      cell: (o) => {
+        const off = bestDiscount(o);
+        return off > 0 ? (
+          <span className="text-[12.5px] font-bold tabular-nums text-emerald-600 dark:text-emerald-500">
+            −{off}%
+          </span>
+        ) : (
+          <span className="text-[12.5px] text-muted-foreground/70">—</span>
+        );
+      },
     },
     {
       key: "status",
@@ -329,14 +439,32 @@ const Offers = () => {
 
   const hasActiveQuery = search.trim().length > 0 || tab !== "all";
 
+  /* Tabs live on the header band's bottom edge. Inside the card they were the
+     third stacked strip — panel head, then tabs, then toolbar — before a single
+     row of data, which is roughly 150px of chrome above the content. */
+  const tabs = (
+    <TabStrip
+      variant="flush"
+      tabs={TABS.map((t) => ({ ...t, count: counts[t.key] }))}
+      activeKey={tab}
+      onChange={setTab}
+    />
+  );
+
   return (
     <DashboardLayout
-      title="Offers"
-      subtitle="Discounts and promotions running against your listings."
+      title="Offers & promotions"
+      subtitle="Discounts running against your listings — what's live, how deep it goes, and which offerings have nothing on them."
+      tabs={tabs}
+      headerActions={
+        <button onClick={() => navigate("/offering/add")} className={`${BTN_RAW} ${BTN_PRIMARY}`}>
+          <Plus size={15} strokeWidth={2.4} />
+          New offering
+        </button>
+      }
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div style={BRAND_VARS} className="space-y-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {isLoading ? (
             Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
@@ -344,65 +472,45 @@ const Offers = () => {
               <StatTile
                 index={0}
                 icon={Tag}
-                label="Offerings"
-                hint="Everything you've listed"
-                value={stats.total}
-                color="#117479"
+                label="Running promotions"
+                hint={`On ${stats.promoted} of ${stats.live} live offering${stats.live === 1 ? "" : "s"}`}
+                value={stats.promoted}
               />
               <StatTile
                 index={1}
-                icon={BadgeCheck}
-                label="Live"
-                hint="Approved and bookable"
-                value={stats.approved}
-                color="#22c55e"
+                icon={Percent}
+                label="Deepest discount"
+                hint={stats.deepest > 0 ? "Best offer you're running" : "Nothing discounted yet"}
+                value={stats.deepest > 0 ? `${stats.deepest}%` : "—"}
               />
               <StatTile
                 index={2}
-                icon={Clock3}
-                label="Pending"
-                hint="Waiting on admin"
-                value={stats.pending}
-                color="#f59e0b"
+                icon={BadgeCheck}
+                label="Live offerings"
+                hint="Approved and bookable"
+                value={stats.live}
               />
               <StatTile
                 index={3}
                 icon={CircleSlash}
-                label="Inactive"
-                hint="Paused, cancelled or rejected"
-                value={stats.inactive}
-                color="#94a3b8"
+                label="Without an offer"
+                hint={
+                  stats.unpromoted > 0
+                    ? "A discount is the cheapest way to move these"
+                    : "Every live offering has one"
+                }
+                value={stats.unpromoted}
+                onClick={stats.unpromoted > 0 ? () => setTab("approved") : undefined}
               />
             </>
           )}
         </div>
 
         <Panel>
-          <PanelHead
-            icon={Tag}
-            title="Your offerings"
-            blurb="Everything listed under this account, in every state."
-            aside={
-              !isLoading && !isError ? (
-                <span className="text-[11.5px] font-semibold tabular-nums text-muted-foreground">
-                  {visible.length === offers.length
-                    ? `${offers.length} total`
-                    : `${visible.length} of ${offers.length}`}
-                </span>
-              ) : undefined
-            }
-          />
-
-          <div className="px-5 pt-2">
-            <TabStrip
-              tabs={TABS.map((t) => ({ ...t, count: counts[t.key] }))}
-              activeKey={tab}
-              onChange={setTab}
-              className="border-b-0"
-            />
-          </div>
-
-          <div className="px-5 py-3.5 border-y border-border/70">
+          {/* The toolbar IS the card's header row — search grows to fill it, the
+              sort control and the result count sit at the end, and the table
+              starts directly under the hairline. */}
+          <div className="px-4 py-3 border-b border-border">
             <AdminToolbar
               searchValue={search}
               onSearchChange={setSearch}
@@ -445,7 +553,7 @@ const Offers = () => {
           />
 
           {serverTotal > MY_OFFERS_LIMIT && (
-            <p className="px-5 py-3 text-[11.5px] text-muted-foreground border-t border-border/70">
+            <p className="px-4 py-3 text-[11.5px] text-muted-foreground border-t border-border">
               Showing the {MY_OFFERS_LIMIT} most recent of {serverTotal} offerings.
             </p>
           )}
@@ -459,7 +567,7 @@ const Offers = () => {
           isOpen
           onClose={() => setViewId(null)}
           listingData={viewOffer}
-          portalStyle={CONSOLE_PORTAL_VARS}
+          portalScope="vendor"
           position={{ index: viewIndex + 1, total: visible.length }}
           onPrev={viewIndex > 0 ? () => setViewId(visible[viewIndex - 1]._id ?? null) : undefined}
           onNext={

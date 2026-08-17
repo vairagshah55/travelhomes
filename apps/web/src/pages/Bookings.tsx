@@ -7,23 +7,37 @@ import {
   Search,
   Package,
   Calendar as CalendarIcon,
-  LayoutGrid,
+  CalendarPlus,
   IndianRupee,
   Clock,
   Sun,
   ChevronDown,
+  Pencil,
+  X,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
 import {
+  AdminDetailDrawer,
+  DetailField,
+  DetailNote,
+  DetailSection,
+} from "@/components/admin/AdminDetailDrawer";
+import {
   BRAND_VARS,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  BTN_RAW,
   CONTROL,
-  PANEL,
+  EmptyState,
+  PANEL_FLUSH,
   PANEL_FOOTER,
-  Panel,
-  PanelHead,
+  PANEL_HEAD,
+  PILL_NEUTRAL,
   StatTile,
   StatTileSkeleton,
+  StatusBadge,
+  TabStrip,
 } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import {
@@ -33,6 +47,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useBookingResources } from "@/hooks/useBookingResources";
+import { useTableUrlState } from "@/components/admin/useTableUrlState";
+import { avatarTint } from "@/components/bookings/BookingDrawer";
+import { getInitials } from "@/utils/getInitials";
 
 import {
   type BookingData,
@@ -41,7 +58,7 @@ import {
   CalendarGrid,
   DateNavigation,
 } from "@/components/bookings";
-import { currencyINR } from "@/utils/currency";
+import { currencyINR, toAmount } from "@/utils/currency";
 
 /* ── Filter dropdown trigger ─────────────────────────────────────────────── */
 const FilterPill: React.FC<{
@@ -54,18 +71,23 @@ const FilterPill: React.FC<{
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border whitespace-nowrap",
-          "text-[13px] font-semibold text-foreground/85 bg-muted/50 dark:bg-white/5 border-border",
+          "inline-flex items-center gap-2 h-9 px-3 rounded-lg border whitespace-nowrap",
+          "text-[13px] font-semibold text-foreground/85 bg-card border-border",
           "outline-none transition-colors duration-150 hover:bg-muted",
           "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
         )}
       >
         {icon}
-        {label}
-        <ChevronDown size={14} className="text-muted-foreground" />
+        <span className="max-w-[140px] truncate">{label}</span>
+        <ChevronDown size={14} className="text-muted-foreground shrink-0" />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-52 p-1.5">
+    <DropdownMenuContent
+      align="start"
+      style={BRAND_VARS}
+      data-console-portal=""
+      className="w-52 p-1.5"
+    >
       {children}
     </DropdownMenuContent>
   </DropdownMenu>
@@ -88,21 +110,135 @@ const LEGEND = [
   { label: "Cancelled", dot: "bg-red-400" },
 ];
 
+/* ── Calendar booking inspector ───────────────────────────────────────────────
+   Clicking a bar used to navigate straight to `/bookings/:id/edit`, so glancing
+   at a reservation cost you the month you were reading and dropped you into a
+   six-group form. It opens beside the grid now; Edit is one click from the
+   footer for when editing is actually what you meant. */
+
+const CalendarBookingDrawer = ({
+  booking,
+  open,
+  onClose,
+  onEdit,
+}: {
+  booking: BookingData | null;
+  open: boolean;
+  onClose: () => void;
+  onEdit: (b: BookingData) => void;
+}) => {
+  if (!booking) return null;
+
+  const fmt = (d: Date) =>
+    new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const pending = toAmount(booking.pendingAmount);
+
+  return (
+    <AdminDetailDrawer
+      open={open}
+      onClose={onClose}
+      portalScope="vendor"
+      eyebrow="Booking"
+      title={booking.guestName || "Guest"}
+      subtitle={`${booking.bookingId} · ${booking.resourceName}`}
+      media={
+        <span
+          className={cn(
+            "grid place-items-center w-11 h-11 rounded-full text-[14px] font-bold",
+            avatarTint(booking.guestName ?? "?"),
+          )}
+          aria-hidden
+        >
+          {getInitials(booking.guestName || "?")}
+        </span>
+      }
+      status={
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={booking.status} size="sm" />
+          <StatusBadge status={booking.paymentStatus} size="sm" />
+          {pending > 0 && (
+            <span className="text-[11.5px] font-semibold text-amber-600 dark:text-amber-400 tabular-nums">
+              {currencyINR(pending)} outstanding
+            </span>
+          )}
+        </div>
+      }
+      footer={
+        <>
+          <button onClick={onClose} className={`${BTN_RAW} ${BTN_NEUTRAL}`}>
+            Close
+          </button>
+          <button onClick={() => onEdit(booking)} className={`${BTN_RAW} ${BTN_PRIMARY}`}>
+            <Pencil size={14} strokeWidth={2.2} />
+            Edit booking
+          </button>
+        </>
+      }
+    >
+      <DetailSection title="Stay" columns={2}>
+        <DetailField label="Check in" value={fmt(booking.startDate)} />
+        <DetailField label="Check out" value={fmt(booking.endDate)} />
+        <DetailField label="Nights" value={booking.totalDays} />
+        <DetailField label="Service" value={booking.resourceName} />
+        <DetailField label="Adults" value={booking.adults} />
+        <DetailField label="Children" value={booking.children} />
+      </DetailSection>
+
+      <DetailSection title="Payment" columns={2}>
+        <DetailField label="Base price" value={currencyINR(toAmount(booking.basePrice))} />
+        <DetailField label="Extra charges" value={currencyINR(toAmount(booking.extraCharges))} />
+        <DetailField label="Total" value={currencyINR(toAmount(booking.totalAmount))} />
+        <DetailField label="Paid" value={currencyINR(toAmount(booking.paidAmount))} />
+        <DetailField label="Outstanding" value={currencyINR(pending)} />
+        <DetailField label="Method" value={booking.paymentMethod} />
+      </DetailSection>
+
+      <DetailSection title="Guest" columns={2}>
+        <DetailField label="Name" value={booking.guestName} />
+        <DetailField label="Total guests" value={booking.totalGuests} />
+        <DetailField label="Phone" value={booking.phoneNumber} />
+        <DetailField label="Email" value={booking.email} />
+        {booking.specialRequests && <DetailNote>{booking.specialRequests}</DetailNote>}
+        {booking.notes && <DetailNote>{booking.notes}</DetailNote>}
+      </DetailSection>
+    </AdminDetailDrawer>
+  );
+};
+
+/* ── Page ─────────────────────────────────────────────────────────────────── */
+
 const Bookings = () => {
   const navigate = useNavigate();
   const { user, token: authToken } = useAuth();
   const queryClient = useQueryClient();
   const token = authToken ?? undefined;
 
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  /* View state lives in the URL: the month you are looking at, what you searched
+     for, which service you filtered to and which booking is open. A vendor can
+     now send "the calendar I'm looking at" as a link, and a refresh mid-task
+     doesn't drop them back on the current month with an empty search — which is
+     what `useState` did on every one of these. */
+  const url = useTableUrlState({
+    filters: [
+      { key: "service", type: "select" },
+      { key: "month", type: "select" },
+      { key: "year", type: "select" },
+    ],
+  });
+
+  const now = new Date();
+  const currentMonth = Number(url.filters.month ?? now.getMonth());
+  const currentYear = Number(url.filters.year ?? now.getFullYear());
+  const serviceFilter = (url.filters.service as string) ?? "all";
+  const searchQuery = url.q;
+
+  const setMonth = (m: number) => url.setFilters({ ...url.filters, month: String(m) });
+  const setYear = (y: number) => url.setFilters({ ...url.filters, year: String(y) });
+  const setServiceFilter = (s: string) =>
+    url.setFilters({ ...url.filters, service: s === "all" ? "" : s });
+
   const [vehicleNames, setVehicleNames] = useState<string[]>([]);
-
   const [selectedDate, setSelectedDate] = useState<{ date: number; resource: string } | null>(null);
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [serviceFilter, setServiceFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"month" | "week">("month");
 
   // ─── Toast helper ──────────────────────────────────────────────────────────
   const notify = (type: "success" | "error", message: string) => {
@@ -173,10 +309,6 @@ const Bookings = () => {
     navigate(qs ? `/bookings/new?${qs}` : "/bookings/new");
   };
 
-  /* Editing is its own page (/bookings/:id/edit) — the old right-side panel put
-     a six-group form in a 540px column. */
-  const handleBookingClick = (b: BookingData) => navigate(`/bookings/${b._id}/edit`);
-
   const handleDateClick = (date: number, resource: string) => {
     setSelectedDate({ date, resource });
     goToNewBooking(date, resource);
@@ -212,6 +344,11 @@ const Bookings = () => {
     });
   }, [bookings, user, vehicleNames, serviceFilter, searchQuery]);
 
+  const openBooking = useMemo(
+    () => filteredBookings.find((b) => b._id === url.selectedId) ?? null,
+    [filteredBookings, url.selectedId],
+  );
+
   const stats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -230,88 +367,108 @@ const Bookings = () => {
     return { total: filteredBookings.length, revenue, pending, today: todayCount };
   }, [filteredBookings]);
 
-
   const monthLabel = new Date(currentYear, currentMonth).toLocaleDateString("en-IN", {
     month: "long",
     year: "numeric",
   });
 
+  /* Calendar and list are two views of one dataset, so they belong on one tab
+     strip rather than being two unrelated rail entries a vendor has to know
+     about. The strip lives on the header band's bottom edge — switching it
+     visibly swaps the whole body. */
+  const tabs = (
+    <TabStrip
+      variant="flush"
+      tabs={[
+        { key: "calendar", label: "Calendar" },
+        { key: "list", label: "All records" },
+      ]}
+      activeKey="calendar"
+      onChange={(k) => k === "list" && navigate("/bookings/details")}
+    />
+  );
+
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout
       title="Bookings"
+      subtitle="Every reservation across your offerings — drag to move a stay, click an empty cell to create one."
+      tabs={tabs}
+      headerActions={
+        <button onClick={() => goToNewBooking()} className={`${BTN_RAW} ${BTN_PRIMARY}`}>
+          <CalendarPlus size={15} strokeWidth={2.4} />
+          New booking
+        </button>
+      }
+      /* Wider than the other console pages on purpose — this is a month ×
+         resource grid, and squeezing it to the standard container only adds
+         horizontal scrolling. */
+      contentClassName="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-5 sm:py-6 pb-24 lg:pb-10"
     >
-      {/* Wider than the other console pages on purpose — this is a month ×
-          resource grid, and squeezing it to max-w-6xl only adds scrolling.
-          pb clears the fixed MobileVendorNav. */}
-      <div style={BRAND_VARS} className="max-w-[1400px] mx-auto pb-24 lg:pb-12 space-y-5">
+      <div style={BRAND_VARS} className="space-y-5">
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {loading ? (
-            <>
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-            </>
+            Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
             <>
               <StatTile
                 icon={CalendarIcon}
                 label="Bookings"
-                hint="This month"
+                hint={monthLabel}
                 value={stats.total}
-                color="#117479"
                 index={0}
               />
               <StatTile
                 icon={IndianRupee}
-                label="Revenue"
-                hint="Total billed"
+                label="Billed"
+                hint="Total for this month"
                 value={currencyINR(stats.revenue)}
-                color="#22c55e"
                 index={1}
               />
               <StatTile
                 icon={Clock}
-                label="Pending"
-                hint="Yet to collect"
+                label="Outstanding"
+                hint={stats.pending > 0 ? "Yet to collect" : "Everything collected"}
                 value={currencyINR(stats.pending)}
-                color="#f59e0b"
                 index={2}
               />
               <StatTile
                 icon={Sun}
-                label="Today"
-                hint="Active stays"
+                label="In-house today"
+                hint="Guests currently staying"
                 value={stats.today}
-                color="#8b5cf6"
                 index={3}
               />
             </>
           )}
         </div>
 
-        {/* ── Toolbar ── */}
-        <div className={cn(PANEL, "p-3")}>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className="relative flex-1 min-w-[200px] max-w-[320px]">
+        {/* ── Calendar ──
+            The toolbar is the card's OWN header row rather than a separate
+            floating bar above it: search + filters describe the grid below
+            them, and a second card in between made the page read as two
+            unrelated panels stacked. */}
+        <section className={PANEL_FLUSH}>
+          <div className={cn(PANEL_HEAD, "flex-wrap items-center gap-2.5")}>
+            <div className="relative flex-1 min-w-[180px] max-w-[320px]">
               <Search
                 size={14}
                 strokeWidth={2.2}
+                aria-hidden
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none"
               />
               <Input
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => url.setQ(e.target.value)}
                 placeholder="Search guest, booking ID or service"
                 aria-label="Search bookings"
-                className={cn("h-10 pl-9", CONTROL)}
+                className={cn(CONTROL, "h-9 pl-9 text-[13px]")}
               />
             </div>
 
             <FilterPill
-              icon={<Package size={14} className="text-muted-foreground" />}
+              icon={<Package size={14} className="text-muted-foreground" aria-hidden />}
               label={serviceFilter === "all" ? "All services" : serviceFilter}
             >
               <DropdownMenuItem
@@ -332,59 +489,56 @@ const Bookings = () => {
             </FilterPill>
 
             {/* Month selector */}
-            <div className="flex items-center gap-1.5 h-10 pl-3 pr-1.5 rounded-xl border border-border bg-muted/50 dark:bg-white/5">
-              <CalendarIcon size={14} className="text-muted-foreground" />
+            <div className="flex items-center gap-1.5 h-9 pl-3 pr-1 rounded-lg border border-border bg-card">
+              <CalendarIcon size={14} className="text-muted-foreground" aria-hidden />
               <DateNavigation
                 currentMonth={currentMonth}
                 currentYear={currentYear}
-                onMonthChange={setCurrentMonth}
-                onYearChange={setCurrentYear}
+                onMonthChange={setMonth}
+                onYearChange={setYear}
               />
             </div>
 
-            <FilterPill
-              icon={<LayoutGrid size={14} className="text-muted-foreground" />}
-              label={viewMode === "month" ? "Month view" : "Week view"}
-            >
-              <DropdownMenuItem className={FILTER_ITEM_CLASS} onClick={() => setViewMode("month")}>
-                Month view
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className={FILTER_ITEM_CLASS}
-                onClick={() => setViewMode("week")}
-                disabled
+            {url.hasActiveQuery && (
+              <button
+                onClick={url.clearQuery}
+                className={cn(PILL_NEUTRAL, "h-9 hover:bg-muted/70 transition-colors")}
               >
-                Week view (soon)
-              </DropdownMenuItem>
-            </FilterPill>
-          </div>
-        </div>
+                <X size={13} strokeWidth={2.4} aria-hidden />
+                Clear
+              </button>
+            )}
 
-        {/* ── Calendar ── */}
-        <Panel>
-          <PanelHead
-            icon={CalendarIcon}
-            title={monthLabel}
-            blurb="Click an empty cell to book it · drag a booking to move it"
-            aside={
-              <span className="hidden md:inline-flex items-center text-[11.5px] tabular-nums text-muted-foreground">
-                {filteredBookings.length} shown
-              </span>
-            }
-          />
+            <span className="ml-auto hidden md:inline-flex items-center text-[12px] tabular-nums text-muted-foreground">
+              {filteredBookings.length} shown
+            </span>
+          </div>
 
           <div className="p-3" key={`${currentYear}-${currentMonth}`}>
             {loading ? (
-              <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                <span className="text-[13px]">Loading bookings…</span>
+              /* Grid-shaped skeleton, not a spinner: the calendar is ~420px
+                 tall and a centred spinner collapses the panel, so the page
+                 jumps the moment data lands. */
+              <div className="space-y-2" aria-label="Loading bookings">
+                <div className="h-8 rounded-lg bg-muted animate-pulse" />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+                ))}
               </div>
+            ) : filteredBookings.length === 0 && url.hasActiveQuery ? (
+              <EmptyState
+                icon={Search}
+                title="No bookings match your filters"
+                description="Try a different service, a different month, or clear the search."
+                actionLabel="Clear filters"
+                onAction={url.clearQuery}
+              />
             ) : (
               <CalendarGrid
                 currentMonth={currentMonth}
                 currentYear={currentYear}
                 bookings={filteredBookings}
-                onBookingClick={handleBookingClick}
+                onBookingClick={(b) => url.setSelectedId(b._id)}
                 onBookingDrag={handleBookingDrag}
                 onDateClick={handleDateClick}
                 onNewBooking={(resource) => goToNewBooking(undefined, resource)}
@@ -401,7 +555,7 @@ const Bookings = () => {
                   key={l.label}
                   className="inline-flex items-center gap-1.5 text-[11.5px] font-medium text-muted-foreground"
                 >
-                  <span className={cn("w-2 h-2 rounded-full", l.dot)} />
+                  <span className={cn("w-2 h-2 rounded-full", l.dot)} aria-hidden />
                   {l.label}
                 </span>
               ))}
@@ -410,8 +564,15 @@ const Bookings = () => {
               {vehicleNames.length} service{vehicleNames.length === 1 ? "" : "s"}
             </p>
           </footer>
-        </Panel>
+        </section>
       </div>
+
+      <CalendarBookingDrawer
+        booking={openBooking}
+        open={!!openBooking}
+        onClose={() => url.setSelectedId(null)}
+        onEdit={(b) => navigate(`/bookings/${b._id}/edit`)}
+      />
     </DashboardLayout>
   );
 };

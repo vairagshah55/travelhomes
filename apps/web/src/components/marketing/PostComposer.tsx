@@ -148,7 +148,7 @@ export const PostComposer: React.FC<{ draft: PostDraft }> = ({ draft }) => {
                     <img
                       src={img.url}
                       alt={img.file.name}
-                      className="w-full h-full object-cover rounded-xl border border-border/70"
+                      className="w-full h-full object-cover rounded-xl border border-border"
                     />
                     {i === 0 && (
                       <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-black/65 text-white text-[9.5px] font-bold uppercase tracking-wide">
@@ -192,7 +192,7 @@ export const PostComposer: React.FC<{ draft: PostDraft }> = ({ draft }) => {
               className="min-h-[140px] border-0 bg-transparent rounded-none resize-y text-[13.5px] leading-relaxed
                 focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground/60"
             />
-            <div className="flex items-center gap-1 px-2 py-1.5 border-t border-border/70 bg-card/60">
+            <div className="flex items-center gap-1 px-2 py-1.5 border-t border-border bg-card/60">
               {TOOLS.map(({ icon: Icon, title, apply }) => (
                 <button
                   key={title}

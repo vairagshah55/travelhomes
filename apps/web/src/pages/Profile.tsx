@@ -45,6 +45,7 @@ import {
   ReadValue,
   SELECT_ITEM,
   StatusBadge,
+  TabStrip,
 } from "@/components/shared";
 import { getInitials } from "@/utils/getInitials";
 import { cn } from "@/lib/utils";
@@ -581,7 +582,7 @@ const Profile = () => {
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group relative w-28 h-28 rounded-xl overflow-hidden border border-border/70 outline-none focus-visible:ring-4 focus-visible:ring-brand/15"
+                className="group relative w-28 h-28 rounded-xl overflow-hidden border border-border outline-none focus-visible:ring-4 focus-visible:ring-brand/15"
               >
                 <img
                   src={url}
@@ -599,9 +600,17 @@ const Profile = () => {
   return (
     <DashboardLayout
       title="Profile"
+      subtitle="Your business identity — what travellers see, and the details we verify you against."
+      tabs={
+        <TabStrip
+          variant="flush"
+          tabs={TABS.map((t) => ({ key: t.key, label: t.label }))}
+          activeKey={activeTab}
+          onChange={setActiveTab}
+        />
+      }
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-5xl mx-auto space-y-5 pb-24 lg:pb-12">
+      <div style={BRAND_VARS} className="max-w-5xl space-y-5">
         {/* ── Identity header ── */}
         <section className={cn(PANEL, "relative overflow-hidden")}>
           <div
@@ -751,42 +760,10 @@ const Profile = () => {
           </div>
         </section>
 
-        {/* ── Tabs ── */}
-        <div
-          role="tablist"
-          aria-label="Profile sections"
-          className={cn(PANEL, "inline-flex items-center gap-1 p-1 rounded-2xl")}
-        >
-          {TABS.map((tab) => {
-            const active = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveTab(tab.key)}
-                className={cn(
-                  "relative flex items-center gap-2 h-10 px-4 rounded-xl text-[13px] font-semibold",
-                  "outline-none transition-colors duration-150",
-                  "focus-visible:ring-2 focus-visible:ring-brand/40",
-                  active ? "text-brand" : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="profileTabPill"
-                    className="absolute inset-0 rounded-xl bg-brand/[0.09]"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                  />
-                )}
-                <span className="relative flex items-center gap-2">
-                  <tab.icon size={15} strokeWidth={2.2} />
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {/* The tab strip moved to the page-header band — see the `tabs` prop
+            below. A floating pill row between the identity card and the content
+            was a third distinct tab treatment in the console (the band strip,
+            the settings rail, and this). */}
 
         {/* ── Content ── */}
         <AnimatePresence mode="wait">
@@ -821,7 +798,7 @@ const Profile = () => {
                       description="Add your Instagram, Facebook or website below — they show up on your public listings."
                     />
                   ) : (
-                    <ul className="divide-y divide-border/70">
+                    <ul className="divide-y divide-border">
                       {socialProfiles.map((link: any, index: number) => (
                         <li
                           key={index}
@@ -871,7 +848,7 @@ const Profile = () => {
                         <SelectTrigger id="link-platform" className={cn("h-11", CONTROL)}>
                           <SelectValue placeholder="Pick one" />
                         </SelectTrigger>
-                        <SelectContent style={BRAND_VARS}>
+                        <SelectContent style={BRAND_VARS} data-console-portal="">
                           {PLATFORMS.map((p) => (
                             <SelectItem
                               key={p}

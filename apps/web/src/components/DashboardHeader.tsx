@@ -1,11 +1,10 @@
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Bell, Menu, LayoutDashboard, Plus } from "lucide-react";
-import { BRAND_VARS, BTN_PRIMARY } from "@/components/shared";
-import { cn } from "@/lib/utils";
+import { Bell, Menu, LayoutDashboard, Search } from "lucide-react";
 import { Sidebar } from "./Navigation";
+import VendorCommandPalette from "./VendorCommandPalette";
 import ProfileDropdown from "./ProfileDropdown";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { ThemeToggle } from "./ThemeToggle";
@@ -68,6 +67,7 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   const { updateUserType } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
   // Poll for unread vendor notifications every 30s. useQuery dedupes if
   // multiple Header instances ever mount on the same page (which can
@@ -85,8 +85,6 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
   });
 
   const crumbs = useBreadcrumbs();
-  // Only ancestor crumbs render — the last one is the title right below it.
-  const trail = crumbs.slice(0, -1);
 
   const handleSwitchToUser = async () => {
     await updateUserType("user");
@@ -169,32 +167,44 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         </motion.span>
       </div>
 
-      {/* ── Right — create, theme, notifications, account (36px controls) ── */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
-        {/* Creating a booking is the vendor's most common write action, so it
-            lives in the chrome rather than on one page. Matches the 44px
-            control height of the bell/avatar; collapses to icon-only on
-            phones, where the label would crowd the bar. */}
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={() => navigate("/bookings/new")}
-          style={BRAND_VARS}
-          aria-label="New booking"
-          className={cn(
-            BTN_PRIMARY,
-            // BTN_PRIMARY assumes shadcn <Button> for layout; this is a raw
-            // motion.button, so it brings its own flex.
-            "inline-flex items-center justify-center whitespace-nowrap",
-            "h-9 rounded-lg px-0 w-9 sm:w-auto sm:px-3.5 text-[12.5px]",
-          )}
+      {/* ── Right — search, theme, notifications, account (36px controls) ──
+          The global "New booking" button that used to sit here is gone. A
+          create button in the chrome competes with whatever the CURRENT page's
+          primary action is — on /offering it sat beside "Add offering" and both
+          read as the page's main verb — and it hardcoded one of three create
+          flows into every screen. Creating now happens where the thing lives,
+          plus the palette's Create group from anywhere. */}
+      <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
+        {/* Search opens the ⌘K palette. It is a button styled as a field rather
+            than a real input: there is no such thing as searching "in the
+            header" — every query resolves to a destination or an action, which
+            is what the palette does. */}
+        <button
+          onClick={() => setIsPaletteOpen(true)}
+          aria-label="Search pages and actions"
+          className="group hidden sm:flex items-center gap-2 h-9 pl-3 pr-2 rounded-lg border border-app-border
+            bg-app-surface-2/70 text-app-fg-subtle hover:bg-app-surface-2 hover:text-app-fg-muted
+            transition-colors outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20"
         >
-          <Plus size={15} strokeWidth={2.6} />
-          <span className="hidden sm:inline">New booking</span>
-        </motion.button>
+          <Search size={15} strokeWidth={2} aria-hidden />
+          <span className="text-[13px] font-medium w-24 lg:w-36 text-left">Search…</span>
+          <kbd className="hidden lg:inline-flex items-center gap-0.5 h-5 px-1.5 rounded border border-app-border bg-app-surface text-[10.5px] font-semibold text-app-fg-subtle">
+            ⌘K
+          </kbd>
+        </button>
+        <button
+          onClick={() => setIsPaletteOpen(true)}
+          aria-label="Search pages and actions"
+          className="sm:hidden grid place-items-center size-9 rounded-lg text-app-fg-muted hover:bg-app-surface-2 hover:text-app-fg transition-colors"
+        >
+          <Search size={17} strokeWidth={1.9} />
+        </button>
 
         <ThemeToggle />
 
-        {/* Notifications — circular button with red ping dot */}
+        {/* Notifications. The badge no longer `animate-ping`s: a red dot
+            pulsing forever is not an alert, it is a permanent distraction, and
+            unread counts here sit above zero most of the day. */}
         <motion.button
           whileTap={{ scale: 0.94 }}
           onClick={() => navigate("/notifications")}
@@ -202,20 +212,11 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
           aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
         >
           <Bell size={17} strokeWidth={1.9} />
-          <AnimatePresence>
-            {unreadCount > 0 && (
-              <motion.span
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                className="absolute -top-1 -right-1 grid place-items-center min-w-[18px] h-[18px] px-1 rounded-full bg-[#f23030] text-white text-[10px] font-bold leading-none ring-2 ring-white dark:ring-gray-900"
-              >
-                <span className="absolute inset-0 -z-10 animate-ping rounded-full bg-[#f23030] opacity-60" />
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </motion.span>
-            )}
-          </AnimatePresence>
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold leading-none tabular-nums ring-2 ring-app-surface">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
         </motion.button>
 
         {/* Profile */}
@@ -229,6 +230,8 @@ export function DashboardHeader({ Headtitle }: { Headtitle: string }) {
         />
 
         <ChangePasswordModal isOpen={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
+        {/* Mounted once, here — the palette owns the global ⌘K listener. */}
+        <VendorCommandPalette open={isPaletteOpen} onOpenChange={setIsPaletteOpen} />
       </div>
     </header>
   );

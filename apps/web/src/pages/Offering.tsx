@@ -1,7 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Plus, Award, Search, ChevronDown, CheckCircle2, Clock, IndianRupee } from "lucide-react";
+import {
+  Plus,
+  Award,
+  Search,
+  ChevronDown,
+  CheckCircle2,
+  Clock,
+  IndianRupee,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -14,16 +23,17 @@ import { cn } from "@/lib/utils";
 import {
   BRAND_VARS,
   BTN_PRIMARY,
+  BTN_RAW,
   CONTROL,
   EmptyState,
   PANEL,
+  PILL_NEUTRAL,
   Panel,
-  PanelHead,
   StatTile,
   StatTileSkeleton,
+  TabStrip,
 } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
-import { CONSOLE_PORTAL_VARS } from "@/components/shared";
 import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
 import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 import {
@@ -49,8 +59,8 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border whitespace-nowrap",
-          "text-[13px] font-semibold text-foreground/85 bg-muted/50 dark:bg-white/5 border-border",
+          "inline-flex items-center gap-2 h-9 px-3 rounded-lg border whitespace-nowrap",
+          "text-[13px] font-semibold text-foreground/85 bg-card border-border",
           "outline-none transition-colors duration-150 hover:bg-muted",
           "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
         )}
@@ -59,7 +69,12 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
         <ChevronDown size={14} className="text-muted-foreground" />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-48 p-1.5">
+    <DropdownMenuContent
+      align="start"
+      style={BRAND_VARS}
+      data-console-portal=""
+      className="w-52 p-1.5"
+    >
       {children}
     </DropdownMenuContent>
   </DropdownMenu>
@@ -79,6 +94,15 @@ const TYPE_LABELS: Record<string, string> = {
   "unique-stay": "Unique stays",
   activity: "Activities",
 };
+
+const SORT_LABELS = {
+  recent: "Recently added",
+  "price-asc": "Price: low to high",
+  "price-desc": "Price: high to low",
+  name: "Name A–Z",
+} as const;
+
+type SortKey = keyof typeof SORT_LABELS;
 
 /** Grid-shaped loading state — matches the card, not a generic block. */
 const CardSkeleton = () => (
@@ -110,10 +134,13 @@ const Offering = () => {
     setPage,
     filters,
     setFilters,
+    sort,
+    setSort,
     selectedId: viewId,
     setSelectedId: setViewId,
-  } = useTableUrlState({ filters: URL_FILTERS, defaultTab: "approved" });
+  } = useTableUrlState({ filters: URL_FILTERS, defaultTab: "approved", defaultSort: "recent" });
   const activeTab = rawTab as "approved" | "pending";
+  const sortKey = (sort in SORT_LABELS ? sort : "recent") as SortKey;
   const typeFilter = (filters.type as string) || "all";
   const setTypeFilter = (value: string) =>
     setFilters(value === "all" ? {} : { type: value });
@@ -163,7 +190,7 @@ const Offering = () => {
 
   const offers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return baseOffers.filter((o) => {
+    const filtered = baseOffers.filter((o) => {
       if (typeFilter !== "all") {
         const st = (o.serviceType || "").toLowerCase();
         if (st !== typeFilter) return false;
@@ -175,7 +202,17 @@ const Offering = () => {
       }
       return true;
     });
-  }, [baseOffers, typeFilter, searchQuery]);
+
+    /* Sorted client-side over the already-fetched list — no new request. A
+       catalog you can only read in insertion order stops being usable at about
+       twenty listings, which is where these accounts land. */
+    const price = (o: OfferDTO) => Number(o.regularPrice || 0);
+    const sorted = [...filtered];
+    if (sortKey === "price-asc") sorted.sort((a, b) => price(a) - price(b));
+    else if (sortKey === "price-desc") sorted.sort((a, b) => price(b) - price(a));
+    else if (sortKey === "name") sorted.sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+    return sorted;
+  }, [baseOffers, typeFilter, searchQuery, sortKey]);
 
   /* The page-reset effect that used to sit here is gone: the URL hook resets
      `?page=` inside setQ/setFilters/setTab. As an effect it also ran on MOUNT,
@@ -183,11 +220,13 @@ const Offering = () => {
      before the operator saw it. */
 
   const stats = useMemo(() => {
-    const revenue = approvedOffers.reduce((sum, o) => sum + Number(o.regularPrice || 0), 0);
+    const prices = approvedOffers.map((o) => Number(o.regularPrice || 0)).filter((n) => n > 0);
+    const revenue = prices.reduce((sum, n) => sum + n, 0);
     return {
       approved: approvedOffers.length,
       pending: pendingOffers.length,
       revenue,
+      avgPrice: prices.length ? Math.round(revenue / prices.length) : 0,
     };
   }, [approvedOffers, pendingOffers]);
 
@@ -225,154 +264,141 @@ const Offering = () => {
      OfferPanel duplicated a subset of the wizard's fields. */
   const onEdit = (offer: OfferDTO) => navigate(`/offering/${offer._id}/edit`);
 
-  const tabs: { key: "approved" | "pending"; label: string; count: number }[] = [
-    { key: "approved", label: "Approved", count: approvedOffers.length },
-    { key: "pending", label: "Pending", count: pendingOffers.length },
-  ];
+  /* The status tabs moved onto the header band's bottom edge. They used to be a
+     segmented pill inside a "Your listings" panel that carried nothing else —
+     a whole card whose only job was to hold a control. Switching a tab now
+     visibly swaps the page body, which is what a tab is supposed to mean. */
+  const tabs = (
+    <TabStrip
+      variant="flush"
+      tabs={[
+        { key: "approved", label: "Live", count: approvedOffers.length },
+        { key: "pending", label: "Under review", count: pendingOffers.length },
+      ]}
+      activeKey={activeTab}
+      onChange={setActiveTab}
+    />
+  );
 
   return (
     <>
       <DashboardLayout
         title="Offerings"
         subtitle="Every camper van, stay and activity listed under this account, in every state."
+        tabs={tabs}
         headerActions={
-          <Button onClick={() => navigate("/offering/add")} className={cn(BTN_PRIMARY, "h-9")}>
+          <Button onClick={() => navigate("/offering/add")} className={cn(BTN_RAW, BTN_PRIMARY)}>
             <Plus size={15} strokeWidth={2.5} />
             Add offering
           </Button>
         }
       >
-        {/* pb clears the fixed MobileVendorNav on small screens. */}
-        <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
+        <div style={BRAND_VARS} className="space-y-5">
           {/* ── Metrics ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             {loading ? (
-              <>
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-              </>
+              Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
             ) : (
               <>
                 <StatTile
                   icon={CheckCircle2}
-                  label="Approved"
-                  hint="Live listings"
+                  label="Live"
+                  hint="Bookable by travellers"
                   value={stats.approved}
-                  color="#22c55e"
                   index={0}
                 />
                 <StatTile
                   icon={Clock}
-                  label="Pending"
-                  hint="Awaiting review"
+                  label="Under review"
+                  hint={stats.pending > 0 ? "Not bookable yet" : "Nothing waiting"}
                   value={stats.pending}
-                  color="#f59e0b"
                   index={1}
+                  onClick={stats.pending > 0 ? () => setActiveTab("pending") : undefined}
                 />
                 <StatTile
                   icon={IndianRupee}
-                  label="Catalog value"
-                  hint="Approved listings, per day"
-                  value={currencyINR(stats.revenue)}
-                  color="#117479"
+                  label="Avg nightly rate"
+                  hint="Across live offerings"
+                  value={currencyINR(stats.avgPrice)}
                   index={2}
+                />
+                <StatTile
+                  icon={Award}
+                  label="Catalog value"
+                  hint="Combined day rate"
+                  value={currencyINR(stats.revenue)}
+                  index={3}
                 />
               </>
             )}
           </div>
 
-          {/* ── Toolbar: tabs, search, type, create ── */}
-          <Panel>
-            <PanelHead
-              icon={Award}
-              title="Your listings"
-              blurb={
-                loading
-                  ? "Loading your catalog…"
-                  : hasActiveQuery
-                    ? `${offers.length} of ${baseOffers.length} ${activeTab} shown`
-                    : `${offers.length} ${activeTab} listing${offers.length === 1 ? "" : "s"}`
-              }
-              /* The primary action moved up to the header band, where every
-                 console page keeps its primary action. Two "Add offering"
-                 buttons a few hundred pixels apart is worse than one. */
-            />
-
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3 px-5 py-3">
-              <div
-                role="tablist"
-                aria-label="Listing status"
-                className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 dark:bg-white/[0.04] w-fit shrink-0"
-              >
-                {tabs.map((t) => {
-                  const active = activeTab === t.key;
-                  return (
-                    <button
-                      key={t.key}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      onClick={() => setActiveTab(t.key)}
-                      className={cn(
-                        "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg",
-                        "text-[12.5px] font-semibold outline-none transition-colors duration-150",
-                        "focus-visible:ring-2 focus-visible:ring-brand/40",
-                        active ? "text-brand" : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="offeringTabPill"
-                          className="absolute inset-0 rounded-lg bg-card shadow-[0_1px_2px_rgba(16,24,40,0.08)]"
-                          transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                        />
-                      )}
-                      <span className="relative">{t.label}</span>
-                      <span
-                        className={cn(
-                          "relative grid place-items-center min-w-[20px] h-[18px] px-1.5 rounded-full",
-                          "text-[10.5px] font-bold tabular-nums",
-                          active ? "bg-brand/15 text-brand" : "bg-muted-foreground/10",
-                        )}
-                      >
-                        {t.count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
-                <div className="relative flex-1 min-w-[190px] lg:max-w-[280px]">
-                  <Search
-                    size={14}
-                    strokeWidth={2.2}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none"
-                  />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search name, category or city"
-                    aria-label="Search listings"
-                    className={cn("h-10 pl-9", CONTROL)}
-                  />
-                </div>
-
-                <FilterPill label={TYPE_LABELS[typeFilter]}>
-                  {(["all", "camper-van", "unique-stay", "activity"] as const).map((key) => (
-                    <DropdownMenuItem
-                      key={key}
-                      className={FILTER_ITEM_CLASS}
-                      onClick={() => setTypeFilter(key)}
-                    >
-                      {TYPE_LABELS[key]}
-                    </DropdownMenuItem>
-                  ))}
-                </FilterPill>
-              </div>
+          {/* ── Toolbar ──
+              A bare control row on the page ground, not another card: the cards
+              below ARE the panels, and wrapping the filters in a second one gave
+              the page two competing white surfaces before any content. */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[190px] sm:max-w-[320px]">
+              <Search
+                size={14}
+                strokeWidth={2.2}
+                aria-hidden
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 pointer-events-none"
+              />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search name, category or city"
+                aria-label="Search listings"
+                className={cn(CONTROL, "h-9 pl-9 bg-card text-[13px]")}
+              />
             </div>
-          </Panel>
+
+            <FilterPill label={TYPE_LABELS[typeFilter]}>
+              {(["all", "camper-van", "unique-stay", "activity"] as const).map((key) => (
+                <DropdownMenuItem
+                  key={key}
+                  className={FILTER_ITEM_CLASS}
+                  onClick={() => setTypeFilter(key)}
+                >
+                  {TYPE_LABELS[key]}
+                </DropdownMenuItem>
+              ))}
+            </FilterPill>
+
+            <FilterPill label={SORT_LABELS[sortKey]}>
+              {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                <DropdownMenuItem
+                  key={key}
+                  className={FILTER_ITEM_CLASS}
+                  onClick={() => setSort(key === "recent" ? "" : key)}
+                >
+                  {SORT_LABELS[key]}
+                </DropdownMenuItem>
+              ))}
+            </FilterPill>
+
+            {hasActiveQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setTypeFilter("all");
+                }}
+                className={cn(PILL_NEUTRAL, "h-9 bg-card hover:bg-muted transition-colors")}
+              >
+                <X size={13} strokeWidth={2.4} aria-hidden />
+                Clear
+              </button>
+            )}
+
+            <p className="ml-auto text-[12px] tabular-nums text-muted-foreground">
+              {loading
+                ? "Loading…"
+                : hasActiveQuery
+                  ? `${offers.length} of ${baseOffers.length} shown`
+                  : `${offers.length} listing${offers.length === 1 ? "" : "s"}`}
+            </p>
+          </div>
 
           {/* ── Grid — the cards ARE panels, so they sit on the page, not in one ── */}
           {loading ? (
@@ -453,7 +479,7 @@ const Offering = () => {
           isOpen
           onClose={() => setViewId(null)}
           listingData={viewOffer}
-          portalStyle={CONSOLE_PORTAL_VARS}
+          portalScope="vendor"
           position={{ index: viewIndex + 1, total: offers.length }}
           onPrev={viewIndex > 0 ? () => setViewId(offers[viewIndex - 1]._id ?? null) : undefined}
           onNext={

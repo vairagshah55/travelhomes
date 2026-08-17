@@ -516,12 +516,12 @@ const Settings = () => {
   return (
     <DashboardLayout
       title="Settings"
+      subtitle="Your account, how bookings behave, what we notify you about, and where your money goes."
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
-        <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
+      <div style={BRAND_VARS}>
+        <div className="grid gap-5 lg:gap-6 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Left rail: who you are, where you can go ── */}
-          <aside className="lg:sticky lg:top-2 self-start space-y-3">
+          <aside className="lg:sticky lg:top-4 self-start space-y-3">
             <div className={cn(PANEL, "hidden lg:flex items-center gap-3 p-4")}>
               {avatar ? (
                 <img src={avatar} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
@@ -568,15 +568,18 @@ const Settings = () => {
                         transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       />
                     )}
+                    {/* Monochrome glyph, matching the sidebar and the
+                        notifications rail. A filled tile on the active row plus
+                        a grey tile on each of the other four gave the rail two
+                        competing active-state signals — the pill behind the row
+                        and the tile inside it. */}
                     <span
                       className={cn(
-                        "relative grid place-items-center w-8 h-8 rounded-[10px] shrink-0 transition-colors duration-150",
-                        active
-                          ? "bg-brand text-brand-fg"
-                          : "bg-muted text-muted-foreground group-hover:text-foreground/70",
+                        "relative grid place-items-center w-7 h-7 shrink-0 mt-px transition-colors duration-150",
+                        active ? "text-brand" : "text-muted-foreground group-hover:text-foreground",
                       )}
                     >
-                      <section.icon size={15} strokeWidth={2.1} />
+                      <section.icon size={16} strokeWidth={active ? 2.3 : 1.9} />
                     </span>
                     <span className="relative min-w-0">
                       <span
@@ -605,7 +608,7 @@ const Settings = () => {
             <div
               role="tablist"
               aria-label="Settings sections"
-              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border/70 rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border rounded-[10px] shadow-[0_1px_2px_rgba(18,25,38,0.04)]"
             >
               {SECTIONS.map((section) => {
                 const active = activeSection === section.key;
@@ -678,7 +681,7 @@ const Settings = () => {
                         </Button>
                       }
                     />
-                    <div className="divide-y divide-border/70">
+                    <div className="divide-y divide-border">
                       <SettingRow icon={Mail} title="Email" blurb={user?.email || "Not added yet"}>
                         {user?.emailVerified ? (
                           <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -752,7 +755,7 @@ const Settings = () => {
                                 "focus-visible:ring-4 focus-visible:ring-brand/15",
                                 selected
                                   ? "border-brand ring-4 ring-brand/10"
-                                  : "border-border/70 hover:border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
+                                  : "border-border hover:border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
                               )}
                             >
                               <span
@@ -882,7 +885,7 @@ const Settings = () => {
                     />
 
                     {tickets.length > 0 && (
-                      <div className="flex items-center gap-1.5 px-5 py-3 overflow-x-auto scrollbar-hide border-b border-border/70">
+                      <div className="flex items-center gap-1.5 px-5 py-3 overflow-x-auto scrollbar-hide border-b border-border">
                         {TICKET_FILTERS.map((f) => {
                           const selected = ticketFilter === f;
                           return (
@@ -908,7 +911,7 @@ const Settings = () => {
                     )}
 
                     {ticketsQuery.isLoading ? (
-                      <div className="divide-y divide-border/70">
+                      <div className="divide-y divide-border">
                         {[0, 1, 2].map((i) => (
                           <div key={i} className="flex items-center gap-4 px-5 py-4 animate-pulse">
                             <div className="flex-1 space-y-2">
@@ -946,7 +949,7 @@ const Settings = () => {
                         </button>
                       </div>
                     ) : (
-                      <ul className="divide-y divide-border/70">
+                      <ul className="divide-y divide-border">
                         {visibleTickets.map((t, i) => {
                           const key = (t.status || "pending").toLowerCase();
                           return (
@@ -1020,7 +1023,7 @@ const Settings = () => {
                           <SelectTrigger id="pref-language" className={cn("h-11", CONTROL)}>
                             <SelectValue placeholder="Pick a language" />
                           </SelectTrigger>
-                          <SelectContent style={BRAND_VARS}>
+                          <SelectContent style={BRAND_VARS} data-console-portal="">
                             {LANGUAGES.map((l) => (
                               <SelectItem key={l.value} value={l.value} className={SELECT_ITEM}>
                                 {l.label}
@@ -1040,7 +1043,7 @@ const Settings = () => {
                           <SelectTrigger id="pref-timezone" className={cn("h-11", CONTROL)}>
                             <SelectValue placeholder="Pick a timezone" />
                           </SelectTrigger>
-                          <SelectContent style={BRAND_VARS}>
+                          <SelectContent style={BRAND_VARS} data-console-portal="">
                             {timezoneOptions.map((tz) => (
                               <SelectItem key={tz} value={tz} className={SELECT_ITEM}>
                                 {tz}
@@ -1057,7 +1060,7 @@ const Settings = () => {
                       title="Notifications"
                       blurb="Choose how we reach you. Booking alerts are worth keeping on."
                     />
-                    <div className="divide-y divide-border/70">
+                    <div className="divide-y divide-border">
                       {NOTIFICATION_CHANNELS.map((channel) => (
                         <SettingRow
                           key={channel.key}
@@ -1125,12 +1128,12 @@ const Settings = () => {
       {/* ── Ticket detail ── */}
       <Dialog open={!!openTicket} onOpenChange={(open) => !open && setOpenTicket(null)}>
         <DialogContent
-          style={BRAND_VARS}
-          className="sm:max-w-[560px] p-0 gap-0 overflow-hidden rounded-[18px] bg-card border-border/70"
+          style={BRAND_VARS} data-console-portal=""
+          className="sm:max-w-[560px] p-0 gap-0 overflow-hidden rounded-[10px] bg-card border-border"
         >
           {openTicket && (
             <>
-              <div className="px-6 pt-6 pb-4 border-b border-border/70">
+              <div className="px-6 pt-6 pb-4 border-b border-border">
                 <StatusBadge status={(openTicket.status || "pending").toLowerCase()} />
                 <h2 className="mt-3 pr-8 text-[18px] font-bold leading-6 tracking-[-0.01em] text-foreground">
                   {openTicket.subject}
@@ -1146,7 +1149,7 @@ const Settings = () => {
                   {openTicket.description}
                 </p>
 
-                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-border/70">
+                <div className="flex flex-wrap gap-x-5 gap-y-2 pt-4 border-t border-border">
                   {openTicket.name && (
                     <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                       <UserRound size={13} strokeWidth={2.1} />
@@ -1181,8 +1184,8 @@ const Settings = () => {
       {/* ── Ticket sent ── */}
       <Dialog open={showSentModal} onOpenChange={setShowSentModal}>
         <DialogContent
-          style={BRAND_VARS}
-          className="sm:max-w-[420px] p-8 text-center rounded-[18px] bg-card border-border/70"
+          style={BRAND_VARS} data-console-portal=""
+          className="sm:max-w-[420px] p-8 text-center rounded-[10px] bg-card border-border"
         >
           <div className="flex flex-col items-center">
             <motion.span

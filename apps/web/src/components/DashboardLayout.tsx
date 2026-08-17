@@ -28,6 +28,29 @@ import { PAGE_CONTAINER } from "@/components/admin/adminUI";
 // via the shell route, and put every page that uses DashboardLayout inside
 // that route block.
 
+/**
+ * Marks <body> while the vendor console is mounted, so PORTALLED surfaces get
+ * the console's tokens.
+ *
+ * Radix renders dialogs, selects, popovers and dropdowns as direct children of
+ * <body> — outside `[data-console="vendor"]` — so without this they fall back
+ * to `:root`, whose `app-*` accent is the NextAdmin purple. The admin already
+ * solves this exactly this way (`useAdminPortalScope` in AdminApp); the vendor
+ * side was instead spreading a `style={BRAND_VARS}` object onto each portal
+ * one at a time, which meant every new menu had to remember to opt in, and
+ * which could not express a dark variant at all.
+ *
+ * It must NOT be a `:root` rule in the stylesheet: global.css is loaded by the
+ * public site, so a rule there would repaint every public page. Scoping it to a
+ * class that only exists while this shell is mounted is what keeps it contained.
+ */
+function useConsolePortalScope() {
+  useLayoutEffect(() => {
+    document.body.classList.add("vendor-scope");
+    return () => document.body.classList.remove("vendor-scope");
+  }, []);
+}
+
 /** Tiny content-area placeholder for lazy chunk loads — keeps the shell visible. */
 const ContentLoader = () => (
   <div className="flex-1 flex items-center justify-center">
@@ -92,6 +115,7 @@ const LayoutContext = createContext<LayoutContextValue | null>(null);
 export const DashboardLayoutShell: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [header, setHeader] = useState<PageHeader>({ title: "Dashboard" });
   const ctx = useMemo(() => ({ setHeader }), []);
+  useConsolePortalScope();
 
   return (
     <LayoutContext.Provider value={ctx}>

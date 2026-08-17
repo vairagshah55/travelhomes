@@ -7,10 +7,12 @@ import {
   LifeBuoy,
   Loader2,
   MessageSquareText,
+  Package as PackageIcon,
   Search,
   Send,
   SearchX,
   Sparkles,
+  Wallet,
   X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -23,11 +25,15 @@ import DashboardLayout, { DashboardLayoutShell } from "@/components/DashboardLay
 import {
   BRAND_VARS,
   BTN_PRIMARY,
+  BTN_RAW,
   BTN_SOFT,
   CONTROL,
+  CONTROL_AREA,
   CONTROL_ERROR,
   EmptyState,
   Field,
+  PANEL,
+  PANEL_INTERACTIVE,
   Panel,
   PanelHead,
 } from "@/components/shared";
@@ -231,62 +237,61 @@ const HelpContent = ({ compact }: { compact?: boolean }) => {
 
   const greetingName = user?.firstName || user?.name?.split(" ")[0];
 
-  return (
-    <div
-      style={BRAND_VARS}
-      className={cn("space-y-5", compact ? "max-w-4xl" : "max-w-3xl", "mx-auto")}
-    >
-      {/* ── Ask ── */}
-      <Panel className="relative">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand/[0.09] via-brand/[0.02] to-transparent"
-        />
-        <div className="relative p-6 sm:p-7">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/[0.1] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand">
-            <Sparkles size={12} strokeWidth={2.4} />
-            Help centre
-          </span>
-          <h1
-            className={cn(
-              "mt-3 font-bold tracking-[-0.02em] text-foreground",
-              compact ? "text-[22px]" : "text-[26px] sm:text-[30px]",
-            )}
-          >
-            {greetingName ? `Hi ${greetingName}, how can we help?` : "How can we help?"}
-          </h1>
-          <p className="mt-1.5 text-[13.5px] text-muted-foreground">
-            Search our answers, or send us a ticket and we'll get back to you by email.
-          </p>
+  /* Search is a plain live-filter field, not a form: typing already filters, so
+     there is no submit and no need for a button that does nothing new. */
+  const searchField = (
+    <div className="relative">
+      <Search
+        size={16}
+        aria-hidden
+        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60"
+      />
+      <Input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search every answer…"
+        aria-label="Search help articles"
+        className={cn(CONTROL, "h-11 rounded-full pl-11 pr-11 text-[14px]")}
+      />
+      {searching && (
+        <button
+          onClick={() => setSearch("")}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-muted-foreground hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        >
+          <X size={14} strokeWidth={2.4} />
+        </button>
+      )}
+    </div>
+  );
 
-          {/* Live search — no submit button, because typing already filters. */}
-          <div className="relative mt-5">
-            <Search
-              size={16}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60"
-            />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search every answer…"
-              aria-label="Search help articles"
-              className={cn("h-12 rounded-full pl-11 pr-11 text-[14px]", CONTROL)}
-            />
-            {searching && (
-              <button
-                onClick={() => setSearch("")}
-                aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 grid place-items-center w-7 h-7 rounded-full text-muted-foreground hover:bg-muted outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-              >
-                <X size={14} strokeWidth={2.4} />
-              </button>
-            )}
-          </div>
-        </div>
-      </Panel>
+  /* Where a vendor's support questions actually go. Two of the three are
+     in-product destinations rather than articles — "how do I get paid" is
+     answered by the revenue page far better than by a paragraph, and a support
+     centre that only ever offers reading material makes people write tickets. */
+  const shortcuts = [
+    {
+      icon: Wallet,
+      label: "Payouts and settlement",
+      blurb: "See what's settled and what's pending",
+      to: "/revenue",
+    },
+    {
+      icon: PackageIcon,
+      label: "Getting a listing approved",
+      blurb: "Check where your offerings are in review",
+      to: "/offering?tab=pending",
+    },
+    {
+      icon: MessageSquareText,
+      label: "Talking to guests",
+      blurb: "Open your message inbox",
+      to: "/vendor-chat",
+    },
+  ];
 
-      {/* ── Answers ── */}
-      <Panel>
+  const answersPanel = (
+    <Panel>
         <PanelHead
           icon={LifeBuoy}
           title={searching ? "Search results" : "Frequently asked"}
@@ -299,7 +304,7 @@ const HelpContent = ({ compact }: { compact?: boolean }) => {
 
         {/* Tabs hide while searching — results already span every category. */}
         {!searching && tabs.length > 0 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide border-b border-border/70 px-5 py-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide border-b border-border px-5 py-3">
             {tabs.map((key) => {
               const active = currentTab === key;
               return (
@@ -326,7 +331,7 @@ const HelpContent = ({ compact }: { compact?: boolean }) => {
         )}
 
         {faqsQuery.isLoading ? (
-          <div className="divide-y divide-border/70">
+          <div className="divide-y divide-border">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="px-5 py-5">
                 <div
@@ -351,7 +356,7 @@ const HelpContent = ({ compact }: { compact?: boolean }) => {
             onAction={() => setSearch("")}
           />
         ) : (
-          <div className="divide-y divide-border/70">
+          <div className="divide-y divide-border">
             {results.map((faq) => (
               <FaqRow
                 key={faq._id}
@@ -363,131 +368,209 @@ const HelpContent = ({ compact }: { compact?: boolean }) => {
             ))}
           </div>
         )}
-      </Panel>
+    </Panel>
+  );
 
-      {/* ── Ticket ── */}
-      <Panel>
-        <PanelHead
-          icon={Send}
-          title="Still stuck? Send a ticket"
-          blurb="We usually reply within a day."
-          aside={
-            compact ? (
-              <Button asChild variant="ghost" className={BTN_SOFT}>
-                <Link to="/settings/account">
-                  Track tickets
-                  <ChevronRight size={14} strokeWidth={2.4} />
-                </Link>
-              </Button>
-            ) : undefined
-          }
-        />
+  const ticketPanel = (
+    <Panel>
+      <PanelHead
+        icon={Send}
+        title="Still stuck? Send a ticket"
+        blurb="We usually reply within a day."
+        aside={
+          compact ? (
+            <Button asChild variant="ghost" className={BTN_SOFT}>
+              <Link to="/settings/account">
+                Track tickets
+                <ChevronRight size={14} strokeWidth={2.4} />
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
 
-        <div className="space-y-4 p-5">
-          <div className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
-            <Field label="Your name" htmlFor="help-name" error={errors.name}>
-              <Input
-                id="help-name"
-                value={form.name}
-                placeholder="e.g. Priya Nair"
-                onChange={(e) => setField("name", e.target.value)}
-                className={cn("h-11", CONTROL, errors.name && CONTROL_ERROR)}
-              />
-            </Field>
-
-            <Field label="Phone (optional)" htmlFor="help-phone" error={errors.phoneNumber}>
-              <Input
-                id="help-phone"
-                type="tel"
-                inputMode="numeric"
-                value={form.phoneNumber}
-                placeholder="10-digit mobile number"
-                onChange={(e) =>
-                  setField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 10))
-                }
-                className={cn("h-11", CONTROL, errors.phoneNumber && CONTROL_ERROR)}
-              />
-            </Field>
-
-            <Field
-              label="Email"
-              htmlFor="help-email"
-              error={errors.email}
-              className="sm:col-span-2"
-            >
-              <Input
-                id="help-email"
-                type="email"
-                value={form.email}
-                placeholder="you@example.com"
-                onChange={(e) => setField("email", e.target.value)}
-                className={cn("h-11", CONTROL, errors.email && CONTROL_ERROR)}
-              />
-            </Field>
-
-            <Field
-              label="Subject"
-              htmlFor="help-subject"
-              error={errors.subject}
-              hint={counterFor(form.subject, SUBJECT_MAX)}
-              className="sm:col-span-2"
-            >
-              <Input
-                id="help-subject"
-                value={form.subject}
-                maxLength={SUBJECT_MAX}
-                placeholder="One line on what's wrong"
-                onChange={(e) => setField("subject", e.target.value)}
-                className={cn("h-11", CONTROL, errors.subject && CONTROL_ERROR)}
-              />
-            </Field>
-          </div>
-
-          <Field
-            label="What happened"
-            htmlFor="help-description"
-            error={errors.description}
-            hint={counterFor(form.description, MESSAGE_MAX)}
-          >
-            <Textarea
-              id="help-description"
-              value={form.description}
-              maxLength={MESSAGE_MAX}
-              placeholder="What you expected, what happened instead, and any booking ID involved."
-              onChange={(e) => setField("description", e.target.value)}
-              className={cn(
-                "min-h-[132px] resize-none py-3 leading-relaxed",
-                CONTROL,
-                errors.description && CONTROL_ERROR,
-              )}
+      <div className="space-y-4 p-4">
+        {/* One column. In the console this panel is a 2/5 rail, and a two-up
+            field grid there gives every input about 150px — narrower than the
+            placeholder text inside it. */}
+        <div className="grid grid-cols-1 gap-4">
+          <Field label="Your name" htmlFor="help-name" error={errors.name}>
+            <Input
+              id="help-name"
+              value={form.name}
+              placeholder="e.g. Priya Nair"
+              onChange={(e) => setField("name", e.target.value)}
+              className={cn(CONTROL, errors.name && CONTROL_ERROR)}
             />
           </Field>
 
-          <div className="flex items-center justify-between gap-4 pt-1">
-            <p className="text-[11.5px] text-muted-foreground">
-              We'll reply to{" "}
-              <span className="font-semibold text-foreground/80">{form.email || "your email"}</span>
-            </p>
-            <Button
-              onClick={submit}
-              disabled={sending}
-              className={cn(BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
-            >
-              {sending ? (
-                <>
-                  <Loader2 size={15} className="animate-spin" />
-                  Sending…
-                </>
-              ) : (
-                <>
-                  <Send size={15} strokeWidth={2.2} />
-                  Send ticket
-                </>
-              )}
-            </Button>
+          <Field label="Phone (optional)" htmlFor="help-phone" error={errors.phoneNumber}>
+            <Input
+              id="help-phone"
+              type="tel"
+              inputMode="numeric"
+              value={form.phoneNumber}
+              placeholder="10-digit mobile number"
+              onChange={(e) =>
+                setField("phoneNumber", e.target.value.replace(/\D/g, "").slice(0, 10))
+              }
+              className={cn(CONTROL, errors.phoneNumber && CONTROL_ERROR)}
+            />
+          </Field>
+
+          <Field label="Email" htmlFor="help-email" error={errors.email}>
+            <Input
+              id="help-email"
+              type="email"
+              value={form.email}
+              placeholder="you@example.com"
+              onChange={(e) => setField("email", e.target.value)}
+              className={cn(CONTROL, errors.email && CONTROL_ERROR)}
+            />
+          </Field>
+
+          <Field
+            label="Subject"
+            htmlFor="help-subject"
+            error={errors.subject}
+            hint={counterFor(form.subject, SUBJECT_MAX)}
+          >
+            <Input
+              id="help-subject"
+              value={form.subject}
+              maxLength={SUBJECT_MAX}
+              placeholder="One line on what's wrong"
+              onChange={(e) => setField("subject", e.target.value)}
+              className={cn(CONTROL, errors.subject && CONTROL_ERROR)}
+            />
+          </Field>
+        </div>
+
+        <Field
+          label="What happened"
+          htmlFor="help-description"
+          error={errors.description}
+          hint={counterFor(form.description, MESSAGE_MAX)}
+        >
+          <Textarea
+            id="help-description"
+            value={form.description}
+            maxLength={MESSAGE_MAX}
+            placeholder="What you expected, what happened instead, and any booking ID involved."
+            onChange={(e) => setField("description", e.target.value)}
+            className={cn(CONTROL_AREA, "min-h-[120px] py-3", errors.description && CONTROL_ERROR)}
+          />
+        </Field>
+
+        <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <p className="text-[11.5px] text-muted-foreground">
+            We'll reply to{" "}
+            <span className="font-semibold text-foreground/80">{form.email || "your email"}</span>
+          </p>
+          <Button
+            onClick={submit}
+            disabled={sending}
+            className={cn(BTN_RAW, BTN_PRIMARY, "disabled:opacity-60 disabled:shadow-none")}
+          >
+            {sending ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                Sending…
+              </>
+            ) : (
+              <>
+                <Send size={15} strokeWidth={2.2} />
+                Send ticket
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </Panel>
+  );
+
+  /* ── Composition ──────────────────────────────────────────────────────────
+     Two shapes for two chromes.
+
+     Inside the console the page-header band already carries the title, so the
+     gradient hero that used to open this page was a second <h1> saying the same
+     word a few pixels below the first — and it pushed the search field, the one
+     control anyone comes here to use, most of the way down the screen. Compact
+     mode drops it and runs the FAQ against a sticky support column, so "read
+     the answer" and "ask a human" are both reachable without scrolling past one
+     to get to the other.
+
+     The public page keeps the hero: there is no band above it there, and the
+     page has to introduce itself. */
+  if (compact) {
+    return (
+      <div style={BRAND_VARS} className="space-y-5">
+        {searchField}
+
+        {!searching && (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {shortcuts.map((shortcut) => (
+              <Link
+                key={shortcut.to}
+                to={shortcut.to}
+                className={cn(
+                  PANEL,
+                  PANEL_INTERACTIVE,
+                  "group flex items-start gap-3 px-4 py-3.5 outline-none",
+                  "focus-visible:ring-4 focus-visible:ring-brand/20",
+                )}
+              >
+                <shortcut.icon
+                  size={16}
+                  strokeWidth={2}
+                  aria-hidden
+                  className="mt-0.5 shrink-0 text-muted-foreground transition-colors group-hover:text-brand"
+                />
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold text-foreground">
+                    {shortcut.label}
+                  </span>
+                  <span className="mt-0.5 block text-[12px] leading-relaxed text-muted-foreground">
+                    {shortcut.blurb}
+                  </span>
+                </span>
+              </Link>
+            ))}
           </div>
+        )}
+
+        <div className="grid gap-4 lg:grid-cols-5 items-start">
+          <div className="lg:col-span-3">{answersPanel}</div>
+          <div className="lg:col-span-2 lg:sticky lg:top-4">{ticketPanel}</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={BRAND_VARS} className="mx-auto max-w-3xl space-y-5">
+      <Panel className="relative">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 bg-gradient-to-br from-brand/[0.09] via-brand/[0.02] to-transparent"
+        />
+        <div className="relative p-6 sm:p-7">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/[0.1] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-brand">
+            <Sparkles size={12} strokeWidth={2.4} />
+            Help centre
+          </span>
+          <h1 className="mt-3 text-[26px] sm:text-[30px] font-bold tracking-[-0.02em] text-foreground">
+            {greetingName ? `Hi ${greetingName}, how can we help?` : "How can we help?"}
+          </h1>
+          <p className="mt-1.5 text-[13.5px] text-muted-foreground">
+            Search our answers, or send us a ticket and we'll get back to you by email.
+          </p>
+          <div className="mt-5">{searchField}</div>
         </div>
       </Panel>
+
+      {answersPanel}
+      {ticketPanel}
     </div>
   );
 };
@@ -505,13 +588,10 @@ const Help = () => {
     return (
       <DashboardLayoutShell>
         <DashboardLayout
-          title="Help"
-          
+          title="Help & support"
+          subtitle="Search the answers, jump straight to the page that fixes it, or send us a ticket."
         >
-          {/* pb clears the fixed MobileVendorNav on small screens. */}
-          <div className="pb-24 lg:pb-12">
-            <HelpContent compact />
-          </div>
+          <HelpContent compact />
         </DashboardLayout>
       </DashboardLayoutShell>
     );

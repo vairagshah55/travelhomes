@@ -29,9 +29,16 @@ interface CommandDialogProps extends DialogProps {
    * vars down. The admin palette passes `PORTAL_VARS`.
    */
   contentStyle?: React.CSSProperties;
+  /**
+   * Marks the surface as belonging to the vendor console, which theme-scopes it
+   * via the `[data-console-portal]` blocks in global.css. `contentStyle` alone
+   * can't do this: the neutral ramp differs between light and dark, and a style
+   * object has no way to say "these greys, unless dark".
+   */
+  contentScope?: "admin" | "vendor";
 }
 
-const CommandDialog = ({ children, contentStyle, ...props }: CommandDialogProps) => {
+const CommandDialog = ({ children, contentStyle, contentScope, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
       {/* gap-0 neutralizes DialogContent's default gap-4 between children.
@@ -41,6 +48,7 @@ const CommandDialog = ({ children, contentStyle, ...props }: CommandDialogProps)
           because only the former is carried in by `contentStyle`. */}
       <DialogContent
         style={contentStyle}
+        data-console-portal={contentScope === "vendor" ? "" : undefined}
         className="overflow-hidden p-0 gap-0 rounded-2xl border-app-border bg-app-surface max-w-[640px] [&>button]:hidden"
       >
         <Command className="bg-app-surface text-app-fg [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-app-fg-subtle [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-1 [&_[cmdk-input-wrapper]_svg]:h-[18px] [&_[cmdk-input-wrapper]_svg]:w-[18px] [&_[cmdk-input]]:h-12 [&_[cmdk-input]]:text-[14px] [&_[cmdk-item]]:gap-3 [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]]:rounded-lg [&_[cmdk-item]_svg]:h-[18px] [&_[cmdk-item]_svg]:w-[18px] [&_[cmdk-item]_svg]:shrink-0">

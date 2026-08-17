@@ -129,10 +129,10 @@ export const OfferEditDialog: React.FC<{
       {/* Radix portals to <body>, outside the page root — BRAND_VARS has to
           ride along or every `brand` class in here resolves navy. */}
       <DialogContent
-        style={BRAND_VARS}
+        style={BRAND_VARS} data-console-portal=""
         className="sm:max-w-[620px] max-h-[88vh] overflow-y-auto rounded-2xl p-0 gap-0"
       >
-        <DialogHeader className="px-5 pt-5 pb-4 border-b border-border/70 text-left">
+        <DialogHeader className="px-5 pt-5 pb-4 border-b border-border text-left">
           <DialogTitle className="text-[15px] font-bold tracking-[-0.01em] pr-8">
             Edit offering
           </DialogTitle>
@@ -226,7 +226,7 @@ export const OfferEditDialog: React.FC<{
           </Field>
         </div>
 
-        <footer className="flex items-center justify-between gap-3 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+        <footer className="flex items-center justify-between gap-3 px-5 py-4 border-t border-border bg-muted/40 dark:bg-white/[0.02]">
           <button
             type="button"
             onClick={() => offer?._id && navigate(`/offering/${offer._id}/edit`)}

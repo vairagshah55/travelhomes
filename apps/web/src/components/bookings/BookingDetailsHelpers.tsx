@@ -111,7 +111,7 @@ export const InfoRow = ({
   label: string;
   value: string;
 }) => (
-  <div className="flex items-start gap-3 py-3 border-b border-border/70 last:border-b-0">
+  <div className="flex items-start gap-3 py-3 border-b border-border last:border-b-0">
     <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-muted text-muted-foreground shrink-0">
       {icon}
     </span>

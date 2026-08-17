@@ -74,7 +74,7 @@ export const SlidePanel = ({
         style={{ ...BRAND_VARS, width, maxWidth: "100vw" }}
         className={cn(
           "fixed top-0 right-0 bottom-0 z-[51] flex flex-col overflow-hidden",
-          "bg-card border-l border-border/70",
+          "bg-card border-l border-border",
           "transition-transform duration-300 [transition-timing-function:cubic-bezier(0.32,0.72,0,1)]",
           open
             ? "translate-x-0 shadow-[-12px_0_48px_-16px_rgba(16,24,40,0.28)]"
@@ -82,7 +82,7 @@ export const SlidePanel = ({
         )}
       >
         {/* Header */}
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/70 shrink-0">
+        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             {icon && (
               <span className="grid place-items-center w-9 h-9 rounded-[10px] bg-brand/10 text-brand shrink-0">
@@ -108,7 +108,7 @@ export const SlidePanel = ({
 
         {/* Sticky footer */}
         {footer && (
-          <footer className="flex justify-end gap-2 px-5 py-4 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02] shrink-0">
+          <footer className="flex justify-end gap-2 px-5 py-4 border-t border-border bg-muted/40 dark:bg-white/[0.02] shrink-0">
             {footer}
           </footer>
         )}

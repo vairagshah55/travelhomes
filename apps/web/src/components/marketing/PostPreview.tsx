@@ -24,7 +24,7 @@ export const PostPreview: React.FC<{ draft: PostDraft }> = ({ draft }) => {
             <img
               src={cover.url}
               alt="Cover preview"
-              className="w-full aspect-[4/3] object-cover rounded-xl border border-border/70"
+              className="w-full aspect-[4/3] object-cover rounded-xl border border-border"
             />
             {rest.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
@@ -33,11 +33,11 @@ export const PostPreview: React.FC<{ draft: PostDraft }> = ({ draft }) => {
                     key={img.id}
                     src={img.url}
                     alt=""
-                    className="w-full aspect-square object-cover rounded-lg border border-border/70"
+                    className="w-full aspect-square object-cover rounded-lg border border-border"
                   />
                 ))}
                 {rest.length > 2 && (
-                  <div className="grid place-items-center aspect-square rounded-lg border border-border/70 bg-muted/60 dark:bg-white/5">
+                  <div className="grid place-items-center aspect-square rounded-lg border border-border bg-muted/60 dark:bg-white/5">
                     <span className="text-[13px] font-bold text-muted-foreground tabular-nums">
                       +{extra}
                     </span>

@@ -1,28 +1,31 @@
 import React from "react";
 import { AlertCircle, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ELEV_1 } from "@/components/admin/adminUI";
 
 /* ── Theme ────────────────────────────────────────────────────────────────────
-   The vendor console reads teal, but `--brand` is navy in global.css and the
-   teal override lives in admin.css — which only AdminApp imports. Rather than
-   sprinkle #117479 through the JSX (what the older vendor pages had to do),
-   re-point the token on a page's root so every `bg-brand` / `text-brand` /
-   `ring-brand/15` beneath it resolves teal through Tailwind. Opacity modifiers
-   keep working because the token is hsl channels, not a hex string.
+   DELIBERATELY EMPTY. Kept as an export because ~28 vendor surfaces spread it
+   onto their root, and because the name documents what that root is for.
 
-   Radix portals its overlays to <body>, outside any page root — so a Dialog
-   that uses brand classes needs `style={BRAND_VARS}` on its own content too. */
-export const BRAND_VARS = {
-  "--brand": "183 76% 27%" /* #117479 */,
-  "--brand-hover": "183 76% 22%" /* #0d5c60 */,
-  "--brand-fg": "0 0% 100%",
-  // shadcn primitives (Switch fill, Checkbox tick, Select/Input focus ring) key
-  // off --primary and --ring, not --brand, so re-point those too or the
-  // controls stay navy.
-  "--primary": "183 76% 27%",
-  "--primary-foreground": "0 0% 100%",
-  "--ring": "180 68% 54%",
-} as React.CSSProperties;
+   It used to re-point `--brand` / `--primary` / `--ring` inline, for a reason
+   that no longer holds: back then `--brand` was NAVY in global.css and the teal
+   lived in admin.css, which only AdminApp imports. The 2026 palette sweep made
+   `:root --brand` the logo cyan, so every value in here became a byte-for-byte
+   copy of the cascade it was overriding.
+
+   Byte-identical in LIGHT mode, that is — and that is what made it a bug rather
+   than dead weight. An inline custom property beats any stylesheet rule without
+   `!important`, so pinning the light cyan here meant `.dark` could never take
+   effect underneath it. #117479 is ~2.3:1 on the console's dark surface, so in
+   dark mode every link, chart line, active tab and soft button on 28 pages was
+   effectively unreadable, and no amount of CSS could fix it while this object
+   had values in it.
+
+   The tokens now live where they can be theme-aware — `:root` / `.dark` and the
+   `[data-console="vendor"]` / `[data-console-portal]` blocks in global.css.
+   Removing the `style={BRAND_VARS}` spreads is a safe follow-up sweep; leaving
+   them costs nothing. */
+export const BRAND_VARS = {} as React.CSSProperties;
 
 /* The admin area's portal vars used to live here too, as `ADMIN_APP_VARS` —
    built by spreading BRAND_VARS above. That coupling broke the moment admin
@@ -31,51 +34,124 @@ export const BRAND_VARS = {
    `PORTAL_VARS`, independent of this set. */
 
 /**
- * Vendor token set for PORTALLED console surfaces — the shared drawer, and any
- * Radix layer that renders components spelled in the `app-*` namespace.
+ * Also deliberately empty, and for a sharper version of the same reason.
  *
- * `BRAND_VARS` covers `bg-brand` / `text-brand`, but the shared console
- * components (AdminDetailDrawer, AdminDataTable's menus) are written in
- * `app-*`, whose `--accent` is the NextAdmin purple at `:root`. A portalled
- * node sits on <body>, outside `[data-console="vendor"]` where global.css
- * re-points it, so it has to be restated here or a vendor drawer opens purple.
+ * A portalled surface (Radix renders drawers, dialogs, selects and dropdowns as
+ * direct children of `<body>`) sits outside `[data-console="vendor"]`, so it
+ * genuinely does need the console's tokens restated — the shared components are
+ * written in the `app-*` namespace, whose `--accent` is the NextAdmin purple at
+ * `:root`, and without a restatement a vendor drawer opened purple.
  *
- * The surface vars are deliberately NOT restated: `:root` already provides the
- * light values and `.dark` the dark ones, and both are correct on <body>.
+ * But a style object cannot express "these values, unless dark", and a portal
+ * needs BOTH: the console's neutral ramp and its accent invert between themes.
+ * So the restatement moved to CSS — the `[data-console-portal]` and
+ * `.dark [data-console-portal]` blocks in global.css — and the component stamps
+ * that attribute instead of spreading values.
+ *
+ * Kept as an export so the four vendor surfaces that still pass it keep
+ * compiling; `portalScope="vendor"` on the drawer is the current way in.
  */
-export const CONSOLE_PORTAL_VARS = {
-  ...BRAND_VARS,
-  "--accent": "#117479",
-  "--accent-hover": "#0d5c60",
-  "--accent-soft": "rgba(17, 116, 121, 0.09)",
-  "--accent-fg": "#ffffff",
-} as React.CSSProperties;
+export const CONSOLE_PORTAL_VARS = {} as React.CSSProperties;
 
-/** White card, hairline edge, soft layered lift — depth from shadow, not stroke. */
-export const PANEL =
-  "bg-card rounded-[18px] border border-border/70 " +
-  "shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.16)] " +
-  "dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),0_12px_32px_-16px_rgba(0,0,0,0.55)]";
+/**
+ * Marker attribute for portalled console surfaces — spread onto any Radix
+ * content node rendered from the vendor console. See the note above.
+ */
+export const CONSOLE_PORTAL_ATTR = { "data-console-portal": "" } as const;
+
+/* ── Geometry ─────────────────────────────────────────────────────────────
+   The vendor console and the admin are held to ONE geometry contract, so a
+   button, a field or a card is the same object in both. The numbers live in
+   `components/admin/adminUI.ts` (spelled in the brand-agnostic `app-*`
+   namespace); re-deriving them here is how the two drifted last time — a
+   panel at 18px next to a table cell at 10px, a 40px button beside a 36px one.
+
+     primary / filled controls .... h-9,  rounded-lg, 13px semibold
+     inputs and selects ........... h-10, rounded-xl, 13.5px
+     cards and panels ............. rounded-[10px], hairline, no lift
+     pills and chips .............. h-8,  rounded-full, 12px
+
+   What the vendor kit still owns is the SPELLING: these classes use the
+   `brand` tokens (`bg-brand`, `ring-brand/15`) that vendor pages and Radix
+   portals re-point through `BRAND_VARS`, where the admin kit uses `app-accent`.
+   Same pixels, different token path. */
+
+/**
+ * The one panel definition for the console.
+ *
+ * A resting surface gets a hairline and essentially no shadow. The previous
+ * value put a 28px blurred lift under every card, which read as consumer-app
+ * rather than business tool and — worse — flattened hierarchy: when a stat
+ * card, a chart, a table and a form section all levitate equally, nothing on
+ * the page is actually raised. Shadow is now reserved for layers that really
+ * do float (menus, drawers, dialogs) via `ELEV_FLOAT`.
+ */
+export const PANEL = `bg-card rounded-[10px] border border-border ${ELEV_1}`;
+
+/** Same panel, clipping its children — use when a table or media sits flush. */
+export const PANEL_FLUSH = `${PANEL} overflow-hidden`;
+
+/** Genuinely floating layers only: drawers, dialogs, popovers. */
+export const ELEV_FLOAT =
+  "shadow-[0_8px_24px_-6px_rgba(14,26,27,0.12),0_2px_6px_-2px_rgba(14,26,27,0.06)] " +
+  "dark:shadow-[0_8px_28px_-6px_rgba(0,0,0,0.6)]";
+
+/** Hover treatment for a clickable card — the edge darkens, it does not lift. */
+export const PANEL_INTERACTIVE =
+  "transition-[background-color,border-color] duration-150 " +
+  "hover:border-brand/30 hover:bg-muted/40 dark:hover:bg-white/[0.03]";
+
+/** Header strip inside a panel — hairline base, no fill. */
+export const PANEL_HEAD =
+  "flex items-start justify-between gap-4 px-4 py-3.5 border-b border-border";
 
 /** Action bar at the bottom of a panel — hairline top, faintly recessed. */
 export const PANEL_FOOTER =
-  "flex items-center justify-between gap-4 px-5 py-4 border-t border-border/70 " +
-  "bg-muted/40 dark:bg-white/[0.02]";
+  "flex items-center justify-between gap-4 px-4 py-3 border-t border-border " +
+  "bg-muted/50 dark:bg-white/[0.02]";
+
+/** Inner grouping block — a bordered region that must not read as a card. */
+export const INSET = "rounded-lg border border-border overflow-hidden bg-card";
 
 /** Active-row highlight for a vertical rail. Give the `motion.span` a `layoutId`
     so one pill slides between rows; siblings need `relative` to paint above it. */
 export const ACTIVE_PILL =
-  "absolute inset-0 rounded-xl bg-brand/[0.09] shadow-[inset_3px_0_0_0_hsl(var(--brand))]";
+  "absolute inset-0 rounded-lg bg-brand/[0.09] shadow-[inset_3px_0_0_0_hsl(var(--brand))]";
+
+/** One focus ring for the whole console. `ring-offset-0` matters: without it the
+    offset inherits and punches a white gap through tinted fills. */
+export const FOCUS_RING =
+  "outline-none focus-visible:ring-4 focus-visible:ring-brand/20 focus-visible:ring-offset-0";
 
 /** Inset field that lifts to the card surface on focus — CONVENTIONS.md Rule 1/2. */
 export const CONTROL =
-  "rounded-xl border-border bg-muted/50 dark:bg-white/5 text-[13.5px] " +
+  "h-10 rounded-xl border-border bg-muted/60 dark:bg-white/5 text-[13.5px] " +
+  "placeholder:text-muted-foreground/60 focus-visible:bg-card focus-visible:border-brand " +
+  "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:ring-offset-0 " +
+  "transition-[background-color,border-color,box-shadow] duration-150";
+
+/** Textarea counterpart — same skin, height comes from `rows`. */
+export const CONTROL_AREA =
+  "rounded-xl border-border bg-muted/60 dark:bg-white/5 text-[13.5px] leading-6 resize-none " +
   "placeholder:text-muted-foreground/60 focus-visible:bg-card focus-visible:border-brand " +
   "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:ring-offset-0 " +
   "transition-[background-color,border-color,box-shadow] duration-150";
 
 export const CONTROL_ERROR =
   "border-red-400 focus-visible:border-red-500 focus-visible:ring-red-500/15";
+
+/* ── Pills and eyebrows ───────────────────────────────────────────────────
+   Brand-tinted and neutral chips for counts, filters and metadata. Semantic
+   status colours live in StatusBadge — do not restate them here. */
+export const PILL_BRAND =
+  "inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-brand/[0.09] " +
+  "text-brand text-[12px] font-semibold";
+export const PILL_NEUTRAL =
+  "inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-muted " +
+  "text-muted-foreground text-[12px] font-medium border border-border";
+/** Column label / small-caps eyebrow above a group. */
+export const EYEBROW =
+  "text-[11px] font-semibold uppercase tracking-[0.06em] text-muted-foreground/80";
 
 /**
  * Highlight styling for dropdown rows.
@@ -99,24 +175,56 @@ export const SELECT_ITEM =
   "cursor-pointer focus:bg-brand/[0.1] focus:text-brand " +
   "data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand";
 
+/* ── Buttons ──────────────────────────────────────────────────────────────
+   Four roles only: primary (one per view), secondary, neutral, danger. The
+   press state is a 1px sink rather than a scale — scale blurs text mid-frame
+   on the sub-pixel grid, a translate does not.
+
+   These are sized to be droppable onto a shadcn `<Button>` (which supplies the
+   flex box) OR onto a bare element — hence `inline-flex` is NOT baked in; use
+   `BTN_RAW` alongside when the element isn't a `<Button>`. */
+export const BTN_RAW = "inline-flex items-center justify-center whitespace-nowrap shrink-0";
+
+/* A flat fill with a 1px inset highlight along the top edge. It reads as a
+   crisp physical key rather than a glowing blob, and it survives on both light
+   and tinted grounds. The previous value floated the primary button on a 16px
+   brand-coloured glow, which made a form's Save look like a hero CTA.
+   Spelled in `hsl(var(--brand)/…)` so it follows whichever brand is in scope —
+   and note Tailwind silently drops any arbitrary value containing a space. */
+export const BTN_PRIMARY =
+  "h-9 px-3.5 rounded-lg bg-brand hover:bg-brand-hover text-brand-fg " +
+  "text-[13px] font-semibold gap-2 border-0 " +
+  "shadow-[inset_0_1px_0_0_rgba(255,255,255,0.14),0_1px_2px_hsl(var(--brand)/0.2)] " +
+  "disabled:shadow-none active:translate-y-px " +
+  "transition-[box-shadow,transform,background-color] duration-150";
+
 /* Secondary actions read as tinted fills, not hairline outlines — a 1px
    `border-border` pill on a white card is almost invisible and looks unfinished. */
 export const BTN_SOFT =
-  "h-9 px-3.5 rounded-xl border-0 shadow-none bg-brand/[0.09] text-brand " +
-  "hover:bg-brand/[0.16] text-[12.5px] font-semibold gap-1.5";
+  "h-9 px-3.5 rounded-lg border-0 shadow-none bg-brand/[0.09] text-brand " +
+  "hover:bg-brand/[0.16] text-[13px] font-semibold gap-1.5 active:translate-y-px " +
+  "transition-[background-color,transform] duration-150";
+
+/** Neutral equivalent, for actions that aren't brand-flavoured (Cancel, Export). */
 export const BTN_NEUTRAL =
-  "h-9 px-4 rounded-xl border-0 shadow-none bg-muted text-foreground/80 " +
-  "hover:bg-muted/70 text-[12.5px] font-semibold gap-1.5";
-/* The glow is spelled in `hsl(var(--brand)/…)` rather than a literal hex so it
-   follows whichever brand is in scope — cyan on vendor routes, blue inside the
-   admin shell. A literal here is also how the previous values silently broke:
-   Tailwind drops any arbitrary value containing a space. */
-export const BTN_PRIMARY =
-  "h-10 px-5 rounded-xl bg-brand hover:bg-brand-hover text-brand-fg font-semibold gap-2 " +
-  "shadow-[0_1px_2px_hsl(var(--brand)/0.24),0_6px_16px_-6px_hsl(var(--brand)/0.45)] " +
-  "hover:shadow-[0_2px_4px_hsl(var(--brand)/0.28),0_10px_22px_-6px_hsl(var(--brand)/0.5)] " +
-  "active:translate-y-px " +
-  "transition-[box-shadow,transform,background-color] duration-150";
+  "h-9 px-3.5 rounded-lg border border-border shadow-none bg-card text-foreground/85 " +
+  "hover:bg-muted text-[13px] font-semibold gap-1.5 active:translate-y-px " +
+  "transition-[background-color,transform] duration-150";
+
+export const BTN_GHOST =
+  "h-9 px-2.5 rounded-lg border-0 shadow-none bg-transparent text-muted-foreground " +
+  "hover:bg-muted hover:text-foreground text-[13px] font-semibold gap-1.5";
+
+export const BTN_DANGER_SOFT =
+  "h-9 px-3.5 rounded-lg border-0 shadow-none bg-red-50 text-red-600 hover:bg-red-100 " +
+  "dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20 " +
+  "text-[13px] font-semibold gap-1.5";
+
+/** Tighter, for table footers and inline rows. */
+export const BTN_SM = "h-8 px-3 text-[12.5px]";
+/** Square icon-only button. Pair with any of the roles above. */
+export const BTN_ICON = "h-9 w-9 px-0";
+export const BTN_ICON_SM = "h-8 w-8 px-0";
 
 export const Panel = ({
   className,
@@ -126,6 +234,15 @@ export const Panel = ({
   children: React.ReactNode;
 }) => <section className={cn(PANEL, "overflow-hidden", className)}>{children}</section>;
 
+/**
+ * Panel header.
+ *
+ * The icon is a small monochrome glyph, not a brand-tinted tile. A filled tile
+ * on every panel head turned the accent into wallpaper: by the time a page had
+ * six sections, the one thing on screen that was genuinely the primary action
+ * had no colour left to distinguish it. The accent is rationed to five roles —
+ * primary button, active nav row, focus ring, selected row/tab, and links.
+ */
 export const PanelHead = ({
   icon: Icon,
   title,
@@ -137,19 +254,24 @@ export const PanelHead = ({
   blurb?: string;
   aside?: React.ReactNode;
 }) => (
-  <header className="flex items-start justify-between gap-4 px-5 pt-4 pb-3.5 border-b border-border/70">
-    <div className="flex items-start gap-3 min-w-0">
+  <header className={PANEL_HEAD}>
+    <div className="flex items-start gap-2.5 min-w-0">
       {Icon && (
-        <span className="mt-0.5 grid place-items-center w-8 h-8 rounded-[10px] bg-brand/10 text-brand shrink-0">
-          <Icon size={15} strokeWidth={2.1} />
-        </span>
+        <Icon
+          size={15}
+          strokeWidth={2}
+          aria-hidden
+          className="mt-[3px] shrink-0 text-muted-foreground"
+        />
       )}
       <div className="min-w-0">
-        <h3 className="text-[14.5px] font-bold tracking-[-0.01em] text-foreground">{title}</h3>
-        {blurb && <p className="mt-0.5 text-[12.5px] text-muted-foreground">{blurb}</p>}
+        <h3 className="text-[14px] font-bold tracking-[-0.01em] text-foreground">{title}</h3>
+        {blurb && (
+          <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">{blurb}</p>
+        )}
       </div>
     </div>
-    {aside && <div className="shrink-0 pt-0.5">{aside}</div>}
+    {aside && <div className="shrink-0 -mt-0.5">{aside}</div>}
   </header>
 );
 
@@ -160,19 +282,24 @@ export const SubPanel = ({
   blurb,
   aside,
   children,
+  className,
 }: {
   icon: LucideIcon;
   title: string;
   blurb?: string;
   aside?: React.ReactNode;
   children: React.ReactNode;
+  className?: string;
 }) => (
-  <section className="rounded-[14px] border border-border/70 overflow-hidden">
-    <header className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
-      <div className="flex items-start gap-3 min-w-0">
-        <span className="grid place-items-center w-8 h-8 rounded-[10px] bg-brand/10 text-brand shrink-0">
-          <Icon size={15} strokeWidth={2.1} />
-        </span>
+  <section className={cn(INSET, className)}>
+    <header className="flex items-start justify-between gap-3 px-4 py-3 border-b border-border bg-muted/50 dark:bg-white/[0.02]">
+      <div className="flex items-start gap-2.5 min-w-0">
+        <Icon
+          size={15}
+          strokeWidth={2}
+          aria-hidden
+          className="mt-[3px] shrink-0 text-muted-foreground"
+        />
         <div className="min-w-0">
           <p className="text-[13.5px] font-bold text-foreground">{title}</p>
           {blurb && <p className="mt-0.5 text-[12px] text-muted-foreground">{blurb}</p>}
@@ -184,7 +311,13 @@ export const SubPanel = ({
   </section>
 );
 
-/** Label + blurb on the left, control on the right. */
+/**
+ * Label + blurb on the left, control on the right.
+ *
+ * Stacks below `sm`: a switch pinned to the right edge of a 360px phone with a
+ * two-line description squeezed beside it was the single worst responsive
+ * offender in Settings.
+ */
 export const SettingRow = ({
   icon: Icon,
   title,
@@ -196,12 +329,15 @@ export const SettingRow = ({
   blurb?: string;
   children: React.ReactNode;
 }) => (
-  <div className="flex items-center justify-between gap-6 px-5 py-4">
-    <div className="flex items-start gap-3 min-w-0">
+  <div className="flex flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <div className="flex items-start gap-2.5 min-w-0">
       {Icon && (
-        <span className="mt-px grid place-items-center w-8 h-8 rounded-[10px] bg-muted text-muted-foreground shrink-0">
-          <Icon size={15} strokeWidth={2} />
-        </span>
+        <Icon
+          size={15}
+          strokeWidth={2}
+          aria-hidden
+          className="mt-[3px] shrink-0 text-muted-foreground"
+        />
       )}
       <div className="min-w-0">
         <p className="text-[13.5px] font-semibold text-foreground">{title}</p>
@@ -210,7 +346,7 @@ export const SettingRow = ({
         )}
       </div>
     </div>
-    <div className="shrink-0">{children}</div>
+    <div className="shrink-0 sm:pl-0 pl-[22px]">{children}</div>
   </div>
 );
 

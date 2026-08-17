@@ -773,7 +773,7 @@ const AddOfferings = () => {
       title="Add Offering"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto">
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Left rail: where you are, and how far there is to go ── */}
           <WizardRail
@@ -819,7 +819,7 @@ const AddOfferings = () => {
                               "focus-visible:ring-4 focus-visible:ring-brand/15",
                               active
                                 ? "border-brand ring-4 ring-brand/10"
-                                : "border-border/70 hover:border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
+                                : "border-border hover:border-border shadow-[0_1px_2px_rgba(16,24,40,0.04)]",
                             )}
                           >
                             <span

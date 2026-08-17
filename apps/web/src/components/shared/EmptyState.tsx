@@ -1,5 +1,6 @@
 import React from "react";
 import type { LucideIcon } from "lucide-react";
+import { BTN_NEUTRAL, BTN_PRIMARY, BTN_RAW, FOCUS_RING } from "./Panel";
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -13,7 +14,16 @@ interface EmptyStateProps {
 }
 
 /**
- * Primary CTA uses `bg-brand` — auto-themes per route group.
+ * The screen a surface shows when it has no rows.
+ *
+ * Three of these are distinct states and must not be collapsed into one:
+ * nothing exists yet ("Create your first offering"), a filter matched nothing
+ * ("Try adjusting your filters"), and the fetch failed. Each carries the action
+ * that resolves it — an empty state without a next step is a dead end dressed
+ * up as a feature.
+ *
+ * Buttons come from the shared kit rather than being spelled inline, so the CTA
+ * in an empty table is the same object as the CTA in the page header above it.
  */
 export function EmptyState({
   icon: Icon,
@@ -51,25 +61,12 @@ export function EmptyState({
       {(actionLabel || secondaryLabel) && (
         <div className="flex flex-wrap items-center justify-center gap-2">
           {actionLabel && onAction && (
-            <button
-              onClick={onAction}
-              className="bg-brand hover:bg-brand-hover text-brand-fg rounded-xl px-4 h-10 text-[13px] font-semibold
-                shadow-[0_1px_2px_hsl(var(--brand)/0.24),0_6px_16px_-6px_hsl(var(--brand)/0.45)]
-                hover:shadow-[0_2px_4px_hsl(var(--brand)/0.28),0_10px_22px_-6px_hsl(var(--brand)/0.5)]
-                active:translate-y-px transition-[background-color,box-shadow,transform] duration-150
-                outline-none focus-visible:ring-4 focus-visible:ring-brand/20"
-            >
+            <button onClick={onAction} className={`${BTN_RAW} ${BTN_PRIMARY} ${FOCUS_RING}`}>
               {actionLabel}
             </button>
           )}
           {secondaryLabel && onSecondary && (
-            <button
-              onClick={onSecondary}
-              className="bg-card border border-border text-foreground/80 hover:bg-muted rounded-xl px-4 h-10
-                text-[13px] font-semibold active:translate-y-px
-                transition-[background-color,transform] duration-150
-                outline-none focus-visible:ring-4 focus-visible:ring-brand/20"
-            >
+            <button onClick={onSecondary} className={`${BTN_RAW} ${BTN_NEUTRAL} ${FOCUS_RING}`}>
               {secondaryLabel}
             </button>
           )}

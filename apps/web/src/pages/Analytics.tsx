@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Select,
@@ -10,16 +10,12 @@ import {
 import {
   BadgeCheck,
   CalendarCheck,
-  CalendarClock,
-  CalendarX,
   Clock,
   Eye,
   IndianRupee,
   LineChart,
-  MousePointer,
   Package,
   Target,
-  Users,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { vendorAnalyticsApi } from "@/lib/api";
@@ -28,10 +24,10 @@ import {
   BRAND_VARS,
   CONTROL,
   ChartTooltip,
-  PANEL,
+  PANEL_HEAD,
   Panel,
-  PanelHead,
   SELECT_ITEM,
+  SectionHeader,
   StatTile,
   StatTileSkeleton,
 } from "@/components/shared";
@@ -46,7 +42,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { currencyINR } from "@/utils/currency";
-
+import { inrCompact } from "@/components/revenue/format";
 
 const PERIODS = [
   { value: "daily", label: "Daily" },
@@ -57,72 +53,128 @@ const PERIODS = [
 
 const periodLabel = (v: string) => PERIODS.find((p) => p.value === v)?.label ?? v;
 
+/* ── Funnel ───────────────────────────────────────────────────────────────────
+   The single most useful thing this endpoint's data can say, and the page
+   never said it. Impressions, clicks, visitors and bookings were four cards in
+   a row of eight, so the numbers were all present and the RELATIONSHIP between
+   them — the only reason to look at them together — was invisible.
+
+   Four stages, each bar proportional to the widest, each gap labelled with the
+   conversion between them. It answers "where am I losing people": a healthy
+   impression count with a 0.3% click rate is a listing-photo problem, and the
+   same impressions with a 9% click rate and no bookings is a pricing problem.
+   Those are different weeks of work and the old layout couldn't tell them
+   apart. */
+
+const FunnelStage = ({
+  label,
+  value,
+  hint,
+  widthPct,
+  conversion,
+  conversionLabel,
+}: {
+  label: string;
+  value: number;
+  hint: string;
+  widthPct: number;
+  conversion?: number;
+  conversionLabel?: string;
+}) => (
+  <div className="py-3 first:pt-0 last:pb-0">
+    <div className="flex items-baseline justify-between gap-3">
+      <p className="text-[12.5px] font-semibold text-foreground">{label}</p>
+      <p className="text-[15px] font-bold tabular-nums text-foreground">
+        {value.toLocaleString("en-IN")}
+      </p>
+    </div>
+    <div className="mt-1.5 h-2 rounded-full bg-muted overflow-hidden">
+      <div
+        className="h-full rounded-full bg-brand transition-[width] duration-500"
+        /* A computed proportion is exactly what Rule 1 in CONVENTIONS.md allows
+           an inline style for — there is no class for "37.4% wide". */
+        style={{ width: `${Math.max(widthPct, 1.5)}%` }}
+      />
+    </div>
+    <div className="mt-1.5 flex items-baseline justify-between gap-3">
+      <p className="text-[11.5px] text-muted-foreground">{hint}</p>
+      {conversion !== undefined && (
+        <p className="text-[11.5px] font-semibold tabular-nums text-muted-foreground">
+          {conversion.toFixed(1)}% {conversionLabel}
+        </p>
+      )}
+    </div>
+  </div>
+);
+
 /* ── Chart panel ──────────────────────────────────────────────────────────── */
 
 const ChartPanel = ({
-  icon,
   title,
+  blurb,
   filter,
   onFilterChange,
   data,
   dataKey,
-  color,
   loading,
   currency,
+  className,
 }: {
-  icon: typeof LineChart;
   title: string;
+  blurb: string;
   filter: string;
   onFilterChange: (v: string) => void;
   data: any[];
   dataKey: string;
-  color: string;
   loading: boolean;
   currency?: boolean;
+  className?: string;
 }) => {
-  const gradientId = `grad-${dataKey}-${title.replace(/\s/g, "")}`;
+  const gradientId = `grad-${dataKey}`;
   const total = useMemo(
     () => data.reduce((sum, row) => sum + Number(row?.[dataKey] || 0), 0),
     [data, dataKey],
   );
 
   return (
-    <Panel>
-      <PanelHead
-        icon={icon}
-        title={title}
-        // The period is part of what the chart IS — the old titles said
-        // "Monthly Earnings" no matter which period was selected.
-        blurb={
-          loading
-            ? "Loading…"
-            : `${periodLabel(filter)} · ${currency ? currencyINR(total) : total.toLocaleString("en-IN")} total`
-        }
-        aside={
-          <Select value={filter} onValueChange={onFilterChange}>
-            <SelectTrigger className={cn("h-9 w-[112px]", CONTROL)} aria-label={`${title} period`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent style={BRAND_VARS}>
-              {PERIODS.map((p) => (
-                <SelectItem key={p.value} value={p.value} className={SELECT_ITEM}>
-                  {p.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        }
-      />
+    <Panel className={className}>
+      <header className={PANEL_HEAD}>
+        <div className="min-w-0">
+          <h3 className="text-[14px] font-bold tracking-[-0.01em] text-foreground">{title}</h3>
+          {/* The period is part of what the chart IS — the old titles said
+              "Monthly Earnings" no matter which period was selected. */}
+          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+            {loading
+              ? "Loading…"
+              : `${periodLabel(filter)} · ${currency ? currencyINR(total) : total.toLocaleString("en-IN")} total · ${blurb}`}
+          </p>
+        </div>
+        <Select value={filter} onValueChange={onFilterChange}>
+          <SelectTrigger className={cn(CONTROL, "h-9 w-[112px]")} aria-label={`${title} period`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent style={BRAND_VARS} data-console-portal="">
+            {PERIODS.map((p) => (
+              <SelectItem key={p.value} value={p.value} className={SELECT_ITEM}>
+                {p.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </header>
 
       <div className="p-4 pt-5">
         {loading ? (
-          <div className="h-[200px] rounded-xl bg-muted animate-pulse" />
+          <div className="h-[220px] rounded-lg bg-muted animate-pulse" />
         ) : data.length === 0 ? (
-          <div className="h-[200px] grid place-items-center text-center">
+          <div className="h-[220px] grid place-items-center text-center">
             <div>
-              <span className="mx-auto grid place-items-center w-11 h-11 rounded-full bg-muted text-muted-foreground">
-                <LineChart size={20} strokeWidth={1.9} />
-              </span>
+              <LineChart
+                size={20}
+                strokeWidth={1.8}
+                aria-hidden
+                className="mx-auto text-muted-foreground"
+              />
               <p className="mt-2.5 text-[13px] font-semibold text-foreground">Nothing to plot</p>
               <p className="mt-0.5 text-[12px] text-muted-foreground">
                 No {periodLabel(filter).toLowerCase()} data for this period yet.
@@ -130,48 +182,54 @@ const ChartPanel = ({
             </div>
           </div>
         ) : (
-          <div className="h-[200px]">
+          <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.28} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(var(--brand))" stopOpacity={0.24} />
+                    <stop offset="95%" stopColor="hsl(var(--brand))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 {/* Horizontal rules only — vertical ones fight the area fill. */}
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  vertical={false}
-                  stroke="currentColor"
-                  className="text-border"
-                />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="name"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11 }}
-                  stroke="currentColor"
-                  className="text-muted-foreground"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                   interval="preserveStartEnd"
+                  minTickGap={16}
                 />
                 <YAxis
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fontSize: 11 }}
-                  stroke="currentColor"
-                  className="text-muted-foreground"
-                  width={38}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  width={currency ? 56 : 40}
+                  tickFormatter={(v: number) => (currency ? inrCompact(v) : String(v))}
                 />
-                <Tooltip content={<ChartTooltip valuePrefix={currency ? "₹" : ""} />} />
+                <Tooltip
+                  cursor={{ stroke: "hsl(var(--brand))", strokeWidth: 1, strokeOpacity: 0.35 }}
+                  content={
+                    <ChartTooltip
+                      valueFormatter={(v: number) =>
+                        currency ? currencyINR(v) : v.toLocaleString("en-IN")
+                      }
+                    />
+                  }
+                />
+                {/* Series colour is the brand token, not a per-chart hex. Two
+                    charts of the same measure used to be drawn in teal and
+                    violet, which implied they were different series. */}
                 <Area
                   type="monotone"
                   dataKey={dataKey}
-                  stroke={color}
+                  stroke="hsl(var(--brand))"
                   strokeWidth={2}
                   fillOpacity={1}
                   fill={`url(#${gradientId})`}
-                  activeDot={{ r: 4, strokeWidth: 2 }}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 2, stroke: "hsl(var(--card))" }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -185,9 +243,14 @@ const ChartPanel = ({
 /* ── Page ─────────────────────────────────────────────────────────────────── */
 
 const Analytics = () => {
-  const [monthlyFilter, setMonthlyFilter] = useState("monthly");
-  const [yearlyFilter, setYearlyFilter] = useState("yearly");
-  const [dailyFilter, setDailyFilter] = useState("daily");
+  /* Two chart periods, not three. The page used to render "Earnings" and
+     "Earnings trend" side by side — the SAME series from the SAME endpoint,
+     differing only in the period each had selected and the colour each was
+     drawn in. Two charts of one measure is not more insight, it is a reader
+     comparing a chart against itself. One earnings chart with a period
+     selector, one visitors chart. */
+  const [earningsPeriod, setEarningsPeriod] = useState("monthly");
+  const [visitorsPeriod, setVisitorsPeriod] = useState("daily");
 
   const { token: authToken } = useAuth();
   const token = authToken ?? undefined;
@@ -201,26 +264,17 @@ const Analytics = () => {
     },
   });
 
-  // Three separate graph queries keyed by their filter so flipping
-  // monthly/yearly/daily refetches only that bucket.
-  const monthlyQuery = useQuery<any[]>({
-    queryKey: ["analytics", "graphs", "monthly", monthlyFilter],
+  const earningsQuery = useQuery<any[]>({
+    queryKey: ["analytics", "graphs", "earnings", earningsPeriod],
     queryFn: async () => {
-      const res = await vendorAnalyticsApi.getGraphs(token, monthlyFilter);
+      const res = await vendorAnalyticsApi.getGraphs(token, earningsPeriod);
       return res.success && res.data ? res.data : [];
     },
   });
-  const yearlyQuery = useQuery<any[]>({
-    queryKey: ["analytics", "graphs", "yearly", yearlyFilter],
+  const visitorsQuery = useQuery<any[]>({
+    queryKey: ["analytics", "graphs", "visitors", visitorsPeriod],
     queryFn: async () => {
-      const res = await vendorAnalyticsApi.getGraphs(token, yearlyFilter);
-      return res.success && res.data ? res.data : [];
-    },
-  });
-  const dailyQuery = useQuery<any[]>({
-    queryKey: ["analytics", "graphs", "daily", dailyFilter],
-    queryFn: async () => {
-      const res = await vendorAnalyticsApi.getGraphs(token, dailyFilter);
+      const res = await vendorAnalyticsApi.getGraphs(token, visitorsPeriod);
       return res.success && res.data ? res.data : [];
     },
   });
@@ -231,206 +285,227 @@ const Analytics = () => {
   const impressions = data?.metrics?.impressions ?? 0;
   const clicks = data?.metrics?.clicks ?? 0;
   const visitors = data?.metrics?.visitors ?? 0;
+  const bookings = data?.total ?? 0;
   const payments = data?.payments ?? { received: 0, pending: 0 };
   const properties = data?.properties ?? { approved: 0, pending: 0 };
 
   /** Clicks per impression — the number that says whether reach is working. */
   const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+  /** Bookings per visitor — the number that says whether the listing sells. */
+  const conversion = visitors > 0 ? (bookings / visitors) * 100 : 0;
 
-  const bookingSegments = [
-    { label: "Total", value: data?.total ?? 0, dot: "bg-brand", icon: CalendarCheck },
-    { label: "Upcoming", value: data?.upcoming ?? 0, dot: "bg-blue-400", icon: CalendarClock },
-    { label: "Past", value: data?.past ?? 0, dot: "bg-emerald-400", icon: CalendarCheck },
-    { label: "Cancelled", value: data?.cancelled ?? 0, dot: "bg-red-400", icon: CalendarX },
-  ];
+  const funnel = useMemo(() => {
+    const stages = [
+      {
+        label: "Impressions",
+        value: impressions,
+        hint: "Times a listing appeared in search",
+      },
+      {
+        label: "Clicks",
+        value: clicks,
+        hint: "Opened from a search result",
+        conversion: impressions > 0 ? (clicks / impressions) * 100 : undefined,
+        conversionLabel: "of impressions",
+      },
+      {
+        label: "Visitors",
+        value: visitors,
+        hint: "People who reached a listing page",
+        conversion: clicks > 0 ? (visitors / clicks) * 100 : undefined,
+        conversionLabel: "of clicks",
+      },
+      {
+        label: "Bookings",
+        value: bookings,
+        hint: "Reservations made",
+        conversion: visitors > 0 ? (bookings / visitors) * 100 : undefined,
+        conversionLabel: "of visitors",
+      },
+    ];
+    // Scale to the widest stage rather than to impressions: if a vendor somehow
+    // has more visitors than impressions (different counters, different
+    // windows), scaling to the first stage would draw a bar past the container.
+    const peak = Math.max(...stages.map((s) => s.value), 1);
+    return stages.map((s) => ({ ...s, widthPct: (s.value / peak) * 100 }));
+  }, [impressions, clicks, visitors, bookings]);
+
+  const funnelEmpty = impressions === 0 && clicks === 0 && visitors === 0 && bookings === 0;
 
   return (
     <DashboardLayout
       title="Analytics"
+      subtitle="Where travellers find you, how many of them book, and what that's worth."
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
-        {/* ── Reach ── */}
-        <section className="space-y-2.5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-            Reach
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {loading ? (
-              <>
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-              </>
-            ) : (
-              <>
-                <StatTile
-                  icon={Eye}
-                  label="Impressions"
-                  hint="Times your listings were shown"
-                  value={impressions}
-                  color="#06b6d4"
-                  index={0}
-                />
-                <StatTile
-                  icon={MousePointer}
-                  label="Clicks"
-                  hint="Opened from search"
-                  value={clicks}
-                  color="#f59e0b"
-                  index={1}
-                />
-                <StatTile
-                  icon={Target}
-                  label="Click-through rate"
-                  hint="Clicks ÷ impressions"
-                  value={`${ctr.toFixed(1)}%`}
-                  color="#a855f7"
-                  index={2}
-                />
-                <StatTile
-                  icon={Users}
-                  label="Visitors"
-                  hint="People who viewed your offers"
-                  value={visitors}
-                  color="#ec4899"
-                  index={3}
-                />
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* ── Bookings ── */}
-        <section className="space-y-2.5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-            Bookings
-          </h2>
+      <div style={BRAND_VARS} className="space-y-5 md:space-y-6">
+        {/* ── Headline numbers ──
+            Four cards, each a different question. The page previously ran eight
+            across two sections, four of which restated the funnel below. */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {loading ? (
-            <div className={cn(PANEL, "h-[92px] animate-pulse")} />
+            Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
-            <Panel>
-              <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border/70">
-                {bookingSegments.map((s) => (
-                  <div
-                    key={s.label}
-                    className="flex flex-col items-center justify-center gap-1.5 py-4 transition-colors duration-150 hover:bg-muted/50 dark:hover:bg-white/[0.02]"
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span className={cn("w-2 h-2 rounded-full", s.dot)} />
-                      <span className="text-[11.5px] font-semibold text-muted-foreground">
-                        {s.label}
-                      </span>
-                    </span>
-                    <p className="text-[20px] font-bold tracking-[-0.02em] tabular-nums text-foreground">
-                      {s.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </Panel>
+            <>
+              <StatTile
+                icon={Eye}
+                label="Impressions"
+                hint="Times your listings were shown"
+                value={impressions}
+                index={0}
+              />
+              <StatTile
+                icon={Target}
+                label="Click-through rate"
+                hint={`${clicks.toLocaleString("en-IN")} clicks from ${impressions.toLocaleString("en-IN")} views`}
+                value={`${ctr.toFixed(1)}%`}
+                index={1}
+              />
+              <StatTile
+                icon={CalendarCheck}
+                label="Visitor conversion"
+                hint={`${bookings} booking${bookings === 1 ? "" : "s"} from ${visitors.toLocaleString("en-IN")} visitors`}
+                value={`${conversion.toFixed(1)}%`}
+                index={2}
+              />
+              <StatTile
+                icon={IndianRupee}
+                label="Earned"
+                hint="Received and settled"
+                value={payments.received}
+                format={currencyINR}
+                index={3}
+              />
+            </>
           )}
-        </section>
+        </div>
 
-        {/* ── Money and catalog ── */}
-        <section className="space-y-2.5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-            Payments and listings
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-            {loading ? (
-              <>
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-                <StatTileSkeleton />
-              </>
-            ) : (
-              <>
-                {/* These are SUMS of payment amounts, not counts — the old
-                    labels ("No. of Payment Received") read a rupee total as a
-                    quantity. */}
-                <StatTile
-                  icon={IndianRupee}
-                  label="Payments received"
-                  hint="Completed and paid"
-                  value={payments.received}
-                  format={currencyINR}
-                  color="#10b981"
-                  index={0}
-                />
-                <StatTile
-                  icon={Clock}
-                  label="Payments pending"
-                  hint="Awaiting settlement"
-                  value={payments.pending}
-                  format={currencyINR}
-                  color="#f43f5e"
-                  index={1}
-                />
-                <StatTile
-                  icon={BadgeCheck}
-                  label="Approved listings"
-                  hint="Live on the site"
-                  value={properties.approved}
-                  color="#22c55e"
-                  index={2}
-                />
-                <StatTile
-                  icon={Package}
-                  label="Pending approval"
-                  hint="With our review team"
-                  value={properties.pending}
-                  color="#f59e0b"
-                  index={3}
-                />
-              </>
-            )}
-          </div>
-        </section>
+        {/* ── Funnel + catalog health, side by side ── */}
+        <div className="grid gap-4 lg:grid-cols-5">
+          <Panel className="lg:col-span-3">
+            <header className={PANEL_HEAD}>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-bold tracking-[-0.01em] text-foreground">
+                  From search to booking
+                </h3>
+                <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                  Where travellers drop off on the way to a reservation
+                </p>
+              </div>
+            </header>
+            <div className="px-4 py-4">
+              {loading ? (
+                <div className="space-y-5">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-3 w-24 rounded bg-muted animate-pulse" />
+                      <div className="h-2 rounded-full bg-muted animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : funnelEmpty ? (
+                <div className="py-10 text-center">
+                  <p className="text-[13px] font-semibold text-foreground">No traffic yet</p>
+                  <p className="mt-1 text-[12.5px] text-muted-foreground max-w-[42ch] mx-auto">
+                    Once your offerings start appearing in search, this shows how many people see
+                    them, click through, and go on to book.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {funnel.map((stage) => (
+                    <FunnelStage key={stage.label} {...stage} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </Panel>
+
+          <Panel className="lg:col-span-2">
+            <header className={PANEL_HEAD}>
+              <div className="min-w-0">
+                <h3 className="text-[14px] font-bold tracking-[-0.01em] text-foreground">
+                  Catalog and payments
+                </h3>
+                <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                  What's live, and what you're owed
+                </p>
+              </div>
+            </header>
+            <dl className="divide-y divide-border">
+              {[
+                {
+                  icon: BadgeCheck,
+                  label: "Live offerings",
+                  value: String(properties.approved),
+                  hint: "Bookable right now",
+                },
+                {
+                  icon: Package,
+                  label: "Under review",
+                  value: String(properties.pending),
+                  hint: "With our review team",
+                },
+                {
+                  icon: IndianRupee,
+                  label: "Settled",
+                  value: currencyINR(payments.received),
+                  hint: "Paid out to you",
+                },
+                {
+                  icon: Clock,
+                  label: "Awaiting settlement",
+                  value: currencyINR(payments.pending),
+                  hint: "Collected, not yet paid out",
+                },
+              ].map((row) => (
+                <div key={row.label} className="flex items-center gap-3 px-4 py-3.5">
+                  <row.icon
+                    size={15}
+                    strokeWidth={2}
+                    aria-hidden
+                    className="shrink-0 text-muted-foreground"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <dt className="text-[13px] font-semibold text-foreground">{row.label}</dt>
+                    <dd className="text-[11.5px] text-muted-foreground">{row.hint}</dd>
+                  </div>
+                  <dd className="shrink-0 text-[14px] font-bold tabular-nums text-foreground">
+                    {loading ? "—" : row.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </Panel>
+        </div>
 
         {/* ── Trends ── */}
-        <section className="space-y-2.5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-            Trends
-          </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="space-y-3">
+          <SectionHeader
+            title="Trends"
+            description="Both charts read the same series the revenue page does — change the period to compare a week against a year."
+          />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ChartPanel
-              icon={IndianRupee}
               title="Earnings"
-              filter={monthlyFilter}
-              onFilterChange={setMonthlyFilter}
-              data={monthlyQuery.data ?? []}
+              blurb="what guests paid"
+              filter={earningsPeriod}
+              onFilterChange={setEarningsPeriod}
+              data={earningsQuery.data ?? []}
               dataKey="earnings"
-              color="#117479"
-              loading={monthlyQuery.isLoading}
+              loading={earningsQuery.isLoading}
               currency
             />
             <ChartPanel
-              icon={LineChart}
-              title="Earnings trend"
-              filter={yearlyFilter}
-              onFilterChange={setYearlyFilter}
-              data={yearlyQuery.data ?? []}
-              dataKey="earnings"
-              color="#8b5cf6"
-              loading={yearlyQuery.isLoading}
-              currency
+              title="Visitors"
+              blurb="people who opened a listing"
+              filter={visitorsPeriod}
+              onFilterChange={setVisitorsPeriod}
+              data={visitorsQuery.data ?? []}
+              dataKey="visitors"
+              loading={visitorsQuery.isLoading}
             />
           </div>
-
-          <ChartPanel
-            icon={Users}
-            title="Visitors"
-            filter={dailyFilter}
-            onFilterChange={setDailyFilter}
-            data={dailyQuery.data ?? []}
-            dataKey="visitors"
-            color="#0ea5e9"
-            loading={dailyQuery.isLoading}
-          />
-        </section>
+        </div>
       </div>
     </DashboardLayout>
   );

@@ -168,10 +168,10 @@ const NewBooking = () => {
       title="New Booking"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto">
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Rail: live recap of what's being booked ── */}
-          <aside className="lg:sticky lg:top-2 self-start space-y-3">
+          <aside className="lg:sticky lg:top-4 self-start space-y-3">
             <div className={cn(PANEL, "p-4")}>
               <div className="flex items-center gap-3">
                 <span className="grid place-items-center w-11 h-11 rounded-full bg-brand/[0.1] text-brand shrink-0">
@@ -187,7 +187,7 @@ const NewBooking = () => {
                 </div>
               </div>
 
-              <div className="mt-3 divide-y divide-border/70">
+              <div className="mt-3 divide-y divide-border">
                 <SummaryRow
                   label="Dates"
                   muted={!summary.start}
@@ -221,7 +221,7 @@ const NewBooking = () => {
                 )}
               </div>
 
-              <div className="mt-3 pt-3 border-t border-border/70 flex items-baseline justify-between gap-3">
+              <div className="mt-3 pt-3 border-t border-border flex items-baseline justify-between gap-3">
                 <span className="text-[12px] font-semibold text-muted-foreground">Total</span>
                 <span className="text-[18px] font-bold tabular-nums tracking-[-0.02em] text-brand">
                   {currencyINR(summary.total)}
@@ -273,7 +273,7 @@ const NewBooking = () => {
                     {[0, 1, 2].map((i) => (
                       <div
                         key={i}
-                        className="rounded-[14px] border border-border/70 overflow-hidden"
+                        className="rounded-[14px] border border-border overflow-hidden"
                       >
                         <div className="h-[58px] bg-muted/50 animate-pulse" />
                         <div className="p-4 grid sm:grid-cols-2 gap-4">

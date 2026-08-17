@@ -174,7 +174,7 @@ export const EditBookingFields = ({
               <SelectTrigger className={cn("h-11 border", CONTROL)}>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent style={BRAND_VARS} className="z-[60]">
+              <SelectContent style={BRAND_VARS} data-console-portal="" className="z-[60]">
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s} className={SELECT_ITEM}>
                     {s}
@@ -245,7 +245,7 @@ export const EditBookingFields = ({
               <SelectTrigger className={cn("h-11 border", CONTROL)}>
                 <SelectValue placeholder="Select method" />
               </SelectTrigger>
-              <SelectContent style={BRAND_VARS} className="z-[60]">
+              <SelectContent style={BRAND_VARS} data-console-portal="" className="z-[60]">
                 {PAYMENT_METHODS.map((m) => (
                   <SelectItem key={m.value} value={m.value} className={SELECT_ITEM}>
                     {m.label}
@@ -262,7 +262,7 @@ export const EditBookingFields = ({
               <SelectTrigger className={cn("h-11 border", CONTROL)}>
                 <SelectValue placeholder="Unpaid" />
               </SelectTrigger>
-              <SelectContent style={BRAND_VARS} className="z-[60]">
+              <SelectContent style={BRAND_VARS} data-console-portal="" className="z-[60]">
                 {PAYMENT_STATUSES.map((s) => (
                   <SelectItem key={s.value} value={s.value} className={SELECT_ITEM}>
                     {s.label}

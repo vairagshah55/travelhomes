@@ -2,6 +2,7 @@ import React from "react";
 import { AlertCircle, ChevronDown, ChevronUp, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { EYEBROW, FOCUS_RING, PORTAL_VARS, SKELETON } from "./adminUI";
+import { CONSOLE_PORTAL_VARS } from "@/components/shared/Panel";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,14 +56,17 @@ interface AdminDetailDrawerProps {
   /** Fetch failed — replaces the body with the reason. */
   error?: string | null;
   /**
-   * Token set for the portalled panel. Radix renders the sheet as a child of
-   * <body>, outside whichever console root is in scope, so the vars have to be
+   * Which console this drawer belongs to. Radix renders the sheet as a child of
+   * <body>, outside whichever console root is in scope, so the theme has to be
    * restated on the panel itself — there is nothing to inherit from.
    *
-   * Defaults to the admin's blue (`PORTAL_VARS`). The vendor console passes
-   * `CONSOLE_PORTAL_VARS` from components/shared/Panel.tsx; without it a vendor
-   * drawer opens in admin blue over a cyan page.
+   * `"admin"` (the default) carries the admin's blue `PORTAL_VARS`. `"vendor"`
+   * carries the cyan brand AND stamps `data-console-portal`, which is what the
+   * matching light/dark blocks in global.css key off for the neutral ramp — a
+   * plain style object can't express "these greys, unless dark".
    */
+  portalScope?: "admin" | "vendor";
+  /** Escape hatch for a one-off token set. Overrides `portalScope`'s vars. */
   portalStyle?: React.CSSProperties;
   children: React.ReactNode;
 }
@@ -88,9 +92,12 @@ export function AdminDetailDrawer({
   media,
   loading = false,
   error = null,
-  portalStyle = PORTAL_VARS,
+  portalScope = "admin",
+  portalStyle,
   children,
 }: AdminDetailDrawerProps) {
+  const isVendor = portalScope === "vendor";
+  const scopeStyle = portalStyle ?? (isVendor ? CONSOLE_PORTAL_VARS : PORTAL_VARS);
   const stepper =
     "grid place-items-center w-7 h-7 rounded-md border border-app-border text-app-fg-muted " +
     "hover:bg-app-surface-2 hover:text-app-fg disabled:opacity-35 disabled:pointer-events-none " +
@@ -119,7 +126,8 @@ export function AdminDetailDrawer({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
         side="right"
-        style={portalStyle}
+        style={scopeStyle}
+        data-console-portal={isVendor ? "" : undefined}
         onCloseAutoFocus={(event) => {
           const target = restoreRef.current;
           // Only take over when the origin is still on the page — a row that

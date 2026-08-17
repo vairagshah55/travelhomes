@@ -334,15 +334,20 @@ const VendorChat = () => {
   return (
     <DashboardLayout
       title="Messages"
+      subtitle="Conversations with guests about their bookings."
       /* Owns its own height: the shell stops scrolling for this page. */
       fillHeight
-      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden p-4 lg:p-6"
+      contentClassName="flex-1 min-h-0 flex flex-col overflow-hidden px-4 sm:px-6 lg:px-8 py-4 pb-20 lg:pb-6"
     >
       {/* The two panes own their scrolling — the page itself never scrolls, so
-          the composer stays put like a real chat client. */}
+          the composer stays put like a real chat client.
+
+          Full container width rather than max-w-6xl: a thread pane capped at
+          ~740px wraps a two-line message into four, and the space it was giving
+          back sat empty on the right of a 1440px screen. */}
       <div
         style={BRAND_VARS}
-        className="flex-1 min-h-0 w-full max-w-6xl mx-auto grid gap-4 lg:gap-5 lg:grid-cols-[320px_minmax(0,1fr)]"
+        className="flex-1 min-h-0 w-full max-w-[1600px] mx-auto grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]"
       >
         {/* ── Conversation list ── */}
         <section
@@ -353,7 +358,7 @@ const VendorChat = () => {
             activeId && "hidden lg:flex",
           )}
         >
-          <header className="shrink-0 px-4 pt-4 pb-3 border-b border-border/70">
+          <header className="shrink-0 px-4 pt-4 pb-3 border-b border-border">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-[14.5px] font-bold tracking-[-0.01em] text-foreground">
@@ -393,7 +398,7 @@ const VendorChat = () => {
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
             {loadingList ? (
-              <div className="divide-y divide-border/70">
+              <div className="divide-y divide-border">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
                     <div className="w-10 h-10 rounded-full bg-muted animate-pulse shrink-0" />
@@ -431,7 +436,7 @@ const VendorChat = () => {
                 </button>
               </div>
             ) : (
-              <ul className="divide-y divide-border/70">
+              <ul className="divide-y divide-border">
                 {visible.map((c) => (
                   <li key={c.id} className="relative">
                     <ConversationRow
@@ -469,7 +474,7 @@ const VendorChat = () => {
           ) : (
             <>
               {/* Thread header */}
-              <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border/70">
+              <header className="shrink-0 flex items-center gap-3 px-4 py-3 border-b border-border">
                 <button
                   type="button"
                   onClick={closeConversation}
@@ -545,7 +550,7 @@ const VendorChat = () => {
               </div>
 
               {/* Composer */}
-              <footer className="shrink-0 border-t border-border/70 bg-muted/40 dark:bg-white/[0.02] px-3 py-3">
+              <footer className="shrink-0 border-t border-border bg-muted/40 dark:bg-white/[0.02] px-3 py-3">
                 <AnimatePresence initial={false}>
                   {files.length > 0 && (
                     <motion.div
@@ -558,7 +563,7 @@ const VendorChat = () => {
                         {files.map((f, i) => (
                           <span
                             key={`${f.file.name}-${i}`}
-                            className="relative inline-flex items-center gap-2 pl-2 pr-7 py-1.5 rounded-xl bg-card border border-border/70 text-[12px] font-medium text-foreground/85 max-w-[220px]"
+                            className="relative inline-flex items-center gap-2 pl-2 pr-7 py-1.5 rounded-xl bg-card border border-border text-[12px] font-medium text-foreground/85 max-w-[220px]"
                           >
                             {f.preview ? (
                               <img
@@ -591,12 +596,12 @@ const VendorChat = () => {
                       <button
                         type="button"
                         aria-label="Attach a file"
-                        className="grid place-items-center w-10 h-10 shrink-0 rounded-xl bg-card border border-border/70 text-muted-foreground hover:text-brand hover:border-brand/40 transition-colors duration-150"
+                        className="grid place-items-center w-10 h-10 shrink-0 rounded-xl bg-card border border-border text-muted-foreground hover:text-brand hover:border-brand/40 transition-colors duration-150"
                       >
                         <Paperclip size={16} strokeWidth={2.2} />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-44 p-1.5">
+                    <DropdownMenuContent align="start" style={BRAND_VARS} data-console-portal="" className="w-44 p-1.5">
                       <DropdownMenuItem
                         className={MENU_ITEM}
                         onClick={() => imageInput.current?.click()}

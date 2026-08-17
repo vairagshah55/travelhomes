@@ -754,7 +754,7 @@ const EditOfferings = () => {
       <DashboardLayout
         title="Edit Offering"
       >
-        <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+        <div style={BRAND_VARS} className="max-w-6xl mx-auto">
           <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
             <div className="space-y-3">
               <div className={cn(PANEL, "h-[132px] animate-pulse")} />
@@ -781,7 +781,7 @@ const EditOfferings = () => {
       title="Edit Offering"
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+      <div style={BRAND_VARS} className="max-w-6xl mx-auto">
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           <WizardRail
             steps={STEPS}

@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BRAND_VARS, PANEL, StatusBadge } from "@/components/shared";
+import { BRAND_VARS, PANEL, PANEL_INTERACTIVE, StatusBadge } from "@/components/shared";
 import { type OfferDTO } from "@/lib/api";
 import { cn, getImageUrl } from "@/lib/utils";
 
@@ -66,9 +66,12 @@ export const OfferingCard = ({
       }}
       className={cn(
         PANEL,
+        PANEL_INTERACTIVE,
         "group flex flex-col overflow-hidden cursor-pointer outline-none",
-        "transition-[transform,box-shadow] duration-200",
-        "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(59,217,218,0.28),0_18px_40px_-20px_rgba(59,217,218,0.65)]",
+        /* The card used to lift 2px onto a 40px cyan glow on hover. In a grid of
+           twelve that reads as the page breathing rather than as a response to
+           the pointer, and it forced a repaint of the photo underneath. The edge
+           darkening in PANEL_INTERACTIVE is the console's hover vocabulary. */
         "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
       )}
     >
@@ -101,7 +104,7 @@ export const OfferingCard = ({
               <button
                 type="button"
                 aria-label={`Actions for ${listing.name}`}
-                className="grid place-items-center w-8 h-8 rounded-full bg-white/90 dark:bg-gray-900/90 text-[#475467] dark:text-gray-200 shadow-[0_2px_8px_rgba(16,24,40,0.14)] backdrop-blur-sm outline-none transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-brand/50"
+                className="grid place-items-center w-8 h-8 rounded-full bg-card/90 text-foreground/70 shadow-[0_2px_8px_rgba(14,26,27,0.16)] backdrop-blur-sm outline-none transition-colors hover:bg-card hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand/50"
               >
                 <MoreHorizontal size={15} />
               </button>
@@ -109,6 +112,7 @@ export const OfferingCard = ({
             <DropdownMenuContent
               align="end"
               style={BRAND_VARS}
+              data-console-portal=""
               className="w-[168px] p-1.5"
               onClick={(e) => e.stopPropagation()}
             >

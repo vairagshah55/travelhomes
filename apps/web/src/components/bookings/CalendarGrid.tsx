@@ -180,11 +180,11 @@ export const CalendarGrid = ({
   };
 
   return (
-    <div className="overflow-auto rounded-[14px] border border-border/70 bg-card">
+    <div className="overflow-auto rounded-[14px] border border-border bg-card">
       {/* Header row — sticks while the body scrolls vertically. */}
-      <div className="flex min-w-max sticky top-0 z-30 bg-muted border-b border-border/70">
+      <div className="flex min-w-max sticky top-0 z-30 bg-muted border-b border-border">
         <div
-          className="shrink-0 sticky left-0 z-10 px-4 py-3 border-r border-border/70 bg-muted text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground"
+          className="shrink-0 sticky left-0 z-10 px-4 py-3 border-r border-border bg-muted text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground"
           style={{ width: RAIL }}
         >
           Service
@@ -195,7 +195,7 @@ export const CalendarGrid = ({
             <div
               key={d}
               className={cn(
-                "shrink-0 py-3 text-center border-r border-border/70 text-[12px] font-bold tabular-nums",
+                "shrink-0 py-3 text-center border-r border-border text-[12px] font-bold tabular-nums",
                 today
                   ? "text-brand"
                   : isWeekend(d)
@@ -222,7 +222,7 @@ export const CalendarGrid = ({
           <div
             key={vi}
             className={cn(
-              "group/row flex min-w-max border-b border-border/70 last:border-b-0",
+              "group/row flex min-w-max border-b border-border last:border-b-0",
               "transition-colors duration-100 hover:bg-brand/[0.035]",
               vi % 2 === 1 && "bg-muted/30 dark:bg-white/[0.015]",
             )}
@@ -231,7 +231,7 @@ export const CalendarGrid = ({
             <div
               // Stays opaque `bg-card` even on row hover — the booking bars
               // scroll underneath it, and a translucent rail would show them.
-              className="shrink-0 sticky left-0 z-20 flex items-center gap-2 pl-4 pr-2 border-r border-border/70 bg-card"
+              className="shrink-0 sticky left-0 z-20 flex items-center gap-2 pl-4 pr-2 border-r border-border bg-card"
               style={{ width: RAIL }}
             >
               <span className="min-w-0 flex-1 text-[13px] font-semibold text-foreground truncate">
@@ -283,7 +283,7 @@ export const CalendarGrid = ({
                       : `Create a booking on ${day} for ${vehicle}`
                   }
                   className={cn(
-                    "shrink-0 relative flex items-center justify-center border-r border-border/70",
+                    "shrink-0 relative flex items-center justify-center border-r border-border",
                     "cursor-pointer transition-colors duration-100",
                     // The overlay bar already names the guest — a booked cell
                     // only needs to read as unavailable, not repeat the name in

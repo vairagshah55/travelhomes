@@ -152,7 +152,7 @@ export const PaymentTable: React.FC<{
         }
       />
 
-      <div className="px-5 py-3.5 border-b border-border/70">
+      <div className="px-5 py-3.5 border-b border-border">
         <AdminToolbar
           searchValue={searchQuery}
           onSearchChange={(v) => {

@@ -1,7 +1,8 @@
 import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Clock3, ImageIcon, Megaphone, Tag } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { BRAND_VARS, StatTile, StatTileSkeleton } from "@/components/shared";
+import { BRAND_VARS, BTN_RAW, BTN_SOFT, StatTile, StatTileSkeleton } from "@/components/shared";
 import {
   OffersSummary,
   PostComposer,
@@ -21,11 +22,17 @@ import {
  * saying "your posts" until the API grows an owner.
  */
 const Marketing = () => {
+  const navigate = useNavigate();
   const draft = usePostDraft();
   const postsQuery = useMarketingPosts();
   const offersQuery = useMyOffers();
 
-  const posts = postsQuery.data ?? [];
+  /* `Array.isArray`, not `?? []`. `/api/marketing/content` returns a bare array
+     on success, so any error envelope (`{ success: false, … }`) arrives as an
+     OBJECT that survives the nullish check and then blows up on `.reduce` —
+     white-screening the page instead of showing the feed's error state. Caught
+     by the runtime smoke pass; `Offering.tsx` already guards its list this way. */
+  const posts = Array.isArray(postsQuery.data) ? postsQuery.data : [];
   const offers = offersQuery.data?.items ?? [];
 
   const stats = useMemo(() => {
@@ -40,10 +47,16 @@ const Marketing = () => {
   return (
     <DashboardLayout
       title="Marketing"
+      subtitle="Write a post, see how it will look, and check what promotions are running behind it."
+      headerActions={
+        <button onClick={() => navigate("/marketing/offers")} className={`${BTN_RAW} ${BTN_SOFT}`}>
+          <Tag size={14} strokeWidth={2.2} />
+          Manage offers
+        </button>
+      }
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+      <div style={BRAND_VARS} className="space-y-5 md:space-y-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {loadingStats ? (
             Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
@@ -54,15 +67,17 @@ const Marketing = () => {
                 label="Posts"
                 hint="In the feed"
                 value={stats.posts}
-                color="#117479"
               />
               <StatTile
                 index={1}
                 icon={ImageIcon}
                 label="Images"
-                hint="Across all posts"
+                hint={
+                  stats.posts > 0
+                    ? `${(stats.images / stats.posts).toFixed(1)} per post`
+                    : "Across all posts"
+                }
                 value={stats.images}
-                color="#3b82f6"
               />
               <StatTile
                 index={2}
@@ -70,27 +85,34 @@ const Marketing = () => {
                 label="Offers live"
                 hint="Approved and bookable"
                 value={stats.live}
-                color="#22c55e"
+                onClick={() => navigate("/marketing/offers?tab=approved")}
               />
               <StatTile
                 index={3}
                 icon={Clock3}
                 label="Awaiting review"
-                hint="Offers with admin"
+                hint={stats.pending > 0 ? "Offers with admin" : "Nothing waiting"}
                 value={stats.pending}
-                color="#f59e0b"
+                onClick={
+                  stats.pending > 0
+                    ? () => navigate("/marketing/offers?tab=pending")
+                    : undefined
+                }
               />
             </>
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
           <div className="lg:col-span-2">
             <PostComposer draft={draft} />
           </div>
 
-          {/* Sticky so the preview stays in view while the composer grows. */}
-          <div className="space-y-5 lg:sticky lg:top-0">
+          {/* Sticky so the preview stays in view while the composer grows.
+              `top-4` rather than `top-0`: the shell's <main> is the scroll
+              container, so a 0 offset parks the preview flush against the
+              header band with no breathing room above it. */}
+          <div className="space-y-4 lg:sticky lg:top-4">
             <PostPreview draft={draft} />
             <OffersSummary
               offers={offers}

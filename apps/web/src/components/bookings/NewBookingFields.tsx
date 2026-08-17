@@ -150,7 +150,7 @@ export const NewBookingFields = ({
               >
                 <SelectValue placeholder={hasServices ? "Select service" : "No services yet"} />
               </SelectTrigger>
-              <SelectContent style={BRAND_VARS} className="z-[60]">
+              <SelectContent style={BRAND_VARS} data-console-portal="" className="z-[60]">
                 {groupedServices
                   ? groupedServices.map((g) => (
                       <SelectGroup key={g.type}>
@@ -303,7 +303,7 @@ export const NewBookingFields = ({
               >
                 <SelectValue placeholder="Select method" />
               </SelectTrigger>
-              <SelectContent style={BRAND_VARS} className="z-[60]">
+              <SelectContent style={BRAND_VARS} data-console-portal="" className="z-[60]">
                 {PAYMENT_METHODS.map((m) => (
                   <SelectItem key={m.value} value={m.value} className={SELECT_ITEM}>
                     {m.label}

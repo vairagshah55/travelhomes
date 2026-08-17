@@ -1,12 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 import {
   X,
   Users,
-  MapPin,
   Pencil,
   Trash2,
   Ban,
@@ -14,11 +13,7 @@ import {
   Eye,
   Save,
   Calendar,
-  User,
-  Mail,
-  Phone,
   IndianRupee,
-  Clock,
   CalendarX,
   Search,
   ChevronDown,
@@ -38,13 +33,13 @@ import {
   BRAND_VARS,
   BTN_NEUTRAL,
   BTN_PRIMARY,
+  BTN_RAW,
   BTN_SOFT,
-  CONSOLE_PORTAL_VARS,
   CONTROL,
   Panel,
-  PanelHead,
   StatTile,
   StatTileSkeleton,
+  TabStrip,
 } from "@/components/shared";
 import { bookingDetailsApi, offersApi, activitiesApi, type BookingDetailDTO } from "@/lib/api";
 import { formatDate } from "@/utils/formateTime";
@@ -53,7 +48,6 @@ import { cn } from "@/lib/utils";
 import {
   PanelInput,
   PanelSelect,
-  InfoRow,
   parseBookingDate,
   isDateInRange,
   categorizeBooking,
@@ -87,8 +81,8 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
       <button
         type="button"
         className={cn(
-          "inline-flex items-center gap-2 h-10 px-3.5 rounded-xl border whitespace-nowrap",
-          "text-[13px] font-semibold text-foreground/85 bg-muted/50 dark:bg-white/5 border-border",
+          "inline-flex items-center gap-2 h-9 px-3 rounded-lg border whitespace-nowrap",
+          "text-[13px] font-semibold text-foreground/85 bg-card border-border",
           "outline-none transition-colors duration-150 hover:bg-muted",
           "focus-visible:ring-4 focus-visible:ring-brand/15 focus-visible:border-brand",
         )}
@@ -97,7 +91,12 @@ const FilterPill: React.FC<{ label: string; children: React.ReactNode }> = ({
         <ChevronDown size={14} className="text-muted-foreground" />
       </button>
     </DropdownMenuTrigger>
-    <DropdownMenuContent align="start" style={BRAND_VARS} className="w-48 p-1.5">
+    <DropdownMenuContent
+      align="start"
+      style={BRAND_VARS}
+      data-console-portal=""
+      className="w-52 p-1.5"
+    >
       {children}
     </DropdownMenuContent>
   </DropdownMenu>
@@ -127,6 +126,7 @@ const FILTER_ITEM_CLASS =
   "data-[highlighted]:bg-brand/[0.1] data-[highlighted]:text-brand";
 
 const BookingDetails = () => {
+  const navigate = useNavigate();
   const { user, token: authToken } = useAuth();
   const token = authToken ?? undefined;
 
@@ -607,47 +607,72 @@ const BookingDetails = () => {
     </Button>
   );
 
+  /* The tab strip lives on the header band's bottom edge, matching every other
+     console list. Inside the card it was the second of three stacked strips
+     (panel head → tabs+filters → active-filter pills) before the first row of
+     data, and a segmented pill inside a card reads as a control that changes
+     something IN the card rather than swapping the whole body. */
+  const bandTabs = (
+    <TabStrip
+      variant="flush"
+      tabs={TABS.map((t) => ({
+        key: t.key,
+        label: t.label,
+        count:
+          t.key === "upcoming"
+            ? tabCounts.upcoming
+            : t.key === "past"
+              ? tabCounts.past
+              : tabCounts.cancelled,
+      }))}
+      activeKey={activeTab}
+      onChange={(k) => {
+        setActiveTab(k as typeof activeTab);
+        setCurrentPage(1);
+      }}
+    />
+  );
+
   // ═══════════════════════════════════════════════════════════════════════════
   return (
     <DashboardLayout
-      title="Booking Details"
+      title="Booking records"
       subtitle="Every reservation against your listings, with guest and payment detail."
+      tabs={bandTabs}
+      headerActions={
+        <button onClick={() => navigate("/bookings")} className={`${BTN_RAW} ${BTN_SOFT}`}>
+          <CalendarDays size={14} strokeWidth={2.2} />
+          Calendar view
+        </button>
+      }
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12 space-y-5">
+      <div style={BRAND_VARS} className="space-y-5">
         {/* ── Metrics ── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {isLoading ? (
-            <>
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-              <StatTileSkeleton />
-            </>
+            Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
             <>
               <StatTile
                 icon={CalendarDays}
-                label="Total"
-                hint="All bookings"
+                label="Total bookings"
+                hint="Across every status"
                 value={stats.total}
-                color="#117479"
                 index={0}
               />
               <StatTile
                 icon={Calendar}
-                label="Today"
-                hint="Active stays"
+                label="Checking in today"
+                hint="Guests arriving"
                 value={stats.today}
-                color="#8b5cf6"
                 index={1}
               />
               <StatTile
                 icon={Activity}
-                label="Active"
-                hint="Currently active"
+                label="In progress"
+                hint="Stays underway now"
                 value={stats.active}
-                color="#22c55e"
                 index={2}
               />
               <StatTile
@@ -655,7 +680,6 @@ const BookingDetails = () => {
                 label="Revenue"
                 hint="Excludes cancelled"
                 value={currencyINR(stats.revenue)}
-                color="#f59e0b"
                 index={3}
               />
             </>
@@ -664,71 +688,12 @@ const BookingDetails = () => {
 
         {/* ── Bookings ── */}
         <Panel>
-          <PanelHead
-            icon={CalendarDays}
-            title="Reservations"
-            blurb={
-              isLoading
-                ? "Loading your bookings…"
-                : `${filteredBookings.length} ${activeTab} booking${filteredBookings.length === 1 ? "" : "s"}`
-            }
-          />
+          {/* The toolbar IS the card's header row. There used to be a panel head
+              ("Reservations", plus a count the table's own footer already
+              reports) above a tab strip above this row — three bands of chrome
+              before the first booking. */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-3 border-b border-border">
 
-          {/* Tabs + filters */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3 px-5 py-3 border-b border-border/70">
-            <div
-              role="tablist"
-              aria-label="Booking groups"
-              className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 dark:bg-white/[0.04] w-fit shrink-0"
-            >
-              {TABS.map((t) => {
-                const active = activeTab === t.key;
-                const count =
-                  t.key === "upcoming"
-                    ? tabCounts.upcoming
-                    : t.key === "past"
-                      ? tabCounts.past
-                      : tabCounts.cancelled;
-                return (
-                  <button
-                    key={t.key}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => {
-                      setActiveTab(t.key);
-                      setCurrentPage(1);
-                    }}
-                    className={cn(
-                      "relative inline-flex items-center gap-1.5 h-8 px-3 rounded-lg",
-                      "text-[12.5px] font-semibold outline-none transition-colors duration-150",
-                      "focus-visible:ring-2 focus-visible:ring-brand/40",
-                      active ? "text-brand" : "text-muted-foreground hover:text-foreground",
-                    )}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId="bookingTabPill"
-                        className="absolute inset-0 rounded-lg bg-card shadow-[0_1px_2px_rgba(16,24,40,0.08)]"
-                        transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                      />
-                    )}
-                    <span className="relative">{t.label}</span>
-                    <span
-                      className={cn(
-                        "relative grid place-items-center min-w-[20px] h-[18px] px-1.5 rounded-full",
-                        "text-[10.5px] font-bold tabular-nums",
-                        active ? "bg-brand/15 text-brand" : "bg-muted-foreground/10",
-                      )}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
               <div className="relative flex-1 min-w-[190px] lg:max-w-[260px]">
                 <Search
                   size={14}
@@ -743,7 +708,7 @@ const BookingDetails = () => {
                   }}
                   placeholder="Search client, ID or service"
                   aria-label="Search bookings"
-                  className={cn("h-10 pl-9", CONTROL)}
+                  className={cn(CONTROL, "h-9 pl-9 text-[13px]")}
                 />
               </div>
 
@@ -792,12 +757,11 @@ const BookingDetails = () => {
                   </DropdownMenuItem>
                 ))}
               </FilterPill>
-            </div>
           </div>
 
           {/* Active-filter pills — otherwise an empty table looks like no data. */}
           {hasActiveQuery && (
-            <div className="flex flex-wrap items-center gap-1.5 px-5 py-2.5 border-b border-border/70 bg-muted/30 dark:bg-white/[0.015]">
+            <div className="flex flex-wrap items-center gap-1.5 px-4 py-2.5 border-b border-border bg-muted/40 dark:bg-white/[0.015]">
               <span className="text-[11.5px] font-semibold text-muted-foreground">Filtered by</span>
               {searchQuery.trim() && (
                 <FilterChip label={`“${searchQuery.trim()}”`} onClear={() => setSearchQuery("")} />
@@ -862,7 +826,7 @@ const BookingDetails = () => {
         <AdminDetailDrawer
           open
           onClose={() => setDetailId(null)}
-          portalStyle={CONSOLE_PORTAL_VARS}
+          portalScope="vendor"
           eyebrow="Booking"
           title={detailBooking.id}
           subtitle={detailBooking.serviceName}

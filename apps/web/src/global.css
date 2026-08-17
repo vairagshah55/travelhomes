@@ -24,6 +24,14 @@
   --brand-subtle: 180 67% 94%;
 }
 
+/* NOTE ON DARK MODE: `--brand` has no `.dark` value here, and that is a real
+   gap — #117479 is the darkened logo cyan, chosen because #3BD9DA is 1.7:1 on
+   WHITE, and on a near-black surface that logic inverts (it lands around
+   2.3:1). The fix is applied in the `[data-console="vendor"]` block further
+   down rather than on `.dark` globally, because a `.dark` rule here would also
+   repaint the public site and the admin, both of which are out of scope for
+   the vendor work. Fixing it app-wide is a separate, deliberate change. */
+
 /* ═══════════════════════════════════════════════════════════════
    SEMANTIC SURFACE / ACCENT LAYER  (Tailwind `app-*` namespace)
    ONE source of truth — the admin/console design system (NextAdmin tpl
@@ -172,14 +180,165 @@
   --accent-hover: #0d5c60;
   --accent-soft: rgba(17, 116, 121, 0.09);
   --accent-fg: #ffffff;
+
+  /* ── Neutral ramp ──────────────────────────────────────────────────────
+     One cyan-cast grey scale for the whole console. `--surface*` are the
+     `app-*` Tailwind namespace (shared table, toolbar, drawer, stat cards);
+     the shadcn triplets below them are the SAME ramp restated so that
+     `bg-card` / `border-border` / `text-muted-foreground` — which ~28 vendor
+     pages are written in — land on identical pixels. Without this the page
+     had two neutral systems side by side: `app-*` on the slate-blue values
+     inherited from the NextAdmin defaults, shadcn on a cyan-tinted set, and a
+     panel edge never quite matched the table rule inside it.
+
+     Restating shadcn's tokens here rather than editing `:root` is deliberate:
+     `:root` is shared with the public site, which must not move. */
+  --surface: #ffffff;
+  --surface-2: #f1f5f6;
+  --surface-border: #e2e9eb;
+  --surface-fg: #0e1a1b;
+  --surface-fg-muted: #5a6b6d;
+  --surface-fg-subtle: #8b9a9c;
+
+  --card: 0 0% 100%;
+  --card-foreground: 184 32% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 184 32% 8%;
+  --border: 190 14% 90%;
+  --input: 190 14% 90%;
+  --muted: 195 20% 96%;
+  --muted-foreground: 187 9% 39%;
+  --foreground: 184 32% 8%;
+  --secondary: 195 20% 96%;
+  --secondary-foreground: 184 32% 8%;
+
   /* Page ground the white panels read against. Explicit rather than
      `--surface-2`, whose dark value is a translucent white that would leave
      the shell see-through. */
-  --console-page-bg: #f5f7fa;
+  --console-page-bg: #f4f7f8;
+  /* Dark chip for floating labels (collapsed-rail tooltips). Stays dark in
+     both themes — a light tooltip on a light page needs a border to be seen,
+     at which point it reads as a small panel instead of a label. */
+  --console-tip: #16292b;
   background-color: var(--console-page-bg);
+  color: var(--surface-fg);
 }
 .dark [data-console="vendor"] {
-  --console-page-bg: #0f1416;
+  /* Dark flips which end of the cyan ramp is the action colour. #117479 is the
+     darkened logo cyan, picked because #3BD9DA is 1.7:1 on WHITE; on a
+     near-black surface that inverts — #117479 lands ~2.3:1 and every link,
+     chart line, active tab and soft button was unreadable, while the bright
+     logo cyan is ~11:1 carrying near-black artwork.
+     `--accent` (the `app-*` namespace: the shared table's sort headers, active
+     pagination page, row washes) follows the same inversion. */
+  --brand: 180 68% 54%; /* #3BD9DA */
+  --brand-hover: 180 68% 62%;
+  --brand-fg: 180 100% 4%; /* #001414 */
+  --brand-subtle: 183 40% 14%;
+  --accent: #3bd9da;
+  --accent-hover: #5fe1e2;
+  --accent-soft: rgba(59, 217, 218, 0.14);
+  --accent-fg: #001414;
+
+  --surface: #111b1c;
+  --surface-2: rgba(255, 255, 255, 0.045);
+  --surface-border: #1e2c2e;
+  --surface-fg: #ffffff;
+  --surface-fg-muted: #94a6a8;
+  --surface-fg-subtle: #6b7c7e;
+
+  --card: 185 24% 9%;
+  --card-foreground: 0 0% 100%;
+  --popover: 185 24% 9%;
+  --popover-foreground: 0 0% 100%;
+  --border: 187 20% 15%;
+  --input: 187 20% 15%;
+  --muted: 187 22% 12%;
+  --muted-foreground: 186 10% 62%;
+  --foreground: 0 0% 100%;
+  --secondary: 187 22% 12%;
+  --secondary-foreground: 0 0% 100%;
+
+  --console-page-bg: #0a1112;
+  --console-tip: #24393b;
+}
+
+/* Portalled console surfaces — drawers, dialogs, selects, popovers.
+   Radix renders these as direct children of <body>, outside the shell root, so
+   nothing above declares the console ramp for them.
+
+   Two selectors, on purpose:
+     `body.vendor-scope`   — set by DashboardLayoutShell for as long as the
+                             console is mounted. This is the one that does the
+                             work: it catches EVERY portal without each one
+                             having to opt in, which is how the admin already
+                             does it (`useAdminPortalScope`).
+     `[data-console-portal]` — stamped by the drawer and the command palette.
+                             Belt and braces for a surface that can render
+                             before the class lands.
+
+   Deliberately NOT a `:root` rule: global.css is loaded by the public site, and
+   a :root override here would repaint every public page. The class only exists
+   while the vendor shell is mounted, which is what keeps this contained. */
+[data-console-portal],
+body.vendor-scope {
+  --brand: 183 76% 27%;
+  --brand-hover: 183 76% 30%;
+  --brand-fg: 0 0% 100%;
+  --primary: 183 76% 27%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 183 76% 27%;
+  --accent: #117479;
+  --accent-hover: #0d5c60;
+  --accent-soft: rgba(17, 116, 121, 0.09);
+  --accent-fg: #ffffff;
+
+  --surface: #ffffff;
+  --surface-2: #f1f5f6;
+  --surface-border: #e2e9eb;
+  --surface-fg: #0e1a1b;
+  --surface-fg-muted: #5a6b6d;
+  --surface-fg-subtle: #8b9a9c;
+
+  --card: 0 0% 100%;
+  --card-foreground: 184 32% 8%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 184 32% 8%;
+  --border: 190 14% 90%;
+  --input: 190 14% 90%;
+  --muted: 195 20% 96%;
+  --muted-foreground: 187 9% 39%;
+  --foreground: 184 32% 8%;
+}
+.dark [data-console-portal],
+.dark body.vendor-scope {
+  --brand: 180 68% 54%;
+  --brand-hover: 180 68% 62%;
+  --brand-fg: 180 100% 4%;
+  --primary: 180 68% 54%;
+  --primary-foreground: 180 100% 4%;
+  --ring: 180 68% 54%;
+  --accent: #3bd9da;
+  --accent-hover: #5fe1e2;
+  --accent-soft: rgba(59, 217, 218, 0.14);
+  --accent-fg: #001414;
+
+  --surface: #111b1c;
+  --surface-2: rgba(255, 255, 255, 0.045);
+  --surface-border: #1e2c2e;
+  --surface-fg: #ffffff;
+  --surface-fg-muted: #94a6a8;
+  --surface-fg-subtle: #6b7c7e;
+
+  --card: 185 24% 9%;
+  --card-foreground: 0 0% 100%;
+  --popover: 185 24% 9%;
+  --popover-foreground: 0 0% 100%;
+  --border: 187 20% 15%;
+  --input: 187 20% 15%;
+  --muted: 187 22% 12%;
+  --muted-foreground: 186 10% 62%;
+  --foreground: 0 0% 100%;
 }
 
 /* ═══════════════════════════════════════════════════════════════

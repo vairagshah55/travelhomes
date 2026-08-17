@@ -16,7 +16,7 @@ interface PostFeedProps {
 }
 
 const CardShell = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-[14px] border border-border/70 overflow-hidden bg-card">{children}</div>
+  <div className="rounded-[14px] border border-border overflow-hidden bg-card">{children}</div>
 );
 
 const SkeletonCard = () => (
@@ -107,7 +107,7 @@ export const PostFeed: React.FC<PostFeedProps> = ({ posts, isLoading, isError, o
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: Math.min(i, 8) * 0.03, duration: 0.22 }}
                   className={cn(
-                    "group rounded-[14px] border border-border/70 overflow-hidden bg-card",
+                    "group rounded-[14px] border border-border overflow-hidden bg-card",
                     "transition-[transform,box-shadow] duration-200",
                     "hover:-translate-y-0.5 hover:shadow-[0_1px_2px_rgba(16,24,40,0.05),0_14px_30px_-18px_rgba(16,24,40,0.35)]",
                   )}

@@ -1,4 +1,5 @@
 import React from "react";
+import { PANEL, PANEL_FLUSH } from "./Panel";
 import TableSkeleton from "./TableSkeleton";
 
 interface PageSkeletonProps {
@@ -8,6 +9,15 @@ interface PageSkeletonProps {
   tableColumns?: number;
 }
 
+/**
+ * Whole-page loading state for a list surface: stat row, tab strip, table.
+ *
+ * It mirrors the real page's composition — same `PANEL` geometry, same 2-up
+ * stat grid, same table rows — so the layout does not reflow when data lands.
+ * The previous version drew its own rounded boxes in literal greys, which meant
+ * the skeleton and the page it stood in for had different radii and a different
+ * neutral, and the swap was visible as a flicker.
+ */
 export function PageSkeleton({
   showStats = true,
   showTabs = true,
@@ -15,40 +25,38 @@ export function PageSkeleton({
   tableColumns = 5,
 }: PageSkeletonProps) {
   return (
-    <div className="p-5 space-y-5 animate-pulse">
+    <div className="space-y-5 animate-pulse">
       {showStats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <div className="h-3 w-20 bg-gray-200 dark:bg-gray-700 rounded" />
-                <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700" />
-              </div>
-              <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
-              <div className="h-2.5 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div key={i} className={`${PANEL} px-4 py-3.5`}>
+              <div className="h-3 w-20 rounded bg-muted" />
+              <div className="mt-3 h-6 w-24 rounded bg-muted" />
+              <div className="mt-3 h-2.5 w-16 rounded bg-muted" />
             </div>
           ))}
         </div>
       )}
 
       {showTabs && (
-        <div className="flex items-center gap-3 border-b border-gray-200 dark:border-gray-800 pb-1">
+        <div className="flex items-center gap-4 border-b border-border pb-2.5">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-7 w-24 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div key={i} className="h-3.5 w-20 rounded bg-muted" />
           ))}
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+      <div className={PANEL_FLUSH}>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+          <div className="h-9 flex-1 max-w-xs rounded-xl bg-muted" />
+          <div className="h-9 w-24 rounded-lg bg-muted ml-auto" />
+        </div>
         <table className="w-full">
           <thead>
-            <tr>
+            <tr className="border-b border-border">
               {Array.from({ length: tableColumns }).map((_, i) => (
-                <th key={i} className="bg-gray-50 dark:bg-gray-800 px-3 py-3 text-left">
-                  <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+                <th key={i} className="px-3 py-2.5 text-left">
+                  <div className="h-2.5 w-16 rounded bg-muted" />
                 </th>
               ))}
             </tr>

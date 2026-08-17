@@ -64,7 +64,7 @@ export const EarningsChart: React.FC<{
             <SelectTrigger className={cn("h-9 w-[116px] text-[12.5px] font-semibold", CONTROL)}>
               <SelectValue />
             </SelectTrigger>
-            <SelectContent style={BRAND_VARS}>
+            <SelectContent style={BRAND_VARS} data-console-portal="">
               {PERIODS.map((p) => (
                 <SelectItem key={p.value} value={p.value} className={SELECT_ITEM}>
                   {p.label}

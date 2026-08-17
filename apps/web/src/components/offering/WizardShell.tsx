@@ -1,8 +1,24 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Check, ChevronLeft, ChevronRight, Edit2, Loader2, type LucideIcon } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Edit2,
+  Loader2,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ACTIVE_PILL, BTN_NEUTRAL, BTN_PRIMARY, PANEL, PANEL_FOOTER } from "@/components/shared";
+import {
+  ACTIVE_PILL,
+  BTN_NEUTRAL,
+  BTN_PRIMARY,
+  BTN_RAW,
+  INSET,
+  PANEL,
+  PANEL_FOOTER,
+} from "@/components/shared";
 
 /** Re-exported so the wizard pages keep one import surface. */
 export { SubPanel } from "@/components/shared";
@@ -55,7 +71,7 @@ export const WizardRail = ({
   const StepIcon = steps[current].icon;
 
   return (
-    <aside className="lg:sticky lg:top-2 self-start space-y-3">
+    <aside className="lg:sticky lg:top-4 self-start space-y-3">
       <div className={cn(PANEL, "p-4")}>
         <div className="flex items-center gap-3">
           <span className="grid place-items-center w-11 h-11 rounded-full bg-brand/[0.1] text-brand shrink-0">
@@ -157,7 +173,7 @@ export const WizardRail = ({
       <div
         role="tablist"
         aria-label="Steps"
-        className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border/70 rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+        className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border rounded-[10px] shadow-[0_1px_2px_rgba(18,25,38,0.04)]"
       >
         {steps.map((s, i) => {
           const done = i < current;
@@ -229,7 +245,7 @@ export const WizardFooter = ({
   busyLabel: string;
 }) => (
   <footer className={PANEL_FOOTER}>
-    <Button variant="ghost" onClick={onBack} className={BTN_NEUTRAL}>
+    <Button variant="ghost" onClick={onBack} className={cn(BTN_RAW, BTN_NEUTRAL)}>
       <ChevronLeft size={15} strokeWidth={2.4} />
       {backLabel}
     </Button>
@@ -249,7 +265,7 @@ export const WizardFooter = ({
     <Button
       onClick={onNext}
       disabled={!canAdvance || busy}
-      className={cn(BTN_PRIMARY, "disabled:opacity-45 disabled:shadow-none")}
+      className={cn(BTN_RAW, BTN_PRIMARY, "disabled:opacity-45 disabled:shadow-none")}
     >
       {isLastStep ? (
         busy ? (
@@ -295,7 +311,7 @@ export const FeatureChip = ({
       "focus-visible:ring-4 focus-visible:ring-brand/15",
       selected
         ? "border-brand bg-brand/[0.09] text-brand"
-        : "border-border/70 bg-card text-foreground/80 hover:border-border hover:bg-muted/60",
+        : "border-border bg-card text-foreground/80 hover:border-brand/30 hover:bg-muted/60",
     )}
   >
     {label}
@@ -326,7 +342,7 @@ export const ChoiceTile = ({
       "focus-visible:ring-4 focus-visible:ring-brand/15 disabled:opacity-50",
       selected
         ? "border-brand bg-brand/[0.07] text-brand"
-        : "border-border/70 bg-card text-foreground/80 hover:border-border hover:bg-muted/60",
+        : "border-border bg-card text-foreground/80 hover:border-brand/30 hover:bg-muted/60",
     )}
   >
     {label}
@@ -343,8 +359,8 @@ export const ReviewSection = ({
   rows: [string, string | undefined][];
   onEdit: () => void;
 }) => (
-  <div className="rounded-[14px] border border-border/70 overflow-hidden">
-    <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/70 bg-muted/40 dark:bg-white/[0.02]">
+  <div className={INSET}>
+    <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border bg-muted/50 dark:bg-white/[0.02]">
       <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
         {label}
       </p>
@@ -357,7 +373,7 @@ export const ReviewSection = ({
         Edit
       </button>
     </header>
-    <dl className="divide-y divide-border/70">
+    <dl className="divide-y divide-border">
       {rows.map(([k, v]) => {
         const empty = !v || v === "—" || v === "None";
         const missing = v === "Missing";
@@ -383,20 +399,22 @@ export const ReviewSection = ({
   </div>
 );
 
-/** Submit-failure banner. */
+/** Submit-failure banner. Uses the kit's ALERT geometry and a lucide glyph —
+    the hand-inlined circle-exclamation SVG this carried was the only icon in
+    the console not drawn from the one icon set. */
 export const WizardError = ({ message }: { message: string }) => (
-  <div className="flex items-start gap-2.5 p-3.5 rounded-xl border border-red-300/70 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10">
-    <span className="mt-px shrink-0 text-red-600 dark:text-red-400">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
-        <circle cx="12" cy="12" r="9.25" stroke="currentColor" strokeWidth="1.8" />
-        <path
-          d="M12 7.5v6M12 16.4v.2"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-        />
-      </svg>
-    </span>
-    <p className="text-[12.5px] font-semibold text-red-700 dark:text-red-300">{message}</p>
+  <div
+    role="alert"
+    className="flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-500/30 dark:bg-red-500/10"
+  >
+    <AlertCircle
+      size={15}
+      strokeWidth={2.2}
+      aria-hidden
+      className="mt-px shrink-0 text-red-600 dark:text-red-400"
+    />
+    <p className="text-[12.5px] font-semibold leading-relaxed text-red-700 dark:text-red-300">
+      {message}
+    </p>
   </div>
 );

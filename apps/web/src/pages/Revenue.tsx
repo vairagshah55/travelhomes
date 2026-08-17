@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Clock3, IndianRupee, Wallet } from "lucide-react";
+import { Clock3, IndianRupee, Receipt, Wallet } from "lucide-react";
 import { vendorAnalyticsApi, bookingDetailsApi } from "@/lib/api";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
@@ -109,40 +109,56 @@ const Revenue = () => {
   return (
     <DashboardLayout
       title="Revenue"
+      subtitle="What you've earned, what's already settled, and what's still on its way."
     >
-      {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto space-y-5 pb-24 lg:pb-12">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div style={BRAND_VARS} className="space-y-5 md:space-y-6">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
           {countsQuery.isLoading ? (
-            Array.from({ length: 3 }).map((_, i) => <StatTileSkeleton key={i} />)
+            Array.from({ length: 4 }).map((_, i) => <StatTileSkeleton key={i} />)
           ) : (
             <>
               <StatTile
                 index={0}
                 icon={IndianRupee}
-                label="Total earnings"
+                label="Gross earnings"
                 value={totals.total}
                 format={inr}
                 hint="Received plus pending"
-                color="#117479"
               />
               <StatTile
                 index={1}
                 icon={Wallet}
-                label="Payment received"
+                label="Settled"
                 value={totals.received}
                 format={inr}
-                hint="Settled to your account"
-                color="#22c55e"
+                hint={
+                  totals.total > 0
+                    ? `${Math.round((totals.received / totals.total) * 100)}% of gross`
+                    : "Nothing settled yet"
+                }
               />
               <StatTile
                 index={2}
                 icon={Clock3}
-                label="Pending payment"
+                label="Awaiting settlement"
                 value={totals.pending}
                 format={inr}
-                hint="Awaiting settlement"
-                color="#f59e0b"
+                hint={totals.pending > 0 ? "Paid by guests, not yet paid out" : "Nothing outstanding"}
+              />
+              {/* Average transaction is the number that tells a vendor whether
+                  to price up or sell more nights — gross alone conflates the
+                  two. Derived from the payments list already on the page. */}
+              <StatTile
+                index={3}
+                icon={Receipt}
+                label="Avg transaction"
+                value={
+                  payments.length
+                    ? Math.round(payments.reduce((s, p) => s + p.amount, 0) / payments.length)
+                    : 0
+                }
+                format={inr}
+                hint={`Across ${payments.length} booking${payments.length === 1 ? "" : "s"}`}
               />
             </>
           )}

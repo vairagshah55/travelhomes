@@ -7,24 +7,8 @@ import { AdminBrandMark } from "@/components/admin/AdminBrand";
 import { ACTIVE_PILL, BRAND_VARS } from "@/components/shared";
 import { notificationsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Calendar,
-  CalendarPlus,
-  Package,
-  DollarSign,
-  BarChart3,
-  Settings,
-  LogOut,
-  ChevronRight,
-  MessageSquare,
-  FileText,
-  HelpCircle,
-  Bell,
-  Pin,
-  PinOff,
-  Globe,
-} from "lucide-react";
+import { LogOut, ChevronRight, Pin, PinOff } from "lucide-react";
+import { VENDOR_NAV, VENDOR_NAV_ITEMS, type VendorNavItem } from "@/components/vendorNav";
 
 /* This rail renders in the same language as the vendor pages it frames —
    `BRAND_VARS` + the kit's tokens from `components/shared/Panel.tsx`, so
@@ -45,16 +29,10 @@ import {
    rail. One scroller + hidden scrollbar + edge fades is the standard shape and
    removes that entirely. */
 
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  path: string;
-  /** Per-item accent hue for the color-coded icon tile (mirrors admin nav). */
-  color?: string;
-  children?: MenuItem[];
-  badge?: number;
-}
+/* The rail renders `components/vendorNav.ts`; so does the ⌘K palette. Keeping
+   the list in one place is why a page can't appear in one surface and not the
+   other — the failure mode the admin already hit with its own palette. */
+type MenuItem = VendorNavItem & { badge?: number };
 
 // Sidebar accepts a handful of shapes across the codebase — nothing is
 // required. The component reads `forceExpanded` and `defaultCollapsed`
@@ -70,74 +48,6 @@ interface SidebarProps {
   setIsCollapsed?: (collapsed: boolean) => void;
   isMobile?: boolean;
 }
-
-const menuItems: MenuItem[] = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-    path: "/dashboard",
-    color: "#3BD9DA",
-  },
-  {
-    id: "bookings",
-    label: "Bookings",
-    icon: Calendar,
-    path: "/bookings",
-    color: "#a855f7",
-    children: [
-      { id: "all-bookings", label: "All Bookings", icon: Calendar, path: "/bookings" },
-      { id: "booking-details", label: "Details", icon: FileText, path: "/bookings/details" },
-      // Create lives in the nav (mirrors Offerings › Add New) rather than as a
-      // button on each bookings page.
-      { id: "new-booking", label: "New Booking", icon: CalendarPlus, path: "/bookings/new" },
-    ],
-  },
-  {
-    id: "offering",
-    label: "Offerings",
-    icon: Package,
-    path: "/offering",
-    color: "#3b82f6",
-    children: [
-      { id: "all-offerings", label: "All Offerings", icon: Package, path: "/offering" },
-      { id: "add-offering", label: "Add New", icon: Package, path: "/offering/add" },
-    ],
-  },
-  { id: "revenue", label: "Revenue", icon: DollarSign, path: "/revenue", color: "#22c55e" },
-  {
-    id: "marketing",
-    label: "Marketing",
-    icon: BarChart3,
-    path: "/marketing",
-    color: "#ec4899",
-    children: [
-      { id: "marketing-home", label: "Overview", icon: BarChart3, path: "/marketing" },
-      { id: "offers", label: "Offers", icon: Package, path: "/marketing/offers" },
-    ],
-  },
-  { id: "analytics", label: "Analytics", icon: BarChart3, path: "/analytics", color: "#f59e0b" },
-  {
-    id: "messages",
-    label: "Messages",
-    icon: MessageSquare,
-    path: "/vendor-chat",
-    color: "#14b8a6",
-  },
-];
-
-const bottomMenuItems: MenuItem[] = [
-  {
-    id: "notifications",
-    label: "Notifications",
-    icon: Bell,
-    path: "/notifications",
-    color: "#3b82f6",
-  },
-  { id: "settings", label: "Settings", icon: Settings, path: "/settings", color: "#8a929f" },
-  { id: "help", label: "Help & Support", icon: HelpCircle, path: "/help", color: "#22c55e" },
-  { id: "visit-site", label: "Visit Site", icon: Globe, path: "/", color: "#117479" },
-];
 
 /** Section caption above a nav group — same type as the panel group headers. */
 const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -161,7 +71,7 @@ const Badge = ({
       "inline-flex items-center justify-center min-w-[19px] h-[18px] px-1.5 rounded-full",
       "text-[10px] font-bold leading-none tabular-nums",
       alert
-        ? "bg-[#f23030]/10 text-[#f23030]"
+        ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
         : active
           ? "bg-brand/15 text-brand"
           : "bg-muted text-muted-foreground",
@@ -171,15 +81,19 @@ const Badge = ({
   </span>
 );
 
-/* ─── tooltip shown in collapsed mode ─── */
+/* ─── tooltip shown in collapsed mode ───
+   Dark chip in both themes: it floats over the light page ground, and a
+   light-on-light tooltip needs a border to be visible at all, which then reads
+   as a small panel rather than a label. `--console-tip` is declared alongside
+   the console ramp in global.css so the value isn't a literal here. */
 const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) => (
   <div
     className="
     pointer-events-none absolute left-full ml-3 z-50
     flex items-center gap-2
-    px-3 py-2 rounded-xl whitespace-nowrap
-    bg-[#101828]/95 dark:bg-gray-800 text-white text-[12.5px] font-semibold
-    shadow-[0_8px_24px_-8px_rgba(16,24,40,0.45)] ring-1 ring-white/10
+    px-2.5 py-1.5 rounded-lg whitespace-nowrap
+    bg-[color:var(--console-tip)] text-white text-[12.5px] font-semibold
+    shadow-[0_8px_24px_-8px_rgba(14,26,27,0.45)] ring-1 ring-white/10
     opacity-0 invisible -translate-x-1
     group-hover:opacity-100 group-hover:visible group-hover:translate-x-0
     transition-all duration-150 ease-out
@@ -187,12 +101,13 @@ const CollapsedTooltip = ({ label, badge }: { label: string; badge?: number }) =
   >
     {/* arrow */}
     <span
+      aria-hidden
       className="absolute right-full top-1/2 -translate-y-1/2
-      border-[5px] border-transparent border-r-[#101828]/95 dark:border-r-gray-800"
+      border-[5px] border-transparent border-r-[color:var(--console-tip)]"
     />
     {label}
     {badge !== undefined && badge > 0 && (
-      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-brand text-brand-fg rounded-full leading-none tabular-nums">
+      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-white/20 text-white rounded-full leading-none tabular-nums">
         {badge > 99 ? "99+" : badge}
       </span>
     )}
@@ -247,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     location.pathname === path || location.pathname.startsWith(path + "/");
   const activeParentIds = useMemo(() => {
     const ids: string[] = [];
-    [...menuItems, ...bottomMenuItems].forEach((item) => {
+    VENDOR_NAV_ITEMS.forEach((item) => {
       if (item.children?.some((c) => matchPath(c.path))) ids.push(item.id);
     });
     return ids;
@@ -339,8 +254,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
-  const isParentActive = (item: MenuItem) =>
-    isActive(item.path) || (item.children?.some((c) => isActive(c.path)) ?? false);
+
+  /**
+   * A row is active when it owns the current URL AND no other top-level row
+   * owns it more specifically.
+   *
+   * The longest-prefix rule used to apply only to siblings inside one group.
+   * That was enough while Offers lived under Marketing; now that they are
+   * peers in different sections, `/marketing/offers` matches Marketing's
+   * prefix too and BOTH rows lit up — two active pills in one rail, and with a
+   * shared `layoutId` framer would try to animate one element between them.
+   */
+  const isParentActive = (item: MenuItem) => {
+    const own = isActive(item.path) || (item.children?.some((c) => isActive(c.path)) ?? false);
+    if (!own) return false;
+    return !VENDOR_NAV_ITEMS.some(
+      (other) =>
+        other.id !== item.id && isActive(other.path) && other.path.length > item.path.length,
+    );
+  };
 
   // For sibling children where one path is a prefix of another (e.g. /offering
   // and /offering/add), the plain prefix test in `isActive` lights up BOTH.
@@ -395,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <item.icon size={18} strokeWidth={active ? 2.3 : 1.9} />
               {/* unread dot — the count itself only fits in the tooltip */}
               {badge > 0 && !active && (
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#f23030] ring-2 ring-app-surface" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-600 ring-2 ring-app-surface" />
               )}
             </button>
             <CollapsedTooltip label={item.label} badge={badge} />
@@ -529,9 +461,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       >
                         {child.label}
                       </span>
-                      {child.badge !== undefined && child.badge > 0 && (
-                        <Badge count={child.badge} active={ca} />
-                      )}
                     </motion.button>
                   );
                 })}
@@ -608,7 +537,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2.5 flex-1 min-w-0">
               <AdminBrandMark size={30} />
               <span className="font-extrabold tracking-tight leading-none text-[16px] whitespace-nowrap min-w-0 truncate">
-                <span className="text-[#101828] dark:text-white">Travel</span>
+                <span className="text-foreground">Travel</span>
                 <span className="text-brand">Homes</span>
               </span>
 
@@ -646,21 +575,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="h-full overflow-y-auto overflow-x-hidden overscroll-contain scrollbar-hide"
           >
             <div className="py-2.5">
-              {isOpen && <SectionLabel>Main Menu</SectionLabel>}
-              <div className="space-y-px">{menuItems.map(renderItem)}</div>
-
-              {/* Support reads as a second group, not a second panel — the
-                  hairline is a divider inside the same scroller. */}
-              <div
-                className={cn(
-                  "mt-3 pt-3 border-t border-app-border",
-                  isOpen ? "mx-4" : "mx-3",
-                )}
-              />
-              <div className={cn(isOpen ? "pt-0.5" : "pt-1")}>
-                {isOpen && <SectionLabel>Support</SectionLabel>}
-                <div className="space-y-px">{bottomMenuItems.map(renderItem)}</div>
-              </div>
+              {VENDOR_NAV.map((section, i) => (
+                <div key={section.id} className={cn(i > 0 && (isOpen ? "mt-4" : "mt-3"))}>
+                  {/* Collapsed, a caption has nowhere to render at 68px wide, so
+                      groups are separated by a hairline instead. Expanded, the
+                      caption IS the separator — a rule under a label as well is
+                      one divider too many. */}
+                  {i > 0 && !isOpen && (
+                    <div className="mx-3 mb-3 border-t border-app-border" aria-hidden />
+                  )}
+                  {isOpen && section.label && <SectionLabel>{section.label}</SectionLabel>}
+                  <div className="space-y-px">{section.items.map(renderItem)}</div>
+                </div>
+              ))}
             </div>
           </nav>
 

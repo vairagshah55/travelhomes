@@ -30,8 +30,6 @@ import { useTableUrlState } from "@/components/admin/useTableUrlState";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   BRAND_VARS,
-  CONSOLE_PORTAL_VARS,
-  BTN_NEUTRAL,
   BTN_SOFT,
   CONTROL,
   ConfirmModal,
@@ -351,16 +349,16 @@ const Notifications = () => {
       subtitle="Bookings, payouts, listing decisions and support replies."
     >
       {/* pb clears the fixed MobileVendorNav on small screens. */}
-      <div style={BRAND_VARS} className="max-w-6xl mx-auto pb-24 lg:pb-12">
+      <div style={BRAND_VARS}>
         <div className="grid gap-5 lg:gap-7 lg:grid-cols-[254px_minmax(0,1fr)]">
           {/* ── Left rail: how many are waiting, and what to look at ── */}
-          <aside className="lg:sticky lg:top-2 self-start space-y-3">
+          <aside className="lg:sticky lg:top-4 self-start space-y-3">
             <div className={cn(PANEL, "p-4")}>
               <div className="flex items-center gap-3">
                 <span className="relative grid place-items-center w-11 h-11 rounded-full bg-brand/[0.1] text-brand shrink-0">
                   <BellRing size={18} strokeWidth={2.1} />
                   {counts.unread > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#f23030] ring-2 ring-card" />
+                    <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-600 ring-2 ring-card" />
                   )}
                 </span>
                 <div className="min-w-0">
@@ -411,19 +409,18 @@ const Notifications = () => {
                         transition={{ type: "spring", stiffness: 420, damping: 34 }}
                       />
                     )}
+                    {/* Monochrome glyph, not a colour-coded tile. Seven filter
+                        rows in seven different hues made the ACTIVE row — the
+                        only one that carries state — compete with six inactive
+                        ones for attention. */}
                     <span
                       className={cn(
-                        "relative grid place-items-center w-8 h-8 rounded-[10px] shrink-0",
+                        "relative grid place-items-center w-7 h-7 shrink-0",
                         "transition-colors duration-150",
-                        active && "bg-brand text-brand-fg",
+                        active ? "text-brand" : "text-muted-foreground group-hover:text-foreground",
                       )}
-                      style={
-                        active
-                          ? undefined
-                          : { backgroundColor: `${item.color}1f`, color: item.color }
-                      }
                     >
-                      <item.icon size={15} strokeWidth={2.1} />
+                      <item.icon size={16} strokeWidth={active ? 2.3 : 1.9} />
                     </span>
                     <span
                       className={cn(
@@ -438,7 +435,7 @@ const Notifications = () => {
                         "relative ml-auto shrink-0 grid place-items-center min-w-[20px] h-[20px] px-1.5",
                         "rounded-full text-[10.5px] font-bold tabular-nums",
                         item.key === "unread" && counts.unread > 0
-                          ? "bg-[#f23030]/10 text-[#f23030]"
+                          ? "bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400"
                           : active
                             ? "bg-brand/15 text-brand"
                             : "bg-muted text-muted-foreground",
@@ -455,7 +452,7 @@ const Notifications = () => {
             <div
               role="tablist"
               aria-label="Notification filters"
-              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border/70 rounded-2xl shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
+              className="lg:hidden flex items-center gap-1 p-1 overflow-x-auto scrollbar-hide bg-card border border-border rounded-[10px] shadow-[0_1px_2px_rgba(18,25,38,0.04)]"
             >
               {railItems.map((item) => {
                 const active = filter === item.key;
@@ -503,7 +500,7 @@ const Notifications = () => {
                 />
 
                 {notifications.length > 0 && (
-                  <div className="flex items-center gap-3 px-5 py-3 border-b border-border/70">
+                  <div className="flex items-center gap-3 px-5 py-3 border-b border-border">
                     {/* Radix renders the checkbox as a <button>, which a <label
                         htmlFor> can't activate — the text carries its own click. */}
                     <div className="flex items-center gap-2 shrink-0">
@@ -558,7 +555,7 @@ const Notifications = () => {
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                      className="overflow-hidden border-b border-border/70 bg-brand/[0.05]"
+                      className="overflow-hidden border-b border-border bg-brand/[0.05]"
                     >
                       <div className="flex items-center gap-2 px-5 py-2.5">
                         <p className="text-[12.5px] font-bold tabular-nums text-brand">
@@ -593,7 +590,7 @@ const Notifications = () => {
                 </AnimatePresence>
 
                 {notificationsQuery.isLoading ? (
-                  <div className="divide-y divide-border/70">
+                  <div className="divide-y divide-border">
                     {[0, 1, 2, 3, 4].map((i) => (
                       <div key={i} className="flex items-center gap-3 px-5 py-4 animate-pulse">
                         <div className="w-4 h-4 rounded bg-muted shrink-0" />
@@ -656,7 +653,7 @@ const Notifications = () => {
                     <section key={section.key}>
                       <header
                         className={cn(
-                          "px-5 py-2 bg-muted/40 dark:bg-white/[0.02] border-b border-border/70",
+                          "px-5 py-2 bg-muted/40 dark:bg-white/[0.02] border-b border-border",
                           sectionIndex > 0 && "border-t",
                         )}
                       >
@@ -668,7 +665,7 @@ const Notifications = () => {
                         </p>
                       </header>
 
-                      <ul className="divide-y divide-border/70">
+                      <ul className="divide-y divide-border">
                         {section.items.map((n, i) => {
                           const id = rowId(n);
                           const meta = metaFor(n);
@@ -710,14 +707,18 @@ const Notifications = () => {
                                   "focus-visible:ring-2 focus-visible:ring-brand/40",
                                 )}
                               >
+                                {/* The type hue stays on the GLYPH — "approved"
+                                    green vs "rejected" red is real information
+                                    and it is what makes a long list scannable.
+                                    What went is the filled tile behind it and
+                                    the matching coloured label text below: three
+                                    restatements of one fact, and nine tinted
+                                    squares down a column read as decoration. */}
                                 <span
-                                  className="grid place-items-center w-9 h-9 rounded-[10px] shrink-0"
-                                  style={{
-                                    backgroundColor: `${meta.color}1f`,
-                                    color: meta.color,
-                                  }}
+                                  className="grid place-items-center w-8 h-8 shrink-0"
+                                  style={{ color: meta.color }}
                                 >
-                                  <meta.icon size={16} strokeWidth={2.1} />
+                                  <meta.icon size={17} strokeWidth={2} />
                                 </span>
 
                                 <span className="min-w-0 flex-1">
@@ -743,9 +744,7 @@ const Notifications = () => {
                                     {n.message}
                                   </span>
                                   <span className="mt-1 flex sm:hidden items-center gap-1.5 text-[11px] text-muted-foreground">
-                                    <span className="font-semibold" style={{ color: meta.color }}>
-                                      {meta.label}
-                                    </span>
+                                    <span className="font-semibold">{meta.label}</span>
                                     ·<span className="tabular-nums">{shortWhen(n.createdAt)}</span>
                                   </span>
                                 </span>
@@ -754,10 +753,7 @@ const Notifications = () => {
                                   <span className="text-[11.5px] tabular-nums text-muted-foreground whitespace-nowrap">
                                     {shortWhen(n.createdAt)}
                                   </span>
-                                  <span
-                                    className="text-[11px] font-semibold"
-                                    style={{ color: meta.color }}
-                                  >
+                                  <span className="text-[11px] font-semibold text-muted-foreground">
                                     {meta.label}
                                   </span>
                                 </span>
@@ -818,14 +814,14 @@ const Notifications = () => {
         <AdminDetailDrawer
           open
           onClose={() => setOpenNotif(null)}
-          portalStyle={CONSOLE_PORTAL_VARS}
+          portalScope="vendor"
           eyebrow={openMeta.label}
           title={openNotif.title}
           subtitle={`${absolute(openNotif.createdAt)} · ${relative(openNotif.createdAt)}`}
           media={
             <span
               className="grid place-items-center w-9 h-9 rounded-[10px]"
-              style={{ backgroundColor: `${openMeta.color}1f`, color: openMeta.color }}
+              style={{ backgroundColor: `${openMeta.color}1a`, color: openMeta.color }}
             >
               <openMeta.icon size={16} strokeWidth={2.3} />
             </span>

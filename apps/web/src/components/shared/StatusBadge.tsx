@@ -34,6 +34,12 @@ const COLOR_MAP: Record<string, string> = {
   // job applications
   accepted:
     "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
+  // vendor console — an offering visible to travellers, an offer running now
+  live: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
+  running:
+    "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
+  payout_sent:
+    "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 dark:bg-emerald-500/10 dark:text-emerald-400 dark:ring-emerald-500/30",
 
   // warning / in-progress
   pending:
@@ -52,6 +58,13 @@ const COLOR_MAP: Record<string, string> = {
   upcoming:
     "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
   under_review:
+    "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
+  // vendor console — an offer the vendor stopped, or one waiting to start
+  paused:
+    "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
+  payout_pending:
+    "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
+  incomplete:
     "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 dark:bg-amber-500/10 dark:text-amber-400 dark:ring-amber-500/30",
 
   // info
@@ -75,6 +88,14 @@ const COLOR_MAP: Record<string, string> = {
   closed:
     "bg-gray-100 text-gray-600 ring-1 ring-gray-200/60 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10",
   past: "bg-gray-100 text-gray-600 ring-1 ring-gray-200/60 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10",
+  // vendor console — an offer past its end date, or a hidden offering. Neutral,
+  // not red: expiry is the normal end of an offer's life, not a failure.
+  expired:
+    "bg-gray-100 text-gray-600 ring-1 ring-gray-200/60 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10",
+  unlisted:
+    "bg-gray-100 text-gray-600 ring-1 ring-gray-200/60 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10",
+  archived:
+    "bg-gray-100 text-gray-600 ring-1 ring-gray-200/60 dark:bg-white/5 dark:text-gray-300 dark:ring-white/10",
 
   // negative
   banned:
@@ -101,6 +122,15 @@ const DOT_MAP: Record<string, string> = {
   paid: "bg-emerald-500",
   success: "bg-emerald-500",
   accepted: "bg-emerald-500",
+  live: "bg-emerald-500",
+  running: "bg-emerald-500",
+  payout_sent: "bg-emerald-500",
+  paused: "bg-amber-500",
+  payout_pending: "bg-amber-500",
+  incomplete: "bg-amber-500",
+  expired: "bg-gray-400",
+  unlisted: "bg-gray-400",
+  archived: "bg-gray-400",
   under_review: "bg-amber-500",
   interview_scheduled: "bg-blue-500",
   interviewed: "bg-purple-500",
