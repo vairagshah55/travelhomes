@@ -399,6 +399,9 @@ const ManagementListing = () => {
       name: o.name || "",
       category: o.category || "",
       status: o.status,
+      // Without this the form's vendor picker opens on "No vendor assigned" for
+      // a listing that has one — an edit would look like it was dropping it.
+      vendorId: o.vendorId || "",
       regularPrice: o.regularPrice ?? "",
       finalPrice: o.finalPrice ?? o.discountPrice ?? "",
       description: o.description || "",

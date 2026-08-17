@@ -232,40 +232,12 @@ const App = () => {
                       </PublicRoute>
                     }
                   />
-                  <Route
-                    path="/blogs"
-                    element={
-                      <ProtectedRoute>
-                        <Blogs />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/blogsDetials"
-                    element={
-                      <ProtectedRoute>
-                        <BlogsDetail />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/hostwithus"
-                    element={
-                      <ProtectedRoute>
-                        {" "}
-                        <Host />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/about"
-                    element={
-                      <ProtectedRoute>
-                        {" "}
-                        <About />
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* Marketing/content pages are public — they're linked from the
+                      footer and must open for signed-out visitors (and crawlers). */}
+                  <Route path="/blogs" element={<Blogs />} />
+                  <Route path="/blogsDetials" element={<BlogsDetail />} />
+                  <Route path="/hostwithus" element={<Host />} />
+                  <Route path="/about" element={<About />} />
                   <Route
                     path="/payment"
                     element={
@@ -274,23 +246,8 @@ const App = () => {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/contact"
-                    element={
-                      <ProtectedRoute>
-                        <Contact />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/career"
-                    element={
-                      <ProtectedRoute>
-                        {" "}
-                        <Career />
-                      </ProtectedRoute>
-                    }
-                  />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/career" element={<Career />} />
 
                   {/* Onboarding routes */}
                   <Route
