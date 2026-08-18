@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Plus, X, Search, MoreHorizontal } from "lucide-react";
 import { StepHeader } from "../shared/primitives";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon } from "@/components/features/featureIcons";
 
 interface FeatureItem {
   label: string;
@@ -214,11 +215,16 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                       isSelected ? "opacity-100" : "opacity-65",
                     )}
                   >
+                    {/* Admin rows go through FeatureIcon so an empty `icon`
+                        (which is every row in the CMS today) falls back to one
+                        inferred from the name instead of an empty box. The
+                        other two branches are the local static lists, whose
+                        icons are already an emoji string or a component. */}
                     {isAdminFeature ? (
-                      <img
-                        src={getImageUrl(feature.icon as string)}
-                        alt=""
-                        className="w-full h-full object-contain"
+                      <FeatureIcon
+                        icon={feature.icon as string}
+                        name={feature.label}
+                        size={17}
                       />
                     ) : typeof feature.icon === "string" ? (
                       <span className="text-[14px] leading-none">{feature.icon}</span>

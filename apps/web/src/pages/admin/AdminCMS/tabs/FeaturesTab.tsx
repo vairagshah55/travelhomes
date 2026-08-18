@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LayoutGrid, ListTree, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  Download,
+  LayoutGrid,
+  ListTree,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
 import ConfirmModal from "@/components/shared/ConfirmModal";
@@ -13,15 +22,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AddFeatureModal } from "../modals";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { getImageUrl } from "@/lib/adminUtils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon, isLucideIcon } from "@/components/features/featureIcons";
+import { AddFeatureModal, ImportFeaturesModal } from "../modals";
+import {
+  dataUrlToFile,
+  downloadCsv,
+  exportFilename,
+  fetchIconAsDataUrl,
+  toCsv,
+  type PlannedRow,
+} from "../featuresIo";
+import {
+  BTN_NEUTRAL,
   BTN_PRIMARY,
   CmsField,
   CmsSegmented,
   DIALOG_VARS,
   SELECT_ITEM,
   TableFrame,
-  Thumb,
 } from "../ui";
 import type { Feature } from "../types";
 
@@ -59,6 +85,8 @@ export function FeaturesTab() {
   const [loadingSubs, setLoadingSubs] = useState(false);
   const [selectedStayProperty, setSelectedStayProperty] = useState<string>("");
   const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const loadFeatures = () => {
     setLoading(true);
@@ -222,9 +250,20 @@ export function FeaturesTab() {
     );
   }, [features, staySubCategories, isSelectionMode, search]);
 
+  /* `FeatureIcon` rather than `Thumb`: no row in the database has an uploaded
+     icon, so Thumb rendered the same grey placeholder square 50 times. This
+     falls back to an icon inferred from the feature's own name, which is what
+     vendors will see too. */
   const nameCell = (f: Feature) => (
     <div className="flex items-center gap-3 min-w-0">
-      <Thumb src={f.icon} className="w-9 h-9" imgClassName="object-contain p-1" />
+      <span
+        className={cn(
+          "grid h-9 w-9 shrink-0 place-items-center rounded-[10px] border border-app-border bg-app-surface-2",
+          isLucideIcon(f.icon) || !f.icon ? "text-app-accent" : "",
+        )}
+      >
+        <FeatureIcon icon={f.icon} name={f.name} size={17} />
+      </span>
       <span className="font-semibold text-app-fg truncate">{f.name}</span>
     </div>
   );
@@ -302,6 +341,132 @@ export function FeaturesTab() {
     { label: "Delete", icon: Trash2, variant: "danger", onClick: (f) => setPendingDelete(f) },
   ];
 
+  /* ── CSV import / export ────────────────────────────────────────────────
+     Both act on the list currently on screen: the selected offering category
+     crossed with the selected mode (and, in selection mode, the chosen property
+     type). Scoping them to the visible tab is what makes the round-trip
+     predictable — export, edit in a spreadsheet, import back into the same
+     place. */
+
+  /** Values a create/update must carry, whichever tab is open. */
+  const ioTarget = isSelectionMode
+    ? { category: selectedStayProperty, type: "subcategory" }
+    : { category: offeringCategory, type: featureType };
+
+  /**
+   * @param withIcons Inlines each row's icon image as a data URL so the file is
+   *   self-contained and can be imported into another environment. Off by
+   *   default: base64 turns a readable spreadsheet into multi-kilobyte cells,
+   *   and the plain `icon` path already round-trips fine within one environment.
+   */
+  const handleExport = async (withIcons: boolean) => {
+    if (!visibleFeatures.length) {
+      toast.error("Nothing to export in this list");
+      return;
+    }
+
+    let iconData: Map<string, string> | undefined;
+    let skipped = 0;
+
+    if (withIcons) {
+      /* `lucide:` tokens are skipped, not fetched: they're already portable
+         across environments — that's the whole point of storing a token rather
+         than an upload path — and `getImageUrl("lucide:wifi")` would just build
+         a nonsense URL, fail, and get miscounted as an unreadable icon. */
+      const withIcon = visibleFeatures.filter((f) => f.icon && !isLucideIcon(f.icon));
+      setExporting(true);
+      try {
+        iconData = new Map();
+        const results = await Promise.all(
+          withIcon.map(async (f) => [f.id, await fetchIconAsDataUrl(getImageUrl(f.icon))] as const),
+        );
+        for (const [id, data] of results) {
+          if (data) iconData.set(id, data);
+          else skipped++;
+        }
+      } finally {
+        setExporting(false);
+      }
+    }
+
+    downloadCsv(
+      exportFilename(isSelectionMode ? propertyName : offeringCategory, addLabel, new Date()),
+      toCsv(visibleFeatures, iconData),
+    );
+
+    // Say the number, because an active search narrows what gets exported.
+    const n = visibleFeatures.length;
+    toast.success(
+      `Exported ${n} ${n === 1 ? "row" : "rows"}${search.trim() ? " matching your search" : ""}` +
+        (withIcons ? ` · ${iconData?.size ?? 0} icons embedded` : "") +
+        (skipped ? ` · ${skipped} icon${skipped === 1 ? "" : "s"} too large or unreadable` : ""),
+    );
+  };
+
+  /**
+   * Apply one planned row. Per-record because the API has no bulk endpoint.
+   *
+   * Empty cells never clear an existing value — a CSV that omits the icon or
+   * description column would otherwise silently wipe both on every row it
+   * touches. Import sets what it's given and leaves the rest alone; clearing a
+   * field stays an explicit edit in the UI.
+   */
+  const applyImportRow = async (row: PlannedRow) => {
+    // An embedded image is uploaded first and its new path wins: a path copied
+    // from another environment points at an upload that doesn't exist here.
+    let iconPath = row.icon;
+    if (row.iconData) {
+      const file = dataUrlToFile(row.iconData, `feature-${row.name}`.slice(0, 60));
+      if (file) {
+        const up: any = await cmsService.uploadMedia({
+          page: "features",
+          section: "Features",
+          file,
+        });
+        if (up?.data?.url) iconPath = up.data.url;
+      }
+    }
+
+    const payloadExtras = {
+      ...(iconPath ? { icon: iconPath } : {}),
+      ...(row.description ? { description: row.description } : {}),
+    };
+
+    if (row.action === "create") {
+      const res: any = await cmsService.createFeature({
+        name: row.name,
+        category: ioTarget.category,
+        type: ioTarget.type,
+        ...payloadExtras,
+      });
+      // The server forces `status: "enable"` on create, so a row that asked to
+      // be disabled needs the toggle afterwards.
+      if (row.status === "disable") {
+        await cmsService.toggleFeature(withId(res.data || res).id);
+      }
+      return;
+    }
+
+    if (row.existing) {
+      await cmsService.updateFeature(row.existing.id, { name: row.name, ...payloadExtras });
+      if (row.existing.status !== row.status) {
+        await cmsService.toggleFeature(row.existing.id);
+      }
+    }
+  };
+
+  const handleImportDone = ({ created, updated, failed }: { created: number; updated: number; failed: number }) => {
+    // Refetch rather than patching local state — a run can touch dozens of rows
+    // and the server is the only thing that knows the final shape of each.
+    if (isSelectionMode) {
+      if (selectedStayProperty) void loadSubCategories(selectedStayProperty);
+    } else {
+      loadFeatures();
+    }
+    if (failed === 0) toast.success(`Imported ${created + updated} rows`);
+    else toast.error(`${failed} of ${created + updated + failed} rows could not be saved`);
+  };
+
   const modeItems = [
     { value: "feature" as const, label: "Features", icon: Sparkles },
     { value: "category" as const, label: "Categories", icon: LayoutGrid },
@@ -363,10 +528,53 @@ export function FeaturesTab() {
         onSearchChange={setSearch}
         searchPlaceholder={`Search ${addLabel === "sub-category" ? "sub-categories" : addLabel + "s"}…`}
         primaryAction={
-          <button onClick={openAdd} className={BTN_PRIMARY}>
-            <Plus size={15} strokeWidth={2.4} />
-            Add {addLabel}
-          </button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={BTN_NEUTRAL}
+                  disabled={exporting}
+                  title="Download this list as a CSV"
+                >
+                  <Download size={15} strokeWidth={2.4} />
+                  <span className="max-sm:sr-only">{exporting ? "Preparing…" : "Export"}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" style={DIALOG_VARS} className="w-72">
+                <DropdownMenuItem
+                  className={SELECT_ITEM}
+                  onSelect={() => void handleExport(false)}
+                >
+                  <div>
+                    <p className="font-semibold">Export CSV</p>
+                    <p className="mt-0.5 text-[11.5px] text-app-fg-muted">
+                      Spreadsheet-friendly. Icons stay as paths.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem className={SELECT_ITEM} onSelect={() => void handleExport(true)}>
+                  <div>
+                    <p className="font-semibold">Export CSV with icons</p>
+                    <p className="mt-0.5 text-[11.5px] text-app-fg-muted">
+                      Embeds the icon images, so it imports into another environment intact.
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <button
+              onClick={() => setShowImport(true)}
+              className={BTN_NEUTRAL}
+              title="Add or update rows from a CSV"
+            >
+              <Upload size={15} strokeWidth={2.4} />
+              <span className="max-sm:sr-only">Import</span>
+            </button>
+            <button onClick={openAdd} className={BTN_PRIMARY}>
+              <Plus size={15} strokeWidth={2.4} />
+              Add {addLabel}
+            </button>
+          </div>
         }
       />
 
@@ -408,6 +616,23 @@ export function FeaturesTab() {
         onSubmit={handleAddSubCategory}
         type="subcategory"
         initialData={editing}
+      />
+
+      <ImportFeaturesModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        /* Matching runs against the whole current list, not `visibleFeatures` —
+           otherwise an active search would hide a row and the importer would
+           create a duplicate of something already there. */
+        existing={isSelectionMode ? staySubCategories : features}
+        target={{
+          category: ioTarget.category,
+          type: ioTarget.type,
+          label: addLabel === "sub-category" ? "sub-categories" : `${addLabel}s`,
+          categoryLabel: isSelectionMode ? propertyName : offeringCategory,
+        }}
+        onApplyRow={applyImportRow}
+        onDone={handleImportDone}
       />
 
       <ConfirmModal

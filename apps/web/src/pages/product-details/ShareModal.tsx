@@ -3,6 +3,7 @@ import { Copy, Download, Share2, Facebook, Twitter, Linkedin, Mail } from "lucid
 import { FaWhatsapp } from "react-icons/fa";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { downloadElementAsPDF } from "@/utils/pdfGenerator";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -46,40 +47,13 @@ export default function ShareModal({
 
     try {
       setDownloading(true);
-
-      // Dynamic import — html2pdf.js + html2canvas weigh ~944kB and aren't
-      // worth shipping with the route bundle. Only fetch on user click.
-      const { default: html2pdf } = await import("html2pdf.js");
-
-      const element = contentRef.current.cloneNode(true) as HTMLElement;
-      element.style.display = "block";
-      // Allow element to take its natural width/height (especially for fixed width PDF views)
-      element.style.width = "";
-      element.style.height = "auto";
-      element.style.overflow = "visible";
-      element.style.maxHeight = "none";
-
-      // Remove any fixed positioning or transforms that might mess up PDF
-      const fixedElements = element.querySelectorAll('[className*="fixed"], [className*="sticky"]');
-      fixedElements.forEach((el) => {
-        (el as HTMLElement).style.position = "static";
-      });
-
-      const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number], // top, left, bottom, right
+      // Page geometry and the per-page footer live in downloadElementAsPDF —
+      // the source node's width has to match the capture container exactly or
+      // html2pdf clips it, so both sides read the same constant.
+      await downloadElementAsPDF(contentRef.current, {
         filename: `${title.replace(/\s+/g, "_")}.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          scrollY: 0,
-          // Removed fixed windowWidth to let element determine its own layout
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" as const },
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-      };
-
-      await html2pdf().set(opt).from(element).save();
+        footerLeft: url,
+      });
     } catch (err) {
       console.error("Failed to generate PDF:", err);
     } finally {

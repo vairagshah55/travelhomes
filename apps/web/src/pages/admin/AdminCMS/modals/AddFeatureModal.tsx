@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { cmsService } from "@/services/cms";
-import { getImageUrl } from "@/lib/adminUtils";
+import { IconPicker } from "@/components/features/IconPicker";
 import {
   Dialog,
   DialogContent,
@@ -128,7 +127,9 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
               </CmsField>
             )}
 
-            <CmsField label="Icon" hint="PNG, JPG or SVG">
+            {/* Pick from the bundled library first, upload second — see
+                IconPicker for why that order is the right way round here. */}
+            <CmsField label="Icon" hint="Pick one, or upload your own">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -136,29 +137,13 @@ export const AddFeatureModal: React.FC<AddFeatureModalProps> = ({
                 accept="image/*"
                 onChange={handleImageChange}
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="w-full rounded-xl border border-dashed border-app-border bg-app-surface-2 px-4 py-6 text-center transition-colors hover:border-app-accent hover:bg-app-accent-soft focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-app-accent/20 disabled:opacity-60"
-              >
-                <span className="flex flex-col items-center gap-3">
-                  {uploading ? (
-                    <Loader2 size={24} className="animate-spin text-app-accent" />
-                  ) : formData.icon ? (
-                    <img
-                      src={getImageUrl(formData.icon)}
-                      alt=""
-                      className="h-14 w-14 object-contain"
-                    />
-                  ) : (
-                    <Upload size={24} className="text-app-accent" />
-                  )}
-                  <span className="text-[12.5px] font-semibold text-app-fg">
-                    {uploading ? "Uploading…" : formData.icon ? "Replace icon" : "Choose an icon"}
-                  </span>
-                </span>
-              </button>
+              <IconPicker
+                value={formData.icon}
+                featureName={formData.name}
+                onChange={(icon) => setFormData((prev) => ({ ...prev, icon }))}
+                onUploadClick={() => fileInputRef.current?.click()}
+                uploading={uploading}
+              />
             </CmsField>
           </div>
 

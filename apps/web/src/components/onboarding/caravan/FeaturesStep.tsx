@@ -1,52 +1,9 @@
 import React from "react";
-import {
-  Accessibility,
-  Archive,
-  Armchair,
-  Bandage,
-  Bath,
-  BatteryCharging,
-  Bed,
-  BedDouble,
-  BedSingle,
-  Bike,
-  Cable,
-  Camera,
-  Cctv,
-  CookingPot,
-  Droplets,
-  Fan,
-  FireExtinguisher,
-  Flame,
-  GlassWater,
-  Layers,
-  Lightbulb,
-  LocateFixed,
-  Microwave,
-  MoreHorizontal,
-  PawPrint,
-  Plus,
-  RectangleVertical,
-  Refrigerator,
-  Shirt,
-  Sofa,
-  Sparkles,
-  Speaker,
-  Sun,
-  Table,
-  Thermometer,
-  Toilet,
-  Tv2,
-  Umbrella,
-  UtensilsCrossed,
-  Wifi,
-  Wind,
-  X,
-  Zap,
-} from "lucide-react";
+import { MoreHorizontal, Plus, X } from "lucide-react";
 import { StepHeader } from "../shared/primitives";
 import { sortFeatureRows } from "@/lib/cmsFeatures";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon } from "@/components/features/featureIcons";
 
 interface CustomFeature {
   name: string;
@@ -78,89 +35,6 @@ interface FeaturesStepProps {
 
 const ICON_SIZE = 17;
 
-/**
- * Glyph per amenity name, used when the CMS row has no uploaded icon (and for
- * the whole fallback list). Keys are lowercased names. Anything unmatched gets
- * `Sparkles`, so an admin can add an amenity we've never heard of and it still
- * renders as a proper pill.
- */
-const ICON_BY_NAME: Record<string, React.ReactNode> = {
-  // Climate
-  "air conditioning": <Wind size={ICON_SIZE} />,
-  heating: <Flame size={ICON_SIZE} />,
-  insulation: <Thermometer size={ICON_SIZE} />,
-  fan: <Fan size={ICON_SIZE} />,
-
-  // Seating & storage
-  "sofa / lounge seating": <Sofa size={ICON_SIZE} />,
-  "recliner seats": <Armchair size={ICON_SIZE} />,
-  "storage cabinets": <Archive size={ICON_SIZE} />,
-
-  // Sleeping
-  "double bed": <BedDouble size={ICON_SIZE} />,
-  "single beds": <BedSingle size={ICON_SIZE} />,
-  "bunk beds": <Layers size={ICON_SIZE} />,
-  "sofa cum bed": <Sofa size={ICON_SIZE} />,
-  "sleeping beds": <BedDouble size={ICON_SIZE} />,
-  pillows: <Bed size={ICON_SIZE} />,
-  blankets: <Shirt size={ICON_SIZE} />,
-
-  // Kitchen
-  "induction stove / gas stove": <CookingPot size={ICON_SIZE} />,
-  microwave: <Microwave size={ICON_SIZE} />,
-  refrigerator: <Refrigerator size={ICON_SIZE} />,
-  "basic kitchen utensils": <UtensilsCrossed size={ICON_SIZE} />,
-  "kitchen / cooking area": <UtensilsCrossed size={ICON_SIZE} />,
-
-  // Bathroom
-  bathroom: <Bath size={ICON_SIZE} />,
-  toilet: <Toilet size={ICON_SIZE} />,
-  "bathroom / toilet": <Bath size={ICON_SIZE} />,
-  "hot water / geyser": <Droplets size={ICON_SIZE} />,
-  shower: <Droplets size={ICON_SIZE} />,
-  "wash basin": <Droplets size={ICON_SIZE} />,
-  mirror: <RectangleVertical size={ICON_SIZE} />,
-  toiletries: <Bandage size={ICON_SIZE} />,
-
-  // Entertainment & connectivity
-  tv: <Tv2 size={ICON_SIZE} />,
-  "tv / entertainment": <Tv2 size={ICON_SIZE} />,
-  "wi-fi": <Wifi size={ICON_SIZE} />,
-  "wi-fi / internet": <Wifi size={ICON_SIZE} />,
-  speaker: <Speaker size={ICON_SIZE} />,
-
-  // Power
-  "charging points": <Cable size={ICON_SIZE} />,
-  generator: <Zap size={ICON_SIZE} />,
-  "power backup": <BatteryCharging size={ICON_SIZE} />,
-  "solar power": <Sun size={ICON_SIZE} />,
-  "exterior lights": <Lightbulb size={ICON_SIZE} />,
-  lighting: <Lightbulb size={ICON_SIZE} />,
-
-  // Safety
-  "drinking water facility": <GlassWater size={ICON_SIZE} />,
-  "fire extinguisher": <FireExtinguisher size={ICON_SIZE} />,
-  "first aid kit": <Bandage size={ICON_SIZE} />,
-  cctv: <Cctv size={ICON_SIZE} />,
-  "gps tracking": <LocateFixed size={ICON_SIZE} />,
-
-  // Outdoor
-  awning: <Umbrella size={ICON_SIZE} />,
-  "outdoor kitchen": <CookingPot size={ICON_SIZE} />,
-  bbq: <Flame size={ICON_SIZE} />,
-  "rooftop terrace": <Sun size={ICON_SIZE} />,
-  "camping chairs": <Armchair size={ICON_SIZE} />,
-  "camping table": <Table size={ICON_SIZE} />,
-  "bike rack": <Bike size={ICON_SIZE} />,
-
-  // Access & policies
-  "wheelchair accessible": <Accessibility size={ICON_SIZE} />,
-  "pet friendly": <PawPrint size={ICON_SIZE} />,
-  "photo / video shoot allowed": <Camera size={ICON_SIZE} />,
-};
-
-const glyphFor = (name: string) =>
-  ICON_BY_NAME[name.trim().toLowerCase()] ?? <Sparkles size={ICON_SIZE} />;
 
 /**
  * Fallback amenity list — used only until an admin adds Camper Van features in
@@ -309,24 +183,13 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                     selected ? "text-th-brand" : "text-th-warm-text-muted",
                   )}
                 >
-                  {amenity.icon ? (
-                    <>
-                      <img
-                        src={getImageUrl(amenity.icon)}
-                        alt=""
-                        className="w-[17px] h-[17px] object-contain"
-                        onError={(e) => {
-                          const el = e.currentTarget;
-                          el.style.display = "none";
-                          const sib = el.nextElementSibling as HTMLElement | null;
-                          if (sib) sib.style.display = "";
-                        }}
-                      />
-                      <span style={{ display: "none" }}>{glyphFor(amenity.name)}</span>
-                    </>
-                  ) : (
-                    glyphFor(amenity.name)
-                  )}
+                  {/* The local ICON_BY_NAME map that used to back `glyphFor`
+                      moved to `components/features/featureIcons` so the stays
+                      and activity steps get the same fallback — they had none,
+                      and rendered an empty box for every pill. FeatureIcon also
+                      handles the img-failed case that the old inline
+                      `onError` + hidden-sibling dance covered here. */}
+                  <FeatureIcon icon={amenity.icon} name={amenity.name} size={ICON_SIZE} />
                 </span>
                 <span className="text-[13px] font-semibold tracking-[-0.01em]">{amenity.name}</span>
               </button>

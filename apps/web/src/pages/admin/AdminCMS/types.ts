@@ -36,6 +36,9 @@ export interface Feature {
   status: "enable" | "disable";
   icon: string;
   description?: string;
+  /** "feature" | "category" | "subcategory". The API returns it on every row;
+      it was just never declared here, so the CSV export had to cast to read it. */
+  type?: string;
 }
 
 export interface StaffRole {

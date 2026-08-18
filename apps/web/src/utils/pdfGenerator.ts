@@ -11,6 +11,93 @@ export interface PDFOptions {
   compress?: boolean;
 }
 
+/**
+ * Width a full-bleed PDF source node must be, exactly.
+ *
+ * html2pdf renders into a container sized to `pageSize.inner.width` (page width
+ * minus the left/right margins) inside an overlay with `overflow: hidden`. It
+ * does NOT scale a node down to fit — anything wider is simply cut off at the
+ * right edge. `downloadElementAsPDF` uses zero horizontal margin so the inner
+ * width is the full A4 sheet, and the document draws its own gutters.
+ */
+export const PDF_PAGE_WIDTH = "210mm";
+
+/** Bottom band (mm) kept clear on every page for the stamped footer. */
+const FOOTER_BAND_MM = 14;
+
+export interface ElementPDFOptions {
+  filename: string;
+  /** Printed bottom-left on every page — usually the listing's public URL. */
+  footerLeft?: string;
+}
+
+/**
+ * Render an off-screen node to A4 and save it.
+ *
+ * The node is expected to be `PDF_PAGE_WIDTH` wide and to sit inside a
+ * `display: none` wrapper, which is why it is cloned and unhidden first: an
+ * un-rendered node measures 0x0 and html2canvas captures nothing.
+ */
+export const downloadElementAsPDF = async (source: HTMLElement, options: ElementPDFOptions) => {
+  const { default: html2pdf } = await import("html2pdf.js");
+
+  const element = source.cloneNode(true) as HTMLElement;
+  element.style.display = "block";
+
+  const opt = {
+    // [top, left, bottom, right]. No horizontal margin — the masthead, hero and
+    // host band run to the paper edge, and the body pads itself.
+    margin: [0, 0, FOOTER_BAND_MM, 0] as [number, number, number, number],
+    filename: options.filename,
+    image: { type: "jpeg" as const, quality: 0.96 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      scrollY: 0,
+    },
+    jsPDF: {
+      unit: "mm" as const,
+      format: "a4",
+      orientation: "portrait" as const,
+      compress: true,
+    },
+    /* "avoid-all" was refusing to split anything at all, which pushed the
+       trailing block onto a page of its own. Break on explicit opt-in instead. */
+    pagebreak: {
+      mode: ["css", "legacy"],
+      avoid: [".pdf-avoid"],
+      before: [".pdf-break-before"],
+    },
+  };
+
+  const worker = html2pdf().set(opt).from(element).toPdf();
+
+  await worker.get("pdf").then((pdf: any) => {
+    const total = pdf.internal.getNumberOfPages();
+    const w = pdf.internal.pageSize.getWidth();
+    const h = pdf.internal.pageSize.getHeight();
+
+    for (let page = 1; page <= total; page += 1) {
+      pdf.setPage(page);
+      pdf.setDrawColor(216, 228, 228);
+      pdf.setLineWidth(0.2);
+      pdf.line(16, h - 10, w - 16, h - 10);
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(7.5);
+      pdf.setTextColor(122, 138, 139);
+      if (options.footerLeft) {
+        // Long URLs would otherwise run under the page number.
+        pdf.text(pdf.splitTextToSize(options.footerLeft, w - 60)[0], 16, h - 5.5);
+      }
+      pdf.text(`${page} / ${total}`, w - 16, h - 5.5, { align: "right" });
+    }
+  });
+
+  await worker.save();
+};
+
 export const generatePDF = async (elementId: string, options: PDFOptions) => {
   const element = document.getElementById(elementId);
   if (!element) {

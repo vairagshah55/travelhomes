@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import { MoreHorizontal, X, Plus } from "lucide-react";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon } from "@/components/features/featureIcons";
 import { IconType } from "react-icons";
 
 interface FeatureItem {
@@ -169,11 +170,11 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
                     selected ? "opacity-100" : "opacity-65",
                   )}
                 >
-                  <img
-                    src={getImageUrl(feature.icon)}
-                    alt=""
-                    className="w-full h-full object-contain"
-                  />
+                  {/* Was a bare `<img src={getImageUrl(feature.icon)}>`. No CMS
+                      feature has an uploaded icon, so this rendered an empty
+                      18px box beside every pill. FeatureIcon falls back to an
+                      icon inferred from the feature's name. */}
+                  <FeatureIcon icon={feature.icon} name={feature.name} size={17} />
                 </span>
                 <span className="text-[13px] font-semibold tracking-[-0.01em]">{feature.name}</span>
               </button>
