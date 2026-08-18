@@ -122,9 +122,11 @@ import { cn } from "@/lib/utils";
  * So resolution happens in one place, in this order:
  *
  *   1. `lucide:<name>` — an icon the admin picked from the library.
- *   2. An uploaded image path — an admin's own artwork still wins over a guess.
- *   3. Inferred from the feature's *name* — exact match, then keyword match.
- *   4. `Sparkles`, so an unrecognised feature is still a proper pill.
+ *   2. An emoji glyph — the bundled fallback lists store these; rendered as
+ *      text, since `getImageUrl("🏕️")` is just a 404.
+ *   3. An uploaded image path — an admin's own artwork still wins over a guess.
+ *   4. Inferred from the feature's *name* — exact match, then keyword match.
+ *   5. `Sparkles`, so an unrecognised feature is still a proper pill.
  *
  * Step 3 is the important one: it means every existing feature gets a sensible
  * icon with no admin work at all, and a newly added "Outdoor Shower" is
@@ -364,6 +366,11 @@ export function inferIconName(featureName: string): string | null {
 /** True when the stored value is a library token rather than an upload path. */
 export const isLucideIcon = (icon?: string): boolean => !!icon?.startsWith(LUCIDE_PREFIX);
 
+/** True for an emoji glyph ("🏕️", "👨‍👩‍👧‍👦"). Paths and tokens always contain
+    ASCII alphanumerics; emoji sequences never do. */
+const isEmojiIcon = (icon: string): boolean =>
+  /\p{Extended_Pictographic}/u.test(icon) && !/[a-z0-9]/i.test(icon);
+
 /** `lucide:wifi` → the component, or undefined for an unknown/renamed token. */
 export function lucideComponentFor(icon?: string): IconComponent | undefined {
   if (!isLucideIcon(icon)) return undefined;
@@ -394,13 +401,22 @@ export const FeatureIcon = ({
     return <Picked size={size} className={className} />;
   }
 
-  // 2. An uploaded image. `img` can still 404; `FeatureImage` falls back to the
+  // 2. An emoji glyph, rendered as text.
+  if (icon && isEmojiIcon(icon)) {
+    return (
+      <span className={className} style={{ fontSize: Math.round(size * 0.85), lineHeight: 1 }}>
+        {icon}
+      </span>
+    );
+  }
+
+  // 3. An uploaded image. `img` can still 404; `FeatureImage` falls back to the
   //    inferred glyph rather than the browser's broken-image marker.
   if (icon && !isLucideIcon(icon)) {
     return <FeatureImage src={icon} name={name} size={size} className={className} />;
   }
 
-  // 3 & 4. Inferred from the name, else the neutral mark.
+  // 4 & 5. Inferred from the name, else the neutral mark.
   const Inferred = ICON_LIBRARY[inferIconName(name || "") || "sparkles"].Icon;
   return <Inferred size={size} className={className} />;
 };

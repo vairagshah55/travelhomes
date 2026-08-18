@@ -1,6 +1,7 @@
 import React from "react";
 import { SectionCard, StepHeader } from "../shared/primitives";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon } from "@/components/features/featureIcons";
 
 interface Category {
   id: string;
@@ -157,20 +158,18 @@ const CategorySelectionStep: React.FC<CategorySelectionStepProps> = ({
                             : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft",
                         )}
                       >
-                        {category.icon && (
-                          <span
-                            className={cn(
-                              "w-4 h-4 flex items-center justify-center shrink-0 transition-opacity duration-150",
-                              selected ? "opacity-100" : "opacity-70",
-                            )}
-                          >
-                            <img
-                              src={getImageUrl(category.icon)}
-                              alt=""
-                              className="w-full h-full object-contain"
-                            />
-                          </span>
-                        )}
+                        {/* Always rendered, through the shared FeatureIcon
+                            resolver — the CMS stores `lucide:` tokens (or
+                            nothing) here, which the old bare <img> turned into
+                            a broken-image marker or no icon at all. */}
+                        <span
+                          className={cn(
+                            "w-4 h-4 flex items-center justify-center shrink-0 transition-opacity duration-150",
+                            selected ? "opacity-100" : "opacity-70",
+                          )}
+                        >
+                          <FeatureIcon icon={category.icon} name={category.name} size={15} />
+                        </span>
                         <span className="text-[13px] font-semibold tracking-[-0.01em]">
                           {category.name}
                         </span>

@@ -1,7 +1,8 @@
 import React from "react";
 import { Home } from "lucide-react";
 import { SectionCard, StepHeader } from "../shared/primitives";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { FeatureIcon } from "@/components/features/featureIcons";
 
 interface PropertyType {
   id: string;
@@ -82,21 +83,17 @@ const PropertyTypeStep: React.FC<PropertyTypeStepProps> = ({
                   </div>
                 )}
 
-                {/* Icon */}
+                {/* Icon — through the shared FeatureIcon resolver: the CMS
+                    stores `lucide:` tokens (or nothing) for these rows, which
+                    a bare <img src={getImageUrl(icon)}> turned into a 404 that
+                    onError then hid, so every tile rendered iconless. */}
                 <div
                   className={cn(
                     "w-9 h-9 flex items-center justify-center transition-opacity duration-150",
-                    selected ? "opacity-100" : "opacity-70",
+                    selected ? "opacity-100 text-th-brand" : "opacity-70 text-th-warm-text-dark",
                   )}
                 >
-                  <img
-                    src={getImageUrl(property.icon)}
-                    alt={property.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
+                  <FeatureIcon icon={property.icon} name={property.name} size={28} />
                 </div>
 
                 {/* Name */}
