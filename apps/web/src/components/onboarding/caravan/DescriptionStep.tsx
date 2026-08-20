@@ -45,11 +45,18 @@ interface DescriptionStepProps {
   // of the onboarding wizard, drop the StepHeader and the centered max-width
   // wrapper so the section blends with the host page chrome.
   embedded?: boolean;
-  // Optional overrides so this step can also stand in for unique-stay /
-  // activity edit, where the name field reads as "Property Name" / "Activity
-  // Name" instead of "Caravan Name".
+  // Optional overrides so this step can stand in for the other services. Every
+  // string here named a caravan; a vehicle-rental vendor was being told to
+  // describe "the story of your stay" and upload "your best caravan photo".
+  // Defaults keep the caravan flow byte-identical.
   nameLabel?: string;
   namePlaceholder?: string;
+  kicker?: string;
+  headerSubtitle?: string;
+  descriptionHelp?: string;
+  descriptionPlaceholder?: string;
+  /** Fills "Add your best ___ photo" in the empty cover dropzone. */
+  coverPhotoNoun?: string;
 }
 
 const GALLERY_TARGET = 5;
@@ -179,6 +186,11 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   embedded,
   nameLabel = "Caravan Name",
   namePlaceholder = "e.g. Cozy Mountain Camper",
+  kicker = "Caravan Details",
+  headerSubtitle = "A great first impression starts with the story of your stay — add the details that help travellers picture it.",
+  descriptionHelp = "What makes your caravan unique? Mention the vibe, standout features, and ideal guests.",
+  descriptionPlaceholder = "Describe the vibe, features, and what makes it special for travellers…",
+  coverPhotoNoun = "caravan",
 }) => {
   const sections = (
     <>
@@ -213,7 +225,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             required
             error={errors.description}
             right={<CharCount value={description.length} max={200} />}
-            help="What makes your caravan unique? Mention the vibe, standout features, and ideal guests."
+            help={descriptionHelp}
           >
             <StyledTextarea
               value={description}
@@ -221,7 +233,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
                 onDescriptionChange(v);
                 if (errors.description) clearError("description");
               }}
-              placeholder="Describe the vibe, features, and what makes it special for travellers…"
+              placeholder={descriptionPlaceholder}
               maxLength={200}
               rows={4}
               error={!!errors.description}
@@ -269,6 +281,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
         <div className="flex flex-col gap-7">
           <CoverPhotoBlock
             file={coverImage?.[0]}
+            noun={coverPhotoNoun}
             error={errors.coverImage}
             onUpload={(files) => {
               onCoverUpload(files);
@@ -304,10 +317,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   }
   return (
     <div className="w-full flex flex-col gap-6">
-      <StepHeader
-        kicker="Caravan Details"
-        subtitle="A great first impression starts with the story of your stay — add the details that help travellers picture it."
-      />
+      <StepHeader kicker={kicker} subtitle={headerSubtitle} />
       <div className="w-full flex flex-col gap-4">{sections}</div>
     </div>
   );
@@ -418,7 +428,8 @@ const CoverPhotoBlock: React.FC<{
   error?: string;
   onUpload: (files: FileList | null) => void;
   onRemove: () => void;
-}> = ({ file, error, onUpload, onRemove }) => (
+  noun?: string;
+}> = ({ file, error, onUpload, onRemove, noun }) => (
   <div className="flex flex-col gap-3">
     <div className="flex items-start justify-between gap-3">
       <div>
@@ -438,7 +449,7 @@ const CoverPhotoBlock: React.FC<{
     {file ? (
       <CoverPreview file={file} onUpload={onUpload} onRemove={onRemove} />
     ) : (
-      <CoverDropzone error={error} onUpload={onUpload} />
+      <CoverDropzone error={error} onUpload={onUpload} noun={noun} />
     )}
   </div>
 );
@@ -486,7 +497,8 @@ const CoverPreview: React.FC<{
 const CoverDropzone: React.FC<{
   error?: string;
   onUpload: (files: FileList | null) => void;
-}> = ({ error, onUpload }) => {
+  noun?: string;
+}> = ({ error, onUpload, noun = "caravan" }) => {
   const { isDragging, handlers } = useDropzone(onUpload);
   return (
     <div className="flex flex-col gap-1.5">
@@ -523,7 +535,7 @@ const CoverDropzone: React.FC<{
         </div>
         <div>
           <p className="text-[14px] font-bold text-th-text-primary tracking-[-0.01em]">
-            {isDragging ? "Drop to upload" : "Add your best caravan photo"}
+            {isDragging ? "Drop to upload" : `Add your best ${noun} photo`}
           </p>
           <p className="text-[12.5px] text-[color:var(--onb-text-secondary,#657477)] mt-1">
             Drag &amp; drop, or click to browse your device

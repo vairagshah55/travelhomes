@@ -1,7 +1,7 @@
 /**
  * Onboarding router. Mounted at /api/onboarding.
  *
- * Submit endpoints (activity / caravan / stay) are vendor-self-service —
+ * Submit endpoints (activity / caravan / stay / vehicle) are vendor-self-service —
  * any authenticated user can submit. List + get-by-id endpoints are
  * admin-only (the SPA's review queue).
  */
@@ -24,6 +24,7 @@ router.post(
 );
 router.post("/caravan", requireJwt(), validate({ body: dto.submitBody }), controller.submitCaravan);
 router.post("/stay", requireJwt(), validate({ body: dto.submitBody }), controller.submitStay);
+router.post("/vehicle", requireJwt(), validate({ body: dto.submitBody }), controller.submitVehicle);
 
 // ─── Selfie attach ─────────────────────────────────────────────────────
 router.post(
@@ -44,6 +45,12 @@ router.post(
   validate({ body: dto.selfieBody }),
   controller.attachStaySelfie,
 );
+router.post(
+  "/vehicle/selfie",
+  requireJwt(),
+  validate({ body: dto.selfieBody }),
+  controller.attachVehicleSelfie,
+);
 
 // ─── Read ──────────────────────────────────────────────────────────────
 router.get("/mine", requireJwt(), controller.getMine);
@@ -51,6 +58,7 @@ router.get("/mine", requireJwt(), controller.getMine);
 router.get("/activity", requireJwt({ adminOnly: true }), controller.listActivities);
 router.get("/caravan", requireJwt({ adminOnly: true }), controller.listCaravans);
 router.get("/stay", requireJwt({ adminOnly: true }), controller.listStays);
+router.get("/vehicle", requireJwt({ adminOnly: true }), controller.listVehicles);
 
 router.get(
   "/activity/:id",
@@ -69,6 +77,12 @@ router.get(
   requireJwt({ adminOnly: true }),
   validate({ params: dto.idParams }),
   controller.getStay,
+);
+router.get(
+  "/vehicle/:id",
+  requireJwt({ adminOnly: true }),
+  validate({ params: dto.idParams }),
+  controller.getVehicle,
 );
 
 // Debug-only count endpoint — same gate as the legacy file.

@@ -21,7 +21,7 @@ import { TestimonialsSection } from "@/components/home/TestimonialsSection";
 import { LatestArticles } from "@/components/home/LatestArticles";
 import { FAQSection } from "@/components/home/FAQSection";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
 
 type BlogDTO = {
   _id: string;
@@ -93,6 +93,7 @@ const SECTION_DEFAULTS: Record<string, boolean> = {
   "camper-van": true,
   "unique-stays": true,
   "best-activity": true,
+  "vehicle-rental": true,
   "trending-destinations": true,
   testimonials: true,
   "top-rated-stays": true,
@@ -113,7 +114,12 @@ export default function Index() {
   const [activeTab, setActiveTab] = useState("unique-stays");
   const [scrollHighlightFilter, setScrollHighlightFilter] = useState<FilterType | null>(null);
   const [heroHeight, setHeroHeight] = useState(500);
-  const [pages, setPages] = useState({ caravan: 1, "unique-stays": 1, activity: 1 });
+  const [pages, setPages] = useState({
+    caravan: 1,
+    "unique-stays": 1,
+    activity: 1,
+    "vehicle-rental": 1,
+  });
 
   const heroSectionRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -126,10 +132,11 @@ export default function Index() {
   const { data: categoryMapData } = useQuery({
     queryKey: ["offer-categories"],
     queryFn: async () => {
-      const [van, stay, act] = await Promise.all([
+      const [van, stay, act, vehicle] = await Promise.all([
         cmsPublicApi.getFeatures("Camper Van", "category"),
         cmsPublicApi.getFeatures("Unique Stays", "category"),
         cmsPublicApi.getFeatures("Activity", "category"),
+        cmsPublicApi.getFeatures("Vehicle Rental", "category"),
       ]);
       const map: Record<string, any> = {};
       const add = (list: any[], type: string) => {
@@ -141,6 +148,7 @@ export default function Index() {
       add(van, "caravan");
       add(stay, "unique-stays");
       add(act, "activity");
+      add(vehicle, "vehicle-rental");
       return map;
     },
     staleTime: 10 * 60 * 1000,
@@ -206,6 +214,7 @@ export default function Index() {
       "camper-van": "camper-van",
       "unique-stays": "unique-stays",
       activity: "best-activity",
+      "vehicle-rental": "vehicle-rental",
     };
     const tabMap: Record<string, string> = {
       "unique-stays": "unique-stays",
@@ -267,6 +276,7 @@ export default function Index() {
     if (s === "camper-van") return "caravan" as const;
     if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
     if (s === "activity") return "activity" as const;
+    if (s === "vehicle-rental") return "vehicle-rental" as const;
     const c = String(cat || "").toLowerCase();
     const cc = c.replace(/[\s_-]+/g, "");
     if (categoryMap[c]) return categoryMap[c];
@@ -292,8 +302,15 @@ export default function Index() {
         ? `/campervan/${o._id}`
         : ncat === "unique-stays"
           ? `/unique-stay/${o._id}`
-          : `/activity/${o._id}`;
-    const unit = ncat === "activity" ? "/ person" : ncat === "caravan" ? "/ day" : "/ night";
+          : ncat === "vehicle-rental"
+            ? `/vehicle/${o._id}`
+            : `/activity/${o._id}`;
+    const unit =
+      ncat === "activity"
+        ? "/ person"
+        : ncat === "caravan" || ncat === "vehicle-rental"
+          ? "/ day"
+          : "/ night";
     const img = o.photos?.coverUrl?.length
       ? o.photos.coverUrl
       : o.photos?.galleryUrls?.[0] || "/placeholder.svg";
@@ -328,11 +345,12 @@ export default function Index() {
    */
   const approved = useMemo(() => offers.filter((o) => o.status === "approved"), [offers]);
 
-  const { caravanCards, stayCards, activityCards } = useMemo(() => {
+  const { caravanCards, stayCards, activityCards, vehicleCards } = useMemo(() => {
     const buckets: Record<string, CardItem[]> = {
       caravan: [],
       "unique-stays": [],
       activity: [],
+      "vehicle-rental": [],
     };
     for (const o of approved) {
       const bucket = buckets[getNormCategory(o.category, o.serviceType)];
@@ -342,12 +360,14 @@ export default function Index() {
       caravanCards: buckets.caravan,
       stayCards: buckets["unique-stays"],
       activityCards: buckets.activity,
+      vehicleCards: buckets["vehicle-rental"],
     };
   }, [approved, getNormCategory, mapOfferToCard]);
 
   const caravanTotal = Math.max(1, Math.ceil(caravanCards.length / PAGE_SIZE));
   const stayTotal = Math.max(1, Math.ceil(stayCards.length / PAGE_SIZE));
   const activityTotal = Math.max(1, Math.ceil(activityCards.length / PAGE_SIZE));
+  const vehicleTotal = Math.max(1, Math.ceil(vehicleCards.length / PAGE_SIZE));
 
   // Memoised because these are passed straight into <OfferSections> — a fresh
   // slice on every scroll-highlight render would re-render the whole card grid.
@@ -363,12 +383,22 @@ export default function Index() {
     () => activityCards.slice(0, pages.activity * PAGE_SIZE),
     [activityCards, pages.activity],
   );
+  const vehicleShown = useMemo(
+    () => vehicleCards.slice(0, pages["vehicle-rental"] * PAGE_SIZE),
+    [vehicleCards, pages],
+  );
 
-  const incPage = (k: "caravan" | "unique-stays" | "activity") =>
+  const incPage = (k: "caravan" | "unique-stays" | "activity" | "vehicle-rental") =>
     setPages((p) => ({
       ...p,
       [k]: Math.min(
-        k === "caravan" ? caravanTotal : k === "unique-stays" ? stayTotal : activityTotal,
+        k === "caravan"
+          ? caravanTotal
+          : k === "unique-stays"
+            ? stayTotal
+            : k === "vehicle-rental"
+              ? vehicleTotal
+              : activityTotal,
         p[k] + 1,
       ),
     }));
@@ -407,6 +437,7 @@ export default function Index() {
           caravanShown={caravanShown}
           stayShown={stayShown}
           activityShown={activityShown}
+          vehicleShown={vehicleShown}
         />
 
         <TrendingDestinations

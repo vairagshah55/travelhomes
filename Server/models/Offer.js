@@ -68,7 +68,65 @@ const OfferSchema = new Schema(
     personCapacity: Number,
     timeDuration: String,
     expectations: [{ type: String }],
-    
+
+    // ─── Vehicle rental specific (serviceType === 'vehicle-rental') ──────
+    // These four are the guest-facing search filters, so they're structured
+    // fields rather than entries in the free-form `features` array — a filter
+    // can't reliably match "Automatic" inside a string list that also holds
+    // amenity names.
+    vehicleClass: {
+      type: String,
+      enum: ['car', 'van', 'bus']
+    },
+    brand: String,
+    model: String,
+    manufactureYear: Number,
+    registrationNumber: String,
+    fuelType: {
+      type: String,
+      enum: ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid']
+    },
+    transmission: {
+      type: String,
+      enum: ['Manual', 'Automatic']
+    },
+    airConditioned: { type: Boolean, default: false },
+    luggageCapacity: Number,
+    pickupPoints: [{ type: String }],
+
+    // Self-drive rate card — present only when the vendor enabled that mode.
+    selfDriveEnabled: { type: Boolean, default: false },
+    selfDrivePerDay: Number,
+    selfDrivePerKm: Number,
+    freeKmPerDay: Number,
+    extraKmCharge: Number,
+    securityDeposit: Number,
+    minRentalHours: Number,
+    selfDriveIncludes: [{ type: String }],
+    selfDriveExcludes: [{ type: String }],
+
+    // Chauffeur-driven rate card.
+    withDriverEnabled: { type: Boolean, default: false },
+    withDriverPerDay: Number,
+    withDriverPerKm: Number,
+    driverAllowancePerDay: Number,
+    /** Hour (0-23) after which the night charge applies. */
+    nightChargeAfter: Number,
+    outstationPerKm: Number,
+    withDriverIncludes: [{ type: String }],
+    withDriverExcludes: [{ type: String }],
+
+    fuelPolicy: {
+      type: String,
+      enum: ['included', 'excluded', 'same-to-same']
+    },
+    tollsAndParking: {
+      type: String,
+      enum: ['included', 'on-actuals']
+    },
+    cancellationWindowHours: Number,
+
+
     address: String,
     serviceType: String,
     
@@ -135,7 +193,7 @@ const OfferSchema = new Schema(
     },
     sourceModel: {
       type: String,
-      enum: ['ActivityOnboarding', 'CaravanOnboarding', 'StayOnboarding']
+      enum: ['ActivityOnboarding', 'CaravanOnboarding', 'StayOnboarding', 'VehicleOnboarding']
     },
     // ─── Discount offers ───────────────────────────────────────────────
     // Four optional discount "slots" the vendor can toggle on for an offer.
@@ -191,6 +249,10 @@ const OfferSchema = new Schema(
 OfferSchema.index({ status: 1, createdAt: -1 }); // default listing + newest-first
 OfferSchema.index({ status: 1, averageRating: -1, ratingsCount: -1 }); // sort=rating
 OfferSchema.index({ status: 1, regularPrice: 1 }); // sort=price_asc / price_desc
+// Added with the vehicle-rental facets: /api/offers?serviceType=… is now the
+// primary browse query for every service tab, so it pairs the two equalities
+// with the default newest-first sort.
+OfferSchema.index({ status: 1, serviceType: 1, createdAt: -1 });
 OfferSchema.index({ category: 1 });
 OfferSchema.index({ city: 1, state: 1 });
 

@@ -52,9 +52,14 @@ import {
 import type { Feature } from "../types";
 
 type FeatureType = "feature" | "category" | "selection";
-type OfferingCategory = "Camper Van" | "Unique Stay" | "Activity";
+type OfferingCategory = "Camper Van" | "Unique Stay" | "Activity" | "Vehicle Rental";
 
-const OFFERING_CATEGORIES: OfferingCategory[] = ["Camper Van", "Unique Stay", "Activity"];
+const OFFERING_CATEGORIES: OfferingCategory[] = [
+  "Camper Van",
+  "Unique Stay",
+  "Activity",
+  "Vehicle Rental",
+];
 
 const withId = (d: any): Feature => ({ ...d, id: d.id || d._id });
 

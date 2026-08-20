@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
  * describe a multi-step form this screen isn't one of.
  */
 
-type ServiceType = "caravan" | "stay" | "activity";
+type ServiceType = "caravan" | "stay" | "activity" | "vehicle";
 
 const SERVICE_META: Record<ServiceType, { title: string; description: string; tag: string }> = {
   caravan: {
@@ -49,6 +49,12 @@ const SERVICE_META: Record<ServiceType, { title: string; description: string; ta
     description: "Guide outdoor adventures, tours, workshops, and unforgettable local experiences.",
     tag: "New",
   },
+  vehicle: {
+    title: "Vehicle Rental",
+    description:
+      "Rent out your car, van, or bus — self-drive or with a driver — to travellers on the move.",
+    tag: "New",
+  },
 };
 
 /** Homepage-section key that gates each service (admin CMS → Home page). */
@@ -56,6 +62,7 @@ const SECTION_KEY_BY_SERVICE: Record<ServiceType, string> = {
   caravan: "camper-van",
   stay: "unique-stays",
   activity: "best-activity",
+  vehicle: "vehicle-rental",
 };
 
 const ILLUSTRATION_BY_SERVICE: Record<ServiceType, string> = {
@@ -64,12 +71,17 @@ const ILLUSTRATION_BY_SERVICE: Record<ServiceType, string> = {
   stay: "https://api.builder.io/api/v1/image/assets/TEMP/8e762f2f0679274541ddec18f7f1325791c712e7",
   activity:
     "https://api.builder.io/api/v1/image/assets/TEMP/ac3af7014c1557f3fdf25509200649edd541b7e3",
+  // Reuses the caravan illustration: both are road vehicles, and a mismatched
+  // stock photo reads worse than a related one. Swap when artwork exists.
+  vehicle:
+    "https://api.builder.io/api/v1/image/assets/TEMP/b0d5bf84a04251328fd3565624ad1b2b09a5cd43",
 };
 
 const SESSION_IDS: Record<ServiceType, { key: string; value: string }> = {
   activity: { key: "activityID", value: "activity1" },
   caravan: { key: "camperVanID", value: "camperVan2" },
   stay: { key: "stayID", value: "stay3" },
+  vehicle: { key: "vehicleID", value: "vehicle4" },
 };
 
 const ServiceSelection = () => {
@@ -80,6 +92,7 @@ const ServiceSelection = () => {
     "camper-van": true,
     "unique-stays": true,
     "best-activity": true,
+    "vehicle-rental": true,
   });
   const [showError, setShowError] = useState(false);
 
@@ -488,6 +501,17 @@ const SERVICE_ICONS: Record<ServiceType, React.ReactNode> = {
         d="M22.323 42.9009H21.2793C20.0367 42.9009 19.0293 41.8936 19.0293 40.6509L19.0293 27.4377C19.0293 26.195 20.0367 25.1877 21.2793 25.1877H22.323M49.6768 25.2886H50.7205C51.9631 25.2886 52.9705 26.296 52.9705 27.5386V40.7519C52.9705 41.9945 51.9631 43.0019 50.7205 43.0019H49.6768M49.6768 43.0019V25.9768V24.3978C49.6768 23.5217 49.1759 22.7624 48.4449 22.3909M49.6768 43.0019V47.6C49.6768 48.403 49.2561 49.1077 48.6232 49.5059M23.5539 22.3913C22.8234 22.7631 22.323 23.522 22.323 24.3978V25.9775V43.0012V47.6C22.323 48.4025 22.7432 49.1069 23.3755 49.5052M23.5539 22.3913C24.0984 24.2641 25.8271 25.6327 27.8755 25.6327H44.1232C46.1718 25.6327 47.9006 24.2638 48.4449 22.3909M23.5539 22.3913C23.4378 21.9919 23.3755 21.5696 23.3755 21.1327V15.3803C23.3755 14.1376 24.3829 13.1303 25.6255 13.1303H46.3732C47.6158 13.1303 48.6232 14.1376 48.6232 15.3803V21.1327C48.6232 21.5694 48.561 21.9916 48.4449 22.3909M48.6232 49.5059V49.338C48.6232 48.0954 47.6158 47.088 46.3732 47.088H25.6255C24.3829 47.088 23.3755 48.0954 23.3755 49.338V49.5052M48.6232 49.5059V56.6197C48.6232 57.8624 47.6158 58.8697 46.3732 58.8697H25.6255C24.3829 58.8697 23.3755 57.8624 23.3755 56.6197V49.5052M29.084 20.8405V33.7384M42.4719 20.8405V33.7384M40.2441 44.5138V49.7389M31.7537 44.5138V49.7389M28.9379 19.151C29.2468 20.2135 30.2276 20.99 31.3897 20.99H40.6078C41.77 20.99 42.7509 20.2134 43.0597 19.1508"
         stroke="currentColor"
         strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  vehicle: (
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4.5 15.5V11.2l1.7-4.4A2 2 0 0 1 8.07 5.5h7.86a2 2 0 0 1 1.87 1.3l1.7 4.4v4.3M4.5 15.5h15M4.5 15.5v2a.5.5 0 0 0 .5.5h1.5a.5.5 0 0 0 .5-.5v-2M19.5 15.5v2a.5.5 0 0 1-.5.5h-1.5a.5.5 0 0 1-.5-.5v-2M5 11.5h14M8 13.5h.01M16 13.5h.01"
+        stroke="currentColor"
+        strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

@@ -11,6 +11,7 @@ import {
   Tent,
   Home,
   Compass,
+  Car,
   type LucideIcon,
 } from "lucide-react";
 import { analyticsService } from "@/services/api";
@@ -41,6 +42,7 @@ const SERVICES: { key: string; label: string; color: string; icon: LucideIcon }[
   { key: "camper-van", label: "Camper Van", color: "#2563eb", icon: Tent },
   { key: "unique-stay", label: "Unique Stay", color: "#a855f7", icon: Home },
   { key: "activity", label: "Activity", color: "#f59e0b", icon: Compass },
+  { key: "vehicle-rental", label: "Vehicle Rental", color: "#10b981", icon: Car },
 ];
 
 const num = (v: unknown) => (typeof v === "number" ? v : Number(v) || 0);

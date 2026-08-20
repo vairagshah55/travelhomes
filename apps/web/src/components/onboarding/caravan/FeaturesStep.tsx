@@ -31,6 +31,10 @@ interface FeaturesStepProps {
   // Hide the kicker/title/subtitle and centered wrapper when used inside an
   // existing scrollable form (e.g. edit page).
   embedded?: boolean;
+  // Overrides the built-in list used when the CMS has no rows yet. Without it
+  // a vehicle-rental vendor is offered caravan amenities — bunk beds, a geyser,
+  // a gas stove — none of which belong in a car.
+  fallbackFeatures?: string[];
 }
 
 const ICON_SIZE = 17;
@@ -114,12 +118,15 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   onCustomFeatureInputChange,
   onAddCustomFeature,
   embedded,
+  fallbackFeatures,
 }) => {
   const selectedCount = features.length + customFeatures.length;
 
   const amenities = React.useMemo<Amenity[]>(() => {
     const fromAdmin = fromCms(dynamicFeatures || []);
-    const base = fromAdmin.length > 0 ? fromAdmin : FALLBACK_FEATURES.map((name) => ({ key: name, name }));
+    const fallback = fallbackFeatures ?? FALLBACK_FEATURES;
+    const base =
+      fromAdmin.length > 0 ? fromAdmin : fallback.map((name) => ({ key: name, name }));
 
     // An amenity saved on the listing that the admin has since renamed,
     // disabled or deleted would otherwise disappear from the grid — and get

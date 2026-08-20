@@ -7,8 +7,16 @@ import indianCities from "../../data/indian_cities.json";
 import CamperVanIcon from "../icons/CamperVanIcon";
 import HomeIcon from "../icons/HomeIcon";
 import RocketIcon from "../icons/RocketIcon";
+import CarIcon from "../icons/CarIcon";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
+
+/** Half-hour pickup/return slots for the vehicle-rental tab. */
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
 
 const ACTIVITIES = ["Tracking", "Hiking", "Camping", "Photography", "Bird Watching"];
 const MAX_CITY_RESULTS = 8;
@@ -199,6 +207,10 @@ export function MobileSearchSheet({
 
   const isCamperVan = activeFilter === "camper-van";
   const isActivity = activeFilter === "activity";
+  const isVehicle = activeFilter === "vehicle-rental";
+  const [pickupTime, setPickupTime] = useState("10:00");
+  const [returnTime, setReturnTime] = useState("10:00");
+  const [vehicleClass, setVehicleClass] = useState<"" | "car" | "van" | "bus">("");
   const totalGuests = guests.adults + guests.children + guests.infants;
   const today = new Date().toISOString().slice(0, 10);
 
@@ -206,6 +218,12 @@ export function MobileSearchSheet({
     { id: "camper-van" as const, label: "Camper Van", icon: CamperVanIcon, key: "camper-van" },
     { id: "unique-stays" as const, label: "Stays", icon: HomeIcon, key: "unique-stays" },
     { id: "activity" as const, label: "Activity", icon: RocketIcon, key: "best-activity" },
+    {
+      id: "vehicle-rental" as const,
+      label: "Vehicles",
+      icon: CarIcon,
+      key: "vehicle-rental",
+    },
   ].filter((t) => homepageSections[t.key] !== false);
 
   const handleSearch = () => {
@@ -216,6 +234,9 @@ export function MobileSearchSheet({
     if (!isActivity && !checkOut) next.checkOut = "Required";
     if (isActivity && !activity.trim()) next.activity = "Required";
     if (checkIn && checkOut && checkOut < checkIn) next.checkOut = "After check-in";
+    if (isVehicle && checkIn && checkOut && checkIn === checkOut && returnTime <= pickupTime) {
+      next.checkOut = "Return must be after pickup";
+    }
     if (Object.keys(next).length) {
       setErrors(next);
       return;
@@ -230,6 +251,11 @@ export function MobileSearchSheet({
       guests: String(totalGuests),
       activity: activity || "Tracking",
     });
+    if (isVehicle) {
+      params.set("pickupTime", pickupTime);
+      params.set("returnTime", returnTime);
+      params.set("vehicleClass", vehicleClass);
+    }
     onOpenChange(false);
     navigate(`/search?${params.toString()}`);
   };
@@ -287,11 +313,40 @@ export function MobileSearchSheet({
         {/* Scrollable form */}
         <div className="flex-1 overflow-y-auto overscroll-contain px-5 pb-6 space-y-3">
           <CityField
-            label={isCamperVan ? "From" : "Location"}
+            label={isCamperVan ? "From" : isVehicle ? "Pickup city" : "Location"}
             value={from}
             onChange={setFrom}
             error={errors.from}
           />
+
+          {isVehicle && (
+            <Field icon={CarIcon} label="Vehicle type">
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { value: "", label: "Any" },
+                    { value: "car", label: "Car" },
+                    { value: "van", label: "Van" },
+                    { value: "bus", label: "Bus" },
+                  ] as const
+                ).map((option) => (
+                  <button
+                    key={option.value || "any"}
+                    type="button"
+                    aria-pressed={vehicleClass === option.value}
+                    onClick={() => setVehicleClass(option.value)}
+                    className={`px-3 h-8 rounded-full text-xs font-semibold border transition-colors ${
+                      vehicleClass === option.value
+                        ? "bg-[#3BD9DA] text-white border-[#3BD9DA]"
+                        : "bg-white text-[#5F6A82] border-gray-200"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          )}
 
           {isCamperVan && <CityField label="To" value={to} onChange={setTo} error={errors.to} />}
 
@@ -326,7 +381,11 @@ export function MobileSearchSheet({
           {/* Native date inputs — the OS wheel picker beats any custom
               calendar on a phone, and it needs zero vertical space. */}
           <div className={isActivity ? "" : "grid grid-cols-2 gap-3"}>
-            <Field icon={Calendar} label={isActivity ? "Date" : "Check in"} error={errors.checkIn}>
+            <Field
+              icon={Calendar}
+              label={isActivity ? "Date" : isVehicle ? "Pickup" : "Check in"}
+              error={errors.checkIn}
+            >
               <input
                 type="date"
                 min={today}
@@ -334,9 +393,27 @@ export function MobileSearchSheet({
                 onChange={(e) => setCheckIn(e.target.value)}
                 className="w-full bg-transparent text-gray-900 font-semibold text-[15px] focus:outline-none"
               />
+              {isVehicle && (
+                <select
+                  aria-label="Pickup time"
+                  value={pickupTime}
+                  onChange={(e) => setPickupTime(e.target.value)}
+                  className="mt-2 w-full bg-transparent text-gray-900 font-semibold text-[15px] focus:outline-none"
+                >
+                  {TIME_SLOTS.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              )}
             </Field>
             {!isActivity && (
-              <Field icon={Calendar} label="Check out" error={errors.checkOut}>
+              <Field
+                icon={Calendar}
+                label={isVehicle ? "Return" : "Check out"}
+                error={errors.checkOut}
+              >
                 <input
                   type="date"
                   min={checkIn || today}
@@ -344,6 +421,20 @@ export function MobileSearchSheet({
                   onChange={(e) => setCheckOut(e.target.value)}
                   className="w-full bg-transparent text-gray-900 font-semibold text-[15px] focus:outline-none"
                 />
+                {isVehicle && (
+                  <select
+                    aria-label="Return time"
+                    value={returnTime}
+                    onChange={(e) => setReturnTime(e.target.value)}
+                    className="mt-2 w-full bg-transparent text-gray-900 font-semibold text-[15px] focus:outline-none"
+                  >
+                    {TIME_SLOTS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </Field>
             )}
           </div>

@@ -3,7 +3,7 @@
 export interface WishlistItem {
   id: string; // unique identifier (can be a route like /unique-stay/:id)
   title: string;
-  type: 'campervan' | 'stay' | 'activity';
+  type: 'campervan' | 'stay' | 'activity' | 'vehicle';
   location: string;
   price: string; // e.g., "₹2890/night" or "₹2890/person"
   rating?: number;

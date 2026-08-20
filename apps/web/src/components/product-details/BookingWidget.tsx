@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Calendar, Users, ChevronDown, ArrowRight } from "lucide-react";
+import { Calendar, Clock, Users, ChevronDown, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CalendarDropdown } from "@/components/CalendarDropdown";
 import { GuestDropdown } from "@/components/GuestDropdown";
@@ -25,7 +25,31 @@ interface BookingWidgetProps {
   /** Each page formats display dates its own way; default matches UniqueStay/CamperVan ("23 May"). */
   formatDate?: (d: Date) => string;
   onReserve: () => void;
+
+  // ─── Vehicle-rental extras ────────────────────────────────────────────
+  // All optional, so the stay / caravan / activity pages render exactly as
+  // before. A rental differs in three ways the other three don't: it can be
+  // booked in two modes at two different rates, it starts and ends at an hour
+  // rather than on a date, and self-drive holds a refundable deposit.
+  /** Only the modes this listing actually offers. Omit to hide the selector. */
+  rentalModes?: { value: string; label: string; perDay: number; hint?: string }[];
+  rentalMode?: string;
+  onRentalModeChange?: (mode: string) => void;
+  pickupTime?: string;
+  returnTime?: string;
+  onPickupTimeChange?: (t: string) => void;
+  onReturnTimeChange?: (t: string) => void;
+  securityDeposit?: number;
+  /** Overrides the "Reserve" button text. */
+  ctaLabel?: string;
 }
+
+/** Half-hour slots for the pickup/return selects. */
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
 
 const defaultFormatDate = (d: Date) =>
   d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
@@ -47,6 +71,15 @@ export function BookingWidget({
   setGuests,
   formatDate = defaultFormatDate,
   onReserve,
+  rentalModes,
+  rentalMode,
+  onRentalModeChange,
+  pickupTime,
+  returnTime,
+  onPickupTimeChange,
+  onReturnTimeChange,
+  securityDeposit,
+  ctaLabel,
 }: BookingWidgetProps) {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showGuests, setShowGuests] = useState(false);
@@ -105,6 +138,54 @@ export function BookingWidget({
           </div>
         </div>
 
+        {/* Rental mode. Rendered only when the caller passes modes, and only
+            as a choice when there is more than one — a self-drive-only listing
+            shows the single mode as a label rather than a one-option radio. */}
+        {rentalModes && rentalModes.length > 0 && (
+          <div className="mb-5">
+            <div className="text-sm font-medium text-gray-500 mb-2">Rental option</div>
+            <div className="grid grid-cols-1 gap-2">
+              {rentalModes.map((mode) => {
+                const selected = rentalMode === mode.value;
+                const only = rentalModes.length === 1;
+                return (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={only}
+                    onClick={() => onRentalModeChange?.(mode.value)}
+                    className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border text-left transition-colors ${
+                      selected || only
+                        ? "border-[#3BD9DA] bg-[#3BD9DA]/10"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    } ${only ? "cursor-default" : "cursor-pointer"}`}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-gray-900">
+                        {mode.label}
+                      </span>
+                      {mode.hint && (
+                        <span className="block text-xs text-gray-500 mt-0.5">{mode.hint}</span>
+                      )}
+                    </span>
+                    <span className="text-sm font-bold text-gray-900 whitespace-nowrap">
+                      ₹{mode.perDay.toLocaleString()}
+                      <span className="font-normal text-gray-500"> / day</span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            {securityDeposit != null && securityDeposit > 0 && rentalMode === "self-drive" && (
+              <p className="mt-2 text-xs text-gray-500">
+                Refundable security deposit of ₹{securityDeposit.toLocaleString()} collected at
+                pickup. A valid driving licence is required.
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="space-y-4 mb-6">
           <div className="grid grid-cols-1 gap-4">
             <div className="relative z-50" ref={calendarRef}>
@@ -138,6 +219,45 @@ export function BookingWidget({
                 />
               )}
             </div>
+
+            {pickupTime != null && returnTime != null && (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="p-4 border border-gray-200 rounded-xl bg-white block">
+                  <span className="flex items-center gap-2 text-gray-500 mb-3">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-medium">Pickup time</span>
+                  </span>
+                  <select
+                    value={pickupTime}
+                    onChange={(e) => onPickupTimeChange?.(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-black focus:outline-none cursor-pointer"
+                  >
+                    {TIME_SLOTS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="p-4 border border-gray-200 rounded-xl bg-white block">
+                  <span className="flex items-center gap-2 text-gray-500 mb-3">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-sm font-medium">Return time</span>
+                  </span>
+                  <select
+                    value={returnTime}
+                    onChange={(e) => onReturnTimeChange?.(e.target.value)}
+                    className="w-full bg-transparent text-sm font-medium text-black focus:outline-none cursor-pointer"
+                  >
+                    {TIME_SLOTS.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
 
             <div className="relative" ref={guestRef}>
               <div
@@ -173,7 +293,7 @@ export function BookingWidget({
           className="w-full bg-[#3BD9DA] text-white py-4 rounded-xl font-semibold text-lg hover:bg-[#2BC7C8] shadow-[0_4px_16px_rgba(59,217,218,0.5)] hover:shadow-[0_6px_20px_rgba(13,69,72,0.35)] transition-all mb-6"
           onClick={onReserve}
         >
-          Reserve
+          {ctaLabel || "Reserve"}
         </Button>
       </div>
     </div>

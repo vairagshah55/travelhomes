@@ -13,7 +13,7 @@ const AdminAnalyticsMetric = require("../../models/AdminAnalyticsMetric");
 const User = require("../../models/User");
 const Vendor = require("../../models/Vendor");
 
-const CATEGORIES = ["camper-van", "unique-stay", "activity"];
+const CATEGORIES = ["camper-van", "unique-stay", "activity", "vehicle-rental"];
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -22,9 +22,13 @@ function escapeRegex(s) {
 function normalizeCategory(input) {
   if (!input) return undefined;
   const v = String(input).toLowerCase();
+  // "camper" is checked before "vehicle": a camper van is a vehicle by any
+  // plain reading, and matching that first would file every caravan under
+  // vehicle-rental.
   if (v.includes("camper")) return "camper-van";
   if (v.includes("unique")) return "unique-stay";
   if (v.includes("activity")) return "activity";
+  if (v.includes("vehicle")) return "vehicle-rental";
   return undefined;
 }
 

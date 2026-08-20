@@ -274,6 +274,7 @@ const HOMEPAGE_DEFAULTS = [
   { sectionKey: "camper-van", label: "Camper Van" },
   { sectionKey: "unique-stays", label: "Unique Stays" },
   { sectionKey: "best-activity", label: "Best Activity" },
+  { sectionKey: "vehicle-rental", label: "Vehicle Rental" },
   { sectionKey: "trending-destinations", label: "Trending Destinations" },
   { sectionKey: "testimonials", label: "Testimonials" },
   { sectionKey: "top-rated-stays", label: "Top Rated Stays" },
@@ -282,8 +283,16 @@ const HOMEPAGE_DEFAULTS = [
 
 async function listHomepageSections() {
   let sections = await HomepageSection.find({}).sort({ sectionKey: 1 });
-  if (sections.length === 0) {
-    await HomepageSection.insertMany(HOMEPAGE_DEFAULTS);
+
+  // Backfill any default that isn't in the collection yet, rather than only
+  // seeding when it's completely empty. A new section key (vehicle-rental was
+  // the first) would otherwise never appear on an already-seeded database, so
+  // the admin toggle for it had no row to flip and the feature stayed dark with
+  // no way to turn it on short of a manual insert.
+  const existing = new Set(sections.map((s) => s.sectionKey));
+  const missing = HOMEPAGE_DEFAULTS.filter((d) => !existing.has(d.sectionKey));
+  if (missing.length > 0) {
+    await HomepageSection.insertMany(missing, { ordered: false });
     sections = await HomepageSection.find({}).sort({ sectionKey: 1 });
   }
   return sections;

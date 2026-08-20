@@ -251,7 +251,10 @@ async function listPayments({ tab, serviceType, search, sortBy, sortDir }, user)
   if (tab === "refund-status") {
     query.status = { $in: ["requested", "processing", "refunded"] };
   }
-  if (serviceType && ["camper-van", "unique-stay", "activity"].includes(serviceType)) {
+  if (
+    serviceType &&
+    ["camper-van", "unique-stay", "activity", "vehicle-rental"].includes(serviceType)
+  ) {
     query.serviceCategory = serviceType;
   }
   if (search) {

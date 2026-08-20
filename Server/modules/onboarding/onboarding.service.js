@@ -30,6 +30,7 @@ const path = require("path");
 const ActivityOnboarding = require("../../models/ActivityOnboarding");
 const CaravanOnboarding = require("../../models/CaravanOnboarding");
 const StayOnboarding = require("../../models/StayOnboarding");
+const VehicleOnboarding = require("../../models/VehicleOnboarding");
 const Offer = require("../../models/Offer");
 const Vendor = require("../../models/Vendor");
 const User = require("../../models/User");
@@ -201,7 +202,12 @@ async function syncUserProfile(email, data) {
   }
 }
 
-const TYPE_LABELS = { activity: "activity", caravan: "caravan", stay: "unique stay" };
+const TYPE_LABELS = {
+  activity: "activity",
+  caravan: "caravan",
+  stay: "unique stay",
+  vehicle: "vehicle rental",
+};
 
 // A vendor may only have one submission in flight at a time — resubmitting
 // the SAME type (editing a pending draft) is allowed and replaces it via
@@ -209,14 +215,16 @@ const TYPE_LABELS = { activity: "activity", caravan: "caravan", stay: "unique st
 // still awaiting admin action is blocked here so it can't be bypassed by
 // navigating straight to another /onboarding/<type> URL.
 async function findPendingSubmission(userId, excludingType) {
-  const [activity, caravan, stay] = await Promise.all([
+  const [activity, caravan, stay, vehicle] = await Promise.all([
     excludingType === "activity" ? null : ActivityOnboarding.findOne({ userId, status: "pending" }),
     excludingType === "caravan" ? null : CaravanOnboarding.findOne({ userId, status: "pending" }),
     excludingType === "stay" ? null : StayOnboarding.findOne({ userId, status: "pending" }),
+    excludingType === "vehicle" ? null : VehicleOnboarding.findOne({ userId, status: "pending" }),
   ]);
   if (activity) return { type: "activity", doc: activity };
   if (caravan) return { type: "caravan", doc: caravan };
   if (stay) return { type: "stay", doc: stay };
+  if (vehicle) return { type: "vehicle", doc: vehicle };
   return null;
 }
 
@@ -289,6 +297,7 @@ const ONBOARDING_MODEL_BY_SERVICE_TYPE = {
   activity: ActivityOnboarding,
   "camper-van": CaravanOnboarding,
   "unique-stay": StayOnboarding,
+  "vehicle-rental": VehicleOnboarding,
 };
 
 /**
@@ -505,6 +514,122 @@ async function submitCaravan(body, user) {
   return doc;
 }
 
+async function submitVehicle(body, user) {
+  await assertNoOtherPendingSubmission(user._id, "vehicle");
+  const vendor = await ensureVendor(user);
+
+  const strPhotos = await normalizeImageArray(body.photos || [], "vehicle-photo");
+  const rawCover = Array.isArray(body.coverImage)
+    ? body.coverImage
+    : body.coverImage
+      ? [body.coverImage]
+      : [];
+  const strCoverImage = await normalizeImageArray(rawCover, "vehicle-cover");
+  const strIdPhotos = await normalizeImageArray(body.idPhotos || [], "vehicle-id-photo");
+  // Compliance and driver documents go through the same normaliser as every
+  // other image. Skipping it is what bloated caravan documents to ~2.8 MB
+  // each (see the note in submitCaravan) — these arrays are the same shape.
+  const strRcPhotos = await normalizeImageArray(body.rcPhotos || [], "vehicle-rc-photo");
+  const strDriverLicencePhotos = await normalizeImageArray(
+    body.driverLicencePhotos || [],
+    "vehicle-driver-licence",
+  );
+
+  const { doc, isNew } = await upsertOnboardingDoc(VehicleOnboarding, user, vendor, {
+    ...body,
+    photos: strPhotos,
+    coverImage: strCoverImage,
+    idPhotos: strIdPhotos,
+    rcPhotos: strRcPhotos,
+    driverLicencePhotos: strDriverLicencePhotos,
+  });
+
+  await syncUserProfile(user.email, { ...body, idPhotos: strIdPhotos, type: "vehicle" });
+  await supersedePreviousSubmissions(user._id, "vehicle-rental", doc._id);
+
+  // The headline price guests see. Self-drive is checked first because it's the
+  // cheaper of the two when a vendor offers both (no driver allowance), so the
+  // card shows the "from" rate rather than the higher chauffeur rate.
+  const headlinePrice =
+    parsePrice(doc.selfDriveEnabled ? doc.selfDrivePerDay : 0) ||
+    parsePrice(doc.withDriverEnabled ? doc.withDriverPerDay : 0) ||
+    parsePrice(doc.finalPrice || 0);
+
+  await syncOfferForOnboarding(
+    {
+      name: doc.name || "Vehicle",
+      category: doc.category || "vehicle-rental",
+      description:
+        (doc.description && String(doc.description).trim()) ||
+        "Auto-created from vehicle rental onboarding",
+      rules: doc.rules || [],
+      features: doc.features || [],
+      seatingCapacity: doc.seatingCapacity,
+      luggageCapacity: doc.luggageCapacity,
+      locality: doc.locality,
+      pincode: doc.pincode,
+      city: doc.city || "Default City",
+      state: doc.state || "Default State",
+      regularPrice: headlinePrice,
+
+      vehicleClass: doc.vehicleClass,
+      brand: doc.brand,
+      model: doc.model,
+      manufactureYear: doc.manufactureYear,
+      registrationNumber: doc.registrationNumber,
+      fuelType: doc.fuelType,
+      transmission: doc.transmission,
+      airConditioned: !!doc.airConditioned,
+      pickupPoints: doc.pickupPoints || [],
+
+      selfDriveEnabled: !!doc.selfDriveEnabled,
+      selfDrivePerDay: parsePrice(doc.selfDrivePerDay),
+      selfDrivePerKm: parsePrice(doc.selfDrivePerKm),
+      freeKmPerDay: parsePrice(doc.freeKmPerDay),
+      extraKmCharge: parsePrice(doc.extraKmCharge),
+      securityDeposit: parsePrice(doc.securityDeposit),
+      minRentalHours: parsePrice(doc.minRentalHours),
+      selfDriveIncludes: doc.selfDriveIncludes || [],
+      selfDriveExcludes: doc.selfDriveExcludes || [],
+
+      withDriverEnabled: !!doc.withDriverEnabled,
+      withDriverPerDay: parsePrice(doc.withDriverPerDay),
+      withDriverPerKm: parsePrice(doc.withDriverPerKm),
+      driverAllowancePerDay: parsePrice(doc.driverAllowancePerDay),
+      nightChargeAfter: parsePrice(doc.nightChargeAfter),
+      outstationPerKm: parsePrice(doc.outstationPerKm),
+      withDriverIncludes: doc.withDriverIncludes || [],
+      withDriverExcludes: doc.withDriverExcludes || [],
+
+      fuelPolicy: doc.fuelPolicy,
+      tollsAndParking: doc.tollsAndParking,
+      cancellationWindowHours: parsePrice(doc.cancellationWindowHours),
+
+      // Kept for the shared includes/excludes renderer on the details page,
+      // which reads priceIncludes/priceExcludes for every service type.
+      priceIncludes: doc.selfDriveEnabled
+        ? doc.selfDriveIncludes || []
+        : doc.withDriverIncludes || [],
+      priceExcludes: doc.selfDriveEnabled
+        ? doc.selfDriveExcludes || []
+        : doc.withDriverExcludes || [],
+
+      serviceType: "vehicle-rental",
+      photos: { coverUrl: strCoverImage[0] || strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
+      status: "pending",
+      userId: user._id,
+      vendorId: vendor && vendor.vendorId,
+      sourceId: doc._id,
+      sourceModel: "VehicleOnboarding",
+    },
+    VehicleOnboarding,
+    doc,
+    isNew,
+  );
+
+  return doc;
+}
+
 async function submitStay(body, user) {
   await assertNoOtherPendingSubmission(user._id, "stay");
   const vendor = await ensureVendor(user);
@@ -616,6 +741,8 @@ const attachCaravanSelfie = (id, imageData, user) =>
   attachSelfie(CaravanOnboarding, "caravan-selfie", "idPhotos", id, imageData, user);
 const attachStaySelfie = (id, imageData, user) =>
   attachSelfie(StayOnboarding, "stay-selfie", "images", id, imageData, user);
+const attachVehicleSelfie = (id, imageData, user) =>
+  attachSelfie(VehicleOnboarding, "vehicle-selfie", "idPhotos", id, imageData, user);
 
 // ─── Read endpoints ────────────────────────────────────────────────────
 /**
@@ -645,16 +772,18 @@ async function findCurrentSubmission(Model, userId) {
 
 async function getMine(user) {
   const userId = user._id;
-  const [activity, caravan, stay] = await Promise.all([
+  const [activity, caravan, stay, vehicle] = await Promise.all([
     findCurrentSubmission(ActivityOnboarding, userId),
     findCurrentSubmission(CaravanOnboarding, userId),
     findCurrentSubmission(StayOnboarding, userId),
+    findCurrentSubmission(VehicleOnboarding, userId),
   ]);
 
   const submissions = [
     { type: "activity", doc: activity },
     { type: "caravan", doc: caravan },
     { type: "stay", doc: stay },
+    { type: "vehicle", doc: vehicle },
   ].filter((x) => x.doc);
 
   if (!submissions.length) return null;
@@ -688,6 +817,7 @@ async function getMine(user) {
       activity: activity || null,
       caravan: caravan || null,
       stay: stay || null,
+      vehicle: vehicle || null,
     },
   };
 }
@@ -695,6 +825,7 @@ async function getMine(user) {
 const listActivities = () => ActivityOnboarding.find().sort({ createdAt: -1 }).limit(100);
 const listCaravans = () => CaravanOnboarding.find().sort({ createdAt: -1 }).limit(100);
 const listStays = () => StayOnboarding.find().sort({ createdAt: -1 }).limit(100);
+const listVehicles = () => VehicleOnboarding.find().sort({ createdAt: -1 }).limit(100);
 
 async function getActivity(id) {
   const doc = await ActivityOnboarding.findById(id);
@@ -711,30 +842,46 @@ async function getStay(id) {
   if (!doc) throw new NotFoundError("Stay", id);
   return doc;
 }
+async function getVehicle(id) {
+  const doc = await VehicleOnboarding.findById(id);
+  if (!doc) throw new NotFoundError("Vehicle", id);
+  return doc;
+}
 
 async function debugStats() {
-  const [activities, caravans, stays] = await Promise.all([
+  const [activities, caravans, stays, vehicles] = await Promise.all([
     ActivityOnboarding.countDocuments(),
     CaravanOnboarding.countDocuments(),
     StayOnboarding.countDocuments(),
+    VehicleOnboarding.countDocuments(),
   ]);
-  return { activities, caravans, stays, total: activities + caravans + stays };
+  return {
+    activities,
+    caravans,
+    stays,
+    vehicles,
+    total: activities + caravans + stays + vehicles,
+  };
 }
 
 module.exports = {
   submitActivity,
   submitCaravan,
   submitStay,
+  submitVehicle,
   attachActivitySelfie,
   attachCaravanSelfie,
   attachStaySelfie,
+  attachVehicleSelfie,
   getMine,
   findCurrentSubmission, // exported for tests
   listActivities,
   listCaravans,
   listStays,
+  listVehicles,
   getActivity,
   getCaravan,
   getStay,
+  getVehicle,
   debugStats,
 };

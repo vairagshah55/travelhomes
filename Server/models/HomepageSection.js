@@ -6,7 +6,7 @@ const HomepageSectionSchema = new Schema({
     type: String,
     required: true,
     unique: true,
-    enum: ['camper-van', 'unique-stays', 'best-activity', 'trending-destinations', 'testimonials', 'top-rated-stays', 'faq']
+    enum: ['camper-van', 'unique-stays', 'best-activity', 'vehicle-rental', 'trending-destinations', 'testimonials', 'top-rated-stays', 'faq']
   },
   label: {
     type: String,

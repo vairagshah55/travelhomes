@@ -27,7 +27,7 @@ const bookingStatus = z.enum([
 ]);
 
 const serviceModelEnum = z.enum(["Management", "Offer"]);
-const serviceNameEnum = z.enum(["activity", "camper-van", "unique-stay"]);
+const serviceNameEnum = z.enum(["activity", "camper-van", "unique-stay", "vehicle-rental"]);
 
 const isoDate = z.union([z.iso.datetime(), z.iso.date()]);
 
@@ -70,7 +70,7 @@ const listForAdminQuery = z.object({
   tab: z
     .enum(["all-bookings", "upcoming-bookings", "past-booking", "cancelled-bookings"])
     .optional(),
-  serviceType: z.enum(["caravan", "stay", "activity"]).optional(),
+  serviceType: z.enum(["caravan", "stay", "activity", "vehicle"]).optional(),
   search: z.string().trim().max(200).optional(),
   sortBy: z.string().trim().max(40).optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
@@ -103,6 +103,24 @@ const createBookingBody = z.object({
   paymentDetails: paymentDetails.optional(),
   bookingStatus: bookingStatus.optional(),
   specialRequests: z.string().trim().max(2000).optional(),
+
+  // ─── Vehicle rental only ────────────────────────────────────────────
+  // All optional: the three older services never send them. The service
+  // layer enforces the conditional requirements (a self-drive booking must
+  // carry a licence number) — see assertVehicleFields in bookings.service.js.
+  dropLocation: z.string().trim().max(200).optional(),
+  rentalMode: z.enum(["self-drive", "with-driver"]).optional(),
+  pickupTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "pickupTime must be HH:mm")
+    .optional(),
+  returnTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "returnTime must be HH:mm")
+    .optional(),
+  numberOfPassengers: z.number().int().positive().max(100).optional(),
+  drivingLicenceNumber: z.string().trim().max(40).optional(),
+  specialRequirements: z.string().trim().max(2000).optional(),
 });
 
 // ─── PUT /api/bookings/:id ──────────────────────────────────────────────────

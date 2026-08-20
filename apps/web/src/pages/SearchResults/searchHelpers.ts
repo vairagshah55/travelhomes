@@ -1,21 +1,30 @@
 import { getImageUrl } from "@/lib/utils";
 
-export type FilterType = "camper-van" | "unique-stays" | "activity";
+export type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
 export type RangeVal = { minVal: number; maxVal: number };
 
 /**
  * Normalize the wide variety of "category" / "serviceType" strings the API
- * returns into our 3 homepage buckets: caravan / unique-stays / activity.
- * Used both server-side filtering and downstream card rendering.
+ * returns into our 4 homepage buckets: caravan / unique-stays / activity /
+ * vehicle-rental. Used for both filtering and downstream card rendering.
+ *
+ * `serviceType` is stamped by the server on submit, so it's the reliable key
+ * and is checked first. The category fallbacks below only run for legacy rows
+ * that predate it — note that a vehicle-rental offer must be matched on
+ * serviceType, because its category is free text like "Sedan" or "Mini bus"
+ * which the caravan keyword list would happily claim ("van" is a substring of
+ * "Cargo van" AND of "Minivan").
  */
 export function getNormCategory(cat?: string, serviceType?: string) {
   const s = String(serviceType || "").toLowerCase();
   if (s === "camper-van") return "caravan" as const;
   if (s === "unique-stay" || s === "unique-stays") return "unique-stays" as const;
   if (s === "activity") return "activity" as const;
+  if (s === "vehicle-rental") return "vehicle-rental" as const;
 
   const c = String(cat || "").toLowerCase();
   const cClean = c.replace(/[\s_-]+/g, "");
+  if (cClean === "vehiclerental") return "vehicle-rental" as const;
   if (
     ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) =>
       cClean.includes(k),
@@ -50,6 +59,11 @@ export interface FilterArgs {
   selectedFacilities: string[];
   sleepRange: RangeVal;
   seatRange: RangeVal;
+  /** Vehicle-rental only. Empty/undefined means "don't filter on this". */
+  selectedFuelTypes?: string[];
+  selectedTransmissions?: string[];
+  selectedRentalModes?: string[];
+  acOnly?: boolean;
 }
 
 /**
@@ -65,6 +79,10 @@ export function filterSearchItems(items: any[], args: FilterArgs) {
     selectedFacilities,
     sleepRange,
     seatRange,
+    selectedFuelTypes,
+    selectedTransmissions,
+    selectedRentalModes,
+    acOnly,
   } = args;
   return items.filter((item) => {
     const price = Number(item.regularPrice || 0);
@@ -110,6 +128,33 @@ export function filterSearchItems(items: any[], args: FilterArgs) {
       if (seating < seatRange.minVal || seating > seatRange.maxVal) return false;
     }
 
+    // ─── Vehicle-rental facets ──────────────────────────────────────────
+    if (activeFilter === "vehicle-rental") {
+      if (seatRange) {
+        const seating = Number(item.seatingCapacity || item.seating || item.passengers || 0);
+        if (seating < seatRange.minVal || seating > seatRange.maxVal) return false;
+      }
+
+      if (selectedFuelTypes && selectedFuelTypes.length > 0) {
+        if (!selectedFuelTypes.includes(String(item.fuelType || ""))) return false;
+      }
+
+      if (selectedTransmissions && selectedTransmissions.length > 0) {
+        if (!selectedTransmissions.includes(String(item.transmission || ""))) return false;
+      }
+
+      // A mode filter asks "can I book it this way", so it reads the vendor's
+      // enabled flags rather than a stored mode on the offer.
+      if (selectedRentalModes && selectedRentalModes.length > 0) {
+        const offered: string[] = [];
+        if (item.selfDriveEnabled) offered.push("self-drive");
+        if (item.withDriverEnabled) offered.push("with-driver");
+        if (!selectedRentalModes.some((m) => offered.includes(m))) return false;
+      }
+
+      if (acOnly && !item.airConditioned) return false;
+    }
+
     return true;
   });
 }
@@ -148,6 +193,30 @@ export function mapOfferToCard(doc: any, activeFilter: FilterType) {
       id: `/campervan/${doc?._id}`,
       title: doc?.name || "Camper Van",
       details: [doc?.city, doc?.state].filter(Boolean).join(", ") || doc?.category || "",
+      price:
+        typeof doc?.regularPrice === "number"
+          ? `₹${doc.regularPrice}`
+          : `₹${Number(doc?.regularPrice || 0)}`,
+      Maxprice: doc?.regularPrice || "0",
+      unit: "/ day",
+      image: cover,
+    };
+  }
+  if (activeFilter === "vehicle-rental") {
+    const cover =
+      getImageUrl(doc?.photos?.coverUrl) ||
+      getImageUrl(doc?.photos?.galleryUrls?.[0]) ||
+      "https://api.builder.io/api/v1/image/assets/TEMP/89f609eeb750fe283dc03242d757caafc89778de?width=610";
+    // Details line leads with brand + model when the vendor supplied them —
+    // "Toyota Innova Crysta · 7 seats" identifies a rental far better than the
+    // city does, which the guest already filtered by.
+    const make = [doc?.brand, doc?.model].filter(Boolean).join(" ");
+    const seats = doc?.seatingCapacity ? `${doc.seatingCapacity} seats` : "";
+    const place = [doc?.city, doc?.state].filter(Boolean).join(", ");
+    return {
+      id: `/vehicle/${doc?._id}`,
+      title: doc?.name || "Vehicle",
+      details: [make, seats].filter(Boolean).join(" · ") || place,
       price:
         typeof doc?.regularPrice === "number"
           ? `₹${doc.regularPrice}`
@@ -207,6 +276,20 @@ export function getFilterOptions(activeFilter: FilterType) {
         types: ["Adventure", "Cultural", "Sports", "Relaxation"],
         categories: ["Luxury", "Standard", "Budget", "Eco"],
         facilities: ["Equipment Included", "Guide", "Transportation", "Meals", "Insurance"],
+      };
+    case "vehicle-rental":
+      return {
+        types: ["Hatchback", "Sedan", "SUV", "MUV", "Tempo Traveller", "Mini Bus"],
+        categories: ["Luxury", "Standard", "Budget", "Electric"],
+        facilities: [
+          "AC",
+          "Music System",
+          "Bluetooth",
+          "GPS",
+          "Reverse Camera",
+          "Child Seat",
+          "Roof Carrier",
+        ],
       };
     default:
       return { types: [], categories: [], facilities: [] };

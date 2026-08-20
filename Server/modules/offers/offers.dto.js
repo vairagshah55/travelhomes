@@ -25,6 +25,21 @@ const listQuery = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   sort: sortOrder.optional(),
+
+  // ─── Service + vehicle-rental facets ────────────────────────────────
+  // `serviceType` is what the offer carries (set server-side on submit), as
+  // opposed to `category`, which is vendor-entered free text. Without it the
+  // search page had to pull limit=100 and re-bucket every row client-side
+  // through getNormCategory's fuzzy string matching.
+  serviceType: z.enum(["camper-van", "unique-stay", "activity", "vehicle-rental"]).optional(),
+  vehicleClass: z.enum(["car", "van", "bus"]).optional(),
+  fuelType: z.enum(["Petrol", "Diesel", "CNG", "Electric", "Hybrid"]).optional(),
+  transmission: z.enum(["Manual", "Automatic"]).optional(),
+  airConditioned: z.union([z.literal("true"), z.literal("false"), z.boolean()]).optional(),
+  rentalMode: z.enum(["self-drive", "with-driver"]).optional(),
+  brand: z.string().trim().max(120).optional(),
+  minSeats: z.coerce.number().int().positive().max(100).optional(),
+  maxSeats: z.coerce.number().int().positive().max(100).optional(),
 });
 
 const idParams = z.object({ id: objectIdString });

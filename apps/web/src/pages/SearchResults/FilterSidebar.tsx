@@ -12,7 +12,7 @@ type FilterOptions = {
 
 interface FilterSidebarProps {
   onClose: () => void;
-  activeFilter: "camper-van" | "unique-stays" | "activity";
+  activeFilter: "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
   filterOptions: FilterOptions;
   priceBounds: { min: number; max: number; step: number };
   priceRange: RangeVal;
@@ -31,7 +31,26 @@ interface FilterSidebarProps {
   setSelectedCategories: React.Dispatch<React.SetStateAction<string[]>>;
   selectedFacilities: string[];
   setSelectedFacilities: React.Dispatch<React.SetStateAction<string[]>>;
+
+  // ─── Vehicle-rental facets ────────────────────────────────────────────
+  // Optional so the three existing call sites (and the mobile filter dialog)
+  // keep compiling; the vehicle blocks below only render for that tab anyway.
+  selectedFuelTypes?: string[];
+  setSelectedFuelTypes?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedTransmissions?: string[];
+  setSelectedTransmissions?: React.Dispatch<React.SetStateAction<string[]>>;
+  selectedRentalModes?: string[];
+  setSelectedRentalModes?: React.Dispatch<React.SetStateAction<string[]>>;
+  acOnly?: boolean;
+  setAcOnly?: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+const FUEL_OPTIONS = ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"];
+const TRANSMISSION_OPTIONS = ["Manual", "Automatic"];
+const RENTAL_MODE_OPTIONS: { value: string; label: string }[] = [
+  { value: "self-drive", label: "Self-drive" },
+  { value: "with-driver", label: "With driver" },
+];
 
 const RATING_OPTIONS = ["1+", "2+", "3+", "4+", "5+"];
 
@@ -198,7 +217,25 @@ export function FilterSidebar({
   setSelectedCategories,
   selectedFacilities,
   setSelectedFacilities,
+  selectedFuelTypes = [],
+  setSelectedFuelTypes,
+  selectedTransmissions = [],
+  setSelectedTransmissions,
+  selectedRentalModes = [],
+  setSelectedRentalModes,
+  acOnly = false,
+  setAcOnly,
 }: FilterSidebarProps) {
+  /** Add/remove one value from a multi-select facet. */
+  const toggleIn = (
+    list: string[],
+    setList: React.Dispatch<React.SetStateAction<string[]>> | undefined,
+    value: string,
+  ) => {
+    if (!setList) return;
+    setList(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  };
+
   return (
     <div className="w-full lg:w-80 xl:w-80">
       <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm overflow-y-auto scrollbar-hide">
@@ -269,6 +306,96 @@ export function FilterSidebar({
               unit=""
             />
           </div>
+        )}
+
+        {activeFilter === "vehicle-rental" && (
+          <>
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Seats</h4>
+              <DualRangeSlider
+                min={seatBounds.min}
+                max={seatBounds.max}
+                step={seatBounds.step}
+                range={seatRange}
+                setRange={setSeatRange}
+                unit=""
+              />
+            </div>
+
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Rental mode</h4>
+              <div className="flex gap-2 flex-wrap">
+                {RENTAL_MODE_OPTIONS.map((mode) => (
+                  <button
+                    key={mode.value}
+                    type="button"
+                    aria-pressed={selectedRentalModes.includes(mode.value)}
+                    onClick={() => toggleIn(selectedRentalModes, setSelectedRentalModes, mode.value)}
+                    className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                      selectedRentalModes.includes(mode.value)
+                        ? "bg-gradient-to-r from-[#117479] to-[#128086] text-white border-transparent shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-[#3bd9da]/40 hover:text-[#117479]"
+                    }`}
+                  >
+                    {mode.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Transmission</h4>
+              <div className="flex gap-2 flex-wrap">
+                {TRANSMISSION_OPTIONS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-pressed={selectedTransmissions.includes(t)}
+                    onClick={() => toggleIn(selectedTransmissions, setSelectedTransmissions, t)}
+                    className={`px-3.5 py-2 rounded-full border text-sm font-semibold transition-all duration-200 active:scale-95 ${
+                      selectedTransmissions.includes(t)
+                        ? "bg-gradient-to-r from-[#117479] to-[#128086] text-white border-transparent shadow-sm"
+                        : "bg-white text-gray-600 border-gray-200 hover:border-[#3bd9da]/40 hover:text-[#117479]"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Fuel</h4>
+              <div className="space-y-3.5">
+                {FUEL_OPTIONS.map((fuel) => (
+                  <label
+                    key={fuel}
+                    className="flex items-center gap-3 cursor-pointer text-gray-600 hover:text-[#0a1c1c] transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedFuelTypes.includes(fuel)}
+                      onChange={() => toggleIn(selectedFuelTypes, setSelectedFuelTypes, fuel)}
+                      className="w-4 h-4 rounded border-gray-300 text-[#117479] focus:ring-[#3bd9da]"
+                    />
+                    <span className="text-sm">{fuel}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 pb-6 border-b border-gray-100">
+              <label className="flex items-center gap-3 cursor-pointer text-gray-600 hover:text-[#0a1c1c] transition-colors">
+                <input
+                  type="checkbox"
+                  checked={acOnly}
+                  onChange={(e) => setAcOnly?.(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-[#117479] focus:ring-[#3bd9da]"
+                />
+                <span className="text-sm font-semibold text-[#0a1c1c]">Air conditioned only</span>
+              </label>
+            </div>
+          </>
         )}
 
         <div className="mb-6 pb-6 border-b border-gray-100">

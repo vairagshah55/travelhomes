@@ -125,10 +125,11 @@ export function statusMeta(status?: string): StatusMeta {
   }
 }
 
-/** Human name for the three service types the DTO uses. */
+/** Human name for the service types the DTO uses. */
 export function serviceLabel(serviceName?: BookingDTO["serviceName"]): string {
   if (serviceName === "camper-van") return "Camper van";
   if (serviceName === "activity") return "Activity";
+  if (serviceName === "vehicle-rental") return "Vehicle rental";
   return "Stay";
 }
 

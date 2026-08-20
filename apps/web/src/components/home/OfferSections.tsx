@@ -6,7 +6,7 @@ import ResultCard from "../ResultCard";
 import { CardGridSkeleton } from "./skeletons";
 import { ScrollReveal } from "./ScrollReveal";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
 
 interface CardItem {
   id: string;
@@ -27,6 +27,9 @@ interface OfferSectionsProps {
   caravanShown: CardItem[];
   stayShown: CardItem[];
   activityShown: CardItem[];
+  // Optional so Index can adopt this one section at a time; an absent list
+  // renders as "no vehicles yet" rather than crashing on .slice.
+  vehicleShown?: CardItem[];
 }
 
 const MAX_SECONDARY = 5;
@@ -100,10 +103,33 @@ export function OfferSections({
   caravanShown,
   stayShown,
   activityShown,
+  vehicleShown = [],
 }: OfferSectionsProps) {
   const caravanPreview = caravanShown.slice(0, MAX_SECONDARY);
   const stayPreview = stayShown.slice(0, MAX_SECONDARY);
   const activityPreview = activityShown.slice(0, MAX_SECONDARY);
+  const vehiclePreview = vehicleShown.slice(0, MAX_SECONDARY);
+
+  /** Secondary "Vehicle Rental" strip, shown under every other primary tab. */
+  const vehicleSecondary = homepageSections["vehicle-rental"] ? (
+    <OfferSection
+      title="Vehicle Rental"
+      subtitle="Cars, vans and buses — self-drive or with a driver"
+      sectionId="vehicle-rental"
+      loading={loadingOffers}
+      error={offerError}
+      hasItems={vehiclePreview.length > 0}
+      viewAllHref="/search?filter=vehicle-rental"
+    >
+      <ResultCard
+        activeFilter="vehicle-rental"
+        ResultvehicleShown={vehiclePreview}
+        ResultcaravanShown={[]}
+        ResultstayShown={[]}
+        ResultactivityShown={[]}
+      />
+    </OfferSection>
+  ) : null;
 
   return (
     <>
@@ -165,6 +191,26 @@ export function OfferSections({
         </OfferSection>
       )}
 
+      {activeFilter === "vehicle-rental" && homepageSections["vehicle-rental"] && (
+        <OfferSection
+          title="Vehicle Rental"
+          subtitle="Cars, vans and buses — self-drive or with a driver"
+          sectionId="vehicle-rental"
+          loading={loadingOffers}
+          error={offerError}
+          hasItems={vehicleShown.length > 0}
+          viewAllHref="/search?filter=vehicle-rental"
+        >
+          <ResultCard
+            activeFilter={activeFilter}
+            ResultvehicleShown={vehicleShown}
+            ResultactivityShown={activityShown}
+            ResultstayShown={stayShown}
+            ResultcaravanShown={caravanShown}
+          />
+        </OfferSection>
+      )}
+
       {/* ── Secondary sections (max 5, with View all link) ──
           Use ResultCard (same component as the primary section above) so the
           card UI — shimmer wrap, hover-reveal heart, "Saved" badge, price
@@ -210,6 +256,7 @@ export function OfferSections({
               />
             </OfferSection>
           )}
+          {vehicleSecondary}
         </>
       )}
 
@@ -251,6 +298,7 @@ export function OfferSections({
               />
             </OfferSection>
           )}
+          {vehicleSecondary}
         </>
       )}
 
@@ -289,6 +337,66 @@ export function OfferSections({
                 ResultstayShown={stayPreview}
                 ResultcaravanShown={[]}
                 ResultactivityShown={[]}
+              />
+            </OfferSection>
+          )}
+          {vehicleSecondary}
+        </>
+      )}
+
+      {activeFilter === "vehicle-rental" && (
+        <>
+          {homepageSections["camper-van"] && (
+            <OfferSection
+              title="Stay at our top Camper Van"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="camper-van"
+              loading={loadingOffers}
+              error={offerError}
+              hasItems={caravanPreview.length > 0}
+              viewAllHref="/search?filter=camper-van"
+            >
+              <ResultCard
+                activeFilter="camper-van"
+                ResultcaravanShown={caravanPreview}
+                ResultstayShown={[]}
+                ResultactivityShown={[]}
+              />
+            </OfferSection>
+          )}
+          {homepageSections["unique-stays"] && (
+            <OfferSection
+              title="Unique Stays"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="unique-stays"
+              loading={loadingOffers}
+              error={offerError}
+              hasItems={stayPreview.length > 0}
+              viewAllHref="/search?filter=unique-stays"
+            >
+              <ResultCard
+                activeFilter="unique-stays"
+                ResultstayShown={stayPreview}
+                ResultcaravanShown={[]}
+                ResultactivityShown={[]}
+              />
+            </OfferSection>
+          )}
+          {homepageSections["best-activity"] && (
+            <OfferSection
+              title="Best Activity"
+              subtitle="Handpicked for every kind of traveler"
+              sectionId="activity"
+              loading={loadingOffers}
+              error={offerError}
+              hasItems={activityPreview.length > 0}
+              viewAllHref="/search?filter=activity"
+            >
+              <ResultCard
+                activeFilter="activity"
+                ResultactivityShown={activityPreview}
+                ResultcaravanShown={[]}
+                ResultstayShown={[]}
               />
             </OfferSection>
           )}

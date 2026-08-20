@@ -76,7 +76,7 @@ const BookingSchema = new Schema(
     serviceName: {
       type: String,
       required: true,
-      enum: ["activity", "camper-van", "unique-stay"],
+      enum: ["activity", "camper-van", "unique-stay", "vehicle-rental"],
       trim: true,
     },
     clientName: {
@@ -115,6 +115,45 @@ const BookingSchema = new Schema(
       type: String,
       trim: true,
     },
+
+    // ─── Vehicle rental (serviceName === "vehicle-rental") ───────────────
+    // Car/van/bus rentals are the only service where the return leg is a
+    // distinct place and the time of day is part of the contract — a stay is
+    // date-only and a caravan is picked up and returned at the vendor's
+    // address. All optional so the three older services validate unchanged.
+    dropLocation: {
+      type: String,
+      trim: true,
+    },
+    rentalMode: {
+      type: String,
+      enum: ["self-drive", "with-driver"],
+      trim: true,
+    },
+    /** "HH:mm", 24-hour. Pairs with checkInDate / checkOutDate. */
+    pickupTime: {
+      type: String,
+      trim: true,
+    },
+    returnTime: {
+      type: String,
+      trim: true,
+    },
+    numberOfPassengers: {
+      type: Number,
+      min: 1,
+    },
+    /** Required by the client for self-drive; the vendor verifies at handover. */
+    drivingLicenceNumber: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    specialRequirements: {
+      type: String,
+      trim: true,
+    },
+
     totalAmount: {
       type: Number,
       required: true,

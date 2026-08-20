@@ -12,7 +12,7 @@ const { z } = require("zod");
 const objectIdString = z.string().regex(/^[a-fA-F0-9]{24}$/, "Invalid id format");
 
 const paymentStatus = z.enum(["pending", "paid", "requested", "processing", "refunded"]);
-const serviceCategory = z.enum(["camper-van", "unique-stay", "activity"]);
+const serviceCategory = z.enum(["camper-van", "unique-stay", "activity", "vehicle-rental"]);
 
 // ─── GET /api/payments ──────────────────────────────────────────────────────
 const listQuery = z.object({

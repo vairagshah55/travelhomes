@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   Award,
   BedDouble,
+  Car,
   Caravan,
   MapPin,
   MessageSquareQuote,
@@ -27,6 +28,12 @@ const SECTIONS: { title: string; key: string; icon: LucideIcon; blurb: string }[
     key: "best-activity",
     icon: Mountain,
     blurb: "Highlighted activities.",
+  },
+  {
+    title: "Vehicle Rental",
+    key: "vehicle-rental",
+    icon: Car,
+    blurb: "Car, van & bus rentals — search tab, listings, and vendor onboarding.",
   },
   {
     title: "Trending destinations",

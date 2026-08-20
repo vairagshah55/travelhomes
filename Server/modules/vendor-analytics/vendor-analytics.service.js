@@ -49,9 +49,9 @@ async function computeCounts(vendorId) {
   const offerViewFilter = vendorOfferIds
     ? {
         serviceId: { $in: vendorOfferIds },
-        category: { $in: ["activity", "camper-van", "unique-stay"] },
+        category: { $in: ["activity", "camper-van", "unique-stay", "vehicle-rental"] },
       }
-    : { category: { $in: ["activity", "camper-van", "unique-stay"] } };
+    : { category: { $in: ["activity", "camper-van", "unique-stay", "vehicle-rental"] } };
 
   const [clickAgg, impressionAgg, visitorAgg] = await Promise.all([
     Offer.aggregate(clickPipeline),
@@ -213,7 +213,7 @@ async function getGraphs({ period = "monthly" } = {}, user) {
     // rows (categories that match offer.serviceType) AND to THIS vendor's
     // offers. Mirrors the offerViewFilter in computeCounts.
     if (collection === "AdminAnalyticsMetric") {
-      match.category = { $in: ["activity", "camper-van", "unique-stay"] };
+      match.category = { $in: ["activity", "camper-van", "unique-stay", "vehicle-rental"] };
       if (vendorOfferIds) match.serviceId = { $in: vendorOfferIds };
     }
 

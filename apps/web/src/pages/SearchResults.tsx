@@ -52,7 +52,14 @@ import {
   getFilterOptions,
 } from "./SearchResults/searchHelpers";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
+
+/** Half-hour slots for the vehicle pickup/return time selects. */
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
 
 // Stable identity for the "no results yet" case, so the memo chain below isn't
 // invalidated by a fresh `[]` literal on every render while the query loads.
@@ -88,7 +95,22 @@ export default function SearchResults() {
     "camper-van": true,
     "unique-stays": true,
     "best-activity": true,
+    "vehicle-rental": true,
   });
+
+  // ─── Vehicle-rental search state ────────────────────────────────────────
+  // Pickup/return times are vehicle-only: a stay is date-only and a caravan is
+  // collected from the vendor's address, but a rental contract is priced from
+  // the hour it starts.
+  const [pickupTime, setPickupTime] = useState(searchParams.get("pickupTime") || "10:00");
+  const [returnTime, setReturnTime] = useState(searchParams.get("returnTime") || "10:00");
+  const [vehicleClass, setVehicleClass] = useState<"" | "car" | "van" | "bus">(
+    (searchParams.get("vehicleClass") as "car" | "van" | "bus") || "",
+  );
+  const [selectedFuelTypes, setSelectedFuelTypes] = useState<string[]>([]);
+  const [selectedTransmissions, setSelectedTransmissions] = useState<string[]>([]);
+  const [selectedRentalModes, setSelectedRentalModes] = useState<string[]>([]);
+  const [acOnly, setAcOnly] = useState(false);
 
   const { data: homepageSections } = useHomepageSections();
   useEffect(() => {
@@ -105,6 +127,7 @@ export default function SearchResults() {
       "camper-van": "camper-van",
       "unique-stays": "unique-stays",
       activity: "best-activity",
+      "vehicle-rental": "vehicle-rental",
     };
 
     if (visibleSections[filterMap[activeFilter]] === false) {
@@ -125,8 +148,23 @@ export default function SearchResults() {
     params.set("checkin", checkInDate ? checkInDate.toISOString() : "");
     params.set("checkout", checkOutDate ? checkOutDate.toISOString() : "");
     params.set("activity", activityName || "");
+    if (activeFilter === "vehicle-rental") {
+      params.set("pickupTime", pickupTime);
+      params.set("returnTime", returnTime);
+      params.set("vehicleClass", vehicleClass);
+    }
     setSearchParams(params);
-  }, [activeFilter, selectedLocation, selectedLocationTo, checkInDate, checkOutDate, activityName]);
+  }, [
+    activeFilter,
+    selectedLocation,
+    selectedLocationTo,
+    checkInDate,
+    checkOutDate,
+    activityName,
+    pickupTime,
+    returnTime,
+    vehicleClass,
+  ]);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
   const [showLocationToDropdown, setShowLocationToDropdown] = useState(false);
   const [showGuestDropdown, setShowGuestDropdown] = useState(false);
@@ -159,6 +197,10 @@ export default function SearchResults() {
     setPriceRange({ minVal: min, maxVal: max });
     setSleepRange({ minVal: minSleep, maxVal: maxSleep });
     setSeatRange({ minVal: minSeat, maxVal: maxSeat });
+    setSelectedFuelTypes([]);
+    setSelectedTransmissions([]);
+    setSelectedRentalModes([]);
+    setAcOnly(false);
   }, [activeFilter]);
 
   const locationRef = useRef<HTMLDivElement>(null);
@@ -221,6 +263,13 @@ export default function SearchResults() {
       guests: (guests.adults + guests.children + guests.infants).toString(),
       activity: activityName,
     });
+    // Carried through so the details page and the booking form can pre-fill the
+    // rental window the guest actually searched for.
+    if (activeFilter === "vehicle-rental") {
+      params.set("pickupTime", pickupTime);
+      params.set("returnTime", returnTime);
+      params.set("vehicleClass", vehicleClass);
+    }
     setSearchParams(params);
   };
 
@@ -266,7 +315,13 @@ export default function SearchResults() {
   // useQuery keyed by (activeFilter, location). The category-normalization
   // logic is the same as the legacy fetch; just lifted into the queryFn.
   const searchQuery = useQuery<any[]>({
-    queryKey: ["search", "offers", activeFilter, (selectedLocation || "").trim()],
+    queryKey: [
+      "search",
+      "offers",
+      activeFilter,
+      (selectedLocation || "").trim(),
+      activeFilter === "vehicle-rental" ? vehicleClass : "",
+    ],
     queryFn: async () => {
       const loc = (selectedLocation || "").trim();
       const params = new URLSearchParams();
@@ -277,6 +332,17 @@ export default function SearchResults() {
       }
       params.set("page", "1");
       params.set("limit", "100");
+
+      // Narrow server-side by serviceType. The client-side getNormCategory pass
+      // below still runs, because legacy offers created before serviceType was
+      // stamped have none — but for vehicle-rental (which only ever existed
+      // with a serviceType) the server filter is authoritative, and the
+      // vehicleClass facet can be pushed down too.
+      if (activeFilter === "vehicle-rental") {
+        params.set("serviceType", "vehicle-rental");
+        if (vehicleClass) params.set("vehicleClass", vehicleClass);
+      }
+
       const r = await fetch(`/api/offers?${params.toString()}`);
       const json = await r.json();
       const list: any[] = Array.isArray(json?.data) ? json.data : [];
@@ -313,6 +379,10 @@ export default function SearchResults() {
         selectedFacilities,
         sleepRange,
         seatRange,
+        selectedFuelTypes,
+        selectedTransmissions,
+        selectedRentalModes,
+        acOnly,
       }),
     [
       dataToUse,
@@ -323,6 +393,10 @@ export default function SearchResults() {
       selectedFacilities,
       sleepRange,
       seatRange,
+      selectedFuelTypes,
+      selectedTransmissions,
+      selectedRentalModes,
+      acOnly,
     ],
   );
 
@@ -370,6 +444,14 @@ export default function SearchResults() {
     setSelectedCategories,
     selectedFacilities,
     setSelectedFacilities,
+    selectedFuelTypes,
+    setSelectedFuelTypes,
+    selectedTransmissions,
+    setSelectedTransmissions,
+    selectedRentalModes,
+    setSelectedRentalModes,
+    acOnly,
+    setAcOnly,
   };
 
   const SearchbarRef = useRef(null);
@@ -397,6 +479,7 @@ export default function SearchResults() {
     "camper-van": { label: "Camper Van", icon: CamperVanIcon },
     "unique-stays": { label: "Unique Stays", icon: HomeIcon },
     activity: { label: "Activity", icon: RocketIcon },
+    "vehicle-rental": { label: "Vehicle Rental", icon: CarIcon },
   }[activeFilter];
 
   return (
@@ -446,6 +529,14 @@ export default function SearchResults() {
                   label="Activity"
                   active={activeFilter === "activity"}
                   onClick={() => setActiveFilter("activity")}
+                />
+              )}
+              {visibleSections["vehicle-rental"] !== false && (
+                <FilterButton
+                  icon={CarIcon}
+                  label="Vehicle Rental"
+                  active={activeFilter === "vehicle-rental"}
+                  onClick={() => setActiveFilter("vehicle-rental")}
                 />
               )}
             </div>
@@ -862,6 +953,180 @@ export default function SearchResults() {
                 </div>
               )}
 
+              {/* Vehicle Rental Filter */}
+              {activeFilter === "vehicle-rental" && (
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:flex-1">
+                    {/* Pickup location */}
+                    <div
+                      className="flex flex-col gap-1 md:gap-2 flex-1 min-w-0 relative p-2 md:p-0"
+                      ref={locationRef}
+                    >
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <MapPin className="w-4 h-4 md:w-5 md:h-5" />
+                        <span className="text-xs md:text-sm">Pickup city</span>
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="City or airport"
+                          value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
+                          onChange={(e) => {
+                            setSelectedLocation(e.target.value);
+                            setShowLocationDropdown(true);
+                          }}
+                          onFocus={() => setShowLocationDropdown(true)}
+                          className="w-full bg-transparent px-3 text-black font-medium text-lg text-left hover:text-gray-700 transition-colors focus:outline-none placeholder:text-gray-400"
+                        />
+                        <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        {showLocationDropdown && (
+                          <LocationDropdown
+                            searchQuery={selectedLocation}
+                            onSelect={(location) => {
+                              setSelectedLocation(location);
+                              setShowLocationDropdown(false);
+                            }}
+                            onClose={() => setShowLocationDropdown(false)}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
+
+                    {/* Pickup date + time. The date button opens the shared range
+                        calendar (which sets both check-in and check-out), and the
+                        time select sits beside it because a rental is priced from
+                        the hour it starts, not the day. */}
+                    <div ref={calendarRef} className="flex flex-col gap-2 flex-1 relative min-w-0">
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Calendar className="w-5 h-5" />
+                        <span className="text-sm">Pickup</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setShowCalendar(!showCalendar);
+                            setShowLocationDropdown(false);
+                            setShowGuestDropdown(false);
+                          }}
+                          className={`font-semibold text-[16px] ${checkInDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
+                        >
+                          {(checkInDate ?? new Date()).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </button>
+                        <select
+                          aria-label="Pickup time"
+                          value={pickupTime}
+                          onChange={(e) => setPickupTime(e.target.value)}
+                          className="bg-transparent text-[15px] font-semibold text-black focus:outline-none cursor-pointer"
+                        >
+                          {TIME_SLOTS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {showCalendar && (
+                        <CalendarDropdown
+                          onSelect={(range) => handleDateRangeSelect(range)}
+                          onClose={() => setShowCalendar(false)}
+                          selectedRange={{ start: checkInDate, end: checkOutDate }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
+
+                    {/* Return date + time */}
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Calendar className="w-5 h-5" />
+                        <span className="text-sm">Return</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setShowCalendar(!showCalendar);
+                            setShowLocationDropdown(false);
+                            setShowGuestDropdown(false);
+                          }}
+                          className={`font-semibold text-[16px] ${checkOutDate ? "text-black" : "text-gray-400"} hover:text-gray-700 transition-colors text-left`}
+                        >
+                          {(checkOutDate ?? new Date()).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })}
+                        </button>
+                        <select
+                          aria-label="Return time"
+                          value={returnTime}
+                          onChange={(e) => setReturnTime(e.target.value)}
+                          className="bg-transparent text-[15px] font-semibold text-black focus:outline-none cursor-pointer"
+                        >
+                          {TIME_SLOTS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="hidden lg:block w-px h-10 bg-gray-300"></div>
+
+                    {/* Vehicle class. Pushed down to the server as a query param,
+                        so switching it refetches rather than re-filtering an
+                        over-fetched page. */}
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <CarIcon className="w-5 h-5" />
+                        <span className="text-sm">Vehicle type</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {(
+                          [
+                            { value: "", label: "Any" },
+                            { value: "car", label: "Car" },
+                            { value: "van", label: "Van" },
+                            { value: "bus", label: "Bus" },
+                          ] as const
+                        ).map((option) => (
+                          <button
+                            key={option.value || "any"}
+                            type="button"
+                            aria-pressed={vehicleClass === option.value}
+                            onClick={() => setVehicleClass(option.value)}
+                            className={`px-3 py-1.5 rounded-full text-[13px] font-semibold transition-colors ${
+                              vehicleClass === option.value
+                                ? "bg-[#3BD9DA] text-white"
+                                : "bg-white text-[#0a1c1c] border border-[#E4E8F0] hover:border-[#3BD9DA]"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-center lg:ml-6 mt-4 lg:mt-0">
+                    <Button
+                      onClick={handleSearch}
+                      className="bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white rounded-full h-12 w-12 lg:h-14 lg:w-14"
+                      size="icon"
+                    >
+                      <Search className="w-5 h-5 lg:w-6 lg:h-6" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Unique Stays Filter */}
               {activeFilter === "unique-stays" && (
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4 md:gap-6 lg:gap-0">
@@ -1109,6 +1374,7 @@ export default function SearchResults() {
                       ResultcaravanShown={paginatedItems}
                       ResultstayShown={paginatedItems}
                       ResultactivityShown={paginatedItems}
+                      ResultvehicleShown={paginatedItems}
                     />
                     <CustomPagination
                       currentPage={page}
@@ -1171,6 +1437,22 @@ function HomeIcon({ className }: { className?: string }) {
         d="M20 8.25L10 1.75L7.5 3.375V1.25H5V5L0 8.25L2.375 11.625L2.5 11.5V18.75H8.75V13.75H11.25V18.75H17.5V11.5L17.625 11.625L20 8.25ZM1.75 8.625L10 3.25L18.25 8.625L17.375 9.875L10 5L2.625 9.875L1.75 8.625ZM16.25 17.5H12.5V12.5H7.5V17.5H3.75V10.75L10 6.625L16.25 10.75V17.5Z"
         fill="currentColor"
       />
+    </svg>
+  );
+}
+
+function CarIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M4.5 15.5V11.2l1.7-4.4A2 2 0 0 1 8.07 5.5h7.86a2 2 0 0 1 1.87 1.3l1.7 4.4v4.3M4.5 15.5h15M4.5 15.5v2a.5.5 0 0 0 .5.5h1.5a.5.5 0 0 0 .5-.5v-2M19.5 15.5v2a.5.5 0 0 1-.5.5h-1.5a.5.5 0 0 1-.5-.5v-2M5 11.5h14"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="13.4" r="0.85" fill="currentColor" />
+      <circle cx="16" cy="13.4" r="0.85" fill="currentColor" />
     </svg>
   );
 }

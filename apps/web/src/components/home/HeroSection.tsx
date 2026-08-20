@@ -8,13 +8,21 @@ import FilterButton from "../FilterButton";
 import CamperVanIcon from "../icons/CamperVanIcon";
 import HomeIcon from "../icons/HomeIcon";
 import RocketIcon from "../icons/RocketIcon";
+import CarIcon from "../icons/CarIcon";
 import { LocationDropdown } from "../LocationDropdown";
 import { GuestDropdown } from "../GuestDropdown";
 import { ActivityDropdown } from "../ActivityDropdown";
 import { CalendarDropdown } from "../CalendarDropdown";
 import { MobileSearchSheet } from "./MobileSearchSheet";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
+
+/** Half-hour pickup/return slots for the vehicle-rental search bar. */
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, "0");
+  const m = i % 2 === 0 ? "00" : "30";
+  return `${h}:${m}`;
+});
 
 const HERO_PHOTOS = [
   "photo-1504280390367-361c6d9f38f4",
@@ -238,6 +246,11 @@ export function HeroSection({
         return r;
       });
   }, [activityName]);
+  // ─── Vehicle-rental search state ──────────────────────────────────────
+  const [pickupTime, setPickupTime] = useState("10:00");
+  const [returnTime, setReturnTime] = useState("10:00");
+  const [vehicleClass, setVehicleClass] = useState<"" | "car" | "van" | "bus">("");
+
   useEffect(() => {
     setSearchErrors({});
   }, [activeFilter]);
@@ -255,6 +268,17 @@ export function HeroSection({
     if (activeFilter !== "activity" && !checkOutDate) errors.checkout = "Required";
     if (activeFilter === "activity" && (!activityName.trim() || activityName === "Tracking"))
       errors.activity = "Required";
+    // A rental window that ends before it starts is the one date error worth
+    // catching here — the search page has no way to price it.
+    if (
+      activeFilter === "vehicle-rental" &&
+      checkInDate &&
+      checkOutDate &&
+      checkOutDate.getTime() === checkInDate.getTime() &&
+      returnTime <= pickupTime
+    ) {
+      errors.checkout = "Return must be after pickup";
+    }
     if (Object.keys(errors).length > 0) {
       setSearchErrors(errors);
       return;
@@ -269,6 +293,11 @@ export function HeroSection({
       guests: String(guests.adults + guests.children + guests.infants),
       activity: activityName,
     });
+    if (activeFilter === "vehicle-rental") {
+      params.set("pickupTime", pickupTime);
+      params.set("returnTime", returnTime);
+      params.set("vehicleClass", vehicleClass);
+    }
     navigate(`/search?${params.toString()}`);
   };
 
@@ -356,7 +385,7 @@ export function HeroSection({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
           >
-            Caravans, unique stays, and curated activities across India.
+            Caravans, unique stays, curated activities, and vehicle rentals across India.
           </motion.p>
 
           {/* Category filter pills — hidden on phones, where they duplicated
@@ -417,6 +446,23 @@ export function HeroSection({
                   label="Activity"
                   active={activeFilter === "activity"}
                   onClick={() => setActiveFilter("activity")}
+                  variant="hero"
+                />
+              </motion.div>
+            )}
+            {homepageSections["vehicle-rental"] && (
+              <motion.div
+                className="flex-shrink-0 snap-start"
+                variants={{
+                  hidden: { opacity: 0, y: 16 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+                }}
+              >
+                <FilterButton
+                  icon={CarIcon}
+                  label="Vehicle Rental"
+                  active={activeFilter === "vehicle-rental"}
+                  onClick={() => setActiveFilter("vehicle-rental")}
                   variant="hero"
                 />
               </motion.div>
@@ -743,6 +789,166 @@ export function HeroSection({
                         />
                       )}
                     </div>
+                  </div>
+                  <SearchBtn />
+                </div>
+              )}
+
+              {/* ── Vehicle Rental ─── */}
+              {activeFilter === "vehicle-rental" && (
+                <div className="flex flex-col lg:flex-row lg:items-start gap-3 lg:gap-0 w-full">
+                  <div className="flex flex-col lg:flex-row lg:flex-1 lg:items-start gap-3 lg:gap-0">
+                    <div
+                      ref={locationRef}
+                      className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showLocationDropdown ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}
+                    >
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span className="text-xs font-medium">Pickup city</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="City or airport"
+                        value={selectedLocation === "Where are you going?" ? "" : selectedLocation}
+                        onChange={(e) => {
+                          setSelectedLocation(e.target.value);
+                          setShowLocationDropdown(true);
+                        }}
+                        onFocus={() => setShowLocationDropdown(true)}
+                        className="w-full px-0.5 bg-transparent text-gray-900 font-semibold text-sm focus:outline-none placeholder:text-gray-300 placeholder:font-normal"
+                      />
+                      {searchErrors.location && (
+                        <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium whitespace-nowrap">
+                          {searchErrors.location}
+                        </span>
+                      )}
+                      {showLocationDropdown && (
+                        <LocationDropdown
+                          searchQuery={selectedLocation}
+                          onSelect={(location) => {
+                            setSelectedLocation(location);
+                            setShowLocationDropdown(false);
+                          }}
+                          onClose={() => setShowLocationDropdown(false)}
+                        />
+                      )}
+                    </div>
+                    <Divider />
+
+                    {/* Pickup — date opens the shared range calendar, which sets
+                        both ends at once; the time select sits under it because a
+                        rental is priced from the hour it starts. */}
+                    <div
+                      ref={calendarRef}
+                      className={`flex flex-col gap-1 flex-1 min-w-0 relative px-4 py-2.5 rounded-xl transition-colors duration-200 ${showCalendar ? "bg-[#F7F7F7]" : "hover:bg-gray-50/80"}`}
+                    >
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-xs font-medium">Pickup</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setShowCalendar(!showCalendar);
+                            setShowLocationDropdown(false);
+                            setShowGuestDropdown(false);
+                          }}
+                          className={`${checkInDate ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                        >
+                          {dateLabel(checkInDate, "Add date")}
+                        </button>
+                        <select
+                          aria-label="Pickup time"
+                          value={pickupTime}
+                          onChange={(e) => setPickupTime(e.target.value)}
+                          className="bg-transparent text-sm font-semibold text-gray-900 focus:outline-none cursor-pointer"
+                        >
+                          {TIME_SLOTS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {searchErrors.checkin && (
+                        <span className="absolute -bottom-2.5 left-4 text-red-500 text-[10px] font-medium whitespace-nowrap">
+                          {searchErrors.checkin}
+                        </span>
+                      )}
+                      {showCalendar && (
+                        <CalendarDropdown
+                          onSelect={handleDateRangeSelect}
+                          onClose={() => setShowCalendar(false)}
+                          selectedRange={{ start: checkInDate, end: checkOutDate }}
+                        />
+                      )}
+                    </div>
+                    <Divider />
+
+                    {/* Return */}
+                    <SearchField active={false} error={searchErrors.checkout}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span className="text-xs font-medium">Return</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setShowCalendar(!showCalendar);
+                            setShowLocationDropdown(false);
+                            setShowGuestDropdown(false);
+                          }}
+                          className={`${checkOutDate ? "text-gray-900" : "text-gray-300"} font-semibold text-sm text-left hover:text-gray-700 transition-colors`}
+                        >
+                          {dateLabel(checkOutDate, "Add date")}
+                        </button>
+                        <select
+                          aria-label="Return time"
+                          value={returnTime}
+                          onChange={(e) => setReturnTime(e.target.value)}
+                          className="bg-transparent text-sm font-semibold text-gray-900 focus:outline-none cursor-pointer"
+                        >
+                          {TIME_SLOTS.map((t) => (
+                            <option key={t} value={t}>
+                              {t}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </SearchField>
+                    <Divider />
+
+                    {/* Vehicle class */}
+                    <SearchField active={false}>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <CarIcon className="w-4 h-4" />
+                        <span className="text-xs font-medium">Vehicle type</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {(
+                          [
+                            { value: "", label: "Any" },
+                            { value: "car", label: "Car" },
+                            { value: "van", label: "Van" },
+                            { value: "bus", label: "Bus" },
+                          ] as const
+                        ).map((option) => (
+                          <button
+                            key={option.value || "any"}
+                            type="button"
+                            aria-pressed={vehicleClass === option.value}
+                            onClick={() => setVehicleClass(option.value)}
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
+                              vehicleClass === option.value
+                                ? "bg-[#3BD9DA] text-white"
+                                : "text-gray-500 hover:bg-gray-100"
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </SearchField>
                   </div>
                   <SearchBtn />
                 </div>

@@ -80,7 +80,7 @@ function getToday() {
 
 function getMetricCategory(offer) {
   const cat = (offer.serviceType || offer.category || "unique-stay").toLowerCase();
-  const valid = ["activity", "camper-van", "unique-stay"];
+  const valid = ["activity", "camper-van", "unique-stay", "vehicle-rental"];
   return valid.includes(cat) ? cat : "unique-stay";
 }
 
@@ -214,6 +214,25 @@ function buildListFilter(q, user) {
       { description: { $regex: escapeRegex(q.q), $options: "i" } },
     );
   if (or.length) query.__searchOr = or;
+
+  // ─── Service + vehicle-rental facets ──────────────────────────────────
+  if (q.serviceType) query.serviceType = q.serviceType;
+  if (q.vehicleClass) query.vehicleClass = q.vehicleClass;
+  if (q.fuelType) query.fuelType = q.fuelType;
+  if (q.transmission) query.transmission = q.transmission;
+  if (q.airConditioned === "true" || q.airConditioned === true) query.airConditioned = true;
+  if (q.brand) query.brand = { $regex: escapeRegex(q.brand), $options: "i" };
+
+  // A rental mode filter means "this listing can be booked that way", so it
+  // keys on the vendor's enabled flag rather than on a stored mode.
+  if (q.rentalMode === "self-drive") query.selfDriveEnabled = true;
+  if (q.rentalMode === "with-driver") query.withDriverEnabled = true;
+
+  if (q.minSeats != null || q.maxSeats != null) {
+    query.seatingCapacity = {};
+    if (q.minSeats != null) query.seatingCapacity.$gte = q.minSeats;
+    if (q.maxSeats != null) query.seatingCapacity.$lte = q.maxSeats;
+  }
 
   return query;
 }

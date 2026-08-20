@@ -40,6 +40,7 @@ const ServiceSelection = lazy(() => import("./pages/onboarding/ServiceSelection"
 const CaravanOnboarding = lazy(() => import("./pages/onboarding/CaravanOnboarding"));
 const StaysOnboarding = lazy(() => import("./pages/onboarding/StaysOnboarding"));
 const ActivityOnboarding = lazy(() => import("./pages/onboarding/ActivityOnboarding"));
+const VehicleOnboarding = lazy(() => import("./pages/onboarding/VehicleOnboarding"));
 const ActivitySelfie = lazy(() => import("./pages/onboarding/ActivitySelfie"));
 const OnboardingComplete = lazy(() => import("./pages/onboarding/OnboardingComplete"));
 const SelfieVerification = lazy(() => import("./pages/onboarding/SelfieVerification"));
@@ -72,6 +73,7 @@ const SearchResults = lazy(() => import("./pages/SearchResults"));
 const CamperVanDetails = lazy(() => import("./pages/product-details/CamperVanDetails"));
 const UniqueStayDetails = lazy(() => import("./pages/product-details/UniqueStayDetails"));
 const ActivityDetails = lazy(() => import("./pages/product-details/ActivityDetails"));
+const VehicleDetails = lazy(() => import("./pages/product-details/VehicleDetails"));
 const Payment = lazy(() => import("./pages/product-details/Payment"));
 
 // ─── User account ──────────────────────────────────────────────────────────
@@ -190,6 +192,14 @@ const App = () => {
                       </Suspense>
                     }
                   />
+                  <Route
+                    path="/vehicle/:id"
+                    element={
+                      <Suspense fallback={<ProductDetailsSkeleton />}>
+                        <VehicleDetails />
+                      </Suspense>
+                    }
+                  />
 
                   <Route
                     path="/login"
@@ -279,6 +289,14 @@ const App = () => {
                     element={
                       <ProtectedRoute>
                         <ActivityOnboarding />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/onboarding/vehicle"
+                    element={
+                      <ProtectedRoute>
+                        <VehicleOnboarding />
                       </ProtectedRoute>
                     }
                   />

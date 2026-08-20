@@ -27,6 +27,7 @@ const STATUS_COLOR = {
 const SERVICE_TYPE_FROM_NAME = {
   "camper-van": "van",
   "unique-stay": "unique-stays",
+  "vehicle-rental": "vehicle",
 };
 
 function formatDDMMYYYY(date) {

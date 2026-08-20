@@ -709,7 +709,7 @@ export interface BookingDTO {
   bookingId: string;
   userId: string;
   serviceId: string;
-  serviceName: "activity" | "camper-van" | "unique-stay";
+  serviceName: "activity" | "camper-van" | "unique-stay" | "vehicle-rental";
   clientName: string;
   clientEmail: string;
   clientPhone: string;
@@ -765,7 +765,10 @@ export const bookingsApi = {
 };
 
 // Onboarding API helpers
-export const submitOnboardingData = async (type: "activity" | "caravan" | "stay", data: any) => {
+export const submitOnboardingData = async (
+  type: "activity" | "caravan" | "stay" | "vehicle",
+  data: any,
+) => {
   try {
     const token = localStorage.getItem("travel_auth_token");
     console.log(`Submitting ${type} onboarding data:`, {
@@ -836,7 +839,7 @@ export const getOnboardingData = async () => {
 };
 
 export const submitSelfieVerification = async (
-  type: "activity" | "caravan" | "stay",
+  type: "activity" | "caravan" | "stay" | "vehicle",
   id: string,
   imageData: string,
 ) => {

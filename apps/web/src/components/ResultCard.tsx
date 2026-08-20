@@ -7,18 +7,24 @@ import { addWishlistItem, removeWishlistItem, getWishlist, WISHLIST_UPDATED } fr
 import { useAuth } from "../contexts/AuthContext";
 import { toast } from "sonner";
 
-type FilterType = "camper-van" | "unique-stays" | "activity";
+type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
 
 function ResultCard({
   activeFilter,
   ResultcaravanShown,
   ResultstayShown,
   ResultactivityShown,
+  ResultvehicleShown,
 }: {
   activeFilter: FilterType;
   ResultactivityShown: any[];
   ResultstayShown: any[];
   ResultcaravanShown: any[];
+  // Optional so the existing three-array call sites keep compiling; the
+  // vehicle-rental branch falls back to the caravan list, which is what every
+  // call site passes anyway (they hand the same already-filtered array to all
+  // of these — see the note at the ResultCard call in SearchResults).
+  ResultvehicleShown?: any[];
 }) {
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   const { isAuthenticated } = useAuth();
@@ -42,6 +48,8 @@ function ResultCard({
         return ResultstayShown;
       case "activity":
         return ResultactivityShown;
+      case "vehicle-rental":
+        return ResultvehicleShown ?? ResultcaravanShown;
       default:
         return ResultcaravanShown;
     }
@@ -62,7 +70,9 @@ function ResultCard({
             ? "campervan"
             : activeFilter === "unique-stays"
               ? "stay"
-              : "activity";
+              : activeFilter === "vehicle-rental"
+                ? "vehicle"
+                : "activity";
         addWishlistItem({
           id,
           title: item.title,

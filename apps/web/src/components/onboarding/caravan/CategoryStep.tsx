@@ -17,6 +17,12 @@ interface CategoryStepProps {
   // Hide the kicker/title/subtitle and centered wrapper when used inside
   // an existing scrollable form (e.g. edit page).
   embedded?: boolean;
+  // Overrides for reuse by another service. The fallback list matters most:
+  // a vehicle-rental vendor listing a sedan was being offered "Motorhome" and
+  // "Travel Trailer" whenever the CMS had no Vehicle Rental categories yet.
+  kicker?: string;
+  subtitle?: string;
+  fallbackCategories?: { name: string; description: string; emoji?: string }[];
 }
 
 interface VehicleType {
@@ -103,13 +109,21 @@ const CategoryStep: React.FC<CategoryStepProps> = ({
   categoriesLoading,
   onSelect,
   embedded,
+  kicker = "Vehicle Type",
+  subtitle = "Select the type that best describes your vehicle.",
+  fallbackCategories,
 }) => {
   const categories = React.useMemo<VehicleType[]>(() => {
     const fromAdmin = fromCms(dynamicCategories || []);
+    const fallback = fallbackCategories ?? FALLBACK_CATEGORIES;
     const base =
       fromAdmin.length > 0
         ? fromAdmin
-        : FALLBACK_CATEGORIES.map((c) => ({ ...c, key: c.name }));
+        : fallback.map((c) => ({
+            ...c,
+            emoji: c.emoji || emojiFor(c.name),
+            key: c.name,
+          }));
 
     // A listing saved under a category the admin has since renamed, disabled or
     // deleted would otherwise render as "nothing selected" — and silently lose
@@ -121,7 +135,7 @@ const CategoryStep: React.FC<CategoryStepProps> = ({
       ];
     }
     return base;
-  }, [dynamicCategories, category]);
+  }, [dynamicCategories, category, fallbackCategories]);
 
   const showSkeleton = categoriesLoading && !(dynamicCategories && dynamicCategories.length > 0);
 
@@ -231,7 +245,7 @@ const CategoryStep: React.FC<CategoryStepProps> = ({
           It previously hand-rolled a centred, dash-flanked heading with its own
           inline clamp() font-size — which is why it kept the old look after the
           shared header was reworked. */}
-      <StepHeader kicker="Vehicle Type" subtitle="Select the type that best describes your vehicle." />
+      <StepHeader kicker={kicker} subtitle={subtitle} />
       {list}
     </div>
   );

@@ -22,7 +22,55 @@ export default function PaymentPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, login, isAuthenticated } = useAuth();
-  const { service, type, checkInDate, checkOutDate, guests } = location.state || {};
+  const {
+    service,
+    type,
+    checkInDate,
+    checkOutDate,
+    guests,
+    // Vehicle rental only — set by VehicleDetails when it navigates here.
+    rentalMode,
+    pickupTime: statePickupTime,
+    returnTime: stateReturnTime,
+    ratePerDay,
+  } = location.state || {};
+
+  const isVehicle = type === "vehicle";
+
+  /**
+   * Vehicle-rental booking details.
+   *
+   * Kept in its own state object rather than merged into `formData`: that one is
+   * the billing address every service collects, and threading five conditional
+   * fields through it would make the shared form harder to read for the three
+   * services that never use them.
+   */
+  const [vehicleData, setVehicleData] = useState({
+    pickupLocation: "",
+    dropLocation: "",
+    numberOfPassengers: 1,
+    drivingLicenceNumber: "",
+    specialRequirements: "",
+  });
+  const [pickupTime, setPickupTime] = useState(statePickupTime || "10:00");
+  const [returnTime, setReturnTime] = useState(stateReturnTime || "10:00");
+
+  const setVehicleField = (field: string, value: string | number) =>
+    setVehicleData((prev) => ({ ...prev, [field]: value }));
+
+  // Default the pickup point to the vendor's first one, so the common case is
+  // one tap rather than free-typing an address the vendor doesn't recognise.
+  useEffect(() => {
+    if (!isVehicle) return;
+    const first = Array.isArray(service?.pickupPoints) ? service.pickupPoints[0] : null;
+    if (first) {
+      setVehicleData((prev) => ({
+        ...prev,
+        pickupLocation: prev.pickupLocation || first,
+        dropLocation: prev.dropLocation || first,
+      }));
+    }
+  }, [isVehicle, service]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -95,19 +143,51 @@ export default function PaymentPage() {
     1,
     calculateDays(editableBookingData.checkInDate, editableBookingData.checkOutDate),
   );
-  const pricePerNight = Number(service?.regularPrice) || 600;
+  // For a vehicle the headline `regularPrice` is the cheaper mode's rate, so
+  // the rate the guest actually selected is passed through explicitly.
+  const pricePerNight = isVehicle
+    ? Number(ratePerDay) || Number(service?.regularPrice) || 0
+    : Number(service?.regularPrice) || 600;
+
+  /**
+   * Extra charges a vehicle rental carries and the other three don't.
+   *
+   * The driver allowance is per day of the trip; the security deposit is a
+   * one-off that's refunded after the vehicle comes back. Both are zero unless
+   * the vendor set them, so a listing without either quotes exactly like a stay.
+   */
+  const driverAllowance =
+    isVehicle && rentalMode === "with-driver"
+      ? (Number(service?.driverAllowancePerDay) || 0) * days
+      : 0;
+  // Shown on the quote but NOT charged online: the vendor collects and refunds
+  // the deposit in person at handover (see the note in BookingWidget), so
+  // adding it to the gateway amount would take money twice for the same thing.
+  const securityDeposit =
+    isVehicle && rentalMode === "self-drive" ? Number(service?.securityDeposit) || 0 : 0;
 
   let basePrice = pricePerNight * days;
   if (type === "activity") {
     basePrice = pricePerNight * Math.max(1, totalGuests);
   }
 
-  const gst = Math.round(basePrice * 0.18);
-  const totalAmount = basePrice + gst + 50; // + cleaning fee
+  // GST applies to the rental and the driver allowance, not to the deposit —
+  // that isn't a supply of service, it's money held and returned.
+  const gst = Math.round((basePrice + driverAllowance) * 0.18);
+  // Vehicles carry no cleaning fee; the ₹50 below is the stay/caravan one.
+  const cleaningFee = isVehicle ? 0 : 50;
+  const totalAmount = basePrice + driverAllowance + gst + cleaningFee;
 
   const [bookingData, setBookingData] = useState({
     bookingId: `BK-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000)}`,
-    tripType: type === "van" ? "Camper Van" : type === "activity" ? "Activity" : "Unique Stay",
+    tripType:
+      type === "van"
+        ? "Camper Van"
+        : type === "activity"
+          ? "Activity"
+          : type === "vehicle"
+            ? "Vehicle Rental"
+            : "Unique Stay",
     bookingType: "Vacation Rental",
     guestName: formData.name || "Guest Name",
     guestPhone: formData.phone || "N/A",
@@ -127,8 +207,10 @@ export default function PaymentPage() {
     totalNights: days,
     basePrice: basePrice,
     discount: 0,
-    cleaningFee: 50,
+    cleaningFee: cleaningFee,
     serviceFee: 0,
+    driverAllowance: driverAllowance,
+    securityDeposit: securityDeposit,
     gst: gst,
     totalAmount: totalAmount,
     amountPaid: totalAmount, // Full payment
@@ -153,8 +235,18 @@ export default function PaymentPage() {
       bp = pricePerNight * Math.max(1, totalGuests);
     }
 
-    const g = Math.round(bp * 0.18);
-    const tot = bp + g + 50;
+    // Mirrors the top-level quote — recomputed against the edited date range.
+    const allowance =
+      isVehicle && rentalMode === "with-driver"
+        ? (Number(service?.driverAllowancePerDay) || 0) * d
+        : 0;
+    const deposit =
+      isVehicle && rentalMode === "self-drive" ? Number(service?.securityDeposit) || 0 : 0;
+    const fee = isVehicle ? 0 : 50;
+
+    const g = Math.round((bp + allowance) * 0.18);
+    // `deposit` is deliberately absent — collected at pickup, not online.
+    const tot = bp + allowance + g + fee;
     setBookingData((prev) => ({
       ...prev,
       checkInDate: editableBookingData.checkInDate.toLocaleDateString(),
@@ -162,6 +254,9 @@ export default function PaymentPage() {
       numberOfNights: d,
       totalNights: d,
       basePrice: bp,
+      driverAllowance: allowance,
+      securityDeposit: deposit,
+      cleaningFee: fee,
       gst: g,
       totalAmount: tot,
       amountPaid: tot,
@@ -171,7 +266,7 @@ export default function PaymentPage() {
       address: `${formData.address1}, ${formData.address2}, ${formData.city}, ${formData.state}, ${formData.pincode}`,
       userId: user?.id,
     }));
-  }, [editableBookingData, formData, pricePerNight, user, type]);
+  }, [editableBookingData, formData, pricePerNight, user, type, isVehicle, rentalMode, service]);
 
   const handleChange = (field: string, value: string) => {
     setFormData({ ...formData, [field]: value });
@@ -193,6 +288,12 @@ export default function PaymentPage() {
           checkInDate: editableBookingData.checkInDate,
           checkOutDate: editableBookingData.checkOutDate,
           guests: editableBookingData.guests,
+          // Without these, a signed-out guest who logs in mid-checkout comes
+          // back to a vehicle booking with no mode and no times — which the
+          // server then refuses on create.
+          ...(isVehicle
+            ? { rentalMode, pickupTime, returnTime, ratePerDay: pricePerNight }
+            : {}),
         }),
       );
       sessionStorage.setItem("auth_redirect", location.pathname);
@@ -288,6 +389,21 @@ export default function PaymentPage() {
       toast.error("Please enter your phone number");
       return;
     }
+    if (isVehicle) {
+      if (!vehicleData.pickupLocation.trim()) {
+        toast.error("Please choose a pickup location");
+        return;
+      }
+      if (rentalMode === "self-drive" && !vehicleData.drivingLicenceNumber.trim()) {
+        toast.error("A driving licence number is required for self-drive");
+        return;
+      }
+      const seats = Number(service?.seatingCapacity) || 0;
+      if (seats > 0 && Number(vehicleData.numberOfPassengers) > seats) {
+        toast.error(`This vehicle seats ${seats} passengers`);
+        return;
+      }
+    }
 
     setPaying(true);
     try {
@@ -312,7 +428,28 @@ export default function PaymentPage() {
           clientEmail: formData.email,
           clientPhone: formData.phone,
           serviceName:
-            type === "van" ? "camper-van" : type === "activity" ? "activity" : "unique-stay",
+            type === "van"
+              ? "camper-van"
+              : type === "activity"
+                ? "activity"
+                : type === "vehicle"
+                  ? "vehicle-rental"
+                  : "unique-stay",
+          // Only sent for a vehicle rental — the server requires rentalMode,
+          // both times, and (for self-drive) the licence number, and rejects
+          // the create otherwise. See assertVehicleFields in bookings.service.
+          ...(isVehicle
+            ? {
+                rentalMode,
+                pickupTime,
+                returnTime,
+                pickupLocation: vehicleData.pickupLocation,
+                dropLocation: vehicleData.dropLocation,
+                numberOfPassengers: Number(vehicleData.numberOfPassengers) || 1,
+                drivingLicenceNumber: vehicleData.drivingLicenceNumber || undefined,
+                specialRequirements: vehicleData.specialRequirements || undefined,
+              }
+            : {}),
           numberOfGuests: editableBookingData.guests.adults + editableBookingData.guests.children,
           checkInDate: editableBookingData.checkInDate,
           checkOutDate: editableBookingData.checkOutDate,
@@ -504,6 +641,131 @@ export default function PaymentPage() {
               </>
             )}
 
+            {isVehicle && (
+              <div className="mb-6 space-y-4">
+                <h3 className="font-semibold text-lg">Rental details</h3>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Pickup location
+                    </label>
+                    {Array.isArray(service?.pickupPoints) && service.pickupPoints.length > 0 ? (
+                      <select
+                        value={vehicleData.pickupLocation}
+                        onChange={(e) => setVehicleField("pickupLocation", e.target.value)}
+                        className="w-full border border-gray-400 rounded-[10px] px-3 h-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        {service.pickupPoints.map((point: string) => (
+                          <option key={point} value={point}>
+                            {point}
+                          </option>
+                        ))}
+                        <option value="other">Other — I'll specify below</option>
+                      </select>
+                    ) : (
+                      <Input
+                        placeholder="Where should we hand it over?"
+                        value={vehicleData.pickupLocation}
+                        onChange={(e) => setVehicleField("pickupLocation", e.target.value)}
+                        className="border-gray-400 rounded-[10px]"
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Drop location
+                    </label>
+                    <Input
+                      placeholder="Where will you return it?"
+                      value={vehicleData.dropLocation}
+                      onChange={(e) => setVehicleField("dropLocation", e.target.value)}
+                      className="border-gray-400 rounded-[10px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Pickup time
+                    </label>
+                    <input
+                      type="time"
+                      value={pickupTime}
+                      onChange={(e) => setPickupTime(e.target.value)}
+                      className="w-full border border-gray-400 rounded-[10px] px-3 h-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Return time
+                    </label>
+                    <input
+                      type="time"
+                      value={returnTime}
+                      onChange={(e) => setReturnTime(e.target.value)}
+                      className="w-full border border-gray-400 rounded-[10px] px-3 h-10 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Passengers
+                      {Number(service?.seatingCapacity) > 0
+                        ? ` (max ${service.seatingCapacity})`
+                        : ""}
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={Number(service?.seatingCapacity) || undefined}
+                      value={String(vehicleData.numberOfPassengers)}
+                      onChange={(e) =>
+                        setVehicleField("numberOfPassengers", Number(e.target.value) || 1)
+                      }
+                      className="border-gray-400 rounded-[10px]"
+                    />
+                  </div>
+                </div>
+
+                {/* Only self-drive needs a licence. Asking a chauffeur-driven
+                    customer for theirs would be collecting an ID we have no use
+                    for. */}
+                {rentalMode === "self-drive" && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                      Driving licence number
+                    </label>
+                    <Input
+                      placeholder="As printed on your licence"
+                      value={vehicleData.drivingLicenceNumber}
+                      onChange={(e) =>
+                        setVehicleField("drivingLicenceNumber", e.target.value.toUpperCase())
+                      }
+                      className="border-gray-400 rounded-[10px]"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      Bring the original licence to pickup — the vendor verifies it at handover.
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                    Special requirements
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Child seat, roof carrier, anything else the vendor should know"
+                    value={vehicleData.specialRequirements}
+                    onChange={(e) => setVehicleField("specialRequirements", e.target.value)}
+                    className="w-full border border-gray-400 rounded-[10px] px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
             <h3 className="font-semibold mb-4 text-lg">Enter your details</h3>
 
             <div className="space-y-4">
@@ -638,18 +900,41 @@ export default function PaymentPage() {
 
                 <div className="flex justify-between text-gray-500">
                   <p>
-                    ₹{pricePerNight} × {bookingData.numberOfNights} nights
+                    ₹{pricePerNight} × {bookingData.numberOfNights}{" "}
+                    {isVehicle ? (bookingData.numberOfNights === 1 ? "day" : "days") : "nights"}
                   </p>
                   <p>₹{bookingData.basePrice}</p>
                 </div>
+                {isVehicle && bookingData.driverAllowance > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <p>Driver allowance</p>
+                    <p>₹{bookingData.driverAllowance}</p>
+                  </div>
+                )}
+                {isVehicle && bookingData.securityDeposit > 0 && (
+                  <div className="flex justify-between text-gray-400 text-xs pt-1">
+                    <p>Security deposit (refundable, paid at pickup)</p>
+                    <p>₹{bookingData.securityDeposit}</p>
+                  </div>
+                )}
+                {isVehicle && Number(service?.extraKmCharge) > 0 && (
+                  <p className="text-xs text-gray-400 pt-1">
+                    {Number(service?.freeKmPerDay) > 0
+                      ? `${service.freeKmPerDay} km included per day. `
+                      : ""}
+                    Extra distance billed at ₹{service.extraKmCharge}/km on return.
+                  </p>
+                )}
                 {/* <div className="flex justify-between text-gray-500">
                   <p>Long-stay discount</p>
                   <p>–₹100</p>
                 </div> */}
-                <div className="flex justify-between text-gray-500">
-                  <p>Cleaning fee</p>
-                  <p>₹{bookingData.cleaningFee}</p>
-                </div>
+                {bookingData.cleaningFee > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <p>Cleaning fee</p>
+                    <p>₹{bookingData.cleaningFee}</p>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-500">
                   <p>Service fee</p>
                   <p>₹{bookingData.serviceFee}</p>
@@ -774,6 +1059,76 @@ export default function PaymentPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Rental details — vehicle bookings only. Driver name and phone
+                  are what the guest actually needs at pickup time, so they lead
+                  the block when the booking is chauffeur-driven. */}
+              {isVehicle && (
+                <div className="pb-4 border-b border-gray-200 dark:border-gray-800">
+                  <h3 className="font-semibold text-black dark:text-white mb-3">Rental Details</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Rental option:</span>
+                      <span className="font-medium text-black dark:text-white">
+                        {rentalMode === "with-driver" ? "With Driver" : "Self-Drive"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Pickup:</span>
+                      <span className="font-medium text-black dark:text-white text-right">
+                        {vehicleData.pickupLocation || "—"} · {pickupTime}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Return:</span>
+                      <span className="font-medium text-black dark:text-white text-right">
+                        {vehicleData.dropLocation || vehicleData.pickupLocation || "—"} ·{" "}
+                        {returnTime}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Passengers:</span>
+                      <span className="font-medium text-black dark:text-white">
+                        {vehicleData.numberOfPassengers}
+                      </span>
+                    </div>
+                    {rentalMode === "self-drive" && vehicleData.drivingLicenceNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Licence:</span>
+                        <span className="font-medium text-black dark:text-white">
+                          {vehicleData.drivingLicenceNumber}
+                        </span>
+                      </div>
+                    )}
+                    {rentalMode === "with-driver" && service?.driverName && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Driver:</span>
+                          <span className="font-medium text-black dark:text-white">
+                            {service.driverName}
+                          </span>
+                        </div>
+                        {service?.driverPhone && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">Driver phone:</span>
+                            <span className="font-medium text-black dark:text-white">
+                              {service.driverPhone}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {vehicleData.specialRequirements && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-gray-600 dark:text-gray-400 shrink-0">Requests:</span>
+                        <span className="font-medium text-black dark:text-white text-right">
+                          {vehicleData.specialRequirements}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Guest Information */}
               <div className="pb-4 border-b border-gray-200 dark:border-gray-800">

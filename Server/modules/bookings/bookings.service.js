@@ -31,7 +31,7 @@ const { sendEmail } = require("../../lib/email-sender/sender");
 const { notifyNewBooking } = require("../../shared/bookingNotifications");
 const env = require("../../config/env");
 const logger = require("../../shared/logger");
-const { NotFoundError } = require("../../shared/errors");
+const { NotFoundError, BadRequestError } = require("../../shared/errors");
 
 // ─── Reads ──────────────────────────────────────────────────────────────────
 async function listByDate(date) {
@@ -128,6 +128,7 @@ const SERVICE_TYPE_MAP = {
   caravan: "camper-van",
   stay: "unique-stay",
   activity: "activity",
+  vehicle: "vehicle-rental",
 };
 
 async function listForAdmin({ tab, serviceType, search, sortBy, sortDir } = {}) {
@@ -248,7 +249,32 @@ async function emitNewBookingNotifications(booking) {
 }
 
 // ─── Writes ─────────────────────────────────────────────────────────────────
+/**
+ * Conditional requirements for a vehicle-rental booking.
+ *
+ * The DTO can't express these: `rentalMode` and `drivingLicenceNumber` are
+ * optional at the schema level because the three older services never send
+ * them, so "required, but only when serviceName is vehicle-rental" has to be
+ * checked here. A self-drive handover without a licence number on file is the
+ * one that actually matters — the vendor has nothing to verify against at
+ * pickup, and the booking would already be paid for by then.
+ */
+function assertVehicleFields(input) {
+  if (input.serviceName !== "vehicle-rental") return;
+
+  if (!input.rentalMode) {
+    throw new BadRequestError("rentalMode is required for a vehicle rental booking");
+  }
+  if (input.rentalMode === "self-drive" && !input.drivingLicenceNumber) {
+    throw new BadRequestError("drivingLicenceNumber is required for a self-drive booking");
+  }
+  if (!input.pickupTime || !input.returnTime) {
+    throw new BadRequestError("pickupTime and returnTime are required for a vehicle rental booking");
+  }
+}
+
 async function create(input) {
+  assertVehicleFields(input);
   const booking = await Booking.create(input);
   await emitNewBookingNotifications(booking);
 

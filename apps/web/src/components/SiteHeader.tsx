@@ -29,7 +29,7 @@ import { CalendarDropdown } from "./CalendarDropdown";
 import { CgLoadbarDoc } from "react-icons/cg";
 import { cmsPublicApi } from "@/lib/api";
 import { useHomepageSections } from "@/hooks/useHomepageSections";
-import { CamperVanIcon, HomeIcon, RocketIcon } from "./site-header/icons";
+import { CamperVanIcon, CarIcon, HomeIcon, RocketIcon } from "./site-header/icons";
 import { useIsApprovedVendor } from "@/hooks/useProfile";
 
 interface SiteHeaderProps {
@@ -102,6 +102,7 @@ export default function SiteHeader({
     "camper-van": true,
     "unique-stays": true,
     "best-activity": true,
+    "vehicle-rental": true,
   });
 
   const { data: homepageSections } = useHomepageSections();
@@ -315,6 +316,12 @@ export default function SiteHeader({
     { id: "camper-van", label: "Camper Van", icon: CamperVanIcon, sectionKey: "camper-van" },
     { id: "unique-stays", label: "Unique Stays", icon: HomeIcon, sectionKey: "unique-stays" },
     { id: "activity", label: "Activity", icon: RocketIcon, sectionKey: "best-activity" },
+    {
+      id: "vehicle-rental",
+      label: "Vehicle Rental",
+      icon: CarIcon,
+      sectionKey: "vehicle-rental",
+    },
   ].filter((tab) => visibleSections[tab.sectionKey] !== false);
 
   return (

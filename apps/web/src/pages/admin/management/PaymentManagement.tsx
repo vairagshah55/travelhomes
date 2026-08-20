@@ -34,6 +34,7 @@ const SERVICE_TYPE_OPTIONS = [
   { value: "camper-van", label: "Camper Van" },
   { value: "unique-stay", label: "Unique Stay" },
   { value: "activity", label: "Activity" },
+  { value: "vehicle-rental", label: "Vehicle Rental" },
 ];
 
 const ITEMS_PER_PAGE = 15;
