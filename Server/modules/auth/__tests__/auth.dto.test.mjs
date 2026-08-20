@@ -8,11 +8,14 @@ import { describe, it, expect } from "vitest";
 import dto from "../auth.dto.js";
 
 describe("auth.dto.registerBody", () => {
+  // "p@ssword123" used to live here. The password rule was later tightened to
+  // require an uppercase letter and this fixture was never updated, so every
+  // assertion below threw on `password` instead of testing what it names.
   const valid = {
     userType: "user",
     email: "User@Example.com",
     mobile: "+919876543210",
-    password: "p@ssword123",
+    password: "P@ssword123",
   };
 
   it("accepts a minimal valid user payload and lowercases the email", () => {

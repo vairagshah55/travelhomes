@@ -12,23 +12,26 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Done before importing saga so the require chain picks up the mock.
 vi.mock("mongoose", async () => {
   const actual = await vi.importActual("mongoose");
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      startSession: async () => ({
-        endSession: () => {},
-        withTransaction: async () => {
-          // Mimic standalone-mongod behavior.
-          const err = new Error(
-            "Transaction numbers are only allowed on a replica set member or mongos",
-          );
-          err.code = 20;
-          throw err;
-        },
-      }),
+
+  const startSession = async () => ({
+    endSession: () => {},
+    withTransaction: async () => {
+      // Mimic standalone-mongod behavior.
+      const err = new Error(
+        "Transaction numbers are only allowed on a replica set member or mongos",
+      );
+      err.code = 20;
+      throw err;
     },
-  };
+  });
+
+  // Overridden at BOTH levels on purpose. saga.js is CommonJS —
+  // `const mongoose = require("mongoose")` resolves to the module namespace,
+  // so stubbing only `default.startSession` left `mongoose.startSession`
+  // pointing at the real driver. With no connection open it never settled and
+  // all four tests here died on the 10s timeout rather than exercising the
+  // compensation path they describe.
+  return { ...actual, startSession, default: { ...actual.default, startSession } };
 });
 
 const { runSaga } = await import("../saga.js");

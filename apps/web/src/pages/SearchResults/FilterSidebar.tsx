@@ -398,6 +398,7 @@ export function FilterSidebar({
           </>
         )}
 
+        {filterOptions.types.length > 0 && (
         <div className="mb-6 pb-6 border-b border-gray-100">
           <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Type</h4>
           <div className="space-y-3.5">
@@ -423,7 +424,9 @@ export function FilterSidebar({
             ))}
           </div>
         </div>
+        )}
 
+        {filterOptions.categories.length > 0 && (
         <div className="mb-6 pb-6 border-b border-gray-100">
           <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Category</h4>
           <div className="space-y-3.5">
@@ -449,6 +452,7 @@ export function FilterSidebar({
             ))}
           </div>
         </div>
+        )}
 
         <div>
           <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Facilities</h4>

@@ -274,6 +274,16 @@ export const FALLBACK_VEHICLE_CATEGORIES = [
 ];
 
 /**
+ * Just the names from the list above.
+ *
+ * The guest search sidebar filters on `offer.category`, which is exactly one of
+ * these — so its "Type" checkboxes have to be these strings verbatim. They were
+ * hand-retyped in searchHelpers and had already drifted ("MUV" vs "MUV / MPV",
+ * and four of them missing), which silently made those boxes match nothing.
+ */
+export const VEHICLE_CATEGORY_NAMES: string[] = FALLBACK_VEHICLE_CATEGORIES.map((c) => c.name);
+
+/**
  * Step 2's amenity grid, same fallback contract. Fuel type, transmission and air
  * conditioning are absent on purpose — those are structured fields on the offer
  * because the search page filters on them, so listing them here too would let a

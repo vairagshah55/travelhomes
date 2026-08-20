@@ -79,12 +79,15 @@ describe("vendor-auth.dto.updateAccountBody", () => {
   });
 
   it("accepts a password change with both passwords", () => {
+    // `currentPassword` is checked by the strict password schema (min 8 plus
+    // upper/lower/digit/symbol), so the old "old" / "newer-password" fixture
+    // could never parse — this asserted nothing but a throw.
     const parsed = dto.updateAccountBody.parse({
       currentEmail: "x@y.com",
-      currentPassword: "old",
-      newPassword: "newer-password",
+      currentPassword: "OldPassw0rd!",
+      newPassword: "NewPassw0rd!",
     });
-    expect(parsed.newPassword).toBe("newer-password");
+    expect(parsed.newPassword).toBe("NewPassw0rd!");
   });
 });
 

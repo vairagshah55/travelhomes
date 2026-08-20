@@ -1,4 +1,5 @@
 import { getImageUrl } from "@/lib/utils";
+import { VEHICLE_CATEGORY_NAMES } from "@/components/onboarding/vehicle/vehicleConfig";
 
 export type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
 export type RangeVal = { minVal: number; maxVal: number };
@@ -278,9 +279,15 @@ export function getFilterOptions(activeFilter: FilterType) {
         facilities: ["Equipment Included", "Guide", "Transportation", "Meals", "Insurance"],
       };
     case "vehicle-rental":
+      // `categories` is deliberately empty. Both the Type and the Category
+      // checkbox groups filter the SAME field (`item.type || item.category`, and
+      // an Offer has no `type`), so shipping two lists for one field meant
+      // ticking one box from each — Type "Sedan" + Category "Luxury" — demanded
+      // a category containing both words and always returned nothing. For a
+      // vehicle the CMS category IS the type, so there is only one list.
       return {
-        types: ["Hatchback", "Sedan", "SUV", "MUV", "Tempo Traveller", "Mini Bus"],
-        categories: ["Luxury", "Standard", "Budget", "Electric"],
+        types: VEHICLE_CATEGORY_NAMES,
+        categories: [],
         facilities: [
           "AC",
           "Music System",
