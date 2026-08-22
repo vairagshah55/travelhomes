@@ -106,14 +106,14 @@ const AdminAnalyticsOverview = () => {
       value: totals.totalProperties,
       icon: Building2,
       iconColor: "#a855f7",
-      nav: "/management/listing",
+      nav: "/admin/management/listing",
     },
     {
       title: "Total Bookings",
       value: totals.totalBookings,
       icon: CalendarDays,
       iconColor: "#ec4899",
-      nav: "/management/booking",
+      nav: "/admin/management/booking",
     },
     {
       title: "Total Revenue",
@@ -175,7 +175,7 @@ const AdminAnalyticsOverview = () => {
               key={s.key}
               s={s}
               delay={i * 0.06}
-              onProperties={() => navigate("/management/listing")}
+              onProperties={() => navigate("/admin/management/listing")}
             />
           ))}
         </div>

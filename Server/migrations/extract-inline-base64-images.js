@@ -10,6 +10,13 @@
  * The submit path is fixed (see modules/onboarding/onboarding.service.js); this
  * repairs rows written before that fix.
  *
+ * Blogs are here for the same reason and one extra one. `blogs.dto.js` caps
+ * coverImage/authorImg at 2000 characters, so a post holding a 20 KB data URL
+ * is a row the API itself would now reject — which is exactly what the CMS
+ * blog CSV export/import hit: the export writes what is stored, and the import
+ * refused four of its own rows. The admin form has uploaded to /uploads via
+ * cms-media since, and produces the same `/uploads/<file>` value this writes.
+ *
  * Usage:
  *   node migrations/extract-inline-base64-images.js            # dry run, reports only
  *   node migrations/extract-inline-base64-images.js --apply    # writes files + updates docs
@@ -33,6 +40,7 @@ const TARGETS = [
   { collection: "activityonboardings", prefix: "activity", fields: ["idPhotos", "photos", "coverImage"] },
   { collection: "stayonboardings", prefix: "stay", fields: ["idPhotos", "photos", "images", "coverImage"] },
   { collection: "profiles", prefix: "profile", fields: ["idPhotos", "photos", "photo"] },
+  { collection: "blogs", prefix: "blog", fields: ["coverImage", "authorImg"] },
 ];
 
 const mimeToExt = (mime) => {

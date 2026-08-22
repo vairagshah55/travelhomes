@@ -63,7 +63,10 @@ async function getStats() {
     User.countDocuments({ status: "active" }),
     Vendor.countDocuments({}),
     Vendor.countDocuments({ status: "active" }),
-    Vendor.countDocuments({ status: "pending_kyc" }),
+    // "kyc-unverified" is the value in Vendor's status enum. This asked for
+    // "pending_kyc", which is in no enum and no document, so the Pending KYC
+    // tile reported 0 no matter how many vendors were waiting on KYC.
+    Vendor.countDocuments({ status: "kyc-unverified" }),
     Management.countDocuments({}),
     Management.countDocuments({ status: { $in: ["pending", "inactive"] } }),
     Booking.countDocuments({}),

@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parseCsv } from "./csvIo";
-import {
-  blogsToCsv,
-  buildBlogImportPlan,
-  BLOG_CSV_COLUMNS,
-  type BlogRecord,
-} from "./blogsIo";
+import { blogsToCsv, buildBlogImportPlan, BLOG_CSV_COLUMNS, type BlogRecord } from "./blogsIo";
 
 const post = (over: Partial<BlogRecord> = {}): BlogRecord => ({
   _id: "b1",
@@ -25,8 +20,7 @@ const csvOf = (rows: string[][]) =>
   [BLOG_CSV_COLUMNS.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
 
 /** Header + one row, with only the named columns present. */
-const partialCsv = (cols: string[], values: string[]) =>
-  `${cols.join(",")}\r\n${values.join(",")}`;
+const partialCsv = (cols: string[], values: string[]) => `${cols.join(",")}\r\n${values.join(",")}`;
 
 describe("blogsToCsv", () => {
   it("writes every column in the documented order", () => {
@@ -79,7 +73,55 @@ describe("buildBlogImportPlan — matching", () => {
     const csv = partialCsv(["id", "title", "slug"], ["nope", "X", "himalayan-road-trip"]);
     const plan = buildBlogImportPlan(csv, existing);
     expect(plan.updates).toHaveLength(1);
-    expect(plan.updates[0].warnings.join(" ")).toMatch(/no post with that id/i);
+    expect(plan.updates[0].warnings.join(" ")).toMatch(/matched on slug\/title instead/i);
+  });
+
+  it("does not claim a slug/title match on a row it is creating", () => {
+    const csv = partialCsv(["id", "title"], ["nope", "Nothing like this exists"]);
+    const plan = buildBlogImportPlan(csv, existing);
+    expect(plan.creates).toHaveLength(1);
+    expect(plan.creates[0].warnings.join(" ")).toMatch(/importing it as a new post/i);
+    expect(plan.creates[0].warnings.join(" ")).not.toMatch(/matched on slug/i);
+  });
+});
+
+describe("buildBlogImportPlan — legacy inline images", () => {
+  /* Roughly what a post written before the CMS uploaded to /uploads holds. */
+  const dataUri = `data:image/jpeg;base64,${"A".repeat(20_000)}`;
+
+  it("re-imports an export of a post whose images are inline base64", () => {
+    const stored = post({ coverImage: dataUri, authorImg: dataUri });
+    const plan = buildBlogImportPlan(blogsToCsv([stored]), [stored]);
+    expect(plan.errors).toHaveLength(0);
+    expect(plan.updates).toHaveLength(1);
+  });
+
+  it("drops the cell rather than sending an image the server would reject", () => {
+    const stored = post({ coverImage: dataUri, authorImg: dataUri });
+    const { payload, warnings } = buildBlogImportPlan(blogsToCsv([stored]), [stored]).updates[0];
+    expect(payload.coverImage).toBeUndefined();
+    expect(payload.authorImg).toBeUndefined();
+    expect(warnings.join(" ")).toMatch(/cover image is an inline base64 image/i);
+    expect(warnings.join(" ")).toMatch(/author image is an inline base64 image/i);
+  });
+
+  it("keeps the rest of the row — the text columns still import", () => {
+    const stored = post({ coverImage: dataUri });
+    const csv = partialCsv(
+      ["title", "slug", "coverImage"],
+      ["Rewritten headline", "himalayan-road-trip", dataUri],
+    );
+    expect(buildBlogImportPlan(csv, [stored]).updates[0].payload.title).toBe("Rewritten headline");
+  });
+
+  it("still errors on an over-long value that is not an inline image", () => {
+    const csv = partialCsv(
+      ["title", "coverImage"],
+      ["X", `https://cdn.test/${"a".repeat(2000)}.jpg`],
+    );
+    expect(buildBlogImportPlan(csv, []).errors[0].errors.join(" ")).toMatch(
+      /over 2000 characters/i,
+    );
   });
 });
 
@@ -131,7 +173,10 @@ describe("buildBlogImportPlan — status defaults", () => {
 
   it("keeps an existing post's status when the column is blank", () => {
     const drafted = [post({ status: "draft" })];
-    const plan = buildBlogImportPlan(partialCsv(["title", "status"], ["Himalayan road trip", ""]), drafted);
+    const plan = buildBlogImportPlan(
+      partialCsv(["title", "status"], ["Himalayan road trip", ""]),
+      drafted,
+    );
     expect(plan.updates[0].payload.status).toBe("draft");
   });
 
@@ -167,7 +212,7 @@ describe("buildBlogImportPlan — payloads only carry what the row had", () => {
       ["X", "Meta title", "a, b", "Meta description"],
     );
     // The keywords cell contains a comma, so it must be quoted to survive.
-    const quoted = csv.replace('a, b', '"a, b"');
+    const quoted = csv.replace("a, b", '"a, b"');
     const plan = buildBlogImportPlan(quoted, []);
     expect(plan.creates[0].payload.metaKeywords).toBe("a, b");
     expect(plan.creates[0].payload.metaDescription).toBe("Meta description");

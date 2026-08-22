@@ -174,7 +174,16 @@ const AdminDashboard = () => {
 
   const d = payload?.data ?? {};
 
-  // NextAdmin template palette — vibrant solid-fill circular icon badges.
+  /* Each card is a link into the list it summarises.
+
+     Targets carry the `/admin` prefix: admin mounts as a descendant <Routes>
+     under `/admin/*`, so `navigate()` still resolves against the ROOT router —
+     an un-prefixed "/management/user" lands on the public catch-all 404, which
+     is what these were doing since the routes moved.
+
+     Where a card counts a subset, the target carries the tab that shows that
+     same subset (`?tab=` is read by useTableUrlState), so the number the
+     operator clicked is the number they land on. */
   const statsCards = useMemo(
     () => [
       {
@@ -182,56 +191,56 @@ const AdminDashboard = () => {
         value: String(d.stats?.users?.total ?? 0),
         icon: Users,
         iconColor: "#18BFFF",
-        navigate: "/management/user",
+        navigate: "/admin/management/user",
       },
       {
         title: "Active Users",
         value: String(d.stats?.users?.active ?? 0),
         icon: UserCheck,
         iconColor: "#3FD97F",
-        navigate: "/management/user",
+        navigate: "/admin/management/user?tab=active-users",
       },
       {
         title: "Total Vendors",
         value: String(d.stats?.vendors?.total ?? 0),
         icon: ClipboardCheck,
         iconColor: "#8155FF",
-        navigate: "/management/vendor",
+        navigate: "/admin/management/vendor",
       },
       {
         title: "Active Vendors",
         value: String(d.stats?.vendors?.active ?? 0),
         icon: Wallet,
         iconColor: "#2563eb",
-        navigate: "/management/vendor",
+        navigate: "/admin/management/vendor?tab=active",
       },
       {
         title: "Pending KYC",
         value: String(d.stats?.vendors?.pendingKyc ?? 0),
         icon: TrendingUp,
         iconColor: "#F59460",
-        navigate: "/management/vendor",
+        navigate: "/admin/management/vendor?tab=kyc-unverified",
       },
       {
         title: "Total Listings",
         value: String(d.stats?.listings?.total ?? 0),
         icon: MousePointer,
         iconColor: "#3C50E0",
-        navigate: "/management/listing",
+        navigate: "/admin/management/listing",
       },
       {
         title: "Pending Listings",
         value: String(d.stats?.listings?.pending ?? 0),
         icon: ClipboardList,
         iconColor: "#F56060",
-        navigate: "/management/listing",
+        navigate: "/admin/management/listing?tab=pending",
       },
       {
         title: "Total Revenue",
         value: formatINR(d.stats?.revenue?.total ?? 0),
         icon: IndianRupee,
         iconColor: "#FF9C55",
-        navigate: "/payments",
+        navigate: "/admin/payments",
       },
     ],
     [d.stats],

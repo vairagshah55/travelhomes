@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowUpRight, TrendingDown, TrendingUp } from "lucide-react";
 import { useCountUp } from "@/hooks/useCountUp";
 import { CARD, CARD_INTERACTIVE_HOVER, FOCUS_RING } from "./adminUI";
 
@@ -86,13 +86,31 @@ export function AdminStatCard({
         <p className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-app-fg-subtle truncate">
           {title}
         </p>
-        <Icon
-          size={15}
-          strokeWidth={2}
-          aria-hidden
-          className="shrink-0 mt-px opacity-55 transition-opacity group-hover:opacity-90"
-          style={{ color: iconColor }}
-        />
+        {/* On a clickable card the metric glyph crossfades to an arrow: the
+            hover border/tint alone never read as "this goes somewhere", and an
+            arrow parked permanently next to every icon is eight arrows of
+            decoration on a grid that already has eight icons. */}
+        <span className="relative shrink-0 mt-px size-[15px]">
+          <Icon
+            size={15}
+            strokeWidth={2}
+            aria-hidden
+            className={`absolute inset-0 opacity-55 transition-opacity duration-150 ${
+              clickable
+                ? "group-hover:opacity-0 group-focus-visible:opacity-0"
+                : "group-hover:opacity-90"
+            }`}
+            style={{ color: iconColor }}
+          />
+          {clickable && (
+            <ArrowUpRight
+              size={15}
+              strokeWidth={2.4}
+              aria-hidden
+              className="absolute inset-0 opacity-0 transition-opacity duration-150 text-app-accent group-hover:opacity-100 group-focus-visible:opacity-100"
+            />
+          )}
+        </span>
       </div>
 
       <div className="mt-2 flex items-baseline gap-2 min-w-0">

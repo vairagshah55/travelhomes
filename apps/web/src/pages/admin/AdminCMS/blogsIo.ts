@@ -41,6 +41,16 @@ import type { BlogPayload } from "@/services/cms";
  *   headline would silently change the post's URL and break every inbound link.
  *   Sending the current slug pins it.
  *
+ * • **An inline `data:` image is dropped, not treated as a row error.** Posts
+ *   written before the CMS uploaded to /uploads hold their cover and author
+ *   images as base64 data URLs tens of thousands of characters long, and both
+ *   columns are capped at 2000 by the server. Failing the row on that would
+ *   mean an export of the blog list could not be re-imported — the file was
+ *   rejected on values this app had just written. The cell is dropped with a
+ *   warning instead: `payload` omits empty values, so an update keeps the image
+ *   already on the post and only the text columns change. A length problem in
+ *   any *other* column is still an error, because there the server would 400.
+ *
  * • **`content` is HTML and travels as-is.** The RFC 4180 parser handles the
  *   embedded commas, quotes and newlines that guarantees. It is *not* sanitised
  *   here — the public page sanitises at render time
@@ -86,6 +96,9 @@ export type BlogStatus = "published" | "draft";
 
 /** The slug shape the server's DTO accepts: lowercase, digits, single hyphens. */
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** `data:image/jpeg;base64,…` — an image inlined in the cell rather than linked. */
+const isInlineImage = (value: string) => /^data:/i.test(value);
 
 /** A blog row as the admin tab holds it. */
 export interface BlogRecord extends BlogPayload {
@@ -193,10 +206,10 @@ export function buildBlogImportPlan(
     const category = read(raw, "category");
     const description = read(raw, "description");
     const content = read(raw, "content");
-    const coverImage = read(raw, "coverImage");
+    let coverImage = read(raw, "coverImage");
     const authorName = read(raw, "authorName");
     const authorRole = read(raw, "authorRole");
-    const authorImg = read(raw, "authorImg");
+    let authorImg = read(raw, "authorImg");
     const metaTitle = read(raw, "metaTitle");
     const metaKeywords = read(raw, "metaKeywords");
     const metaDescription = read(raw, "metaDescription");
@@ -206,6 +219,21 @@ export function buildBlogImportPlan(
     const warnings: string[] = [];
 
     if (!title) errors.push("Title is required");
+
+    /* Before the length checks, so a legacy base64 image is a dropped cell
+       rather than a rejected row — see the note at the top of this file. */
+    if (isInlineImage(coverImage)) {
+      coverImage = "";
+      warnings.push(
+        "Cover image is an inline base64 image — not imported, upload it in the editor",
+      );
+    }
+    if (isInlineImage(authorImg)) {
+      authorImg = "";
+      warnings.push(
+        "Author image is an inline base64 image — not imported, upload it in the editor",
+      );
+    }
 
     for (const [label, value, limit] of [
       ["Title", title, LIMITS.title],
@@ -255,7 +283,14 @@ export function buildBlogImportPlan(
       undefined;
 
     if (id && !byId.has(id)) {
-      warnings.push("No post with that id in this list — matched on slug/title instead");
+      /* Say which of the two it was. The old message claimed a slug/title match
+         unconditionally, so a row being CREATED reported that it had matched
+         something — the plan said "0 to update" on the same screen. */
+      warnings.push(
+        match
+          ? "No post with that id in this list — matched on slug/title instead"
+          : "No post with that id in this list — importing it as a new post",
+      );
     }
 
     const isUpdate = !!match;
