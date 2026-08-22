@@ -1,8 +1,16 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowUpRight, Newspaper, RefreshCw, Search, X } from "lucide-react";
+import {
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Newspaper,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
@@ -23,8 +31,10 @@ import {
   RetryButton,
   Shimmer,
 } from "@/components/site/kit";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { API_BASE_URL } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { PAGE_SIZE, pageWindow } from "./pagination";
 
 /**
  * Editorial index for /blogs.
@@ -33,10 +43,14 @@ import { cn } from "@/lib/utils";
  * grid. The imagery belongs to the stories, so the page doesn't open with a
  * stock hero photo competing with the first cover.
  *
- * Filtering is client-side on purpose: `GET /api/blogs` takes only `status` and
- * `limit` (max 50), so there's nothing to query by category or keyword. One
- * fetch of the published set covers it at this volume — revisit if the archive
- * outgrows 50 posts, at which point the endpoint needs real paging.
+ * ── Filtering and paging ─────────────────────────────────────────────────
+ * Both are server-side. They used to be client-side, because `GET /api/blogs`
+ * took only `status` and `limit` (capped at 50): this page fetched the first 50
+ * published posts and filtered them in the browser, so the 51st article onwards
+ * was unreachable on the site while sitting there published in the CMS. The
+ * endpoint now takes `page`, `search` and `category` and returns `pagination`,
+ * and the filter pills read their counts from `GET /api/blogs/categories` —
+ * counts computed from one page would have said "3" for a category holding 30.
  *
  * Styling follows CONVENTIONS.md: `th-*` tokens, Tailwind classes, CSS hover.
  * The local `Notice` and skeleton pieces now come from `components/site/kit`,
@@ -186,48 +200,161 @@ const FeaturedSkeleton = () => (
   </div>
 );
 
+/* ── Pager ──────────────────────────────────────────────────────────────── */
+
+type Pagination = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasMore: boolean;
+};
+
+type BlogListResponse = { success: boolean; data: BlogDTO[]; pagination?: Pagination };
+
+type CategoryFacet = { name: string; count: number };
+
+const pageBtn =
+  "inline-flex h-10 min-w-10 items-center justify-center gap-1 rounded-th-full border border-th-border bg-th-surface-0 px-3 text-[13.5px] font-semibold tabular-nums text-th-text-secondary outline-none transition-[border-color,color,background-color] duration-150 hover:border-th-border-hover hover:text-th-text-primary focus-visible:ring-4 focus-visible:ring-[color:var(--th-ring)] disabled:pointer-events-none disabled:opacity-40";
+
+const Pager = ({
+  page,
+  totalPages,
+  onChange,
+  busy,
+}: {
+  page: number;
+  totalPages: number;
+  onChange: (next: number) => void;
+  busy?: boolean;
+}) => {
+  if (totalPages <= 1) return null;
+
+  return (
+    <nav
+      aria-label="Pagination"
+      className="mt-10 flex flex-wrap items-center justify-center gap-2 border-t border-th-border pt-8"
+    >
+      <button
+        type="button"
+        onClick={() => onChange(page - 1)}
+        disabled={page <= 1 || busy}
+        className={pageBtn}
+      >
+        <ChevronLeft size={15} strokeWidth={2.4} aria-hidden />
+        Prev
+      </button>
+
+      {pageWindow(page, totalPages).map((entry, i) =>
+        entry === "gap" ? (
+          <span key={`gap-${i}`} aria-hidden className="px-1 text-th-text-muted">
+            …
+          </span>
+        ) : (
+          <button
+            key={entry}
+            type="button"
+            onClick={() => onChange(entry)}
+            disabled={busy}
+            aria-current={entry === page ? "page" : undefined}
+            aria-label={`Page ${entry}`}
+            className={cn(
+              pageBtn,
+              entry === page &&
+                "border-th-brand bg-th-brand text-th-brand-fg hover:text-th-brand-fg",
+            )}
+          >
+            {entry}
+          </button>
+        ),
+      )}
+
+      <button
+        type="button"
+        onClick={() => onChange(page + 1)}
+        disabled={page >= totalPages || busy}
+        className={pageBtn}
+      >
+        Next
+        <ChevronRight size={15} strokeWidth={2.4} aria-hidden />
+      </button>
+    </nav>
+  );
+};
+
 /* ── Page ───────────────────────────────────────────────────────────────── */
 
 export default function Blog() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  const {
-    data: articles = [],
-    isLoading,
-    isError,
-    refetch,
-    isFetching,
-  } = useQuery<Article[], Error>({
-    queryKey: ["blogs", "published"],
+  /* The server does the matching now, so an un-debounced box would fire one
+     request per keystroke and the replies could land out of order. */
+  const query = useDebouncedValue(search.trim(), 300);
+
+  /* A filter change invalidates the page number — page 4 of "Road trips" is
+     usually past the end of that narrower set. */
+  useEffect(() => {
+    setPage(1);
+  }, [query, category]);
+
+  const { data, isLoading, isError, refetch, isFetching } = useQuery<BlogListResponse, Error>({
+    queryKey: ["blogs", "published", { query, category, page }],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/blogs?status=published&limit=50`);
+      const params = new URLSearchParams({
+        status: "published",
+        limit: String(PAGE_SIZE),
+        page: String(page),
+      });
+      if (query) params.set("search", query);
+      if (category) params.set("category", category);
+
+      const res = await fetch(`${API_BASE_URL}/api/blogs?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const payload = (await res.json()) as { success: boolean; data: BlogDTO[] };
-      return (payload.data || []).map(toArticle);
+      return (await res.json()) as BlogListResponse;
     },
+    /* Holds the page you're reading on screen while the next one loads, rather
+       than collapsing back to skeletons on every pager click. */
+    placeholderData: keepPreviousData,
   });
 
-  const categories = useMemo(() => {
-    const counts = new Map<string, number>();
-    articles.forEach((a) => counts.set(a.category, (counts.get(a.category) ?? 0) + 1));
-    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  }, [articles]);
+  /* Facet counts come from the whole archive. Derived from the current page,
+     they'd have labelled a category holding 30 posts "3". */
+  const { data: facets } = useQuery<{ data: CategoryFacet[]; total: number }, Error>({
+    queryKey: ["blogs", "categories", "published"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE_URL}/api/blogs/categories?status=published`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const payload = (await res.json()) as { data?: CategoryFacet[]; total?: number };
+      return { data: payload.data ?? [], total: payload.total ?? 0 };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return articles.filter((a) => {
-      if (category && a.category !== category) return false;
-      if (!q) return true;
-      return [a.title, a.description, a.author, a.category].join(" ").toLowerCase().includes(q);
-    });
-  }, [articles, search, category]);
+  const articles = useMemo(() => (data?.data ?? []).map(toArticle), [data]);
+  const categories = facets?.data ?? [];
+  const matched = data?.pagination?.total ?? articles.length;
+  const totalPages = data?.pagination?.totalPages ?? 1;
+  const archiveTotal = facets?.total ?? matched;
 
-  const isFiltering = !!search.trim() || !!category;
-  const [featured, ...rest] = filtered;
+  const isFiltering = !!query || !!category;
+
+  /* The featured slot is the newest story in the current view, and only on the
+     first page — a "Featured" banner on page 4 of an archive is just
+     mislabelling whatever happened to sort first. */
+  const showFeatured = page === 1;
+  const [featured, ...rest] = articles;
+  const gridArticles = showFeatured ? rest : articles;
+
   const clearFilters = () => {
     setSearch("");
     setCategory(null);
+  };
+
+  const goToPage = (next: number) => {
+    setPage(Math.min(Math.max(next, 1), totalPages));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -309,10 +436,10 @@ export default function Blog() {
                 )}
               >
                 All
-                <span className="ml-1.5 tabular-nums opacity-70">{articles.length}</span>
+                <span className="ml-1.5 tabular-nums opacity-70">{archiveTotal}</span>
               </button>
 
-              {categories.map(([name, count]) => (
+              {categories.map(({ name, count }) => (
                 <button
                   key={name}
                   type="button"
@@ -333,17 +460,15 @@ export default function Blog() {
             <p className="shrink-0 text-[13px] text-th-text-muted">
               {isFiltering ? (
                 <>
-                  <span className="font-semibold text-th-text-primary tabular-nums">
-                    {filtered.length}
-                  </span>{" "}
-                  of {articles.length}
+                  <span className="font-semibold text-th-text-primary tabular-nums">{matched}</span>{" "}
+                  of {archiveTotal}
                 </>
               ) : (
                 <>
                   <span className="font-semibold text-th-text-primary tabular-nums">
-                    {articles.length}
+                    {archiveTotal}
                   </span>{" "}
-                  {articles.length === 1 ? "article" : "articles"}
+                  {archiveTotal === 1 ? "article" : "articles"}
                 </>
               )}
             </p>
@@ -370,16 +495,16 @@ export default function Blog() {
             body="The articles didn't come back from the server. Check your connection and try again."
             action={<RetryButton onClick={() => void refetch()} busy={isFetching} />}
           />
-        ) : articles.length === 0 ? (
+        ) : matched === 0 && !isFiltering ? (
           <Notice
             icon={Newspaper}
             title="No stories published yet"
             body="The journal is being written. Check back soon for travel guides and host know-how."
           />
-        ) : filtered.length === 0 ? (
+        ) : matched === 0 ? (
           <Notice
             icon={Search}
-            title={search ? `No results for "${search.trim()}"` : "Nothing in this category"}
+            title={query ? `No results for "${query}"` : "Nothing in this category"}
             body="Try a different keyword, or browse everything we've published."
             action={
               <ActionButton
@@ -392,25 +517,34 @@ export default function Blog() {
             }
           />
         ) : (
-          <div className="space-y-10">
-            {/* The featured slot is the newest story in the current view — it
-                stays meaningful while a filter is applied instead of pinning
-                an article that's been filtered out. */}
-            {featured && <FeaturedCard article={featured} />}
+          <>
+            {/* Dimmed, not replaced, while the next page is in flight — the
+                page you're on stays readable instead of flashing to skeletons. */}
+            <div
+              aria-busy={isFetching}
+              className={cn(
+                "space-y-10 transition-opacity duration-200",
+                isFetching && "opacity-60",
+              )}
+            >
+              {showFeatured && featured && <FeaturedCard article={featured} />}
 
-            {rest.length > 0 && (
-              <section>
-                <h2 className="mb-5 text-[13px] font-bold uppercase tracking-[0.1em] text-th-text-muted">
-                  {isFiltering ? "More results" : "Latest articles"}
-                </h2>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {rest.map((article, i) => (
-                    <ArticleCard key={article.id} article={article} index={i} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+              {gridArticles.length > 0 && (
+                <section>
+                  <h2 className="mb-5 text-[13px] font-bold uppercase tracking-[0.1em] text-th-text-muted">
+                    {isFiltering ? "More results" : showFeatured ? "Latest articles" : "Articles"}
+                  </h2>
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {gridArticles.map((article, i) => (
+                      <ArticleCard key={article.id} article={article} index={i} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+
+            <Pager page={page} totalPages={totalPages} onChange={goToPage} busy={isFetching} />
+          </>
         )}
       </main>
 

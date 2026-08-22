@@ -1,9 +1,15 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const service = require("./blogs.service");
 
+// `pagination` is additive — existing callers read `data` and ignore it.
 const list = asyncHandler(async (req, res) => {
-  const { data } = await service.list(req.validated.query);
-  res.json({ success: true, data });
+  const { data, pagination } = await service.list(req.validated.query);
+  res.json({ success: true, data, pagination });
+});
+
+const categories = asyncHandler(async (req, res) => {
+  const { data, total } = await service.listCategories(req.validated.query);
+  res.json({ success: true, data, total });
 });
 
 const getBySlug = asyncHandler(async (req, res) => {
@@ -26,4 +32,4 @@ const remove = asyncHandler(async (req, res) => {
   res.json({ success: true, message });
 });
 
-module.exports = { list, getBySlug, create, update, remove };
+module.exports = { list, categories, getBySlug, create, update, remove };

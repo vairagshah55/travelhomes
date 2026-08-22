@@ -9,6 +9,12 @@ const router = express.Router();
 
 // Public reads.
 router.get("/", validate({ query: dto.listQuery }), controller.list);
+
+/* Must stay above `/:slug` — the slug pattern is `[a-z0-9-]+`, so it would
+   otherwise swallow this path and answer with a 404 for a blog named
+   "categories". */
+router.get("/categories", validate({ query: dto.categoriesQuery }), controller.categories);
+
 router.get("/:slug", validate({ params: dto.slugParams }), controller.getBySlug);
 
 // Admin-gated writes.

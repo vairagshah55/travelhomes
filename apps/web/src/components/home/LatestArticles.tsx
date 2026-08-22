@@ -7,6 +7,27 @@ import Section from "../Section";
 import ArticleCard from "../ArticleCard";
 import { ArticlesSkeleton } from "./skeletons";
 import { ScrollReveal, staggerContainer, staggerItem } from "./ScrollReveal";
+import { getImageUrl } from "@/lib/utils";
+
+/**
+ * "Stories from the Road" — the four newest published posts, from
+ * `GET /api/blogs?status=published&limit=4` in `pages/Index.tsx`.
+ *
+ * ── Two things this was doing ─────────────────────────────────────────────
+ *
+ * 1. **It invented articles.** With no published posts it rendered four
+ *    hardcoded Unsplash photos under invented headlines ("Experience Goa Like
+ *    Never Before", "Top 10 Campervan Trips Through the Himalayas"). They were
+ *    not links and there was nothing behind them — a visitor clicking one got
+ *    nothing, and the CMS had no way to remove them. An empty journal now hides
+ *    the section, which is the honest state: nothing published, nothing shown.
+ *
+ * 2. **Covers uploaded through the CMS didn't load.** `b.coverImage` went
+ *    straight to `<img src>`, but stored covers are relative paths that need
+ *    `VITE_API_BASE_URL_MEDIA` prefixed — the same bug the article pages fixed
+ *    with `getImageUrl`. Every card here fell back to its 📰 error state while
+ *    the identical cover rendered fine on /blogs.
+ */
 
 type BlogDTO = {
   _id: string;
@@ -15,25 +36,6 @@ type BlogDTO = {
   coverImage?: string;
   createdAt?: string;
 };
-
-const FALLBACK_ARTICLES = [
-  {
-    image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=610&q=80",
-    title: "Experience Goa Like Never Before: Unique Adventures Await!",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=610&q=80",
-    title: "Top 10 Campervan Trips Through the Himalayas",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=610&q=80",
-    title: "Kerala Backwaters: A Complete Guide for First-Timers",
-  },
-  {
-    image: "https://images.unsplash.com/photo-1587474260584-136574528ed5?w=610&q=80",
-    title: "Hidden Gems of Delhi You've Never Seen Before",
-  },
-];
 
 interface LatestArticlesProps {
   latestBlogs: BlogDTO[];
@@ -53,6 +55,10 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
       </ScrollReveal>
     );
   }
+
+  // Nothing published (or the fetch failed) — drop the section rather than
+  // leaving a heading over an empty rail.
+  if (!latestBlogs.length) return null;
 
   return (
     <ScrollReveal>
@@ -81,27 +87,17 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
             viewport={{ once: true, margin: "-60px" }}
             variants={staggerContainer}
           >
-            {latestBlogs.length > 0
-              ? latestBlogs.map((b) => (
-                  <motion.div
-                    key={b._id}
-                    variants={staggerItem}
-                    className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
-                  >
-                    <Link to={`/blogsDetials?slug=${b.slug}`} className="block">
-                      <ArticleCard image={b.coverImage || "/placeholder.svg"} title={b.title} />
-                    </Link>
-                  </motion.div>
-                ))
-              : FALLBACK_ARTICLES.map((article, i) => (
-                  <motion.div
-                    key={i}
-                    variants={staggerItem}
-                    className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
-                  >
-                    <ArticleCard {...article} />
-                  </motion.div>
-                ))}
+            {latestBlogs.map((b) => (
+              <motion.div
+                key={b._id}
+                variants={staggerItem}
+                className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
+              >
+                <Link to={`/blogsDetials?slug=${b.slug}`} className="block">
+                  <ArticleCard image={getImageUrl(b.coverImage)} title={b.title} />
+                </Link>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </Section>
