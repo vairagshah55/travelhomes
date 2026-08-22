@@ -32,6 +32,8 @@ const Register = require("../../models/Register");
 const ActivityOnboarding = require("../../models/ActivityOnboarding");
 const StayOnboarding = require("../../models/StayOnboarding");
 const CaravanOnboarding = require("../../models/CaravanOnboarding");
+const VehicleOnboarding = require("../../models/VehicleOnboarding");
+const { onboardingModelFor } = require("../../shared/onboardingModels");
 const Feature = require("../../models/Feature");
 const Notification = require("../../models/Notification");
 const logger = require("../../shared/logger");
@@ -316,13 +318,31 @@ async function remove(id) {
   await listing.deleteOne();
 }
 
+/**
+ * Which onboarding collection this listing came from.
+ *
+ * `sourceModel` is the reliable answer and every type in Offer's enum must be
+ * listed. Missing "VehicleOnboarding" was not merely a no-op here: the caravan
+ * default below caught it, so approving a vehicle wrote "approved" onto a
+ * CaravanOnboarding lookup — and in `setStatus`'s no-sourceId branch that means
+ * flipping the vendor's most recent CARAVAN submission instead of the vehicle.
+ *
+ * `serviceType` is the fallback, not `category`: a vehicle offer's category is
+ * its class ("MUV / MPV", "Sedan"), never the service name. The trailing
+ * caravan default is for legacy listings written before `sourceModel` existed,
+ * which are all caravans.
+ */
 function pickOnboardingModel(listing) {
-  if (listing.sourceModel === "ActivityOnboarding") return ActivityOnboarding;
-  if (listing.sourceModel === "StayOnboarding") return StayOnboarding;
-  if (listing.sourceModel === "CaravanOnboarding") return CaravanOnboarding;
+  const bySource = onboardingModelFor(listing.sourceModel);
+  if (bySource) return bySource;
+
+  const serviceType = (listing.serviceType || "").toLowerCase();
+  if (serviceType === "vehicle-rental") return VehicleOnboarding;
+
   const cat = (listing.category || "").toLowerCase();
   if (cat === "activity") return ActivityOnboarding;
   if (cat === "stay") return StayOnboarding;
+  if (cat === "vehicle-rental") return VehicleOnboarding;
   return CaravanOnboarding;
 }
 

@@ -36,9 +36,7 @@ const Vendor = require("../../models/Vendor");
 const User = require("../../models/User");
 const Register = require("../../models/Register");
 const Profile = require("../../models/Profile");
-const ActivityOnboarding = require("../../models/ActivityOnboarding");
-const CaravanOnboarding = require("../../models/CaravanOnboarding");
-const StayOnboarding = require("../../models/StayOnboarding");
+const { onboardingModelFor } = require("../../shared/onboardingModels");
 const Notification = require("../../models/Notification");
 const Booking = require("../../models/Booking");
 const AdminAnalyticsMetric = require("../../models/AdminAnalyticsMetric");
@@ -506,17 +504,19 @@ async function rate(id, rating) {
   return offer;
 }
 
-function pickOnboardingModel(sourceModel) {
-  if (sourceModel === "ActivityOnboarding") return ActivityOnboarding;
-  if (sourceModel === "CaravanOnboarding") return CaravanOnboarding;
-  if (sourceModel === "StayOnboarding") return StayOnboarding;
-  return null;
-}
-
 async function syncSourceStatus(offer, status, reason) {
   if (!offer.sourceId || !offer.sourceModel) return;
-  const Model = pickOnboardingModel(offer.sourceModel);
-  if (!Model) return;
+  const Model = onboardingModelFor(offer.sourceModel);
+  if (!Model) {
+    // Loud, because the failure is otherwise invisible: the offer flips, the
+    // admin sees success, and only the vendor ever notices the onboarding half
+    // never moved. That silence is how the vehicle case shipped.
+    logger.warn(
+      { sourceModel: offer.sourceModel, offerId: String(offer._id) },
+      "[Offer] no onboarding model for sourceModel — source status NOT synced",
+    );
+    return;
+  }
 
   // Onboarding allowed values: draft, pending, approved, rejected.
   let sourceStatus = status;
@@ -557,7 +557,7 @@ async function resolveAdminTarget(offer) {
   }
 
   if (!user && !targetEmail && offer.sourceId && offer.sourceModel) {
-    const Model = pickOnboardingModel(offer.sourceModel);
+    const Model = onboardingModelFor(offer.sourceModel);
     if (Model) {
       const doc = await Model.findById(offer.sourceId);
       if (doc) {

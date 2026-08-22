@@ -15,8 +15,10 @@
  * (supersedePreviousSubmissions), so no new strandings occur. This script fixes
  * the ones already in the database: a pending onboarding doc whose linked Offer
  * is missing or no longer pending gets status "cancelled" — the status the
- * current code would have given it. Nothing is deleted, and a mistake is undone
- * by setting the doc back to "pending".
+ * current code would have given it — unless an admin had already APPROVED or
+ * REJECTED the offer, in which case the doc takes that decision instead.
+ * Nothing is deleted, and a mistake is undone by setting the doc back to
+ * "pending".
  *
  * Docs whose Offer IS pending are left alone: those are live review items.
  *
@@ -37,12 +39,14 @@ const mongoose = require('mongoose');
 const ActivityOnboarding = require('../models/ActivityOnboarding');
 const CaravanOnboarding = require('../models/CaravanOnboarding');
 const StayOnboarding = require('../models/StayOnboarding');
+const VehicleOnboarding = require('../models/VehicleOnboarding');
 const Offer = require('../models/Offer');
 
 const MODELS = [
   ['activity', ActivityOnboarding],
   ['caravan', CaravanOnboarding],
   ['stay', StayOnboarding],
+  ['vehicle', VehicleOnboarding],
 ];
 
 const apply = process.argv.slice(2).includes('--apply');
@@ -76,12 +80,20 @@ async function main() {
         continue;
       }
 
+      // "Offer is not pending" does not always mean "superseded". If an admin
+      // DECIDED the offer, mirror that decision — cancelling an approved
+      // listing's onboarding doc would hide a live service from its vendor.
+      // This case exists because pickOnboardingModel didn't know about vehicle
+      // rental, so approvals flipped the offer and left the doc behind.
+      const decided = offers.find((o) => o.status === 'approved' || o.status === 'rejected');
+      const next = decided ? decided.status : 'cancelled';
       const why = offers.length
         ? `offer status ${offers.map((o) => o.status).join(',')}`
         : 'no offer row';
-      console.log(`  ~ cancel   ${label} ${doc._id} — ${why}, vendor ${doc.vendorId || '?'}`);
+      const verb = decided ? `-> ${next}`.padEnd(9) : 'cancel   ';
+      console.log(`  ~ ${verb} ${label} ${doc._id} — ${why}, vendor ${doc.vendorId || '?'}`);
       if (apply) {
-        doc.status = 'cancelled';
+        doc.status = next;
         await doc.save();
       }
       stranded += 1;
@@ -89,7 +101,7 @@ async function main() {
   }
 
   console.log(
-    `\n${apply ? 'Cancelled' : 'Would cancel'} ${stranded} stranded submission(s); left ${live} live review item(s) untouched.`,
+    `\n${apply ? 'Repaired' : 'Would repair'} ${stranded} stranded submission(s); left ${live} live review item(s) untouched.`,
   );
 
   const pendingOffers = await Offer.countDocuments({ status: 'pending' });

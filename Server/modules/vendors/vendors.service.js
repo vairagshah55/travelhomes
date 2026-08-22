@@ -20,6 +20,7 @@ const CamperVan = require("../../models/CamperVan");
 const Stay = require("../../models/Stay");
 const StayOnboarding = require("../../models/StayOnboarding");
 const CaravanOnboarding = require("../../models/CaravanOnboarding");
+const VehicleOnboarding = require("../../models/VehicleOnboarding");
 const Offer = require("../../models/Offer");
 const Management = require("../../models/Management");
 const logger = require("../../shared/logger");
@@ -42,6 +43,7 @@ async function countVendorServices({ vendorIdObj, vendorIdStr }) {
     stayOnboardingCount,
     activityOnboardingCount,
     caravanOnboardingCount,
+    vehicleOnboardingCount,
   ] = await Promise.all([
     Activity.countDocuments({ vendorId: vendorIdObj }),
     CamperVan.countDocuments({ vendorId: vendorIdStr }),
@@ -51,6 +53,7 @@ async function countVendorServices({ vendorIdObj, vendorIdStr }) {
     StayOnboarding.countDocuments({ vendorId: vendorIdStr }),
     ActivityOnboarding.countDocuments({ vendorId: vendorIdStr }),
     CaravanOnboarding.countDocuments({ vendorId: vendorIdStr }),
+    VehicleOnboarding.countDocuments({ vendorId: vendorIdStr }),
   ]);
   return (
     activityCount +
@@ -60,7 +63,8 @@ async function countVendorServices({ vendorIdObj, vendorIdStr }) {
     managementCount +
     stayOnboardingCount +
     activityOnboardingCount +
-    caravanOnboardingCount
+    caravanOnboardingCount +
+    vehicleOnboardingCount
   );
 }
 
@@ -69,6 +73,7 @@ async function fetchOnboardings(vendorIdStr) {
     StayOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }),
     ActivityOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }),
     CaravanOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }),
+    VehicleOnboarding.findOne({ vendorId: vendorIdStr }).sort({ createdAt: -1 }),
   ]);
 }
 
@@ -93,10 +98,10 @@ async function list({ status, page = 1, limit = 10 }) {
           vendorIdStr: vendor.vendorId,
         });
 
-        const [stayOnboarding, activityOnboarding, caravanOnboarding] = await fetchOnboardings(
-          vendor.vendorId,
-        );
-        const source = stayOnboarding || activityOnboarding || caravanOnboarding;
+        const [stayOnboarding, activityOnboarding, caravanOnboarding, vehicleOnboarding] =
+          await fetchOnboardings(vendor.vendorId);
+        const source =
+          stayOnboarding || activityOnboarding || caravanOnboarding || vehicleOnboarding;
 
         if (source) {
           vendor.brandName = source.brandName || source.businessName || vendor.brandName;
@@ -134,12 +139,14 @@ async function getById(id) {
   const vendorData = vendor.toObject ? vendor.toObject() : vendor;
   const vendorIdStr = vendorData.vendorId;
 
-  const [stayOnboarding, activityOnboarding, caravanOnboarding] =
+  const [stayOnboarding, activityOnboarding, caravanOnboarding, vehicleOnboarding] =
     await fetchOnboardings(vendorIdStr);
 
   // Merge onboarding details into vendorData. Priority: Stay > Activity >
-  // Caravan (we apply in reverse so Stay wins on conflict). Fields are only
-  // overwritten if they were missing on the Vendor doc itself.
+  // Caravan > Vehicle (we apply in reverse so Stay wins on conflict). Fields
+  // are only overwritten if they were missing on the Vendor doc itself. A
+  // vendor whose ONLY submission is a vehicle used to merge nothing at all, so
+  // the admin drawer showed a vendor with no business or KYC details.
   const mergeDetails = (source) => {
     if (!source) return;
     vendorData.brandName = source.brandName || source.businessName || vendorData.brandName;
@@ -177,6 +184,7 @@ async function getById(id) {
     if (!vendorData.personalPincode) vendorData.personalPincode = source.personalPincode;
   };
 
+  if (vehicleOnboarding) mergeDetails(vehicleOnboarding);
   if (caravanOnboarding) mergeDetails(caravanOnboarding);
   if (activityOnboarding) mergeDetails(activityOnboarding);
   if (stayOnboarding) mergeDetails(stayOnboarding);
