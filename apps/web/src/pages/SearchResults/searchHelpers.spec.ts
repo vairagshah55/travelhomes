@@ -150,3 +150,112 @@ describe("mapOfferToCard — vehicle rental", () => {
     expect(bare.details).toBe("Pune, Maharashtra");
   });
 });
+
+/* ── Regressions from the end-to-end search pass ─────────────────────────── */
+
+/** A unique-stay exactly as the API returns one: `name`, flat city/state. */
+const stayOffer = {
+  _id: "stay1",
+  name: "cave house",
+  serviceType: "unique-stay",
+  category: "stay",
+  city: "Ahmedabad",
+  state: "Gujarat",
+  regularPrice: 10000,
+  discountPrice: null,
+  features: [],
+};
+
+describe("mapOfferToCard — unique stays read the fields the API sends", () => {
+  const card = mapOfferToCard(stayOffer, "unique-stays");
+
+  it("titles the card from `name`, not the absent `title`", () => {
+    // Regression: this read `doc.title`, which Offer has no field for, so
+    // every stay in the catalog rendered the literal fallback "Stay".
+    expect(card.title).toBe("cave house");
+  });
+
+  it("locates it from the flat city/state, not `address.city`", () => {
+    // Regression: `address` is a plain String on Offer, so `address.city` was
+    // always undefined and the location line rendered empty.
+    expect(card.details).toBe("Ahmedabad, Gujarat");
+  });
+
+  it("still falls back to a nested address on a legacy row", () => {
+    const legacy = mapOfferToCard(
+      { ...stayOffer, city: undefined, state: undefined, address: { city: "Patan", state: "Gujarat" } },
+      "unique-stays",
+    );
+    expect(legacy.details).toBe("Patan, Gujarat");
+  });
+
+  it("keeps the fallback title when a row really has no name", () => {
+    expect(mapOfferToCard({ ...stayOffer, name: undefined }, "unique-stays").title).toBe("Stay");
+  });
+});
+
+describe("mapOfferToCard — strikethrough only for a real discount", () => {
+  it("shows no struck price when the vendor set none", () => {
+    // Regression: Maxprice was regularPrice, the same number printed beside
+    // it, so every card advertised a discount that did not exist.
+    for (const tab of ["unique-stays", "camper-van", "vehicle-rental", "activity"] as const) {
+      const card = mapOfferToCard({ ...stayOffer, regularPrice: 10000 }, tab);
+      expect(card.price).toBe("₹10000");
+      expect(card.Maxprice).toBeUndefined();
+    }
+  });
+
+  it("shows the regular price struck through when there is a markdown", () => {
+    const card = mapOfferToCard({ ...stayOffer, regularPrice: 10000, discountPrice: 7500 }, "unique-stays");
+    expect(card.price).toBe("₹7500");
+    expect(card.Maxprice).toBe(10000);
+  });
+
+  it("ignores a discount that isn't one", () => {
+    const higher = mapOfferToCard({ ...stayOffer, discountPrice: 12000 }, "unique-stays");
+    expect(higher.Maxprice).toBeUndefined();
+    const zero = mapOfferToCard({ ...stayOffer, discountPrice: 0 }, "unique-stays");
+    expect(zero.Maxprice).toBeUndefined();
+  });
+});
+
+describe("filterSearchItems — a missing capacity is not a zero", () => {
+  const van = {
+    _id: "van1",
+    serviceType: "camper-van",
+    category: "Off Road Caravan",
+    regularPrice: 5775,
+    features: [],
+  };
+  const camperArgs = (over: Partial<FilterArgs> = {}) =>
+    openFilters({ activeFilter: "camper-van", ...over });
+
+  it("keeps a van that never declared its sleeping capacity", () => {
+    // Regression: `Number(x || 0)` turned "unknown" into 0, which fell below
+    // the slider's floor and removed the listing from results entirely.
+    const kept = filterSearchItems([van], camperArgs({ sleepRange: { minVal: 2, maxVal: 16 } }));
+    expect(kept).toHaveLength(1);
+  });
+
+  it("keeps a van that never declared its seating capacity", () => {
+    const kept = filterSearchItems([van], camperArgs({ seatRange: { minVal: 2, maxVal: 16 } }));
+    expect(kept).toHaveLength(1);
+  });
+
+  it("still excludes one that declares a value outside the range", () => {
+    const sleepsOne = { ...van, sleepingCapacity: 1 };
+    expect(
+      filterSearchItems([sleepsOne], camperArgs({ sleepRange: { minVal: 2, maxVal: 16 } })),
+    ).toHaveLength(0);
+    expect(
+      filterSearchItems([sleepsOne], camperArgs({ sleepRange: { minVal: 1, maxVal: 16 } })),
+    ).toHaveLength(1);
+  });
+
+  it("treats a declared zero as a real value, not as missing", () => {
+    const zeroSeats = { ...van, seatingCapacity: 0 };
+    expect(
+      filterSearchItems([zeroSeats], camperArgs({ seatRange: { minVal: 2, maxVal: 16 } })),
+    ).toHaveLength(0);
+  });
+});

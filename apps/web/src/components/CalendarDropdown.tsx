@@ -1,15 +1,29 @@
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+/** Local midnight — the boundary "today is still selectable" turns on. */
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
 export function CalendarDropdown({
   onClose,
   onSelect,
   selectedRange: externalRange,
+  minDate,
 }: {
   onClose: () => void;
   onSelect: (range: { start: Date; end: Date }) => void;
   selectedRange?: { start: Date | null; end: Date | null };
+  /**
+   * Earliest selectable day, defaulting to today. Every caller is a booking or
+   * search flow, and the calendar previously had no floor at all — you could
+   * pick a check-in two weeks in the past and the search accepted it. Pass
+   * `null` for the rare screen that genuinely needs history.
+   */
+  minDate?: Date | null;
 }) {
+  const floor = minDate === null ? null : startOfDay(minDate ?? new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedRange, setSelectedRange] = useState<{
     start: Date | null;
@@ -47,8 +61,17 @@ export function CalendarDropdown({
 
   const nextMonth = () =>
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
-  const prevMonth = () =>
+  /* Paging back past the floor only ever showed a grid of struck-out days, so
+     the control stops there. */
+  const canGoBack =
+    !floor ||
+    new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1) >
+      new Date(floor.getFullYear(), floor.getMonth(), 1);
+
+  const prevMonth = () => {
+    if (!canGoBack) return;
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -123,7 +146,8 @@ export function CalendarDropdown({
           {monthOffset === 0 && (
             <button
               onClick={prevMonth}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#128086] rounded-full transition-colors z-30 absolute left-0"
+              disabled={!canGoBack}
+              className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#128086] rounded-full transition-colors z-30 absolute left-0 disabled:opacity-30 disabled:pointer-events-none"
             >
               <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -159,6 +183,8 @@ export function CalendarDropdown({
 
           {days.map((day, index) => {
             const isCurrentMonth = day.getMonth() === displayMonth.getMonth();
+            const isPast = !!floor && day < floor;
+            const selectable = isCurrentMonth && !isPast;
             const inRange = isInRange(day);
             const rangeStart = isRangeStart(day);
             const rangeEnd = isRangeEnd(day);
@@ -179,17 +205,20 @@ export function CalendarDropdown({
                 )}
 
                 <button
-                  onClick={() => isCurrentMonth && handleDateClick(day)}
-                  disabled={!isCurrentMonth}
+                  onClick={() => selectable && handleDateClick(day)}
+                  disabled={!selectable}
+                  aria-disabled={!selectable}
                   className={`w-8 h-8 flex items-center justify-center relative z-10 transition-all rounded-full text-sm
                     ${
-                      rangeStart || rangeEnd
-                        ? "bg-primary text-white rounded-full shadow-md scale-105"
-                        : isTodayDate
-                          ? "border-2 border-primary rounded-full text-primary font-bold"
-                          : inRange
-                            ? "text-primary border rounded-full font-medium"
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#128086]"
+                      isPast
+                        ? "text-gray-300 dark:text-gray-600 line-through cursor-not-allowed"
+                        : rangeStart || rangeEnd
+                          ? "bg-primary text-white rounded-full shadow-md scale-105"
+                          : isTodayDate
+                            ? "border-2 border-primary rounded-full text-primary font-bold"
+                            : inRange
+                              ? "text-primary border rounded-full font-medium"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#128086]"
                     }
                   `}
                 >

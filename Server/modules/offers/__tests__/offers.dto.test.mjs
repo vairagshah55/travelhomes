@@ -71,3 +71,24 @@ describe("offers.dto.upsertBody", () => {
     expect(parsed.weird).toBe(1);
   });
 });
+
+describe("offers.dto.listQuery — availability window", () => {
+  it("coerces ISO date strings", () => {
+    const q = dto.listQuery.parse({
+      checkin: "2026-09-25T00:00:00.000Z",
+      checkout: "2026-09-28T00:00:00.000Z",
+    });
+    expect(q.checkin).toBeInstanceOf(Date);
+    expect(q.checkout.toISOString()).toBe("2026-09-28T00:00:00.000Z");
+  });
+
+  it("rejects an unparseable date rather than silently ignoring it", () => {
+    expect(() => dto.listQuery.parse({ checkin: "notadate" })).toThrowError();
+  });
+
+  it("leaves both optional — a browse with no dates is still valid", () => {
+    const q = dto.listQuery.parse({ status: "approved" });
+    expect(q.checkin).toBeUndefined();
+    expect(q.checkout).toBeUndefined();
+  });
+});

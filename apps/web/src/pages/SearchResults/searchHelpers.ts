@@ -68,6 +68,31 @@ export interface FilterArgs {
 }
 
 /**
+ * First numeric value among `keys`, or null when the vendor supplied none.
+ *
+ * The distinction matters. These reads used to end in `|| 0`, which turned
+ * "capacity unknown" into "capacity zero" — and since the sleeps/seating
+ * sliders floored at 2, every listing missing the field fell below the floor
+ * and disappeared from results. A ₹5,775 camper van in Ahmedabad was invisible
+ * for no reason other than sleeping one person.
+ */
+function numericField(item: any, keys: string[]): number | null {
+  for (const key of keys) {
+    const raw = item?.[key];
+    if (raw === undefined || raw === null || raw === "") continue;
+    const n = Number(raw);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+/** Range check that abstains on listings with nothing to compare. */
+function outsideRange(value: number | null, range?: RangeVal): boolean {
+  if (value === null || !range) return false;
+  return value < range.minVal || value > range.maxVal;
+}
+
+/**
  * Apply price / type / category / facilities filters to a list of offers,
  * plus the camper-van-only sleeps / seating range filters.
  */
@@ -119,22 +144,18 @@ export function filterSearchItems(items: any[], args: FilterArgs) {
       }
     }
 
-    if (activeFilter === "camper-van" && sleepRange) {
-      const sleeps = Number(item.sleepingCapacity || item.sleeps || item.capacity || 0);
-      if (sleeps < sleepRange.minVal || sleeps > sleepRange.maxVal) return false;
-    }
+    if (activeFilter === "camper-van") {
+      const sleeps = numericField(item, ["sleepingCapacity", "sleeps", "capacity"]);
+      if (outsideRange(sleeps, sleepRange)) return false;
 
-    if (activeFilter === "camper-van" && seatRange) {
-      const seating = Number(item.seatingCapacity || item.seating || item.passengers || 0);
-      if (seating < seatRange.minVal || seating > seatRange.maxVal) return false;
+      const seating = numericField(item, ["seatingCapacity", "seating", "passengers"]);
+      if (outsideRange(seating, seatRange)) return false;
     }
 
     // ─── Vehicle-rental facets ──────────────────────────────────────────
     if (activeFilter === "vehicle-rental") {
-      if (seatRange) {
-        const seating = Number(item.seatingCapacity || item.seating || item.passengers || 0);
-        if (seating < seatRange.minVal || seating > seatRange.maxVal) return false;
-      }
+      const seating = numericField(item, ["seatingCapacity", "seating", "passengers"]);
+      if (outsideRange(seating, seatRange)) return false;
 
       if (selectedFuelTypes && selectedFuelTypes.length > 0) {
         if (!selectedFuelTypes.includes(String(item.fuelType || ""))) return false;
@@ -181,6 +202,32 @@ export function sortSearchItems(items: any[], sortBy: string) {
 }
 
 /**
+ * What the card shows for price, and the struck-through "was" beside it.
+ *
+ * `Maxprice` used to be set to `regularPrice` — the very number printed next to
+ * it — so `ResultCard` rendered "₹10000 ₹10000" with a strikethrough on the
+ * first, advertising a discount that did not exist on any listing. The real
+ * sale field is `discountPrice`, which is nullable and was never read. No
+ * discount now means no strikethrough.
+ */
+function priceParts(doc: any): { price: string; Maxprice?: number } {
+  const regular = Number(doc?.regularPrice || 0);
+  const discounted = Number(doc?.discountPrice);
+  const onSale = Number.isFinite(discounted) && discounted > 0 && discounted < regular;
+
+  return onSale ? { price: `₹${discounted}`, Maxprice: regular } : { price: `₹${regular}` };
+}
+
+/** "City, State" off an offer, tolerating the legacy nested-address shape. */
+function placeOf(doc: any): string {
+  const flat = [doc?.city, doc?.state].filter(Boolean).join(", ");
+  if (flat) return flat;
+  // `address` is a plain String on the Offer model, so `address.city` is
+  // normally undefined — kept only for any legacy row that stored an object.
+  return [doc?.address?.city, doc?.address?.state].filter(Boolean).join(", ");
+}
+
+/**
  * Map a raw offer doc into the simplified card shape rendered by DefaultCard,
  * picking the route + price unit + fallback image based on `activeFilter`.
  */
@@ -193,12 +240,8 @@ export function mapOfferToCard(doc: any, activeFilter: FilterType) {
     return {
       id: `/campervan/${doc?._id}`,
       title: doc?.name || "Camper Van",
-      details: [doc?.city, doc?.state].filter(Boolean).join(", ") || doc?.category || "",
-      price:
-        typeof doc?.regularPrice === "number"
-          ? `₹${doc.regularPrice}`
-          : `₹${Number(doc?.regularPrice || 0)}`,
-      Maxprice: doc?.regularPrice || "0",
+      details: placeOf(doc) || doc?.category || "",
+      ...priceParts(doc),
       unit: "/ day",
       image: cover,
     };
@@ -213,16 +256,11 @@ export function mapOfferToCard(doc: any, activeFilter: FilterType) {
     // city does, which the guest already filtered by.
     const make = [doc?.brand, doc?.model].filter(Boolean).join(" ");
     const seats = doc?.seatingCapacity ? `${doc.seatingCapacity} seats` : "";
-    const place = [doc?.city, doc?.state].filter(Boolean).join(", ");
     return {
       id: `/vehicle/${doc?._id}`,
       title: doc?.name || "Vehicle",
-      details: [make, seats].filter(Boolean).join(" · ") || place,
-      price:
-        typeof doc?.regularPrice === "number"
-          ? `₹${doc.regularPrice}`
-          : `₹${Number(doc?.regularPrice || 0)}`,
-      Maxprice: doc?.regularPrice || "0",
+      details: [make, seats].filter(Boolean).join(" · ") || placeOf(doc),
+      ...priceParts(doc),
       unit: "/ day",
       image: cover,
     };
@@ -234,10 +272,12 @@ export function mapOfferToCard(doc: any, activeFilter: FilterType) {
       "https://api.builder.io/api/v1/image/assets/TEMP/25e2e450e32f87a421008f2fe2aed42df10fdc1d?width=610";
     return {
       id: `/unique-stay/${doc?._id}`,
-      title: doc?.title || "Stay",
-      details: [doc?.address?.city, doc?.address?.state].filter(Boolean).join(", "),
-      price: typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
-      Maxprice: doc?.regularPrice || "0",
+      // `doc.title` was the only source, and Offer has no `title` field — so
+      // every stay in the catalog rendered the literal fallback "Stay". The
+      // catalog field is `name`, exactly as on the other three services.
+      title: doc?.name || doc?.title || "Stay",
+      details: placeOf(doc),
+      ...priceParts(doc),
       unit: "/ night",
       image: cover,
     };
@@ -249,9 +289,8 @@ export function mapOfferToCard(doc: any, activeFilter: FilterType) {
   return {
     id: `/activity/${doc?._id}`,
     title: doc?.name || "Activity",
-    details: [doc?.city, doc?.state].filter(Boolean).join(", "),
-    price: typeof doc?.regularPrice === "number" ? `₹${doc.regularPrice}` : "₹0",
-    Maxprice: doc?.regularPrice || "0",
+    details: placeOf(doc),
+    ...priceParts(doc),
     unit: "/ person",
     image: cover,
   };

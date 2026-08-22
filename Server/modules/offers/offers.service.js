@@ -40,6 +40,7 @@ const ActivityOnboarding = require("../../models/ActivityOnboarding");
 const CaravanOnboarding = require("../../models/CaravanOnboarding");
 const StayOnboarding = require("../../models/StayOnboarding");
 const Notification = require("../../models/Notification");
+const Booking = require("../../models/Booking");
 const AdminAnalyticsMetric = require("../../models/AdminAnalyticsMetric");
 const logger = require("../../shared/logger");
 const { ForbiddenError, NotFoundError, UnauthorizedError } = require("../../shared/errors");
@@ -349,10 +350,49 @@ async function trackImpressions(data, meta = {}) {
   }
 }
 
+/**
+ * Booking states that hold a listing against a date range.
+ *
+ * `cancelled` releases it, and `completed` / `checked-out` are in the past by
+ * definition — none of those should make a listing look unavailable.
+ */
+const BLOCKING_BOOKING_STATES = ["pending", "confirmed", "checked-in", "active"];
+
+/**
+ * Ids of offers already committed across [checkin, checkout).
+ *
+ * Half-open on purpose: one guest checking out on the 14th and the next
+ * checking in on the 14th is a normal turnover, not a clash. The standard
+ * overlap test is `existingStart < requestedEnd && existingEnd > requestedStart`.
+ */
+async function bookedOfferIds(checkin, checkout) {
+  const clashes = await Booking.find({
+    serviceModel: "Offer",
+    bookingStatus: { $in: BLOCKING_BOOKING_STATES },
+    checkInDate: { $lt: checkout },
+    checkOutDate: { $gt: checkin },
+  })
+    .select("serviceId")
+    .lean();
+
+  return clashes.map((b) => b.serviceId).filter(Boolean);
+}
+
 async function list(q, user, meta = {}) {
   let query = buildListFilter(q, user);
   query = await applyOwnerFilter(query, user);
   query = applySearchFilter(query);
+
+  /* Availability. The search page sends the guest's window, so anything already
+     booked across it is dropped — previously the dates were accepted by the UI,
+     put in the page URL, and never asked about, so every date range returned
+     the same list. Only applied when both ends are present and ordered. */
+  if (q.checkin && q.checkout && q.checkin < q.checkout) {
+    const taken = await bookedOfferIds(q.checkin, q.checkout);
+    if (taken.length) {
+      query._id = query._id ? { ...query._id, $nin: taken } : { $nin: taken };
+    }
+  }
 
   const skip = (q.page - 1) * q.limit;
   const sortObj = pickSort(q.sort);

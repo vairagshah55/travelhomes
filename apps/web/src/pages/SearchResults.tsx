@@ -50,6 +50,7 @@ import {
   sortSearchItems,
   mapOfferToCard,
   getFilterOptions,
+  type RangeVal,
 } from "./SearchResults/searchHelpers";
 
 type FilterType = "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
@@ -64,6 +65,39 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
 // Stable identity for the "no results yet" case, so the memo chain below isn't
 // invalidated by a fresh `[]` literal on every render while the query loads.
 const EMPTY_RESULTS: any[] = [];
+
+/* Slider bounds used only before any offers have loaded, or when none of them
+   carry the field. Wide on purpose: a default that excludes is the bug these
+   replaced. */
+const PRICE_FALLBACK = { min: 0, max: 1_000_000 };
+const CAPACITY_FALLBACK = { min: 0, max: 20 };
+
+/**
+ * Bounds spanning the values present in the current result set.
+ *
+ * `collapsed` marks an axis with no range to drag: either no values at all, or
+ * every result sharing one. `DualRangeSlider` divides by `max - min`, so a
+ * single-value axis can't drive a track — the sidebar prints the one value
+ * instead of a slider. `only` carries it, since `min`/`max` get padded apart to
+ * keep anything that does read them well-defined.
+ */
+function spanOf(values: number[], fallback: { min: number; max: number }) {
+  if (!values.length) return { ...fallback, step: 1, collapsed: true, only: null };
+
+  const lo = Math.floor(Math.min(...values));
+  const hi = Math.ceil(Math.max(...values));
+  if (lo === hi) {
+    return { min: Math.max(0, lo - 1), max: hi + 1, step: 1, collapsed: true, only: lo };
+  }
+
+  return {
+    min: lo,
+    max: hi,
+    step: Math.max(1, Math.round((hi - lo) / 100)),
+    collapsed: false,
+    only: null,
+  };
+}
 
 export default function SearchResults() {
   const navigate = useNavigate();
@@ -140,6 +174,26 @@ export default function SearchResults() {
     }
   }, [visibleSections, activeFilter]);
 
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [showLocationToDropdown, setShowLocationToDropdown] = useState(false);
+  const [showGuestDropdown, setShowGuestDropdown] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showCheckoutCalendar, setShowCheckoutCalendar] = useState(false);
+  const [showActivityDropdown, setShowActivityDropdown] = useState(false);
+
+  /* The hero sends one total (`?guests=5`); this page models a breakdown. Seat
+     the total as adults, since the hero has no breakdown to forward. The
+     parameter used to be ignored outright, so a five-guest search from the
+     homepage arrived here reading "2". */
+  const [guests, setGuests] = useState(() => {
+    const total = Number(searchParams.get("guests"));
+    const adults = Number.isFinite(total) && total > 0 ? Math.min(Math.trunc(total), 99) : 2;
+    return { adults, children: 0, infants: 0, pet: 0 };
+  });
+
+  /* Mirror the live search back into the URL, so it stays shareable and a
+     reload lands on the same query. Declared after `guests` because it reads
+     it. */
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     params.set("filter", activeFilter);
@@ -148,6 +202,9 @@ export default function SearchResults() {
     params.set("checkin", checkInDate ? checkInDate.toISOString() : "");
     params.set("checkout", checkOutDate ? checkOutDate.toISOString() : "");
     params.set("activity", activityName || "");
+    // Guests round-trips too, rather than dropping a field the hero had
+    // already put in the URL.
+    params.set("guests", String(guests.adults + guests.children + guests.infants));
     if (activeFilter === "vehicle-rental") {
       params.set("pickupTime", pickupTime);
       params.set("returnTime", returnTime);
@@ -161,23 +218,11 @@ export default function SearchResults() {
     checkInDate,
     checkOutDate,
     activityName,
+    guests,
     pickupTime,
     returnTime,
     vehicleClass,
   ]);
-  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const [showLocationToDropdown, setShowLocationToDropdown] = useState(false);
-  const [showGuestDropdown, setShowGuestDropdown] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  const [showCheckoutCalendar, setShowCheckoutCalendar] = useState(false);
-  const [showActivityDropdown, setShowActivityDropdown] = useState(false);
-
-  const [guests, setGuests] = useState({
-    adults: 2,
-    children: 0,
-    infants: 0,
-    pet: 0,
-  });
 
   const [showFilters, setShowFilters] = useState(false);
 
@@ -194,9 +239,9 @@ export default function SearchResults() {
     setSelectedCategories([]);
     setSelectedFacilities([]);
     setSelectedRating("1+");
-    setPriceRange({ minVal: min, maxVal: max });
-    setSleepRange({ minVal: minSleep, maxVal: maxSleep });
-    setSeatRange({ minVal: minSeat, maxVal: maxSeat });
+    /* The three range sliders are reset by the bounds effect further down
+       instead — switching tabs changes the result set, which changes the
+       bounds, which reopens them to the new inventory's full span. */
     setSelectedFuelTypes([]);
     setSelectedTransmissions([]);
     setSelectedRentalModes([]);
@@ -209,23 +254,24 @@ export default function SearchResults() {
   const calendarRef = useRef<HTMLDivElement>(null);
   const checkoutCalendarRef = useRef<HTMLDivElement>(null);
   const activityRef = useRef<HTMLDivElement>(null);
-  const min = 999,
-    max = 99999,
-    step = 10;
-  const [priceRange, setPriceRange] = useState({ minVal: min, maxVal: max });
-  const minSleep = 2,
-    maxSleep = 16,
-    stepSleep = 5;
-  const [sleepRange, setSleepRange] = useState({
-    minVal: minSleep,
-    maxVal: maxSleep,
+  /* Range-slider selections. The bounds they sit inside are derived from the
+     offers actually returned — see `bounds` below — so the defaults can never
+     exclude live stock. They used to be hardcoded (price 999–99999, sleeps and
+     seats 2–16) and the slider could not be dragged below its own floor, which
+     made every listing under ₹999 or sleeping fewer than two permanently
+     unreachable: 18 of 25 approved offers, including a ₹5,775 camper van whose
+     only sin was sleeping one. */
+  const [priceRange, setPriceRange] = useState<RangeVal>({
+    minVal: PRICE_FALLBACK.min,
+    maxVal: PRICE_FALLBACK.max,
   });
-  const minSeat = 2,
-    maxSeat = 16,
-    stepSeat = 5;
-  const [seatRange, setSeatRange] = useState({
-    minVal: minSeat,
-    maxVal: maxSeat,
+  const [sleepRange, setSleepRange] = useState<RangeVal>({
+    minVal: CAPACITY_FALLBACK.min,
+    maxVal: CAPACITY_FALLBACK.max,
+  });
+  const [seatRange, setSeatRange] = useState<RangeVal>({
+    minVal: CAPACITY_FALLBACK.min,
+    maxVal: CAPACITY_FALLBACK.max,
   });
   const [mobileFilter, setMobileFilter] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
@@ -321,6 +367,8 @@ export default function SearchResults() {
       activeFilter,
       (selectedLocation || "").trim(),
       activeFilter === "vehicle-rental" ? vehicleClass : "",
+      checkInDate ? checkInDate.toISOString() : "",
+      checkOutDate ? checkOutDate.toISOString() : "",
     ],
     queryFn: async () => {
       const loc = (selectedLocation || "").trim();
@@ -332,6 +380,14 @@ export default function SearchResults() {
       }
       params.set("page", "1");
       params.set("limit", "100");
+
+      /* The requested window, so the server can drop anything already booked
+         across it. These were carried in the page URL and then thrown away —
+         every date range returned an identical list. */
+      if (checkInDate && checkOutDate) {
+        params.set("checkin", checkInDate.toISOString());
+        params.set("checkout", checkOutDate.toISOString());
+      }
 
       // Narrow server-side by serviceType. The client-side getNormCategory pass
       // below still runs, because legacy offers created before serviceType was
@@ -359,6 +415,55 @@ export default function SearchResults() {
     () => (Array.isArray(searchQuery.data) ? searchQuery.data : EMPTY_RESULTS),
     [searchQuery.data],
   );
+
+  /**
+   * Slider bounds, measured from the offers this search actually returned.
+   *
+   * Derived rather than hardcoded so the sliders always span their own
+   * inventory. The previous constants (price 999–99999, sleeps/seats 2–16) were
+   * both the default selection AND the slider's travel limits, so anything
+   * outside them could not be reached by any gesture the UI offered.
+   */
+  const bounds = useMemo(() => {
+    const collect = (pick: (o: any) => unknown) =>
+      dataToUse
+        .map(pick)
+        .map(Number)
+        .filter((n) => Number.isFinite(n));
+
+    return {
+      price: spanOf(
+        collect((o) => o.regularPrice),
+        PRICE_FALLBACK,
+      ),
+      sleep: spanOf(
+        collect((o) => o.sleepingCapacity ?? o.sleeps ?? o.capacity),
+        CAPACITY_FALLBACK,
+      ),
+      seat: spanOf(
+        collect((o) => o.seatingCapacity ?? o.seating ?? o.passengers),
+        CAPACITY_FALLBACK,
+      ),
+    };
+  }, [dataToUse]);
+
+  /* Open the sliders back up whenever the inventory behind them changes — a new
+     tab, a new city, a new result set. Without this, a floor the guest dragged
+     up on one search silently carried into the next and hid its cheaper stock.
+     Depends on the bound values, not the `bounds` object, so a refetch that
+     returns the same span leaves an in-progress narrowing alone. */
+  useEffect(() => {
+    setPriceRange({ minVal: bounds.price.min, maxVal: bounds.price.max });
+    setSleepRange({ minVal: bounds.sleep.min, maxVal: bounds.sleep.max });
+    setSeatRange({ minVal: bounds.seat.min, maxVal: bounds.seat.max });
+  }, [
+    bounds.price.min,
+    bounds.price.max,
+    bounds.sleep.min,
+    bounds.sleep.max,
+    bounds.seat.min,
+    bounds.seat.max,
+  ]);
 
   /**
    * Filter → sort → map, memoised.
@@ -427,13 +532,13 @@ export default function SearchResults() {
     onClose: () => {},
     activeFilter,
     filterOptions,
-    priceBounds: { min, max, step },
+    priceBounds: bounds.price,
     priceRange,
     setPriceRange,
-    sleepBounds: { min: minSleep, max: maxSleep, step: stepSleep },
+    sleepBounds: bounds.sleep,
     sleepRange,
     setSleepRange,
-    seatBounds: { min: minSeat, max: maxSeat, step: stepSeat },
+    seatBounds: bounds.seat,
     seatRange,
     setSeatRange,
     selectedRating,

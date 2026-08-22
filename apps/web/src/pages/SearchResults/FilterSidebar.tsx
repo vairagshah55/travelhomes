@@ -10,17 +10,33 @@ type FilterOptions = {
   facilities: string[];
 };
 
+/**
+ * Travel limits for one slider.
+ *
+ * `collapsed` means the results hold fewer than two distinct values on this
+ * axis, so there is no range to drag — `only` is that single value (null when
+ * there are no results at all). The section still renders: a filter quietly
+ * disappearing reads as a broken sidebar, so it states the value instead.
+ */
+type Bounds = {
+  min: number;
+  max: number;
+  step: number;
+  collapsed?: boolean;
+  only?: number | null;
+};
+
 interface FilterSidebarProps {
   onClose: () => void;
   activeFilter: "camper-van" | "unique-stays" | "activity" | "vehicle-rental";
   filterOptions: FilterOptions;
-  priceBounds: { min: number; max: number; step: number };
+  priceBounds: Bounds;
   priceRange: RangeVal;
   setPriceRange: SetRange;
-  sleepBounds: { min: number; max: number; step: number };
+  sleepBounds: Bounds;
   sleepRange: RangeVal;
   setSleepRange: SetRange;
-  seatBounds: { min: number; max: number; step: number };
+  seatBounds: Bounds;
   seatRange: RangeVal;
   setSeatRange: SetRange;
   selectedRating: string;
@@ -192,6 +208,58 @@ function DualRangeSlider({ min, max, step, range, setRange, unit = "₹" }: Dual
 }
 
 /**
+ * One range section: a slider when there's a spread to narrow, the single
+ * shared value when there isn't.
+ *
+ * The no-spread case is common on a specific search — one camper van in a city
+ * means one price — and a dead slider padded to "₹5774 – ₹5776" misrepresents
+ * the data it's describing.
+ */
+function RangeFilter({
+  title,
+  bounds,
+  range,
+  setRange,
+  unit = "₹",
+}: {
+  title: string;
+  bounds: Bounds;
+  range: RangeVal;
+  setRange: SetRange;
+  unit?: string;
+}) {
+  return (
+    <div className="mb-6 pb-6 border-b border-gray-100">
+      <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">{title}</h4>
+      {bounds.collapsed ? (
+        <p className="px-5 text-sm text-gray-500">
+          {bounds.only == null ? (
+            "Nothing to filter"
+          ) : (
+            <>
+              Every result:{" "}
+              <strong className="font-semibold text-[#0a1c1c]">
+                {unit}
+                {bounds.only}
+              </strong>
+            </>
+          )}
+        </p>
+      ) : (
+        <DualRangeSlider
+          min={bounds.min}
+          max={bounds.max}
+          step={bounds.step}
+          range={range}
+          setRange={setRange}
+          unit={unit}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
  * Sidebar with all SearchResults filters: price/sleeps/seating range sliders,
  * rating buttons, and Type/Category/Facilities checkbox groups. Pure
  * presentation — all state lives in the parent and is wired via props.
@@ -250,16 +318,12 @@ export function FilterSidebar({
           <h3 className="text-lg font-bold text-[#0a1c1c] tracking-tight">Filters</h3>
         </div>
 
-        <div className="mb-6 pb-6 border-b border-gray-100">
-          <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Price</h4>
-          <DualRangeSlider
-            min={priceBounds.min}
-            max={priceBounds.max}
-            step={priceBounds.step}
-            range={priceRange}
-            setRange={setPriceRange}
-          />
-        </div>
+        <RangeFilter
+          title="Price"
+          bounds={priceBounds}
+          range={priceRange}
+          setRange={setPriceRange}
+        />
 
         <div className="mb-6 pb-6 border-b border-gray-100">
           <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Rating</h4>
@@ -281,46 +345,34 @@ export function FilterSidebar({
         </div>
 
         {activeFilter === "camper-van" && (
-          <div className="mb-6 pb-6 border-b border-gray-100">
-            <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Sleeps</h4>
-            <DualRangeSlider
-              min={sleepBounds.min}
-              max={sleepBounds.max}
-              step={sleepBounds.step}
-              range={sleepRange}
-              setRange={setSleepRange}
-              unit=""
-            />
-          </div>
+          <RangeFilter
+            title="Sleeps"
+            bounds={sleepBounds}
+            range={sleepRange}
+            setRange={setSleepRange}
+            unit=""
+          />
         )}
 
         {activeFilter === "camper-van" && (
-          <div className="mb-6 pb-6 border-b border-gray-100">
-            <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Seating</h4>
-            <DualRangeSlider
-              min={seatBounds.min}
-              max={seatBounds.max}
-              step={seatBounds.step}
-              range={seatRange}
-              setRange={setSeatRange}
-              unit=""
-            />
-          </div>
+          <RangeFilter
+            title="Seating"
+            bounds={seatBounds}
+            range={seatRange}
+            setRange={setSeatRange}
+            unit=""
+          />
         )}
 
         {activeFilter === "vehicle-rental" && (
           <>
-            <div className="mb-6 pb-6 border-b border-gray-100">
-              <h4 className="text-sm font-semibold text-[#0a1c1c] mb-4">Seats</h4>
-              <DualRangeSlider
-                min={seatBounds.min}
-                max={seatBounds.max}
-                step={seatBounds.step}
-                range={seatRange}
-                setRange={setSeatRange}
-                unit=""
-              />
-            </div>
+            <RangeFilter
+              title="Seats"
+              bounds={seatBounds}
+              range={seatRange}
+              setRange={setSeatRange}
+              unit=""
+            />
 
             <div className="mb-6 pb-6 border-b border-gray-100">
               <h4 className="text-sm font-semibold text-[#0a1c1c] mb-3">Rental mode</h4>

@@ -32,6 +32,12 @@ const listQuery = z.object({
   // search page had to pull limit=100 and re-bucket every row client-side
   // through getNormCategory's fuzzy string matching.
   serviceType: z.enum(["camper-van", "unique-stay", "activity", "vehicle-rental"]).optional(),
+
+  // Requested stay/rental window. Both must be present to filter on
+  // availability; one alone describes nothing bookable.
+  checkin: z.coerce.date().optional(),
+  checkout: z.coerce.date().optional(),
+
   vehicleClass: z.enum(["car", "van", "bus"]).optional(),
   fuelType: z.enum(["Petrol", "Diesel", "CNG", "Electric", "Hybrid"]).optional(),
   transmission: z.enum(["Manual", "Automatic"]).optional(),

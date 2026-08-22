@@ -266,6 +266,13 @@ export function HeroSection({
     if (activeFilter === "camper-van" && !selectedLocationTo.trim()) errors.locationTo = "Required";
     if (!checkInDate) errors.checkin = "Required";
     if (activeFilter !== "activity" && !checkOutDate) errors.checkout = "Required";
+    // The calendar no longer offers past days, but a date picked before
+    // midnight and submitted after it would still be stale by now.
+    if (checkInDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (checkInDate < today) errors.checkin = "Date has passed";
+    }
     if (activeFilter === "activity" && (!activityName.trim() || activityName === "Tracking"))
       errors.activity = "Required";
     // A rental window that ends before it starts is the one date error worth

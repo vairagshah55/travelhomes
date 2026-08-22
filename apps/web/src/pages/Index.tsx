@@ -314,12 +314,19 @@ export default function Index() {
     const img = o.photos?.coverUrl?.length
       ? o.photos.coverUrl
       : o.photos?.galleryUrls?.[0] || "/placeholder.svg";
+    // A genuine markdown: a positive sale price below the regular one.
+    const sale = Number(o.discountPrice);
+    const discounted = Number.isFinite(sale) && sale > 0 && sale < Number(o.regularPrice);
     return {
       id: route,
       title: o.name,
       details: o.city && o.state ? `${o.city}, ${o.state}` : o.city || o.state || "",
-      price: `₹${o.regularPrice}`,
-      Maxprice: Math.round(Number(o.regularPrice || 0) * 1.2) || undefined,
+      /* Was `regularPrice * 1.2` — a 20% "original" price invented per card, so
+         every listing on the homepage advertised a discount no vendor had
+         offered. `discountPrice` is the real sale field; no discount, no
+         strikethrough. */
+      price: `₹${discounted ? o.discountPrice : o.regularPrice}`,
+      Maxprice: discounted ? Number(o.regularPrice) : undefined,
       unit,
       image: img,
       images: [
