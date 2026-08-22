@@ -12,17 +12,14 @@ import {
   Byline,
   CategoryChip,
   Cover,
-  excerptFrom,
   hasReadableContent,
   sanitizeArticleHtml,
   toArticle,
   type BlogDTO,
 } from "@/components/site/article";
 import { CONTAINER, Notice, RetryButton, Shimmer } from "@/components/site/kit";
-import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { API_BASE_URL } from "@/lib/api";
-import { BRAND_NAME, OG_IMAGE } from "@/lib/brand";
-import { cn, getImageUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 /**
  * /blogsDetials — a single story.
@@ -230,59 +227,6 @@ export default function BlogDetailsPage() {
   const article = blog ? toArticle(blog) : null;
   const bodyHtml = useMemo(() => sanitizeArticleHtml(blog?.content), [blog?.content]);
   const showBody = hasReadableContent(bodyHtml);
-
-  /* ── Per-article SEO ──────────────────────────────────────────────────────
-     The CMS has always collected `metaTitle` / `metaDescription` /
-     `metaKeywords` per post, and nothing ever read them: `SEOMeta` resolves
-     `/blogsDetials` to the single global "Blog Details" settings record, so
-     every article in the journal shared one title, one description and one
-     share card. Those fields are now the source of truth here, with the
-     article's own copy as the fallback — and `SEOMeta` skips this route so the
-     global record can't overwrite what we set. */
-  const canonical = blog ? `${window.location.origin}/blogsDetials?slug=${blog.slug}` : undefined;
-
-  const seoImage = useMemo(() => {
-    const cover = blog?.coverImage ? getImageUrl(blog.coverImage) : "";
-    /* Covers uploaded through the CMS are base64 data URLs, and `getImageUrl`
-       returns a relative `/fallback.jpg` when it can't resolve one. Neither is
-       something a crawler can fetch, so the brand card stands in. */
-    if (/^https?:\/\//i.test(cover)) return cover;
-    return `${window.location.origin}${OG_IMAGE}`;
-  }, [blog?.coverImage]);
-
-  const seoDescription = blog
-    ? (blog.metaDescription || "").trim() ||
-      (blog.description || "").trim() ||
-      excerptFrom(blog.content)
-    : undefined;
-
-  useDocumentMeta({
-    enabled: !!blog,
-    title: blog ? (blog.metaTitle || "").trim() || `${blog.title} · ${BRAND_NAME}` : undefined,
-    description: seoDescription,
-    keywords: (blog?.metaKeywords || "").trim() || undefined,
-    image: seoImage,
-    canonical,
-    ogType: "article",
-    jsonLd:
-      blog && article
-        ? {
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: blog.title,
-            description: seoDescription || undefined,
-            image: [seoImage],
-            articleSection: article.category,
-            datePublished: blog.createdAt,
-            dateModified: blog.updatedAt || blog.createdAt,
-            author: { "@type": "Person", name: article.author },
-            publisher: { "@type": "Organization", name: BRAND_NAME },
-            mainEntityOfPage: canonical
-              ? { "@type": "WebPage", "@id": canonical }
-              : undefined,
-          }
-        : null,
-  });
 
   /* Never recommend the story being read, and cap at three. */
   const related = useMemo(

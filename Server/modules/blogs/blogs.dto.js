@@ -11,29 +11,10 @@ const slug = z
 
 const blogStatus = z.enum(["draft", "published", "archived"]);
 
-/**
- * Public list query.
- *
- * `status` + `limit` are the original pair and behave exactly as before: no
- * `page` means no paging, and omitting `limit` returns everything (the admin
- * table depends on that — it needs drafts and the full set).
- *
- * `page` / `search` / `category` were added because /blogs used to fetch up to
- * 50 posts and filter them in the browser: past 50 published articles the rest
- * were unreachable on the site despite being live.
- */
 const listQuery = z.object({
   status: blogStatus.optional(),
-  // Raised from 50 — a page size is chosen by the caller now, and the admin
-  // table pulls the whole archive in one go.
-  limit: z.coerce.number().int().nonnegative().max(100).optional(),
-  page: z.coerce.number().int().positive().max(10_000).optional(),
-  search: z.string().trim().max(120).optional(),
-  category: z.string().trim().max(80).optional(),
+  limit: z.coerce.number().int().nonnegative().max(50).optional(),
 });
-
-/** Facet counts are per-status, so the pills can read "Road trips (4)". */
-const categoriesQuery = z.object({ status: blogStatus.optional() });
 
 const createBody = z.object({
   title: z.string().trim().min(1).max(200),
@@ -58,4 +39,4 @@ const updateBody = createBody
   .partial()
   .refine((d) => Object.keys(d).length > 0, { message: "At least one field must be provided" });
 
-module.exports = { listQuery, categoriesQuery, createBody, idParams, slugParams, updateBody };
+module.exports = { listQuery, createBody, idParams, slugParams, updateBody };

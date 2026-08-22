@@ -16,21 +16,6 @@ const routeToPageMap: Record<string, string> = {
   '/help': 'Help',
 };
 
-/**
- * Routes that build their own <head> from the record they render.
- *
- * This component is route-level: one SEO record per path. That's the wrong
- * granularity for a blog post — every article resolved to the single "Blog
- * Details" record, so the whole journal shared one title, one description and
- * one share card while the per-article meta fields the CMS collects sat unused.
- * `/blogsDetials` now sets its own via `useDocumentMeta`, so skip the page
- * lookup here rather than racing it (both are async; last writer won).
- *
- * The favicon is still applied below — it's global, and dropping it would leave
- * the default icon on any article opened directly.
- */
-const SELF_MANAGED_ROUTES = new Set(['/blogsDetials']);
-
 const SEOMeta: React.FC = () => {
   const location = useLocation();
 
@@ -41,9 +26,7 @@ const SEOMeta: React.FC = () => {
 
       try {
         const [pageResponse, faviconResponse] = await Promise.all([
-          SELF_MANAGED_ROUTES.has(path)
-            ? Promise.resolve({ success: false, data: {} as any })
-            : settingsApi.getSeo(pageName),
+          settingsApi.getSeo(pageName),
           settingsApi.getSeo('favicon')
         ]);
 

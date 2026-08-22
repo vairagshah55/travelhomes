@@ -26,13 +26,7 @@ export type BlogDTO = {
   authorImg?: string;
   authorRole?: string;
   createdAt?: string;
-  updatedAt?: string;
   status?: "draft" | "published";
-  /* Per-article SEO, authored in the CMS Blogs tab. Read by /blogsDetials via
-     `useDocumentMeta` — before that these were stored and never used. */
-  metaTitle?: string;
-  metaKeywords?: string;
-  metaDescription?: string;
 };
 
 export type Article = {
@@ -60,34 +54,6 @@ export function readingMinutes(html?: string, fallback?: string): number {
   const text = String(html || fallback || "").replace(/<[^>]*>/g, " ");
   const words = text.trim().split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
-}
-
-/** Tags stripped, entities decoded, whitespace collapsed. */
-export function plainText(html?: string): string {
-  const withoutTags = String(html || "").replace(/<[^>]*>/g, " ");
-  /* A textarea decodes entities without executing anything it is handed. */
-  let decoded = withoutTags;
-  if (typeof document !== "undefined") {
-    const scratch = document.createElement("textarea");
-    scratch.innerHTML = withoutTags;
-    decoded = scratch.value;
-  }
-  return decoded.replace(/\s+/g, " ").trim();
-}
-
-/**
- * Meta-description-length summary of a post body.
- *
- * Cut on the last word boundary before the limit, so the snippet doesn't end
- * mid-word — search engines render it verbatim.
- */
-export function excerptFrom(html?: string, limit = 160): string {
-  const text = plainText(html);
-  if (text.length <= limit) return text;
-  const clipped = text.slice(0, limit);
-  const lastSpace = clipped.lastIndexOf(" ");
-  const cut = lastSpace > limit * 0.6 ? clipped.slice(0, lastSpace) : clipped;
-  return cut.trimEnd() + "…";
 }
 
 export function initialsOf(name?: string): string {

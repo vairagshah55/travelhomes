@@ -166,7 +166,7 @@ export default function Index() {
 
   const { data: faqsData, isPending: faqsLoading } = useFaqs();
 
-  const { data: blogsData, isPending: blogsLoading } = useQuery({
+  const { data: blogsData } = useQuery({
     queryKey: ["homepage-blogs"],
     queryFn: async () => {
       const r = await fetch(`${API_BASE_URL}/api/blogs?status=published&limit=4`);
@@ -495,7 +495,7 @@ export default function Index() {
             </Section>
           )}
 
-        <LatestArticles latestBlogs={latestBlogs} loadingBlogs={blogsLoading} />
+        <LatestArticles latestBlogs={latestBlogs} loadingBlogs={!blogsData} />
 
         <FAQSection
           homepageSections={homepageSections}
