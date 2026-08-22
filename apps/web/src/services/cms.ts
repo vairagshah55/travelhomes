@@ -2,6 +2,16 @@ import api from "./api";
 
 export interface BlogPayload {
   title: string;
+  /**
+   * URL segment. Optional — the server derives one from the title when it's
+   * absent (`blogs.service.toSlug`).
+   *
+   * Worth sending explicitly on an update: `blogs.service.update` re-derives
+   * the slug whenever a title arrives without one, so patching a headline alone
+   * would silently change the post's public URL. The CSV importer pins it for
+   * exactly that reason.
+   */
+  slug?: string;
   category?: string;
   description?: string;
   content?: string;

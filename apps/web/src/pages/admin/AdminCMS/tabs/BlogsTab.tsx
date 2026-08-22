@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Download,
   Edit2,
   FileText,
   Image as ImageIcon,
@@ -9,6 +10,7 @@ import {
   Send,
   Trash2,
   Undo2,
+  Upload,
   User,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,6 +26,15 @@ import {
   type FilterDefinition,
 } from "@/components/admin/AdminFilterBar";
 import { AdminDataTable, type ColumnDef, type RowAction } from "@/components/admin/AdminDataTable";
+import { downloadCsv, stampedFilename } from "../csvIo";
+import {
+  BLOG_CSV_COLUMNS,
+  blogsCsvTemplate,
+  blogsToCsv,
+  buildBlogImportPlan,
+  type PlannedBlogRow,
+} from "../blogsIo";
+import { ImportCsvModal } from "../modals/ImportCsvModal";
 import {
   Dialog,
   DialogContent,
@@ -52,7 +63,11 @@ import {
   Thumb,
 } from "../ui";
 
-type BlogForm = Required<Omit<BlogPayload, "status">> & { status: "published" | "draft" };
+/* `slug` is omitted as well as `status`: the dialog has no slug field, because
+   the server derives one from the title. Only the CSV importer sets it. */
+type BlogForm = Required<Omit<BlogPayload, "status" | "slug">> & {
+  status: "published" | "draft";
+};
 
 type BlogRow = BlogPayload & {
   _id?: string;
@@ -122,6 +137,7 @@ export function BlogsTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<BlogRow | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -274,6 +290,45 @@ export function BlogsTab() {
     }
   };
 
+  /**
+   * Export what's on screen, not the whole table.
+   *
+   * The toolbar's search and status filter are the admin's way of saying which
+   * rows they mean; exporting everything regardless would ignore that and hand
+   * back a file they then have to filter again by hand.
+   */
+  const handleExport = () => {
+    if (!visible.length) {
+      toast.error("Nothing to export");
+      return;
+    }
+    downloadCsv(stampedFilename("blogs", new Date()), blogsToCsv(visible));
+    const n = visible.length;
+    toast.success(
+      `Exported ${n} ${n === 1 ? "article" : "articles"}` +
+        (hasQuery ? " matching your filters" : ""),
+    );
+  };
+
+  /**
+   * Apply one planned row. Per-record because the API has no bulk endpoint.
+   *
+   * The plan already decided create vs update and built the exact payload —
+   * including pinning the slug on updates so a headline edit can't silently
+   * change a live URL. See `blogsIo.ts`.
+   */
+  const applyImportRow = async (row: PlannedBlogRow) => {
+    if (row.existing) {
+      const id = rowId(row.existing);
+      const res: any = await cmsService.updateBlog(id, row.payload);
+      const updated: BlogRow = res?.data || { ...row.existing, ...row.payload };
+      setBlogs((prev) => prev.map((b) => (rowId(b) === id ? updated : b)));
+      return;
+    }
+    const res: any = await cmsService.createBlog(row.payload);
+    if (res?.data) setBlogs((prev) => [res.data, ...prev]);
+  };
+
   const columns: ColumnDef<BlogRow>[] = [
     {
       key: "title",
@@ -334,10 +389,28 @@ export function BlogsTab() {
         sortValue={sortKey}
         onSortChange={setSortKey}
         primaryAction={
-          <button onClick={openCreate} className={BTN_PRIMARY}>
-            <Plus size={15} strokeWidth={2.4} />
-            Add blog
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              className={BTN_NEUTRAL}
+              title="Download the listed articles as a CSV"
+            >
+              <Download size={15} strokeWidth={2.4} />
+              <span className="max-sm:sr-only">Export</span>
+            </button>
+            <button
+              onClick={() => setShowImport(true)}
+              className={BTN_NEUTRAL}
+              title="Add or update articles from a CSV"
+            >
+              <Upload size={15} strokeWidth={2.4} />
+              <span className="max-sm:sr-only">Import</span>
+            </button>
+            <button onClick={openCreate} className={BTN_PRIMARY}>
+              <Plus size={15} strokeWidth={2.4} />
+              Add blog
+            </button>
+          </div>
         }
         filterSlot={
           <AdminFilterBar
@@ -562,6 +635,48 @@ export function BlogsTab() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ImportCsvModal<PlannedBlogRow>
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        title="Import blogs"
+        description="Adds new articles and updates existing ones. Nothing is deleted."
+        columns={BLOG_CSV_COLUMNS}
+        rowNoun="article"
+        guidance={
+          <>
+            <p>
+              Only <span className="font-semibold text-app-fg">title</span> is required, and column
+              order doesn't matter. Rows match existing articles by{" "}
+              <span className="font-semibold text-app-fg">id</span>, then{" "}
+              <span className="font-semibold text-app-fg">slug</span>, then title — so exporting,
+              editing and re-importing updates in place instead of duplicating.
+            </p>
+            <p>
+              A new row with no <span className="font-semibold text-app-fg">status</span> is imported
+              as a <span className="font-semibold text-app-fg">draft</span>, so a half-finished file
+              can't publish itself to the live journal.
+            </p>
+            <p>
+              Blank cells leave the saved value alone rather than clearing it, and no article is ever
+              deleted by an import. The{" "}
+              <span className="font-mono text-[11.5px]">content</span> column holds the article body
+              as HTML.
+            </p>
+          </>
+        }
+        buildPlan={(text) => buildBlogImportPlan(text, blogs)}
+        onApplyRow={applyImportRow}
+        onDone={({ created, updated, failed }) => {
+          if (failed === 0) toast.success(`Imported ${created + updated} articles`);
+          else toast.error(`${failed} row${failed === 1 ? "" : "s"} could not be saved`);
+          void load();
+        }}
+        onDownloadTemplate={() =>
+          downloadCsv(stampedFilename("blogs-template", new Date()), blogsCsvTemplate())
+        }
+        renderRowMeta={(row) => row.payload.status}
+      />
 
       <ConfirmModal
         open={!!pendingDelete}

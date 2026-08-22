@@ -1,4 +1,9 @@
+import { buildCsv, downloadCsv, norm, parseCsv, slug } from "./csvIo";
 import type { Feature } from "./types";
+
+/* Re-exported so existing callers (and `featuresIo.spec.ts`) keep importing
+   these from here after the primitives moved to `csvIo.ts`. */
+export { downloadCsv, parseCsv };
 
 /**
  * CSV import/export for the CMS Features tab.
@@ -69,12 +74,6 @@ export type FeatureStatus = "enable" | "disable";
 
 /* ── Serialising ─────────────────────────────────────────────────────────── */
 
-/** Quote a field only when it needs it, doubling any embedded quotes. */
-function escapeField(value: unknown): string {
-  const s = value == null ? "" : String(value);
-  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 /**
  * @param iconData Optional `feature id → data URL`. When supplied, an
  *   `iconData` column is appended so the file carries the images themselves.
@@ -82,10 +81,11 @@ function escapeField(value: unknown): string {
  */
 export function toCsv(features: Feature[], iconData?: Map<string, string>): string {
   const withIcons = !!iconData && iconData.size > 0;
-  const header = [...CSV_COLUMNS, ...(withIcons ? [ICON_DATA_COLUMN] : [])].join(",");
+  const headers = [...CSV_COLUMNS, ...(withIcons ? [ICON_DATA_COLUMN] : [])];
 
-  const lines = features.map((f) =>
-    [
+  return buildCsv(
+    headers,
+    features.map((f) => [
       f.id ?? "",
       f.name ?? "",
       f.type ?? "",
@@ -94,12 +94,8 @@ export function toCsv(features: Feature[], iconData?: Map<string, string>): stri
       f.description ?? "",
       f.icon ?? "",
       ...(withIcons ? [iconData!.get(f.id) ?? ""] : []),
-    ]
-      .map(escapeField)
-      .join(","),
+    ]),
   );
-  // CRLF is what RFC 4180 specifies and what Excel expects.
-  return [header, ...lines].join("\r\n");
 }
 
 /**
@@ -150,85 +146,6 @@ export function dataUrlToFile(dataUrl: string, filename: string): File | null {
   }
 }
 
-/**
- * Hand the CSV to the browser as a download.
- *
- * The leading BOM is deliberate: without it Excel reads the file as the local
- * ANSI codepage and mangles any non-ASCII feature name on open.
- */
-export function downloadCsv(filename: string, csv: string): void {
-  const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  // Revoking synchronously can cancel the download in Safari.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-/* ── Parsing ─────────────────────────────────────────────────────────────── */
-
-/**
- * RFC 4180 CSV → grid of cells.
- *
- * A `split(",")` would have been shorter and wrong: descriptions routinely
- * contain commas, and a quoted field may span newlines. This walks the string
- * once, tracking whether it's inside quotes, and treats `""` as an escaped
- * quote. Handles LF and CRLF, and strips a UTF-8 BOM.
- */
-export function parseCsv(input: string): string[][] {
-  const text = input.replace(/^﻿/, "");
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-
-    if (inQuotes) {
-      if (ch === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        field += ch;
-      }
-      continue;
-    }
-
-    if (ch === '"') {
-      inQuotes = true;
-    } else if (ch === ",") {
-      row.push(field);
-      field = "";
-    } else if (ch === "\n" || ch === "\r") {
-      if (ch === "\r" && text[i + 1] === "\n") i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else {
-      field += ch;
-    }
-  }
-
-  // Trailing field/row, unless the file simply ended with a newline.
-  if (field !== "" || row.length > 0) {
-    row.push(field);
-    rows.push(row);
-  }
-
-  // Drop rows that are entirely empty (blank lines between records).
-  return rows.filter((r) => r.some((c) => c.trim() !== ""));
-}
-
 /* ── Planning ────────────────────────────────────────────────────────────── */
 
 export type PlannedAction = "create" | "update" | "error";
@@ -261,8 +178,6 @@ export interface ImportPlan {
   /** Set when the file can't be used at all. */
   fatal?: string;
 }
-
-const norm = (s: string) => s.trim().toLowerCase();
 
 /**
  * Turn parsed CSV into an explicit list of what would happen, without doing any
@@ -382,12 +297,6 @@ export function buildImportPlan(
 
 /** `features-camper-van-2026-08-17.csv` */
 export function exportFilename(category: string, type: string, today: Date): string {
-  const slug = (s: string) =>
-    s
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
   const stamp = [
     today.getFullYear(),
     String(today.getMonth() + 1).padStart(2, "0"),
