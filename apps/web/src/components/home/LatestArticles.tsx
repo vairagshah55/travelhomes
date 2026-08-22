@@ -7,6 +7,7 @@ import Section from "../Section";
 import ArticleCard from "../ArticleCard";
 import { ArticlesSkeleton } from "./skeletons";
 import { ScrollReveal, staggerContainer, staggerItem } from "./ScrollReveal";
+import { getImageUrl } from "@/lib/utils";
 
 type BlogDTO = {
   _id: string;
@@ -89,7 +90,14 @@ export function LatestArticles({ latestBlogs, loadingBlogs = false }: LatestArti
                     className="snap-start w-[74vw] max-w-[300px] flex-shrink-0 md:w-auto md:max-w-none md:flex-shrink"
                   >
                     <Link to={`/blogsDetials?slug=${b.slug}`} className="block">
-                      <ArticleCard image={b.coverImage || "/placeholder.svg"} title={b.title} />
+                      {/* `getImageUrl`, not the raw field. A cover uploaded through the CMS
+                          is stored as `/uploads/<file>`, which resolves against the SITE
+                          origin — the API is a different host in every environment but
+                          the dev proxy, so the bare path 404s and the card falls back to
+                          its placeholder. /blogs and the article page already went through
+                          the helper; this card was the one left passing the value straight
+                          to <img>. */}
+                      <ArticleCard image={getImageUrl(b.coverImage)} title={b.title} />
                     </Link>
                   </motion.div>
                 ))

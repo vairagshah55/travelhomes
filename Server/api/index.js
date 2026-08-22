@@ -133,6 +133,14 @@ app.use("/uploads", express.static(uploadsDir));
 const invoicesDir = path.join(process.cwd(), "invoices");
 app.use("/invoices", express.static(invoicesDir));
 
+// A file that isn't there must 404 here rather than fall through to the JSON
+// API 404 at the bottom of this file. These paths are loaded cross-origin by
+// <img>, and Chrome's Opaque Response Blocking rejects an `application/json`
+// body served to an image — so a missing upload surfaced in the console as
+// `net::ERR_BLOCKED_BY_ORB`, which reads like a CORS fault and sends you
+// looking in the wrong place. An empty 404 is what a static host would send.
+app.use(["/uploads", "/invoices"], (_req, res) => res.sendStatus(404));
+
 // Import all migrated routes
 const activitiesRoutes = require("../modules/activities/activities.router");
 const adminAnalyticsRoutes = require("../modules/admin-analytics/admin-analytics.router");
