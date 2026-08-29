@@ -504,16 +504,36 @@ async function rate(id, rating) {
   return offer;
 }
 
+/**
+ * The onboarding collection behind an offer that carries no `sourceModel`.
+ *
+ * `serviceType` is stamped by onboarding.service rather than typed by the
+ * vendor, so it is the reliable fallback — not `category`, which for a vehicle
+ * holds its class ("Sedan", "MUV / MPV"). Mirrors pickOnboardingModel in
+ * management.service.
+ */
+const SOURCE_MODEL_BY_SERVICE_TYPE = {
+  activity: "ActivityOnboarding",
+  "camper-van": "CaravanOnboarding",
+  "unique-stay": "StayOnboarding",
+  "vehicle-rental": "VehicleOnboarding",
+};
+
 async function syncSourceStatus(offer, status, reason) {
-  if (!offer.sourceId || !offer.sourceModel) return;
-  const Model = onboardingModelFor(offer.sourceModel);
+  const sourceModel =
+    offer.sourceModel || SOURCE_MODEL_BY_SERVICE_TYPE[(offer.serviceType || "").toLowerCase()];
+  const Model = sourceModel ? onboardingModelFor(sourceModel) : null;
   if (!Model) {
     // Loud, because the failure is otherwise invisible: the offer flips, the
     // admin sees success, and only the vendor ever notices the onboarding half
     // never moved. That silence is how the vehicle case shipped.
     logger.warn(
-      { sourceModel: offer.sourceModel, offerId: String(offer._id) },
-      "[Offer] no onboarding model for sourceModel — source status NOT synced",
+      {
+        sourceModel: offer.sourceModel,
+        serviceType: offer.serviceType,
+        offerId: String(offer._id),
+      },
+      "[Offer] no onboarding model for this offer — source status NOT synced",
     );
     return;
   }
@@ -526,9 +546,43 @@ async function syncSourceStatus(offer, status, reason) {
   if (status === "rejected" && reason) updateFields.rejectionReason = reason;
 
   try {
-    await Model.findByIdAndUpdate(offer.sourceId, updateFields);
+    let synced = null;
+    if (offer.sourceId) {
+      synced = await Model.findByIdAndUpdate(offer.sourceId, updateFields, { new: true });
+    }
+    /**
+     * Fall back to the vendor's in-flight submission of this type.
+     *
+     * Returning early on a missing `sourceId` (what this did) drops the
+     * decision silently, and the vendor is then stuck on "under review" with
+     * no way back: the offer is decided, so the admin's Approve action is
+     * hidden and the sync can never be retried. Only docs still awaiting a
+     * decision are touched, so an approved listing is never walked backwards.
+     */
+    if (!synced && offer.vendorId) {
+      synced = await Model.findOneAndUpdate(
+        { vendorId: offer.vendorId, status: { $in: ["pending", "draft"] } },
+        updateFields,
+        { sort: { createdAt: -1 }, new: true },
+      );
+      if (synced) {
+        logger.warn(
+          { offerId: String(offer._id), onboardingId: String(synced._id) },
+          "[Offer] offer had no usable sourceId — synced the vendor's latest in-flight submission",
+        );
+      }
+    }
+
+    if (!synced) {
+      logger.warn(
+        { offerId: String(offer._id), sourceId: String(offer.sourceId || ""), sourceModel },
+        "[Offer] no onboarding doc matched this offer — source status NOT synced",
+      );
+      return;
+    }
+
     logger.info(
-      { sourceModel: offer.sourceModel, sourceId: String(offer.sourceId), sourceStatus },
+      { sourceModel, sourceId: String(synced._id), sourceStatus },
       "[Offer] source status synced",
     );
   } catch (err) {

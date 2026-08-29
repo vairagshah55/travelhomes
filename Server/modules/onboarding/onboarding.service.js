@@ -209,6 +209,107 @@ const TYPE_LABELS = {
   vehicle: "vehicle rental",
 };
 
+/**
+ * The offer statuses an admin reaches by deciding a submission, mapped to the
+ * onboarding status that decision means. `cancelled`/`deactivated`/`blocked`
+ * are admin actions too (offers.service maps them to "rejected"), so they are
+ * listed here rather than being treated as "no decision yet".
+ */
+const OFFER_STATUS_TO_ONBOARDING = {
+  approved: "approved",
+  rejected: "rejected",
+  cancelled: "cancelled",
+  deactivated: "rejected",
+  blocked: "rejected",
+};
+
+/**
+ * Bring a "pending" onboarding doc back in line with the Offer the admin
+ * actually acts on, and report whether it is still in flight.
+ *
+ * The doc's status is a denormalised copy of a decision that is made on the
+ * Offer: the admin approves a row in /admin/management/listing, and the server
+ * mirrors that onto the onboarding doc. Every mirror written so far has leaked
+ * at least once — offers.service skipped vehicles because its sourceModel
+ * lookup predated them, management.service wrote the decision onto a caravan,
+ * and supersedePreviousSubmissions used to retire the offer alone. Each leak
+ * produced the same stuck state, and it is unrecoverable from the UI: the
+ * offer is already approved, so the admin's Approve action is hidden and the
+ * sync can never be re-run. The vendor sits on "under review" forever with
+ * every other service locked — the state the vehicle-rental approvals left
+ * their vendors in before the sourceModel map was fixed.
+ *
+ * So the gate stops trusting the copy. When the doc says "pending" we ask its
+ * Offer, and if the Offer has already been decided the doc is corrected — the
+ * Offer is the record the admin acted on, so it wins. This heals docs stranded
+ * by past bugs on the next read, and contains any future mirror that leaks.
+ *
+ * A doc with no Offer row at all is left pending: that pairing is what
+ * scripts/fix-stranded-onboarding.js resolves with a human looking, and a read
+ * path shouldn't cancel a submission on the strength of a missing row (an
+ * offer-sync failure mid-submit looks identical).
+ *
+ * Never throws: a reconciliation failure must not take down /onboarding/mine.
+ * `OfferModel` is injectable for tests.
+ */
+async function reconcileWithOffer(doc, OfferModel = Offer) {
+  if (!doc || doc.status !== "pending" || !doc._id) return doc;
+
+  try {
+    const offers = await OfferModel.find({ sourceId: doc._id }, "status rejectionReason").lean();
+    if (!offers.length) return doc;
+    if (offers.some((o) => o.status === "pending")) return doc;
+
+    const decided = offers.find((o) => OFFER_STATUS_TO_ONBOARDING[o.status]);
+    if (!decided) return doc;
+
+    const next = OFFER_STATUS_TO_ONBOARDING[decided.status];
+    doc.status = next;
+    if (next === "rejected" && decided.rejectionReason) {
+      doc.rejectionReason = decided.rejectionReason;
+    }
+    await doc.save();
+    logger.warn(
+      {
+        model: doc.constructor && doc.constructor.modelName,
+        onboardingId: String(doc._id),
+        offerStatus: decided.status,
+        next,
+      },
+      "[Onboarding] pending submission disagreed with its offer — corrected from the offer",
+    );
+  } catch (err) {
+    logger.error(
+      { err: err.message, onboardingId: String(doc._id) },
+      "[Onboarding] offer reconciliation failed — leaving submission as-is",
+    );
+  }
+  return doc;
+}
+
+/**
+ * The vendor's genuinely in-flight submission of one type, or null.
+ *
+ * One definition of "in flight" for both gates — the read gate behind
+ * GET /onboarding/mine and the write gate in assertNoOtherPendingSubmission.
+ * They have drifted apart before, and when they do the wizard renders every
+ * step and only the final submit fails.
+ *
+ * The loop exists because reconcileWithOffer can retire the doc it was handed:
+ * each pass either returns a still-pending doc or removes one from the pending
+ * set, so it terminates. Bounded anyway, so a save that silently no-ops can't
+ * spin.
+ */
+async function findLivePendingSubmission(Model, userId, OfferModel = Offer) {
+  for (let i = 0; i < 5; i += 1) {
+    const pending = await Model.findOne({ userId, status: "pending" }).sort({ createdAt: -1 });
+    if (!pending) return null;
+    const reconciled = await reconcileWithOffer(pending, OfferModel);
+    if (reconciled.status === "pending") return reconciled;
+  }
+  return null;
+}
+
 // A vendor may only have one submission in flight at a time — resubmitting
 // the SAME type (editing a pending draft) is allowed and replaces it via
 // supersedePreviousSubmissions below, but starting a DIFFERENT type while one is
@@ -216,10 +317,10 @@ const TYPE_LABELS = {
 // navigating straight to another /onboarding/<type> URL.
 async function findPendingSubmission(userId, excludingType) {
   const [activity, caravan, stay, vehicle] = await Promise.all([
-    excludingType === "activity" ? null : ActivityOnboarding.findOne({ userId, status: "pending" }),
-    excludingType === "caravan" ? null : CaravanOnboarding.findOne({ userId, status: "pending" }),
-    excludingType === "stay" ? null : StayOnboarding.findOne({ userId, status: "pending" }),
-    excludingType === "vehicle" ? null : VehicleOnboarding.findOne({ userId, status: "pending" }),
+    excludingType === "activity" ? null : findLivePendingSubmission(ActivityOnboarding, userId),
+    excludingType === "caravan" ? null : findLivePendingSubmission(CaravanOnboarding, userId),
+    excludingType === "stay" ? null : findLivePendingSubmission(StayOnboarding, userId),
+    excludingType === "vehicle" ? null : findLivePendingSubmission(VehicleOnboarding, userId),
   ]);
   if (activity) return { type: "activity", doc: activity };
   if (caravan) return { type: "caravan", doc: caravan };
@@ -615,7 +716,10 @@ async function submitVehicle(body, user) {
         : doc.withDriverExcludes || [],
 
       serviceType: "vehicle-rental",
-      photos: { coverUrl: strCoverImage[0] || strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
+      photos: {
+        coverUrl: strCoverImage[0] || strPhotos[0] || "",
+        galleryUrls: strPhotos.slice(0, 6),
+      },
       status: "pending",
       userId: user._id,
       vendorId: vendor && vendor.vendorId,
@@ -759,13 +863,16 @@ const attachVehicleSelfie = (id, imageData, user) =>
  * services unlocked, the stay wizard rendered all eight steps — and only the
  * final submit failed, with `assertNoOtherPendingSubmission` reporting the
  * pending caravan the vendor was never shown. The gates and the guard have to
- * agree on what counts as in-flight, and `findPendingSubmission` is the
- * definition: any doc with status "pending".
+ * agree on what counts as in-flight, so both now go through
+ * `findLivePendingSubmission` — "pending, and its offer has not already been
+ * decided" — rather than reading the doc's status twice from two places.
  *
- * Exported for tests: `Model` only needs a `findOne(filter).sort(spec)` chain.
+ * Exported for tests: `Model` only needs a `findOne(filter).sort(spec)` chain,
+ * and `OfferModel` is injectable so the reconciliation can be exercised without
+ * a database.
  */
-async function findCurrentSubmission(Model, userId) {
-  const pending = await Model.findOne({ userId, status: "pending" }).sort({ createdAt: -1 });
+async function findCurrentSubmission(Model, userId, OfferModel = Offer) {
+  const pending = await findLivePendingSubmission(Model, userId, OfferModel);
   if (pending) return pending;
   return Model.findOne({ userId }).sort({ createdAt: -1 });
 }
@@ -875,6 +982,8 @@ module.exports = {
   attachVehicleSelfie,
   getMine,
   findCurrentSubmission, // exported for tests
+  findLivePendingSubmission, // exported for tests
+  reconcileWithOffer, // exported for tests
   listActivities,
   listCaravans,
   listStays,
