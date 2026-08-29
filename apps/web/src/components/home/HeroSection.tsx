@@ -395,10 +395,10 @@ export function HeroSection({
             Caravans, unique stays, curated activities, and vehicle rentals across India.
           </motion.p>
 
-          {/* Category filter pills — hidden on phones, where they duplicated
+          {/* Category filter cards — hidden on phones, where they duplicated
               the tabs already in MobileSearchSheet; centred row from sm up. */}
           <motion.div
-            className="hidden sm:flex flex-nowrap items-center justify-start sm:justify-center gap-2 md:gap-3 mb-5 md:mb-8 lg:mb-5 lg:short:mb-3 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
+            className="hidden sm:flex flex-nowrap items-center justify-start sm:justify-center gap-4 md:gap-5 mb-5 md:mb-8 lg:mb-5 lg:short:mb-3 w-full sm:w-auto max-w-full overflow-x-auto scrollbar-hide snap-rail rail-bleed sm:overflow-visible"
             initial="hidden"
             animate="visible"
             variants={{

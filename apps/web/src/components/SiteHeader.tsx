@@ -21,6 +21,8 @@ import { Button } from "@/components/ui/button";
 import LogoWebsite, { HomeLogoWebsite } from "./ui/LogoWebsite";
 import { BrandLogo } from "./BrandLogo";
 import { useAuth } from "../contexts/AuthContext";
+// Shape shared with the hero's category cards — see the note on the constant.
+import { CATEGORY_BUTTON_RADIUS } from "./FilterButton";
 import UserDropdown from "./UserDropdown";
 import { LocationDropdown } from "./LocationDropdown";
 import { GuestDropdown } from "./GuestDropdown";
@@ -417,59 +419,114 @@ export default function SiteHeader({
               )}
             </AnimatePresence>
 
-            <AnimatePresence mode="wait">
-              {showFilterButtons && !isSearchPage && (
-                <motion.div
-                  initial={{ opacity: 0, y: -12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-                  className="flex flex-wrap max-md:hidden items-center sm:ml-52 justify-center gap-3 py-3"
-                >
-                  {navTabs.map((tab) => {
-                    const IconComponent = tab.icon;
-                    // Only the user's explicit click drives the visual state.
-                    // (The transient scroll-spy "section-in-view" highlight was
-                    // removed — it flashed a dot/tint on the tab for a few
-                    // seconds while scrolling, which read as a glitch.)
-                    const isActive = activeFilter === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => handleTabClick(tab.id)}
-                        className={`group relative flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
-                          isActive ? "text-white" : "text-[#0a1c1c] hover:text-[#117479]"
-                        }`}
-                      >
-                        {/* Active pill — shared layoutId slides between tabs.
+            {/**
+             * Centre section of the three-part header: logo left, categories
+             * centred, actions right.
+             *
+             * This replaces a hardcoded 208px left margin on the nav itself,
+             * which shoved the group clear of the logo. (Spelling that utility
+             * out here would be enough to keep Tailwind emitting it — the
+             * scanner reads raw file text, comments included.) It is not
+             * centring: it tracks the logo's width, not the header's, so the
+             * group drifted off-centre at every viewport and would move again
+             * if the lockup were ever resized.
+             *
+             * Centred by taking the nav out of flow at `lg`, where the desktop
+             * logo appears. `justify-between` on the row then has only the logo
+             * and the actions left to space out, and the group holds its
+             * position regardless of how wide either side gets.
+             *
+             * 46%, not a true 50%: the right cluster ("List your offering" plus
+             * the profile menu) is materially wider than the logo, so the
+             * midpoint of the *free space* is left of the midpoint of the
+             * header. Sitting at 50% therefore reads as a gap beside the
+             * lockup and a crowd beside the actions. A percentage keeps that
+             * correction proportional as the viewport grows, which a fixed
+             * margin could not. This is the one token to tune: raise it toward
+             * 50% to move the group right, lower it to move it left.
+             *
+             * The offset lives on this wrapper rather than on the motion.div
+             * because Framer writes an inline `transform` for the `y`
+             * animation, which would overwrite a Tailwind `-translate-x-1/2`
+             * and leave the group centred on its own left edge.
+             *
+             * `top-0 h-20` rather than `inset-y-0`: the positioning ancestor is
+             * the fixed <header>, which also holds the expandable mobile menu,
+             * so a full-height box would centre against that too. Pinning to
+             * the row's own height keeps it on the row's centre line. Below
+             * `lg` nothing is repositioned — the nav stays in normal flow and
+             * the phone/tablet header behaves as it did.
+             */}
+            <div className="max-md:hidden lg:absolute lg:top-0 lg:left-[46%] lg:-translate-x-1/2 lg:h-20 lg:flex lg:items-center">
+              <AnimatePresence mode="wait">
+                {showFilterButtons && !isSearchPage && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+                    className="flex flex-wrap items-center justify-center gap-3 py-3"
+                  >
+                    {navTabs.map((tab) => {
+                      const IconComponent = tab.icon;
+                      // Only the user's explicit click drives the visual state.
+                      // (The transient scroll-spy "section-in-view" highlight was
+                      // removed — it flashed a dot/tint on the tab for a few
+                      // seconds while scrolling, which read as a glitch.)
+                      const isActive = activeFilter === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => handleTabClick(tab.id)}
+                          className={`group relative flex items-center gap-2 px-4 h-11 ${CATEGORY_BUTTON_RADIUS} text-sm font-medium transition-colors duration-150 ${
+                            isActive ? "text-white" : "text-[#0a1c1c] hover:text-[#117479]"
+                          }`}
+                        >
+                          {/* Active fill — shared layoutId slides between tabs.
+                            Matched to the hero card: the theme token rather than
+                            a second copy of the hex, a white hairline (a
+                            turquoise border on a turquoise fill is invisible),
+                            and two soft layers instead of the old 0.55 halo.
                             Arbitrary values must not contain spaces: Tailwind
                             drops the whole class, which is why the glow on
                             `rgba(59, 217, 218, 0.65)` never rendered. */}
-                        {isActive && (
-                          <motion.span
-                            layoutId="site-header-active-pill"
-                            className="absolute inset-0 rounded-full bg-[#3BD9DA] shadow-[0_2px_10px_rgba(59,217,218,0.55)]"
-                            transition={{ type: "spring", stiffness: 500, damping: 38, mass: 0.6 }}
+                          {isActive && (
+                            <motion.span
+                              layoutId="site-header-active-pill"
+                              className={`absolute inset-0 ${CATEGORY_BUTTON_RADIUS} bg-th-brand border border-white/30 shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(59,217,218,0.20)]`}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 38,
+                                mass: 0.6,
+                              }}
+                            />
+                          )}
+
+                          {/* Idle background — subtle outlined chip when NOT active.
+                            Opaque white, not the `bg-white/70` this had: a
+                            translucent fill takes its colour from whatever sits
+                            behind it. Same hairline and soft two-layer shadow as
+                            the hero card. */}
+                          {!isActive && (
+                            <span
+                              className={`absolute inset-0 ${CATEGORY_BUTTON_RADIUS} bg-white border border-[#E4E8F0] shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(16,24,40,0.06)] group-hover:bg-[#FAFBFC] group-hover:border-[#CBD5E1] transition-colors duration-150`}
+                            />
+                          )}
+
+                          <IconComponent
+                            className={`relative z-10 w-4 h-4 transition-colors duration-150 ${
+                              isActive ? "text-white" : "text-[#5F6A82] group-hover:text-[#117479]"
+                            }`}
                           />
-                        )}
-
-                        {/* Idle background — subtle outlined chip when NOT active */}
-                        {!isActive && (
-                          <span className="absolute inset-0 rounded-full bg-white/70 border border-gray-200/80 group-hover:bg-[#e6fafa] group-hover:border-[#3bd9da]/30 transition-colors duration-150" />
-                        )}
-
-                        <IconComponent
-                          className={`relative z-10 w-4 h-4 transition-colors duration-150 ${
-                            isActive ? "text-white" : "text-[#5F6A82] group-hover:text-[#117479]"
-                          }`}
-                        />
-                        <span className="relative z-10">{tab.label}</span>
-                      </button>
-                    );
-                  })}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                          <span className="relative z-10">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             <AnimatePresence>
               {showSearchSection && !isSearchPage && (
@@ -995,7 +1052,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`max-md:hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`max-md:hidden md:flex items-center gap-2 ${CATEGORY_BUTTON_RADIUS} px-5 h-11 text-sm font-semibold transition-all duration-300 ease-in-out border border-white/30 bg-th-brand text-white hover:bg-[#2BC7C8] shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(59,217,218,0.20)] hover:shadow-[0_2px_4px_rgba(16,24,40,0.06),0_8px_20px_rgba(59,217,218,0.28)] hover:-translate-y-0.5`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
@@ -1020,7 +1077,7 @@ export default function SiteHeader({
                   className="flex items-center gap-2"
                 >
                   <button
-                    className={`hidden md:flex items-center gap-2 rounded-full px-5 h-10 text-sm font-semibold transition-all duration-300 ease-in-out ${"bg-[#3BD9DA] text-white hover:bg-[#2BC7C8] shadow-md hover:shadow-lg hover:-translate-y-0.5"}`}
+                    className={`hidden md:flex items-center gap-2 ${CATEGORY_BUTTON_RADIUS} px-5 h-11 text-sm font-semibold transition-all duration-300 ease-in-out border border-white/30 bg-th-brand text-white hover:bg-[#2BC7C8] shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(59,217,218,0.20)] hover:shadow-[0_2px_4px_rgba(16,24,40,0.06),0_8px_20px_rgba(59,217,218,0.28)] hover:-translate-y-0.5`}
                     onClick={() => navigate("/onboarding/service-selection")}
                   >
                     <CgLoadbarDoc size={16} className="shrink-0" />
@@ -1030,7 +1087,7 @@ export default function SiteHeader({
                       away in the menu, and the pill is the money action. */}
                   <button
                     onClick={() => navigate("/register")}
-                    className={`rounded-full px-4 md:px-5 h-9 text-[13px] md:text-sm font-semibold whitespace-nowrap bg-[#3BD9DA] hover:bg-[#2BC7C8] text-white shadow-sm hover:shadow-md transition-all duration-200 ${
+                    className={`${CATEGORY_BUTTON_RADIUS} px-4 md:px-5 h-9 md:h-11 text-[13px] md:text-sm font-semibold whitespace-nowrap border border-white/30 bg-th-brand hover:bg-[#2BC7C8] text-white shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(59,217,218,0.20)] hover:shadow-[0_2px_4px_rgba(16,24,40,0.06),0_8px_20px_rgba(59,217,218,0.28)] transition-all duration-200 ${
                       showMobileSearchPill ? "hidden lg:block" : ""
                     }`}
                   >

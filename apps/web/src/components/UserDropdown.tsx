@@ -13,6 +13,8 @@ import {
   X as CloseIcon,
   FileText,
 } from "lucide-react";
+// Same corner as the header tabs and the "List your offering" CTA beside it.
+import { CATEGORY_BUTTON_RADIUS } from "./FilterButton";
 import { useAuth } from "../contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getImageUrl } from "@/lib/utils";
@@ -154,11 +156,16 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label={`Account menu for ${displayName}`}
-        /* Cyan pill carries WHITE, matching every other brand-filled control.
+        /* Cyan chip carries WHITE, matching every other brand-filled control.
            The focus ring stays dark ink on purpose — it's an indicator, not a
-           label, and a white ring on cyan would be almost invisible. */
-        className={`group inline-flex items-center gap-2.5 h-11 rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0a1c1c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#3BD9DA] md:pl-3.5 md:pr-1.5 md:bg-[#3BD9DA] md:hover:bg-[#2BC7C8] md:shadow-md md:hover:shadow-lg md:hover:-translate-y-0.5 ${
-          isOpen ? "md:bg-[#2BC7C8] md:shadow-lg" : ""
+           label, and a white ring on cyan would be almost invisible.
+
+           Rounded rectangle, not a pill: it sits in a row with the category
+           tabs and the "List your offering" CTA, which share this corner. The
+           AVATAR inside stays a circle — that is a portrait frame, not a
+           button, and squaring it off would read as an error. */
+        className={`group inline-flex items-center gap-2.5 h-11 ${CATEGORY_BUTTON_RADIUS} transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0a1c1c] focus-visible:ring-offset-2 focus-visible:ring-offset-[#3BD9DA] md:pl-3.5 md:pr-1.5 md:border md:border-white/30 md:bg-th-brand md:hover:bg-[#2BC7C8] md:shadow-[0_1px_2px_rgba(16,24,40,0.04),0_4px_12px_rgba(59,217,218,0.20)] md:hover:shadow-[0_2px_4px_rgba(16,24,40,0.06),0_8px_20px_rgba(59,217,218,0.28)] md:hover:-translate-y-0.5 ${
+          isOpen ? "md:bg-[#2BC7C8]" : ""
         }`}
       >
         <span className="hidden md:inline-flex items-baseline gap-1 text-[13px] leading-none">
@@ -221,7 +228,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({ onSwitchToVendor }) => {
                   setIsOpen(false);
                   navigate(user ? "/onboarding/service-selection" : "/register");
                 }}
-                className="inline-flex items-center gap-2 text-sm font-medium bg-[#3BD9DA] text-white px-4 py-2 rounded-full hover:bg-[#2BC7C8] transition-colors"
+                className={`inline-flex items-center gap-2 text-sm font-medium bg-th-brand text-white px-4 py-2 ${CATEGORY_BUTTON_RADIUS} hover:bg-[#2BC7C8] transition-colors`}
               >
                 <FileText size={16} strokeWidth={2} />
                 List your offering
