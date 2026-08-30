@@ -648,7 +648,7 @@ export default function PaymentPage() {
                 <div className="flex flex-col sm:flex-row gap-4">
                   <div className="flex-1">
                     <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
-                      Pickup location
+                      Parking location
                     </label>
                     {Array.isArray(service?.pickupPoints) && service.pickupPoints.length > 0 ? (
                       <select

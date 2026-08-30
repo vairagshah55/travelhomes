@@ -65,7 +65,7 @@ const CapacityRow = ({
 );
 
 /**
- * Capacity, pickup points, and where the vehicle lives.
+ * Capacity and the parking location the vehicle is collected from.
  *
  * Separate from the caravan capacity step rather than a prop-flag variant of it:
  * a caravan's second number is sleeping capacity, a rental vehicle's is luggage,
@@ -136,8 +136,8 @@ const VehicleCapacityStep: React.FC<VehicleCapacityStepProps> = ({
 
       <SectionCard
         icon={<Navigation size={16} className="text-th-brand" strokeWidth={2.5} />}
-        title="Pickup point"
-        subtitle="Where a guest can collect the vehicle"
+        title="Parking location"
+        subtitle="Where the vehicle is parked and collected from"
         required
       >
         {/* One point, not a list. The Add-point button, the empty-state CTA and
@@ -179,8 +179,8 @@ const VehicleCapacityStep: React.FC<VehicleCapacityStepProps> = ({
   return (
     <div className="flex flex-col items-center gap-7 w-full max-w-2xl">
       <StepHeader
-        kicker="Capacity & Pickup"
-        subtitle="Set what the vehicle carries and where guests collect it."
+        kicker="Capacity & Parking"
+        subtitle="Set what the vehicle carries and where it is parked for collection."
       />
       <div className="w-full flex flex-col gap-4">{sections}</div>
     </div>

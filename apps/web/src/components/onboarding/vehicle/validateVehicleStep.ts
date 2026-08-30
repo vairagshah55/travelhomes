@@ -66,8 +66,8 @@ export function validateVehicleStep(
     // inline by VehicleCapacityStep rather than enforced here.
     // Still a string[] on the model, but the step now collects exactly one, so
     // the copy no longer tells the vendor to "add" anything.
-    if (!hasLine(formData.pickupPoints)) newErrors.pickupPoints = "A pickup point is required";
-    // No address checks: the Pickup location card was removed from this step.
+    if (!hasLine(formData.pickupPoints)) newErrors.pickupPoints = "A parking location is required";
+    // No address checks: the address card was removed from this step.
     // The listing's address/city/state/pincode now come from the business
     // address via deriveVehicleLocation, and that IS still validated — on the
     // Business Details step, which is required before submit.

@@ -511,7 +511,11 @@ export const VEHICLE_CATEGORY_NAMES: string[] = FALLBACK_VEHICLE_CATEGORIES.map(
  * vendor set the same fact in two places that could then disagree.
  */
 export const FALLBACK_VEHICLE_FEATURES: string[] = [
-  "Air Conditioning",
+  // "Air Conditioning" is deliberately absent — SpecsFeaturesStep has a
+  // dedicated toggle for it, backed by the structured `airConditioned` boolean
+  // the search page filters on. Listing it here too let a vendor set the same
+  // fact twice, in two places that could then disagree. (The comment above has
+  // said as much since this list was written; the entry itself was the bug.)
   "Music System",
   "Bluetooth",
   "USB Charging",

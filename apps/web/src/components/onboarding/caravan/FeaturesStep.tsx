@@ -39,7 +39,6 @@ interface FeaturesStepProps {
 
 const ICON_SIZE = 17;
 
-
 /**
  * Fallback amenity list — used only until an admin adds Camper Van features in
  * CMS. Order and wording match the canonical list seeded by
@@ -97,12 +96,13 @@ interface Amenity {
 
 /** CMS rows → pills, in the admin-defined display order (see sortFeatureRows). */
 function fromCms(rows: any[]): Amenity[] {
-  return sortFeatureRows(rows.filter((r) => r && r.name && (r.status ? r.status === "enable" : true)))
-    .map((r) => ({
-      key: String(r.id || r._id || r.name),
-      name: String(r.name),
-      icon: r.icon || "",
-    }));
+  return sortFeatureRows(
+    rows.filter((r) => r && r.name && (r.status ? r.status === "enable" : true)),
+  ).map((r) => ({
+    key: String(r.id || r._id || r.name),
+    name: String(r.name),
+    icon: r.icon || "",
+  }));
 }
 
 const FeaturesStep: React.FC<FeaturesStepProps> = ({
@@ -125,8 +125,7 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
   const amenities = React.useMemo<Amenity[]>(() => {
     const fromAdmin = fromCms(dynamicFeatures || []);
     const fallback = fallbackFeatures ?? FALLBACK_FEATURES;
-    const base =
-      fromAdmin.length > 0 ? fromAdmin : fallback.map((name) => ({ key: name, name }));
+    const base = fromAdmin.length > 0 ? fromAdmin : fallback.map((name) => ({ key: name, name }));
 
     // An amenity saved on the listing that the admin has since renamed,
     // disabled or deleted would otherwise disappear from the grid — and get
@@ -203,20 +202,6 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             );
           })}
 
-          {/* Custom features (added by user) */}
-          {customFeatures.map((cf, idx) => (
-            <button
-              key={`custom-${idx}`}
-              type="button"
-              onClick={() => onRemoveCustomFeature(idx)}
-              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)] cursor-pointer text-th-brand"
-            >
-              <MoreHorizontal size={15} />
-              <span className="text-[13px] font-semibold tracking-[-0.01em]">{cf.name}</span>
-              <X size={13} className="ml-0.5 opacity-70" />
-            </button>
-          ))}
-
           {/* Others button — the "Other (can add manually)" affordance */}
           <button
             type="button"
@@ -234,6 +219,23 @@ const FeaturesStep: React.FC<FeaturesStepProps> = ({
             />
             <span className="text-[13px] font-semibold tracking-[-0.01em]">Others</span>
           </button>
+          {/* Custom features, AFTER the Others button that creates them.
+              They used to sit before it, so a vendor who added one watched it
+              appear in the middle of the row rather than where they were
+              looking. Newest-last also keeps the list stable: the add
+              affordance no longer shifts right with every addition. */}
+          {customFeatures.map((cf, idx) => (
+            <button
+              key={`custom-${idx}`}
+              type="button"
+              onClick={() => onRemoveCustomFeature(idx)}
+              className="flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring)] cursor-pointer text-th-brand"
+            >
+              <MoreHorizontal size={15} />
+              <span className="text-[13px] font-semibold tracking-[-0.01em]">{cf.name}</span>
+              <X size={13} className="ml-0.5 opacity-70" />
+            </button>
+          ))}
         </div>
       )}
 

@@ -465,7 +465,7 @@ export default function VehicleDetails() {
                         vehicle.pickupPoints.length > 0 && (
                           <div className="pt-2">
                             <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                              Pickup points
+                              Parking location
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {vehicle.pickupPoints.map((point: string, i: number) => (

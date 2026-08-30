@@ -71,7 +71,9 @@ const CATEGORIES = [
 // search page filters on them, so listing them here too would let a vendor set
 // the same fact in two places that could then disagree.
 const FEATURES = [
-  { name: 'Air Conditioning', description: 'Working AC for all passengers.' },
+  // Air Conditioning is intentionally not seeded: the vehicle form has a
+  // dedicated toggle backed by the structured `airConditioned` field, and an
+  // amenity row for it let the same fact be set in two places.
   { name: 'Music System', description: 'In-car audio.' },
   { name: 'Bluetooth', description: 'Pair a phone for calls and audio.' },
   { name: 'USB Charging', description: 'Charging ports for passengers.' },
