@@ -203,9 +203,7 @@ const VehicleCardPreview: React.FC<VehicleCardPreviewProps> = ({
                 <SpecChip icon={<Users size={10} />} label={`${seatingCapacity} seats`} />
               )}
               {!!fuelType && <SpecChip icon={<Fuel size={10} />} label={fuelType} />}
-              {!!transmission && (
-                <SpecChip icon={<Settings2 size={10} />} label={transmission} />
-              )}
+              {!!transmission && <SpecChip icon={<Settings2 size={10} />} label={transmission} />}
               {airConditioned && <SpecChip icon={<Snowflake size={10} />} label="AC" />}
             </div>
           )}

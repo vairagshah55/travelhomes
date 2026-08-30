@@ -39,6 +39,16 @@ const TARGETS = [
   { collection: "caravanonboardings", prefix: "caravan", fields: ["idPhotos", "photos", "coverImage"] },
   { collection: "activityonboardings", prefix: "activity", fields: ["idPhotos", "photos", "coverImage"] },
   { collection: "stayonboardings", prefix: "stay", fields: ["idPhotos", "photos", "images", "coverImage"] },
+  // Vehicle rental was added after this list and never appended to it — the
+  // same omission that left VehicleOnboarding out of the sourceModel map. Its
+  // compliance scans (RC, driving licence) go in too: those are the documents
+  // most likely to arrive as a data URL, since they skip the client-side
+  // compressor that the gallery photos go through.
+  {
+    collection: "vehicleonboardings",
+    prefix: "vehicle",
+    fields: ["idPhotos", "photos", "coverImage", "rcPhotos", "driverLicencePhotos"],
+  },
   { collection: "profiles", prefix: "profile", fields: ["idPhotos", "photos", "photo"] },
   { collection: "blogs", prefix: "blog", fields: ["coverImage", "authorImg"] },
 ];
@@ -53,15 +63,24 @@ const mimeToExt = (mime) => {
   return "bin";
 };
 
+/**
+ * Kept in step with onboarding.service's parser. The `/^data:([^;]+);base64,/`
+ * form both files used demands `;base64` immediately after the mime, so a URL
+ * carrying a media-type parameter — `data:image/jpeg;charset=utf-8;base64,…` —
+ * did not match. Here that meant the repair silently skipped exactly the rows
+ * it exists to fix, and reported "nothing to migrate".
+ */
 function parseDataUrl(value) {
-  if (typeof value !== "string") return null;
-  const match = value.match(/^data:([^;]+);base64,(.*)$/);
-  if (!match) return null;
-  try {
-    return { buffer: Buffer.from(match[2], "base64"), ext: mimeToExt(match[1]) };
-  } catch {
-    return null;
-  }
+  if (typeof value !== "string" || !value.startsWith("data:")) return null;
+  const comma = value.indexOf(",");
+  if (comma < 0) return null;
+
+  const params = value.slice(5, comma).split(";");
+  if (!params.some((p) => p.trim().toLowerCase() === "base64")) return null;
+
+  const buffer = Buffer.from(value.slice(comma + 1), "base64");
+  if (!buffer.length) return null;
+  return { buffer, ext: mimeToExt((params[0] || "").trim().toLowerCase()) };
 }
 
 let filesWritten = 0;

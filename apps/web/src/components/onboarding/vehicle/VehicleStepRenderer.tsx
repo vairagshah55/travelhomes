@@ -6,8 +6,9 @@ import {
   DiscountOffersStep,
 } from "@/components/onboarding/shared";
 import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
-// The photo/name/description/rules step is identical across flows apart from
-// its labels, so the caravan one is reused with overrides rather than copied.
+// The photos step is shared with caravan and activity. Those two also collect a
+// name, description and house rules on it; vehicle shows photos only, so it
+// switches the other two cards off rather than forking the component.
 import DescriptionStep from "@/components/onboarding/caravan/DescriptionStep";
 import {
   VehicleClassStep,
@@ -55,11 +56,14 @@ export interface VehicleStepApi {
 
   // Step 3
   locationData: any;
-  mapSrc: string;
   adjustCapacity: (type: "seating" | "luggage", direction: "increase" | "decrease") => void;
-  addPickupPoint: () => void;
-  updatePickupPoint: (index: number, value: string) => void;
-  removePickupPoint: (index: number) => void;
+  /**
+   * One pickup point, not a list — the Add-point control is gone.
+   * `pickupPoints` is still a string[] on the model and the API, so this writes
+   * index 0 and clears the array when the field is emptied. Keeping the array
+   * shape means nothing downstream (Offer, validation, submit) had to change.
+   */
+  setPickupPoint: (value: string) => void;
 
   // Step 4
   toggleRentalMode: (mode: "selfDrive" | "withDriver") => void;
@@ -99,78 +103,98 @@ export interface VehicleStepApi {
 /**
  * Step dispatcher for the vehicle rental onboarding flow.
  *
- * Ten steps: 0 Details · 1 Class · 2 Specs · 3 Capacity | 4 Pricing · 5 Offers |
- * 6 Documents | 7 Business · 8 Personal | 9 Terms. Keep this order in sync with
- * validateVehicleStep and VEHICLE_PHASES in pages/onboarding/VehicleOnboarding.
+ * Nine steps: 0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing · 4 Offers |
+ * 5 Documents | 6 Business · 7 Personal | 8 Terms. Keep this order in sync with
+ * validateVehicleStep, TOTAL_STEPS and VEHICLE_PHASES in
+ * pages/onboarding/VehicleOnboarding. (Was ten: identity and photos merged.)
  */
 export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleStepApi }) {
   const { formData, setFormData, errors, setErrors } = api;
 
   switch (step) {
     case 0:
+      /**
+       * Vehicle identity AND photos on one page.
+       *
+       * These were two steps until the Vehicle Name, Description and Rules
+       * inputs came out of the photos step, which left it holding a cover
+       * image and a gallery and nothing else — too thin to be its own page in
+       * a nine-step flow. Brand and model are what the listing name is now
+       * derived from (deriveVehicleName), so they belong beside the pictures
+       * they name.
+       *
+       * DescriptionStep renders `embedded`, i.e. its section cards without a
+       * StepHeader of its own — VehicleClassStep above already supplies the
+       * page's heading.
+       */
       return (
-        <DescriptionStep
-          nameLabel="Vehicle Name"
-          namePlaceholder="e.g. Toyota Innova Crysta — 7 seater"
-          kicker="Vehicle Details"
-          headerSubtitle="Photos and a clear description are what get a vehicle booked — add the details a traveller needs before they trust you with their trip."
-          descriptionHelp="What should a renter know? Mention its condition, how it drives, and the trips it suits best."
-          descriptionPlaceholder="Describe the vehicle's condition, comfort, and what kind of trips it's best for…"
-          coverPhotoNoun="vehicle"
-          name={formData.name}
-          description={formData.description}
-          rules={formData.rules}
-          photos={formData.photos}
-          coverImage={formData.coverImage}
-          errors={errors}
-          sliderRef={api.sliderRef}
-          onNameChange={(v) => setFormData((prev) => ({ ...prev, name: v }))}
-          onDescriptionChange={(v) => setFormData((prev) => ({ ...prev, description: v }))}
-          onAddRule={api.addRule}
-          onRemoveRule={api.removeRule}
-          onUpdateRule={api.updateRule}
-          onPhotoUpload={(files) => api.handleFileUpload("photos", files)}
-          onCoverUpload={(files) => api.handleCoverFileUpload("coverImage", files)}
-          onRemovePhoto={(i) => api.removeFile("photos", i)}
-          onRemoveCover={(i) => api.removeCoverFile("coverImage", i)}
-          clearError={api.clearError}
-        />
+        <div className="w-full flex flex-col gap-4">
+          <VehicleClassStep
+            vehicleClass={formData.vehicleClass}
+            category={formData.category}
+            brand={formData.brand}
+            model={formData.model}
+            manufactureYear={formData.manufactureYear}
+            registrationNumber={formData.registrationNumber}
+            dynamicCategories={api.dynamicCategories}
+            categoriesLoading={api.categoriesLoading}
+            errors={errors}
+            onVehicleClassChange={(v: VehicleClass) =>
+              setFormData((prev) => ({
+                ...prev,
+                vehicleClass: v,
+                // Categories are class-scoped (VEHICLE_TAXONOMY); a category
+                // picked for "car" is not valid for "bus", so switching class
+                // clears it rather than silently submitting a mismatched pair.
+                // The model picklist is scoped to the CATEGORY in turn, so it
+                // has to go with it — otherwise a Swift stays filed under a bus.
+                ...(prev.vehicleClass && prev.vehicleClass !== v
+                  ? { category: null, model: "", brand: "" }
+                  : { category: prev.category }),
+              }))
+            }
+            onCategoryChange={(v) =>
+              setFormData((prev) =>
+                prev.category === v ? prev : { ...prev, category: v, model: "", brand: "" },
+              )
+            }
+            onBrandChange={(v) => setFormData((prev) => ({ ...prev, brand: v }))}
+            onModelChange={(v) => setFormData((prev) => ({ ...prev, model: v }))}
+            onManufactureYearChange={(v) =>
+              setFormData((prev) => ({ ...prev, manufactureYear: v }))
+            }
+            onRegistrationNumberChange={(v) =>
+              setFormData((prev) => ({ ...prev, registrationNumber: v }))
+            }
+            clearError={api.clearError}
+          />
+          <DescriptionStep
+            embedded
+            showIdentity={false}
+            showRules={false}
+            coverPhotoNoun="vehicle"
+            name={formData.name}
+            description={formData.description}
+            rules={formData.rules}
+            photos={formData.photos}
+            coverImage={formData.coverImage}
+            errors={errors}
+            sliderRef={api.sliderRef}
+            onNameChange={(v) => setFormData((prev) => ({ ...prev, name: v }))}
+            onDescriptionChange={(v) => setFormData((prev) => ({ ...prev, description: v }))}
+            onAddRule={api.addRule}
+            onRemoveRule={api.removeRule}
+            onUpdateRule={api.updateRule}
+            onPhotoUpload={(files) => api.handleFileUpload("photos", files)}
+            onCoverUpload={(files) => api.handleCoverFileUpload("coverImage", files)}
+            onRemovePhoto={(i) => api.removeFile("photos", i)}
+            onRemoveCover={(i) => api.removeCoverFile("coverImage", i)}
+            clearError={api.clearError}
+          />
+        </div>
       );
 
     case 1:
-      return (
-        <VehicleClassStep
-          vehicleClass={formData.vehicleClass}
-          category={formData.category}
-          brand={formData.brand}
-          model={formData.model}
-          manufactureYear={formData.manufactureYear}
-          registrationNumber={formData.registrationNumber}
-          dynamicCategories={api.dynamicCategories}
-          categoriesLoading={api.categoriesLoading}
-          errors={errors}
-          onVehicleClassChange={(v: VehicleClass) =>
-            setFormData((prev) => ({
-              ...prev,
-              vehicleClass: v,
-              // Category lists are class-scoped in CMS; a category picked for
-              // "car" is rarely valid for "bus", so switching class clears it
-              // rather than silently submitting a mismatched pair.
-              category: prev.vehicleClass && prev.vehicleClass !== v ? null : prev.category,
-            }))
-          }
-          onCategoryChange={(v) => setFormData((prev) => ({ ...prev, category: v }))}
-          onBrandChange={(v) => setFormData((prev) => ({ ...prev, brand: v }))}
-          onModelChange={(v) => setFormData((prev) => ({ ...prev, model: v }))}
-          onManufactureYearChange={(v) => setFormData((prev) => ({ ...prev, manufactureYear: v }))}
-          onRegistrationNumberChange={(v) =>
-            setFormData((prev) => ({ ...prev, registrationNumber: v }))
-          }
-          clearError={api.clearError}
-        />
-      );
-
-    case 2:
       return (
         <SpecsFeaturesStep
           fuelType={formData.fuelType}
@@ -197,37 +221,21 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 3:
+    case 2:
       return (
         <VehicleCapacityStep
           vehicleClass={formData.vehicleClass}
           seatingCapacity={formData.seatingCapacity}
           luggageCapacity={formData.luggageCapacity}
-          address={formData.address}
-          locality={formData.locality}
-          state={formData.state}
-          city={formData.city}
-          pincode={formData.pincode}
           pickupPoints={formData.pickupPoints}
-          locationData={api.locationData}
-          mapSrc={api.mapSrc}
           errors={errors}
           onAdjustCapacity={api.adjustCapacity}
-          onAddressChange={(v) => setFormData((prev) => ({ ...prev, address: v }))}
-          onLocalityChange={(v) =>
-            setFormData((prev) => ({ ...prev, locality: v, state: "", city: "" }))
-          }
-          onStateChange={(v) => setFormData((prev) => ({ ...prev, state: v, city: "" }))}
-          onCityChange={(v) => setFormData((prev) => ({ ...prev, city: v }))}
-          onPincodeChange={(v) => setFormData((prev) => ({ ...prev, pincode: v }))}
-          onAddPickupPoint={api.addPickupPoint}
-          onUpdatePickupPoint={api.updatePickupPoint}
-          onRemovePickupPoint={api.removePickupPoint}
+          onPickupPointChange={api.setPickupPoint}
           clearError={api.clearError}
         />
       );
 
-    case 4:
+    case 3:
       return (
         <VehiclePricingStep
           selfDriveEnabled={formData.selfDriveEnabled}
@@ -260,7 +268,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 5:
+    case 4:
       return (
         <DiscountOffersStep
           offers={api.discountOffers}
@@ -271,7 +279,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 6:
+    case 5:
       return (
         <VehicleComplianceStep
           rcPhotos={formData.rcPhotos}
@@ -290,7 +298,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 7:
+    case 6:
       return (
         <BusinessDetailsStep
           values={{
@@ -325,7 +333,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 8:
+    case 7:
       return (
         <PersonalDetailsStep
           values={{
@@ -360,7 +368,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 9:
+    case 8:
       return (
         <TermsConditionsStep
           termsAccepted={formData.termsAccepted}

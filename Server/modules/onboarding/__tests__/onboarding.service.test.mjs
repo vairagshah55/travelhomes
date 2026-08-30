@@ -238,3 +238,61 @@ describe("the in-flight gate after reconciliation", () => {
     expect(found && found._id).toBe("real");
   });
 });
+
+/**
+ * Data-URL parsing, because a `null` from it is not inert.
+ *
+ * Callers read "not a data URL" as "leave this string alone": attachSelfie used
+ * to then persist the raw payload, which is how a 2.8 MB caravan document
+ * exists. The old `/^data:([^;]+);base64,(.*)$/` demanded `;base64` right after
+ * the mime, so any media-type parameter took that branch.
+ */
+const { parseDataUrl } = await import("../onboarding.service.js");
+
+describe("parseDataUrl", () => {
+  const jpegBytes = "/9j/4AAQSkZJRg==";
+
+  it("parses a plain base64 data URL", () => {
+    const out = parseDataUrl(`data:image/jpeg;base64,${jpegBytes}`);
+    expect(out).toMatchObject({ mime: "image/jpeg", ext: "jpg" });
+    expect(out.buffer.length).toBeGreaterThan(0);
+  });
+
+  it("parses one carrying a media-type parameter — the case that regressed", () => {
+    const out = parseDataUrl(`data:image/jpeg;charset=utf-8;base64,${jpegBytes}`);
+    expect(out).toMatchObject({ mime: "image/jpeg", ext: "jpg" });
+  });
+
+  it("is case-insensitive about the base64 marker and the mime", () => {
+    expect(parseDataUrl(`data:IMAGE/PNG;BASE64,${jpegBytes}`)).toMatchObject({
+      mime: "image/png",
+      ext: "png",
+    });
+  });
+
+  it("maps the extensions the uploads folder relies on", () => {
+    for (const [mime, ext] of [
+      ["image/png", "png"],
+      ["image/webp", "webp"],
+      ["application/pdf", "pdf"],
+      ["image/heic", "bin"],
+    ])
+      expect(parseDataUrl(`data:${mime};base64,${jpegBytes}`).ext).toBe(ext);
+  });
+
+  it("rejects a percent-encoded payload — text to decode, not bytes to write", () => {
+    expect(parseDataUrl("data:image/svg+xml,%3Csvg%3E")).toBeNull();
+  });
+
+  it("rejects an empty payload rather than writing a 0-byte file", () => {
+    // Buffer.from(…, "base64") never throws; it drops invalid characters, so an
+    // empty buffer is the only signal that the payload was junk.
+    expect(parseDataUrl("data:image/jpeg;base64,")).toBeNull();
+    expect(parseDataUrl("data:image/jpeg;base64,!!!!")).toBeNull();
+  });
+
+  it("rejects anything that isn't a data URL", () => {
+    for (const v of ["/uploads/vehicle-photo-1.jpg", "", null, undefined, 42, "data:"])
+      expect(parseDataUrl(v)).toBeNull();
+  });
+});

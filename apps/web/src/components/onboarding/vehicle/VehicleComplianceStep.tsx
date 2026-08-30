@@ -38,16 +38,12 @@ function useDocSrc(item: string | File): string {
   return src;
 }
 
-const DocThumb = ({
-  item,
-  onRemove,
-}: {
-  item: string | File;
-  onRemove: () => void;
-}) => {
+const DocThumb = ({ item, onRemove }: { item: string | File; onRemove: () => void }) => {
   const src = useDocSrc(item);
   const isPdf =
-    typeof item === "string" ? item.toLowerCase().endsWith(".pdf") : item.type === "application/pdf";
+    typeof item === "string"
+      ? item.toLowerCase().endsWith(".pdf")
+      : item.type === "application/pdf";
 
   return (
     <div className="relative group w-full aspect-[4/3] rounded-[14px] overflow-hidden border-[1.5px] border-th-warm-border bg-th-warm-surface">

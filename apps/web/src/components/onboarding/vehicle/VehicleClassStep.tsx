@@ -4,7 +4,11 @@ import { Field, SectionCard, StepHeader, StyledInput, StyledSelect } from "../sh
 import CategoryStep from "../caravan/CategoryStep";
 import { cn } from "@/lib/utils";
 import {
-  FALLBACK_VEHICLE_CATEGORIES,
+  vehicleCategoriesFor,
+  vehicleModelsFor,
+  vehicleAllowsOtherModel,
+  brandFromModel,
+  VEHICLE_MODEL_OTHER,
   MANUFACTURE_YEARS,
   VEHICLE_CLASSES,
   type VehicleClass,
@@ -69,12 +73,40 @@ const VehicleClassStep: React.FC<VehicleClassStepProps> = ({
   clearError,
   embedded,
 }) => {
+  const listedModels = vehicleModelsFor(vehicleClass, category);
+  const allowsOther = vehicleAllowsOtherModel(vehicleClass, category);
+
+  /**
+   * Whether the vendor picked "Other" and is typing a model in.
+   *
+   * Local, because it isn't derivable from `model` alone: the moment "Other" is
+   * chosen the model is cleared, so an `!listedModels.includes(model)` test
+   * would read as "nothing selected" and snap the select back to its
+   * placeholder mid-edit. A model already off-list (a draft saved before this
+   * category had a picklist) counts as manual too.
+   */
+  const [modelIsManual, setModelIsManual] = React.useState(false);
+  const modelIsListed = !!model && listedModels.includes(model);
+  const showManualModel = modelIsManual || (!!model && !modelIsListed);
+  const modelSelectValue = modelIsListed ? model : showManualModel ? VEHICLE_MODEL_OTHER : "";
+
   const body = (
     <div className="w-full flex flex-col gap-4">
       <SectionCard
         icon={<Car size={16} />}
-        title="Vehicle class"
-        subtitle="This decides which categories and seat counts guests can filter by."
+        /**
+         * Labelled "Category" / "Sub-category" to match the taxonomy document,
+         * where Car/Van/Bus are the categories and Budget / Small Car, Sedans,
+         * SUVs … are their sub-categories.
+         *
+         * The FIELD names stay `vehicleClass` and `category`: `category` is
+         * what Offer stores and what the guest search sidebar filters on, so
+         * renaming it would mean migrating every listing and the filter with
+         * it. Only the copy changed. Read as: vehicleClass = category,
+         * category = sub-category.
+         */
+        title="Category"
+        subtitle="Car, van or bus. This decides which sub-categories and seat counts guests can filter by."
         required
       >
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -125,25 +157,136 @@ const VehicleClassStep: React.FC<VehicleClassStepProps> = ({
         )}
       </SectionCard>
 
-      {/* Reuses the caravan category card list verbatim — same CMS contract
-          (name / description / uploaded icon), same fallback behaviour. */}
+      {/**
+       * Categories for the CHOSEN CLASS only.
+       *
+       * The list used to be flat and class-independent, so someone listing a
+       * hatchback was offered "Coach Bus". `dynamicCategories` is passed empty
+       * on purpose: the CMS rows are a flat name/description pair with no
+       * class and no model list, so they cannot express this taxonomy — see
+       * VEHICLE_TAXONOMY, which is the source of truth for all three of the
+       * category cards, the model picker below, and the guest search filter.
+       */}
       <SectionCard
         icon={<FileText size={16} />}
-        title="Category"
-        subtitle="Pick the category that best describes this vehicle."
+        title="Sub-category"
+        subtitle={
+          vehicleClass
+            ? "Pick the sub-category that best describes this vehicle."
+            : "Choose a category first."
+        }
         required
       >
-        <CategoryStep
-          embedded
-          fallbackCategories={FALLBACK_VEHICLE_CATEGORIES}
-          category={category}
-          dynamicCategories={dynamicCategories}
-          categoriesLoading={categoriesLoading}
-          onSelect={(name) => {
-            onCategoryChange(name);
-            clearError("category");
-          }}
-        />
+        {vehicleClass ? (
+          <CategoryStep
+            embedded
+            fallbackCategories={vehicleCategoriesFor(vehicleClass)}
+            category={category}
+            dynamicCategories={[]}
+            categoriesLoading={false}
+            onSelect={(name) => {
+              onCategoryChange(name);
+              clearError("category");
+            }}
+          />
+        ) : (
+          <p className="text-[13px] text-th-warm-text-dark">
+            Select car, van or bus above and the matching sub-categories appear here.
+          </p>
+        )}
+      </SectionCard>
+
+      {/**
+       * The third level of the taxonomy — Category (car/van/bus) →
+       * Sub-category (Budget / Small Car) → Model (Maruti Swift).
+       *
+       * Its own card, directly under its parent, rather than sharing the
+       * "Make & registration" grid with the registration plate. Nesting is the
+       * whole point of this step, and burying the last level among the
+       * verification fields hid it. Brand still lives below because the model
+       * prefills it, so the order the vendor works down the page is now
+       * category → sub-category → model → the brand it filled in.
+       */}
+      <SectionCard
+        icon={<Car size={16} />}
+        title="Model"
+        subtitle={
+          category ? `Which ${category.toLowerCase()} is it?` : "Pick a sub-category first."
+        }
+        required
+      >
+        <Field
+          label="Model"
+          required
+          error={errors.model}
+          help={
+            listedModels.length > 0 && allowsOther
+              ? "Not listed? Choose Other and type it in."
+              : undefined
+          }
+        >
+          {listedModels.length === 0 ? (
+            // Bus categories are defined by seat count, not by model, so
+            // there is no list to pick from.
+            <StyledInput
+              value={model}
+              onChange={(v) => {
+                onModelChange(v);
+                clearError("model");
+              }}
+              placeholder="e.g. Volvo 9600"
+              maxLength={60}
+              error={!!errors.model}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              <StyledSelect
+                value={modelSelectValue}
+                onChange={(v) => {
+                  if (v === VEHICLE_MODEL_OTHER) {
+                    // Clear both, so the previous pick's brand doesn't linger
+                    // on a vehicle the vendor is about to name themselves.
+                    setModelIsManual(true);
+                    onModelChange("");
+                    onBrandChange("");
+                  } else {
+                    setModelIsManual(false);
+                    onModelChange(v);
+                    // Prefilled, not locked — the field stays editable for the
+                    // marques whose leading word isn't the whole brand.
+                    onBrandChange(brandFromModel(v));
+                  }
+                  clearError("model");
+                  clearError("brand");
+                }}
+                error={!!errors.model}
+              >
+                <option value="">Select model</option>
+                {listedModels.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+                {/* Closed lists — 7-Seater / Premium Car, Budget Vans and
+                    Premium Vans — omit this by spec. See allowOther. */}
+                {allowsOther && <option value={VEHICLE_MODEL_OTHER}>Other (type it in)</option>}
+              </StyledSelect>
+
+              {showManualModel && (
+                <StyledInput
+                  value={model}
+                  onChange={(v) => {
+                    onModelChange(v);
+                    clearError("model");
+                  }}
+                  placeholder="e.g. Innova Crysta"
+                  maxLength={60}
+                  error={!!errors.model}
+                />
+              )}
+            </div>
+          )}
+        </Field>
       </SectionCard>
 
       <SectionCard
@@ -162,18 +305,6 @@ const VehicleClassStep: React.FC<VehicleClassStepProps> = ({
               placeholder="e.g. Toyota"
               maxLength={60}
               error={!!errors.brand}
-            />
-          </Field>
-          <Field label="Model" required error={errors.model}>
-            <StyledInput
-              value={model}
-              onChange={(v) => {
-                onModelChange(v);
-                clearError("model");
-              }}
-              placeholder="e.g. Innova Crysta"
-              maxLength={60}
-              error={!!errors.model}
             />
           </Field>
           <Field label="Manufacture year" required error={errors.manufactureYear}>

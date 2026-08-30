@@ -28,6 +28,9 @@ import {
   defaultVehicleFormData,
   headlineRate,
   pickActiveDiscount,
+  deriveVehicleName,
+  deriveVehicleDescription,
+  deriveVehicleLocation,
 } from "@/components/onboarding/vehicle/vehicleConfig";
 import { submitVehicleOnboarding } from "@/components/onboarding/vehicle/submitVehicleOnboarding";
 import { validateVehicleStep } from "@/components/onboarding/vehicle/validateVehicleStep";
@@ -41,13 +44,14 @@ import { VehicleStepRenderer } from "@/components/onboarding/vehicle/VehicleStep
  * 6 Documents | 7 Business · 8 Personal. `steps` must sum to totalSteps - 1.
  */
 const VEHICLE_PHASES: OnboardingPhase[] = [
-  { label: "Your vehicle", steps: 4 },
+  { label: "Your vehicle", steps: 3 },
   { label: "Pricing", steps: 2 },
   { label: "Documents", steps: 1 },
   { label: "About you", steps: 2 },
 ];
 
-const TOTAL_STEPS = 10;
+// 9 since the vehicle identity and photos steps merged — see VehicleStepRenderer.
+const TOTAL_STEPS = 9;
 const FORM_STORAGE_KEY = "vehicle_onboarding_form";
 const STEP_STORAGE_KEY = "vehicle_onboarding_step";
 /** CMS category/feature group this flow reads. */
@@ -90,7 +94,13 @@ const VehicleOnboarding = () => {
 
   const [currentStep, setCurrentStep] = useState(() => {
     const saved = sessionStorage.getItem(STEP_STORAGE_KEY);
-    return saved ? parseInt(saved, 10) : 0;
+    const parsed = saved ? parseInt(saved, 10) : 0;
+    // Clamped, because the flow shrank from ten steps to nine. A vendor who
+    // left mid-flow has a step index in sessionStorage from the old numbering,
+    // and a restored 9 would render no case at all — a blank page with a Next
+    // button. NaN from a corrupt value lands on 0 for the same reason.
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return Math.min(parsed, TOTAL_STEPS - 1);
   });
   const sliderRef = useRef(null);
 
@@ -410,18 +420,17 @@ const VehicleOnboarding = () => {
     }));
   };
 
-  const addPickupPoint = () =>
-    setFormData((prev) => ({ ...prev, pickupPoints: [...prev.pickupPoints, ""] }));
-  const updatePickupPoint = (index: number, value: string) =>
-    setFormData((prev) => ({
-      ...prev,
-      pickupPoints: prev.pickupPoints.map((p, i) => (i === index ? value : p)),
-    }));
-  const removePickupPoint = (index: number) =>
-    setFormData((prev) => ({
-      ...prev,
-      pickupPoints: prev.pickupPoints.filter((_, i) => i !== index),
-    }));
+  /**
+   * The single pickup point, stored at index 0 of the existing string[].
+   *
+   * Replaces add/update/remove now that the step takes one value. The
+   * index-based updater could not back a single input on its own: it maps over
+   * the array, and `pickupPoints` defaults to `[]`, so writing index 0 of an
+   * empty array was a no-op and the field would not accept typing at all.
+   * Emptying the input clears the array so `hasLine` still reports it missing.
+   */
+  const setPickupPoint = (value: string) =>
+    setFormData((prev) => ({ ...prev, pickupPoints: value ? [value] : [] }));
 
   // ─── Step 4 handlers ──────────────────────────────────────────────────
   const toggleRentalMode = (mode: "selfDrive" | "withDriver") => {
@@ -790,17 +799,22 @@ const VehicleOnboarding = () => {
       totalSteps={TOTAL_STEPS}
       phases={VEHICLE_PHASES}
       preview={
-        // Steps 0-5 are the listing content a guest sees; the document and
+        // Steps 0-4 are the listing content a guest sees; the document and
         // account steps that follow don't change the card, so the preview panel
-        // drops away rather than sitting there inert.
-        currentStep <= 5 ? (
+        // drops away rather than sitting there inert. (0-5 before the identity
+        // and photos steps merged.)
+        currentStep <= 4 ? (
           <VehicleCardPreview
-            name={formData.name}
-            description={formData.description}
+            /* Derived, not `formData.name`/`.description` — those inputs were
+               removed from step 0, so the card would sit on its "Your vehicle
+               name" placeholder for the whole flow. Same helpers the submit
+               payload uses, so the preview is what gets published. */
+            name={deriveVehicleName(formData)}
+            description={deriveVehicleDescription(formData)}
             coverImage={formData.coverImage}
             photos={formData.photos}
-            city={formData.city}
-            state={formData.state}
+            city={deriveVehicleLocation(formData).city}
+            state={deriveVehicleLocation(formData).state}
             brand={formData.brand}
             model={formData.model}
             seatingCapacity={formData.seatingCapacity}
@@ -858,11 +872,8 @@ const VehicleOnboarding = () => {
           handleRemoveCustomFeature,
           handleAddCustomFeature,
           locationData: data,
-          mapSrc,
           adjustCapacity,
-          addPickupPoint,
-          updatePickupPoint,
-          removePickupPoint,
+          setPickupPoint,
           toggleRentalMode,
           setPricingField,
           addListItem,

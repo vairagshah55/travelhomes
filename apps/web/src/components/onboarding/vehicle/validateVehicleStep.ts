@@ -22,8 +22,8 @@ const hasLine = (items: string[] | undefined) => !!items?.some((i) => i.trim());
  * `errors` is empty and `toastError` is unset.
  *
  * Step order matches VehicleStepRenderer:
- *   0 Details · 1 Class · 2 Specs · 3 Capacity | 4 Pricing · 5 Offers |
- *   6 Documents | 7 Business · 8 Personal | 9 Terms
+ *   0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing · 4 Offers |
+ *   5 Documents | 6 Business · 7 Personal | 8 Terms
  */
 export function validateVehicleStep(
   currentStep: number,
@@ -32,14 +32,13 @@ export function validateVehicleStep(
   const newErrors: Record<string, string> = {};
 
   if (currentStep === 0) {
-    if (!formData.name?.trim()) newErrors.name = "Vehicle name is required";
-    if (!formData.description?.trim()) newErrors.description = "Vehicle description is required";
-    if (!formData.coverImage || formData.coverImage.length === 0)
-      newErrors.coverImage = "A cover photo is required";
-    if (formData.photos.length < 5) newErrors.photos = "Please upload at least 5 photos";
-  } else if (currentStep === 1) {
-    if (!formData.vehicleClass) newErrors.vehicleClass = "Select car, van or bus";
-    if (!formData.category) newErrors.category = "Select a category";
+    // Identity and photos, formerly two steps. No name/description checks:
+    // those inputs are gone — the listing name comes from brand + model via
+    // deriveVehicleName and the description from the specs, so there is
+    // nothing here for a vendor to get wrong. Leaving the old required-checks
+    // in would block the step on fields that no longer have inputs.
+    if (!formData.vehicleClass) newErrors.vehicleClass = "Select a category — car, van or bus";
+    if (!formData.category) newErrors.category = "Select a sub-category";
     if (!formData.brand?.trim()) newErrors.brand = "Brand is required";
     if (!formData.model?.trim()) newErrors.model = "Model is required";
     if (!formData.manufactureYear) newErrors.manufactureYear = "Manufacture year is required";
@@ -50,29 +49,29 @@ export function validateVehicleStep(
     } else if (!REGISTRATION_RE.test(registration)) {
       newErrors.registrationNumber = "Enter a valid registration number, e.g. MH12AB1234";
     }
-  } else if (currentStep === 2) {
+
+    if (!formData.coverImage || formData.coverImage.length === 0)
+      newErrors.coverImage = "A cover photo is required";
+    if (formData.photos.length < 5) newErrors.photos = "Please upload at least 5 photos";
+  } else if (currentStep === 1) {
     if (!formData.fuelType) newErrors.fuelType = "Fuel type is required";
     if (!formData.transmission) newErrors.transmission = "Transmission is required";
     if (!formData.features || formData.features.length === 0) {
       return { errors: newErrors, toastError: "Please select at least one amenity" };
     }
-  } else if (currentStep === 3) {
-    if (formData.seatingCapacity < 1)
-      newErrors.seatingCapacity = "At least 1 seat is required";
+  } else if (currentStep === 2) {
+    if (formData.seatingCapacity < 1) newErrors.seatingCapacity = "At least 1 seat is required";
     // Seat count is not checked against SEAT_HINT_BY_CLASS on purpose — the
     // classes overlap in the real world, so the hint is advisory and shown
     // inline by VehicleCapacityStep rather than enforced here.
-    if (!hasLine(formData.pickupPoints))
-      newErrors.pickupPoints = "Add at least one pickup point";
-    if (!formData.address?.trim()) newErrors.address = "Street address is required";
-    if (!formData.state?.trim()) newErrors.state = "State is required";
-    if (!formData.city?.trim()) newErrors.city = "City is required";
-    if (!formData.pincode?.trim()) {
-      newErrors.pincode = "Pincode is required";
-    } else if (formData.pincode.length !== 6) {
-      newErrors.pincode = "Pincode must be 6 digits";
-    }
-  } else if (currentStep === 4) {
+    // Still a string[] on the model, but the step now collects exactly one, so
+    // the copy no longer tells the vendor to "add" anything.
+    if (!hasLine(formData.pickupPoints)) newErrors.pickupPoints = "A pickup point is required";
+    // No address checks: the Pickup location card was removed from this step.
+    // The listing's address/city/state/pincode now come from the business
+    // address via deriveVehicleLocation, and that IS still validated — on the
+    // Business Details step, which is required before submit.
+  } else if (currentStep === 3) {
     if (!formData.selfDriveEnabled && !formData.withDriverEnabled) {
       return {
         errors: { pricing: "Turn on at least one rental mode — self-drive or with driver" },
@@ -116,7 +115,7 @@ export function validateVehicleStep(
     ) {
       newErrors.nightChargeAfter = "Enter an hour between 0 and 23";
     }
-  } else if (currentStep === 5) {
+  } else if (currentStep === 4) {
     if (formData.firstUserDiscount) {
       if (!formData.firstUserDiscountValue)
         newErrors.firstUserDiscountValue = "Discount value is required";
@@ -136,12 +135,11 @@ export function validateVehicleStep(
         newErrors.weeklyMonthlyOffersFinalPrice = "Final price is required";
     }
     if (formData.specialOffers) {
-      if (!formData.specialOffersValue)
-        newErrors.specialOffersValue = "Discount value is required";
+      if (!formData.specialOffersValue) newErrors.specialOffersValue = "Discount value is required";
       if (!formData.specialOffersFinalPrice)
         newErrors.specialOffersFinalPrice = "Final price is required";
     }
-  } else if (currentStep === 6) {
+  } else if (currentStep === 5) {
     if (!formData.rcPhotos || formData.rcPhotos.length === 0)
       newErrors.rcPhotos = "The registration certificate is required";
 
@@ -171,7 +169,7 @@ export function validateVehicleStep(
       if (!formData.driverLicencePhotos || formData.driverLicencePhotos.length === 0)
         newErrors.driverLicencePhotos = "A photo of the driving licence is required";
     }
-  } else if (currentStep === 7) {
+  } else if (currentStep === 6) {
     if (!formData.brandName?.trim()) newErrors.brandName = "Brand name is required";
     if (!formData.legalCompanyName?.trim())
       newErrors.legalCompanyName = "Legal company name is required";
@@ -187,7 +185,7 @@ export function validateVehicleStep(
     if (!formData.businessPhoneNumber?.trim() || formData.businessPhoneNumber.length !== 10) {
       newErrors.businessPhoneNumber = "Valid business phone number is required";
     }
-  } else if (currentStep === 8) {
+  } else if (currentStep === 7) {
     if (!formData.firstName?.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required";
     if (!formData.personalLocality?.trim()) newErrors.personalLocality = "Country is required";
@@ -202,7 +200,7 @@ export function validateVehicleStep(
     if (!formData.idProof) newErrors.idProof = "ID Proof type is required";
     if (!formData.idPhotos || formData.idPhotos.length === 0)
       newErrors.idPhotos = "ID Proof photo is required";
-  } else if (currentStep === 9) {
+  } else if (currentStep === 8) {
     if (!formData.termsAccepted) {
       return {
         errors: {},

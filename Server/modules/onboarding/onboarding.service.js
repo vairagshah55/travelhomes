@@ -61,15 +61,33 @@ const mimeToExt = (mime) => {
   return "bin";
 };
 
+/**
+ * Split a data URL into its mime and bytes, or null when it isn't one.
+ *
+ * Parsed by hand rather than with `/^data:([^;]+);base64,(.*)$/`, which
+ * required `;base64` to sit immediately after the mime and so rejected any URL
+ * carrying a media-type parameter — `data:image/jpeg;charset=utf-8;base64,…`
+ * is well-formed and that pattern did not match it. A rejection here is not
+ * inert: callers treat "not a data URL" as "leave the string alone", which is
+ * how multi-megabyte base64 ended up stored in Mongo (see attachSelfie).
+ *
+ * Returns null for a non-base64 payload (`data:image/svg+xml,<svg…>`) on
+ * purpose — that is text to percent-decode, not bytes to write, and nothing
+ * here uploads one. `Buffer.from(…, "base64")` never throws; it drops invalid
+ * characters silently, so an empty buffer is the real signal of a bad payload.
+ */
 function parseDataUrl(dataUrl) {
-  if (typeof dataUrl !== "string") return null;
-  const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
-  if (!match) return null;
-  try {
-    return { mime: match[1], buffer: Buffer.from(match[2], "base64"), ext: mimeToExt(match[1]) };
-  } catch {
-    return null;
-  }
+  if (typeof dataUrl !== "string" || !dataUrl.startsWith("data:")) return null;
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) return null;
+
+  const params = dataUrl.slice(5, comma).split(";");
+  if (!params.some((p) => p.trim().toLowerCase() === "base64")) return null;
+
+  const mime = (params[0] || "").trim().toLowerCase();
+  const buffer = Buffer.from(dataUrl.slice(comma + 1), "base64");
+  if (!buffer.length) return null;
+  return { mime, buffer, ext: mimeToExt(mime) };
 }
 
 async function saveDataUrlToUploads(dataUrl, prefix = "file") {
@@ -825,15 +843,30 @@ async function attachSelfie(Model, prefix, imagesField, id, imageData, user) {
     throw new ForbiddenError("Not authorized");
   }
 
-  const asUrl =
-    typeof imageData === "string" && imageData.startsWith("data:")
-      ? await saveDataUrlToUploads(imageData, prefix)
-      : typeof imageData === "string"
-        ? imageData
-        : String(imageData);
+  /**
+   * A failed save must NOT fall back to storing the data URL itself.
+   *
+   * That fallback (`asUrl || imageData`) is how caravan and activity documents
+   * ended up holding raw base64 — one is 2.8 MB. The cost is not just disk:
+   * GET /onboarding/mine returns the whole document to the SPA on every visit,
+   * so a single bad selfie makes the vendor's own onboarding screens crawl.
+   * normalizeImageArray, the other entry point for the same kind of data,
+   * already drops on failure rather than storing it; these two disagreed.
+   *
+   * Failing loudly is the better of the two remaining options: the vendor
+   * retakes one photo, instead of silently owning a listing whose ID photo is
+   * a megabyte of text nothing can render as a file.
+   */
+  let asUrl;
+  if (typeof imageData === "string" && imageData.startsWith("data:")) {
+    asUrl = await saveDataUrlToUploads(imageData, prefix);
+    if (!asUrl) throw new BadRequestError("That photo could not be read — please retake it.");
+  } else {
+    asUrl = typeof imageData === "string" ? imageData : String(imageData);
+  }
 
   const arr = Array.isArray(doc[imagesField]) ? doc[imagesField].slice() : [];
-  arr.push(asUrl || (typeof imageData === "string" ? imageData : String(imageData)));
+  arr.push(asUrl);
   doc[imagesField] = arr;
   await doc.save();
   return doc._id;
@@ -982,6 +1015,7 @@ module.exports = {
   attachVehicleSelfie,
   getMine,
   findCurrentSubmission, // exported for tests
+  parseDataUrl, // exported for tests
   findLivePendingSubmission, // exported for tests
   reconcileWithOffer, // exported for tests
   listActivities,

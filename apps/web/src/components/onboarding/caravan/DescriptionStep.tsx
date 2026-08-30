@@ -49,6 +49,17 @@ interface DescriptionStepProps {
   // string here named a caravan; a vehicle-rental vendor was being told to
   // describe "the story of your stay" and upload "your best caravan photo".
   // Defaults keep the caravan flow byte-identical.
+  /**
+   * Opt out of the Identity card (name + description) and the Rules card.
+   *
+   * Both default to shown, because caravan and activity still collect them —
+   * this component is shared by three flows, so the vehicle flow dropping a
+   * section must not delete it for the others. Vehicle passes false for both:
+   * its name is derived from brand + model (see deriveVehicleName) and it has
+   * no house rules to agree to.
+   */
+  showIdentity?: boolean;
+  showRules?: boolean;
   nameLabel?: string;
   namePlaceholder?: string;
   kicker?: string;
@@ -184,6 +195,8 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
   onRemoveCover,
   clearError,
   embedded,
+  showIdentity = true,
+  showRules = true,
   nameLabel = "Caravan Name",
   namePlaceholder = "e.g. Cozy Mountain Camper",
   kicker = "Caravan Details",
@@ -194,84 +207,88 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
 }) => {
   const sections = (
     <>
-      <SectionCard
-        icon={<Type size={17} className="text-th-brand" strokeWidth={2.2} />}
-        title="Identity"
-        subtitle="How your listing appears to guests"
-      >
-        <div className="flex flex-col gap-5">
-          <Field
-            label={nameLabel}
-            required
-            error={errors.name || errors.activityName}
-            right={<CharCount value={name.length} max={50} />}
-          >
-            <StyledInput
-              value={name}
-              onChange={(v) => {
-                onNameChange(v);
-                if (errors.name) clearError("name");
-                if (errors.activityName) clearError("activityName");
-              }}
-              placeholder={namePlaceholder}
-              maxLength={50}
-              error={!!(errors.name || errors.activityName)}
-              hardErrorBorder
-            />
-          </Field>
-
-          <Field
-            label="Description"
-            required
-            error={errors.description}
-            right={<CharCount value={description.length} max={200} />}
-            help={descriptionHelp}
-          >
-            <StyledTextarea
-              value={description}
-              onChange={(v) => {
-                onDescriptionChange(v);
-                if (errors.description) clearError("description");
-              }}
-              placeholder={descriptionPlaceholder}
-              maxLength={200}
-              rows={4}
-              error={!!errors.description}
-            />
-          </Field>
-        </div>
-      </SectionCard>
-
-      <SectionCard
-        icon={<ShieldCheck size={17} className="text-th-brand" strokeWidth={2.2} />}
-        title="Rules & Regulations"
-        subtitle="Guidelines guests must follow"
-        action={
-          rules.length > 0 ? (
-            <PillCTA
-              icon={<Plus size={12} strokeWidth={2.5} />}
-              label="Add Rule"
-              onClick={onAddRule}
-            />
-          ) : undefined
-        }
-      >
-        {rules.length === 0 ? (
-          <RulesEmptyState onAdd={onAddRule} />
-        ) : (
-          <div className="flex flex-col gap-2">
-            {rules.map((rule, index) => (
-              <RuleRow
-                key={index}
-                index={index}
-                value={rule}
-                onChange={(v) => onUpdateRule(index, v)}
-                onRemove={() => onRemoveRule(index)}
+      {showIdentity && (
+        <SectionCard
+          icon={<Type size={17} className="text-th-brand" strokeWidth={2.2} />}
+          title="Identity"
+          subtitle="How your listing appears to guests"
+        >
+          <div className="flex flex-col gap-5">
+            <Field
+              label={nameLabel}
+              required
+              error={errors.name || errors.activityName}
+              right={<CharCount value={name.length} max={50} />}
+            >
+              <StyledInput
+                value={name}
+                onChange={(v) => {
+                  onNameChange(v);
+                  if (errors.name) clearError("name");
+                  if (errors.activityName) clearError("activityName");
+                }}
+                placeholder={namePlaceholder}
+                maxLength={50}
+                error={!!(errors.name || errors.activityName)}
+                hardErrorBorder
               />
-            ))}
+            </Field>
+
+            <Field
+              label="Description"
+              required
+              error={errors.description}
+              right={<CharCount value={description.length} max={200} />}
+              help={descriptionHelp}
+            >
+              <StyledTextarea
+                value={description}
+                onChange={(v) => {
+                  onDescriptionChange(v);
+                  if (errors.description) clearError("description");
+                }}
+                placeholder={descriptionPlaceholder}
+                maxLength={200}
+                rows={4}
+                error={!!errors.description}
+              />
+            </Field>
           </div>
-        )}
-      </SectionCard>
+        </SectionCard>
+      )}
+
+      {showRules && (
+        <SectionCard
+          icon={<ShieldCheck size={17} className="text-th-brand" strokeWidth={2.2} />}
+          title="Rules & Regulations"
+          subtitle="Guidelines guests must follow"
+          action={
+            rules.length > 0 ? (
+              <PillCTA
+                icon={<Plus size={12} strokeWidth={2.5} />}
+                label="Add Rule"
+                onClick={onAddRule}
+              />
+            ) : undefined
+          }
+        >
+          {rules.length === 0 ? (
+            <RulesEmptyState onAdd={onAddRule} />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {rules.map((rule, index) => (
+                <RuleRow
+                  key={index}
+                  index={index}
+                  value={rule}
+                  onChange={(v) => onUpdateRule(index, v)}
+                  onRemove={() => onRemoveRule(index)}
+                />
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      )}
 
       <SectionCard
         icon={<Camera size={17} className="text-th-brand" strokeWidth={2.2} />}

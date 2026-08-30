@@ -1,20 +1,7 @@
 import React from "react";
-import {
-  Car,
-  Check,
-  IndianRupee,
-  Info,
-  Plus,
-  ShieldCheck,
-  UserRound,
-  X,
-} from "lucide-react";
+import { Car, Check, IndianRupee, Info, Plus, ShieldCheck, UserRound, X } from "lucide-react";
 import { ErrorMsg, Field, SectionCard, StepHeader, StyledSelect } from "../shared/primitives";
-import {
-  iconShellClass,
-  iconShellFocusClass,
-  iconSlotClass,
-} from "../shared/primitives/IconInput";
+import { iconShellClass, iconShellFocusClass, iconSlotClass } from "../shared/primitives/IconInput";
 import { cn } from "@/lib/utils";
 import { FUEL_POLICIES, TOLLS_POLICIES, type FuelPolicy, type TollsPolicy } from "./vehicleConfig";
 
@@ -395,39 +382,23 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                   />
                 </Field>
                 <Field label="Per km" optional>
-                  <PriceInput
-                    value={selfDrivePerKm}
-                    onChange={set("selfDrivePerKm")}
-                    unit="/ km"
-                  />
+                  <PriceInput value={selfDrivePerKm} onChange={set("selfDrivePerKm")} unit="/ km" />
                 </Field>
                 <Field
                   label="Free kilometres per day"
                   optional
                   help="Distance included in the daily rate."
                 >
-                  <UnitInput
-                    value={freeKmPerDay}
-                    onChange={set("freeKmPerDay")}
-                    unit="km"
-                  />
+                  <UnitInput value={freeKmPerDay} onChange={set("freeKmPerDay")} unit="km" />
                 </Field>
                 <Field label="Extra km charge" optional help="Charged beyond the free allowance.">
-                  <PriceInput
-                    value={extraKmCharge}
-                    onChange={set("extraKmCharge")}
-                    unit="/ km"
-                  />
+                  <PriceInput value={extraKmCharge} onChange={set("extraKmCharge")} unit="/ km" />
                 </Field>
                 <Field label="Security deposit" optional help="Refundable, collected at pickup.">
                   <PriceInput value={securityDeposit} onChange={set("securityDeposit")} />
                 </Field>
                 <Field label="Minimum rental" optional>
-                  <UnitInput
-                    value={minRentalHours}
-                    onChange={set("minRentalHours")}
-                    unit="hours"
-                  />
+                  <UnitInput value={minRentalHours} onChange={set("minRentalHours")} unit="hours" />
                 </Field>
               </div>
 

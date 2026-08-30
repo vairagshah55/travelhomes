@@ -3,6 +3,11 @@ import { submitOnboardingData } from "@/lib/api";
 import { onboardingService } from "@/lib/onboardingService";
 import { compressImageToDataUrl } from "@/lib/imageCompression";
 import type { FormData } from "./vehicleConfig";
+import {
+  deriveVehicleName,
+  deriveVehicleDescription,
+  deriveVehicleLocation,
+} from "./vehicleConfig";
 
 export interface SubmitVehicleCallbacks {
   setIsLoading: (v: boolean) => void;
@@ -41,9 +46,11 @@ export async function submitVehicleOnboarding(
   try {
     cb.setIsLoading(true);
 
-    if (!formData.name?.trim()) throw new Error("Vehicle name is required");
+    // No name guard: the field is gone from the wizard and the name is derived
+    // from brand + model below. The brand/model guard that replaces it is the
+    // vehicleClass/category pair already checked here plus step 1's validation.
     if (!formData.vehicleClass) throw new Error("Please select car, van or bus");
-    if (!formData.category) throw new Error("Please select a vehicle category");
+    if (!formData.category) throw new Error("Please select a vehicle sub-category");
     if (!formData.selfDriveEnabled && !formData.withDriverEnabled) {
       throw new Error("Turn on at least one rental mode — self-drive or with driver");
     }
@@ -114,7 +121,27 @@ export async function submitVehicleOnboarding(
       selfDriveExcludes: cleanList(formData.selfDriveExcludes),
       withDriverIncludes: cleanList(formData.withDriverIncludes),
       withDriverExcludes: cleanList(formData.withDriverExcludes),
-      rules: cleanList(formData.rules),
+      /**
+       * Identity, derived rather than typed — the Vehicle Name, Description and
+       * Rules inputs were removed from step 0.
+       *
+       * These three still have to be sent. `VehicleOnboarding.name` and
+       * `Offer.name`/`Offer.description` are `required` in Mongoose, so an
+       * omitted name fails at Model.create and an omitted description gets the
+       * server's "Auto-created from vehicle rental onboarding" fallback, which
+       * is published to guests. Spreading `...formData` above would carry stale
+       * values from a draft saved before the fields were removed, so these
+       * override rather than rely on it.
+       */
+      name: deriveVehicleName(formData),
+      description: deriveVehicleDescription(formData),
+      rules: [],
+
+      // Address/city/state/pincode, from the business address — the Pickup
+      // location card is gone from the capacity step. Spread last-wins over
+      // `...formData` so a draft saved while that card still existed does not
+      // resurrect a stale address.
+      ...deriveVehicleLocation(formData),
 
       // Driver fields belong to the chauffeur mode. A vendor who filled them in
       // and then turned that mode off would otherwise ship a driver on a
