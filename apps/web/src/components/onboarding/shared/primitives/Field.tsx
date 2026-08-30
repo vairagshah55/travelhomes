@@ -31,7 +31,12 @@ const Field: React.FC<FieldProps> = ({
     <div className={`flex items-baseline ${right ? "justify-between" : "gap-2"} gap-3`}>
       <label
         htmlFor={htmlFor}
-        className="text-[11.5px] font-bold text-th-warm-text-dark tracking-[0.06em] uppercase"
+        /* Sentence case, as written. This used to force `uppercase`, which
+           overrode every label in the app: "Fuel policy" rendered as FUEL
+           POLICY and "Per km" as PER KM, so no amount of fixing the source
+           strings changed what a vendor actually read. Size and weight are
+           bumped a little to hold the hierarchy the shouting used to. */
+        className="text-[12.5px] font-semibold text-th-warm-text-dark tracking-[0.01em]"
       >
         {label}
         {required && (
@@ -46,7 +51,7 @@ const Field: React.FC<FieldProps> = ({
         )}
       </label>
       {optional && !right && (
-        <span className="text-[10px] font-semibold text-th-warm-text-muted tracking-[0.04em] uppercase">
+        <span className="text-[10.5px] font-medium text-th-warm-text-muted tracking-[0.01em]">
           Optional
         </span>
       )}

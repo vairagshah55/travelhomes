@@ -3,9 +3,8 @@ import {
   BusinessDetailsStep,
   PersonalDetailsStep,
   TermsConditionsStep,
-  DiscountOffersStep,
 } from "@/components/onboarding/shared";
-import type { CountryOption, DiscountOffer } from "@/components/onboarding/shared";
+import type { CountryOption } from "@/components/onboarding/shared";
 // The photos step is shared with caravan and activity. Those two also collect a
 // name, description and house rules on it; vehicle shows photos only, so it
 // switches the other two cards off rather than forking the component.
@@ -67,18 +66,14 @@ export interface VehicleStepApi {
 
   // Step 4
   toggleRentalMode: (mode: "selfDrive" | "withDriver") => void;
-  /** One-way / two-way chauffeur trips; at least one is required. */
-  toggleTripDirection: (which: "oneWay" | "twoWay") => void;
+  /** One-way / two-way chauffeur trips — exactly one is required. */
+  setTripDirection: (which: "oneWay" | "twoWay") => void;
   setPricingField: (field: string, value: string) => void;
   addListItem: (field: VehicleListField) => void;
   updateListItem: (field: VehicleListField, index: number, value: string) => void;
   removeListItem: (field: VehicleListField, index: number) => void;
 
   // Step 5
-  discountOffers: any;
-  handleDiscountToggle: (key: string) => void;
-  handleDiscountOfferChange: (key: string, field: keyof DiscountOffer, value: string) => void;
-  discountErrors: Record<string, string>;
 
   // Step 6
   setComplianceField: (field: string, value: string) => void;
@@ -105,8 +100,9 @@ export interface VehicleStepApi {
 /**
  * Step dispatcher for the vehicle rental onboarding flow.
  *
- * Nine steps: 0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing · 4 Offers |
- * 5 Documents | 6 Business · 7 Personal | 8 Terms. Keep this order in sync with
+ * Eight steps: 0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing |
+ * 4 Documents | 5 Business · 6 Personal | 7 Terms. (Discount Offers was
+ * dropped from THIS flow only — caravan, stay and activity still have it.) Keep this order in sync with
  * validateVehicleStep, TOTAL_STEPS and VEHICLE_PHASES in
  * pages/onboarding/VehicleOnboarding. (Was ten: identity and photos merged.)
  */
@@ -242,7 +238,6 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         <VehiclePricingStep
           selfDriveEnabled={formData.selfDriveEnabled}
           selfDrivePerDay={formData.selfDrivePerDay}
-          selfDrivePerKm={formData.selfDrivePerKm}
           freeKmPerDay={formData.freeKmPerDay}
           extraKmCharge={formData.extraKmCharge}
           minRentalHours={formData.minRentalHours}
@@ -253,11 +248,9 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
           driverAllowancePerDay={formData.driverAllowancePerDay}
           withDriverOneWay={formData.withDriverOneWay}
           withDriverTwoWay={formData.withDriverTwoWay}
-          onToggleTripDirection={api.toggleTripDirection}
+          onSelectTripDirection={api.setTripDirection}
           withDriverIncludes={formData.withDriverIncludes}
           withDriverExcludes={formData.withDriverExcludes}
-          fuelPolicy={formData.fuelPolicy}
-          tollsAndParking={formData.tollsAndParking}
           cancellationWindowHours={formData.cancellationWindowHours}
           errors={errors}
           onToggleMode={api.toggleRentalMode}
@@ -270,17 +263,6 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
       );
 
     case 4:
-      return (
-        <DiscountOffersStep
-          offers={api.discountOffers}
-          onToggle={api.handleDiscountToggle}
-          onOfferChange={api.handleDiscountOfferChange}
-          errors={api.discountErrors}
-          weeklyLabel="Weekly-Monthly Offers"
-        />
-      );
-
-    case 5:
       return (
         <VehicleComplianceStep
           rcPhotos={formData.rcPhotos}
@@ -299,7 +281,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 6:
+    case 5:
       return (
         <BusinessDetailsStep
           values={{
@@ -334,7 +316,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 7:
+    case 6:
       return (
         <PersonalDetailsStep
           values={{
@@ -369,7 +351,7 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         />
       );
 
-    case 8:
+    case 7:
       return (
         <TermsConditionsStep
           termsAccepted={formData.termsAccepted}

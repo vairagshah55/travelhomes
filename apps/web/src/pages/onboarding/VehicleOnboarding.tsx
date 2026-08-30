@@ -41,13 +41,14 @@ import { VehicleStepRenderer } from "@/components/onboarding/vehicle/VehicleStep
  */
 const VEHICLE_PHASES: OnboardingPhase[] = [
   { label: "Your vehicle", steps: 3 },
-  { label: "Pricing", steps: 2 },
+  { label: "Pricing", steps: 1 },
   { label: "Documents", steps: 1 },
   { label: "About you", steps: 2 },
 ];
 
-// 9 since the vehicle identity and photos steps merged — see VehicleStepRenderer.
-const TOTAL_STEPS = 9;
+// 8: identity+photos merged into one step, and Discount Offers was dropped
+// from this flow. Keep in sync with VehicleStepRenderer and VEHICLE_PHASES.
+const TOTAL_STEPS = 8;
 const FORM_STORAGE_KEY = "vehicle_onboarding_form";
 const STEP_STORAGE_KEY = "vehicle_onboarding_step";
 /** CMS category/feature group this flow reads. */
@@ -212,69 +213,10 @@ const VehicleOnboarding = () => {
     });
   }, [userDetailsLoading, userDetails]);
 
-  // Auto-seed discount final prices from the headline rate, once the offers step
-  // is reached. Only fills fields still empty — never overrides a typed value.
+  // `baseRate` still feeds the preview card's price. The effect that used to
+  // auto-fill discount final prices went with the Discount Offers step, which
+  // this flow no longer has — it was keyed on that step's index.
   const baseRate = headlineRate(formData);
-  useEffect(() => {
-    if (currentStep !== 5) return;
-    if (baseRate <= 0) return;
-
-    setFormData((prev) => {
-      const next = { ...prev };
-      let changed = false;
-
-      const calculateFinal = (type: string, value: string) => {
-        const val = parseFloat(value) || 0;
-        return type === "percentage"
-          ? Math.max(0, baseRate - (baseRate * val) / 100).toFixed(0)
-          : Math.max(0, baseRate - val).toFixed(0);
-      };
-
-      const slots: [keyof FormData, keyof FormData, keyof FormData, keyof FormData][] = [
-        [
-          "firstUserDiscount",
-          "firstUserDiscountFinalPrice",
-          "firstUserDiscountType",
-          "firstUserDiscountValue",
-        ],
-        ["festivalOffers", "festivalOffersFinalPrice", "festivalOffersType", "festivalOffersValue"],
-        [
-          "weeklyMonthlyOffers",
-          "weeklyMonthlyOffersFinalPrice",
-          "weeklyMonthlyOffersType",
-          "weeklyMonthlyOffersValue",
-        ],
-        ["specialOffers", "specialOffersFinalPrice", "specialOffersType", "specialOffersValue"],
-      ];
-
-      for (const [enabledKey, finalKey, typeKey, valueKey] of slots) {
-        if (prev[enabledKey] && !prev[finalKey]) {
-          (next as any)[finalKey] = calculateFinal(
-            String(prev[typeKey]),
-            String(prev[valueKey] ?? ""),
-          );
-          changed = true;
-        }
-      }
-
-      return changed ? next : prev;
-    });
-  }, [
-    currentStep,
-    baseRate,
-    formData.firstUserDiscount,
-    formData.firstUserDiscountType,
-    formData.firstUserDiscountValue,
-    formData.festivalOffers,
-    formData.festivalOffersType,
-    formData.festivalOffersValue,
-    formData.weeklyMonthlyOffers,
-    formData.weeklyMonthlyOffersType,
-    formData.weeklyMonthlyOffersValue,
-    formData.specialOffers,
-    formData.specialOffersType,
-    formData.specialOffersValue,
-  ]);
 
   const clearError = (field: string) => {
     setErrors((prev) => {
@@ -449,9 +391,20 @@ const VehicleOnboarding = () => {
     });
   };
 
-  const toggleTripDirection = (which: "oneWay" | "twoWay") => {
-    const field = which === "oneWay" ? "withDriverOneWay" : "withDriverTwoWay";
-    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
+  /**
+   * Trip direction is a single choice — one-way OR two-way, never both.
+   *
+   * Set rather than toggled: clicking the selected option is a no-op instead of
+   * clearing it, so there is no way to click your way into "nothing selected"
+   * and only find out at validation. Same contract as the rental-mode selector
+   * above.
+   */
+  const setTripDirection = (which: "oneWay" | "twoWay") => {
+    setFormData((prev) => ({
+      ...prev,
+      withDriverOneWay: which === "oneWay",
+      withDriverTwoWay: which === "twoWay",
+    }));
   };
 
   const setPricingField = (field: string, value: string) =>
@@ -571,72 +524,6 @@ const VehicleOnboarding = () => {
   const businessMapQuery = `${formData.businessCity || ""} ${formData.businessState || ""} ${formData.businessPincode || ""} India`;
   const mapSrcbusiness = `https://www.google.com/maps?q=${encodeURIComponent(businessMapQuery)}&output=embed`;
 
-  // ─── Discount offers mapping for shared DiscountOffersStep ────────────
-  const discountOffers = {
-    firstUser: {
-      enabled: formData.firstUserDiscount,
-      type: formData.firstUserDiscountType,
-      value: formData.firstUserDiscountValue,
-      finalPrice: formData.firstUserDiscountFinalPrice,
-    },
-    festival: {
-      enabled: formData.festivalOffers,
-      type: formData.festivalOffersType,
-      value: formData.festivalOffersValue,
-      finalPrice: formData.festivalOffersFinalPrice,
-    },
-    weekly: {
-      enabled: formData.weeklyMonthlyOffers,
-      type: formData.weeklyMonthlyOffersType,
-      value: formData.weeklyMonthlyOffersValue,
-      finalPrice: formData.weeklyMonthlyOffersFinalPrice,
-    },
-    special: {
-      enabled: formData.specialOffers,
-      type: formData.specialOffersType,
-      value: formData.specialOffersValue,
-      finalPrice: formData.specialOffersFinalPrice,
-    },
-  };
-
-  const DISCOUNT_PREFIX: Record<string, string> = {
-    firstUser: "firstUserDiscount",
-    festival: "festivalOffers",
-    weekly: "weeklyMonthlyOffers",
-    special: "specialOffers",
-  };
-
-  const handleDiscountToggle = (key: string) => {
-    const field = DISCOUNT_PREFIX[key];
-    if (field) setFormData((prev) => ({ ...prev, [field]: !(prev as any)[field] }));
-  };
-
-  const handleDiscountOfferChange = (key: string, field: keyof DiscountOffer, value: string) => {
-    const prefix = DISCOUNT_PREFIX[key];
-    if (!prefix) return;
-    const suffix = { type: "Type", value: "Value", finalPrice: "FinalPrice" }[field as string];
-    if (!suffix) return;
-
-    const formField = prefix + suffix;
-    setFormData((prev) => ({ ...prev, [formField]: value }));
-    if (errors[formField]) clearError(formField);
-  };
-
-  const discountErrors: Record<string, string> = {};
-  if (errors.firstUserDiscountValue) discountErrors.firstUserValue = errors.firstUserDiscountValue;
-  if (errors.firstUserDiscountFinalPrice)
-    discountErrors.firstUserFinalPrice = errors.firstUserDiscountFinalPrice;
-  if (errors.festivalOffersValue) discountErrors.festivalValue = errors.festivalOffersValue;
-  if (errors.festivalOffersFinalPrice)
-    discountErrors.festivalFinalPrice = errors.festivalOffersFinalPrice;
-  if (errors.weeklyMonthlyOffersValue) discountErrors.weeklyValue = errors.weeklyMonthlyOffersValue;
-  if (errors.weeklyMonthlyOffersFinalPrice)
-    discountErrors.weeklyFinalPrice = errors.weeklyMonthlyOffersFinalPrice;
-  if (errors.specialOffersValue) discountErrors.specialValue = errors.specialOffersValue;
-  if (errors.specialOffersFinalPrice)
-    discountErrors.specialFinalPrice = errors.specialOffersFinalPrice;
-
-  // ─── Business details mapping for shared BusinessDetailsStep ──────────
   const handleBusinessFieldChange = (field: string, value: string) => {
     const fieldMap: Record<string, string> = {
       brandName: "brandName",
@@ -809,11 +696,10 @@ const VehicleOnboarding = () => {
       totalSteps={TOTAL_STEPS}
       phases={VEHICLE_PHASES}
       preview={
-        // Steps 0-4 are the listing content a guest sees; the document and
+        // Steps 0-3 are the listing content a guest sees; the document and
         // account steps that follow don't change the card, so the preview panel
-        // drops away rather than sitting there inert. (0-5 before the identity
-        // and photos steps merged.)
-        currentStep <= 4 ? (
+        // drops away rather than sitting there inert.
+        currentStep <= 3 ? (
           <VehicleCardPreview
             /* Derived, not `formData.name`/`.description` — those inputs were
                removed from step 0, so the card would sit on its "Your vehicle
@@ -885,15 +771,11 @@ const VehicleOnboarding = () => {
           adjustCapacity,
           setPickupPoint,
           toggleRentalMode,
-          toggleTripDirection,
+          setTripDirection,
           setPricingField,
           addListItem,
           updateListItem,
           removeListItem,
-          discountOffers,
-          handleDiscountToggle,
-          handleDiscountOfferChange,
-          discountErrors,
           setComplianceField,
           handleDocUpload,
           removeDoc,

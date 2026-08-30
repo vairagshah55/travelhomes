@@ -22,8 +22,8 @@ const hasLine = (items: string[] | undefined) => !!items?.some((i) => i.trim());
  * `errors` is empty and `toastError` is unset.
  *
  * Step order matches VehicleStepRenderer:
- *   0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing · 4 Offers |
- *   5 Documents | 6 Business · 7 Personal | 8 Terms
+ *   0 Vehicle + Photos · 1 Specs · 2 Capacity | 3 Pricing |
+ *   4 Documents | 5 Business · 6 Personal | 7 Terms
  */
 export function validateVehicleStep(
   currentStep: number,
@@ -121,30 +121,6 @@ export function validateVehicleStep(
     }
 
   } else if (currentStep === 4) {
-    if (formData.firstUserDiscount) {
-      if (!formData.firstUserDiscountValue)
-        newErrors.firstUserDiscountValue = "Discount value is required";
-      if (!formData.firstUserDiscountFinalPrice)
-        newErrors.firstUserDiscountFinalPrice = "Final price is required";
-    }
-    if (formData.festivalOffers) {
-      if (!formData.festivalOffersValue)
-        newErrors.festivalOffersValue = "Discount value is required";
-      if (!formData.festivalOffersFinalPrice)
-        newErrors.festivalOffersFinalPrice = "Final price is required";
-    }
-    if (formData.weeklyMonthlyOffers) {
-      if (!formData.weeklyMonthlyOffersValue)
-        newErrors.weeklyMonthlyOffersValue = "Discount value is required";
-      if (!formData.weeklyMonthlyOffersFinalPrice)
-        newErrors.weeklyMonthlyOffersFinalPrice = "Final price is required";
-    }
-    if (formData.specialOffers) {
-      if (!formData.specialOffersValue) newErrors.specialOffersValue = "Discount value is required";
-      if (!formData.specialOffersFinalPrice)
-        newErrors.specialOffersFinalPrice = "Final price is required";
-    }
-  } else if (currentStep === 5) {
     if (!formData.rcPhotos || formData.rcPhotos.length === 0)
       newErrors.rcPhotos = "The registration certificate is required";
 
@@ -174,7 +150,7 @@ export function validateVehicleStep(
       if (!formData.driverLicencePhotos || formData.driverLicencePhotos.length === 0)
         newErrors.driverLicencePhotos = "A photo of the driving licence is required";
     }
-  } else if (currentStep === 6) {
+  } else if (currentStep === 5) {
     if (!formData.brandName?.trim()) newErrors.brandName = "Brand name is required";
     if (!formData.legalCompanyName?.trim())
       newErrors.legalCompanyName = "Legal company name is required";
@@ -190,7 +166,7 @@ export function validateVehicleStep(
     if (!formData.businessPhoneNumber?.trim() || formData.businessPhoneNumber.length !== 10) {
       newErrors.businessPhoneNumber = "Valid business phone number is required";
     }
-  } else if (currentStep === 7) {
+  } else if (currentStep === 6) {
     if (!formData.firstName?.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required";
     if (!formData.personalLocality?.trim()) newErrors.personalLocality = "Country is required";
@@ -205,7 +181,7 @@ export function validateVehicleStep(
     if (!formData.idProof) newErrors.idProof = "ID Proof type is required";
     if (!formData.idPhotos || formData.idPhotos.length === 0)
       newErrors.idPhotos = "ID Proof photo is required";
-  } else if (currentStep === 8) {
+  } else if (currentStep === 7) {
     if (!formData.termsAccepted) {
       return {
         errors: {},

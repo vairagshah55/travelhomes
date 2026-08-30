@@ -14,7 +14,6 @@ export type VehicleListField =
 interface VehiclePricingStepProps {
   selfDriveEnabled: boolean;
   selfDrivePerDay: string;
-  selfDrivePerKm: string;
   freeKmPerDay: string;
   extraKmCharge: string;
   minRentalHours: string;
@@ -26,12 +25,10 @@ interface VehiclePricingStepProps {
   driverAllowancePerDay: string;
   withDriverOneWay: boolean;
   withDriverTwoWay: boolean;
-  onToggleTripDirection: (which: "oneWay" | "twoWay") => void;
+  onSelectTripDirection: (which: "oneWay" | "twoWay") => void;
   withDriverIncludes: string[];
   withDriverExcludes: string[];
 
-  fuelPolicy: FuelPolicy;
-  tollsAndParking: TollsPolicy;
   cancellationWindowHours: string;
 
   errors: Record<string, string>;
@@ -312,7 +309,6 @@ const ModeOption = ({
 const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   selfDriveEnabled,
   selfDrivePerDay,
-  selfDrivePerKm,
   freeKmPerDay,
   extraKmCharge,
   minRentalHours,
@@ -323,11 +319,9 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   driverAllowancePerDay,
   withDriverOneWay,
   withDriverTwoWay,
-  onToggleTripDirection,
+  onSelectTripDirection,
   withDriverIncludes,
   withDriverExcludes,
-  fuelPolicy,
-  tollsAndParking,
   cancellationWindowHours,
   errors,
   onToggleMode,
@@ -403,13 +397,6 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                       error={!!errors.selfDrivePerDay}
                     />
                   </Field>
-                  <Field label="Per km" optional>
-                    <PriceInput
-                      value={selfDrivePerKm}
-                      onChange={set("selfDrivePerKm")}
-                      unit="/ km"
-                    />
-                  </Field>
                   <Field
                     label="Max kilometres per day"
                     optional
@@ -417,7 +404,11 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                   >
                     <UnitInput value={freeKmPerDay} onChange={set("freeKmPerDay")} unit="km" />
                   </Field>
-                  <Field label="Extra km charge" optional help="Charged beyond the daily maximum.">
+                  <Field
+                    label="Extra kilometre charge"
+                    optional
+                    help="Charged beyond the daily maximum."
+                  >
                     <PriceInput value={extraKmCharge} onChange={set("extraKmCharge")} unit="/ km" />
                   </Field>
                   <Field label="Minimum rental" optional>
@@ -469,9 +460,15 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
               <div className="flex flex-col gap-4 pl-1">
                 {/* Which trips the chauffeur takes. Both are on by default —
                   most operators do both, and a mode accepting neither
-                  direction is bookable by nobody, which validation blocks. */}
+                  direction is bookable by nobody, which validation blocks.
+                  One choice, not two toggles — a chauffeur trip is either
+                  one-way or a round trip. */}
                 <Field label="Trips offered" required error={errors.withDriverTrip}>
-                  <div className="flex flex-wrap gap-2.5">
+                  <div
+                    role="radiogroup"
+                    aria-label="Trips offered"
+                    className="flex flex-wrap gap-2.5"
+                  >
                     {(
                       [
                         ["oneWay", "One way", withDriverOneWay],
@@ -481,9 +478,13 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                       <button
                         key={key}
                         type="button"
-                        aria-pressed={on}
+                        role="radio"
+                        aria-checked={on}
                         onClick={() => {
-                          onToggleTripDirection(key);
+                          // Selecting the active option is a no-op, so there is
+                          // no way to click into "nothing selected" and only
+                          // find out at validation.
+                          if (!on) onSelectTripDirection(key);
                           clearError("withDriverTrip");
                         }}
                         className={cn(
@@ -502,7 +503,7 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                 </Field>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field label="Per km" required error={errors.withDriverPerKm}>
+                  <Field label="Per kilometre" required error={errors.withDriverPerKm}>
                     <PriceInput
                       error={!!errors.withDriverPerKm}
                       value={withDriverPerKm}
@@ -550,33 +551,15 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
       {/* ─── Shared terms ───────────────────────────────────────────────── */}
       <SectionCard
         icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
-        title="Rental terms"
-        subtitle="These apply to both modes and are shown on the listing."
+        title="Free cancellation window"
+        subtitle="How long before pickup a guest can still cancel for free."
       >
+        {/* Fuel policy and Tolls & parking were removed from this card. They
+            keep their schema defaults ('excluded' / 'on-actuals') server-side,
+            so existing listings are unaffected and the details page still has
+            something to show. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Fuel policy" required>
-            <StyledSelect value={fuelPolicy} onChange={set("fuelPolicy")}>
-              {FUEL_POLICIES.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </StyledSelect>
-          </Field>
-          <Field label="Tolls & parking" required>
-            <StyledSelect value={tollsAndParking} onChange={set("tollsAndParking")}>
-              {TOLLS_POLICIES.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </StyledSelect>
-          </Field>
-          <Field
-            label="Free cancellation window"
-            optional
-            help="Hours before pickup that a guest can cancel free."
-          >
+          <Field label="Cancel up to" optional help="Hours before pickup.">
             <UnitInput
               value={cancellationWindowHours}
               onChange={set("cancellationWindowHours")}

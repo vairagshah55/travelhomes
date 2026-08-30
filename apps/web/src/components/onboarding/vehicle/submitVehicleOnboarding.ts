@@ -109,7 +109,6 @@ export async function submitVehicleOnboarding(
       manufactureYear: num(formData.manufactureYear),
 
       selfDrivePerDay,
-      selfDrivePerKm: num(formData.selfDrivePerKm),
       freeKmPerDay: num(formData.freeKmPerDay),
       extraKmCharge: num(formData.extraKmCharge),
       minRentalHours: num(formData.minRentalHours),

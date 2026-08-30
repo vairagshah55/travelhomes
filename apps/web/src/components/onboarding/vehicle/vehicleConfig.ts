@@ -39,7 +39,6 @@ export interface FormData {
   // ─── Step 4 · Rental modes + pricing ──────────────────────────────────
   selfDriveEnabled: boolean;
   selfDrivePerDay: string;
-  selfDrivePerKm: string;
   freeKmPerDay: string;
   extraKmCharge: string;
   minRentalHours: string;
@@ -50,18 +49,17 @@ export interface FormData {
   withDriverPerKm: string;
   driverAllowancePerDay: string;
   /**
-   * Which chauffeur trips the vendor takes. At least one is required once
-   * with-driver is on — a mode that accepts neither direction is bookable by
-   * nobody. Two booleans rather than one enum because offering both is the
-   * common case.
+   * Which chauffeur trips the vendor takes — EXACTLY one of the two.
+   *
+   * Kept as two booleans rather than one enum so the stored shape survives if
+   * both ever become selectable again; the UI and validation enforce the
+   * single choice.
    */
   withDriverOneWay: boolean;
   withDriverTwoWay: boolean;
   withDriverIncludes: string[];
   withDriverExcludes: string[];
 
-  fuelPolicy: FuelPolicy;
-  tollsAndParking: TollsPolicy;
   cancellationWindowHours: string;
 
   // ─── Step 5 · Discount offers ─────────────────────────────────────────
@@ -151,7 +149,6 @@ export const defaultVehicleFormData: FormData = {
 
   selfDriveEnabled: false,
   selfDrivePerDay: "",
-  selfDrivePerKm: "",
   freeKmPerDay: "",
   extraKmCharge: "",
   minRentalHours: "24",
@@ -161,13 +158,13 @@ export const defaultVehicleFormData: FormData = {
   withDriverEnabled: false,
   withDriverPerKm: "",
   driverAllowancePerDay: "",
-  withDriverOneWay: true,
-  withDriverTwoWay: true,
+  // Neither pre-selected: the field is required and single-select, so a
+  // default would be a choice the vendor never made.
+  withDriverOneWay: false,
+  withDriverTwoWay: false,
   withDriverIncludes: [],
   withDriverExcludes: [],
 
-  fuelPolicy: "excluded",
-  tollsAndParking: "on-actuals",
   cancellationWindowHours: "24",
 
   firstUserDiscount: false,
