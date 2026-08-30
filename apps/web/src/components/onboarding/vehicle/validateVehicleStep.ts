@@ -88,8 +88,11 @@ export function validateVehicleStep(
     }
 
     if (formData.withDriverEnabled) {
-      if (!positive(formData.withDriverPerDay))
-        newErrors.withDriverPerDay = "A per-day rate is required for chauffeur-driven";
+      // Per KILOMETRE — the chauffeur per-day rate was removed from the form.
+      if (!positive(formData.withDriverPerKm))
+        newErrors.withDriverPerKm = "A per-km rate is required for chauffeur-driven";
+      if (!formData.withDriverOneWay && !formData.withDriverTwoWay)
+        newErrors.withDriverTrip = "Choose one-way, two-way, or both";
       if (!hasLine(formData.withDriverIncludes))
         newErrors.withDriverIncludes = "Please add at least one inclusion";
       if (!hasLine(formData.withDriverExcludes))
@@ -107,14 +110,6 @@ export function validateVehicleStep(
       newErrors.freeKmPerDay = "Set a free-km allowance, or clear the extra-km charge";
     }
 
-    const nightHour = Number(formData.nightChargeAfter);
-    if (
-      formData.withDriverEnabled &&
-      formData.nightChargeAfter !== "" &&
-      (!Number.isInteger(nightHour) || nightHour < 0 || nightHour > 23)
-    ) {
-      newErrors.nightChargeAfter = "Enter an hour between 0 and 23";
-    }
   } else if (currentStep === 4) {
     if (formData.firstUserDiscount) {
       if (!formData.firstUserDiscountValue)

@@ -17,17 +17,16 @@ interface VehiclePricingStepProps {
   selfDrivePerKm: string;
   freeKmPerDay: string;
   extraKmCharge: string;
-  securityDeposit: string;
   minRentalHours: string;
   selfDriveIncludes: string[];
   selfDriveExcludes: string[];
 
   withDriverEnabled: boolean;
-  withDriverPerDay: string;
   withDriverPerKm: string;
   driverAllowancePerDay: string;
-  nightChargeAfter: string;
-  outstationPerKm: string;
+  withDriverOneWay: boolean;
+  withDriverTwoWay: boolean;
+  onToggleTripDirection: (which: "oneWay" | "twoWay") => void;
   withDriverIncludes: string[];
   withDriverExcludes: string[];
 
@@ -238,63 +237,44 @@ const ItemList = ({
 );
 
 /** Header row that turns a whole rate card on or off. */
-const ModeToggle = ({
-  icon,
-  title,
-  subtitle,
+/**
+ * The compact switch that sits in a mode card's header.
+ *
+ * Replaces ModeToggle, a full-width row that carried its own title and subtitle
+ * — which meant each mode rendered two headings, the card's and the toggle's,
+ * saying the same thing. The label survives for screen readers only; sighted
+ * users read the card title beside it.
+ */
+const ModeSwitch = ({
   enabled,
+  label,
   onToggle,
 }: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
   enabled: boolean;
+  label: string;
   onToggle: () => void;
 }) => (
   <button
     type="button"
-    aria-pressed={enabled}
+    role="switch"
+    aria-checked={enabled}
+    aria-label={label}
     onClick={onToggle}
     className={cn(
-      "w-full flex items-center gap-3 px-[18px] py-4 rounded-[14px] border-[1.5px] cursor-pointer text-left transition-all duration-150",
+      "relative w-[46px] h-[26px] rounded-full border-[1.5px] shrink-0 cursor-pointer transition-colors duration-150",
       enabled
-        ? "border-th-brand bg-th-brand-soft"
-        : "border-th-warm-border bg-th-surface-0 hover:border-th-brand hover:bg-th-brand-soft",
+        ? "bg-th-brand border-th-brand"
+        : "bg-th-warm-surface border-th-warm-border hover:border-th-brand",
     )}
   >
-    <div
+    <span
       className={cn(
-        "w-[38px] h-[38px] rounded-[11px] border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-150",
-        enabled
-          ? "bg-th-brand-soft border-th-brand-border-soft text-th-brand"
-          : "bg-th-warm-surface border-th-warm-border text-th-warm-text-dark",
+        "absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-all duration-150",
+        enabled ? "left-[23px]" : "left-[2px]",
       )}
-    >
-      {icon}
-    </div>
-    <div className="flex-1 min-w-0">
-      <p
-        className={cn(
-          "text-[14px] font-bold tracking-[-0.01em]",
-          enabled ? "text-th-brand" : "text-th-text-primary",
-        )}
-      >
-        {title}
-      </p>
-      <p className="text-[12px] text-th-warm-text-dark leading-[1.5]">{subtitle}</p>
-    </div>
-    <div
-      className={cn(
-        "w-[42px] h-[24px] rounded-full border-[1.5px] flex items-center px-[2px] shrink-0 transition-all duration-150",
-        enabled
-          ? "bg-th-brand border-th-brand justify-end"
-          : "bg-th-warm-surface border-th-warm-border justify-start",
-      )}
-    >
-      <span className="w-[18px] h-[18px] rounded-full bg-th-surface-0 shadow-[0_1px_2px_rgba(0,0,0,0.15)]" />
-    </div>
+    />
   </button>
-);
+)
 
 /**
  * Rental modes and pricing.
@@ -313,16 +293,15 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   selfDrivePerKm,
   freeKmPerDay,
   extraKmCharge,
-  securityDeposit,
   minRentalHours,
   selfDriveIncludes,
   selfDriveExcludes,
   withDriverEnabled,
-  withDriverPerDay,
   withDriverPerKm,
   driverAllowancePerDay,
-  nightChargeAfter,
-  outstationPerKm,
+  withDriverOneWay,
+  withDriverTwoWay,
+  onToggleTripDirection,
   withDriverIncludes,
   withDriverExcludes,
   fuelPolicy,
@@ -356,19 +335,22 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
       <SectionCard
         icon={<Car size={16} className="text-th-brand" strokeWidth={2.5} />}
         title="Self-drive"
-        subtitle="The guest drives it themselves."
-      >
-        <div className="flex flex-col gap-4">
-          <ModeToggle
-            icon={<Car size={17} />}
-            title="Offer this vehicle for self-drive"
-            subtitle="A valid driving licence is collected at booking."
+        subtitle="The guest drives it themselves. A valid driving licence is collected at booking."
+        /* The switch sits beside the title rather than in a row below it. The
+           old ModeToggle restated the card's own heading to carry the control,
+           so every mode read as two headings stacked on each other. */
+        action={
+          <ModeSwitch
             enabled={selfDriveEnabled}
+            label="Offer this vehicle for self-drive"
             onToggle={() => {
               onToggleMode("selfDrive");
               clearError("pricing");
             }}
           />
+        }
+      >
+        <div className="flex flex-col gap-4">
 
           {selfDriveEnabled && (
             <div className="flex flex-col gap-4 pl-1">
@@ -385,17 +367,14 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                   <PriceInput value={selfDrivePerKm} onChange={set("selfDrivePerKm")} unit="/ km" />
                 </Field>
                 <Field
-                  label="Free kilometres per day"
+                  label="Max kilometres per day"
                   optional
                   help="Distance included in the daily rate."
                 >
                   <UnitInput value={freeKmPerDay} onChange={set("freeKmPerDay")} unit="km" />
                 </Field>
-                <Field label="Extra km charge" optional help="Charged beyond the free allowance.">
+                <Field label="Extra km charge" optional help="Charged beyond the daily maximum.">
                   <PriceInput value={extraKmCharge} onChange={set("extraKmCharge")} unit="/ km" />
-                </Field>
-                <Field label="Security deposit" optional help="Refundable, collected at pickup.">
-                  <PriceInput value={securityDeposit} onChange={set("securityDeposit")} />
                 </Field>
                 <Field label="Minimum rental" optional>
                   <UnitInput value={minRentalHours} onChange={set("minRentalHours")} unit="hours" />
@@ -433,33 +412,58 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
       <SectionCard
         icon={<UserRound size={16} className="text-th-brand" strokeWidth={2.5} />}
         title="With driver"
-        subtitle="You provide a chauffeur with the vehicle."
-      >
-        <div className="flex flex-col gap-4">
-          <ModeToggle
-            icon={<UserRound size={17} />}
-            title="Offer this vehicle with a driver"
-            subtitle="Driver details are collected on the next steps."
+        subtitle="You provide a chauffeur. Driver details are collected on the next steps."
+        action={
+          <ModeSwitch
             enabled={withDriverEnabled}
+            label="Offer this vehicle with a driver"
             onToggle={() => {
               onToggleMode("withDriver");
               clearError("pricing");
             }}
           />
+        }
+      >
+        <div className="flex flex-col gap-4">
 
           {withDriverEnabled && (
             <div className="flex flex-col gap-4 pl-1">
+              {/* Which trips the chauffeur takes. Both are on by default —
+                  most operators do both, and a mode accepting neither
+                  direction is bookable by nobody, which validation blocks. */}
+              <Field label="Trips offered" required error={errors.withDriverTrip}>
+                <div className="flex flex-wrap gap-2.5">
+                  {(
+                    [
+                      ["oneWay", "One way", withDriverOneWay],
+                      ["twoWay", "Two way (round trip)", withDriverTwoWay],
+                    ] as const
+                  ).map(([key, label, on]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => {
+                        onToggleTripDirection(key);
+                        clearError("withDriverTrip");
+                      }}
+                      className={cn(
+                        "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                        on
+                          ? "border-th-brand bg-th-brand-soft text-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
+                          : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft hover:text-th-brand",
+                      )}
+                    >
+                      <span className="text-[13px] font-semibold tracking-[-0.01em]">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </Field>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Per day" required error={errors.withDriverPerDay}>
+                <Field label="Per km" required error={errors.withDriverPerKm}>
                   <PriceInput
-                    value={withDriverPerDay}
-                    onChange={set("withDriverPerDay")}
-                    unit="/ day"
-                    error={!!errors.withDriverPerDay}
-                  />
-                </Field>
-                <Field label="Per km" optional>
-                  <PriceInput
+                    error={!!errors.withDriverPerKm}
                     value={withDriverPerKm}
                     onChange={set("withDriverPerKm")}
                     unit="/ km"
@@ -470,25 +474,6 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                     value={driverAllowancePerDay}
                     onChange={set("driverAllowancePerDay")}
                     unit="/ day"
-                  />
-                </Field>
-                <Field
-                  label="Night charge after"
-                  optional
-                  help="Hour of the day, 0–23, when the night rate starts."
-                >
-                  <UnitInput
-                    value={nightChargeAfter}
-                    onChange={set("nightChargeAfter")}
-                    unit="hrs"
-                    max={23}
-                  />
-                </Field>
-                <Field label="Outstation per km" optional help="Applies outside the home city.">
-                  <PriceInput
-                    value={outstationPerKm}
-                    onChange={set("outstationPerKm")}
-                    unit="/ km"
                   />
                 </Field>
               </div>

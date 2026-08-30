@@ -438,6 +438,11 @@ const VehicleOnboarding = () => {
     setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  const toggleTripDirection = (which: "oneWay" | "twoWay") => {
+    const field = which === "oneWay" ? "withDriverOneWay" : "withDriverTwoWay";
+    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
+  };
+
   const setPricingField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -875,6 +880,7 @@ const VehicleOnboarding = () => {
           adjustCapacity,
           setPickupPoint,
           toggleRentalMode,
+          toggleTripDirection,
           setPricingField,
           addListItem,
           updateListItem,

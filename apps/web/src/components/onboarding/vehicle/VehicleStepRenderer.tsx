@@ -67,6 +67,8 @@ export interface VehicleStepApi {
 
   // Step 4
   toggleRentalMode: (mode: "selfDrive" | "withDriver") => void;
+  /** One-way / two-way chauffeur trips; at least one is required. */
+  toggleTripDirection: (which: "oneWay" | "twoWay") => void;
   setPricingField: (field: string, value: string) => void;
   addListItem: (field: VehicleListField) => void;
   updateListItem: (field: VehicleListField, index: number, value: string) => void;
@@ -243,16 +245,15 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
           selfDrivePerKm={formData.selfDrivePerKm}
           freeKmPerDay={formData.freeKmPerDay}
           extraKmCharge={formData.extraKmCharge}
-          securityDeposit={formData.securityDeposit}
           minRentalHours={formData.minRentalHours}
           selfDriveIncludes={formData.selfDriveIncludes}
           selfDriveExcludes={formData.selfDriveExcludes}
           withDriverEnabled={formData.withDriverEnabled}
-          withDriverPerDay={formData.withDriverPerDay}
           withDriverPerKm={formData.withDriverPerKm}
           driverAllowancePerDay={formData.driverAllowancePerDay}
-          nightChargeAfter={formData.nightChargeAfter}
-          outstationPerKm={formData.outstationPerKm}
+          withDriverOneWay={formData.withDriverOneWay}
+          withDriverTwoWay={formData.withDriverTwoWay}
+          onToggleTripDirection={api.toggleTripDirection}
           withDriverIncludes={formData.withDriverIncludes}
           withDriverExcludes={formData.withDriverExcludes}
           fuelPolicy={formData.fuelPolicy}

@@ -669,8 +669,13 @@ async function submitVehicle(body, user) {
   // The headline price guests see. Self-drive is checked first because it's the
   // cheaper of the two when a vendor offers both (no driver allowance), so the
   // card shows the "from" rate rather than the higher chauffeur rate.
+  // Self-drive is quoted per day, chauffeur work per KILOMETRE — the chauffeur
+  // per-day rate is no longer collected. Falling through to it left a
+  // with-driver-only listing with a headline of 0, i.e. a card advertising ₹0.
+  // `withDriverPerDay` stays in the chain for listings created before that.
   const headlinePrice =
     parsePrice(doc.selfDriveEnabled ? doc.selfDrivePerDay : 0) ||
+    parsePrice(doc.withDriverEnabled ? doc.withDriverPerKm : 0) ||
     parsePrice(doc.withDriverEnabled ? doc.withDriverPerDay : 0) ||
     parsePrice(doc.finalPrice || 0);
 
@@ -714,6 +719,8 @@ async function submitVehicle(body, user) {
       withDriverEnabled: !!doc.withDriverEnabled,
       withDriverPerDay: parsePrice(doc.withDriverPerDay),
       withDriverPerKm: parsePrice(doc.withDriverPerKm),
+      withDriverOneWay: doc.withDriverOneWay !== false,
+      withDriverTwoWay: doc.withDriverTwoWay !== false,
       driverAllowancePerDay: parsePrice(doc.driverAllowancePerDay),
       nightChargeAfter: parsePrice(doc.nightChargeAfter),
       outstationPerKm: parsePrice(doc.outstationPerKm),

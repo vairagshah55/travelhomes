@@ -109,6 +109,9 @@ const OfferSchema = new Schema(
     withDriverEnabled: { type: Boolean, default: false },
     withDriverPerDay: Number,
     withDriverPerKm: Number,
+    // Chauffeur trip directions, mirrored from the onboarding doc.
+    withDriverOneWay: { type: Boolean, default: true },
+    withDriverTwoWay: { type: Boolean, default: true },
     driverAllowancePerDay: Number,
     /** Hour (0-23) after which the night charge applies. */
     nightChargeAfter: Number,

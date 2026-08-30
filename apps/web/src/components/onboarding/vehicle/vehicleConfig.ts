@@ -42,17 +42,21 @@ export interface FormData {
   selfDrivePerKm: string;
   freeKmPerDay: string;
   extraKmCharge: string;
-  securityDeposit: string;
   minRentalHours: string;
   selfDriveIncludes: string[];
   selfDriveExcludes: string[];
 
   withDriverEnabled: boolean;
-  withDriverPerDay: string;
   withDriverPerKm: string;
   driverAllowancePerDay: string;
-  nightChargeAfter: string;
-  outstationPerKm: string;
+  /**
+   * Which chauffeur trips the vendor takes. At least one is required once
+   * with-driver is on — a mode that accepts neither direction is bookable by
+   * nobody. Two booleans rather than one enum because offering both is the
+   * common case.
+   */
+  withDriverOneWay: boolean;
+  withDriverTwoWay: boolean;
   withDriverIncludes: string[];
   withDriverExcludes: string[];
 
@@ -150,17 +154,15 @@ export const defaultVehicleFormData: FormData = {
   selfDrivePerKm: "",
   freeKmPerDay: "",
   extraKmCharge: "",
-  securityDeposit: "",
   minRentalHours: "24",
   selfDriveIncludes: [],
   selfDriveExcludes: [],
 
   withDriverEnabled: false,
-  withDriverPerDay: "",
   withDriverPerKm: "",
   driverAllowancePerDay: "",
-  nightChargeAfter: "22",
-  outstationPerKm: "",
+  withDriverOneWay: true,
+  withDriverTwoWay: true,
   withDriverIncludes: [],
   withDriverExcludes: [],
 
@@ -568,10 +570,25 @@ const DISCOUNT_SLOTS: {
  */
 export function headlineRate(formData: FormData): number {
   const selfDrive = formData.selfDriveEnabled ? Number(formData.selfDrivePerDay) : 0;
-  const withDriver = formData.withDriverEnabled ? Number(formData.withDriverPerDay) : 0;
+  // Chauffeur listings are priced per KILOMETRE now — the per-day rate is gone
+  // from the form. Falling through to it left a with-driver-only listing with a
+  // headline of 0, i.e. a card advertising ₹0.
+  const withDriver = formData.withDriverEnabled ? Number(formData.withDriverPerKm) : 0;
   if (Number.isFinite(selfDrive) && selfDrive > 0) return selfDrive;
   if (Number.isFinite(withDriver) && withDriver > 0) return withDriver;
   return 0;
+}
+
+/**
+ * The unit the headline rate is quoted in.
+ *
+ * Self-drive is a daily rental and chauffeur work is per-kilometre, so the same
+ * number means different things depending on which mode the listing leads with.
+ * The card has to say which, or "₹12" reads as a day rate.
+ */
+export function headlineRateUnit(formData: FormData): "day" | "km" {
+  const selfDrive = formData.selfDriveEnabled ? Number(formData.selfDrivePerDay) : 0;
+  return Number.isFinite(selfDrive) && selfDrive > 0 ? "day" : "km";
 }
 
 /**

@@ -119,6 +119,20 @@ const VehicleOnboardingSchema = new Schema(
       type: Number,
       default: 0
     },
+    /**
+     * Which chauffeur trips the vendor takes. At least one is required once
+     * with-driver is on; both default true because most operators do both.
+     *
+     * NOTE on the neighbouring fields: `withDriverPerDay`, `nightChargeAfter`,
+     * `outstationPerKm` and `securityDeposit` are no longer collected by the
+     * wizard — chauffeur work is priced per kilometre now. They stay on the
+     * schema so listings created before that change keep what their vendor
+     * entered, and so the Offer sync can still fall back to an old per-day rate
+     * for a headline price. Don't reintroduce inputs for them without deciding
+     * what they mean alongside the per-km rate.
+     */
+    withDriverOneWay: { type: Boolean, default: true },
+    withDriverTwoWay: { type: Boolean, default: true },
     withDriverPerKm: {
       type: Number,
       default: 0

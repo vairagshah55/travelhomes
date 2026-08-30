@@ -56,12 +56,16 @@ export async function submitVehicleOnboarding(
     }
 
     const selfDrivePerDay = num(formData.selfDrivePerDay);
-    const withDriverPerDay = num(formData.withDriverPerDay);
+    const withDriverPerKm = num(formData.withDriverPerKm);
     if (formData.selfDriveEnabled && selfDrivePerDay <= 0) {
       throw new Error("A per-day rate is required for self-drive");
     }
-    if (formData.withDriverEnabled && withDriverPerDay <= 0) {
-      throw new Error("A per-day rate is required for chauffeur-driven");
+    // Chauffeur work is priced per kilometre; the per-day rate was removed.
+    if (formData.withDriverEnabled && withDriverPerKm <= 0) {
+      throw new Error("A per-km rate is required for chauffeur-driven");
+    }
+    if (formData.withDriverEnabled && !formData.withDriverOneWay && !formData.withDriverTwoWay) {
+      throw new Error("Choose one-way, two-way, or both for chauffeur trips");
     }
 
     // Gallery/cover photos are downscaled + re-encoded before base64 — there's
@@ -105,14 +109,10 @@ export async function submitVehicleOnboarding(
       selfDrivePerKm: num(formData.selfDrivePerKm),
       freeKmPerDay: num(formData.freeKmPerDay),
       extraKmCharge: num(formData.extraKmCharge),
-      securityDeposit: num(formData.securityDeposit),
       minRentalHours: num(formData.minRentalHours),
 
-      withDriverPerDay,
-      withDriverPerKm: num(formData.withDriverPerKm),
+      withDriverPerKm,
       driverAllowancePerDay: num(formData.driverAllowancePerDay),
-      nightChargeAfter: num(formData.nightChargeAfter),
-      outstationPerKm: num(formData.outstationPerKm),
       cancellationWindowHours: num(formData.cancellationWindowHours),
 
       registrationNumber: formData.registrationNumber.trim().toUpperCase(),
