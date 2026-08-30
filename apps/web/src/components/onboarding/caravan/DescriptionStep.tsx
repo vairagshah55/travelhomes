@@ -266,7 +266,7 @@ const DescriptionStep: React.FC<DescriptionStepProps> = ({
             rules.length > 0 ? (
               <PillCTA
                 icon={<Plus size={12} strokeWidth={2.5} />}
-                label="Add Rule"
+                label="Add rule"
                 onClick={onAddRule}
               />
             ) : undefined
@@ -619,7 +619,7 @@ const GalleryBlock: React.FC<{
           </p>
         </div>
         {photos.length > 0 && canAddBonus && (
-          <PillCTA as="label" icon={<Plus size={12} strokeWidth={2.5} />} label="Add More">
+          <PillCTA as="label" icon={<Plus size={12} strokeWidth={2.5} />} label="Add more">
             <input
               type="file"
               multiple

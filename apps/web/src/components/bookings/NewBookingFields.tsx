@@ -126,7 +126,7 @@ export const NewBookingFields = ({
     <div className="space-y-4">
       <SubPanel icon={User} title="Guest and service" blurb="Who's booking, and what for">
         <div className={grid}>
-          <PanelField label="Guest Name" required error={errFor("guestName")}>
+          <PanelField label="Guest name" required error={errFor("guestName")}>
             <PanelInput
               value={form.guestName}
               onChange={(v) => set("guestName", v)}
@@ -135,7 +135,7 @@ export const NewBookingFields = ({
               error={!!errFor("guestName")}
             />
           </PanelField>
-          <PanelField label="Service Name" required error={errFor("resourceName")}>
+          <PanelField label="Service name" required error={errFor("resourceName")}>
             <Select
               value={form.resourceName === NO_SERVICE_SENTINEL ? "" : form.resourceName}
               onValueChange={(v) => {
@@ -187,7 +187,7 @@ export const NewBookingFields = ({
 
       <SubPanel icon={CalendarIcon} title="Dates" blurb="When the booking starts and ends">
         <div className={grid}>
-          <PanelField label="Start Date" required error={errFor("startDate")}>
+          <PanelField label="Start date" required error={errFor("startDate")}>
             <DatePickerField
               value={form.startDate}
               onChange={(v) => {
@@ -200,7 +200,7 @@ export const NewBookingFields = ({
               placeholder="Select start date"
             />
           </PanelField>
-          <PanelField label="End Date" required error={errFor("endDate")}>
+          <PanelField label="End date" required error={errFor("endDate")}>
             <DatePickerField
               value={form.endDate}
               onChange={(v) => {
@@ -218,7 +218,7 @@ export const NewBookingFields = ({
 
       <SubPanel icon={Phone} title="Contact" blurb="Where we reach the guest">
         <div className={grid}>
-          <PanelField label="Phone Number" required error={errFor("phoneNumber")}>
+          <PanelField label="Phone number" required error={errFor("phoneNumber")}>
             <PanelInput
               value={form.phoneNumber}
               onChange={(v) => setNumeric("phoneNumber", v)}
@@ -266,7 +266,7 @@ export const NewBookingFields = ({
 
       <SubPanel icon={IndianRupee} title="Pricing">
         <div className={grid}>
-          <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
+          <PanelField label="Base price (₹)" required error={errFor("basePrice")}>
             <PanelInput
               value={form.basePrice}
               onChange={(v) => setNumeric("basePrice", v)}
@@ -275,7 +275,7 @@ export const NewBookingFields = ({
               error={!!errFor("basePrice")}
             />
           </PanelField>
-          <PanelField label="Extra Charges (₹)" required error={errFor("extraCharges")}>
+          <PanelField label="Extra charges (₹)" required error={errFor("extraCharges")}>
             <PanelInput
               value={form.extraCharges}
               onChange={(v) => setNumeric("extraCharges", v)}
@@ -289,7 +289,7 @@ export const NewBookingFields = ({
 
       <SubPanel icon={CreditCard} title="Payment">
         <div className={grid}>
-          <PanelField label="Payment Method" required error={errFor("paymentMethod")}>
+          <PanelField label="Payment method" required error={errFor("paymentMethod")}>
             <Select
               value={form.paymentMethod}
               onValueChange={(v) => {
@@ -312,7 +312,7 @@ export const NewBookingFields = ({
               </SelectContent>
             </Select>
           </PanelField>
-          <PanelField label="Total Amount" required error={errFor("totalAmount")}>
+          <PanelField label="Total amount" required error={errFor("totalAmount")}>
             <PanelInput
               value={
                 form.totalAmount ||
@@ -351,7 +351,7 @@ export const NewBookingFields = ({
               className={cn("resize-none py-2.5", CONTROL)}
             />
           </PanelField>
-          <PanelField label="Special Requests">
+          <PanelField label="Special requests">
             <Textarea
               value={form.specialRequests}
               onChange={(e) => set("specialRequests", e.target.value)}

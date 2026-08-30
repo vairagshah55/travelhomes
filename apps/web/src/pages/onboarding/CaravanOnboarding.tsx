@@ -22,11 +22,7 @@ import {
   COUNTRY_OPTIONS,
   DEFAULT_COUNTRY_OPTION,
 } from "@/components/onboarding/shared";
-import type {
-  CountryOption,
-  DiscountOffer,
-  OnboardingPhase,
-} from "@/components/onboarding/shared";
+import type { CountryOption, DiscountOffer, OnboardingPhase } from "@/components/onboarding/shared";
 
 // Caravan-specific step components
 import {
@@ -167,14 +163,13 @@ const CaravanOnboarding = () => {
   const [status, setStatus] = useState<string>("");
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [isStatusLoading, setIsStatusLoading] = useState(true);
-  const [crossTypePending, setCrossTypePending] = useState<{ type: string; doc: any } | null>(
-    null,
-  );
+  const [crossTypePending, setCrossTypePending] = useState<{ type: string; doc: any } | null>(null);
 
   const { userDetails, loading: userDetailsLoading, updateUserDetails } = useUserDetails();
 
   // Camper Van features (cached + shared with other consumers).
-  const { data: camperVanFeatures, isLoading: camperVanFeaturesLoading } = useFeatures("Camper Van");
+  const { data: camperVanFeatures, isLoading: camperVanFeaturesLoading } =
+    useFeatures("Camper Van");
   useEffect(() => {
     if (!camperVanFeatures) return;
     const enabled = camperVanFeatures.filter((f: any) => f.status === "enable");
@@ -655,7 +650,10 @@ const CaravanOnboarding = () => {
     if (customFeatureInput.trim() && customFeatures.length < 20) {
       const newFeatureName = customFeatureInput.trim();
       // Avoid duplicates
-      if (formData.features.includes(newFeatureName)) {
+      // Compared case-INSENSITIVELY. A plain `includes` let "bluetooth" through
+      // alongside "Bluetooth", so the same amenity shipped twice on one listing
+      // and rendered as two chips a guest reads as two different things.
+      if (formData.features.some((f) => f.toLowerCase() === newFeatureName.toLowerCase())) {
         toast.error("This feature already exists");
         return;
       }
@@ -712,8 +710,8 @@ const CaravanOnboarding = () => {
             You already have a listing pending review
           </h2>
           <p className="text-[14px] leading-[1.6] text-[color:var(--onb-text-secondary,#657477)] mb-5">
-            Your {otherLabel} listing is awaiting admin approval. You can add a caravan listing
-            once that's approved or rejected.
+            Your {otherLabel} listing is awaiting admin approval. You can add a caravan listing once
+            that's approved or rejected.
           </p>
           <div className="flex flex-col gap-3">
             <button

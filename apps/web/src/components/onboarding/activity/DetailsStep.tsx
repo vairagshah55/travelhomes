@@ -150,7 +150,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
         >
           <div className="flex flex-col gap-5">
             <Field
-              label="Activity Name"
+              label="Activity name"
               required
               error={errors.activityName}
               right={<CharCount value={activityName.length} max={50} />}
@@ -195,7 +195,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
           subtitle="Cover photo + gallery shown to guests"
         >
           <div className="flex flex-col gap-6">
-            <Field label="Cover Photo" required error={errors.coverImage}>
+            <Field label="Cover photo" required error={errors.coverImage}>
               <div
                 className={cn(
                   "relative w-full h-[200px] rounded-[14px] overflow-hidden border-2 border-dashed bg-th-warm-surface cursor-pointer",
@@ -235,7 +235,7 @@ const DetailsStep: React.FC<DetailsStepProps> = ({
             </Field>
 
             <Field
-              label="Gallery Photos"
+              label="Gallery photos"
               error={errors.photos}
               right={
                 <label

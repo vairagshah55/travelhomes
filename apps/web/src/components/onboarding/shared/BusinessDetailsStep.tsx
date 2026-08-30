@@ -233,7 +233,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
           bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Brand Name" required error={errors.brandName}>
+            <Field label="Brand name" required error={errors.brandName}>
               <IconInput
                 icon={<Building2 size={15} />}
                 value={values.brandName}
@@ -244,7 +244,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
               />
             </Field>
 
-            <Field label="Legal Company Name" required error={errors.companyName}>
+            <Field label="Legal company name" required error={errors.companyName}>
               <IconInput
                 icon={<Briefcase size={15} />}
                 value={values.companyName}
@@ -256,7 +256,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             </Field>
           </div>
 
-          <Field label="GST Number" optional>
+          <Field label="GST number" optional>
             <IconInput
               icon={<Receipt size={15} />}
               value={values.gstNumber}
@@ -279,7 +279,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
           subtitle="How guests and your team can reach you"
           bodyGap
         >
-          <Field label="Business Email" optional error={errors.businessEmail}>
+          <Field label="Business email" optional error={errors.businessEmail}>
             <IconInput
               icon={<Mail size={15} />}
               value={values.businessEmail}
@@ -290,7 +290,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
             />
           </Field>
 
-          <Field label="Business Phone" required error={errors.businessPhone}>
+          <Field label="Business phone" required error={errors.businessPhone}>
             <div className="flex gap-2 items-start">
               <button
                 type="button"
@@ -338,7 +338,7 @@ const BusinessDetailsStep: React.FC<BusinessDetailsStepProps> = ({
           subtitle="Where your business is registered"
           bodyGap
         >
-          <Field label="Street Address" required error={errors.businessAddress}>
+          <Field label="Street address" required error={errors.businessAddress}>
             <IconInput
               icon={<MapPin size={15} />}
               value={values.businessAddress}

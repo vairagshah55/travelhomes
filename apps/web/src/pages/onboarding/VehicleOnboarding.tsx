@@ -14,11 +14,7 @@ import {
   COUNTRY_OPTIONS,
   DEFAULT_COUNTRY_OPTION,
 } from "@/components/onboarding/shared";
-import type {
-  CountryOption,
-  DiscountOffer,
-  OnboardingPhase,
-} from "@/components/onboarding/shared";
+import type { CountryOption, DiscountOffer, OnboardingPhase } from "@/components/onboarding/shared";
 
 // Vehicle-specific pieces
 import { VehicleCardPreview } from "@/components/onboarding/vehicle";
@@ -241,12 +237,7 @@ const VehicleOnboarding = () => {
           "firstUserDiscountType",
           "firstUserDiscountValue",
         ],
-        [
-          "festivalOffers",
-          "festivalOffersFinalPrice",
-          "festivalOffersType",
-          "festivalOffersValue",
-        ],
+        ["festivalOffers", "festivalOffersFinalPrice", "festivalOffersType", "festivalOffersValue"],
         [
           "weeklyMonthlyOffers",
           "weeklyMonthlyOffersFinalPrice",
@@ -399,7 +390,10 @@ const VehicleOnboarding = () => {
   const handleAddCustomFeature = () => {
     if (customFeatureInput.trim() && customFeatures.length < 20) {
       const newFeatureName = customFeatureInput.trim();
-      if (formData.features.includes(newFeatureName)) {
+      // Compared case-INSENSITIVELY. A plain `includes` let "bluetooth" through
+      // alongside "Bluetooth", so the same amenity shipped twice on one listing
+      // and rendered as two chips a guest reads as two different things.
+      if (formData.features.some((f) => f.toLowerCase() === newFeatureName.toLowerCase())) {
         toast.error("This feature already exists");
         return;
       }
@@ -485,13 +479,7 @@ const VehicleOnboarding = () => {
   // Kept in step with the `accept` attribute on the document inputs — the input
   // used to allow `image/*`, so the picker cheerfully offered a WEBP or HEIC
   // scan and this list then rejected it.
-  const DOC_TYPES = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-    "application/pdf",
-  ];
+  const DOC_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "application/pdf"];
 
   /**
    * Documents step upload.

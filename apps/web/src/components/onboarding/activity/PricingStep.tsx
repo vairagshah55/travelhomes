@@ -66,7 +66,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
           subtitle="How much guests pay per booking"
         >
           <div className="flex flex-col gap-5">
-            <Field label="Price per Person" required error={errors.regularPrice}>
+            <Field label="Price per person" required error={errors.regularPrice}>
               <div
                 className={cn(
                   "flex items-center rounded-[13px] overflow-hidden border-[1.5px] transition-all duration-150",
@@ -162,7 +162,7 @@ const PricingStep: React.FC<PricingStepProps> = ({
           subtitle="Where the activity takes place"
         >
           <div className="flex flex-col gap-4">
-            <Field label="Street Address" error={errors.address}>
+            <Field label="Street address" error={errors.address}>
               <StyledInput
                 value={address || ""}
                 onChange={(v) => {

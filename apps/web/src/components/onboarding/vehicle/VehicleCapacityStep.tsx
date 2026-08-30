@@ -103,7 +103,7 @@ const VehicleCapacityStep: React.FC<VehicleCapacityStepProps> = ({
         <div className="flex flex-col gap-3">
           <CapacityRow
             icon={<Users size={16} className="text-th-brand" />}
-            label="Seating Capacity"
+            label="Seating capacity"
             description="Passenger seats, excluding the driver"
             value={seatingCapacity}
             onDecrease={() => onAdjustCapacity("seating", "decrease")}
@@ -123,7 +123,7 @@ const VehicleCapacityStep: React.FC<VehicleCapacityStepProps> = ({
           )}
           <CapacityRow
             icon={<Briefcase size={16} className="text-th-brand" />}
-            label="Luggage Capacity"
+            label="Luggage capacity"
             description="Large bags that fit in the boot"
             value={luggageCapacity}
             onDecrease={() => onAdjustCapacity("luggage", "decrease")}

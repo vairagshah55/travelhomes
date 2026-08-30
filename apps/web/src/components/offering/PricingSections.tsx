@@ -19,7 +19,7 @@ export const CamperVanPricing = ({
 }) => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Per Km Charge" error={errors.perKmCharge}>
+      <Field label="Per km charge" error={errors.perKmCharge}>
         <StyledInput
           value={formData.perKmCharge}
           onChange={(v) => set("perKmCharge", v)}
@@ -28,7 +28,7 @@ export const CamperVanPricing = ({
           error={!!errors.perKmCharge}
         />
       </Field>
-      <Field label="Per Day Charge">
+      <Field label="Per day charge">
         <StyledInput
           value={formData.perDayCharge}
           onChange={(v) => set("perDayCharge", v)}
@@ -38,14 +38,14 @@ export const CamperVanPricing = ({
       </Field>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Seating Capacity">
+      <Field label="Seating capacity">
         <StyledInput
           value={formData.seatingCapacity}
           onChange={(v) => set("seatingCapacity", v)}
           type="number"
         />
       </Field>
-      <Field label="Sleeping Capacity">
+      <Field label="Sleeping capacity">
         <StyledInput
           value={formData.sleepingCapacity}
           onChange={(v) => set("sleepingCapacity", v)}
@@ -54,7 +54,7 @@ export const CamperVanPricing = ({
       </Field>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Per Km Includes">
+      <Field label="Per km includes">
         <RulesList
           rules={formData.perKmIncludes}
           onChange={(i, v) => handleArrayChange("perKmIncludes", i, v)}
@@ -62,7 +62,7 @@ export const CamperVanPricing = ({
           onRemove={(i) => removeArrayItem("perKmIncludes", i)}
         />
       </Field>
-      <Field label="Per Km Excludes">
+      <Field label="Per km excludes">
         <RulesList
           rules={formData.perKmExcludes}
           onChange={(i, v) => handleArrayChange("perKmExcludes", i, v)}
@@ -72,7 +72,7 @@ export const CamperVanPricing = ({
       </Field>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Per Day Includes">
+      <Field label="Per day includes">
         <RulesList
           rules={formData.perDayIncludes}
           onChange={(i, v) => handleArrayChange("perDayIncludes", i, v)}
@@ -80,7 +80,7 @@ export const CamperVanPricing = ({
           onRemove={(i) => removeArrayItem("perDayIncludes", i)}
         />
       </Field>
-      <Field label="Per Day Excludes">
+      <Field label="Per day excludes">
         <RulesList
           rules={formData.perDayExcludes}
           onChange={(i, v) => handleArrayChange("perDayExcludes", i, v)}
@@ -110,7 +110,7 @@ export const UniqueStayPricing = ({
 }) => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Regular Price" required error={errors.regularPrice}>
+      <Field label="Regular price" required error={errors.regularPrice}>
         <StyledInput
           value={formData.regularPrice}
           onChange={(v) => set("regularPrice", v)}
@@ -119,7 +119,7 @@ export const UniqueStayPricing = ({
           error={!!errors.regularPrice}
         />
       </Field>
-      <Field label="Guest Capacity">
+      <Field label="Guest capacity">
         <StyledInput
           value={String(formData.guestCapacity)}
           onChange={(v) => set("guestCapacity", v)}
@@ -128,7 +128,7 @@ export const UniqueStayPricing = ({
       </Field>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Price Includes">
+      <Field label="Price includes">
         <RulesList
           rules={formData.priceIncludes}
           onChange={(i, v) => handleArrayChange("priceIncludes", i, v)}
@@ -136,7 +136,7 @@ export const UniqueStayPricing = ({
           onRemove={(i) => removeArrayItem("priceIncludes", i)}
         />
       </Field>
-      <Field label="Price Excludes">
+      <Field label="Price excludes">
         <RulesList
           rules={formData.priceExcludes}
           onChange={(i, v) => handleArrayChange("priceExcludes", i, v)}
@@ -166,7 +166,7 @@ export const ActivityPricing = ({
 }) => (
   <>
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Field label="Regular Price" required error={errors.regularPrice}>
+      <Field label="Regular price" required error={errors.regularPrice}>
         <StyledInput
           value={formData.regularPrice}
           onChange={(v) => set("regularPrice", v)}
@@ -175,7 +175,7 @@ export const ActivityPricing = ({
           error={!!errors.regularPrice}
         />
       </Field>
-      <Field label="Person Capacity">
+      <Field label="Person capacity">
         <StyledInput
           value={String(formData.personCapacity)}
           onChange={(v) => set("personCapacity", v)}
@@ -192,7 +192,7 @@ export const ActivityPricing = ({
       </Field>
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Field label="Price Includes">
+      <Field label="Price includes">
         <RulesList
           rules={formData.priceIncludes}
           onChange={(i, v) => handleArrayChange("priceIncludes", i, v)}
@@ -200,7 +200,7 @@ export const ActivityPricing = ({
           onRemove={(i) => removeArrayItem("priceIncludes", i)}
         />
       </Field>
-      <Field label="Price Excludes">
+      <Field label="Price excludes">
         <RulesList
           rules={formData.priceExcludes}
           onChange={(i, v) => handleArrayChange("priceExcludes", i, v)}

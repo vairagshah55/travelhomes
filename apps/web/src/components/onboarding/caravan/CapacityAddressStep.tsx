@@ -127,7 +127,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
         <div className="flex flex-col gap-3">
           <CapacityRow
             icon={<Users size={16} className="text-th-brand" />}
-            label="Seating Capacity"
+            label="Seating capacity"
             description="Guests who can sit during the journey"
             value={seatingCapacity}
             onDecrease={() => onAdjustCapacity("seating", "decrease")}
@@ -137,7 +137,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
           />
           <CapacityRow
             icon={<BedDouble size={16} className="text-th-brand" />}
-            label="Sleeping Capacity"
+            label="Sleeping capacity"
             description="Guests who can sleep overnight"
             value={sleepingCapacity}
             onDecrease={() => onAdjustCapacity("sleeping", "decrease")}
@@ -158,7 +158,7 @@ const CapacityAddressStep: React.FC<CapacityAddressStepProps> = ({
         subtitle="Where guests can find your caravan"
       >
         <div className="flex flex-col gap-4">
-          <Field label="Street Address" required error={errors.address}>
+          <Field label="Street address" required error={errors.address}>
             <StyledInput
               value={address}
               onChange={(v) => {

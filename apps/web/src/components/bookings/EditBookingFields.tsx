@@ -121,7 +121,7 @@ export const EditBookingFields = ({
     <div className="space-y-4">
       <SubPanel icon={User} title="Guest" blurb="Who the booking is for">
         <div className="grid gap-4 sm:grid-cols-2">
-          <PanelField label="Guest Name" required error={errFor("guestName")}>
+          <PanelField label="Guest name" required error={errFor("guestName")}>
             <PanelInput
               value={booking.guestName}
               onChange={(v) => setField("guestName", v)}
@@ -153,14 +153,14 @@ export const EditBookingFields = ({
 
       <SubPanel icon={CalendarIcon} title="Dates and status">
         <div className="grid gap-4 sm:grid-cols-2">
-          <PanelField label="Start Date">
+          <PanelField label="Start date">
             <DatePickerField
               value={toInputDate(booking.startDate)}
               onChange={(v) => setField("startDate", v ? new Date(`${v}T00:00:00`) : null)}
               placeholder="Select start date"
             />
           </PanelField>
-          <PanelField label="End Date" error={errFor("endDate")}>
+          <PanelField label="End date" error={errFor("endDate")}>
             <DatePickerField
               value={toInputDate(booking.endDate)}
               onChange={(v) => setField("endDate", v ? new Date(`${v}T00:00:00`) : null)}
@@ -213,7 +213,7 @@ export const EditBookingFields = ({
 
       <SubPanel icon={IndianRupee} title="Pricing">
         <div className="grid gap-4 sm:grid-cols-3">
-          <PanelField label="Base Price (₹)" required error={errFor("basePrice")}>
+          <PanelField label="Base price (₹)" required error={errFor("basePrice")}>
             <PanelInput
               value={booking.basePrice}
               onChange={(v) => setNumeric("basePrice", v)}
@@ -221,7 +221,7 @@ export const EditBookingFields = ({
               error={!!errFor("basePrice")}
             />
           </PanelField>
-          <PanelField label="Extra Charges (₹)" required error={errFor("extraCharges")}>
+          <PanelField label="Extra charges (₹)" required error={errFor("extraCharges")}>
             <PanelInput
               value={booking.extraCharges}
               onChange={(v) => setNumeric("extraCharges", v)}
@@ -229,7 +229,7 @@ export const EditBookingFields = ({
               error={!!errFor("extraCharges")}
             />
           </PanelField>
-          <PanelField label="Total Amount (auto)">
+          <PanelField label="Total amount (auto)">
             <Derived accent>₹ {total.toLocaleString("en-IN")}</Derived>
           </PanelField>
         </div>
@@ -254,7 +254,7 @@ export const EditBookingFields = ({
               </SelectContent>
             </Select>
           </PanelField>
-          <PanelField label="Payment Status">
+          <PanelField label="Payment status">
             <Select
               value={booking.paymentStatus || ""}
               onValueChange={(v: any) => setField("paymentStatus", v)}
@@ -271,7 +271,7 @@ export const EditBookingFields = ({
               </SelectContent>
             </Select>
           </PanelField>
-          <PanelField label="Paid Amount (₹)" error={errFor("paidAmount")}>
+          <PanelField label="Paid amount (₹)" error={errFor("paidAmount")}>
             <PanelInput
               value={booking.paidAmount || ""}
               onChange={(v) => setNumeric("paidAmount", v)}
@@ -296,7 +296,7 @@ export const EditBookingFields = ({
               className={cn("resize-none py-2.5", CONTROL)}
             />
           </PanelField>
-          <PanelField label="Special Requests">
+          <PanelField label="Special requests">
             <Textarea
               value={booking.specialRequests || ""}
               onChange={(e) => setField("specialRequests", e.target.value)}

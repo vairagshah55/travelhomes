@@ -453,7 +453,7 @@ const OfferingDetails = () => {
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
                     <Row label="Name" value={o.name} />
                     <Row label="Category" value={o.category} />
-                    {filled(o.serviceType) && <Row label="Service Type" value={o.serviceType} />}
+                    {filled(o.serviceType) && <Row label="Service type" value={o.serviceType} />}
                   </div>
 
                   {filled(o.description) && (
@@ -467,7 +467,7 @@ const OfferingDetails = () => {
                     </div>
                   )}
 
-                  {filled(o.rules) && <BulletList label="Rules & Regulations" items={o.rules} />}
+                  {filled(o.rules) && <BulletList label="Rules & regulations" items={o.rules} />}
 
                   {filled(o.rejectionReason) && (
                     <div className="space-y-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -543,7 +543,7 @@ const OfferingDetails = () => {
                           <Row label="Persons" value={o.personCapacity} />
                         )}
                         {filled(o.timeDuration) && <Row label="Duration" value={o.timeDuration} />}
-                        {filled(o.stayType) && <Row label="Stay Type" value={o.stayType} />}
+                        {filled(o.stayType) && <Row label="Stay type" value={o.stayType} />}
                       </div>
                     )}
 
@@ -571,10 +571,10 @@ const OfferingDetails = () => {
                   {(filled(o.perKmCharge) || filled(o.perDayCharge)) && (
                     <div className="grid grid-cols-2 gap-5">
                       {filled(o.perKmCharge) && (
-                        <PriceRow label="Per Km Charge" value={`₹${fmt(o.perKmCharge)}`} />
+                        <PriceRow label="Per km charge" value={`₹${fmt(o.perKmCharge)}`} />
                       )}
                       {filled(o.perDayCharge) && (
-                        <PriceRow label="Per Day Charge" value={`₹${fmt(o.perDayCharge)}`} />
+                        <PriceRow label="Per day charge" value={`₹${fmt(o.perDayCharge)}`} />
                       )}
                     </div>
                   )}
@@ -583,10 +583,10 @@ const OfferingDetails = () => {
                   {(filled(o.perKmIncludes) || filled(o.perKmExcludes)) && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                       {filled(o.perKmIncludes) && (
-                        <BulletList label="Per Km Includes" items={o.perKmIncludes!} />
+                        <BulletList label="Per km includes" items={o.perKmIncludes!} />
                       )}
                       {filled(o.perKmExcludes) && (
-                        <BulletList label="Per Km Excludes" items={o.perKmExcludes!} />
+                        <BulletList label="Per km excludes" items={o.perKmExcludes!} />
                       )}
                     </div>
                   )}
@@ -595,10 +595,10 @@ const OfferingDetails = () => {
                   {(filled(o.perDayIncludes) || filled(o.perDayExcludes)) && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                       {filled(o.perDayIncludes) && (
-                        <BulletList label="Per Day Includes" items={o.perDayIncludes!} />
+                        <BulletList label="Per day includes" items={o.perDayIncludes!} />
                       )}
                       {filled(o.perDayExcludes) && (
-                        <BulletList label="Per Day Excludes" items={o.perDayExcludes!} />
+                        <BulletList label="Per day excludes" items={o.perDayExcludes!} />
                       )}
                     </div>
                   )}
@@ -607,10 +607,10 @@ const OfferingDetails = () => {
                   {(filled(o.priceIncludes) || filled(o.priceExcludes)) && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
                       {filled(o.priceIncludes) && (
-                        <BulletList label="Price Includes" items={o.priceIncludes} />
+                        <BulletList label="Price includes" items={o.priceIncludes} />
                       )}
                       {filled(o.priceExcludes) && (
-                        <BulletList label="Price Excludes" items={o.priceExcludes} />
+                        <BulletList label="Price excludes" items={o.priceExcludes} />
                       )}
                     </div>
                   )}

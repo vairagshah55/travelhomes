@@ -208,7 +208,7 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
         <div className="flex flex-col gap-2.5">
           <Counter
             icon={<Users size={14} />}
-            label="Guest Capacity"
+            label="Guest capacity"
             desc="Max guests allowed"
             value={guestCapacity}
             onDecrement={() => {

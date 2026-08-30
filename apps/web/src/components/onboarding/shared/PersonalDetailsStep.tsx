@@ -68,7 +68,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="First Name" required error={errors.firstName}>
+            <Field label="First name" required error={errors.firstName}>
               <IconInput
                 icon={<User size={15} />}
                 value={values.firstName}
@@ -79,7 +79,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
               />
             </Field>
 
-            <Field label="Last Name" required error={errors.lastName}>
+            <Field label="Last name" required error={errors.lastName}>
               <IconInput
                 icon={<User size={15} />}
                 value={values.lastName}
@@ -99,7 +99,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           bodyGap
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="Date of Birth" required error={errors.dateOfBirth}>
+            <Field label="Date of birth" required error={errors.dateOfBirth}>
               <IconInput
                 icon={<Calendar size={15} />}
                 value={values.dateOfBirth}
@@ -109,7 +109,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
               />
             </Field>
 
-            <Field label="Marital Status" optional error={errors.maritalStatus}>
+            <Field label="Marital status" optional error={errors.maritalStatus}>
               <IconSelect
                 icon={<Heart size={15} />}
                 value={values.maritalStatus}
@@ -202,7 +202,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           subtitle="Government-issued ID for verification"
           bodyGap
         >
-          <Field label="ID Proof Type" required error={errors.idProof}>
+          <Field label="ID proof type" required error={errors.idProof}>
             <IconSelect
               icon={<Fingerprint size={15} />}
               value={values.idProof}
@@ -216,7 +216,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
             </IconSelect>
           </Field>
 
-          <Field label="Upload ID Photo" required error={uploadError || errors.idPhotos}>
+          <Field label="Upload ID photo" required error={uploadError || errors.idPhotos}>
             <label
               className={cn(
                 "group relative flex flex-col items-center justify-center w-full h-[180px]",

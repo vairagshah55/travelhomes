@@ -412,7 +412,7 @@ const IndividualRoomForm: React.FC<IndividualRoomFormProps> = ({
                   <div className="rounded-[13px] border-[1.5px] border-th-warm-border px-[14px] py-1 bg-th-warm-surface">
                     <RoomCounter
                       icon={<Users size={14} />}
-                      label="Guest Capacity"
+                      label="Guest capacity"
                       required
                       value={room.guestCapacity}
                       onDecrement={() =>
