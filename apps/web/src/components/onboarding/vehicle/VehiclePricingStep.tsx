@@ -238,43 +238,65 @@ const ItemList = ({
 
 /** Header row that turns a whole rate card on or off. */
 /**
- * The compact switch that sits in a mode card's header.
+ * One choice in the rental-mode selector.
  *
- * Replaces ModeToggle, a full-width row that carried its own title and subtitle
- * — which meant each mode rendered two headings, the card's and the toggle's,
- * saying the same thing. The label survives for screen readers only; sighted
- * users read the card title beside it.
+ * A radio, not a switch. The two modes are mutually exclusive, and a pair of
+ * toggles says the opposite — they read as two independent on/off settings, so
+ * a vendor reasonably expects to enable both and is then surprised when the
+ * first one turns itself off. A radiogroup states the constraint in the control
+ * itself instead of enforcing it after the fact.
+ *
+ * Same selectable-card shape as the vehicle class picker a few steps earlier,
+ * so "pick exactly one of these" looks the same wherever the flow asks it.
  */
-const ModeSwitch = ({
-  enabled,
-  label,
-  onToggle,
+const ModeOption = ({
+  icon,
+  title,
+  blurb,
+  selected,
+  onSelect,
 }: {
-  enabled: boolean;
-  label: string;
-  onToggle: () => void;
+  icon: React.ReactNode;
+  title: string;
+  blurb: string;
+  selected: boolean;
+  onSelect: () => void;
 }) => (
   <button
     type="button"
-    role="switch"
-    aria-checked={enabled}
-    aria-label={label}
-    onClick={onToggle}
+    role="radio"
+    aria-checked={selected}
+    onClick={onSelect}
     className={cn(
-      "relative w-[46px] h-[26px] rounded-full border-[1.5px] shrink-0 cursor-pointer transition-colors duration-150",
-      enabled
-        ? "bg-th-brand border-th-brand"
-        : "bg-th-warm-surface border-th-warm-border hover:border-th-brand",
+      "flex-1 flex items-start gap-3 px-4 py-4 rounded-[16px] border-[1.5px] cursor-pointer text-left transition-all duration-150",
+      selected
+        ? "border-th-brand bg-th-brand-soft shadow-[0_0_0_3px_var(--th-ring),0_2px_12px_rgba(0,0,0,0.04)]"
+        : "border-th-warm-border bg-th-surface-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-th-brand hover:bg-th-brand-soft",
     )}
   >
-    <span
+    <div
       className={cn(
-        "absolute top-[2px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-all duration-150",
-        enabled ? "left-[23px]" : "left-[2px]",
+        "w-10 h-10 rounded-[12px] border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-150",
+        selected
+          ? "bg-th-brand-soft border-th-brand-border-soft text-th-brand"
+          : "bg-th-warm-surface border-th-warm-border text-th-warm-text-dark",
       )}
-    />
+    >
+      {icon}
+    </div>
+    <div className="flex flex-col gap-1 min-w-0">
+      <p
+        className={cn(
+          "text-[14px] font-bold tracking-[-0.01em]",
+          selected ? "text-th-brand" : "text-th-text-primary",
+        )}
+      >
+        {title}
+      </p>
+      <p className="text-[12.5px] text-th-warm-text-dark leading-[1.5]">{blurb}</p>
+    </div>
   </button>
-)
+);
 
 /**
  * Rental modes and pricing.
@@ -331,179 +353,199 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
         </div>
       )}
 
-      {/* ─── Self-drive ─────────────────────────────────────────────────── */}
+      {/* ─── Which mode ─────────────────────────────────────────────────── */}
       <SectionCard
         icon={<Car size={16} className="text-th-brand" strokeWidth={2.5} />}
-        title="Self-drive"
-        subtitle="The guest drives it themselves. A valid driving licence is collected at booking."
-        /* The switch sits beside the title rather than in a row below it. The
-           old ModeToggle restated the card's own heading to carry the control,
-           so every mode read as two headings stacked on each other. */
-        action={
-          <ModeSwitch
-            enabled={selfDriveEnabled}
-            label="Offer this vehicle for self-drive"
-            onToggle={() => {
-              onToggleMode("selfDrive");
+        title="Rental mode"
+        subtitle="How guests take this vehicle. Pick one — the rate card below follows it."
+        required
+      >
+        <div role="radiogroup" aria-label="Rental mode" className="flex flex-col sm:flex-row gap-3">
+          <ModeOption
+            icon={<Car size={18} />}
+            title="Self-drive"
+            blurb="The guest drives it themselves. A valid driving licence is collected at booking."
+            selected={selfDriveEnabled}
+            onSelect={() => {
+              if (!selfDriveEnabled) onToggleMode("selfDrive");
               clearError("pricing");
             }}
           />
-        }
-      >
-        <div className="flex flex-col gap-4">
-
-          {selfDriveEnabled && (
-            <div className="flex flex-col gap-4 pl-1">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Per day" required error={errors.selfDrivePerDay}>
-                  <PriceInput
-                    value={selfDrivePerDay}
-                    onChange={set("selfDrivePerDay")}
-                    unit="/ day"
-                    error={!!errors.selfDrivePerDay}
-                  />
-                </Field>
-                <Field label="Per km" optional>
-                  <PriceInput value={selfDrivePerKm} onChange={set("selfDrivePerKm")} unit="/ km" />
-                </Field>
-                <Field
-                  label="Max kilometres per day"
-                  optional
-                  help="Distance included in the daily rate."
-                >
-                  <UnitInput value={freeKmPerDay} onChange={set("freeKmPerDay")} unit="km" />
-                </Field>
-                <Field label="Extra km charge" optional help="Charged beyond the daily maximum.">
-                  <PriceInput value={extraKmCharge} onChange={set("extraKmCharge")} unit="/ km" />
-                </Field>
-                <Field label="Minimum rental" optional>
-                  <UnitInput value={minRentalHours} onChange={set("minRentalHours")} unit="hours" />
-                </Field>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ItemList
-                  label="Self-drive rate includes"
-                  type="include"
-                  field="selfDriveIncludes"
-                  items={selfDriveIncludes}
-                  error={errors.selfDriveIncludes}
-                  onAdd={onAddListItem}
-                  onUpdate={onUpdateListItem}
-                  onRemove={onRemoveListItem}
-                />
-                <ItemList
-                  label="Self-drive rate excludes"
-                  type="exclude"
-                  field="selfDriveExcludes"
-                  items={selfDriveExcludes}
-                  error={errors.selfDriveExcludes}
-                  onAdd={onAddListItem}
-                  onUpdate={onUpdateListItem}
-                  onRemove={onRemoveListItem}
-                />
-              </div>
-            </div>
-          )}
+          <ModeOption
+            icon={<UserRound size={18} />}
+            title="With driver"
+            blurb="You provide a chauffeur. Driver details are collected on the next steps."
+            selected={withDriverEnabled}
+            onSelect={() => {
+              if (!withDriverEnabled) onToggleMode("withDriver");
+              clearError("pricing");
+            }}
+          />
         </div>
       </SectionCard>
 
-      {/* ─── With driver ────────────────────────────────────────────────── */}
-      <SectionCard
-        icon={<UserRound size={16} className="text-th-brand" strokeWidth={2.5} />}
-        title="With driver"
-        subtitle="You provide a chauffeur. Driver details are collected on the next steps."
-        action={
-          <ModeSwitch
-            enabled={withDriverEnabled}
-            label="Offer this vehicle with a driver"
-            onToggle={() => {
-              onToggleMode("withDriver");
-              clearError("pricing");
-            }}
-          />
-        }
-      >
-        <div className="flex flex-col gap-4">
+      {/* ─── Self-drive rate card ───────────────────────────────────────── */}
+      {selfDriveEnabled && (
+        <SectionCard
+          icon={<Car size={16} className="text-th-brand" strokeWidth={2.5} />}
+          title="Self-drive pricing"
+          subtitle="What the guest pays to drive it themselves."
+        >
+          <div className="flex flex-col gap-4">
+            {selfDriveEnabled && (
+              <div className="flex flex-col gap-4 pl-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Per day" required error={errors.selfDrivePerDay}>
+                    <PriceInput
+                      value={selfDrivePerDay}
+                      onChange={set("selfDrivePerDay")}
+                      unit="/ day"
+                      error={!!errors.selfDrivePerDay}
+                    />
+                  </Field>
+                  <Field label="Per km" optional>
+                    <PriceInput
+                      value={selfDrivePerKm}
+                      onChange={set("selfDrivePerKm")}
+                      unit="/ km"
+                    />
+                  </Field>
+                  <Field
+                    label="Max kilometres per day"
+                    optional
+                    help="Distance included in the daily rate."
+                  >
+                    <UnitInput value={freeKmPerDay} onChange={set("freeKmPerDay")} unit="km" />
+                  </Field>
+                  <Field label="Extra km charge" optional help="Charged beyond the daily maximum.">
+                    <PriceInput value={extraKmCharge} onChange={set("extraKmCharge")} unit="/ km" />
+                  </Field>
+                  <Field label="Minimum rental" optional>
+                    <UnitInput
+                      value={minRentalHours}
+                      onChange={set("minRentalHours")}
+                      unit="hours"
+                    />
+                  </Field>
+                </div>
 
-          {withDriverEnabled && (
-            <div className="flex flex-col gap-4 pl-1">
-              {/* Which trips the chauffeur takes. Both are on by default —
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ItemList
+                    label="Self-drive rate includes"
+                    type="include"
+                    field="selfDriveIncludes"
+                    items={selfDriveIncludes}
+                    error={errors.selfDriveIncludes}
+                    onAdd={onAddListItem}
+                    onUpdate={onUpdateListItem}
+                    onRemove={onRemoveListItem}
+                  />
+                  <ItemList
+                    label="Self-drive rate excludes"
+                    type="exclude"
+                    field="selfDriveExcludes"
+                    items={selfDriveExcludes}
+                    error={errors.selfDriveExcludes}
+                    onAdd={onAddListItem}
+                    onUpdate={onUpdateListItem}
+                    onRemove={onRemoveListItem}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* ─── Chauffeur rate card ────────────────────────────────────────── */}
+      {withDriverEnabled && (
+        <SectionCard
+          icon={<UserRound size={16} className="text-th-brand" strokeWidth={2.5} />}
+          title="Chauffeur pricing"
+          subtitle="What the guest pays for the vehicle with your driver."
+        >
+          <div className="flex flex-col gap-4">
+            {withDriverEnabled && (
+              <div className="flex flex-col gap-4 pl-1">
+                {/* Which trips the chauffeur takes. Both are on by default —
                   most operators do both, and a mode accepting neither
                   direction is bookable by nobody, which validation blocks. */}
-              <Field label="Trips offered" required error={errors.withDriverTrip}>
-                <div className="flex flex-wrap gap-2.5">
-                  {(
-                    [
-                      ["oneWay", "One way", withDriverOneWay],
-                      ["twoWay", "Two way (round trip)", withDriverTwoWay],
-                    ] as const
-                  ).map(([key, label, on]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => {
-                        onToggleTripDirection(key);
-                        clearError("withDriverTrip");
-                      }}
-                      className={cn(
-                        "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
-                        on
-                          ? "border-th-brand bg-th-brand-soft text-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
-                          : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft hover:text-th-brand",
-                      )}
-                    >
-                      <span className="text-[13px] font-semibold tracking-[-0.01em]">{label}</span>
-                    </button>
-                  ))}
+                <Field label="Trips offered" required error={errors.withDriverTrip}>
+                  <div className="flex flex-wrap gap-2.5">
+                    {(
+                      [
+                        ["oneWay", "One way", withDriverOneWay],
+                        ["twoWay", "Two way (round trip)", withDriverTwoWay],
+                      ] as const
+                    ).map(([key, label, on]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => {
+                          onToggleTripDirection(key);
+                          clearError("withDriverTrip");
+                        }}
+                        className={cn(
+                          "flex items-center gap-2 px-[14px] py-2 rounded-full border-[1.5px] cursor-pointer transition-all duration-150",
+                          on
+                            ? "border-th-brand bg-th-brand-soft text-th-brand shadow-[0_0_0_3px_var(--th-ring)]"
+                            : "border-th-warm-border bg-th-warm-surface text-th-warm-text-dark hover:border-th-brand hover:bg-th-brand-soft hover:text-th-brand",
+                        )}
+                      >
+                        <span className="text-[13px] font-semibold tracking-[-0.01em]">
+                          {label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </Field>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="Per km" required error={errors.withDriverPerKm}>
+                    <PriceInput
+                      error={!!errors.withDriverPerKm}
+                      value={withDriverPerKm}
+                      onChange={set("withDriverPerKm")}
+                      unit="/ km"
+                    />
+                  </Field>
+                  <Field label="Driver allowance" optional help="Charged per day of the trip.">
+                    <PriceInput
+                      value={driverAllowancePerDay}
+                      onChange={set("driverAllowancePerDay")}
+                      unit="/ day"
+                    />
+                  </Field>
                 </div>
-              </Field>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Per km" required error={errors.withDriverPerKm}>
-                  <PriceInput
-                    error={!!errors.withDriverPerKm}
-                    value={withDriverPerKm}
-                    onChange={set("withDriverPerKm")}
-                    unit="/ km"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ItemList
+                    label="Chauffeur rate includes"
+                    type="include"
+                    field="withDriverIncludes"
+                    items={withDriverIncludes}
+                    error={errors.withDriverIncludes}
+                    onAdd={onAddListItem}
+                    onUpdate={onUpdateListItem}
+                    onRemove={onRemoveListItem}
                   />
-                </Field>
-                <Field label="Driver allowance" optional help="Charged per day of the trip.">
-                  <PriceInput
-                    value={driverAllowancePerDay}
-                    onChange={set("driverAllowancePerDay")}
-                    unit="/ day"
+                  <ItemList
+                    label="Chauffeur rate excludes"
+                    type="exclude"
+                    field="withDriverExcludes"
+                    items={withDriverExcludes}
+                    error={errors.withDriverExcludes}
+                    onAdd={onAddListItem}
+                    onUpdate={onUpdateListItem}
+                    onRemove={onRemoveListItem}
                   />
-                </Field>
+                </div>
               </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <ItemList
-                  label="Chauffeur rate includes"
-                  type="include"
-                  field="withDriverIncludes"
-                  items={withDriverIncludes}
-                  error={errors.withDriverIncludes}
-                  onAdd={onAddListItem}
-                  onUpdate={onUpdateListItem}
-                  onRemove={onRemoveListItem}
-                />
-                <ItemList
-                  label="Chauffeur rate excludes"
-                  type="exclude"
-                  field="withDriverExcludes"
-                  items={withDriverExcludes}
-                  error={errors.withDriverExcludes}
-                  onAdd={onAddListItem}
-                  onUpdate={onUpdateListItem}
-                  onRemove={onRemoveListItem}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </SectionCard>
+            )}
+          </div>
+        </SectionCard>
+      )}
 
       {/* ─── Shared terms ───────────────────────────────────────────────── */}
       <SectionCard
@@ -552,7 +594,7 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
     <div className="w-full flex flex-col gap-6">
       <StepHeader
         kicker="Rental Modes & Pricing"
-        subtitle="Turn on the modes you offer and price each one. At least one is required."
+        subtitle="Choose the mode you offer and price it. Self-drive or with driver — one or the other."
       />
       {body}
     </div>

@@ -74,7 +74,17 @@ export function validateVehicleStep(
   } else if (currentStep === 3) {
     if (!formData.selfDriveEnabled && !formData.withDriverEnabled) {
       return {
-        errors: { pricing: "Turn on at least one rental mode — self-drive or with driver" },
+        errors: { pricing: "Choose a rental mode — self-drive or with driver" },
+      };
+    }
+
+    // The toggle enforces this, but a draft saved before modes became exclusive
+    // can still hold both, and it would price two rate cards that can't both
+    // apply. Caught here rather than silently switching one off under the
+    // vendor — which of the two they meant isn't ours to guess.
+    if (formData.selfDriveEnabled && formData.withDriverEnabled) {
+      return {
+        errors: { pricing: "Pick one rental mode — self-drive or with driver, not both" },
       };
     }
 

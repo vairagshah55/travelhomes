@@ -51,8 +51,11 @@ export async function submitVehicleOnboarding(
     // vehicleClass/category pair already checked here plus step 1's validation.
     if (!formData.vehicleClass) throw new Error("Please select car, van or bus");
     if (!formData.category) throw new Error("Please select a vehicle sub-category");
+    if (formData.selfDriveEnabled && formData.withDriverEnabled) {
+      throw new Error("Pick one rental mode — self-drive or with driver, not both");
+    }
     if (!formData.selfDriveEnabled && !formData.withDriverEnabled) {
-      throw new Error("Turn on at least one rental mode — self-drive or with driver");
+      throw new Error("Choose a rental mode — self-drive or with driver");
     }
 
     const selfDrivePerDay = num(formData.selfDrivePerDay);

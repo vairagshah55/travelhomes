@@ -433,9 +433,26 @@ const VehicleOnboarding = () => {
     setFormData((prev) => ({ ...prev, pickupPoints: value ? [value] : [] }));
 
   // ─── Step 4 handlers ──────────────────────────────────────────────────
+  /**
+   * Rental modes are mutually exclusive — a listing is self-drive OR chauffeur.
+   *
+   * Switching one ON switches the other OFF rather than refusing the click: a
+   * toggle that silently does nothing reads as broken, and the vendor's intent
+   * ("I want this one") is unambiguous. Switching one OFF leaves the other
+   * alone, so both can be off — which validation then blocks, because a listing
+   * with no rental mode is bookable by nobody.
+   *
+   * The other mode's rates are left in the form on purpose. A vendor who
+   * toggles back and forth while deciding would otherwise have to retype them,
+   * and they are inert on submit while their `…Enabled` flag is false.
+   */
   const toggleRentalMode = (mode: "selfDrive" | "withDriver") => {
-    const field = mode === "selfDrive" ? "selfDriveEnabled" : "withDriverEnabled";
-    setFormData((prev) => ({ ...prev, [field]: !prev[field] }));
+    setFormData((prev) => {
+      const field = mode === "selfDrive" ? "selfDriveEnabled" : "withDriverEnabled";
+      const other = mode === "selfDrive" ? "withDriverEnabled" : "selfDriveEnabled";
+      const next = !prev[field];
+      return { ...prev, [field]: next, ...(next ? { [other]: false } : {}) };
+    });
   };
 
   const toggleTripDirection = (which: "oneWay" | "twoWay") => {
