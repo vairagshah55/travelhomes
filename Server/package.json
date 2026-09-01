@@ -14,6 +14,7 @@
     "seed:caravan-features": "node scripts/seed-caravan-features.js",
     "seed:vehicle-taxonomy": "node scripts/seed-vehicle-taxonomy.js",
     "fix:stranded-onboarding": "node scripts/fix-stranded-onboarding.js",
+    "fix:offer-covers": "node scripts/fix-offer-cover-photos.js",
     "backfill:vehicle-compliance": "node scripts/backfill-vehicle-compliance.js",
     "seed:demo-products": "node scripts/seed-demo-products.js",
     "seed:fresh": "node scripts/seed-fresh.js",

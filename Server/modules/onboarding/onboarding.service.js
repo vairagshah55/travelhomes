@@ -118,6 +118,35 @@ async function normalizeImageArray(input, prefix = "image") {
   return out;
 }
 
+/**
+ * The listing's hero photo, for the Offer's `photos.coverUrl`.
+ *
+ * Every wizard asks the vendor for a cover SEPARATELY from the gallery, and
+ * each onboarding model stores it in `coverImage` — a String for activity and
+ * stay, an array for caravan and vehicle. Three of the four submit handlers
+ * then built the Offer with `coverUrl: gallery[0]` and never read it, so the
+ * one photo the vendor explicitly chose as the hero was the one photo no
+ * surface ever showed: cards, search results, the detail page, the admin table
+ * and the trip screens all read `Offer.photos.coverUrl`.
+ *
+ * Reads the cover off the PERSISTED doc rather than the request. A vendor
+ * editing a pending submission without re-picking the cover sends back the
+ * existing `/uploads/...` string (loadStayDraft and friends hydrate the field
+ * from the doc), and in submitStay's case a failed normalisation leaves the
+ * previous value in place — the doc is the state that actually survived either
+ * way.
+ *
+ * Falls back to the first gallery photo, which is what the three broken
+ * handlers did unconditionally: a listing with no cover on file is better off
+ * showing a photo than a broken image.
+ */
+function coverUrlFor(doc, gallery = []) {
+  const raw = doc && doc.coverImage;
+  const cover = Array.isArray(raw) ? raw.find((c) => typeof c === "string" && c.trim()) : raw;
+  if (typeof cover === "string" && cover.trim()) return cover;
+  return gallery[0] || "";
+}
+
 // ─── Price helper ──────────────────────────────────────────────────────
 const parsePrice = (val) => {
   if (typeof val === "number") return Number.isFinite(val) ? val : 0;
@@ -547,7 +576,7 @@ async function submitActivity(body, user) {
       timeDuration: doc.timeDuration,
       expectations: doc.expectations || [],
       serviceType: "activity",
-      photos: { coverUrl: strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
+      photos: { coverUrl: coverUrlFor(doc, strPhotos), galleryUrls: strPhotos.slice(0, 6) },
       status: "pending",
       userId: user._id,
       vendorId: vendor && vendor.vendorId,
@@ -620,7 +649,7 @@ async function submitCaravan(body, user) {
       perDayIncludes: doc.perDayIncludes || [],
       perDayExcludes: doc.perDayExcludes || [],
       serviceType: "camper-van",
-      photos: { coverUrl: strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
+      photos: { coverUrl: coverUrlFor(doc, strPhotos), galleryUrls: strPhotos.slice(0, 6) },
       status: "pending",
       userId: user._id,
       vendorId: vendor && vendor.vendorId,
@@ -761,7 +790,7 @@ async function submitVehicle(body, user) {
 
       serviceType: "vehicle-rental",
       photos: {
-        coverUrl: strCoverImage[0] || strPhotos[0] || "",
+        coverUrl: coverUrlFor(doc, strPhotos),
         galleryUrls: strPhotos.slice(0, 6),
       },
       status: "pending",
@@ -853,7 +882,10 @@ async function submitStay(body, user) {
       rooms: doc.rooms,
       optionalRules: doc.optionalRules,
       serviceType: "unique-stay",
-      photos: { coverUrl: strPhotos[0] || "", galleryUrls: strPhotos.slice(0, 6) },
+      /* `strPhotos` here is rooms[0].photos — the gallery. Taking coverUrl from
+         it is what made a stay show its first room photo as the hero while the
+         vendor's own cover sat unused on the submission. */
+      photos: { coverUrl: coverUrlFor(doc, strPhotos), galleryUrls: strPhotos.slice(0, 6) },
       status: "pending",
       userId: user._id,
       vendorId: vendor && vendor.vendorId,
@@ -1049,6 +1081,7 @@ module.exports = {
   getMine,
   findCurrentSubmission, // exported for tests
   parseDataUrl, // exported for tests
+  coverUrlFor, // exported for tests
   findLivePendingSubmission, // exported for tests
   reconcileWithOffer, // exported for tests
   listActivities,
