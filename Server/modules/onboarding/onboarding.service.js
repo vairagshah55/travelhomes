@@ -36,6 +36,8 @@ const Vendor = require("../../models/Vendor");
 const User = require("../../models/User");
 const Profile = require("../../models/Profile");
 const logger = require("../../shared/logger");
+const { evaluateCompliance } = require("../../shared/vehicleCompliance");
+const { restoreOne: restoreCompliance } = require("../../services/complianceMonitor");
 const {
   BadRequestError,
   ForbiddenError,
@@ -635,6 +637,18 @@ async function submitCaravan(body, user) {
 
 async function submitVehicle(body, user) {
   await assertNoOtherPendingSubmission(user._id, "vehicle");
+
+  /* The wizard blocks a past date at step 4, but the wizard is not the only
+     caller — a draft can be resumed days later and submitted with a date that
+     has since lapsed, and the API is reachable directly. Refusing here is
+     cheaper than accepting a listing the sweep will pull the same night. */
+  const submitted = evaluateCompliance(body);
+  if (submitted.expired.length) {
+    const labels = submitted.expired.map((d) => d.label).join(" and ");
+    throw new BadRequestError(
+      `${labels} has expired. Renew the document and enter the new date before submitting.`,
+    );
+  }
   const vendor = await ensureVendor(user);
 
   const strPhotos = await normalizeImageArray(body.photos || [], "vehicle-photo");
@@ -731,6 +745,11 @@ async function submitVehicle(body, user) {
       tollsAndParking: doc.tollsAndParking,
       cancellationWindowHours: parsePrice(doc.cancellationWindowHours),
 
+      // Mirrored onto the offer so the expiry sweep and every listing surface
+      // read one document instead of joining back to the submission.
+      insuranceExpiry: doc.insuranceExpiry || null,
+      pucExpiry: doc.pucExpiry || null,
+
       // Kept for the shared includes/excludes renderer on the details page,
       // which reads priceIncludes/priceExcludes for every service type.
       priceIncludes: doc.selfDriveEnabled
@@ -755,6 +774,13 @@ async function submitVehicle(body, user) {
     doc,
     isNew,
   );
+
+  /* Re-submitting the whole wizard is the other way a vendor can renew. The
+     offer has just been rewritten with the new dates, so lift any hold it was
+     under — silently, because the vendor is looking at the confirmation screen
+     that caused it. */
+  const synced = await Offer.findOne({ sourceId: doc._id, sourceModel: "VehicleOnboarding" });
+  if (synced) await restoreCompliance(synced, { silent: true });
 
   return doc;
 }

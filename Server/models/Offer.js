@@ -119,6 +119,43 @@ const OfferSchema = new Schema(
     withDriverIncludes: [{ type: String }],
     withDriverExcludes: [{ type: String }],
 
+    // ─── Compliance documents (vehicle-rental) ───────────────────────────
+    // Mirrored from VehicleOnboarding so the catalog can be swept for lapsed
+    // paperwork without joining back to the submission for every row. Either
+    // date falling into the past takes the listing off the catalog — see
+    // services/complianceMonitor.js.
+    insuranceExpiry: Date,
+    pucExpiry: Date,
+
+    /**
+     * Set when the sweep pulled the listing for an expired document. It holds
+     * the status to put back on renewal, so a listing that was deactivated by
+     * its vendor before the paperwork lapsed doesn't get silently re-published.
+     */
+    complianceHold: {
+      active: { type: Boolean, default: false },
+      /** Document keys that caused it: ['insurance'], ['puc'], or both. */
+      documents: [{ type: String }],
+      since: Date,
+      previousStatus: String
+    },
+
+    /**
+     * Reminder bookkeeping, per document. `expiry` records which date the
+     * threshold was sent against, so renewing to a new date resets the ladder
+     * rather than suppressing every warning on the new one.
+     */
+    complianceNotified: {
+      insurance: {
+        expiry: Date,
+        lastThreshold: Number
+      },
+      puc: {
+        expiry: Date,
+        lastThreshold: Number
+      }
+    },
+
     fuelPolicy: {
       type: String,
       enum: ['included', 'excluded', 'same-to-same']
@@ -256,6 +293,13 @@ OfferSchema.index({ status: 1, regularPrice: 1 }); // sort=price_asc / price_des
 // primary browse query for every service tab, so it pairs the two equalities
 // with the default newest-first sort.
 OfferSchema.index({ status: 1, serviceType: 1, createdAt: -1 });
+// The compliance sweep asks one question every few hours: which live vehicle
+// listings have a document dated before today? Without this it is a full scan
+// of the whole catalog per document per run.
+OfferSchema.index({ serviceType: 1, status: 1, insuranceExpiry: 1 });
+OfferSchema.index({ serviceType: 1, status: 1, pucExpiry: 1 });
+// Admin's "Compliance hold" queue, and the vendor's own banner.
+OfferSchema.index({ 'complianceHold.active': 1, vendorId: 1 });
 OfferSchema.index({ category: 1 });
 OfferSchema.index({ city: 1, state: 1 });
 

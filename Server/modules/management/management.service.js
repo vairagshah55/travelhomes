@@ -37,7 +37,8 @@ const { onboardingModelFor } = require("../../shared/onboardingModels");
 const Feature = require("../../models/Feature");
 const Notification = require("../../models/Notification");
 const logger = require("../../shared/logger");
-const { NotFoundError } = require("../../shared/errors");
+const { BadRequestError, NotFoundError } = require("../../shared/errors");
+const { evaluateCompliance } = require("../../shared/vehicleCompliance");
 const { sendRejectionEmail, sendApprovalEmail } = require("../../services/mailer");
 
 function resolveCategoryName(category, featureMap) {
@@ -427,6 +428,25 @@ async function applyRejection(listing, rejectionReason, targetEmail) {
 }
 
 async function setStatus(id, { status, rejectionReason }) {
+  /* A vehicle whose insurance or PUC lapsed while it sat in the review queue
+     must not be approvable. The expiry sweep would take it straight back down,
+     so approving it produces a listing that flickers live and an admin who
+     thinks they published something. Checked before the write, in this path as
+     well as offers.service.setStatus — both reach the same Offer. */
+  if (status === "approved") {
+    const target = await Offer.findById(id).select(
+      "serviceType name insuranceExpiry pucExpiry",
+    );
+    if (target && target.serviceType === "vehicle-rental") {
+      const { expired } = evaluateCompliance(target);
+      if (expired.length) {
+        throw new BadRequestError(
+          `Cannot approve: ${expired.map((d) => d.label).join(" and ")} has expired. The vendor must renew it first.`,
+        );
+      }
+    }
+  }
+
   const updateData = { status };
   if (status === "rejected" && rejectionReason) updateData.rejectionReason = rejectionReason;
 

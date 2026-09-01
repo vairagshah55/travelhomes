@@ -46,7 +46,33 @@ const listQuery = z.object({
   brand: z.string().trim().max(120).optional(),
   minSeats: z.coerce.number().int().positive().max(100).optional(),
   maxSeats: z.coerce.number().int().positive().max(100).optional(),
+
+  /* Compliance-document facet (vehicle rental only).
+       hold      taken off the catalog by the expiry sweep
+       expired   a date already in the past, swept or not
+       expiring  a date inside the 30-day warning window */
+  compliance: z.enum(["hold", "expired", "expiring"]).optional(),
 });
+
+/**
+ * A renewal carries dates and nothing else. Both are optional so a vendor can
+ * renew one document without restating the other, and both accept null so a
+ * mistyped PUC date can be cleared — clearing insurance is refused in the
+ * service, since a vehicle with no policy on file is not rentable either.
+ */
+// `z.null()` FIRST: zod unions try branches in order and `z.coerce.date()`
+// happily coerces null to the epoch, which would clear a date to 1 Jan 1970
+// rather than to nothing.
+const expiryDate = z.union([z.null(), z.coerce.date()]).optional();
+
+const complianceBody = z
+  .object({
+    insuranceExpiry: expiryDate,
+    pucExpiry: expiryDate,
+  })
+  .refine((v) => v.insuranceExpiry !== undefined || v.pucExpiry !== undefined, {
+    message: "Provide at least one expiry date",
+  });
 
 const idParams = z.object({ id: objectIdString });
 
@@ -69,4 +95,5 @@ module.exports = {
   upsertBody,
   rateBody,
   updateStatusBody,
+  complianceBody,
 };

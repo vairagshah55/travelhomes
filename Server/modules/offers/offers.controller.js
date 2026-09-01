@@ -1,5 +1,7 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const service = require("./offers.service");
+const { runComplianceSweep } = require("../../services/complianceMonitor");
+const { ForbiddenError } = require("../../shared/errors");
 
 // Resolve a stable visitor id for unique-visitor counting. Authenticated
 // requests use the user id; anonymous requests use a hashable IP+UA combo.
@@ -58,6 +60,35 @@ const setStatus = asyncHandler(async (req, res) => {
   res.json({ success: true, data: offer });
 });
 
+const updateCompliance = asyncHandler(async (req, res) => {
+  const { offer, compliance, restored } = await service.updateCompliance(
+    req.validated.params.id,
+    req.validated.body,
+    req.user,
+  );
+  res.json({
+    success: true,
+    data: offer,
+    compliance,
+    restored,
+    message: restored
+      ? "Documents updated — your listing is live again."
+      : "Documents updated.",
+  });
+});
+
+/**
+ * Run the expiry sweep now. The monitor already runs on an interval; this is
+ * for the admin who has just corrected a batch of dates and does not want to
+ * wait for the next pass.
+ */
+const sweepCompliance = asyncHandler(async (req, res) => {
+  const role = req.user && (req.user.role || req.user.userType);
+  if (role !== "admin") throw new ForbiddenError("Admin access required");
+  const summary = await runComplianceSweep();
+  res.json({ success: true, data: summary });
+});
+
 const trackClick = asyncHandler(async (req, res) => {
   await service.trackClick(req.validated.params.id);
   res.json({ success: true });
@@ -71,5 +102,7 @@ module.exports = {
   remove,
   rate,
   setStatus,
+  updateCompliance,
+  sweepCompliance,
   trackClick,
 };

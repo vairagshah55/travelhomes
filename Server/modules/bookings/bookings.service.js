@@ -32,6 +32,7 @@ const { notifyNewBooking } = require("../../shared/bookingNotifications");
 const env = require("../../config/env");
 const logger = require("../../shared/logger");
 const { NotFoundError, BadRequestError } = require("../../shared/errors");
+const { evaluateCompliance } = require("../../shared/vehicleCompliance");
 
 // ─── Reads ──────────────────────────────────────────────────────────────────
 async function listByDate(date) {
@@ -273,8 +274,36 @@ function assertVehicleFields(input) {
   }
 }
 
+/**
+ * Refuse a vehicle whose insurance or PUC certificate has lapsed.
+ *
+ * The catalog and the detail endpoint already hide those listings, so a guest
+ * cannot reach checkout for one. This path is the other one: a vendor or admin
+ * creating a booking by hand, from a list they may have had open since before
+ * the document expired. Handing over a vehicle with lapsed paperwork is the
+ * thing the whole feature exists to prevent, so it is checked at the point of
+ * booking too and not only at the point of browsing.
+ */
+async function assertVehicleCompliance(input) {
+  if (input.serviceName !== "vehicle-rental" || !input.serviceId) return;
+
+  const offer = await Offer.findById(input.serviceId)
+    .select("name serviceType insuranceExpiry pucExpiry")
+    .lean();
+  if (!offer || offer.serviceType !== "vehicle-rental") return;
+
+  const { expired } = evaluateCompliance(offer);
+  if (!expired.length) return;
+
+  throw new BadRequestError(
+    `${expired.map((d) => d.label).join(" and ")} for "${offer.name}" has expired. ` +
+      "The vendor must renew the document before this vehicle can be booked.",
+  );
+}
+
 async function create(input) {
   assertVehicleFields(input);
+  await assertVehicleCompliance(input);
   const booking = await Booking.create(input);
   await emitNewBookingNotifications(booking);
 

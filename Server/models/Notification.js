@@ -24,7 +24,10 @@ const NotificationSchema = new Schema({
   referenceModel: {
     type: String,
     required: false,
-    enum: ['User', 'Vendor', 'Booking', 'HelpDesk', 'Payment']
+    // 'Offer' was missing even though offers.service has always referenced
+    // listings here — every service approval/rejection bell failed validation
+    // and was swallowed by the surrounding catch.
+    enum: ['User', 'Vendor', 'Booking', 'HelpDesk', 'Payment', 'Offer']
   },
   isRead: {
     type: Boolean,

@@ -53,6 +53,10 @@ router.get(
 
 router.post("/", requireJwt(), validate({ body: dto.upsertBody }), controller.create);
 
+/* Ahead of "/:id" — otherwise "compliance" is read as an offer id and rejected
+   by the ObjectId check in idParams. */
+router.post("/compliance/sweep", requireJwt(), controller.sweepCompliance);
+
 router.get(
   "/:id",
   detailLimiter,
@@ -75,6 +79,18 @@ router.patch(
   requireJwt(),
   validate({ params: dto.idParams, body: dto.updateStatusBody }),
   controller.setStatus,
+);
+
+/**
+ * Renew the insurance / PUC expiry dates on a vehicle listing. Owner or admin.
+ * Separate from PUT /:id because it is the one edit that can lift a compliance
+ * hold, and it must not drag the listing back through review to do it.
+ */
+router.patch(
+  "/:id/compliance",
+  requireJwt(),
+  validate({ params: dto.idParams, body: dto.complianceBody }),
+  controller.updateCompliance,
 );
 
 router.post(

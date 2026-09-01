@@ -128,6 +128,16 @@ const schema = z.object({
   // Marketing
   FB_PAGE_ACCESS_TOKEN: z.string().optional(),
 
+  // Vehicle compliance sweep — takes listings off the catalog when their
+  // insurance or PUC certificate expires. See services/complianceMonitor.js.
+  // Enabled unless explicitly set to the string "false"; the interval is
+  // floored at 15 minutes by the monitor itself.
+  COMPLIANCE_SWEEP_ENABLED: z.enum(["true", "false"]).optional(),
+  COMPLIANCE_SWEEP_INTERVAL_MINUTES: z.coerce.number().int().positive().max(10_080).optional(),
+  // Timezone the expiry day is judged in. 330 = IST (+05:30); a document is
+  // valid through the whole of its stated day in THIS zone, not in UTC.
+  COMPLIANCE_TZ_OFFSET_MINUTES: z.coerce.number().int().min(-720).max(840).optional(),
+
   // Debug toggles
   LOG_AUTH_DEBUG: booleanish,
   LOG_OTP_DEBUG: booleanish,

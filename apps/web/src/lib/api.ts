@@ -331,6 +331,16 @@ export interface OfferDTO {
   photos: { coverUrl?: string; galleryUrls: string[] };
   status: "pending" | "approved" | "cancelled" | "deactivated" | "blocked" | "rejected";
   rejectionReason?: string;
+  // Vehicle rental compliance documents. Either date lapsing takes the listing
+  // off the catalog — see lib/vehicleCompliance.ts for the shared verdict.
+  insuranceExpiry?: string | null;
+  pucExpiry?: string | null;
+  complianceHold?: {
+    active?: boolean;
+    documents?: string[];
+    since?: string;
+    previousStatus?: string;
+  };
   // Discount offers — UI was already in place; this is the persisted shape
   // matching the server-side `discounts` sub-doc on the Offer model.
   discounts?: {
@@ -399,6 +409,24 @@ export const offersApi = {
       body: JSON.stringify({ status }),
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }),
+  /**
+   * Renew the dated compliance documents on a vehicle listing. Deliberately not
+   * `update` — this is the one edit that can lift a compliance hold, and it
+   * must not send the listing back through admin review to do it.
+   */
+  updateCompliance: (
+    id: string,
+    payload: { insuranceExpiry?: string | null; pucExpiry?: string | null },
+    token?: string,
+  ) =>
+    request<ApiItemResponse<OfferDTO> & { restored: boolean; message: string }>(
+      `/api/offers/${id}/compliance`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      },
+    ),
   trackClick: (id: string) =>
     request<{ success: boolean }>(`/api/offers/${id}/click`, { method: "POST" }).catch(() => {}),
 };

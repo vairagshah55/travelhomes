@@ -678,9 +678,17 @@ export interface PaymentGatewaySettings {
 
 // Offers API services
 export const offersService = {
-  list: async (status?: "pending" | "approved" | "cancelled" | "modified") => {
+  list: async (
+    status?: "pending" | "approved" | "cancelled" | "modified",
+    // Extra query params — `compliance=hold` backs the admin's compliance queue,
+    // which spans every status and so cannot be expressed as one.
+    params?: Record<string, string | number | boolean>,
+  ) => {
     try {
-      const response = await api.get("/offers", { params: status ? { status } : undefined });
+      const query = { ...(status ? { status } : {}), ...(params || {}) };
+      const response = await api.get("/offers", {
+        params: Object.keys(query).length ? query : undefined,
+      });
       return response.data; // { success, count, data }
     } catch (error: any) {
       throw error.response?.data || error.message;
@@ -714,6 +722,27 @@ export const offersService = {
     try {
       const response = await api.delete(`/offers/${id}`);
       return response.data; // { success, message }
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  /** Renew a vehicle listing's insurance / PUC expiry dates. Lifts the hold. */
+  updateCompliance: async (
+    id: string,
+    payload: { insuranceExpiry?: string | null; pucExpiry?: string | null },
+  ) => {
+    try {
+      const response = await api.patch(`/offers/${id}/compliance`, payload);
+      return response.data; // { success, data, compliance, restored, message }
+    } catch (error: any) {
+      throw error.response?.data || error.message;
+    }
+  },
+  /** Run the expiry sweep now instead of waiting for the next scheduled pass. */
+  sweepCompliance: async () => {
+    try {
+      const response = await api.post("/offers/compliance/sweep");
+      return response.data; // { success, data: { tookDown, reminded, restored } }
     } catch (error: any) {
       throw error.response?.data || error.message;
     }

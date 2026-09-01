@@ -28,6 +28,45 @@ describe("offers.dto.listQuery", () => {
   });
 });
 
+describe("offers.dto.listQuery compliance facet", () => {
+  it("accepts the three compliance views", () => {
+    for (const value of ["hold", "expired", "expiring"]) {
+      expect(dto.listQuery.parse({ compliance: value }).compliance).toBe(value);
+    }
+  });
+  it("rejects anything else", () => {
+    expect(() => dto.listQuery.parse({ compliance: "lapsed" })).toThrowError();
+  });
+  it("is optional", () => {
+    expect(dto.listQuery.parse({}).compliance).toBeUndefined();
+  });
+});
+
+describe("offers.dto.complianceBody", () => {
+  it("accepts one date on its own, so renewing the PUC leaves insurance alone", () => {
+    const parsed = dto.complianceBody.parse({ pucExpiry: "2027-01-01" });
+    expect(parsed.pucExpiry).toBeInstanceOf(Date);
+    expect(parsed.insuranceExpiry).toBeUndefined();
+  });
+  it("accepts both", () => {
+    const parsed = dto.complianceBody.parse({
+      insuranceExpiry: "2027-06-01",
+      pucExpiry: "2027-01-01",
+    });
+    expect(parsed.insuranceExpiry).toBeInstanceOf(Date);
+    expect(parsed.pucExpiry).toBeInstanceOf(Date);
+  });
+  it("accepts null to clear a date", () => {
+    expect(dto.complianceBody.parse({ pucExpiry: null }).pucExpiry).toBeNull();
+  });
+  it("rejects an empty body — there would be nothing to renew", () => {
+    expect(() => dto.complianceBody.parse({})).toThrowError();
+  });
+  it("rejects an unparseable date", () => {
+    expect(() => dto.complianceBody.parse({ insuranceExpiry: "soon" })).toThrowError();
+  });
+});
+
 describe("offers.dto.idParams", () => {
   it("accepts a 24-hex id", () => {
     expect(dto.idParams.parse({ id: validId }).id).toBe(validId);

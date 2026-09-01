@@ -41,8 +41,22 @@ const Notification = require("../../models/Notification");
 const Booking = require("../../models/Booking");
 const AdminAnalyticsMetric = require("../../models/AdminAnalyticsMetric");
 const logger = require("../../shared/logger");
-const { ForbiddenError, NotFoundError, UnauthorizedError } = require("../../shared/errors");
+const VehicleOnboarding = require("../../models/VehicleOnboarding");
+const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  UnauthorizedError,
+} = require("../../shared/errors");
 const { sendApprovalEmail, sendRejectionEmail } = require("../../services/mailer");
+const {
+  COMPLIANCE_DOCS,
+  evaluateCompliance,
+  expiredBefore,
+  expiringBefore,
+  EXPIRING_SOON_DAYS,
+} = require("../../shared/vehicleCompliance");
+const { restoreOne: restoreCompliance } = require("../../services/complianceMonitor");
 
 const uploadsDir = path.join(process.cwd(), "uploads");
 try {
@@ -202,6 +216,30 @@ function buildListFilter(q, user) {
   }
 
   if (q.status) query.status = q.status;
+
+  /* Compliance facet — the admin's "on hold" queue and the vendor's own
+     "needs attention" band both read from here rather than re-deriving the
+     dates client-side. */
+  if (q.compliance === "hold") query["complianceHold.active"] = true;
+  if (q.compliance === "expired") {
+    query.serviceType = "vehicle-rental";
+    query.$or = COMPLIANCE_DOCS.map((d) => ({ [d.field]: { $lt: expiredBefore() } }));
+  }
+  if (q.compliance === "expiring") {
+    query.serviceType = "vehicle-rental";
+    query.$or = COMPLIANCE_DOCS.map((d) => ({
+      [d.field]: { $gte: expiredBefore(), $lt: expiringBefore(EXPIRING_SOON_DAYS) },
+    }));
+  }
+
+  /* Belt-and-braces for guests. The sweep flips an expired vehicle to
+     `deactivated`, which `status: approved` above already hides — but the
+     sweep runs on an interval, and a policy lapsing at midnight must not stay
+     bookable until the next pass. Excluding the dates here closes that window
+     without waiting for a write. */
+  if (query.status === "approved" && !adminViewer && !ownerView) {
+    query.$nor = COMPLIANCE_DOCS.map((d) => ({ [d.field]: { $lt: expiredBefore() } }));
+  }
 
   const or = [];
   if (q.city) or.push({ city: { $regex: escapeRegex(q.city), $options: "i" } });
@@ -464,11 +502,93 @@ async function getById(id, user, visitorId) {
     if (v && v.vendorId && offer.vendorId === v.vendorId) isOwnerByEmail = true;
   }
 
-  if (!isOwner && !isOwnerByEmail && !isAdmin(user) && visitorId) {
+  const privileged = isOwner || isOwnerByEmail || isAdmin(user);
+
+  /* A deep link must not outlive the paperwork. The catalog already drops the
+     listing, but /offers/:id is reachable from a bookmark, a shared link or a
+     stale search-result page, and a booking started there would be for a
+     vehicle that cannot legally be handed over. */
+  if (!privileged && offer.serviceType === "vehicle-rental") {
+    const compliance = evaluateCompliance(offer);
+    if (compliance.expired.length) throw new NotFoundError("Offer", id);
+  }
+
+  if (!privileged && visitorId) {
     await trackVisitor(offer, visitorId);
   }
 
   return offer;
+}
+
+/**
+ * Renew the dated compliance documents on a vehicle listing.
+ *
+ * This is deliberately NOT the onboarding form. Re-submitting through
+ * onboarding rewrites the whole offer and resets it to `pending`, which would
+ * put a listing back in the admin review queue for the sake of one date — and
+ * leave it dark for however long that queue is. A renewal changes two dates
+ * and nothing else, so it restores the listing directly.
+ *
+ * Both dates are optional in the payload; omitting one leaves it as it was.
+ * Whoever supplies a date that is already in the past gets it saved and the
+ * listing stays down, which is the honest outcome.
+ */
+async function updateCompliance(id, payload, user) {
+  const offer = await Offer.findById(id);
+  if (!offer) throw new NotFoundError("Offer", id);
+
+  if (offer.serviceType !== "vehicle-rental") {
+    throw new BadRequestError("Only vehicle rental listings carry compliance documents");
+  }
+
+  const isOwner = offer.userId === userIdOf(user);
+  let isOwnerByEmail = false;
+  if (!isOwner && user && user.email) {
+    const v = await Vendor.findOne({ email: user.email }).lean();
+    if (v && v.vendorId && offer.vendorId === v.vendorId) isOwnerByEmail = true;
+  }
+  if (!isAdmin(user) && !isOwner && !isOwnerByEmail) throw new ForbiddenError("Access denied");
+
+  const changed = {};
+  for (const doc of COMPLIANCE_DOCS) {
+    const value = payload[doc.field];
+    if (value === undefined) continue;
+    const next = value === null || value === "" ? null : new Date(value);
+    const prev = offer[doc.field] ? new Date(offer[doc.field]).getTime() : null;
+    if ((next ? next.getTime() : null) === prev) continue;
+    offer[doc.field] = next;
+    changed[doc.field] = next;
+    // A new date starts its own reminder ladder; the old one described a date
+    // that no longer exists.
+    offer.set(`complianceNotified.${doc.key}`, { expiry: null, lastThreshold: null });
+  }
+
+  if (!Object.keys(changed).length) {
+    return { offer, compliance: evaluateCompliance(offer), restored: false };
+  }
+
+  await offer.save();
+
+  // Keep the submission the listing was built from in step, so the vendor's
+  // onboarding view and any future re-submission carry the renewed dates.
+  if (offer.sourceId) {
+    try {
+      await VehicleOnboarding.updateOne({ _id: offer.sourceId }, { $set: changed });
+    } catch (err) {
+      logger.error(
+        { err: err.message, offerId: String(offer._id) },
+        "[Offer] compliance mirror to onboarding failed",
+      );
+    }
+  }
+
+  // Silent: the vendor is looking at the screen that just did this, so the
+  // "you are live again" email would arrive as noise. An admin-driven renewal
+  // does mail the vendor, because they are not the one who typed it.
+  const restored = await restoreCompliance(offer, { silent: !isAdmin(user) });
+
+  const fresh = restored || (await Offer.findById(id));
+  return { offer: fresh, compliance: evaluateCompliance(fresh), restored: !!restored };
 }
 
 async function update(id, payload, user) {
@@ -751,6 +871,14 @@ function checkStatusPermission(offer, user, status) {
   if (!allowed) {
     throw new ForbiddenError("You can only deactivate approved services or cancel pending ones");
   }
+
+  // Reactivating past a compliance hold would put an uninsured vehicle back on
+  // the catalog with one click. Renewing the document is the only way up.
+  if (status === "approved" && offer.complianceHold && offer.complianceHold.active) {
+    throw new ForbiddenError(
+      "This listing is on hold until its insurance or PUC certificate is renewed",
+    );
+  }
 }
 
 async function setStatus(id, { status, reason }, user) {
@@ -758,6 +886,19 @@ async function setStatus(id, { status, reason }, user) {
   if (!offer) throw new NotFoundError("Offer", id);
 
   checkStatusPermission(offer, user, status);
+
+  /* Applies to admins too. Approving a vehicle whose insurance lapsed while it
+     sat in the review queue is exactly the mistake this feature exists to stop,
+     and the sweep would only take it straight back down. */
+  if (status === "approved" && offer.serviceType === "vehicle-rental") {
+    const compliance = evaluateCompliance(offer);
+    if (compliance.expired.length) {
+      const labels = compliance.expired.map((d) => d.label).join(" and ");
+      throw new BadRequestError(
+        `Cannot approve: ${labels} has expired. The vendor must renew it first.`,
+      );
+    }
+  }
 
   offer.status = status;
   if (status === "rejected" && reason) offer.rejectionReason = reason;
@@ -798,6 +939,7 @@ module.exports = {
   remove,
   rate,
   setStatus,
+  updateCompliance,
   trackClick,
   // exposed for tests
   _internal: { escapeRegex, isAdmin, pickSort, mimeToExt, parseDataUrl },

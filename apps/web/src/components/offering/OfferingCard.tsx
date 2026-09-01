@@ -6,6 +6,7 @@ import {
   MapPin,
   MoreHorizontal,
   Moon,
+  ShieldAlert,
   Trash2,
   Users,
 } from "lucide-react";
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BRAND_VARS, PANEL, PANEL_INTERACTIVE, StatusBadge } from "@/components/shared";
 import { type OfferDTO } from "@/lib/api";
+import { ComplianceBadge } from "@/components/compliance";
+import { evaluateCompliance } from "@/lib/vehicleCompliance";
 import { cn, getImageUrl } from "@/lib/utils";
 
 const MENU_ITEM =
@@ -38,11 +41,14 @@ export const OfferingCard = ({
   onDelete,
   onEdit,
   onCardClick,
+  onRenewCompliance,
 }: {
   listing: OfferDTO;
   onDelete: (id: string) => void;
   onEdit: (offer: OfferDTO) => void;
   onCardClick: (id: string) => void;
+  /** Opens the expiry-date dialog. Absent for consoles that cannot renew. */
+  onRenewCompliance?: (offer: OfferDTO) => void;
 }) => {
   const id = listing._id!;
   const cover = listing.photos?.coverUrl || "";
@@ -52,6 +58,8 @@ export const OfferingCard = ({
   const price = Number(listing.regularPrice || 0);
   const status = (listing.status || "pending") as string;
   const location = [listing.city, listing.state].filter(Boolean).join(", ");
+  const compliance = evaluateCompliance(listing);
+  const needsDocs = !!compliance && compliance.state !== "ok";
 
   return (
     <div
@@ -97,7 +105,13 @@ export const OfferingCard = ({
         />
 
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
-          <StatusBadge status={status} size="sm" className="shadow-sm" />
+          {/* Status says the listing is down; the compliance pill says why.
+              Stacked rather than side by side so a long document label does not
+              push the actions menu off a phone-width card. */}
+          <div className="flex flex-col items-start gap-1.5 min-w-0">
+            <StatusBadge status={status} size="sm" className="shadow-sm" />
+            <ComplianceBadge listing={listing} className="shadow-sm" />
+          </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -122,6 +136,11 @@ export const OfferingCard = ({
               <DropdownMenuItem className={MENU_ITEM} onClick={() => onCardClick(id)}>
                 <Eye size={13} /> View details
               </DropdownMenuItem>
+              {needsDocs && onRenewCompliance && (
+                <DropdownMenuItem className={MENU_ITEM} onClick={() => onRenewCompliance(listing)}>
+                  <ShieldAlert size={13} /> Update documents
+                </DropdownMenuItem>
+              )}
               {/* Approved listings are live — deletion goes through support. */}
               {status !== "approved" && (
                 <DropdownMenuItem className={MENU_ITEM_DANGER} onClick={() => onDelete(id)}>

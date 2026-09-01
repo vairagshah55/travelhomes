@@ -224,6 +224,18 @@ const VehicleOnboardingSchema = new Schema(
     insuranceExpiry: Date,
     pucExpiry: Date,
 
+    /**
+     * Mirror of the Offer's hold, so the vendor's own submission view can say
+     * why the listing went dark. The submission `status` is deliberately NOT
+     * flipped to 'rejected' for a lapsed document — nobody rejected anything,
+     * and the vendor needs the record to stay editable so they can renew it.
+     */
+    complianceHold: {
+      active: { type: Boolean, default: false },
+      documents: [{ type: String }],
+      since: Date
+    },
+
     // ─── Driver (chauffeur-driven listings) ────────────────────────────
     driverName: String,
     driverPhone: String,

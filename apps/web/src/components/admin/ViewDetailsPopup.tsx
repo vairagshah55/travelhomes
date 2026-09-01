@@ -2,6 +2,14 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 import { getImageUrl } from "@/lib/adminUtils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
+import { ComplianceBadge } from "@/components/compliance";
+import {
+  COMPLIANCE_TONE,
+  describeDays,
+  complianceHeadline,
+  evaluateCompliance,
+  formatExpiry,
+} from "@/lib/vehicleCompliance";
 import { formatINR } from "@/utils/formatCurrency";
 import { BTN_DANGER_SOFT, BTN_PRIMARY, EYEBROW } from "./adminUI";
 import {
@@ -52,6 +60,11 @@ interface ViewDetailsPopupProps {
   portalScope?: "admin" | "vendor";
   /** Escape hatch for a one-off token set. Overrides `portalScope`'s vars. */
   portalStyle?: React.CSSProperties;
+  /**
+   * Opens the expiry-date dialog from the compliance section. Omitted where
+   * the viewer cannot renew, which hides the button rather than disabling it.
+   */
+  onRenewCompliance?: () => void;
 }
 
 /* ── Value helpers (unchanged) ────────────────────────────────────────────── */
@@ -122,11 +135,13 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   onNext,
   portalScope,
   portalStyle,
+  onRenewCompliance,
 }) => {
   if (!isOpen) return null;
 
   const d = listingData ?? {};
   const photos = getPhotos(d);
+  const rcPhotos = toArray(d.rcPhotos).map((p) => getImageUrl(p));
 
   const rules = toArray(d.rules || d.rulesAndRegulations || d.policies?.rules);
   const features = toArray(d.features || d.amenities || d.requirements);
@@ -182,6 +197,10 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   const createdAt = d.createdAt ? new Date(d.createdAt).toLocaleDateString("en-IN") : null;
   const place = [d.locality, d.city, d.state].filter(Boolean).join(", ");
 
+  /* Vehicle rental compliance. Null for every other service type, which is
+     also the test for whether the section renders at all. */
+  const compliance = evaluateCompliance(d);
+
   const hasBusiness = d.businessDetails || d.brandName || d.businessEmail || d.businessName;
   const hasPersonal = d.personalDetails || d.personName || d.firstName;
 
@@ -192,7 +211,14 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
       eyebrow="Listing"
       title={d.name || d.title || "Listing details"}
       subtitle={[d.category, place].filter(Boolean).join(" · ") || undefined}
-      status={has(d.status) ? <StatusBadge status={d.status} /> : undefined}
+      status={
+        has(d.status) || compliance ? (
+          <span className="flex flex-wrap items-center justify-end gap-1.5">
+            {has(d.status) && <StatusBadge status={d.status} />}
+            <ComplianceBadge listing={d} />
+          </span>
+        ) : undefined
+      }
       /* `lg`, not `xl`: at 920px the panel swallowed the review queue it is
          meant to be read against, which is the whole reason this stopped being
          a modal. 720px still fits the three-up overview and a four-across
@@ -370,6 +396,72 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
       {photos.length > 0 && (
         <DetailSection title={`Photos (${photos.length})`}>
           <DetailPhotos photos={photos} label="listing photo" />
+        </DetailSection>
+      )}
+
+      {compliance && (
+        <DetailSection title="Compliance documents" columns={2}>
+          <div
+            className={`col-span-full rounded-lg border px-3.5 py-3 ${COMPLIANCE_TONE[compliance.state].band}`}
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <p className="text-[13px] leading-relaxed text-app-fg max-w-[46ch]">
+                {complianceHeadline(compliance)}
+              </p>
+              {onRenewCompliance && compliance.state !== "ok" && (
+                <button
+                  onClick={onRenewCompliance}
+                  className="h-8 shrink-0 rounded-lg bg-app-accent px-3 text-[12.5px] font-semibold
+                    text-app-accent-fg outline-none transition-colors hover:bg-app-accent-hover
+                    focus-visible:ring-4 focus-visible:ring-app-accent/25"
+                >
+                  Update dates
+                </button>
+              )}
+            </div>
+            {compliance.onHold && d.complianceHold?.since && (
+              <p className="mt-2 text-[12px] text-app-fg-muted">
+                Removed automatically on{" "}
+                {new Date(d.complianceHold.since).toLocaleDateString("en-IN")}.
+              </p>
+            )}
+          </div>
+
+          {compliance.docs.map((doc) => (
+            <DetailField
+              key={doc.key}
+              label={`${doc.label} valid until`}
+              value={
+                <span className="inline-flex items-center gap-2">
+                  {formatExpiry(doc.expiry)}
+                  <span
+                    className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold ${
+                      doc.state === "expired" || doc.state === "missing"
+                        ? "text-red-600 dark:text-red-400"
+                        : doc.state === "expiring"
+                          ? "text-amber-700 dark:text-amber-400"
+                          : "text-app-fg-subtle"
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        COMPLIANCE_TONE[
+                          doc.state === "absent" || doc.state === "ok" ? "ok" : doc.state
+                        ].dot
+                      }`}
+                    />
+                    {describeDays(doc.days)}
+                  </span>
+                </span>
+              }
+            />
+          ))}
+
+          {rcPhotos.length > 0 && (
+            <Block title={`Registration certificate (${rcPhotos.length})`}>
+              <DetailPhotos photos={rcPhotos} label="registration certificate" />
+            </Block>
+          )}
         </DetailSection>
       )}
 

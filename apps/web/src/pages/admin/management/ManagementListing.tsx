@@ -14,6 +14,7 @@ import {
   IndianRupee,
   Layers,
   RefreshCw,
+  ShieldAlert,
   Store,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -40,6 +41,12 @@ import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
 import { AdminStatCard } from "@/components/admin/AdminStatCard";
+import {
+  ComplianceBadge,
+  ComplianceRenewDialog,
+  type CompliancePayload,
+} from "@/components/compliance";
+import { evaluateCompliance } from "@/lib/vehicleCompliance";
 import { BTN_NEUTRAL, BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
 import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
@@ -49,6 +56,11 @@ const TABS = [
   { key: "approved", label: "Approved" },
   { key: "rejected", label: "Rejected" },
   { key: "deactivated", label: "Deactivated" },
+  /* Vehicles pulled off the catalog by the expiry sweep. Its own tab rather
+     than a filter on Deactivated: that tab maps to the API's `cancelled`,
+     while a compliance hold writes `deactivated`, so held listings would
+     otherwise be reachable from no tab at all. */
+  { key: "compliance", label: "Compliance hold" },
 ];
 
 /* ── Sort options (client-side) ─────────────────────────────────────────── */
@@ -138,6 +150,9 @@ const ManagementListing = () => {
     onConfirm: () => void;
   } | null>(null);
 
+  // Compliance-document renewal (vehicle listings only)
+  const [renewTarget, setRenewTarget] = useState<Offer | null>(null);
+
   // Vendor details popup
   const [showVendorDetails, setShowVendorDetails] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState<any | null>(null);
@@ -145,7 +160,8 @@ const ManagementListing = () => {
   const [vendorError, setVendorError] = useState<string | null>(null);
 
   /* ── Data ── */
-  const { query, createListing, updateListing, setStatus, deleteListing } = useListings(activeTab);
+  const { query, createListing, updateListing, setStatus, renewCompliance, deleteListing } =
+    useListings(activeTab);
   const offers = query.data ?? [];
 
   /* Listings only carry the vendor's `vendorId` code, so resolve names through
@@ -487,6 +503,11 @@ const ManagementListing = () => {
   };
 
   // Delete (only for cancelled/deactivated listings) — use ConfirmModal
+  const submitRenewal = async (payload: CompliancePayload) => {
+    if (!renewTarget) return;
+    await renewCompliance.mutateAsync({ id: renewTarget._id, payload });
+  };
+
   const askDelete = (offer: Offer) => {
     setConfirm({
       title: "Delete Listing",
@@ -589,6 +610,19 @@ const ManagementListing = () => {
       ),
     },
     {
+      /* Only vehicle listings render anything here, so the column is quiet on a
+         page of stays and activities and loud on the one row that matters. */
+      key: "compliance",
+      header: "Documents",
+      hideBelow: "lg",
+      className: "w-[160px]",
+      cell: (o) => {
+        const verdict = evaluateCompliance(o);
+        if (!verdict) return <span className="text-app-fg-subtle">—</span>;
+        return <ComplianceBadge listing={o} showWhenOk />;
+      },
+    },
+    {
       key: "status",
       header: "Status",
       className: "w-[130px]",
@@ -637,6 +671,14 @@ const ManagementListing = () => {
       // Hidden when already cancelled/deactivated
       hidden: (o) => o.status?.toLowerCase() === "cancelled",
       disabled: () => setStatus.isPending,
+    },
+    {
+      label: "Update documents",
+      icon: ShieldAlert,
+      onClick: (o) => setRenewTarget(o),
+      // Vehicle listings only — nothing else carries a dated document.
+      hidden: (o) => !evaluateCompliance(o),
+      disabled: () => renewCompliance.isPending,
     },
   ];
 
@@ -755,8 +797,16 @@ const ManagementListing = () => {
             onRetry={() => query.refetch()}
             hasActiveQuery={hasActiveQuery}
             emptyIcon={hasActiveQuery ? SearchX : PackageOpen}
-            emptyTitle={`No ${activeTabLabel.toLowerCase()} listings`}
-            emptyDescription="Listings appear here once vendors submit them for review."
+            emptyTitle={
+              activeTab === "compliance"
+                ? "No listings on compliance hold"
+                : `No ${activeTabLabel.toLowerCase()} listings`
+            }
+            emptyDescription={
+              activeTab === "compliance"
+                ? "Vehicles land here automatically when their insurance or PUC certificate expires, and leave again when the vendor enters a new date."
+                : "Listings appear here once vendors submit them for review."
+            }
             noResultsTitle={searchTerm ? `No results for "${searchTerm}"` : "No matching listings"}
             noResultsDescription="Try different keywords or remove filters."
             noResultsAction={{ label: "Clear filters", onClick: clearQuery }}
@@ -801,6 +851,11 @@ const ManagementListing = () => {
                 }
               : undefined
           }
+          onRenewCompliance={
+            access.canEdit && evaluateCompliance(viewOffer)
+              ? () => setRenewTarget(viewOffer)
+              : undefined
+          }
           onReject={
             viewOffer.status !== "rejected" && viewOffer.status !== "cancelled"
               ? () => {
@@ -811,6 +866,14 @@ const ManagementListing = () => {
           }
         />
       )}
+
+      <ComplianceRenewDialog
+        open={!!renewTarget}
+        onClose={() => setRenewTarget(null)}
+        listing={renewTarget}
+        onSubmit={submitRenewal}
+        asAdmin
+      />
 
       <ManagementForm
         isOpen={showManagementForm}

@@ -35,6 +35,11 @@ import {
 } from "@/components/shared";
 import { ConfirmModal } from "@/components/shared/ConfirmModal";
 import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
+import {
+  ComplianceAlertBand,
+  ComplianceRenewDialog,
+  type CompliancePayload,
+} from "@/components/compliance";
 import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 import {
   DropdownMenu,
@@ -43,6 +48,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { currencyINR } from "@/utils/currency";
+import { toast } from "sonner";
 
 /* Query params this page owns. */
 const URL_FILTERS: UrlFilterDef[] = [{ key: "type", type: "select" }];
@@ -139,7 +145,7 @@ const Offering = () => {
     selectedId: viewId,
     setSelectedId: setViewId,
   } = useTableUrlState({ filters: URL_FILTERS, defaultTab: "approved", defaultSort: "recent" });
-  const activeTab = rawTab as "approved" | "pending";
+  const activeTab = rawTab as "approved" | "pending" | "deactivated";
   const sortKey = (sort in SORT_LABELS ? sort : "recent") as SortKey;
   const typeFilter = (filters.type as string) || "all";
   const setTypeFilter = (value: string) =>
@@ -178,15 +184,45 @@ const Offering = () => {
     },
   });
 
+  /* Listings that are off the site. Without this the compliance sweep is a
+     trapdoor: it flips an expired vehicle to `deactivated`, which belongs to
+     neither of the two tabs above, so the listing simply vanishes from the
+     console the vendor was told to go and fix it in. */
+  const deactivatedQuery = useQuery<OfferDTO[]>({
+    queryKey: ["offerings", "deactivated", user?.id],
+    enabled,
+    refetchInterval: 100_000,
+    queryFn: async () => {
+      const res = await offersApi.list("deactivated" as "approved", token, { mine: true });
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+
   const approvedOffers = approvedQuery.data ?? [];
   const pendingOffers = pendingQuery.data ?? [];
+  const deactivatedOffers = deactivatedQuery.data ?? [];
   const loading = approvedQuery.isLoading || pendingQuery.isLoading;
 
   const reload = () => {
     queryClient.invalidateQueries({ queryKey: ["offerings"] });
   };
 
-  const baseOffers = activeTab === "approved" ? approvedOffers : pendingOffers;
+  const baseOffers =
+    activeTab === "approved"
+      ? approvedOffers
+      : activeTab === "deactivated"
+        ? deactivatedOffers
+        : pendingOffers;
+
+  /* The band draws from every tab, not the visible one. A vehicle that lapsed
+     is sitting under "Off the site" — telling the vendor about it only once
+     they have already navigated there defeats the point. */
+  const complianceListings = useMemo(
+    () => [...approvedOffers, ...pendingOffers, ...deactivatedOffers],
+    [approvedOffers, pendingOffers, deactivatedOffers],
+  );
+
+  const [renewTarget, setRenewTarget] = useState<OfferDTO | null>(null);
 
   const offers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -260,6 +296,13 @@ const Offering = () => {
       },
     });
   };
+  const submitRenewal = async (payload: CompliancePayload) => {
+    if (!renewTarget?._id) return;
+    const res = await offersApi.updateCompliance(renewTarget._id, payload, token);
+    reload();
+    toast.success(res.restored ? `"${renewTarget.name}" is live again.` : "Documents updated.");
+  };
+
   /* Editing is its own page (/offering/:id/edit) — the old right-side
      OfferPanel duplicated a subset of the wizard's fields. */
   const onEdit = (offer: OfferDTO) => navigate(`/offering/${offer._id}/edit`);
@@ -274,6 +317,7 @@ const Offering = () => {
       tabs={[
         { key: "approved", label: "Live", count: approvedOffers.length },
         { key: "pending", label: "Under review", count: pendingOffers.length },
+        { key: "deactivated", label: "Off the site", count: deactivatedOffers.length },
       ]}
       activeKey={activeTab}
       onChange={setActiveTab}
@@ -294,6 +338,15 @@ const Offering = () => {
         }
       >
         <div style={BRAND_VARS} className="space-y-5">
+          {/* ── Compliance ── Above the metrics: a listing that is off the site
+              is not a number, it is something to go and fix. */}
+          {!loading && (
+            <ComplianceAlertBand
+              listings={complianceListings}
+              onRenew={(listing) => setRenewTarget(listing as OfferDTO)}
+            />
+          )}
+
           {/* ── Metrics ── */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
             {loading ? (
@@ -425,18 +478,32 @@ const Offering = () => {
                 <EmptyState
                   icon={Award}
                   title={
-                    activeTab === "approved" ? "No approved listings yet" : "No pending listings"
+                    activeTab === "approved"
+                      ? "No approved listings yet"
+                      : activeTab === "deactivated"
+                        ? "Nothing is off the site"
+                        : "No pending listings"
                   }
                   description={
                     activeTab === "approved"
                       ? "Listings show up here once an admin approves them. Anything you submit sits under Pending until then."
-                      : "New listings go into pending review first. Create one to get started."
+                      : activeTab === "deactivated"
+                        ? "Listings land here when you pause them, or when a vehicle's insurance or PUC certificate expires."
+                        : "New listings go into pending review first. Create one to get started."
                   }
                   actionLabel={
-                    activeTab === "approved" ? "View pending listings" : "Create your first listing"
+                    activeTab === "approved"
+                      ? "View pending listings"
+                      : activeTab === "deactivated"
+                        ? "Back to live listings"
+                        : "Create your first listing"
                   }
                   onAction={() =>
-                    activeTab === "approved" ? setActiveTab("pending") : navigate("/offering/add")
+                    activeTab === "approved"
+                      ? setActiveTab("pending")
+                      : activeTab === "deactivated"
+                        ? setActiveTab("approved")
+                        : navigate("/offering/add")
                   }
                   className="min-h-[320px]"
                 />
@@ -458,6 +525,7 @@ const Offering = () => {
                     onDelete={onDelete}
                     onEdit={onEdit}
                     onCardClick={(id) => setViewId(id)}
+                    onRenewCompliance={setRenewTarget}
                   />
                 ))}
               </motion.div>
@@ -480,6 +548,7 @@ const Offering = () => {
           onClose={() => setViewId(null)}
           listingData={viewOffer}
           portalScope="vendor"
+          onRenewCompliance={() => setRenewTarget(viewOffer)}
           position={{ index: viewIndex + 1, total: offers.length }}
           onPrev={viewIndex > 0 ? () => setViewId(offers[viewIndex - 1]._id ?? null) : undefined}
           onNext={
@@ -489,6 +558,13 @@ const Offering = () => {
           }
         />
       )}
+
+      <ComplianceRenewDialog
+        open={!!renewTarget}
+        onClose={() => setRenewTarget(null)}
+        listing={renewTarget}
+        onSubmit={submitRenewal}
+      />
 
       <ConfirmModal
         open={!!confirm}

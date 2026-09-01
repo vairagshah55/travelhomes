@@ -21,6 +21,7 @@ const logger = require("../shared/logger");
 const requestId = require("../shared/requestId");
 const { notFoundHandler, errorHandler } = require("../shared/errorMiddleware");
 const { closeBrowser: closeInvoiceBrowser } = require("../services/invoiceGenerator");
+const { startComplianceMonitor } = require("../services/complianceMonitor");
 
 const app = express();
 const serverio = http.createServer(app);
@@ -30,6 +31,11 @@ const startDB = async () => {
   logger.info("Initiating MongoDB connection...");
   await connectDB();
   logger.info({ status: mongoStatus() }, "MongoDB connection attempt finished");
+
+  // Vehicle listings whose insurance or PUC certificate has lapsed come off the
+  // catalog on their own. Started after the connection so the first pass has a
+  // database to read. Disable with COMPLIANCE_SWEEP_ENABLED=false.
+  startComplianceMonitor();
 };
 
 startDB();
