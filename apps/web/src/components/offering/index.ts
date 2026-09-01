@@ -24,6 +24,7 @@ export {
 
 export { CamperVanPricing, UniqueStayPricing, ActivityPricing } from "./PricingSections";
 export { OfferingCard } from "./OfferingCard";
+export { RoomsEditor } from "./RoomsEditor";
 
 // Shared shell for /offering/add and /offering/:id/edit. The OfferPanel
 // slide-out that used to handle edits was replaced by the full edit page.

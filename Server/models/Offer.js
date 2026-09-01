@@ -42,6 +42,16 @@ const OfferSchema = new Schema(
     rules: [{
       type: String
     }],
+    /**
+     * House rules the vendor marked as optional / "nice to have", kept apart
+     * from `rules` because the guest-facing details page renders the two lists
+     * under different headings. Stay onboarding has always sent these, but the
+     * field was never declared here — so Mongoose strict mode dropped them and
+     * the edit wizard had nothing to load back.
+     */
+    optionalRules: [{
+      type: String
+    }],
     priceIncludes: [{
       type: String
     }],

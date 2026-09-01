@@ -42,8 +42,17 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
     return options.filter((o) => o.label.toLowerCase().includes(q));
   }, [options, query]);
 
+  /**
+   * Falls back to the raw value when it isn't in `options`.
+   *
+   * Returning "" there made the control render its placeholder over a field
+   * that *is* set — which is what the edit wizard showed for the state and
+   * city of any listing whose option lists hadn't loaded (or whose country
+   * lookup came back empty). "Select state" over a saved state reads as
+   * missing data, and picking again was the only way to make it reappear.
+   */
   const selectedLabel = React.useMemo(
-    () => options.find((o) => o.value === value)?.label ?? "",
+    () => options.find((o) => o.value === value)?.label ?? value ?? "",
     [options, value],
   );
 

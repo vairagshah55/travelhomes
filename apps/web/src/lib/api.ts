@@ -290,6 +290,18 @@ export const bookingDetailsApi = {
 };
 
 // Offers API
+/** One room on a unique-stay listing. Mirrors Server RoomSchema. */
+export interface OfferRoom {
+  id?: string;
+  name?: string;
+  description?: string;
+  guestCapacity?: number;
+  beds?: number;
+  bathrooms?: number;
+  price?: number;
+  photos?: string[];
+}
+
 export interface OfferDTO {
   _id?: string;
   vendorId?: string;
@@ -297,6 +309,12 @@ export interface OfferDTO {
   category: string;
   description: string;
   rules: string[];
+  /**
+   * House rules the vendor marked optional. Sent by stay onboarding since the
+   * beginning but only declared on the Offer schema recently — rows created
+   * before that carry none until scripts/backfill-offer-structure.js is run.
+   */
+  optionalRules?: string[];
   features: string[];
   // Camper Van specific
   seatingCapacity?: number | string;
@@ -313,10 +331,49 @@ export interface OfferDTO {
   numberOfBeds?: number | string;
   numberOfBathrooms?: number | string;
   stayType?: string;
+  // Unique Stay — per-room breakdown. `stayType: "individual"` listings keep
+  // their real capacity and price here; the top-level numbers are a rollup.
+  rooms?: OfferRoom[];
+  priceDetails?: any[];
   // Activity specific
   personCapacity?: number | string;
   timeDuration?: string;
   expectations?: string[];
+  // ─── Vehicle rental ────────────────────────────────────────────────────
+  // These were reachable only through an `as any` cast before, which is how
+  // the vendor edit wizard came to ignore them entirely.
+  vehicleClass?: "car" | "van" | "bus";
+  brand?: string;
+  model?: string;
+  manufactureYear?: number | string;
+  registrationNumber?: string;
+  fuelType?: string;
+  transmission?: string;
+  airConditioned?: boolean;
+  luggageCapacity?: number | string;
+  pickupPoints?: string[];
+  selfDriveEnabled?: boolean;
+  selfDrivePerDay?: number | string;
+  selfDrivePerKm?: number | string;
+  freeKmPerDay?: number | string;
+  extraKmCharge?: number | string;
+  securityDeposit?: number | string;
+  minRentalHours?: number | string;
+  selfDriveIncludes?: string[];
+  selfDriveExcludes?: string[];
+  withDriverEnabled?: boolean;
+  withDriverPerDay?: number | string;
+  withDriverPerKm?: number | string;
+  withDriverOneWay?: boolean;
+  withDriverTwoWay?: boolean;
+  driverAllowancePerDay?: number | string;
+  nightChargeAfter?: number | string;
+  outstationPerKm?: number | string;
+  withDriverIncludes?: string[];
+  withDriverExcludes?: string[];
+  fuelPolicy?: string;
+  tollsAndParking?: string;
+  cancellationWindowHours?: number | string;
   // Common
   serviceType?: string;
   locality?: string;

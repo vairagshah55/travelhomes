@@ -155,6 +155,143 @@ const parsePrice = (val) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+// ─── Onboarding → Offer field normalisers ──────────────────────────────
+/**
+ * The four onboarding schemas each named their discount fields differently
+ * (caravan/vehicle: `festivalOffersValue`, activity: `festivalDiscountAmount`,
+ * stay: a single `discountPercentage` for all of them), and none of them was
+ * ever copied onto `Offer.discounts`. The vendor's own edit wizard reads that
+ * sub-doc, so every discount a vendor configured during onboarding came back
+ * as "off" the first time they opened Edit — and re-saving then wrote those
+ * empty toggles back over the submission's values.
+ *
+ * This maps all three shapes onto the one canonical sub-doc.
+ */
+function discountsFromOnboarding(doc) {
+  const str = (v) => (v === undefined || v === null ? "" : String(v));
+  const kind = (v) => (String(v || "").toLowerCase() === "fixed" ? "fixed" : "percentage");
+
+  /** First non-empty of the candidate field names. */
+  const pick = (...keys) => {
+    for (const k of keys) {
+      const v = doc[k];
+      if (v !== undefined && v !== null && String(v) !== "") return v;
+    }
+    return "";
+  };
+
+  /**
+   * Each list is [...slot-specific keys, shared key]. The shared keys —
+   * stay onboarding's single `discountType` / `discountPercentage` / `finalPrice`
+   * for all four offers — are only consulted for a slot the vendor actually
+   * switched on, so a disabled slot doesn't come back pre-filled with another
+   * offer's number.
+   */
+  const slot = (enabled, specific, shared) => ({
+    enabled,
+    type: kind(pick(...specific.type, ...(enabled ? shared.type : []))),
+    value: str(pick(...specific.value, ...(enabled ? shared.value : []))),
+    finalPrice: str(pick(...specific.finalPrice, ...(enabled ? shared.finalPrice : []))),
+  });
+
+  const SHARED = {
+    type: ["discountType"],
+    value: ["discountPercentage"],
+    finalPrice: ["finalPrice"],
+  };
+
+  return {
+    firstUser: slot(
+      !!doc.firstUserDiscount,
+      {
+        type: ["firstUserDiscountType"],
+        value: ["firstUserDiscountValue", "discountAmount"],
+        finalPrice: ["firstUserDiscountFinalPrice"],
+      },
+      SHARED,
+    ),
+    festival: slot(
+      !!doc.festivalOffers,
+      {
+        type: ["festivalOffersType", "festivalDiscountType"],
+        value: ["festivalOffersValue", "festivalDiscountAmount"],
+        finalPrice: ["festivalOffersFinalPrice", "festivalFinalPrice"],
+      },
+      SHARED,
+    ),
+    // Caravan and vehicle call it weeklyMonthlyOffers; stay and activity
+    // weeklyOffers. Either enables the same slot.
+    weekly: slot(
+      !!(doc.weeklyMonthlyOffers || doc.weeklyOffers),
+      {
+        type: ["weeklyMonthlyOffersType", "weeklyDiscountType"],
+        value: ["weeklyMonthlyOffersValue", "weeklyDiscountAmount"],
+        finalPrice: ["weeklyMonthlyOffersFinalPrice", "weeklyFinalPrice"],
+      },
+      SHARED,
+    ),
+    special: slot(
+      !!doc.specialOffers,
+      {
+        type: ["specialOffersType", "specialDiscountType"],
+        value: ["specialOffersValue", "specialDiscountAmount"],
+        finalPrice: ["specialOffersFinalPrice", "specialFinalPrice"],
+      },
+      SHARED,
+    ),
+  };
+}
+
+/**
+ * The listing's category, as a name the CMS category list actually contains.
+ *
+ * Stay and activity used to hard-code the literals "stay" and "activity" here,
+ * which are service types, not categories — so a villa listing was stored with
+ * `category: "stay"`, no tile in the wizard's category grid matched it, and the
+ * vendor was shown an apparently unselected required step. The real choice was
+ * sitting in `selectedProperties` / `selectedActivities` all along.
+ */
+function categoryFromOnboarding(doc, serviceType) {
+  const placeholders = new Set(["stay", "activity", "caravan", "camper-van", "vehicle-rental"]);
+  const candidates = [
+    doc.category,
+    Array.isArray(doc.selectedCategories) && doc.selectedCategories[0],
+    Array.isArray(doc.selectedProperties) && doc.selectedProperties[0],
+    Array.isArray(doc.selectedActivities) && doc.selectedActivities[0],
+  ];
+  for (const c of candidates) {
+    const name = typeof c === "string" ? c.trim() : "";
+    if (name && !placeholders.has(name.toLowerCase())) return name;
+  }
+  // Nothing usable — fall back to the service type so the required field is
+  // still populated, exactly as before.
+  return serviceType;
+}
+
+/**
+ * House rules, whichever field the flow put them in.
+ *
+ * Stay, caravan and vehicle write `rules`; activity writes only
+ * `rulesAndRegulations`. Reading just the first name silently dropped every
+ * activity's rules.
+ */
+function rulesFromOnboarding(doc) {
+  const pickList = (v) =>
+    (Array.isArray(v) ? v : []).map((r) => String(r || "").trim()).filter(Boolean);
+  const primary = pickList(doc.rules);
+  return primary.length ? primary : pickList(doc.rulesAndRegulations);
+}
+
+/**
+ * Street address. Every onboarding flow collects one, and not one of them was
+ * copied onto the Offer — which is why the edit wizard's address field opened
+ * blank and its embedded map pointed at just the city.
+ */
+function addressFromOnboarding(doc) {
+  const raw = doc.address || doc.businessAddress || "";
+  return typeof raw === "string" ? raw.trim() : "";
+}
+
 // ─── Vendor + Profile sync ─────────────────────────────────────────────
 async function ensureVendor(user) {
   if (!user || !user.email) return null;
@@ -557,14 +694,20 @@ async function submitActivity(body, user) {
   await syncOfferForOnboarding(
     {
       name: doc.activityName || "Activity",
-      category: "activity",
+      category: categoryFromOnboarding(doc, "activity"),
       description:
         (doc.description && String(doc.description).trim()) ||
         "Auto-created from activity onboarding",
-      rules: doc.rules || [],
+      /* The activity wizard collects house rules under `rulesAndRegulations` and
+         has no `rules` field at all, so `doc.rules` is always empty and every
+         activity listing reached the catalog — and the vendor's own edit
+         wizard — with no rules on it. */
+      rules: rulesFromOnboarding(doc),
       features: doc.features || [],
       seatingCapacity: doc.personCapacity,
       sleepingCapacity: 0,
+      address: addressFromOnboarding(doc),
+      discounts: discountsFromOnboarding(doc),
       locality: doc.locality,
       pincode: doc.pincode,
       city: doc.city || "Default City",
@@ -627,7 +770,7 @@ async function submitCaravan(body, user) {
   await syncOfferForOnboarding(
     {
       name: doc.name || "Caravan",
-      category: doc.category || "caravan",
+      category: categoryFromOnboarding(doc, "camper-van"),
       description:
         (doc.description && String(doc.description).trim()) ||
         "Auto-created from caravan onboarding",
@@ -635,6 +778,8 @@ async function submitCaravan(body, user) {
       features: doc.features || [],
       seatingCapacity: doc.seatingCapacity,
       sleepingCapacity: doc.sleepingCapacity,
+      address: addressFromOnboarding(doc),
+      discounts: discountsFromOnboarding(doc),
       locality: doc.locality,
       pincode: doc.pincode,
       city: doc.city || "Default City",
@@ -725,7 +870,7 @@ async function submitVehicle(body, user) {
   await syncOfferForOnboarding(
     {
       name: doc.name || "Vehicle",
-      category: doc.category || "vehicle-rental",
+      category: categoryFromOnboarding(doc, "vehicle-rental"),
       description:
         (doc.description && String(doc.description).trim()) ||
         "Auto-created from vehicle rental onboarding",
@@ -733,6 +878,8 @@ async function submitVehicle(body, user) {
       features: doc.features || [],
       seatingCapacity: doc.seatingCapacity,
       luggageCapacity: doc.luggageCapacity,
+      address: addressFromOnboarding(doc),
+      discounts: discountsFromOnboarding(doc),
       locality: doc.locality,
       pincode: doc.pincode,
       city: doc.city || "Default City",
@@ -859,7 +1006,10 @@ async function submitStay(body, user) {
   await syncOfferForOnboarding(
     {
       name: doc.propertyName || (doc.selectedProperties && doc.selectedProperties[0]) || "Stay",
-      category: "stay",
+      /* Was the literal "stay" — a service type, not a category. The property
+         type the vendor picked (Villas, Farm Stay, …) lives in
+         selectedProperties / selectedCategories; see categoryFromOnboarding. */
+      category: categoryFromOnboarding(doc, "unique-stay"),
       description:
         (doc.description && String(doc.description).trim()) || "Auto-created from stay onboarding",
       // The house rules the vendor typed. This passed `[]` and then a phantom
@@ -869,6 +1019,8 @@ async function submitStay(body, user) {
       features: doc.selectedFeatures || [],
       guestCapacity: doc.guestCapacity,
       numberOfBeds: doc.numberOfBeds,
+      address: addressFromOnboarding(doc),
+      discounts: discountsFromOnboarding(doc),
       locality: doc.locality,
       pincode: doc.pincode,
       city: doc.city || "Default City",
@@ -880,7 +1032,9 @@ async function submitStay(body, user) {
       numberOfBathrooms: doc.numberOfBathrooms,
       stayType: doc.stayType,
       rooms: doc.rooms,
-      optionalRules: doc.optionalRules,
+      // Declared on Offer now — it used to be dropped by strict mode, so the
+      // edit wizard reloaded an empty optional-rules list every time.
+      optionalRules: doc.optionalRules || [],
       serviceType: "unique-stay",
       /* `strPhotos` here is rooms[0].photos — the gallery. Taking coverUrl from
          it is what made a stay show its first room photo as the hero while the
@@ -1082,6 +1236,12 @@ module.exports = {
   findCurrentSubmission, // exported for tests
   parseDataUrl, // exported for tests
   coverUrlFor, // exported for tests
+  // Exported for tests and for scripts/backfill-offer-structure.js, which
+  // repairs listings created before these mappings existed.
+  categoryFromOnboarding,
+  addressFromOnboarding,
+  discountsFromOnboarding,
+  rulesFromOnboarding,
   findLivePendingSubmission, // exported for tests
   reconcileWithOffer, // exported for tests
   listActivities,
