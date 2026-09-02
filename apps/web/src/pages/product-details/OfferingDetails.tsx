@@ -181,6 +181,8 @@ const OfferingDetails = () => {
     description: true,
     features: true,
     location: true,
+    rooms: true,
+    vehicle: true,
     pricing: true,
     discount: true,
     history: true,
@@ -269,6 +271,86 @@ const OfferingDetails = () => {
     discount && o?.regularPrice && Number(o.regularPrice) > 0
       ? Math.round(((Number(o.regularPrice) - Number(discount)) / Number(o.regularPrice)) * 100)
       : null;
+
+  /* Per-room breakdown. An `individual` stay charges and fills each room on its
+     own — the top-level guest/room counts are a rollup of these — so a page
+     that showed only the rollup was hiding what is actually bookable. */
+  const rooms: any[] = Array.isArray((o as any)?.rooms) ? (o as any).rooms.filter(Boolean) : [];
+
+  /* The four promotional slots on `Offer.discounts`, which is a different thing
+     from the flat `discountPrice` below: a listing can carry either, both or
+     neither, and this page rendered only the flat one. */
+  const promoSlots = (
+    [
+      ["firstUser", "First booking"],
+      ["festival", "Festival"],
+      ["weekly", "Weekly / monthly"],
+      ["special", "Special"],
+    ] as [string, string][]
+  )
+    .map(([key, label]) => ({ label, ...((o?.discounts as any)?.[key] || {}) }))
+    .filter((slot: any) => slot.enabled);
+
+  // ── Vehicle rental ──────────────────────────────────────────────────────
+  const v = (o ?? {}) as any;
+  const vehicleSpecs = (
+    [
+      ["Class", v.vehicleClass],
+      ["Brand", v.brand],
+      ["Model", v.model],
+      ["Year", v.manufactureYear],
+      ["Registration", v.registrationNumber],
+      ["Fuel", v.fuelType],
+      ["Transmission", v.transmission],
+      // `filled` is false for every boolean, so this asks the question directly
+      // — otherwise the row would never render, not even as "No".
+      [
+        "Air conditioned",
+        typeof v.airConditioned === "boolean" ? (v.airConditioned ? "Yes" : "No") : undefined,
+      ],
+      ["Luggage", v.luggageCapacity],
+    ] as [string, any][]
+  ).filter(([, value]) => filled(value));
+
+  const selfDriveRates = (
+    [
+      ["Per day", v.selfDrivePerDay && `₹${fmt(v.selfDrivePerDay)}`],
+      ["Per km", v.selfDrivePerKm && `₹${fmt(v.selfDrivePerKm)}`],
+      ["Free km / day", v.freeKmPerDay],
+      ["Extra km", v.extraKmCharge && `₹${fmt(v.extraKmCharge)}`],
+      ["Security deposit", v.securityDeposit && `₹${fmt(v.securityDeposit)}`],
+      ["Minimum rental", v.minRentalHours && `${v.minRentalHours} hours`],
+    ] as [string, any][]
+  ).filter(([, value]) => filled(value));
+
+  const withDriverRates = (
+    [
+      ["Per km", v.withDriverPerKm && `₹${fmt(v.withDriverPerKm)}`],
+      ["Per day", v.withDriverPerDay && `₹${fmt(v.withDriverPerDay)}`],
+      ["Driver allowance", v.driverAllowancePerDay && `₹${fmt(v.driverAllowancePerDay)} / day`],
+      ["Night charge after", filled(v.nightChargeAfter) ? `${v.nightChargeAfter}:00` : undefined],
+      ["Outstation per km", v.outstationPerKm && `₹${fmt(v.outstationPerKm)}`],
+      ["Trips", v.withDriverTwoWay ? "Two way" : v.withDriverOneWay ? "One way" : undefined],
+    ] as [string, any][]
+  ).filter(([, value]) => filled(value));
+
+  const vehiclePolicies = (
+    [
+      ["Fuel policy", v.fuelPolicy],
+      ["Tolls & parking", v.tollsAndParking],
+      [
+        "Free cancellation",
+        filled(v.cancellationWindowHours) ? `${v.cancellationWindowHours} hours before` : undefined,
+      ],
+    ] as [string, any][]
+  ).filter(([, value]) => filled(value));
+
+  const hasVehicleFields =
+    vehicleSpecs.length > 0 ||
+    selfDriveRates.length > 0 ||
+    withDriverRates.length > 0 ||
+    vehiclePolicies.length > 0 ||
+    filled(v.pickupPoints);
 
   // Does the details section have anything to show?
   const hasCapacityFields =
@@ -467,7 +549,18 @@ const OfferingDetails = () => {
                     </div>
                   )}
 
-                  {filled(o.rules) && <BulletList label="Rules & regulations" items={o.rules} />}
+                  {filled(o.rules) && (
+                    <BulletList
+                      label={filled(o.optionalRules) ? "House rules" : "Rules & regulations"}
+                      items={o.rules}
+                    />
+                  )}
+
+                  {/* Collected by stay onboarding and shown to guests under
+                      their own heading — this page never rendered them. */}
+                  {filled(o.optionalRules) && (
+                    <BulletList label="Optional rules" items={o.optionalRules!} />
+                  )}
 
                   {filled(o.rejectionReason) && (
                     <div className="space-y-1 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
@@ -549,6 +642,131 @@ const OfferingDetails = () => {
 
                     {filled(o.expectations) && (
                       <BulletList label="Expectations" items={o.expectations!} />
+                    )}
+                  </Section>
+                )}
+
+                {/* ── Rooms ──────────────────────────────────────────────── */}
+                {rooms.length > 0 && (
+                  <Section
+                    title={`Rooms (${rooms.length})`}
+                    expanded={expanded.rooms}
+                    onToggle={() => toggle("rooms")}
+                  >
+                    <div className="space-y-3">
+                      {rooms.map((room: any, i: number) => {
+                        const stats = [
+                          filled(room?.guestCapacity ?? room?.capacity)
+                            ? `${room.guestCapacity ?? room.capacity} guests`
+                            : null,
+                          filled(room?.beds ?? room?.bedCount)
+                            ? `${room.beds ?? room.bedCount} beds`
+                            : null,
+                          filled(room?.bathrooms) ? `${room.bathrooms} bath` : null,
+                          filled(room?.price) ? `₹${fmt(room.price)}` : null,
+                          Array.isArray(room?.photos) && room.photos.length
+                            ? `${room.photos.length} photos`
+                            : null,
+                        ].filter(Boolean);
+                        return (
+                          <div
+                            key={room?.id ?? i}
+                            className="p-3 rounded-lg border border-dashboard-stroke dark:border-gray-600"
+                          >
+                            <p className="text-sm font-semibold text-dashboard-title dark:text-gray-100 font-plus-jakarta">
+                              {String(room?.name || "").trim() || `Room ${i + 1}`}
+                            </p>
+                            {stats.length > 0 && (
+                              <p className="mt-0.5 text-xs text-neutral-07 dark:text-gray-400 font-plus-jakarta">
+                                {stats.join(" · ")}
+                              </p>
+                            )}
+                            {filled(room?.description) && (
+                              <p className="mt-1.5 text-sm text-neutral-07 dark:text-gray-400 font-plus-jakarta">
+                                {room.description}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Section>
+                )}
+
+                {/* ── Vehicle & rental rates ─────────────────────────────── */}
+                {hasVehicleFields && (
+                  <Section
+                    title="Vehicle & rental rates"
+                    expanded={expanded.vehicle}
+                    onToggle={() => toggle("vehicle")}
+                  >
+                    {vehicleSpecs.length > 0 && (
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+                        {vehicleSpecs.map(([label, value]) => (
+                          <Row key={label} label={label} value={String(value)} />
+                        ))}
+                      </div>
+                    )}
+
+                    {filled(v.pickupPoints) && (
+                      <BulletList label="Pickup points" items={v.pickupPoints} />
+                    )}
+
+                    {/* Each rate card renders only when its mode is on — a
+                        self-drive-only listing shouldn't show an empty
+                        chauffeur block. */}
+                    {(v.selfDriveEnabled || selfDriveRates.length > 0) && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide font-plus-jakarta">
+                          Self-drive
+                        </p>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+                          {selfDriveRates.map(([label, value]) => (
+                            <Row key={label} label={label} value={String(value)} />
+                          ))}
+                        </div>
+                        {(filled(v.selfDriveIncludes) || filled(v.selfDriveExcludes)) && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            {filled(v.selfDriveIncludes) && (
+                              <BulletList label="Includes" items={v.selfDriveIncludes} />
+                            )}
+                            {filled(v.selfDriveExcludes) && (
+                              <BulletList label="Excludes" items={v.selfDriveExcludes} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {(v.withDriverEnabled || withDriverRates.length > 0) && (
+                      <div className="space-y-3">
+                        <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide font-plus-jakarta">
+                          With driver
+                        </p>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+                          {withDriverRates.map(([label, value]) => (
+                            <Row key={label} label={label} value={String(value)} />
+                          ))}
+                        </div>
+                        {(filled(v.withDriverIncludes) || filled(v.withDriverExcludes)) && (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            {filled(v.withDriverIncludes) && (
+                              <BulletList label="Includes" items={v.withDriverIncludes} />
+                            )}
+                            {filled(v.withDriverExcludes) && (
+                              <BulletList label="Excludes" items={v.withDriverExcludes} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {vehiclePolicies.length > 0 && (
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+                        {vehiclePolicies.map(([label, value]) => (
+                          <Row key={label} label={label} value={String(value)} />
+                        ))}
+                      </div>
                     )}
                   </Section>
                 )}
@@ -672,12 +890,40 @@ const OfferingDetails = () => {
                 </Section>
 
                 {/* ── Discount ───────────────────────────────────────────── */}
-                {discount !== null && discount !== undefined && (
+                {/* Also renders for a listing that has promotional slots but no
+                    flat discounted rate — the two are independent, and gating
+                    the whole section on `discountPrice` hid every offer the
+                    vendor had configured. */}
+                {(discount !== null && discount !== undefined) || promoSlots.length > 0 ? (
                   <Section
                     title="Discount"
                     expanded={expanded.discount}
                     onToggle={() => toggle("discount")}
                   >
+                    {promoSlots.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {promoSlots.map((slot: any) => (
+                          <div
+                            key={slot.label}
+                            className="p-3 rounded-lg border border-dashboard-stroke dark:border-gray-600"
+                          >
+                            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide font-plus-jakarta">
+                              {slot.label}
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-dashboard-title dark:text-gray-100 font-plus-jakarta">
+                              {slot.value
+                                ? slot.type === "fixed"
+                                  ? `₹${fmt(slot.value)} off`
+                                  : `${slot.value}% off`
+                                : "Enabled"}
+                              {slot.finalPrice ? ` · ₹${fmt(slot.finalPrice)} final` : ""}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {discount !== null && discount !== undefined && (
                     <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
                       <div className="space-y-1">
                         <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide font-plus-jakarta">
@@ -706,8 +952,9 @@ const OfferingDetails = () => {
                         </p>
                       </div>
                     </div>
+                    )}
                   </Section>
-                )}
+                ) : null}
               </div>
 
               {/* ── Sticky price/at-a-glance sidebar ─────────────── */}

@@ -9,6 +9,7 @@ import {
   Info,
   Loader2,
   MapPin,
+  Car,
   Percent,
   Search,
   Store,
@@ -34,6 +35,8 @@ import { cn } from "@/lib/utils";
 import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
 import { useVendorDirectory } from "@/hooks/admin/useVendors";
+import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
+import { SERVICE_TYPES, serviceTypeOf, type ServiceType } from "@/lib/listingKind";
 import {
   BTN_GHOST,
   BTN_NEUTRAL,
@@ -91,6 +94,30 @@ export interface Offer {
   [key: string]: any;
 }
 
+/**
+ * Values the Offer schema constrains with an enum — a free-text box here would
+ * let an operator save something Mongoose then rejects with a cast error.
+ */
+const VEHICLE_CLASS_OPTIONS = [
+  { value: "car", label: "Car" },
+  { value: "van", label: "Van" },
+  { value: "bus", label: "Bus" },
+];
+const FUEL_OPTIONS = ["Petrol", "Diesel", "CNG", "Electric", "Hybrid"].map((v) => ({
+  value: v,
+  label: v,
+}));
+const TRANSMISSION_OPTIONS = ["Manual", "Automatic"].map((v) => ({ value: v, label: v }));
+const FUEL_POLICY_OPTIONS = [
+  { value: "included", label: "Included" },
+  { value: "excluded", label: "Excluded" },
+  { value: "same-to-same", label: "Same to same" },
+];
+const TOLLS_OPTIONS = [
+  { value: "included", label: "Included" },
+  { value: "on-actuals", label: "On actuals" },
+];
+
 interface ManagementFormProps {
   isOpen: boolean;
   onClose: () => void;
@@ -99,50 +126,30 @@ interface ManagementFormProps {
   isLoading?: boolean;
 }
 
-/* ── Category → field relevance ───────────────────────────────────────────
-   A listing is one of three things, and each one uses a different third of
-   this schema. Showing "Per km charge" on an activity and "No. of bathrooms"
-   on a camper van is what made the old form a 40-field wall: nothing on screen
-   told you which fields were actually yours to fill.
+/* ── Service type → field relevance ───────────────────────────────────────
+   A listing is one of four things, and each uses a different part of this
+   schema. Showing "Per km charge" on an activity and "No. of bathrooms" on a
+   camper van is what made the old form a 40-field wall: nothing on screen told
+   you which fields were actually yours to fill.
 
-   The values are the exact strings written today (onboarding writes lowercase
-   "caravan"/"stay"/"activity", the old form wrote "Camper Van"/"Unique Stay"),
-   so nothing about what lands in the database changes. */
-type Kind = "vehicle" | "stay" | "activity";
-
-const CATEGORY_GROUPS: { group: string; items: { value: string; label: string }[] }[] = [
-  {
-    group: "Vehicles",
-    items: [
-      { value: "Camper Van", label: "Camper Van" },
-      { value: "caravan", label: "Caravan" },
-      { value: "motorhome", label: "Motorhome" },
-    ],
-  },
-  { group: "Stays", items: [{ value: "Unique Stay", label: "Unique Stay" }] },
-  { group: "Activities", items: [{ value: "Activity", label: "Activity" }] },
-];
-
-/* Same fuzzy rules the public site uses to route an offer (see getNormCategory
-   in pages/Index.tsx) — a legacy category like "campervan" or "glamping" still
-   resolves to the right field set. Unknown → null, which reveals everything. */
-function kindOf(category?: string): Kind | null {
-  const c = String(category || "")
-    .toLowerCase()
-    .replace(/[\s_-]+/g, "");
-  if (!c) return null;
-  if (
-    ["caravan", "campervan", "campertrailer", "motorhome", "rv", "van"].some((k) => c.includes(k))
-  )
-    return "vehicle";
-  if (c.includes("stay") || ["glamping", "resort", "villa", "cottage"].some((k) => c.includes(k)))
-    return "stay";
-  if (["activity", "activities", "trekking", "tour"].some((k) => c.includes(k))) return "activity";
-  return null;
-}
+   This used to be guessed from the CATEGORY string, which fails on most of the
+   real taxonomy — "Havelis", "Palaces" and "A Frame" are stays, "Sedan" and
+   "SUV" are vehicle rentals, and none of them contains the word the guess looks
+   for, so every one of those listings fell through to "show everything".
+   `serviceType` is the field that actually answers this; see lib/listingKind. */
+type Kind = ServiceType;
 
 /* ── Field + section registry ─────────────────────────────────────────────── */
-type Control = "text" | "number" | "textarea" | "tags" | "category" | "vendor";
+type Control =
+  | "text"
+  | "number"
+  | "textarea"
+  | "tags"
+  | "category"
+  | "vendor"
+  | "serviceType"
+  | "select"
+  | "switch";
 
 interface FieldSpec {
   name: string;
@@ -157,6 +164,8 @@ interface FieldSpec {
   wide?: boolean;
   /** Rendered inside the input, before the value. */
   prefix?: string;
+  /** `select` only — the allowed values, which mirror the schema's enum. */
+  options?: { value: string; label: string }[];
 }
 
 interface SectionSpec {
@@ -182,6 +191,13 @@ const SECTIONS: SectionSpec[] = [
         label: "Vendor",
         control: "vendor",
         help: "Listings saved without a vendor can't be traced back to an owner.",
+      },
+      {
+        name: "serviceType",
+        label: "Service type",
+        control: "serviceType",
+        required: true,
+        help: "Decides which fields apply, and which part of the site the listing appears in.",
       },
       { name: "category", label: "Category", control: "category", required: true },
       {
@@ -212,6 +228,15 @@ const SECTIONS: SectionSpec[] = [
         control: "tags",
         wide: true,
         placeholder: "No smoking, No pets…",
+      },
+      {
+        name: "optionalRules",
+        label: "Optional rules",
+        control: "tags",
+        wide: true,
+        only: ["unique-stay"],
+        placeholder: "Quiet hours after 10pm…",
+        help: "Shown to guests under their own heading, apart from the house rules.",
       },
     ],
   },
@@ -244,19 +269,19 @@ const SECTIONS: SectionSpec[] = [
         label: "Per day charge",
         control: "number",
         prefix: "₹",
-        only: ["vehicle"],
+        only: ["camper-van"],
       },
       {
         name: "perKmCharge",
         label: "Per km charge",
         control: "number",
         prefix: "₹",
-        only: ["vehicle"],
+        only: ["camper-van"],
       },
-      { name: "perDayIncludes", label: "Per day includes", control: "tags", only: ["vehicle"] },
-      { name: "perDayExcludes", label: "Per day excludes", control: "tags", only: ["vehicle"] },
-      { name: "perKmIncludes", label: "Per km includes", control: "tags", only: ["vehicle"] },
-      { name: "perKmExcludes", label: "Per km excludes", control: "tags", only: ["vehicle"] },
+      { name: "perDayIncludes", label: "Per day includes", control: "tags", only: ["camper-van"] },
+      { name: "perDayExcludes", label: "Per day excludes", control: "tags", only: ["camper-van"] },
+      { name: "perKmIncludes", label: "Per km includes", control: "tags", only: ["camper-van"] },
+      { name: "perKmExcludes", label: "Per km excludes", control: "tags", only: ["camper-van"] },
     ],
   },
   {
@@ -266,27 +291,27 @@ const SECTIONS: SectionSpec[] = [
     blurb: "How many people it takes, and what it's made of.",
     cols: 3,
     fields: [
-      { name: "guestCapacity", label: "Guest capacity", control: "number", only: ["stay"] },
-      { name: "numberOfRooms", label: "No. of rooms", control: "number", only: ["stay"] },
-      { name: "numberOfBathrooms", label: "No. of bathrooms", control: "number", only: ["stay"] },
+      { name: "guestCapacity", label: "Guest capacity", control: "number", only: ["unique-stay"] },
+      { name: "numberOfRooms", label: "No. of rooms", control: "number", only: ["unique-stay"] },
+      { name: "numberOfBathrooms", label: "No. of bathrooms", control: "number", only: ["unique-stay"] },
       {
         name: "numberOfBeds",
         label: "No. of beds",
         control: "number",
-        only: ["stay", "vehicle"],
+        only: ["unique-stay", "camper-van"],
       },
       {
         name: "stayType",
         label: "Stay type",
-        only: ["stay"],
+        only: ["unique-stay"],
         placeholder: "Entire place, Private room…",
       },
-      { name: "seatingCapacity", label: "Seating capacity", control: "number", only: ["vehicle"] },
+      { name: "seatingCapacity", label: "Seating capacity", control: "number", only: ["camper-van"] },
       {
         name: "sleepingCapacity",
         label: "Sleeping capacity",
         control: "number",
-        only: ["vehicle"],
+        only: ["camper-van"],
       },
       { name: "personCapacity", label: "Person capacity", control: "number", only: ["activity"] },
       {
@@ -302,6 +327,202 @@ const SECTIONS: SectionSpec[] = [
         only: ["activity"],
         wide: true,
         placeholder: "Guide included, Safety gear provided…",
+      },
+    ],
+  },
+  {
+    key: "vehicle",
+    label: "Vehicle",
+    icon: Car,
+    blurb: "What the vehicle is. Fuel, transmission and class are search filters.",
+    cols: 3,
+    fields: [
+      {
+        name: "vehicleClass",
+        label: "Class",
+        control: "select",
+        options: VEHICLE_CLASS_OPTIONS,
+        only: ["vehicle-rental"],
+      },
+      { name: "brand", label: "Brand", only: ["vehicle-rental"], placeholder: "Toyota" },
+      { name: "model", label: "Model", only: ["vehicle-rental"], placeholder: "Innova Crysta" },
+      {
+        name: "manufactureYear",
+        label: "Manufacture year",
+        control: "number",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "registrationNumber",
+        label: "Registration number",
+        only: ["vehicle-rental"],
+        placeholder: "MH12AB1234",
+      },
+      {
+        name: "fuelType",
+        label: "Fuel",
+        control: "select",
+        options: FUEL_OPTIONS,
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "transmission",
+        label: "Transmission",
+        control: "select",
+        options: TRANSMISSION_OPTIONS,
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "luggageCapacity",
+        label: "Luggage capacity",
+        control: "number",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "airConditioned",
+        label: "Air conditioned",
+        control: "switch",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "pickupPoints",
+        label: "Pickup points",
+        control: "tags",
+        wide: true,
+        only: ["vehicle-rental"],
+      },
+    ],
+  },
+  {
+    key: "rates",
+    label: "Rental rates",
+    icon: IndianRupee,
+    blurb: "Self-drive and chauffeur are independent — a listing can offer either or both.",
+    cols: 3,
+    fields: [
+      {
+        name: "selfDriveEnabled",
+        label: "Self-drive offered",
+        control: "switch",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "selfDrivePerDay",
+        label: "Self-drive per day",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "selfDrivePerKm",
+        label: "Self-drive per km",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "freeKmPerDay",
+        label: "Free km per day",
+        control: "number",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "extraKmCharge",
+        label: "Extra km charge",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "securityDeposit",
+        label: "Security deposit",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "minRentalHours",
+        label: "Minimum rental (hours)",
+        control: "number",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "selfDriveIncludes",
+        label: "Self-drive includes",
+        control: "tags",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "selfDriveExcludes",
+        label: "Self-drive excludes",
+        control: "tags",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "withDriverEnabled",
+        label: "Chauffeur offered",
+        control: "switch",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "withDriverPerKm",
+        label: "With driver per km",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "driverAllowancePerDay",
+        label: "Driver allowance per day",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "nightChargeAfter",
+        label: "Night charge after (hour)",
+        control: "number",
+        only: ["vehicle-rental"],
+        help: "0–23. The hour past which the night charge applies.",
+      },
+      {
+        name: "outstationPerKm",
+        label: "Outstation per km",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "withDriverIncludes",
+        label: "With driver includes",
+        control: "tags",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "withDriverExcludes",
+        label: "With driver excludes",
+        control: "tags",
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "fuelPolicy",
+        label: "Fuel policy",
+        control: "select",
+        options: FUEL_POLICY_OPTIONS,
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "tollsAndParking",
+        label: "Tolls & parking",
+        control: "select",
+        options: TOLLS_OPTIONS,
+        only: ["vehicle-rental"],
+      },
+      {
+        name: "cancellationWindowHours",
+        label: "Free cancellation (hours)",
+        control: "number",
+        only: ["vehicle-rental"],
       },
     ],
   },
@@ -360,6 +581,12 @@ const ARRAY_FIELDS = [
   "perDayExcludes",
   "perKmIncludes",
   "perKmExcludes",
+  "optionalRules",
+  "pickupPoints",
+  "selfDriveIncludes",
+  "selfDriveExcludes",
+  "withDriverIncludes",
+  "withDriverExcludes",
 ];
 
 // Fields the DB stores as Number — strip empty strings so Mongoose doesn't try
@@ -376,12 +603,45 @@ const NUMERIC_FIELDS = [
   "numberOfBathrooms",
   "perDayCharge",
   "perKmCharge",
+  "manufactureYear",
+  "luggageCapacity",
+  "selfDrivePerDay",
+  "selfDrivePerKm",
+  "freeKmPerDay",
+  "extraKmCharge",
+  "securityDeposit",
+  "minRentalHours",
+  "withDriverPerKm",
+  "driverAllowancePerDay",
+  "nightChargeAfter",
+  "outstationPerKm",
+  "cancellationWindowHours",
+];
+
+/* Enum-backed strings. An empty one has to be dropped rather than sent as ""
+   or null — Mongoose validates "" against the enum and rejects the update. */
+const ENUM_FIELDS = [
+  "vehicleClass",
+  "fuelType",
+  "transmission",
+  "fuelPolicy",
+  "tollsAndParking",
 ];
 
 /* Mongoose declares these `required: true` on the Offer model, so a create
    without them is rejected by the server — the old form only marked `name`,
    which is why "Save" could fail with nothing on screen explaining why. */
-const REQUIRED_FIELDS = ["name", "category", "description", "city", "state", "regularPrice"];
+const REQUIRED_FIELDS = [
+  "name",
+  "category",
+  "description",
+  "city",
+  "state",
+  "regularPrice",
+  // Not required by the schema, but a listing saved without it is invisible to
+  // every surface that filters by service type — which is all of them.
+  "serviceType",
+];
 
 const EMPTY: Offer = {
   name: "",
@@ -418,6 +678,37 @@ const EMPTY: Offer = {
   discounts: {},
   photos: { coverUrl: "", galleryUrls: [] },
   status: "pending",
+  serviceType: "",
+  optionalRules: [],
+  vehicleClass: "",
+  brand: "",
+  model: "",
+  manufactureYear: "",
+  registrationNumber: "",
+  fuelType: "",
+  transmission: "",
+  airConditioned: false,
+  luggageCapacity: "",
+  pickupPoints: [],
+  selfDriveEnabled: false,
+  selfDrivePerDay: "",
+  selfDrivePerKm: "",
+  freeKmPerDay: "",
+  extraKmCharge: "",
+  securityDeposit: "",
+  minRentalHours: "",
+  selfDriveIncludes: [],
+  selfDriveExcludes: [],
+  withDriverEnabled: false,
+  withDriverPerKm: "",
+  driverAllowancePerDay: "",
+  nightChargeAfter: "",
+  outstationPerKm: "",
+  withDriverIncludes: [],
+  withDriverExcludes: [],
+  fuelPolicy: "",
+  tollsAndParking: "",
+  cancellationWindowHours: "",
 };
 
 const MAX_IMAGE_MB = 5;
@@ -817,7 +1108,25 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
   }, [initialData, isOpen]);
 
   /* ── Derived ── */
-  const kind = kindOf(formData.category);
+  const kind: Kind | null = serviceTypeOf(formData as any);
+
+  /* Categories come from the same CMS rows the vendor wizards offer, narrowed
+     to the chosen service type. They used to be five hard-coded strings —
+     "Camper Van", "Unique Stay", "Activity" and two caravan types — so a stay
+     listed under "Villas" opened with an empty required Category, and the only
+     way to satisfy it was to overwrite the real category with the words
+     "Unique Stay". */
+  const catalog = useOfferingCatalog();
+  const categoryOptions = useMemo(() => {
+    const fromCms = kind ? catalog.categories[kind] || [] : [];
+    const current = String(formData.category || "").trim();
+    if (current && !fromCms.some((c) => c.toLowerCase() === current.toLowerCase())) {
+      // Keep a legacy or since-renamed category selectable, or opening the form
+      // would silently reset it.
+      return [current, ...fromCms];
+    }
+    return fromCms;
+  }, [catalog.categories, kind, formData.category]);
 
   const vendorOptions = useMemo(() => {
     const list = (vendorQuery.data ?? [])
@@ -867,6 +1176,14 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
       return f.only.includes(kind) || hasValue(f.name);
     },
     [kind, showAllFields, hasValue],
+  );
+
+  /* The body already drops a section whose fields are all irrelevant, but both
+     rails were built from SECTIONS directly — so a stay listed "Vehicle" and
+     "Rental rates" and clicking either scrolled to nothing. */
+  const visibleSections = useMemo(
+    () => SECTIONS.filter((s) => s.custom || (s.fields ?? []).some(isFieldVisible)),
+    [isFieldVisible],
   );
 
   const hiddenCount = useMemo(() => {
@@ -1042,6 +1359,15 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
       if (had) processed[k] = null;
       else delete processed[k];
     });
+    /* An enum field left blank is not "no value" to Mongoose — it is the string
+       "", which fails validation and rejects the whole update. Drop it, and
+       send null only where one is being deliberately cleared. */
+    ENUM_FIELDS.forEach((k) => {
+      if (processed[k] !== "" && processed[k] !== undefined && processed[k] !== null) return;
+      const had = baseline[k] !== "" && baseline[k] !== undefined && baseline[k] !== null;
+      if (had) processed[k] = null;
+      else delete processed[k];
+    });
     /* The Offer model stores the discounted rate as `discountPrice`; there is no
        top-level `finalPrice` path, so Mongoose's strict mode silently dropped
        everything typed into this field. Send both — the read side already falls
@@ -1090,35 +1416,86 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
               <SelectContent style={PORTAL_VARS}>
-                {CATEGORY_GROUPS.map((g) => (
-                  <SelectGroup key={g.group}>
+                {categoryOptions.length === 0 ? (
+                  <SelectGroup>
                     <SelectLabel className="text-[11px] font-semibold uppercase tracking-[0.06em] text-app-fg-subtle">
-                      {g.group}
+                      {kind ? "No categories configured" : "Pick a service type first"}
                     </SelectLabel>
-                    {g.items.map((item) => (
-                      <SelectItem key={item.value} value={item.value} className={SELECT_ITEM}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
                   </SelectGroup>
-                ))}
-                {/* A record can carry a legacy category that isn't in the list;
-                    keep it selectable so opening the form doesn't reset it. */}
-                {formData.category &&
-                  !CATEGORY_GROUPS.some((g) =>
-                    g.items.some((i) => i.value === formData.category),
-                  ) && (
-                    <SelectGroup>
-                      <SelectLabel className="text-[11px] font-semibold uppercase tracking-[0.06em] text-app-fg-subtle">
-                        Existing
-                      </SelectLabel>
-                      <SelectItem value={String(formData.category)} className={SELECT_ITEM}>
-                        {formData.category}
-                      </SelectItem>
-                    </SelectGroup>
-                  )}
+                ) : (
+                  categoryOptions.map((name) => (
+                    <SelectItem key={name} value={name} className={SELECT_ITEM}>
+                      {name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
+          );
+
+        case "serviceType":
+          return (
+            <Select
+              value={(formData.serviceType as string) || undefined}
+              onValueChange={(v) => {
+                setValue("serviceType", v);
+                markTouched("serviceType");
+              }}
+            >
+              <SelectTrigger
+                id={id}
+                aria-invalid={!!error}
+                aria-describedby={describedBy}
+                className={cn(INPUT, error && "border-red-400")}
+              >
+                <SelectValue placeholder="Select a service type" />
+              </SelectTrigger>
+              <SelectContent style={PORTAL_VARS}>
+                {SERVICE_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value} className={SELECT_ITEM}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+
+        case "select":
+          return (
+            <Select
+              value={(formData[f.name] as string) || undefined}
+              onValueChange={(v) => {
+                setValue(f.name, v);
+                markTouched(f.name);
+              }}
+            >
+              <SelectTrigger
+                id={id}
+                aria-invalid={!!error}
+                aria-describedby={describedBy}
+                className={cn(INPUT, error && "border-red-400")}
+              >
+                <SelectValue placeholder={f.placeholder || "Select"} />
+              </SelectTrigger>
+              <SelectContent style={PORTAL_VARS}>
+                {(f.options ?? []).map((o) => (
+                  <SelectItem key={o.value} value={o.value} className={SELECT_ITEM}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+
+        case "switch":
+          return (
+            <span className="flex h-[42px] items-center">
+              <Switch
+                id={id}
+                checked={!!formData[f.name]}
+                onCheckedChange={(v) => setValue(f.name, v)}
+              />
+            </span>
           );
 
         case "tags":
@@ -1485,7 +1862,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             aria-label="Form sections"
             className="hidden md:flex flex-col gap-0.5 w-[204px] shrink-0 p-3 border-r border-app-border bg-app-surface-2/50 overflow-y-auto"
           >
-            {SECTIONS.map((s) => {
+            {visibleSections.map((s) => {
               const active = s.key === activeSection;
               const errs = sectionErrorCount[s.key] ?? 0;
               return (
@@ -1524,7 +1901,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           >
             {/* Mobile equivalent of the rail. */}
             <div className="md:hidden sticky top-0 z-10 flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-hide border-b border-app-border bg-app-surface/95 backdrop-blur">
-              {SECTIONS.map((s) => {
+              {visibleSections.map((s) => {
                 const errs = sectionErrorCount[s.key] ?? 0;
                 return (
                   <button

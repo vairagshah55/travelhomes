@@ -21,6 +21,8 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
 import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
 import ManagementForm, { Offer as FormOffer } from "@/components/admin/ManagementForm";
+import { pickSubmissionDetails } from "@/lib/listingSubmission";
+import { serviceTypeOf } from "@/lib/listingKind";
 import RejectReasonPopup from "@/components/admin/RejectReasonPopup";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -36,7 +38,7 @@ import { useListings, type Offer } from "@/hooks/admin/useListings";
 import { useVendorDirectory } from "@/hooks/admin/useVendors";
 import { useFeatureAccess } from "@/hooks/admin/useFeatureAccess";
 import { ADMIN_FEATURES } from "@/lib/adminPermissions";
-import { vendorService, offersService } from "@/services/api";
+import { vendorService, offersService, listingSubmissionService } from "@/services/api";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/adminUtils";
 import { formatINR } from "@/utils/formatCurrency";
@@ -374,7 +376,15 @@ const ManagementListing = () => {
      listing is fetched by id (same `offersService.get` call as before, moved
      behind the selection) and every section — business/personal details, rules,
      includes/excludes, gallery, capacity — is populated. The summary row seeds
-     the drawer meanwhile, so its header is right from the first frame. */
+     the drawer meanwhile, so its header is right from the first frame.
+
+     The onboarding submission is fetched with it. Business details, personal /
+     KYC details and the registration-certificate photos are NOT fields on
+     `Offer` — they only exist on the submission — so those three sections of
+     the drawer could never render and sat dead on every listing. Only the
+     fields that exist nowhere else are merged (see pickSubmissionDetails);
+     merging the whole document would put the submission's own name, status,
+     photos and category over the listing's. */
   useEffect(() => {
     if (!viewRow) return;
     const id = viewRow._id;
@@ -382,9 +392,12 @@ const ManagementListing = () => {
     setIsViewLoading(true);
     offersService
       .get(id)
-      .then((res: any) => {
+      .then(async (res: any) => {
         const full = res?.data ?? res;
-        if (!cancelled && full) setViewDetail({ id, data: full });
+        if (cancelled || !full) return;
+        const submission = await listingSubmissionService.get(full.sourceModel, full.sourceId);
+        if (cancelled) return;
+        setViewDetail({ id, data: { ...full, ...pickSubmissionDetails(submission) } });
       })
       .catch((e: unknown) => {
         console.error("Failed to load listing details", e);
@@ -414,6 +427,11 @@ const ManagementListing = () => {
       _id: o._id,
       name: o.name || "",
       category: o.category || "",
+      /* Which third of the schema applies. Inferred for rows that predate the
+         field (anything typed straight into this form), so the picker opens on
+         the right answer instead of empty — an empty required field would block
+         an unrelated edit from saving. */
+      serviceType: o.serviceType || serviceTypeOf(o) || "",
       status: o.status,
       // Without this the form's vendor picker opens on "No vendor assigned" for
       // a listing that has one — an edit would look like it was dropping it.
@@ -423,6 +441,7 @@ const ManagementListing = () => {
       description: o.description || "",
       features: o.features || "",
       rules: o.rules || "",
+      optionalRules: o.optionalRules || "",
       priceIncludes: o.priceIncludes || "",
       priceExcludes: o.priceExcludes || "",
       seatingCapacity: o.seatingCapacity ?? "",
@@ -448,6 +467,41 @@ const ManagementListing = () => {
       address: o.address || "",
       discounts: o.discounts || {},
       photos: o.photos || { coverUrl: "", galleryUrls: [] },
+
+      /* Vehicle rental. None of this was mapped, so the admin form could not
+         show or change a single field of a vehicle listing — and the field
+         relevance guess, working off the category string ("Sedan", "SUV"),
+         matched nothing and fell back to revealing all forty fields. */
+      vehicleClass: o.vehicleClass || "",
+      brand: o.brand || "",
+      model: o.model || "",
+      manufactureYear: o.manufactureYear ?? "",
+      registrationNumber: o.registrationNumber || "",
+      fuelType: o.fuelType || "",
+      transmission: o.transmission || "",
+      airConditioned: !!o.airConditioned,
+      luggageCapacity: o.luggageCapacity ?? "",
+      pickupPoints: o.pickupPoints || "",
+      selfDriveEnabled: !!o.selfDriveEnabled,
+      selfDrivePerDay: o.selfDrivePerDay ?? "",
+      selfDrivePerKm: o.selfDrivePerKm ?? "",
+      freeKmPerDay: o.freeKmPerDay ?? "",
+      extraKmCharge: o.extraKmCharge ?? "",
+      securityDeposit: o.securityDeposit ?? "",
+      minRentalHours: o.minRentalHours ?? "",
+      selfDriveIncludes: o.selfDriveIncludes || "",
+      selfDriveExcludes: o.selfDriveExcludes || "",
+      withDriverEnabled: !!o.withDriverEnabled,
+      withDriverPerDay: o.withDriverPerDay ?? "",
+      withDriverPerKm: o.withDriverPerKm ?? "",
+      driverAllowancePerDay: o.driverAllowancePerDay ?? "",
+      nightChargeAfter: o.nightChargeAfter ?? "",
+      outstationPerKm: o.outstationPerKm ?? "",
+      withDriverIncludes: o.withDriverIncludes || "",
+      withDriverExcludes: o.withDriverExcludes || "",
+      fuelPolicy: o.fuelPolicy || "",
+      tollsAndParking: o.tollsAndParking || "",
+      cancellationWindowHours: o.cancellationWindowHours ?? "",
     };
     setSelectedOffer(formData);
     setIsEditing(true);

@@ -144,6 +144,10 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
   const rcPhotos = toArray(d.rcPhotos).map((p) => getImageUrl(p));
 
   const rules = toArray(d.rules || d.rulesAndRegulations || d.policies?.rules);
+  /* House rules the vendor marked optional. Stay onboarding has always
+     collected these; they only started reaching the Offer once the field was
+     declared on the schema, so older rows show none until the backfill runs. */
+  const optionalRules = toArray(d.optionalRules);
   const features = toArray(d.features || d.amenities || d.requirements);
   const expectations = toArray(d.expectations);
   const includes = uniq([...toArray(d.priceIncludes), ...toArray(d.included)]);
@@ -161,6 +165,78 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
     perKmExc.length > 0 ||
     perDayInc.length > 0 ||
     perDayExc.length > 0;
+
+  /* Per-room breakdown. An `individual` stay carries its real capacity and
+     price here — the top-level numbers are a rollup — so a drawer that showed
+     only those was describing the property and not what is actually bookable. */
+  const rooms: any[] = Array.isArray(d.rooms) ? d.rooms.filter(Boolean) : [];
+
+  // ── Vehicle rental ──────────────────────────────────────────────────────
+  const vehicleSpecs = (
+    [
+      ["Class", d.vehicleClass],
+      ["Brand", d.brand],
+      ["Model", d.model],
+      ["Manufacture year", d.manufactureYear],
+      ["Registration", d.registrationNumber],
+      ["Fuel", d.fuelType],
+      ["Transmission", d.transmission],
+      ["Air conditioned", has(d.airConditioned) ? (d.airConditioned ? "Yes" : "No") : undefined],
+      ["Luggage capacity", d.luggageCapacity],
+    ] as [string, any][]
+  ).filter(([, v]) => has(v));
+  const pickupPoints = toArray(d.pickupPoints);
+
+  /* The two rate cards are independent — a vendor can offer either or both —
+     so each renders only when its mode is on, rather than showing an empty
+     chauffeur block on a self-drive-only listing. */
+  const selfDriveRates = (
+    [
+      ["Per day", has(d.selfDrivePerDay) ? formatINR(Number(d.selfDrivePerDay)) : undefined],
+      ["Per km", has(d.selfDrivePerKm) ? formatINR(Number(d.selfDrivePerKm)) : undefined],
+      ["Free km / day", d.freeKmPerDay],
+      ["Extra km", has(d.extraKmCharge) ? formatINR(Number(d.extraKmCharge)) : undefined],
+      ["Security deposit", has(d.securityDeposit) ? formatINR(Number(d.securityDeposit)) : undefined],
+      ["Minimum rental", has(d.minRentalHours) ? `${d.minRentalHours} hours` : undefined],
+    ] as [string, any][]
+  ).filter(([, v]) => has(v));
+
+  const withDriverRates = (
+    [
+      ["Per km", has(d.withDriverPerKm) ? formatINR(Number(d.withDriverPerKm)) : undefined],
+      ["Per day", has(d.withDriverPerDay) ? formatINR(Number(d.withDriverPerDay)) : undefined],
+      [
+        "Driver allowance",
+        has(d.driverAllowancePerDay) ? `${formatINR(Number(d.driverAllowancePerDay))} / day` : undefined,
+      ],
+      ["Night charge after", has(d.nightChargeAfter) ? `${d.nightChargeAfter}:00` : undefined],
+      ["Outstation per km", has(d.outstationPerKm) ? formatINR(Number(d.outstationPerKm)) : undefined],
+      [
+        "Trips",
+        d.withDriverTwoWay ? "Two way" : d.withDriverOneWay ? "One way" : undefined,
+      ],
+    ] as [string, any][]
+  ).filter(([, v]) => has(v));
+
+  const policies = (
+    [
+      ["Fuel policy", d.fuelPolicy],
+      ["Tolls & parking", d.tollsAndParking],
+      [
+        "Free cancellation",
+        has(d.cancellationWindowHours) ? `${d.cancellationWindowHours} hours before` : undefined,
+      ],
+    ] as [string, any][]
+  ).filter(([, v]) => has(v));
+
+  const hasVehicleDetail =
+    vehicleSpecs.length > 0 ||
+    pickupPoints.length > 0 ||
+    d.selfDriveEnabled ||
+    d.withDriverEnabled ||
+    selfDriveRates.length > 0 ||
+    withDriverRates.length > 0 ||
+    policies.length > 0;
 
   // Address
   const address =
@@ -352,6 +428,73 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         </DetailSection>
       )}
 
+      {hasVehicleDetail && (
+        <DetailSection title="Vehicle" columns={3}>
+          {vehicleSpecs.map(([label, value]) => (
+            <DetailField key={label} label={label} value={String(value)} />
+          ))}
+          {pickupPoints.length > 0 && (
+            <Block title="Pickup points">
+              <DetailList items={pickupPoints} />
+            </Block>
+          )}
+        </DetailSection>
+      )}
+
+      {hasVehicleDetail && (
+        <DetailSection title="Rental modes and rates" columns={3}>
+          <DetailField
+            label="Modes offered"
+            value={
+              [d.selfDriveEnabled && "Self-drive", d.withDriverEnabled && "With driver"]
+                .filter(Boolean)
+                .join(" · ") || "—"
+            }
+            full
+          />
+
+          {(d.selfDriveEnabled || selfDriveRates.length > 0) && (
+            <>
+              {selfDriveRates.map(([label, value]) => (
+                <DetailField key={`sd-${label}`} label={`Self-drive · ${label}`} value={value} />
+              ))}
+              {toArray(d.selfDriveIncludes).length > 0 && (
+                <Block title="Self-drive includes">
+                  <DetailList items={toArray(d.selfDriveIncludes)} />
+                </Block>
+              )}
+              {toArray(d.selfDriveExcludes).length > 0 && (
+                <Block title="Self-drive excludes">
+                  <DetailList items={toArray(d.selfDriveExcludes)} />
+                </Block>
+              )}
+            </>
+          )}
+
+          {(d.withDriverEnabled || withDriverRates.length > 0) && (
+            <>
+              {withDriverRates.map(([label, value]) => (
+                <DetailField key={`wd-${label}`} label={`With driver · ${label}`} value={value} />
+              ))}
+              {toArray(d.withDriverIncludes).length > 0 && (
+                <Block title="With driver includes">
+                  <DetailList items={toArray(d.withDriverIncludes)} />
+                </Block>
+              )}
+              {toArray(d.withDriverExcludes).length > 0 && (
+                <Block title="With driver excludes">
+                  <DetailList items={toArray(d.withDriverExcludes)} />
+                </Block>
+              )}
+            </>
+          )}
+
+          {policies.map(([label, value]) => (
+            <DetailField key={label} label={label} value={String(value)} />
+          ))}
+        </DetailSection>
+      )}
+
       {hasCaravanPricing && (
         <DetailSection title="Caravan pricing" columns={4}>
           <DetailField
@@ -390,6 +533,44 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
           {propertyDetails.map(([label, value]) => (
             <DetailField key={label} label={label} value={String(value)} />
           ))}
+        </DetailSection>
+      )}
+
+      {rooms.length > 0 && (
+        <DetailSection title={`Rooms (${rooms.length})`}>
+          <div className="col-span-full space-y-2">
+            {rooms.map((room: any, i: number) => {
+              const stats = [
+                has(room?.guestCapacity ?? room?.capacity)
+                  ? `${room.guestCapacity ?? room.capacity} guests`
+                  : null,
+                has(room?.beds ?? room?.bedCount) ? `${room.beds ?? room.bedCount} beds` : null,
+                has(room?.bathrooms) ? `${room.bathrooms} bath` : null,
+                has(room?.price) && Number(room.price) > 0 ? formatINR(Number(room.price)) : null,
+                Array.isArray(room?.photos) && room.photos.length
+                  ? `${room.photos.length} photos`
+                  : null,
+              ].filter(Boolean);
+              return (
+                <div
+                  key={room?.id || i}
+                  className="rounded-lg border border-app-border bg-app-surface-2/60 px-3.5 py-2.5"
+                >
+                  <p className="text-[13px] font-semibold text-app-fg">
+                    {String(room?.name || "").trim() || `Room ${i + 1}`}
+                  </p>
+                  {stats.length > 0 && (
+                    <p className="mt-0.5 text-[12px] text-app-fg-muted">{stats.join(" · ")}</p>
+                  )}
+                  {has(room?.description) && (
+                    <p className="mt-1 text-[12.5px] leading-relaxed text-app-fg">
+                      {room.description}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </DetailSection>
       )}
 
@@ -465,7 +646,10 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         </DetailSection>
       )}
 
-      {(features.length > 0 || rules.length > 0 || expectations.length > 0) && (
+      {(features.length > 0 ||
+        rules.length > 0 ||
+        optionalRules.length > 0 ||
+        expectations.length > 0) && (
         <DetailSection title="Details">
           {features.length > 0 && (
             <Block title={d.category ? `${d.category} features` : "Features"}>
@@ -478,8 +662,13 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
             </Block>
           )}
           {rules.length > 0 && (
-            <Block title="Rules & regulations">
+            <Block title={optionalRules.length > 0 ? "House rules" : "Rules & regulations"}>
               <DetailList items={rules} />
+            </Block>
+          )}
+          {optionalRules.length > 0 && (
+            <Block title="Optional rules">
+              <DetailList items={optionalRules} />
             </Block>
           )}
         </DetailSection>

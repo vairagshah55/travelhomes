@@ -676,6 +676,41 @@ export interface PaymentGatewaySettings {
 // Admin Roles API services
 // export const adminRolesService = { ... } // Duplicate removed from here
 
+/**
+ * The onboarding submission behind a listing.
+ *
+ * The listing inspector renders business details, personal/KYC details and the
+ * registration-certificate photos — none of which are fields on `Offer`. They
+ * live on the submission the listing was created from, so those three sections
+ * could never render from the offer alone and sat dead in every drawer.
+ *
+ * Admin-only on the server (GET /onboarding/<type>/:id), which is why the
+ * vendor console does not fetch this: a vendor's own KYC belongs on their
+ * profile, not stapled to each of their listings.
+ */
+const SUBMISSION_PATH: Record<string, string> = {
+  StayOnboarding: "stay",
+  ActivityOnboarding: "activity",
+  CaravanOnboarding: "caravan",
+  VehicleOnboarding: "vehicle",
+};
+
+export const listingSubmissionService = {
+  /** Resolves to the submission, or null when the listing has no link to one. */
+  get: async (sourceModel?: string, sourceId?: string) => {
+    const path = sourceModel ? SUBMISSION_PATH[sourceModel] : undefined;
+    if (!path || !sourceId) return null;
+    try {
+      const response = await api.get(`/onboarding/${path}/${sourceId}`);
+      return response.data?.data ?? null;
+    } catch {
+      // Best-effort enrichment: a missing or forbidden submission must not stop
+      // the drawer from rendering the listing itself.
+      return null;
+    }
+  },
+};
+
 // Offers API services
 export const offersService = {
   list: async (
