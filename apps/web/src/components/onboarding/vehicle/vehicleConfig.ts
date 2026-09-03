@@ -98,10 +98,6 @@ export interface FormData {
   // ─── Step 7 · Personal details (+ driver) ─────────────────────────────
   firstName: string;
   lastName: string;
-  personalLocality: string;
-  personalState: string;
-  personalCity: string;
-  personalPincode: string;
   dateOfBirth: string;
   maritalStatus: string;
   idProof: string;
@@ -200,10 +196,6 @@ export const defaultVehicleFormData: FormData = {
 
   firstName: "",
   lastName: "",
-  personalLocality: "India",
-  personalState: "",
-  personalCity: "",
-  personalPincode: "",
   dateOfBirth: "",
   maritalStatus: "",
   idProof: "",

@@ -169,14 +169,10 @@ export function validateVehicleStep(
   } else if (currentStep === 6) {
     if (!formData.firstName?.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName?.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.personalLocality?.trim()) newErrors.personalLocality = "Country is required";
-    if (!formData.personalState?.trim()) newErrors.personalState = "State is required";
-    if (!formData.personalCity?.trim()) newErrors.personalCity = "City is required";
-    if (!formData.personalPincode?.trim()) {
-      newErrors.personalPincode = "Pincode is required";
-    } else if (!/^\d{6}$/.test(formData.personalPincode.trim())) {
-      newErrors.personalPincode = "Enter a valid 6-digit pincode";
-    }
+    /* No personal-address checks here on purpose. The step no longer renders
+       that card (showAddress={false} in VehicleStepRenderer), and validating a
+       field the vendor cannot see makes the step impossible to pass — the
+       toast names an input that is not on screen. */
     if (!formData.dateOfBirth) newErrors.dateOfBirth = "Date of Birth is required";
     if (!formData.idProof) newErrors.idProof = "ID Proof type is required";
     if (!formData.idPhotos || formData.idPhotos.length === 0)

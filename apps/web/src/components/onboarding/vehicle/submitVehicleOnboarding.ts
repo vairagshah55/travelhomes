@@ -170,11 +170,9 @@ export async function submitVehicleOnboarding(
       firstName: formData.firstName,
       lastName: formData.lastName,
       phoneNumber: formData.businessPhoneNumber,
-      country: (formData as any).personalCountry,
-      state: formData.personalState,
-      city: formData.personalCity,
-      personalPincode: formData.personalPincode,
-      personalLocality: formData.personalLocality,
+      // No country/state/city/pincode: this flow stopped collecting a personal
+      // address, and sending empty strings would blank whatever the vendor's
+      // profile already had from another service they onboarded.
       dateOfBirth: formData.dateOfBirth,
       maritalStatus: formData.maritalStatus,
       idProof: formData.idProof,

@@ -322,29 +322,17 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
           values={{
             firstName: formData.firstName,
             lastName: formData.lastName,
-            pincode: formData.personalPincode,
             dateOfBirth: formData.dateOfBirth,
             maritalStatus: formData.maritalStatus,
             idProof: formData.idProof,
           }}
           errors={errors}
           onChange={api.handlePersonalFieldChange}
-          locationData={api.locationData}
-          selectedState={formData.personalState}
-          selectedCity={formData.personalCity}
-          countryName={formData.personalLocality}
-          onStateChange={(val) => {
-            setFormData((prev) => ({ ...prev, personalState: val, personalCity: "" }));
-            if (errors.personalState) {
-              setErrors((prev) => ({ ...prev, personalState: "" }));
-            }
-          }}
-          onCityChange={(val) => {
-            setFormData((prev) => ({ ...prev, personalCity: val }));
-            if (errors.personalCity) {
-              setErrors((prev) => ({ ...prev, personalCity: "" }));
-            }
-          }}
+          /* A vehicle rental already carries the business address and the
+             driver's licence; the vendor's home address adds nothing to the
+             approval and was the one step asking for it. The other three
+             wizards still collect it. */
+          showAddress={false}
           idProofImage={api.idProofImage}
           onIdProofUpload={api.handleUploadIDProof}
           uploadError={api.uploadError}

@@ -26,10 +26,7 @@ function autofillFromUserDetails(userDetails: any): Partial<FormData> {
   return {
     firstName: userDetails.firstName || "",
     lastName: userDetails.lastName || "",
-    personalState: userDetails.state || "",
-    personalCity: userDetails.city || "",
-    personalPincode: userDetails.personalPincode || "",
-    personalLocality: userDetails.personalLocality || "India",
+    // No personal address: this flow stopped asking for one.
     dateOfBirth: userDetails.dateOfBirth
       ? new Date(userDetails.dateOfBirth).toISOString().split("T")[0]
       : "",
@@ -213,16 +210,12 @@ export async function loadVehicleDraft(opts: LoadVehicleDraftOptions): Promise<v
         businessPhoneNumber: doc.businessPhoneNumber || userDetails?.business?.phoneNumber || "",
         businessAddress: doc.businessAddress || userDetails?.business?.address || "",
         businessLocality: doc.businessLocality || userDetails?.business?.locality || "India",
-        personalLocality: doc.personalLocality || userDetails?.personalLocality || "India",
         businessState: doc.businessState || userDetails?.business?.state || "",
         businessCity: doc.businessCity || userDetails?.business?.city || "",
         businessPincode: doc.businessPincode || userDetails?.business?.pincode || "",
 
         firstName: doc.firstName || userDetails?.firstName || "",
         lastName: doc.lastName || userDetails?.lastName || "",
-        personalState: doc.personalState || userDetails?.state || "",
-        personalCity: doc.personalCity || userDetails?.city || "",
-        personalPincode: doc.personalPincode || userDetails?.personalPincode || "",
         dateOfBirth: doc.dateOfBirth || toDateInput(userDetails?.dateOfBirth),
         maritalStatus: doc.maritalStatus || userDetails?.maritalStatus || "",
         idProof: doc.idProof || userDetails?.idProof || "",

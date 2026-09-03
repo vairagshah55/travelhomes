@@ -171,13 +171,10 @@ const VehicleOnboarding = () => {
   const [showCustomFeaturesInput, setShowCustomFeaturesInput] = useState(false);
   const [customFeatureInput, setCustomFeatureInput] = useState("");
 
-  // Three addresses (vehicle, business, personal), each with its own country.
-  // Only these countries' states/cities are fetched — see useCountriesData.
-  const data = useCountriesData([
-    formData.locality,
-    formData.businessLocality,
-    formData.personalLocality,
-  ]);
+  // Two addresses (vehicle, business), each with its own country. The personal
+  // address was removed from this flow, so its country is no longer fetched.
+  // Only these countries' states/cities are loaded — see useCountriesData.
+  const data = useCountriesData([formData.locality, formData.businessLocality]);
 
   const { userDetails, loading: userDetailsLoading, updateUserDetails } = useUserDetails();
 
@@ -564,7 +561,9 @@ const VehicleOnboarding = () => {
     const fieldMap: Record<string, string> = {
       firstName: "firstName",
       lastName: "lastName",
-      pincode: "personalPincode",
+      // No `pincode` entry: the personal-address card is not rendered in this
+      // flow, so nothing can emit that field. Leaving the mapping in would
+      // write to a form key that no longer exists.
       dateOfBirth: "dateOfBirth",
       maritalStatus: "maritalStatus",
       idProof: "idProof",

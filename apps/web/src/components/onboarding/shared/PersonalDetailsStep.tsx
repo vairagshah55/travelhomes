@@ -16,19 +16,30 @@ interface PersonalDetailsStepProps {
   values: {
     firstName: string;
     lastName: string;
-    pincode: string;
+    /** Residential pincode. Only read when `showAddress` is true. */
+    pincode?: string;
     dateOfBirth: string;
     maritalStatus: string;
     idProof: string;
   };
   errors: Record<string, string>;
   onChange: (field: string, value: string) => void;
-  locationData: any[];
-  selectedState: string;
-  selectedCity: string;
-  countryName: string;
-  onStateChange: (val: string) => void;
-  onCityChange: (val: string) => void;
+  /**
+   * Render the "Personal Address" card. The vehicle rental flow asks for the
+   * business address and the driver's licence and has no use for the vendor's
+   * home address, so it opts out — the other three flows still collect it.
+   *
+   * Opting out means the six props below go unused, which is why they are all
+   * optional: a caller that does not show the card should not have to invent
+   * a state, a city and two change handlers to satisfy the signature.
+   */
+  showAddress?: boolean;
+  locationData?: any[];
+  selectedState?: string;
+  selectedCity?: string;
+  countryName?: string;
+  onStateChange?: (val: string) => void;
+  onCityChange?: (val: string) => void;
   idProofImage: string | null;
   onIdProofUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   uploadError?: string;
@@ -38,10 +49,11 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
   values,
   errors,
   onChange,
-  locationData,
-  selectedState,
-  selectedCity,
-  countryName,
+  showAddress = true,
+  locationData = [],
+  selectedState = "",
+  selectedCity = "",
+  countryName = "",
   onStateChange,
   onCityChange,
   idProofImage,
@@ -125,12 +137,13 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
           </div>
         </SectionCard>
 
-        <SectionCard
-          icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
-          title="Personal Address"
-          subtitle="Your current residential address"
-          bodyGap
-        >
+        {showAddress && (
+          <SectionCard
+            icon={<MapPin size={16} className="text-th-brand" strokeWidth={2.5} />}
+            title="Personal Address"
+            subtitle="Your current residential address"
+            bodyGap
+          >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Field label="Country">
               <div className="flex items-center h-[52px] rounded-[13px] bg-th-warm-surface opacity-70 border-[1.5px] border-transparent">
@@ -146,7 +159,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
             <Field label="Pincode" required error={errors.personalPincode}>
               <IconInput
                 icon={<MapPin size={15} />}
-                value={values.pincode}
+                value={values.pincode ?? ""}
                 onChange={(v) => onChange("pincode", v.replace(/\D/g, ""))}
                 placeholder="e.g. 400001"
                 maxLength={6}
@@ -161,7 +174,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
               <IconSelect
                 icon={<MapPin size={15} />}
                 value={selectedState}
-                onChange={onStateChange}
+                onChange={onStateChange ?? (() => {})}
                 error={!!errors.personalState}
               >
                 <option value="" disabled>
@@ -179,7 +192,7 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
               <IconSelect
                 icon={<MapPin size={15} />}
                 value={selectedCity}
-                onChange={onCityChange}
+                onChange={onCityChange ?? (() => {})}
                 disabled={!selectedState}
                 error={!!errors.personalCity}
               >
@@ -193,8 +206,9 @@ const PersonalDetailsStep: React.FC<PersonalDetailsStepProps> = ({
                 ))}
               </IconSelect>
             </Field>
-          </div>
-        </SectionCard>
+            </div>
+          </SectionCard>
+        )}
 
         <SectionCard
           icon={<ShieldCheck size={16} className="text-th-brand" strokeWidth={2.5} />}
