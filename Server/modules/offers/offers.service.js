@@ -490,6 +490,65 @@ async function trackVisitor(offer, visitorId) {
   }
 }
 
+/**
+ * Which onboarding collection an offer was built from.
+ *
+ * `sourceModel` is authoritative; `serviceType` is the fallback for rows
+ * created before it was stamped. Deliberately NOT `category`, which for a
+ * vehicle holds its class ("Sedan", "MUV / MPV") and for a stay the property
+ * type — the same trap `pickOnboardingModel` documents in management.service.
+ */
+function submissionModelNameFor(offer) {
+  if (!offer) return null;
+  return (
+    offer.sourceModel ||
+    SOURCE_MODEL_BY_SERVICE_TYPE[String(offer.serviceType || "").toLowerCase()] ||
+    null
+  );
+}
+
+/**
+ * The submission an offer was created from, ready to send to a reviewer.
+ *
+ * Takes the model rather than resolving it so the lookup order can be tested
+ * against a stand-in: `sourceId` first, then the vendor's most recent
+ * submission of this type for rows that predate `sourceId` — the same fallback
+ * `syncSourceStatus` uses.
+ *
+ * Never throws. A submission we cannot read must not cost the admin the
+ * listing itself; they simply review what the Offer carries, as before.
+ */
+async function loadSubmissionFor(offer, SourceModel) {
+  if (!SourceModel || !offer) return null;
+
+  let submission = null;
+  try {
+    if (offer.sourceId) {
+      submission = await SourceModel.findById(offer.sourceId).lean();
+    }
+    if (!submission && offer.vendorId) {
+      submission = await SourceModel.findOne({ vendorId: offer.vendorId })
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+  } catch (err) {
+    logger.error(
+      { err: err.message, offerId: String(offer._id) },
+      "[Offer] submission lookup failed — detail served without it",
+    );
+    return null;
+  }
+
+  if (!submission) return null;
+
+  delete submission.__v;
+  // Never echo the submission's status back alongside the offer's: the Offer is
+  // the decision of record and the two can legitimately disagree (a superseded
+  // submission reads "cancelled" under a live listing).
+  delete submission.status;
+  return submission;
+}
+
 async function getById(id, user, visitorId) {
   const offer = await Offer.findById(id);
   if (!offer) throw new NotFoundError("Offer", id);
@@ -517,7 +576,54 @@ async function getById(id, user, visitorId) {
     await trackVisitor(offer, visitorId);
   }
 
-  return offer;
+  if (!privileged) return offer;
+
+  /* ── The submission behind the listing ───────────────────────────────────
+     An Offer is a LOSSY projection of what the vendor actually filled in. The
+     onboarding wizards collect the business identity (brand, legal company,
+     GST, business email/phone), the personal KYC block (name, date of birth,
+     marital status, ID proof + photos), the vendor's own category/feature
+     picks and the raw per-flow discount fields — and none of those have a home
+     on Offer. Across the four service types 129 submitted fields never reach
+     it.
+
+     That matters because the admin approval drawer reads the Offer. Its
+     "Business details" and "Personal details" sections have existed all along
+     and could never populate, so a listing was being approved without anyone
+     seeing who they were approving. Patching the projection field by field is
+     what has been happening (categoryFromOnboarding, addressFromOnboarding,
+     coverUrlFor, optionalRules) and it loses to 129.
+
+     So hand the reviewer the source document instead. Attached only for the
+     admin and the listing's own vendor — it carries date of birth and ID proof
+     and must never reach a guest. One extra findById on the detail endpoint,
+     which keeps the drawer to a single request. */
+  const sourceModel = submissionModelNameFor(offer);
+  const SourceModel = sourceModel ? onboardingModelFor(sourceModel) : null;
+  const submission = await loadSubmissionFor(offer, SourceModel);
+
+  /* The vendor account behind the listing.
+     Independent of the submission on purpose: a listing seeded or created
+     directly through the admin has no onboarding document at all, and the
+     reviewer still needs to know whose it is — "Vendor ID: VD1522" and nothing
+     else is not an answer. Where a submission DOES exist this is still worth
+     having, because Vendor is the account of record while the submission is a
+     snapshot of what was typed into a wizard once. */
+  let vendor = null;
+  if (offer.vendorId) {
+    try {
+      vendor = await Vendor.findOne({ vendorId: offer.vendorId })
+        .select("vendorId brandName personName email phone location status servicesOffered")
+        .lean();
+    } catch (err) {
+      logger.error(
+        { err: err.message, vendorId: offer.vendorId },
+        "[Offer] vendor lookup failed — detail served without it",
+      );
+    }
+  }
+
+  return { ...offer.toObject(), submission, submissionModel: sourceModel || null, vendor };
 }
 
 /**
@@ -942,5 +1048,13 @@ module.exports = {
   updateCompliance,
   trackClick,
   // exposed for tests
-  _internal: { escapeRegex, isAdmin, pickSort, mimeToExt, parseDataUrl },
+  _internal: {
+    escapeRegex,
+    isAdmin,
+    pickSort,
+    mimeToExt,
+    parseDataUrl,
+    submissionModelNameFor,
+    loadSubmissionFor,
+  },
 };

@@ -45,6 +45,23 @@ describe("categoryFromOnboarding", () => {
     ).toBe("Farm Stay");
   });
 
+  it("ignores the wizard's own \"default\" placeholder and reads the real pick", () => {
+    // Two live stay submissions look exactly like this. Writing "default" into
+    // a required category field is worse than leaving the old "stay".
+    expect(
+      categoryFromOnboarding(
+        { selectedCategories: ["default"], selectedProperties: ["cave house"] },
+        "unique-stay",
+      ),
+    ).toBe("cave house");
+  });
+
+  it("falls back to the service type when every candidate is a placeholder", () => {
+    expect(
+      categoryFromOnboarding({ selectedCategories: ["default"], selectedProperties: ["none"] }, "unique-stay"),
+    ).toBe("unique-stay");
+  });
+
   it("ignores a stored category that is really a service type", () => {
     // Rows written by the old mapping carry category: "stay". Treating that as
     // a real category is what kept the wizard's grid empty.

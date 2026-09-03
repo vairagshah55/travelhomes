@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { getImageUrl } from "@/lib/adminUtils";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ComplianceBadge } from "@/components/compliance";
@@ -19,6 +19,13 @@ import {
   DetailPhotos,
   DetailSection,
 } from "./AdminDetailDrawer";
+import {
+  collectReviewPhotos,
+  extraSubmissionFields,
+  mergeListingForReview,
+  missingForApproval,
+} from "./listingReview";
+import { ReviewExtraField } from "./ReviewValue";
 
 /**
  * Listing inspector.
@@ -139,9 +146,42 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const d = listingData ?? {};
-  const photos = getPhotos(d);
+  /* The offer folded together with the submission it was created from.
+     `GET /api/offers/:id` attaches that submission for admins and the listing's
+     own vendor, because an Offer is a lossy projection of the wizard — 129
+     submitted fields across the four service types have no column on it,
+     including the entire business identity and personal KYC block. Merging here
+     rather than in each section is what makes the existing "Business details"
+     and "Personal details" sections populate at all: they always read the right
+     keys, the keys were simply never in the payload. */
+  const d = mergeListingForReview(listingData);
+
+  /* Cover + gallery + per-room photos, deduped. Not `getPhotos(d)` alone: the
+     submit handlers cap `Offer.photos.galleryUrls` at six, so a vendor who
+     uploaded twelve had half of them invisible to the reviewer. */
+  const photos = Array.from(
+    new Set([...getPhotos(d), ...collectReviewPhotos(d).map((u) => getImageUrl(u))]),
+  );
+
+  /* Required information that is absent. Surfaced, never blocking — an admin
+     may have a reason to approve anyway, but not without being told.
+     Only computed once the submission is actually attached: the vendor console
+     renders this same drawer straight from a LIST row, which legitimately
+     carries no business or KYC fields, and judging completeness from a partial
+     record would report seven missing fields on a complete listing. */
+  const missing = d.__submission ? missingForApproval(d) : [];
+
+  /* Whatever the vendor submitted that no section below claims. Keeps the
+     promise that a field added to a wizard cannot become invisible here. */
+  const extras = extraSubmissionFields(d);
   const rcPhotos = toArray(d.rcPhotos).map((p) => getImageUrl(p));
+  /* KYC and driver documents. Both live on the submission only, so before the
+     submission was attached there was nothing to render — which is why they had
+     no section despite being the point of a KYC review. */
+  const idPhotos = toArray(d.idPhotos).map((p) => getImageUrl(p));
+  const licencePhotos = toArray(d.driverLicencePhotos).map((p) => getImageUrl(p));
+  const hasDriver =
+    has(d.driverName) || has(d.driverPhone) || has(d.driverLicenceNumber) || licencePhotos.length > 0;
 
   const rules = toArray(d.rules || d.rulesAndRegulations || d.policies?.rules);
   /* House rules the vendor marked optional. Stay onboarding has always
@@ -277,6 +317,37 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
      also the test for whether the section renders at all. */
   const compliance = evaluateCompliance(d);
 
+  /* The wizards store an address twice over: sometimes as one string, and
+     always as separate locality / city / state / pincode fields. Compose the
+     parts when the single field is absent, so the reviewer sees one readable
+     address instead of four loose values in the catch-all below. */
+  const joinAddress = (...parts: unknown[]) =>
+    parts
+      .map((v) => (typeof v === "string" ? v.trim() : v ? String(v) : ""))
+      .filter(Boolean)
+      .join(", ");
+
+  const businessAddress =
+    d.businessDetails?.address ||
+    d.businessAddress ||
+    joinAddress(d.businessLocality, d.businessCity, d.businessState, d.businessPincode);
+
+  const personalAddress =
+    d.personalDetails?.address ||
+    d.personalAddress ||
+    joinAddress(
+      d.personalLocality,
+      d.personalCity,
+      d.personalState,
+      d.personalPincode,
+      d.personalCountry,
+    );
+
+  /* The vendor account behind the listing. Attached by the detail endpoint
+     independently of the submission, so it is the one identity that resolves
+     even for a listing seeded or created straight through the admin. */
+  const vendorAccount = d.__vendor;
+
   const hasBusiness = d.businessDetails || d.brandName || d.businessEmail || d.businessName;
   const hasPersonal = d.personalDetails || d.personName || d.firstName;
 
@@ -333,6 +404,27 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         ) : undefined
       }
     >
+      {missing.length > 0 && (
+        <div className="mb-1 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3 dark:border-amber-400/30 dark:bg-amber-400/[0.08]">
+          <p className="flex items-center gap-2 text-[12.5px] font-bold text-amber-900 dark:text-amber-200">
+            <AlertTriangle size={14} strokeWidth={2.3} />
+            {missing.length} required {missing.length === 1 ? "field is" : "fields are"} missing
+            from this submission
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {missing.map((m) => (
+              <li
+                key={m.label}
+                className="text-[12px] text-amber-900/90 dark:text-amber-200/85"
+              >
+                <span className="font-semibold">{m.label}</span>
+                <span className="opacity-70"> — {m.hint}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <DetailSection title="Overview" columns={3}>
         <DetailField label="Name" value={d.name || d.title} />
         <DetailField label="Category" value={d.category} />
@@ -357,6 +449,19 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
             </p>
           </div>
         )}
+      </DetailSection>
+
+      {/* Location as discrete values, not just the composed line in Overview:
+          a reviewer checking whether a listing belongs in the city it claims
+          needs to read the parts, and a wrong pincode is invisible inside a
+          run-on address string. No map here — no flow collects coordinates. */}
+      <DetailSection title="Location" columns={3}>
+        <DetailField label="Locality" value={d.locality} />
+        <DetailField label="City" value={d.city} />
+        <DetailField label="State" value={d.state} />
+        <DetailField label="Pincode" value={d.pincode} />
+        <DetailField label="Country" value={d.country || "India"} />
+        <DetailField label="Full address" value={address} full />
       </DetailSection>
 
       <DetailSection title="Pricing" columns={3}>
@@ -646,6 +751,23 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         </DetailSection>
       )}
 
+      {/* Chauffeur details. Collected only when the vendor enabled the
+          with-driver rate card, and required in that case — a self-drive-only
+          listing has no driver, so the section stays hidden rather than
+          rendering four empty fields. */}
+      {hasDriver && (
+        <DetailSection title="Driver" columns={3}>
+          <DetailField label="Driver name" value={d.driverName} />
+          <DetailField label="Driver phone" value={d.driverPhone} />
+          <DetailField label="Licence number" value={d.driverLicenceNumber} />
+          {licencePhotos.length > 0 && (
+            <Block title={`Driving licence (${licencePhotos.length})`}>
+              <DetailPhotos photos={licencePhotos} label="driving licence" />
+            </Block>
+          )}
+        </DetailSection>
+      )}
+
       {(features.length > 0 ||
         rules.length > 0 ||
         optionalRules.length > 0 ||
@@ -674,6 +796,43 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
         </DetailSection>
       )}
 
+      {/* Vendor account — who is being approved, as opposed to what.
+          Rendered before the wizard's own business block because this is the
+          record of account: for a listing with no onboarding submission it is
+          the only identity available, and where both exist it is the one that
+          survived registration. */}
+      {vendorAccount && (
+        <DetailSection title="Vendor account" columns={3}>
+          <DetailField label="Vendor ID" value={vendorAccount.vendorId} />
+          <DetailField label="Brand name" value={vendorAccount.brandName} />
+          <DetailField label="Contact person" value={vendorAccount.personName} />
+          <DetailField
+            label="Email"
+            value={
+              vendorAccount.email ? (
+                <a href={`mailto:${vendorAccount.email}`} className="text-app-accent hover:underline">
+                  {vendorAccount.email}
+                </a>
+              ) : (
+                ""
+              )
+            }
+          />
+          <DetailField label="Phone" value={vendorAccount.phone} />
+          <DetailField
+            label="Account status"
+            value={vendorAccount.status ? <StatusBadge status={vendorAccount.status} /> : ""}
+          />
+          <DetailField label="Location" value={vendorAccount.location} full />
+          {Array.isArray(vendorAccount.servicesOffered) &&
+            vendorAccount.servicesOffered.length > 0 && (
+              <Block title="Services offered">
+                <DetailList items={vendorAccount.servicesOffered.map(String)} />
+              </Block>
+            )}
+        </DetailSection>
+      )}
+
       {hasBusiness && (
         <DetailSection title="Business details">
           <DetailField
@@ -688,10 +847,16 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
             label="Phone"
             value={d.businessDetails?.phone || d.businessPhone || d.phone || d.phoneNumber}
           />
+          {/* The trading name and the registered entity are different things,
+              and the registered one is what a GST number has to match. */}
+          <DetailField
+            label="Legal company name"
+            value={d.legalCompanyName || d.companyName}
+          />
           <DetailField label="GST number" value={d.businessDetails?.gst || d.gstNumber} />
           <DetailField
             label="Business address"
-            value={d.businessDetails?.address || d.businessAddress}
+            value={businessAddress}
             full
           />
         </DetailSection>
@@ -744,9 +909,29 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
           )}
           <DetailField
             label="Personal address"
-            value={d.personalDetails?.address || d.personalAddress}
+            value={personalAddress}
             full
           />
+          {/* The scans behind the ID proof. A KYC review that shows the document
+              TYPE but not the document is not a review. */}
+          {idPhotos.length > 0 && (
+            <Block title={`ID photos (${idPhotos.length})`}>
+              <DetailPhotos photos={idPhotos} label="ID photo" />
+            </Block>
+          )}
+        </DetailSection>
+      )}
+
+      {/* Everything else the vendor submitted. Rendered generically by shape —
+          strings, numbers, booleans, dates, URLs, string arrays, arrays of
+          objects and nested objects all get a readable presentation. This is
+          the section that makes the drawer complete by default instead of by
+          maintenance: a new wizard field lands here on its own. */}
+      {extras.length > 0 && (
+        <DetailSection title="Also submitted by the vendor" columns={2}>
+          {extras.map((field) => (
+            <ReviewExtraField key={field.key} field={field} />
+          ))}
         </DetailSection>
       )}
     </AdminDetailDrawer>

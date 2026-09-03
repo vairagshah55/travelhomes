@@ -26,6 +26,7 @@ const Management = require("../models/Management");
 const Offer = require("../models/Offer");
 const User = require("../models/User");
 const Vendor = require("../models/Vendor");
+const { onboardingModelFor } = require("./onboardingModels");
 const InvoiceGenerator = require("../services/invoiceGenerator");
 const { sendEmailSilent } = require("../lib/email-sender/sender");
 const env = require("../config/env");
@@ -48,6 +49,14 @@ const asObjectId = (value) =>
 
 const money = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
+/** Keyed on the `serviceType` the submit handlers stamp — never on `category`. */
+const SOURCE_MODEL_BY_SERVICE_TYPE = {
+  activity: "ActivityOnboarding",
+  "camper-van": "CaravanOnboarding",
+  "unique-stay": "StayOnboarding",
+  "vehicle-rental": "VehicleOnboarding",
+};
+
 const onDate = (value) => {
   const d = new Date(value);
   return Number.isNaN(d.getTime())
@@ -56,6 +65,71 @@ const onDate = (value) => {
 };
 
 /* ── Who is the vendor? ──────────────────────────────────────────────────── */
+
+/**
+ * Choose who to notify from the records we managed to find.
+ *
+ * Pure, and exported, because this precedence IS the bug that was fixed: the
+ * old code returned from the `userId` branch the moment it was entered — which
+ * it almost always is, since `offer.userId` is a well-formed ObjectId — and so
+ * a User row that does not exist ended the search with `{ email: null }`,
+ * never reaching the Vendor record that had the real address. Measured on
+ * production: 7 of 7 offers resolved to no email, which killed the vendor half
+ * of every notification.
+ *
+ * Rules:
+ *   - the owning User's address wins when it has one;
+ *   - otherwise the Vendor account's;
+ *   - otherwise the business email typed into the onboarding wizard;
+ *   - and a route only wins if it actually produced an address.
+ * The user id is kept independently of the address, because the in-app bell is
+ * addressed by id and would otherwise be lost along with the email.
+ */
+function pickVendorIdentity({ ownerId, owner, vendor, vendorUser, submissionEmail, offerName }) {
+  const userId = ownerId || vendorUser?._id || null;
+  const fallbackName = owner?.name || vendor?.personName || vendor?.brandName || vendorUser?.name;
+  const name = fallbackName || offerName || "there";
+
+  const email = owner?.email || vendor?.email || submissionEmail || null;
+  if (!email && !userId) return { userId: null, email: null, name: "" };
+
+  return { userId, email, name };
+}
+
+/**
+ * The business email on the onboarding submission behind a listing.
+ *
+ * Every wizard collects one and it is the address the vendor actually reads.
+ * `resolveAdminTarget` in offers.service has always used this as its own last
+ * resort; this brings the notification path in line rather than leaving the two
+ * to disagree about who owns a listing.
+ */
+async function businessEmailFromSubmission(serviceId) {
+  try {
+    const offer = await Offer.findById(serviceId)
+      .select("sourceModel sourceId serviceType vendorId")
+      .lean();
+    if (!offer) return null;
+
+    const modelName =
+      offer.sourceModel || SOURCE_MODEL_BY_SERVICE_TYPE[String(offer.serviceType || "").toLowerCase()];
+    const Model = modelName ? onboardingModelFor(modelName) : null;
+    if (!Model) return null;
+
+    let doc = null;
+    if (offer.sourceId) doc = await Model.findById(offer.sourceId).select("businessEmail").lean();
+    if (!doc && offer.vendorId) {
+      doc = await Model.findOne({ vendorId: offer.vendorId })
+        .sort({ createdAt: -1 })
+        .select("businessEmail")
+        .lean();
+    }
+    return doc?.businessEmail || null;
+  } catch (err) {
+    logger.warn({ err: err.message, serviceId }, "[booking-notify] submission email lookup failed");
+    return null;
+  }
+}
 
 /**
  * Resolve the listing's owner to something we can both notify and email.
@@ -92,31 +166,51 @@ async function resolveVendor(serviceId) {
     const offer = await Offer.findById(serviceId).select("userId vendorId name").lean();
     if (!offer) return empty;
 
-    // Prefer userId: it is already a User id, so it needs no translation.
+    /*
+     * Two routes to the owner, tried in order — and the ORDER IS NOT THE POINT,
+     * the fall-through is.
+     *
+     * This used to `return` from the userId branch as soon as it was entered,
+     * which it almost always is: `offer.userId` is a well-formed ObjectId, so
+     * `asObjectId` succeeds. But the User row it names frequently does not
+     * exist, and the branch returned `{ email: null }` without ever trying the
+     * vendorId route — which would have worked, because Vendor carries a real
+     * email. Live measurement: 7 of 7 offers resolved to no email.
+     *
+     * The cost was the entire vendor half of every notification. No vendor
+     * booking email, no vendor "your listing was removed for expired documents"
+     * email, and `bell()` skipped too where recipientId was needed. It read as
+     * "email is broken" and was actually "the lookup gave up early".
+     *
+     * So each route now only wins if it produced something to send to.
+     */
+    /* Gather every candidate, THEN decide. Collecting first is the fix: the old
+       code decided inside the userId branch and returned from it, so a dangling
+       userId ended the search before the Vendor record was ever consulted. */
     const ownerId = asObjectId(offer.userId);
-    if (ownerId) {
-      const owner = await User.findById(ownerId).select("name email").lean();
-      return {
-        userId: ownerId,
-        email: owner?.email || null,
-        name: owner?.name || offer.name || "there",
-      };
-    }
+    const owner = ownerId ? await User.findById(ownerId).select("name email").lean() : null;
 
-    // Only the business code left. Vendor holds the email; the User row that
-    // actually logs in is the one sharing that email.
-    if (offer.vendorId) {
-      const vendor = await Vendor.findOne({ vendorId: offer.vendorId })
-        .select("email personName brandName")
-        .lean();
-      if (!vendor?.email) return empty;
-      const owner = await User.findOne({ email: vendor.email }).select("_id name").lean();
-      return {
-        userId: owner?._id || null,
-        email: vendor.email,
-        name: vendor.personName || vendor.brandName || "there",
-      };
-    }
+    const vendor = offer.vendorId
+      ? await Vendor.findOne({ vendorId: offer.vendorId }).select("email personName brandName").lean()
+      : null;
+
+    // Only worth a third query when the first two produced no address.
+    const needSubmission = !owner?.email && !vendor?.email && (offer.vendorId || offer.userId);
+    const submissionEmail = needSubmission ? await businessEmailFromSubmission(serviceId) : null;
+
+    const vendorUser =
+      vendor?.email && !ownerId
+        ? await User.findOne({ email: vendor.email }).select("_id name").lean()
+        : null;
+
+    return pickVendorIdentity({
+      ownerId,
+      owner,
+      vendor,
+      vendorUser,
+      submissionEmail,
+      offerName: offer.name,
+    });
   } catch (err) {
     logger.warn({ err: err.message, serviceId }, "[booking-notify] vendor lookup failed");
   }
@@ -334,4 +428,10 @@ async function notifyPaymentReceived(payment, { gateway } = {}) {
   });
 }
 
-module.exports = { notifyNewBooking, notifyPaymentReceived, resolveVendor };
+module.exports = {
+  notifyNewBooking,
+  notifyPaymentReceived,
+  resolveVendor,
+  // exported for tests
+  pickVendorIdentity,
+};

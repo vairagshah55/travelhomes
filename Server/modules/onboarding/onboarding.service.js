@@ -252,7 +252,27 @@ function discountsFromOnboarding(doc) {
  * sitting in `selectedProperties` / `selectedActivities` all along.
  */
 function categoryFromOnboarding(doc, serviceType) {
-  const placeholders = new Set(["stay", "activity", "caravan", "camper-van", "vehicle-rental"]);
+  /*
+   * Values that are a service type or a UI default rather than a category the
+   * vendor chose.
+   *
+   * "default" earns its place here from real data: two live stay submissions
+   * carry `selectedCategories: ["default"]` — the wizard's own placeholder —
+   * while the property type the vendor actually picked sits one candidate later
+   * in `selectedProperties` ("villa", "cave house"). Without this the backfill
+   * writes the literal string "default" into a required field, which is worse
+   * than the "stay" it replaces.
+   */
+  const placeholders = new Set([
+    "stay",
+    "activity",
+    "caravan",
+    "camper-van",
+    "vehicle-rental",
+    "default",
+    "none",
+    "other",
+  ]);
   const candidates = [
     doc.category,
     Array.isArray(doc.selectedCategories) && doc.selectedCategories[0],

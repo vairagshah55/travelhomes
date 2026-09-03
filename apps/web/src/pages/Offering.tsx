@@ -272,7 +272,33 @@ const Offering = () => {
 
   /* Position within the whole filtered set, so prev/next crosses page edges. */
   const viewIndex = viewId ? offers.findIndex((o) => o._id === viewId) : -1;
-  const viewOffer = viewIndex >= 0 ? offers[viewIndex] : null;
+  const viewRow = viewIndex >= 0 ? offers[viewIndex] : null;
+
+  /* The full listing, fetched per record.
+     A list row is a summary: it carries none of the business or KYC fields, and
+     `Offer.photos.galleryUrls` is capped at six by the submit handlers. The
+     detail endpoint also attaches the onboarding submission for the listing's
+     own vendor, which is what lets the shared inspector show a vendor the same
+     complete record an admin sees — including the photos beyond the sixth.
+     React Query keyed on the id, so stepping through with prev/next serves
+     already-seen listings from cache instead of refetching. */
+  const detailQuery = useQuery<OfferDTO | null>({
+    queryKey: ["offering-detail", viewId],
+    enabled: !!viewId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const res = await offersApi.get(viewId!, token);
+      return res.data ?? null;
+    },
+  });
+
+  /* Row first so the drawer header is right from the first frame, detail over
+     the top once it lands — and only when it is the record still on screen. */
+  const viewOffer = viewRow
+    ? detailQuery.data && detailQuery.data._id === viewRow._id
+      ? { ...viewRow, ...detailQuery.data }
+      : viewRow
+    : null;
 
   const onDelete = (id: string) => {
     const listing = offers.find((o) => o._id === id);
@@ -547,6 +573,7 @@ const Offering = () => {
           isOpen
           onClose={() => setViewId(null)}
           listingData={viewOffer}
+          isLoading={detailQuery.isLoading}
           portalScope="vendor"
           onRenewCompliance={() => setRenewTarget(viewOffer)}
           position={{ index: viewIndex + 1, total: offers.length }}
