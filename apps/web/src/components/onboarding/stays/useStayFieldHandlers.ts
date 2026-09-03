@@ -32,12 +32,9 @@ interface UseStayFieldHandlersInput {
   // Personal fields (Step 6)
   setFirstName: (v: string) => void;
   setLastName: (v: string) => void;
-  setPersonalPincode: (v: string) => void;
   setDateOfBirth: (v: string) => void;
   setMaritalStatus: (v: string) => void;
   setIdProof: (v: string) => void;
-  setStateOption: (v: string) => void;
-  setCityOptions: (v: string) => void;
 
   clearError: (field: string) => void;
 }
@@ -72,12 +69,9 @@ export function useStayFieldHandlers(input: UseStayFieldHandlersInput) {
     setCityOptions2,
     setFirstName,
     setLastName,
-    setPersonalPincode,
     setDateOfBirth,
     setMaritalStatus,
     setIdProof,
-    setStateOption,
-    setCityOptions,
     clearError,
   } = input;
 
@@ -137,7 +131,6 @@ export function useStayFieldHandlers(input: UseStayFieldHandlersInput) {
     const map: Record<string, [(v: string) => void, string]> = {
       firstName: [setFirstName, "firstName"],
       lastName: [setLastName, "lastName"],
-      pincode: [setPersonalPincode, "personalPincode"],
       dateOfBirth: [setDateOfBirth, "dateOfBirth"],
       maritalStatus: [setMaritalStatus, "maritalStatus"],
       idProof: [setIdProof, "idProof"],
@@ -146,17 +139,6 @@ export function useStayFieldHandlers(input: UseStayFieldHandlersInput) {
     if (!entry) return;
     entry[0](value);
     clearError(entry[1]);
-  };
-
-  const handlePersonalStateChange = (val: string) => {
-    setStateOption(val);
-    setCityOptions("");
-    clearError("personalState");
-  };
-
-  const handlePersonalCityChange = (val: string) => {
-    setCityOptions(val);
-    clearError("personalCity");
   };
 
   const handleCategoryToggle = (categoryKey: string) => {
@@ -172,8 +154,6 @@ export function useStayFieldHandlers(input: UseStayFieldHandlersInput) {
     handleBusinessStateChange,
     handleBusinessCityChange,
     handlePersonalChange,
-    handlePersonalStateChange,
-    handlePersonalCityChange,
     handleCategoryToggle,
   };
 }

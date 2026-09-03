@@ -56,12 +56,8 @@ export interface SubmitStayInput {
   businessPincode: string;
 
   // Personal
-  personalPincode: string;
   firstName: string;
   lastName: string;
-  personalCountry: string;
-  personalState: string;
-  personalCity: string;
   dateOfBirth: string;
   maritalStatus: string;
   idProof: string;
@@ -122,12 +118,8 @@ export async function submitStayOnboarding(
     state,
     city,
     businessPincode,
-    personalPincode,
     firstName,
     lastName,
-    personalCountry,
-    personalState,
-    personalCity,
     dateOfBirth,
     maritalStatus,
     idProof,
@@ -220,12 +212,8 @@ export async function submitStayOnboarding(
       city,
       pincode: businessPincode,
       businessPincode,
-      personalPincode,
       firstName,
       lastName,
-      personalCountry,
-      personalState,
-      personalCity,
       dateOfBirth,
       maritalStatus,
       idProof,
@@ -252,11 +240,9 @@ export async function submitStayOnboarding(
       firstName,
       lastName,
       phoneNumber: businessPhone,
-      country: personalCountry,
-      state: personalState,
-      city: personalCity,
-      personalLocality: personalCountry,
-      personalPincode,
+      // No country/state/city/pincode: this flow stopped collecting a personal
+      // address, and writing empty strings would blank whatever the vendor's
+      // profile already holds from another service they onboarded.
       dateOfBirth,
       maritalStatus,
       idProof,

@@ -229,14 +229,10 @@ const StaysOnboarding = () => {
   const [state, setState] = useState(cached?.state ?? "");
   const [city, setCity] = useState(cached?.city ?? "");
   const [businessPincode, setBusinessPincode] = useState(cached?.businessPincode ?? "");
-  const [personalPincode, setPersonalPincode] = useState(cached?.personalPincode ?? "");
 
   // Personal Details state
   const [firstName, setFirstName] = useState(cached?.firstName ?? "");
   const [lastName, setLastName] = useState(cached?.lastName ?? "");
-  const [personalCountry, setPersonalCountry] = useState(cached?.personalCountry ?? "India");
-  const [personalState, setPersonalState] = useState(cached?.personalState ?? "");
-  const [personalCity, setPersonalCity] = useState(cached?.personalCity ?? "");
   const [dateOfBirth, setDateOfBirth] = useState(cached?.dateOfBirth ?? "");
   const [maritalStatus, setMaritalStatus] = useState(cached?.maritalStatus ?? "");
   const [idProof, setIdProof] = useState(cached?.idProof ?? "");
@@ -295,12 +291,8 @@ const StaysOnboarding = () => {
     state,
     city,
     businessPincode,
-    personalPincode,
     firstName,
     lastName,
-    personalCountry,
-    personalState,
-    personalCity,
     dateOfBirth,
     maritalStatus,
     idProof,
@@ -376,15 +368,12 @@ const StaysOnboarding = () => {
   };
 
   const [fileName, setFileName] = useState("");
-  const [countryOption, setCoutryOption] = useState("India");
   const [countryOption2, setCoutryOption2] = useState("India");
-  // Personal and business addresses can sit in different countries, so both are
-  // hydrated. Only these countries' states/cities are fetched — see
-  // useCountriesData; the full dataset is never downloaded.
-  const data = useCountriesData([countryOption, countryOption2]);
-  const [stateOption, setStateOption] = useState(cached?.personalState ?? "");
+  // Only the business address remains — the personal address was removed from
+  // this flow, so its country is no longer hydrated or fetched. Only this
+  // country's states/cities are loaded; the full dataset is never downloaded.
+  const data = useCountriesData([countryOption2]);
   const [stateOption2, setStateOption2] = useState(cached?.state ?? "");
-  const [cityOption, setCityOptions] = useState(cached?.personalCity ?? "");
   const [cityOption2, setCityOptions2] = useState(cached?.city ?? "");
 
   useEffect(() => {
@@ -397,18 +386,6 @@ const StaysOnboarding = () => {
 
   useEffect(() => {
     setLocality("India");
-  }, []);
-
-  useEffect(() => {
-    setPersonalState(stateOption);
-  }, [stateOption]);
-
-  useEffect(() => {
-    setPersonalCity(cityOption);
-  }, [cityOption]);
-
-  useEffect(() => {
-    setPersonalCountry("India");
   }, []);
 
   // Top-level Unique Stay features + categories (shared cache).
@@ -518,14 +495,8 @@ const StaysOnboarding = () => {
         setCity,
         setCityOptions2,
         setBusinessPincode,
-        setPersonalPincode,
         setFirstName,
         setLastName,
-        setPersonalCountry,
-        setPersonalState,
-        setStateOption,
-        setPersonalCity,
-        setCityOptions,
         setDateOfBirth,
         setMaritalStatus,
         setIdProof,
@@ -659,9 +630,6 @@ const StaysOnboarding = () => {
       businessPincode,
       firstName,
       lastName,
-      personalState,
-      personalCity,
-      personalPincode,
       dateOfBirth,
       idProof,
       idProofImage,
@@ -726,12 +694,8 @@ const StaysOnboarding = () => {
         state,
         city,
         businessPincode,
-        personalPincode,
         firstName,
         lastName,
-        personalCountry,
-        personalState,
-        personalCity,
         dateOfBirth,
         maritalStatus,
         idProof,
@@ -879,8 +843,6 @@ const StaysOnboarding = () => {
     handleBusinessStateChange,
     handleBusinessCityChange,
     handlePersonalChange,
-    handlePersonalStateChange,
-    handlePersonalCityChange,
     handleCategoryToggle,
   } = useStayFieldHandlers({
     firstUserDiscount,
@@ -906,12 +868,9 @@ const StaysOnboarding = () => {
     setCityOptions2,
     setFirstName,
     setLastName,
-    setPersonalPincode,
     setDateOfBirth,
     setMaritalStatus,
     setIdProof,
-    setStateOption,
-    setCityOptions,
     clearError,
   });
 
@@ -1011,16 +970,10 @@ const StaysOnboarding = () => {
     // Step 6
     firstName,
     lastName,
-    personalPincode,
     dateOfBirth,
     maritalStatus,
     idProof,
     handlePersonalChange,
-    stateOption,
-    cityOption,
-    countryOption,
-    handlePersonalStateChange,
-    handlePersonalCityChange,
     idProofImage,
     handleUploadIDProof,
     uploadError: error,

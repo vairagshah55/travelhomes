@@ -53,14 +53,8 @@ export interface StayDraftSetters {
   setCity: (v: string) => void;
   setCityOptions2: (v: string) => void;
   setBusinessPincode: (v: string) => void;
-  setPersonalPincode: (v: string) => void;
   setFirstName: (v: string) => void;
   setLastName: (v: string) => void;
-  setPersonalCountry: (v: string) => void;
-  setPersonalState: (v: string) => void;
-  setStateOption: (v: string) => void;
-  setPersonalCity: (v: string) => void;
-  setCityOptions: (v: string) => void;
   setDateOfBirth: (v: string) => void;
   setMaritalStatus: (v: string) => void;
   setIdProof: (v: string) => void;
@@ -97,12 +91,6 @@ function autofillFromProfile(s: StayDraftSetters, userDetails: any): void {
 
   s.setFirstName(userDetails.firstName || "");
   s.setLastName(userDetails.lastName || "");
-  s.setPersonalState(userDetails.state || "");
-  s.setStateOption(userDetails.state || "");
-  s.setPersonalCity(userDetails.city || "");
-  s.setCityOptions(userDetails.city || "");
-  s.setPersonalPincode(userDetails.personalPincode || "");
-  s.setPersonalCountry(userDetails.country || "India");
   if (userDetails.dateOfBirth) {
     s.setDateOfBirth(new Date(userDetails.dateOfBirth).toISOString().split("T")[0]);
   }
@@ -307,15 +295,9 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
       s.setBusinessPincode(
         doc.businessPincode || doc.pincode || userDetails?.business?.pincode || "",
       );
-      s.setPersonalPincode(doc.personalPincode || userDetails?.personalPincode || "");
 
       s.setFirstName(doc.firstName || userDetails?.firstName || "");
       s.setLastName(doc.lastName || userDetails?.lastName || "");
-      s.setPersonalCountry(doc.personalCountry || userDetails?.country || "India");
-      s.setPersonalState(doc.personalState || userDetails?.state || "");
-      s.setStateOption(doc.personalState || userDetails?.state || "");
-      s.setPersonalCity(doc.personalCity || userDetails?.city || "");
-      s.setCityOptions(doc.personalCity || userDetails?.city || "");
       s.setDateOfBirth(
         doc.dateOfBirth ||
           (userDetails?.dateOfBirth

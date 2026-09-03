@@ -115,16 +115,10 @@ export interface StaysStepApi {
   // Step 6
   firstName: string;
   lastName: string;
-  personalPincode: string;
   dateOfBirth: string;
   maritalStatus: string;
   idProof: string;
   handlePersonalChange: (field: string, value: string) => void;
-  stateOption: string;
-  cityOption: string;
-  countryOption: string;
-  handlePersonalStateChange: (val: string) => void;
-  handlePersonalCityChange: (val: string) => void;
   idProofImage: string | null;
   handleUploadIDProof: (e: React.ChangeEvent<HTMLInputElement>) => void;
   uploadError: string;
@@ -274,19 +268,16 @@ export function StaysStepRenderer({ step, api }: { step: number; api: StaysStepA
           values={{
             firstName: api.firstName,
             lastName: api.lastName,
-            pincode: api.personalPincode,
             dateOfBirth: api.dateOfBirth,
             maritalStatus: api.maritalStatus,
             idProof: api.idProof,
           }}
           errors={api.errors}
           onChange={api.handlePersonalChange}
-          locationData={api.data}
-          selectedState={api.stateOption}
-          selectedCity={api.cityOption}
-          countryName={api.countryOption}
-          onStateChange={api.handlePersonalStateChange}
-          onCityChange={api.handlePersonalCityChange}
+          /* A stay already carries the property address and the business
+             address; the vendor's home address added a third and was not used
+             for anything downstream. Activity and caravan still collect it. */
+          showAddress={false}
           idProofImage={api.idProofImage}
           onIdProofUpload={api.handleUploadIDProof}
           uploadError={api.uploadError}

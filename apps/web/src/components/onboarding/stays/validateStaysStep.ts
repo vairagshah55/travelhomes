@@ -40,9 +40,6 @@ export interface ValidateStaysStepInput {
   businessPincode: string;
   firstName: string;
   lastName: string;
-  personalState: string;
-  personalCity: string;
-  personalPincode: string;
   dateOfBirth: string;
   idProof: string;
   idProofImage: string | null;
@@ -94,9 +91,6 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
     businessPincode,
     firstName,
     lastName,
-    personalState,
-    personalCity,
-    personalPincode,
     dateOfBirth,
     idProof,
     idProofImage,
@@ -182,13 +176,9 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
   } else if (currentStep === 6) {
     if (!firstName?.trim()) newErrors.firstName = "First name is required";
     if (!lastName?.trim()) newErrors.lastName = "Last name is required";
-    if (!personalState?.trim()) newErrors.personalState = "Personal state is required";
-    if (!personalCity?.trim()) newErrors.personalCity = "Personal city is required";
-    if (!personalPincode?.trim()) {
-      newErrors.personalPincode = "Pincode is required";
-    } else if (!/^\d{6}$/.test(personalPincode.trim())) {
-      newErrors.personalPincode = "Enter a valid 6-digit pincode";
-    }
+    /* No personal-address checks: the step no longer renders that card
+       (showAddress={false} in StaysStepRenderer), and requiring a field the
+       vendor cannot see makes the step impossible to pass. */
     if (!dateOfBirth) newErrors.dateOfBirth = "Date of birth is required";
     if (!idProof) newErrors.idProof = "ID proof type is required";
     if (!idProofImage) newErrors.idPhotos = "ID proof photo is required";
