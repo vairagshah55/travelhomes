@@ -1,3 +1,4 @@
+import { isValidTimeOfDay } from "@/utils/formateTime";
 interface Room {
   name: string;
   description: string;
@@ -18,6 +19,8 @@ export interface ValidateStaysStepInput {
   numberOfBeds: number;
   numberOfBathrooms: number;
   regularPrice: string;
+  checkInTime: string;
+  checkOutTime: string;
   entireStayRules: string[];
   coverImage: string | null;
   entireStayImages: string[];
@@ -69,6 +72,8 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
     numberOfBeds,
     numberOfBathrooms,
     regularPrice,
+    checkInTime,
+    checkOutTime,
     entireStayRules,
     coverImage,
     entireStayImages,
@@ -114,6 +119,11 @@ export function validateStaysStep(input: ValidateStaysStepInput): ValidateStaysS
       if (numberOfBathrooms <= 0) newErrors.numberOfBathrooms = "Add at least 1 bathroom";
       if (!regularPrice || Number(regularPrice) <= 0)
         newErrors.regularPrice = "Enter a valid price";
+      /* Only inside the `entire` branch: the individual-room layout does not
+         render the Check-in & Check-out card, and requiring a field the vendor
+         cannot see makes the step impossible to pass. */
+      if (!isValidTimeOfDay(checkInTime)) newErrors.checkInTime = "Check-in time is required";
+      if (!isValidTimeOfDay(checkOutTime)) newErrors.checkOutTime = "Check-out time is required";
       const hasValidRule = entireStayRules.some((rule) => rule.trim() !== "");
       if (!hasValidRule) newErrors.entireStayRules = "Add at least one rule";
       if (!coverImage) newErrors.coverImage = "Cover photo is required";

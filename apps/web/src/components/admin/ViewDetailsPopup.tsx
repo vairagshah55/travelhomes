@@ -11,6 +11,7 @@ import {
   formatExpiry,
 } from "@/lib/vehicleCompliance";
 import { formatINR } from "@/utils/formatCurrency";
+import { formatTimeOfDay } from "@/utils/formateTime";
 import { BTN_DANGER_SOFT, BTN_PRIMARY, EYEBROW } from "./adminUI";
 import {
   AdminDetailDrawer,
@@ -299,6 +300,10 @@ const ViewDetailsPopup: React.FC<ViewDetailsPopupProps> = ({
       ["No. of rooms", d.numberOfRooms],
       ["No. of bathrooms", d.numberOfBathrooms],
       ["Stay type", d.stayType],
+      // Rendered 12-hour ("2:00 PM") though stored 24-hour: the reviewer reads
+      // this against the guest-facing listing, which shows the same.
+      ["Check-in", has(d.checkInTime) ? formatTimeOfDay(d.checkInTime) : ""],
+      ["Check-out", has(d.checkOutTime) ? formatTimeOfDay(d.checkOutTime) : ""],
       ["Duration", d.timeDuration || d.duration],
     ] as [string, any][]
   ).filter(([, v]) => has(v));

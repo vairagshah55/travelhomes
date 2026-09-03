@@ -9,6 +9,7 @@ export { default as StyledTextarea } from "./StyledTextarea";
 export { default as StyledSelect } from "./StyledSelect";
 export { default as SearchableSelect } from "./SearchableSelect";
 export type { SearchableOption } from "./SearchableSelect";
+export { default as TimeInput } from "./TimeInput";
 export { default as IconInput } from "./IconInput";
 export { default as IconSelect } from "./IconSelect";
 export { default as Stepper } from "./Stepper";

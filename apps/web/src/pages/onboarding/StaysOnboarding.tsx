@@ -180,6 +180,12 @@ const StaysOnboarding = () => {
     Number(cached?.numberOfBathrooms) || 0,
   );
   const [regularPrice, setRegularPrice] = useState(cached?.regularPrice ?? "");
+  /* Property check-in / check-out, 24-hour "HH:mm". Seeded with the industry
+     defaults so the card opens answered rather than blocking on two fields
+     nearly every property answers the same way; both stay required, so a
+     vendor who clears one is told. */
+  const [checkInTime, setCheckInTime] = useState(cached?.checkInTime ?? "14:00");
+  const [checkOutTime, setCheckOutTime] = useState(cached?.checkOutTime ?? "11:00");
   const [rooms, setRooms] = useState<Room[]>(
     cached?.rooms ?? [
       {
@@ -271,6 +277,8 @@ const StaysOnboarding = () => {
     numberOfBeds,
     numberOfBathrooms,
     regularPrice,
+    checkInTime,
+    checkOutTime,
     rooms,
     selectedFeatures,
     customFeatures,
@@ -468,6 +476,8 @@ const StaysOnboarding = () => {
         setNumberOfBeds,
         setNumberOfBathrooms,
         setRegularPrice,
+        setCheckInTime,
+        setCheckOutTime,
         setRooms,
         setCoverImage,
         setEntireStayImages,
@@ -608,6 +618,8 @@ const StaysOnboarding = () => {
       numberOfBeds,
       numberOfBathrooms,
       regularPrice,
+      checkInTime,
+      checkOutTime,
       entireStayRules,
       coverImage,
       entireStayImages,
@@ -672,6 +684,8 @@ const StaysOnboarding = () => {
         numberOfBeds,
         numberOfBathrooms,
         regularPrice,
+        checkInTime,
+        checkOutTime,
         rooms,
         selectedFeatures,
         entireStayRules,
@@ -896,6 +910,10 @@ const StaysOnboarding = () => {
     numberOfBathrooms,
     regularPrice,
     setRegularPrice,
+    checkInTime,
+    setCheckInTime,
+    checkOutTime,
+    setCheckOutTime,
     incrementValue,
     decrementValue,
     setGuestCapacity,

@@ -25,6 +25,10 @@ interface StayDetailsStepProps {
   numberOfBathrooms: number;
   regularPrice: string;
   setRegularPrice: (val: string) => void;
+  checkInTime: string;
+  setCheckInTime: (val: string) => void;
+  checkOutTime: string;
+  setCheckOutTime: (val: string) => void;
   incrementValue: (value: number, setter: (val: number) => void, max?: number) => void;
   decrementValue: (value: number, setter: (val: number) => void, min?: number) => void;
   setGuestCapacity: (val: number) => void;
@@ -145,6 +149,10 @@ const StayDetailsStep: React.FC<StayDetailsStepProps> = (props) => {
             numberOfBathrooms={props.numberOfBathrooms}
             regularPrice={props.regularPrice}
             setRegularPrice={props.setRegularPrice}
+            checkInTime={props.checkInTime}
+            setCheckInTime={props.setCheckInTime}
+            checkOutTime={props.checkOutTime}
+            setCheckOutTime={props.setCheckOutTime}
             incrementValue={props.incrementValue}
             decrementValue={props.decrementValue}
             setGuestCapacity={props.setGuestCapacity}

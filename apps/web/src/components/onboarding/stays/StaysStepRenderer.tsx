@@ -40,6 +40,10 @@ export interface StaysStepApi {
   numberOfBathrooms: number;
   regularPrice: string;
   setRegularPrice: (v: string) => void;
+  checkInTime: string;
+  setCheckInTime: (v: string) => void;
+  checkOutTime: string;
+  setCheckOutTime: (v: string) => void;
   incrementValue: (value: number, setter: (val: number) => void, max?: number) => void;
   decrementValue: (value: number, setter: (val: number) => void, min?: number) => void;
   setGuestCapacity: (v: number) => void;
@@ -169,6 +173,10 @@ export function StaysStepRenderer({ step, api }: { step: number; api: StaysStepA
           numberOfBathrooms={api.numberOfBathrooms}
           regularPrice={api.regularPrice}
           setRegularPrice={api.setRegularPrice}
+          checkInTime={api.checkInTime}
+          setCheckInTime={api.setCheckInTime}
+          checkOutTime={api.checkOutTime}
+          setCheckOutTime={api.setCheckOutTime}
           incrementValue={api.incrementValue}
           decrementValue={api.decrementValue}
           setGuestCapacity={api.setGuestCapacity}

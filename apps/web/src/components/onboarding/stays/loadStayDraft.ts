@@ -26,6 +26,8 @@ export interface StayDraftSetters {
   setNumberOfBeds: (v: number) => void;
   setNumberOfBathrooms: (v: number) => void;
   setRegularPrice: (v: string) => void;
+  setCheckInTime: (v: string) => void;
+  setCheckOutTime: (v: string) => void;
   setRooms: (v: Room[]) => void;
   setCoverImage: (v: string | null) => void;
   setEntireStayImages: (v: string[]) => void;
@@ -132,6 +134,10 @@ function resetListingFields(s: StayDraftSetters): void {
   s.setNumberOfBeds(0);
   s.setNumberOfBathrooms(0);
   s.setRegularPrice("");
+  // Back to the same defaults a fresh form opens with, not blank — an empty
+  // required time would block the step on a form the vendor just reset.
+  s.setCheckInTime("14:00");
+  s.setCheckOutTime("11:00");
   s.setRooms([
     {
       id: "1",
@@ -238,6 +244,10 @@ export async function loadStayDraft(opts: LoadStayDraftOptions): Promise<void> {
       s.setNumberOfBeds(Number(doc.numberOfBeds) || 0);
       s.setNumberOfBathrooms(Number(doc.numberOfBathrooms) || 0);
       s.setRegularPrice(String(doc.regularPrice || ""));
+      // Resume/edit: fall back to the defaults for submissions created before
+      // these fields existed, so an older draft does not reopen invalid.
+      s.setCheckInTime(doc.checkInTime || "14:00");
+      s.setCheckOutTime(doc.checkOutTime || "11:00");
 
       if (doc.rooms && doc.rooms.length > 0) {
         // Normalise legacy `capacity`/`bedCount` field names to canonical

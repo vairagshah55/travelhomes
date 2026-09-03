@@ -26,6 +26,9 @@ export interface SubmitStayInput {
   numberOfBeds: number;
   numberOfBathrooms: number;
   regularPrice: string | number;
+  /** Property check-in / check-out, 24-hour "HH:mm". */
+  checkInTime: string;
+  checkOutTime: string;
   rooms: Room[];
 
   // Features & rules
@@ -96,6 +99,8 @@ export async function submitStayOnboarding(
     numberOfBeds,
     numberOfBathrooms,
     regularPrice,
+    checkInTime,
+    checkOutTime,
     rooms,
     selectedFeatures,
     entireStayRules,
@@ -179,6 +184,10 @@ export async function submitStayOnboarding(
       numberOfBeds: Number(numberOfBeds),
       numberOfBathrooms: Number(numberOfBathrooms),
       regularPrice: effectiveRegularPrice,
+      // Stored as sent: a bare "HH:mm" string, the same shape the legacy
+      // Management.checkInTime and Booking.pickupTime already use.
+      checkInTime,
+      checkOutTime,
       rooms: roomsWithPhotos,
       selectedFeatures,
       // `rules` and `images`, not `entireStayRules`/`entireStayImages`: those are

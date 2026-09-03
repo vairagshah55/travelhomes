@@ -1051,6 +1051,8 @@ async function submitStay(body, user) {
       numberOfRooms: doc.numberOfRooms,
       numberOfBathrooms: doc.numberOfBathrooms,
       stayType: doc.stayType,
+      checkInTime: doc.checkInTime || "",
+      checkOutTime: doc.checkOutTime || "",
       rooms: doc.rooms,
       // Declared on Offer now — it used to be dropped by strict mode, so the
       // edit wizard reloaded an empty optional-rules list every time.

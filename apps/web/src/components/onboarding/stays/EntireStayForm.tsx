@@ -9,9 +9,14 @@ import {
   DoorClosed,
   BedDouble,
   Bath,
+  Clock,
   ShieldCheck,
 } from "lucide-react";
-import { SectionCard as SharedSectionCard } from "../shared/primitives";
+import {
+  Field,
+  SectionCard as SharedSectionCard,
+  TimeInput,
+} from "../shared/primitives";
 import { compressImageToDataUrl } from "@/lib/imageCompression";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +27,11 @@ interface EntireStayFormProps {
   numberOfBathrooms: number;
   regularPrice: string;
   setRegularPrice: (val: string) => void;
+  /** 24-hour "HH:mm". Property-level arrival/departure times for guests. */
+  checkInTime: string;
+  setCheckInTime: (val: string) => void;
+  checkOutTime: string;
+  setCheckOutTime: (val: string) => void;
   incrementValue: (value: number, setter: (val: number) => void, max?: number) => void;
   decrementValue: (value: number, setter: (val: number) => void, min?: number) => void;
   setGuestCapacity: (val: number) => void;
@@ -173,6 +183,10 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
   numberOfBathrooms,
   regularPrice,
   setRegularPrice,
+  checkInTime,
+  setCheckInTime,
+  checkOutTime,
+  setCheckOutTime,
   incrementValue,
   decrementValue,
   setGuestCapacity,
@@ -327,6 +341,47 @@ const EntireStayForm: React.FC<EntireStayFormProps> = ({
             </span>
           </div>
           <ErrorMsg message={errors.regularPrice} />
+        </div>
+      </SectionCard>
+
+      {/* ── Check-in & Check-out ── */}
+      <SectionCard
+        icon={<Clock size={16} strokeWidth={2.5} />}
+        title="Check-in & Check-out"
+        subtitle="Set the arrival and departure times for your guests"
+        required
+      >
+        {/* Two-up on desktop, stacked on mobile — the same grid the other
+            paired fields in this flow use. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Check-in time" required error={errors.checkInTime} htmlFor="stay-check-in">
+            <TimeInput
+              id="stay-check-in"
+              value={checkInTime}
+              onChange={(v) => {
+                setCheckInTime(v);
+                clearError("checkInTime");
+              }}
+              error={!!errors.checkInTime}
+            />
+          </Field>
+
+          <Field
+            label="Check-out time"
+            required
+            error={errors.checkOutTime}
+            htmlFor="stay-check-out"
+          >
+            <TimeInput
+              id="stay-check-out"
+              value={checkOutTime}
+              onChange={(v) => {
+                setCheckOutTime(v);
+                clearError("checkOutTime");
+              }}
+              error={!!errors.checkOutTime}
+            />
+          </Field>
         </div>
       </SectionCard>
 

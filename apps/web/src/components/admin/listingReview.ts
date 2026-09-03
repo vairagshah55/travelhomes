@@ -179,6 +179,7 @@ const ALREADY_SHOWN = new Set<string>([
   // capacity / property
   "seatingCapacity", "sleepingCapacity", "guestCapacity", "personCapacity", "maxParticipants",
   "numberOfBeds", "numberOfRooms", "numberOfBathrooms", "stayType", "timeDuration", "duration",
+  "checkInTime", "checkOutTime",
   "rooms",
   // caravan pricing
   "perKmCharge", "perDayCharge", "perKmIncludes", "perKmExcludes",

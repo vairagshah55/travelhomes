@@ -65,6 +65,16 @@ const OfferSchema = new Schema(
     numberOfRooms: Number,
     numberOfBathrooms: Number,
     stayType: String,
+    /**
+     * Property check-in / check-out for a stay, 24-hour "HH:mm".
+     *
+     * On the Offer as well as the submission because the Offer is what the
+     * catalog, the details page and the admin approval drawer read — a field
+     * that lives only on the submission is invisible to all three (the gap the
+     * 2026-09-03 approval-review audit was about).
+     */
+    checkInTime: String,
+    checkOutTime: String,
     
     // Caravan specific pricing
     perKmCharge: Number,

@@ -58,6 +58,16 @@ const StayOnboardingSchema = new Schema(
       default: 1
     },
     
+    /**
+     * Property check-in / check-out, as a bare 24-hour "HH:mm" string.
+     *
+     * Same shape as the legacy `Management.checkInTime` and `Booking.pickupTime`
+     * rather than a Date: these are times of day with no date attached, and a
+     * Date would pin them to an arbitrary day and shift across timezones.
+     */
+    checkInTime: String,
+    checkOutTime: String,
+
     // Cover image (single hero photo separate from the gallery)
     coverImage: String,
 
