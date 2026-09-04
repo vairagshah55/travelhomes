@@ -109,13 +109,25 @@ export async function submitVehicleOnboarding(
       manufactureYear: num(formData.manufactureYear),
 
       selfDrivePerDay,
+      selfDrivePerKm: num(formData.selfDrivePerKm),
       freeKmPerDay: num(formData.freeKmPerDay),
       extraKmCharge: num(formData.extraKmCharge),
+      securityDeposit: num(formData.securityDeposit),
       minRentalHours: num(formData.minRentalHours),
 
       withDriverPerKm,
+      withDriverPerDay: num(formData.withDriverPerDay),
       driverAllowancePerDay: num(formData.driverAllowancePerDay),
+      nightChargeAfter: num(formData.nightChargeAfter),
+      outstationPerKm: num(formData.outstationPerKm),
       cancellationWindowHours: num(formData.cancellationWindowHours),
+      /* Sent only when the vendor picked one. The wizard does not render these
+         two (see showRunningCostPolicies), so in practice they are blank here
+         and the schema defaults `excluded` / `on-actuals` apply — but a draft
+         resumed after an edit can carry a real value, and dropping it would
+         silently revert the vendor's choice. */
+      ...(formData.fuelPolicy ? { fuelPolicy: formData.fuelPolicy } : {}),
+      ...(formData.tollsAndParking ? { tollsAndParking: formData.tollsAndParking } : {}),
 
       registrationNumber: formData.registrationNumber.trim().toUpperCase(),
       pickupPoints: cleanList(formData.pickupPoints),

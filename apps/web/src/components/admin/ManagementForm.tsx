@@ -10,6 +10,7 @@ import {
   Loader2,
   MapPin,
   Car,
+  Clock,
   Percent,
   Search,
   Store,
@@ -149,7 +150,8 @@ type Control =
   | "vendor"
   | "serviceType"
   | "select"
-  | "switch";
+  | "switch"
+  | "time";
 
 interface FieldSpec {
   name: string;
@@ -331,6 +333,31 @@ const SECTIONS: SectionSpec[] = [
     ],
   },
   {
+    /* Its own section rather than tucked under Capacity: an arrival time is not
+       a capacity, and `visibleSections` drops a section whose every field is
+       scoped away — so this never renders for a vehicle or an activity. */
+    key: "stayTimes",
+    label: "Check-in & check-out",
+    icon: Clock,
+    blurb: "Arrival and departure times shown to guests.",
+    cols: 2,
+    fields: [
+      {
+        name: "checkInTime",
+        label: "Check-in time",
+        control: "time",
+        only: ["unique-stay"],
+        help: "24-hour clock. Shown to guests as e.g. 2:00 PM.",
+      },
+      {
+        name: "checkOutTime",
+        label: "Check-out time",
+        control: "time",
+        only: ["unique-stay"],
+      },
+    ],
+  },
+  {
     key: "vehicle",
     label: "Vehicle",
     icon: Car,
@@ -470,6 +497,17 @@ const SECTIONS: SectionSpec[] = [
         control: "number",
         prefix: "₹",
         only: ["vehicle-rental"],
+      },
+      {
+        /* Chauffeur work is quoted per kilometre now, but listings created
+           before that carry a day rate and it still feeds the headline price
+           fallback in submitVehicle — so it has to be editable, not stranded. */
+        name: "withDriverPerDay",
+        label: "With driver per day",
+        control: "number",
+        prefix: "₹",
+        only: ["vehicle-rental"],
+        help: "Legacy day rate. Leave blank unless this listing already has one.",
       },
       {
         name: "driverAllowancePerDay",
@@ -612,6 +650,7 @@ const NUMERIC_FIELDS = [
   "securityDeposit",
   "minRentalHours",
   "withDriverPerKm",
+  "withDriverPerDay",
   "driverAllowancePerDay",
   "nightChargeAfter",
   "outstationPerKm",
@@ -701,6 +740,9 @@ const EMPTY: Offer = {
   selfDriveExcludes: [],
   withDriverEnabled: false,
   withDriverPerKm: "",
+  withDriverPerDay: "",
+  checkInTime: "",
+  checkOutTime: "",
   driverAllowancePerDay: "",
   nightChargeAfter: "",
   outstationPerKm: "",
@@ -1538,7 +1580,9 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
               <input
                 id={id}
                 name={f.name}
-                type={f.control === "number" ? "number" : "text"}
+                type={
+                  f.control === "number" ? "number" : f.control === "time" ? "time" : "text"
+                }
                 inputMode={f.control === "number" ? "numeric" : undefined}
                 min={f.control === "number" ? 0 : undefined}
                 value={(formData[f.name] as any) ?? ""}

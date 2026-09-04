@@ -39,6 +39,8 @@ export interface FormData {
   // ─── Step 4 · Rental modes + pricing ──────────────────────────────────
   selfDriveEnabled: boolean;
   selfDrivePerDay: string;
+  selfDrivePerKm: string;
+  securityDeposit: string;
   freeKmPerDay: string;
   extraKmCharge: string;
   minRentalHours: string;
@@ -47,6 +49,9 @@ export interface FormData {
 
   withDriverEnabled: boolean;
   withDriverPerKm: string;
+  withDriverPerDay: string;
+  nightChargeAfter: string;
+  outstationPerKm: string;
   driverAllowancePerDay: string;
   /**
    * Which chauffeur trips the vendor takes — EXACTLY one of the two.
@@ -61,6 +66,10 @@ export interface FormData {
   withDriverExcludes: string[];
 
   cancellationWindowHours: string;
+  /* Kept at their schema defaults by the wizard, which does not render them —
+     editable on an existing listing from the vendor edit screen. */
+  fuelPolicy: FuelPolicy | "";
+  tollsAndParking: TollsPolicy | "";
 
   // ─── Step 5 · Discount offers ─────────────────────────────────────────
   firstUserDiscount: boolean;
@@ -145,6 +154,8 @@ export const defaultVehicleFormData: FormData = {
 
   selfDriveEnabled: false,
   selfDrivePerDay: "",
+  selfDrivePerKm: "",
+  securityDeposit: "",
   freeKmPerDay: "",
   extraKmCharge: "",
   minRentalHours: "24",
@@ -153,6 +164,9 @@ export const defaultVehicleFormData: FormData = {
 
   withDriverEnabled: false,
   withDriverPerKm: "",
+  withDriverPerDay: "",
+  nightChargeAfter: "",
+  outstationPerKm: "",
   driverAllowancePerDay: "",
   // Neither pre-selected: the field is required and single-select, so a
   // default would be a choice the vendor never made.
@@ -162,6 +176,8 @@ export const defaultVehicleFormData: FormData = {
   withDriverExcludes: [],
 
   cancellationWindowHours: "24",
+  fuelPolicy: "",
+  tollsAndParking: "",
 
   firstUserDiscount: false,
   firstUserDiscountType: "percentage",

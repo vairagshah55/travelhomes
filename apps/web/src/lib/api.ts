@@ -331,6 +331,9 @@ export interface OfferDTO {
   numberOfBeds?: number | string;
   numberOfBathrooms?: number | string;
   stayType?: string;
+  /** Stay arrival/departure, 24-hour "HH:mm". */
+  checkInTime?: string;
+  checkOutTime?: string;
   // Unique Stay — per-room breakdown. `stayType: "individual"` listings keep
   // their real capacity and price here; the top-level numbers are a rollup.
   rooms?: OfferRoom[];

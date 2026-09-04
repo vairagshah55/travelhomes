@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BedDouble,
+  Clock,
   Car,
   Images,
   IndianRupee,
@@ -73,9 +74,15 @@ import {
 } from "@/components/onboarding/vehicle";
 import type { VehicleListField } from "@/components/onboarding/vehicle/VehiclePricingStep";
 import type {
+  FuelPolicy,
   FuelType,
+  TollsPolicy,
   Transmission,
   VehicleClass,
+} from "@/components/onboarding/vehicle/vehicleConfig";
+import {
+  FUEL_POLICIES,
+  TOLLS_POLICIES,
 } from "@/components/onboarding/vehicle/vehicleConfig";
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -251,19 +258,30 @@ const EditOfferings = () => {
     pickupPoints: [] as string[],
     selfDriveEnabled: false,
     selfDrivePerDay: "",
+    selfDrivePerKm: "",
     freeKmPerDay: "",
     extraKmCharge: "",
+    securityDeposit: "",
     minRentalHours: "",
     selfDriveIncludes: [] as string[],
     selfDriveExcludes: [] as string[],
     withDriverEnabled: false,
     withDriverPerKm: "",
+    withDriverPerDay: "",
     driverAllowancePerDay: "",
+    nightChargeAfter: "",
+    outstationPerKm: "",
     withDriverOneWay: true,
     withDriverTwoWay: false,
     withDriverIncludes: [] as string[],
     withDriverExcludes: [] as string[],
+    fuelPolicy: "" as FuelPolicy | "",
+    tollsAndParking: "" as TollsPolicy | "",
     cancellationWindowHours: "",
+    /* Stay arrival/departure, 24-hour "HH:mm" — the shape the Offer stores and
+       `<input type="time">` emits. */
+    checkInTime: "",
+    checkOutTime: "",
     regularPrice: "",
     priceIncludes: [] as string[],
     priceExcludes: [] as string[],
@@ -383,21 +401,30 @@ const EditOfferings = () => {
       pickupPoints: o.pickupPoints || [],
       selfDriveEnabled: !!o.selfDriveEnabled,
       selfDrivePerDay: numField(o.selfDrivePerDay),
+      selfDrivePerKm: numField(o.selfDrivePerKm),
       freeKmPerDay: numField(o.freeKmPerDay),
       extraKmCharge: numField(o.extraKmCharge),
+      securityDeposit: numField(o.securityDeposit),
       minRentalHours: numField(o.minRentalHours),
       selfDriveIncludes: o.selfDriveIncludes || [],
       selfDriveExcludes: o.selfDriveExcludes || [],
       withDriverEnabled: !!o.withDriverEnabled,
       withDriverPerKm: numField(o.withDriverPerKm),
+      withDriverPerDay: numField(o.withDriverPerDay),
       driverAllowancePerDay: numField(o.driverAllowancePerDay),
+      nightChargeAfter: numField(o.nightChargeAfter),
+      outstationPerKm: numField(o.outstationPerKm),
       // Exactly one direction is offered; default to one-way for rows saved
       // before the pair existed, matching the onboarding wizard.
       withDriverOneWay: o.withDriverTwoWay === true ? false : true,
       withDriverTwoWay: o.withDriverTwoWay === true,
       withDriverIncludes: o.withDriverIncludes || [],
       withDriverExcludes: o.withDriverExcludes || [],
+      fuelPolicy: (o.fuelPolicy as FuelPolicy) || "",
+      tollsAndParking: (o.tollsAndParking as TollsPolicy) || "",
       cancellationWindowHours: numField(o.cancellationWindowHours),
+      checkInTime: o.checkInTime || "",
+      checkOutTime: o.checkOutTime || "",
       regularPrice: String(o.regularPrice || ""),
       priceIncludes: o.priceIncludes?.length ? o.priceIncludes : [],
       priceExcludes: o.priceExcludes?.length ? o.priceExcludes : [],
@@ -782,6 +809,10 @@ const EditOfferings = () => {
           numberOfBeds: Number(formData.numberOfBeds),
           numberOfBathrooms: Number(formData.numberOfBathrooms),
           stayType: formData.stayType,
+          // Sent only when set, so an older listing that never had them is not
+          // written with two empty strings.
+          ...(formData.checkInTime ? { checkInTime: formData.checkInTime } : {}),
+          ...(formData.checkOutTime ? { checkOutTime: formData.checkOutTime } : {}),
           // The per-room breakdown, which used to be loaded as [] and never
           // sent — so the wizard could neither show it nor change it. Omitted
           // entirely when there was nothing to edit and nothing was added, so
@@ -811,21 +842,28 @@ const EditOfferings = () => {
 
           selfDriveEnabled: !!formData.selfDriveEnabled,
           selfDrivePerDay: numOrUndefined(formData.selfDrivePerDay),
+          selfDrivePerKm: numOrUndefined(formData.selfDrivePerKm),
           freeKmPerDay: numOrUndefined(formData.freeKmPerDay),
           extraKmCharge: numOrUndefined(formData.extraKmCharge),
+          securityDeposit: numOrUndefined(formData.securityDeposit),
           minRentalHours: numOrUndefined(formData.minRentalHours),
           selfDriveIncludes: formData.selfDriveIncludes.filter(Boolean),
           selfDriveExcludes: formData.selfDriveExcludes.filter(Boolean),
 
           withDriverEnabled: !!formData.withDriverEnabled,
           withDriverPerKm: numOrUndefined(formData.withDriverPerKm),
+          withDriverPerDay: numOrUndefined(formData.withDriverPerDay),
           driverAllowancePerDay: numOrUndefined(formData.driverAllowancePerDay),
+          nightChargeAfter: numOrUndefined(formData.nightChargeAfter),
+          outstationPerKm: numOrUndefined(formData.outstationPerKm),
           withDriverOneWay: !!formData.withDriverOneWay,
           withDriverTwoWay: !!formData.withDriverTwoWay,
           withDriverIncludes: formData.withDriverIncludes.filter(Boolean),
           withDriverExcludes: formData.withDriverExcludes.filter(Boolean),
 
           cancellationWindowHours: numOrUndefined(formData.cancellationWindowHours),
+          fuelPolicy: formData.fuelPolicy || undefined,
+          tollsAndParking: formData.tollsAndParking || undefined,
         };
       }
 
@@ -1639,6 +1677,33 @@ const EditOfferings = () => {
                             </SubPanel>
 
                             <SubPanel
+                              icon={Clock}
+                              title="Check-in & check-out"
+                              blurb="Arrival and departure times shown to guests"
+                            >
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <Field label="Check-in time" htmlFor="edit-check-in">
+                                  <Input
+                                    id="edit-check-in"
+                                    type="time"
+                                    value={formData.checkInTime}
+                                    onChange={(e) => set("checkInTime", e.target.value)}
+                                    className={cn("h-11", CONTROL)}
+                                  />
+                                </Field>
+                                <Field label="Check-out time" htmlFor="edit-check-out">
+                                  <Input
+                                    id="edit-check-out"
+                                    type="time"
+                                    value={formData.checkOutTime}
+                                    onChange={(e) => set("checkOutTime", e.target.value)}
+                                    className={cn("h-11", CONTROL)}
+                                  />
+                                </Field>
+                              </div>
+                            </SubPanel>
+
+                            <SubPanel
                               icon={BedDouble}
                               title="Rooms"
                               blurb={
@@ -1702,6 +1767,8 @@ const EditOfferings = () => {
                             embedded
                             selfDriveEnabled={formData.selfDriveEnabled}
                             selfDrivePerDay={formData.selfDrivePerDay}
+                            selfDrivePerKm={formData.selfDrivePerKm}
+                            securityDeposit={formData.securityDeposit}
                             freeKmPerDay={formData.freeKmPerDay}
                             extraKmCharge={formData.extraKmCharge}
                             minRentalHours={formData.minRentalHours}
@@ -1709,6 +1776,9 @@ const EditOfferings = () => {
                             selfDriveExcludes={formData.selfDriveExcludes}
                             withDriverEnabled={formData.withDriverEnabled}
                             withDriverPerKm={formData.withDriverPerKm}
+                            withDriverPerDay={formData.withDriverPerDay}
+                            nightChargeAfter={formData.nightChargeAfter}
+                            outstationPerKm={formData.outstationPerKm}
                             driverAllowancePerDay={formData.driverAllowancePerDay}
                             withDriverOneWay={formData.withDriverOneWay}
                             withDriverTwoWay={formData.withDriverTwoWay}
@@ -1722,6 +1792,11 @@ const EditOfferings = () => {
                             withDriverIncludes={formData.withDriverIncludes}
                             withDriverExcludes={formData.withDriverExcludes}
                             cancellationWindowHours={formData.cancellationWindowHours}
+                            fuelPolicy={formData.fuelPolicy}
+                            tollsAndParking={formData.tollsAndParking}
+                            /* Editing an existing listing, unlike the wizard —
+                               see showRunningCostPolicies. */
+                            showRunningCostPolicies
                             errors={errors}
                             onToggleMode={toggleRentalMode}
                             onFieldChange={set}

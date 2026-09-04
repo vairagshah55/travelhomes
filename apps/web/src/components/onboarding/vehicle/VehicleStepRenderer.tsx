@@ -238,6 +238,8 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
         <VehiclePricingStep
           selfDriveEnabled={formData.selfDriveEnabled}
           selfDrivePerDay={formData.selfDrivePerDay}
+          selfDrivePerKm={formData.selfDrivePerKm}
+          securityDeposit={formData.securityDeposit}
           freeKmPerDay={formData.freeKmPerDay}
           extraKmCharge={formData.extraKmCharge}
           minRentalHours={formData.minRentalHours}
@@ -245,6 +247,9 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
           selfDriveExcludes={formData.selfDriveExcludes}
           withDriverEnabled={formData.withDriverEnabled}
           withDriverPerKm={formData.withDriverPerKm}
+          withDriverPerDay={formData.withDriverPerDay}
+          nightChargeAfter={formData.nightChargeAfter}
+          outstationPerKm={formData.outstationPerKm}
           driverAllowancePerDay={formData.driverAllowancePerDay}
           withDriverOneWay={formData.withDriverOneWay}
           withDriverTwoWay={formData.withDriverTwoWay}
@@ -252,6 +257,8 @@ export function VehicleStepRenderer({ step, api }: { step: number; api: VehicleS
           withDriverIncludes={formData.withDriverIncludes}
           withDriverExcludes={formData.withDriverExcludes}
           cancellationWindowHours={formData.cancellationWindowHours}
+          fuelPolicy={formData.fuelPolicy}
+          tollsAndParking={formData.tollsAndParking}
           errors={errors}
           onToggleMode={api.toggleRentalMode}
           onFieldChange={api.setPricingField}

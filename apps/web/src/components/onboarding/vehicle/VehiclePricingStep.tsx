@@ -14,6 +14,8 @@ export type VehicleListField =
 interface VehiclePricingStepProps {
   selfDriveEnabled: boolean;
   selfDrivePerDay: string;
+  selfDrivePerKm: string;
+  securityDeposit: string;
   freeKmPerDay: string;
   extraKmCharge: string;
   minRentalHours: string;
@@ -22,6 +24,9 @@ interface VehiclePricingStepProps {
 
   withDriverEnabled: boolean;
   withDriverPerKm: string;
+  withDriverPerDay: string;
+  nightChargeAfter: string;
+  outstationPerKm: string;
   driverAllowancePerDay: string;
   withDriverOneWay: boolean;
   withDriverTwoWay: boolean;
@@ -30,6 +35,19 @@ interface VehiclePricingStepProps {
   withDriverExcludes: string[];
 
   cancellationWindowHours: string;
+  fuelPolicy: string;
+  tollsAndParking: string;
+  /**
+   * Show the fuel / tolls policies.
+   *
+   * OFF by default, and that is deliberate: these two were taken out of the
+   * onboarding wizard on purpose (see the note in the cancellation card) so a
+   * new listing keeps the schema defaults `excluded` / `on-actuals`. But they
+   * are real columns an admin can already edit, so a vendor correcting an
+   * EXISTING listing needs them too — `EditOfferings` opts in, the wizard does
+   * not, and neither decision leaks into the other.
+   */
+  showRunningCostPolicies?: boolean;
 
   errors: Record<string, string>;
   onToggleMode: (mode: "selfDrive" | "withDriver") => void;
@@ -309,6 +327,8 @@ const ModeOption = ({
 const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   selfDriveEnabled,
   selfDrivePerDay,
+  selfDrivePerKm,
+  securityDeposit,
   freeKmPerDay,
   extraKmCharge,
   minRentalHours,
@@ -316,6 +336,9 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   selfDriveExcludes,
   withDriverEnabled,
   withDriverPerKm,
+  withDriverPerDay,
+  nightChargeAfter,
+  outstationPerKm,
   driverAllowancePerDay,
   withDriverOneWay,
   withDriverTwoWay,
@@ -323,6 +346,9 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
   withDriverIncludes,
   withDriverExcludes,
   cancellationWindowHours,
+  fuelPolicy,
+  tollsAndParking,
+  showRunningCostPolicies = false,
   errors,
   onToggleMode,
   onFieldChange,
@@ -416,6 +442,28 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                       value={minRentalHours}
                       onChange={set("minRentalHours")}
                       unit="hours"
+                    />
+                  </Field>
+                  <Field
+                    label="Per kilometre"
+                    optional
+                    help="Only if you bill distance on top of the day rate."
+                  >
+                    <PriceInput
+                      value={selfDrivePerKm}
+                      onChange={set("selfDrivePerKm")}
+                      unit="/ km"
+                    />
+                  </Field>
+                  <Field
+                    label="Security deposit"
+                    optional
+                    help="Refundable, collected at handover."
+                  >
+                    <PriceInput
+                      value={securityDeposit}
+                      onChange={set("securityDeposit")}
+                      unit="total"
                     />
                   </Field>
                 </div>
@@ -518,6 +566,39 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                       unit="/ day"
                     />
                   </Field>
+                  <Field
+                    label="Per day"
+                    optional
+                    help="Only if you also quote a flat daily chauffeur rate."
+                  >
+                    <PriceInput
+                      value={withDriverPerDay}
+                      onChange={set("withDriverPerDay")}
+                      unit="/ day"
+                    />
+                  </Field>
+                  <Field
+                    label="Outstation per kilometre"
+                    optional
+                    help="Rate beyond the city limits, if it differs."
+                  >
+                    <PriceInput
+                      value={outstationPerKm}
+                      onChange={set("outstationPerKm")}
+                      unit="/ km"
+                    />
+                  </Field>
+                  <Field
+                    label="Night charge after"
+                    optional
+                    help="Hour of a 24-hour clock past which a night charge applies."
+                  >
+                    <UnitInput
+                      value={nightChargeAfter}
+                      onChange={set("nightChargeAfter")}
+                      unit="hrs"
+                    />
+                  </Field>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -544,6 +625,40 @@ const VehiclePricingStep: React.FC<VehiclePricingStepProps> = ({
                 </div>
               </div>
             )}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Running costs. Rendered only where the caller opts in — see
+          `showRunningCostPolicies`. The wizard leaves these at their schema
+          defaults on purpose; the vendor edit screen can correct them. */}
+      {showRunningCostPolicies && (
+        <SectionCard
+          icon={<IndianRupee size={16} className="text-th-brand" strokeWidth={2.5} />}
+          title="Fuel, tolls & parking"
+          subtitle="Who covers the running costs on a trip."
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Field label="Fuel" optional>
+              <StyledSelect value={fuelPolicy} onChange={set("fuelPolicy")}>
+                <option value="">Select a fuel policy</option>
+                {FUEL_POLICIES.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </StyledSelect>
+            </Field>
+            <Field label="Tolls & parking" optional>
+              <StyledSelect value={tollsAndParking} onChange={set("tollsAndParking")}>
+                <option value="">Select a tolls policy</option>
+                {TOLLS_POLICIES.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </StyledSelect>
+            </Field>
           </div>
         </SectionCard>
       )}
