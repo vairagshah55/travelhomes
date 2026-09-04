@@ -396,13 +396,32 @@ describe("the admin wizard mirrors the onboarding flows", () => {
     expect(leaked).toEqual([]);
   });
 
-  it.each(KINDS)("gives %s the three custom blocks", (kind) => {
+  it.each(KINDS)("gives %s the custom blocks that apply to it", (kind) => {
     const custom = WIZARD_STEPS[kind].map((s) => s.custom).filter(Boolean);
+    // Every listing has photos.
     expect(custom).toContain("photos");
-    expect(custom).toContain("discounts");
     // Rooms is a stay concept only — the model's `rooms` array is never used by
     // the other three.
     expect(custom.includes("rooms")).toBe(kind === "unique-stay");
+    /* Discounts are collected by the stay, caravan and activity wizards. The
+       vehicle wizard never did, and nothing guest-facing reads `discounts` for
+       a vehicle, so they are gone from every vehicle surface. */
+    expect(custom.includes("discounts")).toBe(kind !== "vehicle-rental");
+  });
+
+  /* `onlyKinds` on a custom SECTION and the per-kind WIZARD_STEPS table are two
+     descriptions of the same scope, and no renderer reads the first — so only a
+     test can stop them drifting. Without this, scoping a custom block in one
+     place and forgetting the other is invisible until someone reads both. */
+  it.each(KINDS)("scopes custom sections and %s's wizard steps identically", (kind) => {
+    const stepBlocks = new Set(WIZARD_STEPS[kind].map((s) => s.custom).filter(Boolean));
+    SECTIONS.filter((s) => s.custom).forEach((section) => {
+      const sectionApplies = !section.onlyKinds || section.onlyKinds.includes(kind);
+      expect(
+        stepBlocks.has(section.custom),
+        `${section.custom}: SECTIONS says ${sectionApplies}, WIZARD_STEPS["${kind}"] says ${stepBlocks.has(section.custom)}`,
+      ).toBe(sectionApplies);
+    });
   });
 
   /* The step ORDER is the point of this table: an admin reviewing a stay should
@@ -424,7 +443,13 @@ describe("the admin wizard mirrors the onboarding flows", () => {
     expect(phases("unique-stay")).toEqual(["Your stay", "Pricing"]);
     expect(phases("camper-van")).toEqual(["Your caravan", "Pricing"]);
     expect(phases("activity")).toEqual(["Your activity", "Pricing"]);
-    expect(phases("vehicle-rental")).toEqual(["Your vehicle", "Pricing"]);
+    /* Vehicles carry a third phase, matching VEHICLE_PHASES in
+       pages/onboarding/VehicleOnboarding ("Your vehicle" / "Pricing" /
+       "Documents" — its fourth, "About you", is vendor-only and has no admin
+       equivalent). The Documents step must stay LAST: the rail groups
+       consecutive steps by label, so placing it between Pricing and Photos
+       would split Pricing into two groups. */
+    expect(phases("vehicle-rental")).toEqual(["Your vehicle", "Pricing", "Documents"]);
   });
 
   it("drops a step whose fields are all hidden, and keeps the custom ones", () => {

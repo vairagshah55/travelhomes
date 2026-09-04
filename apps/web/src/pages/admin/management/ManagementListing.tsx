@@ -141,6 +141,15 @@ const ManagementListing = () => {
 
   /* ── Modal state ── */
   const [showManagementForm, setShowManagementForm] = useState(false);
+  /* Vehicle paperwork for the form's read-only Documents step.
+     `rcPhotos` / `driverLicencePhotos` live on the VehicleOnboarding submission,
+     not on `Offer`, so they need the same second fetch the drawer does. Held
+     apart from `selectedOffer` on purpose: `offers.dto.upsertBody` is strict, so
+     a submission-only key inside the form's state would 400 the save. */
+  const [formDocs, setFormDocs] = useState<{
+    rcPhotos?: string[];
+    driverLicencePhotos?: string[];
+  }>({});
   const [isEditing, setIsEditing] = useState(false);
   // FormOffer is ManagementForm's Offer shape (required by initialData prop).
   const [selectedOffer, setSelectedOffer] = useState<FormOffer | null>(null);
@@ -267,6 +276,34 @@ const ManagementListing = () => {
     }),
     [scoped],
   );
+
+  useEffect(() => {
+    const target = showManagementForm ? selectedOffer : null;
+    if (!target?._id || serviceTypeOf(target as any) !== "vehicle-rental") {
+      setFormDocs({});
+      return;
+    }
+    let cancelled = false;
+    offersService
+      .get(target._id)
+      .then(async (res: any) => {
+        const full = res?.data ?? res;
+        if (cancelled || !full?.sourceModel || !full?.sourceId) return;
+        const submission = await listingSubmissionService.get(full.sourceModel, full.sourceId);
+        if (cancelled) return;
+        const picked = pickSubmissionDetails(submission) as Record<string, unknown>;
+        setFormDocs({
+          rcPhotos: (picked.rcPhotos as string[]) ?? [],
+          driverLicencePhotos: (picked.driverLicencePhotos as string[]) ?? [],
+        });
+      })
+      // Non-fatal: the dates still render from the Offer, only the scans are
+      // missing, so this must not interrupt an edit in progress.
+      .catch((e: unknown) => console.error("Failed to load vehicle paperwork", e));
+    return () => {
+      cancelled = true;
+    };
+  }, [showManagementForm, selectedOffer]);
 
   const filterDefs: FilterDefinition[] = [
     {
@@ -987,6 +1024,13 @@ const ManagementListing = () => {
         onSubmit={handleFormSubmit}
         initialData={selectedOffer || undefined}
         isLoading={createListing.isPending || updateListing.isPending}
+        complianceDocs={formDocs}
+        /* Same dialog and same mutation the listings table and the drawer use —
+           the one path that lifts the compliance hold. Only when editing: a
+           listing being created has no id to PATCH. */
+        onRenewCompliance={
+          selectedOffer?._id ? () => setRenewTarget(selectedOffer as Offer) : undefined
+        }
       />
 
       <RejectReasonPopup

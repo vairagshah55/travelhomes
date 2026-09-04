@@ -26,6 +26,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { getImageUrl } from "@/lib/adminUtils";
+import {
+  COMPLIANCE_TONE,
+  complianceHeadline,
+  describeDays,
+  evaluateCompliance,
+  formatExpiry,
+} from "@/lib/vehicleCompliance";
 import { formatINR } from "@/utils/formatCurrency";
 import { useVendorDirectory } from "@/hooks/admin/useVendors";
 import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
@@ -80,6 +87,21 @@ interface ManagementFormProps {
   onSubmit: (data: Partial<Offer>) => void;
   initialData?: Offer;
   isLoading?: boolean;
+  /**
+   * Vehicle paperwork, for the read-only Documents step.
+   *
+   * A SEPARATE prop rather than extra keys on `initialData`, and that is not a
+   * style preference: `rcPhotos` and `driverLicencePhotos` live on the
+   * VehicleOnboarding submission and are NOT declared on `Offer`, while
+   * `offers.dto.upsertBody` is `.strict()` at the top level. Merging them into
+   * `initialData` would put them into `formData`, `serializeOfferingValues`
+   * sends everything in `formData`, and the PUT would then 400 on every vehicle
+   * save — the same trap the `_id` fix addressed. Keeping them out of the form
+   * state means they can be shown without ever being submitted.
+   */
+  complianceDocs?: { rcPhotos?: string[]; driverLicencePhotos?: string[] };
+  /** Opens ComplianceRenewDialog. Absent while creating — there is no id yet. */
+  onRenewCompliance?: () => void;
 }
 
 const MAX_IMAGE_MB = 5;
@@ -437,6 +459,8 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
   onSubmit,
   initialData,
   isLoading = false,
+  complianceDocs,
+  onRenewCompliance,
 }) => {
   const isEdit = !!initialData;
 
@@ -1141,6 +1165,125 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
   );
 
   /* ── Discounts section ── */
+  /**
+   * Insurance and PUC, read-only, with the renewal handed to the dialog.
+   *
+   * Deliberately not inputs. These two dates have their own endpoint —
+   * PATCH /api/offers/:id/compliance — which resets the reminder ladder,
+   * mirrors the dates onto the submission and LIFTS `complianceHold`. Written
+   * through the generic PUT they would save and leave the listing dark with the
+   * vendor told nothing, so this step shows the state and defers the edit.
+   */
+  const renderCompliance = () => {
+    const compliance = evaluateCompliance(formData as any);
+    if (!compliance) {
+      return (
+        <p className="text-[13px] text-app-fg-muted">
+          Compliance documents apply to vehicle rental listings only.
+        </p>
+      );
+    }
+
+    const rcPhotos = complianceDocs?.rcPhotos ?? [];
+    const licencePhotos = complianceDocs?.driverLicencePhotos ?? [];
+    const isNew = !formData._id;
+
+    return (
+      <div className="space-y-3">
+        <div
+          className={cn(
+            "rounded-xl border px-3.5 py-3",
+            COMPLIANCE_TONE[compliance.state].band,
+          )}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="max-w-[46ch] text-[13px] leading-relaxed text-app-fg">
+              {complianceHeadline(compliance)}
+            </p>
+            {onRenewCompliance && compliance.state !== "ok" && (
+              <button type="button" className={BTN_PRIMARY} onClick={onRenewCompliance}>
+                Renew dates
+              </button>
+            )}
+          </div>
+          {compliance.onHold && (formData as any).complianceHold?.since && (
+            <p className="mt-1.5 text-[11.5px] text-app-fg-muted">
+              Removed from the catalog automatically on{" "}
+              {new Date((formData as any).complianceHold.since).toLocaleDateString("en-IN")}.
+            </p>
+          )}
+        </div>
+
+        <div className="grid gap-2.5 sm:grid-cols-2">
+          {compliance.docs.map((doc) => (
+            <div key={doc.key} className="rounded-xl border border-app-border px-3.5 py-2.5">
+              <p className="text-[11.5px] font-semibold uppercase tracking-[0.04em] text-app-fg-muted">
+                {doc.label} valid until
+              </p>
+              <p className="mt-0.5 text-[13.5px] font-semibold text-app-fg">
+                {formatExpiry(doc.expiry)}
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 text-[11.5px] font-medium",
+                  doc.state === "expired" || doc.state === "missing"
+                    ? "text-red-600 dark:text-red-400"
+                    : doc.state === "expiring"
+                      ? "text-amber-700 dark:text-amber-400"
+                      : "text-app-fg-subtle",
+                )}
+              >
+                {describeDays(doc.days)}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* Vendor-submitted evidence. Read-only by nature — an admin reviews
+            these, they are not an admin's to replace. */}
+        {(rcPhotos.length > 0 || licencePhotos.length > 0) && (
+          <div className="space-y-2.5">
+            {[
+              { label: "Registration certificate", photos: rcPhotos },
+              { label: "Driver licence", photos: licencePhotos },
+            ]
+              .filter((group) => group.photos.length > 0)
+              .map((group) => (
+                <div key={group.label}>
+                  <p className="mb-1.5 text-[11.5px] font-semibold uppercase tracking-[0.04em] text-app-fg-muted">
+                    {group.label} ({group.photos.length})
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.photos.map((src, i) => (
+                      <a
+                        key={i}
+                        href={getImageUrl(src)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block h-20 w-28 overflow-hidden rounded-lg border border-app-border"
+                      >
+                        <img
+                          src={getImageUrl(src)}
+                          alt={`${group.label} ${i + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+
+        <p className="text-[11.5px] leading-relaxed text-app-fg-muted">
+          {isNew
+            ? "Expiry dates arrive with the vendor's submission. Once this listing is saved, use Renew dates to change them."
+            : "These dates are changed through Renew dates, not by saving this form — renewing also lifts the compliance hold and restarts the reminder schedule."}
+        </p>
+      </div>
+    );
+  };
+
   const renderDiscounts = () => {
     const regular = Number(formData.regularPrice);
     return (
@@ -1401,6 +1544,8 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
                   renderPhotos()
                 ) : currentStep.custom === "discounts" ? (
                   renderDiscounts()
+                ) : currentStep.custom === "compliance" ? (
+                  renderCompliance()
                 ) : currentStep.custom === "rooms" ? (
                   <RoomsEditor
                     rooms={(formData.rooms as any) || []}

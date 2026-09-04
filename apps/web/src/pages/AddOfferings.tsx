@@ -1093,20 +1093,29 @@ const AddOfferings = () => {
                         )}
                       </SubPanel>
 
-                      <SubPanel
-                        icon={Sparkles}
-                        title="Discounts"
-                        blurb="Optional — toggle any offer to enable it"
-                      >
-                        <DiscountOffersStep
-                          embedded
-                          offers={discountOffers as any}
-                          onToggle={handleDiscountToggle}
-                          onOfferChange={handleDiscountChange as any}
-                          errors={errors}
-                          weeklyLabel="Weekly / Monthly Offers"
-                        />
-                      </SubPanel>
+                      {/* Not for vehicles. The vehicle wizard never collected the
+                          four promotional slots, nothing guest-facing reads
+                          `discounts` for one (VehicleDetails and Payment both
+                          ignore it), and the admin form no longer offers them
+                          either — see WIZARD_STEPS["vehicle-rental"]. Leaving the
+                          panel here would let a vendor set a rate no guest sees
+                          and no admin can review. */}
+                      {activeTab !== "vehicle-rental" && (
+                        <SubPanel
+                          icon={Sparkles}
+                          title="Discounts"
+                          blurb="Optional — toggle any offer to enable it"
+                        >
+                          <DiscountOffersStep
+                            embedded
+                            offers={discountOffers as any}
+                            onToggle={handleDiscountToggle}
+                            onOfferChange={handleDiscountChange as any}
+                            errors={errors}
+                            weeklyLabel="Weekly / Monthly Offers"
+                          />
+                        </SubPanel>
+                      )}
                     </div>
                   )}
 

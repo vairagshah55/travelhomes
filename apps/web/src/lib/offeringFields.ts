@@ -27,6 +27,7 @@ import {
   ListChecks,
   MapPin,
   Percent,
+  ShieldCheck,
   Tag,
   Users,
   type LucideIcon,
@@ -155,7 +156,7 @@ export interface SectionSpec {
   /** Columns at ≥768px. Capacity is all short numbers, so it takes three. */
   cols?: 2 | 3;
   fields?: FieldSpec[];
-  custom?: "photos" | "discounts" | "rooms";
+  custom?: "photos" | "discounts" | "rooms" | "compliance";
   /** Scope for a `custom` section, which has no `fields` to derive it from. */
   onlyKinds?: Kind[];
 }
@@ -598,11 +599,34 @@ export const SECTIONS: SectionSpec[] = [
     custom: "photos",
   },
   {
+    /* Insurance and PUC, plus the paperwork they are checked against.
+       `custom` because these are NOT ordinary fields and must never become
+       inputs on the generic PUT /api/offers/:id: they have their own endpoint,
+       PATCH /api/offers/:id/compliance, which resets the reminder ladder,
+       mirrors the dates onto the submission and LIFTS `complianceHold`. A date
+       written through the generic update would save and leave the listing dark
+       with nobody told. The block renders read-only and hands the edit to
+       ComplianceRenewDialog. */
+    key: "compliance",
+    label: "Documents",
+    icon: ShieldCheck,
+    blurb: "Insurance and PUC expiry, and the paperwork on file.",
+    custom: "compliance",
+    onlyKinds: ["vehicle-rental"],
+  },
+  {
+    /* Not vehicles — see the note on WIZARD_STEPS["vehicle-rental"].
+       NOTE: no renderer reads `onlyKinds` today (nothing walks SECTIONS as
+       sections; the forms walk WIZARD_STEPS, which is keyed per kind, and the
+       vendor pages hard-code their custom panels). It is the registry's own
+       description of the scope, and `offeringFields.spec.ts` holds the two
+       descriptions to each other so they cannot drift. */
     key: "discounts",
     label: "Discounts",
     icon: Percent,
     blurb: "Optional promotional rates, off by default.",
     custom: "discounts",
+    onlyKinds: ["unique-stay", "camper-van", "activity"],
   },
 ];
 
@@ -1117,7 +1141,7 @@ export interface WizardStepSpec {
   /** Registry field names, in the order the onboarding step asks for them. */
   fields?: string[];
   /** A custom block — the same names `SECTIONS` uses. */
-  custom?: "photos" | "discounts" | "rooms";
+  custom?: "photos" | "discounts" | "rooms" | "compliance";
 }
 
 /* Shared: the vendor/service header every admin step 0 needs, and the location
@@ -1312,8 +1336,15 @@ export const WIZARD_STEPS: Record<Kind, WizardStepSpec[]> = {
 
   /* /onboarding/vehicle — VEHICLE_PHASES: "Your vehicle" ×3, "Pricing" ×1
      0 Details · 1 Class · 2 Specs · 3 Capacity · 4 Pricing
-     That flow drops Discount Offers; the admin form keeps them, because a
-     vehicle listing can still carry discounts set from elsewhere. */
+     No Discounts step: that flow drops Discount Offers, and the four
+     promotional slots are now dropped for vehicles everywhere else too. The
+     admin form used to keep them "because a vehicle listing can still carry
+     discounts set from elsewhere" — but the only "elsewhere" was the vendor
+     create/edit pages, which offered them for the same non-reason, and nothing
+     guest-facing reads them for a vehicle: neither VehicleDetails nor Payment
+     touches `discounts`, so they only ever rendered back to the vendor's own
+     offering page and the admin drawer. Write-only decoration on three screens.
+     Stay, caravan and activity keep theirs — their wizards collect them. */
   "vehicle-rental": [
     {
       key: "details",
@@ -1389,7 +1420,18 @@ export const WIZARD_STEPS: Record<Kind, WizardStepSpec[]> = {
       ],
     },
     PHOTOS_STEP("Pricing"),
-    DISCOUNTS_STEP("Discounts", "Pricing"),
+    {
+      /* Read-only, with a Renew button — see the SECTIONS entry for why these
+         two dates cannot be plain inputs. Last, and in its own phase, so the
+         rail reads "Your vehicle" -> "Pricing" -> "Documents" exactly like
+         VEHICLE_PHASES in pages/onboarding/VehicleOnboarding. */
+      key: "compliance",
+      label: "Documents",
+      blurb: "Insurance and PUC expiry, and the paperwork on file.",
+      icon: ShieldCheck,
+      phase: "Documents",
+      custom: "compliance",
+    },
   ],
 };
 
