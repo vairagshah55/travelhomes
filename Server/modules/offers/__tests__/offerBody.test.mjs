@@ -100,7 +100,19 @@ describe("the offer upsert body", () => {
     const body = Object.fromEntries([...IGNORED].map((k) => [k, "whatever"]));
     const out = parse({ ...body, name: "x" });
     expect(Object.keys(out)).toEqual(["name"]);
-    expect(IGNORED.size).toBe(12);
+
+    // 12 dead discount keys + `_id` and `__v`.
+    expect(IGNORED.size).toBe(14);
+  });
+
+  /* Every form on the SPA holds a fetched document in its state and PUTs that
+     state back, so `_id` rides along on literally every admin save. The service
+     takes the id from the URL, so the body's copy is redundant — but rejecting
+     it would have 400'd all of them. This case exists because that is exactly
+     what the first cut of this schema did. */
+  it("accepts the _id every form echoes back, and keeps it out of the update", () => {
+    const out = parse({ _id: "a".repeat(24), __v: 3, name: "cabins" });
+    expect(out).toEqual({ name: "cabins" });
   });
 
   it("keeps an explicit null, because that is how a field gets cleared", () => {
@@ -132,10 +144,7 @@ describe("the offer upsert body", () => {
  * cannot store.
  */
 describe("frontend registry ↔ Offer schema parity", () => {
-  const registry = readFileSync(
-    path.join(REPO, "apps/web/src/lib/offeringFields.ts"),
-    "utf8",
-  );
+  const registry = readFileSync(path.join(REPO, "apps/web/src/lib/offeringFields.ts"), "utf8");
   const sections = registry.slice(
     registry.indexOf("export const SECTIONS"),
     registry.indexOf("export const DISCOUNT_SLOTS"),

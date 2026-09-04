@@ -37,17 +37,24 @@ const ALIASES = { finalPrice: "discountPrice" };
 /**
  * Accepted and discarded, rather than rejected.
  *
- * These are the twelve dead discount keys described above. Rejecting them would
- * 400 a vendor mid-submit over keys that have never done anything; they are
- * dropped here and removed from the client payload separately.
+ * Two groups:
+ *
+ * 1. `_id` and `__v` — Mongoose owns both, and the id the service updates comes
+ *    from the URL, never the body. But every form on the SPA holds a fetched
+ *    document in its state and PUTs that state back, so `_id` rides along on
+ *    literally every admin save. Rejecting it would 400 all of them.
+ * 2. The twelve dead flat discount keys described above. Rejecting those would
+ *    400 a vendor mid-submit over keys that have never done anything.
+ *
+ * Both are dropped from the parsed body, so the service still never sees them.
  */
-const IGNORED = new Set(
-  ["firstUserDiscount", "festivalOffers", "weeklyMonthlyOffers", "specialOffers"].flatMap((k) => [
-    k,
-    `${k}Type`,
-    `${k}Value`,
-  ]),
-);
+const IGNORED = new Set([
+  "_id",
+  "__v",
+  ...["firstUserDiscount", "festivalOffers", "weeklyMonthlyOffers", "specialOffers"].flatMap(
+    (k) => [k, `${k}Type`, `${k}Value`],
+  ),
+]);
 
 /** A validator for one leaf path, from its SchemaType. */
 function leafFor(schemaType) {
