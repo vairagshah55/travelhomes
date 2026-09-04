@@ -23,6 +23,7 @@ import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
 import ManagementForm, { Offer as FormOffer } from "@/components/admin/ManagementForm";
 import { pickSubmissionDetails } from "@/lib/listingSubmission";
 import { SERVICE_TYPES, serviceTypeLabel, serviceTypeOf } from "@/lib/listingKind";
+import { pickOfferingValues } from "@/lib/offeringFields";
 import RejectReasonPopup from "@/components/admin/RejectReasonPopup";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -515,90 +516,39 @@ const ManagementListing = () => {
     setShowManagementForm(true);
   };
 
-  // Open ManagementForm for edit — map the FULL editable field set so nothing
-  // is dropped. (Cast to any: the list row carries every schema field at
-  // runtime even though the summary `Offer` type only enumerates a subset.)
+  /* Open ManagementForm for edit.
+     Built from the shared registry rather than a hand-written field list. The
+     list this replaces had grown to 67 keys and had already fallen behind by
+     four: `checkInTime`, `checkOutTime` and `rooms` were never mapped, so a
+     stay opened with blank arrival times and an empty room editor — and since
+     the form seeds an unmapped field as "", saving wrote those blanks straight
+     over the stored values. `withDriverTwoWay` was missing too, which meant any
+     admin save flipped a chauffeur vehicle to one-way.
+
+     `pickOfferingValues` copies only the keys the record actually has, so
+     anything absent still opens from the form's own blank defaults. */
   const handleEdit = (offer: Offer) => {
     const o = offer as any;
     const formData: FormOffer = {
+      ...pickOfferingValues(o),
       _id: o._id,
-      name: o.name || "",
-      category: o.category || "",
+      status: o.status,
       /* Which third of the schema applies. Inferred for rows that predate the
          field (anything typed straight into this form), so the picker opens on
          the right answer instead of empty — an empty required field would block
          an unrelated edit from saving. */
       serviceType: o.serviceType || serviceTypeOf(o) || "",
-      status: o.status,
       // Without this the form's vendor picker opens on "No vendor assigned" for
       // a listing that has one — an edit would look like it was dropping it.
       vendorId: o.vendorId || "",
-      regularPrice: o.regularPrice ?? "",
+      /* The model stores the discounted rate as `discountPrice`; the form calls
+         it `finalPrice` and writes both back. */
       finalPrice: o.finalPrice ?? o.discountPrice ?? "",
-      description: o.description || "",
-      features: o.features || "",
-      rules: o.rules || "",
-      optionalRules: o.optionalRules || "",
-      priceIncludes: o.priceIncludes || "",
-      priceExcludes: o.priceExcludes || "",
-      seatingCapacity: o.seatingCapacity ?? "",
-      sleepingCapacity: o.sleepingCapacity ?? "",
-      guestCapacity: o.guestCapacity ?? "",
-      personCapacity: o.personCapacity ?? "",
-      numberOfBeds: o.numberOfBeds ?? "",
-      numberOfRooms: o.numberOfRooms ?? "",
-      numberOfBathrooms: o.numberOfBathrooms ?? "",
-      stayType: o.stayType || "",
-      timeDuration: o.timeDuration || "",
-      perDayCharge: o.perDayCharge ?? "",
-      perKmCharge: o.perKmCharge ?? "",
-      perDayIncludes: o.perDayIncludes || "",
-      perDayExcludes: o.perDayExcludes || "",
-      perKmIncludes: o.perKmIncludes || "",
-      perKmExcludes: o.perKmExcludes || "",
-      expectations: o.expectations || "",
-      locality: o.locality || "",
-      city: o.city || "",
-      state: o.state || "",
-      pincode: o.pincode || "",
-      address: o.address || "",
+      /* Not registry fields — these back the form's three `custom` sections
+         (Rooms, Photos, Discounts) rather than a FieldSpec. */
+      rooms: o.rooms || [],
       discounts: o.discounts || {},
       photos: o.photos || { coverUrl: "", galleryUrls: [] },
-
-      /* Vehicle rental. None of this was mapped, so the admin form could not
-         show or change a single field of a vehicle listing — and the field
-         relevance guess, working off the category string ("Sedan", "SUV"),
-         matched nothing and fell back to revealing all forty fields. */
-      vehicleClass: o.vehicleClass || "",
-      brand: o.brand || "",
-      model: o.model || "",
-      manufactureYear: o.manufactureYear ?? "",
-      registrationNumber: o.registrationNumber || "",
-      fuelType: o.fuelType || "",
-      transmission: o.transmission || "",
-      airConditioned: !!o.airConditioned,
-      luggageCapacity: o.luggageCapacity ?? "",
-      pickupPoints: o.pickupPoints || "",
-      selfDriveEnabled: !!o.selfDriveEnabled,
-      selfDrivePerDay: o.selfDrivePerDay ?? "",
-      selfDrivePerKm: o.selfDrivePerKm ?? "",
-      freeKmPerDay: o.freeKmPerDay ?? "",
-      extraKmCharge: o.extraKmCharge ?? "",
-      securityDeposit: o.securityDeposit ?? "",
-      minRentalHours: o.minRentalHours ?? "",
-      selfDriveIncludes: o.selfDriveIncludes || "",
-      selfDriveExcludes: o.selfDriveExcludes || "",
-      withDriverEnabled: !!o.withDriverEnabled,
-      withDriverPerDay: o.withDriverPerDay ?? "",
-      withDriverPerKm: o.withDriverPerKm ?? "",
-      driverAllowancePerDay: o.driverAllowancePerDay ?? "",
-      nightChargeAfter: o.nightChargeAfter ?? "",
-      outstationPerKm: o.outstationPerKm ?? "",
-      withDriverIncludes: o.withDriverIncludes || "",
-      withDriverExcludes: o.withDriverExcludes || "",
-      fuelPolicy: o.fuelPolicy || "",
-      tollsAndParking: o.tollsAndParking || "",
-      cancellationWindowHours: o.cancellationWindowHours ?? "",
     };
     setSelectedOffer(formData);
     setIsEditing(true);

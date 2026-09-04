@@ -53,7 +53,6 @@ import {
 } from "@/lib/offeringFields";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
-import { STAY_AMENITY_NAMES } from "@/components/onboarding/stays/stayConfig";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
 import type { DiscountOffer } from "@/components/onboarding/shared";
 import { SearchableSelect } from "@/components/onboarding/shared/primitives";
@@ -1016,11 +1015,9 @@ const EditOfferings = () => {
 
   const catalog = useOfferingCatalog();
   const baseCategories = catalog.categories[activeTab] || [];
-  // Same unique-stay fallback as AddOfferings: an unseeded CMS otherwise leaves
-  // the Features step empty, and the two wizards must offer the same list.
-  const cmsFeatures = catalog.features[activeTab] || [];
-  const baseFeatures =
-    cmsFeatures.length || activeTab !== "unique-stay" ? cmsFeatures : STAY_AMENITY_NAMES;
+  // The unseeded-CMS fallback now lives in useOfferingCatalog, so this page,
+  // /offering/add and the admin form all offer the same amenity list.
+  const baseFeatures = catalog.features[activeTab] || [];
 
   /**
    * The saved category, spelled the way the CMS spells it.

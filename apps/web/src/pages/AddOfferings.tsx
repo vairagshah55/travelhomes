@@ -65,7 +65,6 @@ import {
   CategoryStep as CaravanCategoryStep,
   CapacityAddressStep as CaravanCapacityAddressStep,
 } from "@/components/onboarding/caravan";
-import { STAY_AMENITY_NAMES } from "@/components/onboarding/stays/stayConfig";
 import { DiscountOffersStep } from "@/components/onboarding/shared";
 import { SearchableSelect } from "@/components/onboarding/shared/primitives";
 
@@ -93,50 +92,6 @@ const CAMPER_VAN_CATEGORIES = [
   "Mini Caravan",
 ];
 
-// Fallback only, for a CMS with no Camper Van features yet. Keep in step with
-// FALLBACK_FEATURES in onboarding/caravan/FeaturesStep.tsx.
-const CAMPER_VAN_FEATURES = [
-  "Air Conditioning",
-  "Heating",
-  "Sofa / Lounge Seating",
-  "Recliner Seats",
-  "Storage Cabinets",
-  "Double Bed",
-  "Single Beds",
-  "Bunk Beds",
-  "Sofa Cum Bed",
-  "Pillows",
-  "Blankets",
-  "Induction Stove / Gas Stove",
-  "Microwave",
-  "Refrigerator",
-  "Basic Kitchen Utensils",
-  "Bathroom",
-  "Toilet",
-  "Hot Water / Geyser",
-  "Wash Basin",
-  "Mirror",
-  "Toiletries",
-  "TV",
-  "Wi-Fi",
-  "Speaker",
-  "Charging Points",
-  "Generator",
-  "Power Backup",
-  "Exterior Lights",
-  "Drinking Water Facility",
-  "Fire Extinguisher",
-  "First Aid Kit",
-  "CCTV",
-  "GPS Tracking",
-  "Awning",
-  "Outdoor Kitchen",
-  "BBQ",
-  "Rooftop Terrace",
-  "Camping Chairs",
-  "Camping Table",
-  "Wheelchair Accessible",
-];
 
 // ═════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
@@ -460,11 +415,12 @@ const AddOfferings = () => {
             {},
             vendorGenericFieldNames("create", activeTab as Kind),
           ),
-          // Discounts now persisted as a structured sub-doc on the Offer model
-          // (Offer.discounts) rather than the legacy flat fields. The old
-          // fields are kept on the payload for backwards-compat with any
-          // consumer still reading them, but the source of truth is the
-          // `discounts` object below.
+          /* Discounts are a structured sub-document on the Offer model
+             (Offer.discounts). Twelve flat keys — firstUserDiscount,
+             festivalOffersType, … — used to ride along "for backwards-compat
+             with any consumer still reading them"; none has ever had a schema
+             path, so Mongoose dropped every one of them and no consumer could
+             have read anything. Removed; the sub-doc is the only source. */
           discounts: {
             firstUser: {
               enabled: !!formData.firstUserDiscount,
@@ -491,18 +447,6 @@ const AddOfferings = () => {
               finalPrice: "",
             },
           },
-          firstUserDiscount: formData.firstUserDiscount,
-          firstUserDiscountType: formData.firstUserDiscountType,
-          firstUserDiscountValue: formData.firstUserDiscountValue,
-          festivalOffers: formData.festivalOffers,
-          festivalOffersType: formData.festivalOffersType,
-          festivalOffersValue: formData.festivalOffersValue,
-          weeklyMonthlyOffers: formData.weeklyMonthlyOffers,
-          weeklyMonthlyOffersType: formData.weeklyMonthlyOffersType,
-          weeklyMonthlyOffersValue: formData.weeklyMonthlyOffersValue,
-          specialOffers: formData.specialOffers,
-          specialOffersType: formData.specialOffersType,
-          specialOffersValue: formData.specialOffersValue,
         } as any,
         token,
       );
@@ -532,16 +476,9 @@ const AddOfferings = () => {
     if (activeTab !== "camper-van") return fromCms;
     return fromCms.length ? fromCms : CAMPER_VAN_CATEGORIES;
   }, [activeTab, catalog.categories]);
-  const baseFeatures = useMemo(() => {
-    const fromCms = catalog.features[activeTab] || [];
-    if (fromCms.length) return fromCms;
-    // Fallbacks for a CMS that hasn't been seeded for this service type. Without
-    // the unique-stay entry a vendor adding a stay from the console reached the
-    // Features step and saw an empty grid.
-    if (activeTab === "camper-van") return CAMPER_VAN_FEATURES;
-    if (activeTab === "unique-stay") return STAY_AMENITY_NAMES;
-    return fromCms;
-  }, [activeTab, catalog.features]);
+  // The unseeded-CMS fallbacks now live in useOfferingCatalog, so this page,
+  // /offering/:id/edit and the admin form all offer the same amenity list.
+  const baseFeatures = catalog.features[activeTab] || [];
 
   // Defensive merge — keep any in-progress draft category/feature visible even
   // if it's not in the CMS list (e.g. user typed via Other / pasted a custom).

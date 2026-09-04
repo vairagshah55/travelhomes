@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertCircle,
+  ArrowRight,
   Check,
   ChevronDown,
   Image as ImageIcon,
@@ -40,6 +41,9 @@ import {
   NUMERIC_FIELDS,
   REQUIRED_FIELDS,
   SECTIONS,
+  hasMeaningfulValue,
+  wizardStepsFor,
+  isFieldRelevant,
   serializeOfferingValues,
   toArr,
   type FieldSpec,
@@ -47,6 +51,10 @@ import {
   type Offer,
 } from "@/lib/offeringFields";
 import { RoomsEditor } from "@/components/offering/RoomsEditor";
+/* The same chip the vendor wizard's Features step uses. Its colours are tokens,
+   so it renders teal on the vendor side and blue inside the admin shell without
+   a second component. */
+import { FeatureChip } from "@/components/offering";
 import {
   BTN_GHOST,
   BTN_NEUTRAL,
@@ -439,11 +447,19 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [showAllFields, setShowAllFields] = useState(false);
-  const [activeSection, setActiveSection] = useState(SECTIONS[0].key);
+  /* The wizard step, mirroring the vendor onboarding flow at /onboarding/stay:
+     one section at a time behind a progress rail, rather than one long scroll.
+     An index into `wizardSteps`, so it follows the service type — a stay
+     has no Vehicle step to land on. */
+  const [stepIndex, setStepIndex] = useState(0);
   const [askDiscard, setAskDiscard] = useState(false);
+  /* An admin correcting a listing sometimes needs an amenity CMS doesn't offer
+     yet. Kept as a deliberate second step rather than a free-text box, so the
+     curated list stays the default answer. */
+  const [customFeature, setCustomFeature] = useState("");
+  const [showCustomFeature, setShowCustomFeature] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const { query: vendorQuery } = useVendorDirectory();
 
@@ -456,7 +472,9 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
     setSubmitAttempted(false);
     setShowAllFields(false);
     setAskDiscard(false);
-    setActiveSection(SECTIONS[0].key);
+    setShowCustomFeature(false);
+    setCustomFeature("");
+    setStepIndex(0);
     scrollRef.current?.scrollTo({ top: 0 });
   }, [initialData, isOpen]);
 
@@ -511,37 +529,38 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
   const errorFor = (name: string) => (touched[name] || submitAttempted ? errors[name] : undefined);
 
-  /* A field belongs on screen if it suits the chosen category, if the operator
-     asked for everything, or if it already holds a value — the last clause is
-     what stops an edit from hiding data the record actually has. */
+  /* A field belongs on screen if it suits the chosen service type, if the
+     operator asked for everything, or if the record actually holds a value —
+     see hasMeaningfulValue for what "actually" has to mean here. */
   const hasValue = useCallback(
-    (name: string) => {
-      const v = formData[name];
-      if (Array.isArray(v)) return v.length > 0;
-      return v !== "" && v !== undefined && v !== null;
-    },
+    (name: string) => hasMeaningfulValue(name, formData),
     [formData],
   );
 
   const isFieldVisible = useCallback(
-    (f: FieldSpec) => {
-      if (!f.only || !kind || showAllFields) return true;
-      return f.only.includes(kind) || hasValue(f.name);
-    },
-    [kind, showAllFields, hasValue],
+    (f: FieldSpec) => isFieldRelevant(f, kind, formData, showAllFields),
+    [kind, showAllFields, formData],
   );
 
-  /* The body already drops a section whose fields are all irrelevant, but both
-     rails were built from SECTIONS directly — so a stay listed "Vehicle" and
-     "Rental rates" and clicking either scrolled to nothing. */
-  const visibleSections = useMemo(
-    () =>
-      SECTIONS.filter((s) => {
-        if (s.onlyKinds && kind && !showAllFields && !s.onlyKinds.includes(kind)) return false;
-        return s.custom || (s.fields ?? []).some(isFieldVisible);
-      }),
-    [isFieldVisible],
+  /* The steps this listing walks, in the order its own onboarding flow asks
+     for them — see WIZARD_STEPS. `wizardStepsFor` drops a step whose every
+     field is scoped away, so a stay never lands on a Rental rates step. */
+  const wizardSteps = useMemo(
+    () => wizardStepsFor(kind, isFieldVisible),
+    [kind, isFieldVisible],
   );
+
+  /* Consecutive steps sharing a phase label, so the rail groups the way
+     OnboardingLayout's does ("Your stay" spanning four ticks). */
+  const phaseGroups = useMemo(() => {
+    const out: { label: string; start: number; end: number }[] = [];
+    wizardSteps.forEach((s, i) => {
+      const last = out[out.length - 1];
+      if (last && last.label === s.phase) last.end = i;
+      else out.push({ label: s.phase, start: i, end: i });
+    });
+    return out;
+  }, [wizardSteps]);
 
   const hiddenCount = useMemo(() => {
     if (!kind) return 0;
@@ -562,45 +581,40 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
   const isDirty = changedKeys.length > 0;
 
-  /* Per-section error badge — an operator scrolled to Photos shouldn't have to
-     hunt for the one empty required field three sections up. */
-  const sectionErrorCount = useMemo(() => {
+  /* Per-step error badge — an operator on Photos shouldn't have to hunt for
+     the one empty required field three steps back. */
+  const stepErrorCount = useMemo(() => {
     const out: Record<string, number> = {};
-    SECTIONS.forEach((s) => {
-      out[s.key] = (s.fields ?? []).filter(
+    wizardSteps.forEach((s) => {
+      out[s.key] = s.fields.filter(
         (f) => errors[f.name] && (touched[f.name] || submitAttempted),
       ).length;
     });
     return out;
-  }, [errors, touched, submitAttempted]);
+  }, [wizardSteps, errors, touched, submitAttempted]);
 
-  /* ── Scroll spy ──
-     Measured with rects rather than offsetTop: the sections' offsetParent is
-     the (fixed) dialog, not the scroll container, so offsetTop carries the
-     header's height and the rail lags a whole section behind. */
-  const handleScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-    const line = container.getBoundingClientRect().top + 96;
-    let current = SECTIONS[0].key;
-    for (const s of SECTIONS) {
-      const el = sectionRefs.current[s.key];
-      if (el && el.getBoundingClientRect().top <= line) current = s.key;
-    }
-    setActiveSection(current);
+  /* ── Step navigation ──
+     `wizardSteps` shrinks when a service type is picked, so the index is
+     clamped on read rather than corrected in an effect — an effect would fight
+     the operator's own click on the step they just chose. */
+  const step = Math.min(stepIndex, Math.max(0, wizardSteps.length - 1));
+  const currentStep = wizardSteps[step];
+  const isLastStep = step >= wizardSteps.length - 1;
+
+  const goToStep = useCallback((next: number) => {
+    setStepIndex(next);
+    scrollRef.current?.scrollTo({ top: 0 });
   }, []);
 
-  const goToSection = (key: string) => {
-    const el = sectionRefs.current[key];
-    const container = scrollRef.current;
-    if (!el || !container) return;
-    const delta = el.getBoundingClientRect().top - container.getBoundingClientRect().top;
-    container.scrollTo({
-      top: Math.max(0, container.scrollTop + delta - 12),
-      behavior: "smooth",
-    });
-    setActiveSection(key);
-  };
+  /* Jumping by key is what the rail and the save-time error jump both need —
+     the step a field lives on is a fact about the registry, not the operator. */
+  const goToSectionKey = useCallback(
+    (key: string) => {
+      const i = wizardSteps.findIndex((sec) => sec.key === key);
+      if (i >= 0) goToStep(i);
+    },
+    [wizardSteps, goToStep],
+  );
 
   /* ── Change handlers ── */
   const setValue = (name: string, value: any) =>
@@ -695,8 +709,8 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
 
     const firstError = VALIDATED_FIELDS.find((name) => errors[name]);
     if (firstError) {
-      const section = SECTIONS.find((s) => (s.fields ?? []).some((f) => f.name === firstError));
-      if (section) goToSection(section.key);
+      const owning = wizardSteps.find((s) => s.fields.some((f) => f.name === firstError));
+      if (owning) goToSectionKey(owning.key);
       // After the smooth scroll settles, put the caret in the offending field.
       window.setTimeout(() => document.getElementById(fieldId(firstError))?.focus(), 320);
       toast.error(
@@ -832,6 +846,95 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
               />
             </span>
           );
+
+        case "features": {
+          const selected = Array.isArray(formData.features)
+            ? (formData.features as string[])
+            : [];
+          const fromCms = kind ? catalog.features[kind] || [] : [];
+          const known = new Set(fromCms.map((v) => v.toLowerCase()));
+          /* Values the listing already carries that the catalog no longer
+             offers — renamed, disabled, or typed in before this control
+             existed. They render as selected chips; dropping them from the
+             grid would silently delete them on the next save. */
+          const extras = selected.filter((v) => !known.has(v.toLowerCase()));
+          const options = [...fromCms, ...extras];
+          const isOn = (v: string) => selected.some((x) => x.toLowerCase() === v.toLowerCase());
+          const toggle = (v: string) =>
+            setValue(
+              "features",
+              isOn(v)
+                ? selected.filter((x) => x.toLowerCase() !== v.toLowerCase())
+                : [...selected, v],
+            );
+          const addCustom = () => {
+            const value = customFeature.trim();
+            if (!value) return;
+            if (!isOn(value)) setValue("features", [...selected, value]);
+            setCustomFeature("");
+            setShowCustomFeature(false);
+          };
+
+          return (
+            <div className="space-y-2.5">
+              {catalog.isLoading && options.length === 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                    <div key={i} className="h-9 w-24 rounded-full bg-app-bg-subtle animate-pulse" />
+                  ))}
+                </div>
+              ) : options.length === 0 ? (
+                <p className="text-[12.5px] text-app-fg-muted">
+                  {kind
+                    ? "No features published for this service type yet — add them in CMS → Features, or add one below."
+                    : "Choose a service type to see the features it offers."}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {options.map((v) => (
+                    <FeatureChip key={v} label={v} selected={isOn(v)} onClick={() => toggle(v)} />
+                  ))}
+                </div>
+              )}
+
+              {showCustomFeature ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    autoFocus
+                    value={customFeature}
+                    onChange={(e) => setCustomFeature(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addCustom();
+                      }
+                      if (e.key === "Escape") setShowCustomFeature(false);
+                    }}
+                    placeholder="Name the feature…"
+                    className={cn(INPUT_SM, "max-w-[260px]")}
+                  />
+                  <button type="button" onClick={addCustom} className={cn(BTN_NEUTRAL, BTN_SM)}>
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowCustomFeature(true)}
+                  className={cn(BTN_GHOST, BTN_SM)}
+                >
+                  + Add a feature not in the catalog
+                </button>
+              )}
+
+              {selected.length > 0 && (
+                <p className="text-[11.5px] font-semibold text-brand">
+                  {selected.length} selected
+                </p>
+              )}
+            </div>
+          );
+        }
 
         case "tags":
           return (
@@ -1162,7 +1265,7 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           document.getElementById(fieldId("name"))?.focus();
         }}
         className={cn(
-          "max-w-[1060px] w-[calc(100vw-1.5rem)] p-0 gap-0 rounded-[14px] overflow-hidden",
+          "max-w-[900px] w-[calc(100vw-1.5rem)] p-0 gap-0 rounded-[14px] overflow-hidden",
           "h-[min(90vh,900px)] flex flex-col bg-app-surface",
         )}
       >
@@ -1176,9 +1279,15 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
               {isEdit ? "Edit listing" : "Create listing"}
             </DialogTitle>
             <DialogDescription className="mt-0.5 text-[12.5px] text-app-fg-muted truncate">
+              {wizardSteps.length > 0 && (
+                <span className="font-semibold text-app-fg">
+                  Step {step + 1} of {wizardSteps.length}
+                </span>
+              )}
+              <span className="mx-1.5 opacity-40">·</span>
               {isEdit
                 ? formData.name || "Untitled listing"
-                : "New listings are saved as pending and appear in the review queue."}
+                : "Saved as pending and added to the review queue."}
             </DialogDescription>
           </div>
           {hiddenCount > 0 && (
@@ -1192,146 +1301,142 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
           )}
         </header>
 
-        {/* ── Body ── */}
-        <div className="flex-1 min-h-0 flex">
-          {/* Section rail — doubles as a progress map and an error map. */}
-          <nav
-            aria-label="Form sections"
-            className="hidden md:flex flex-col gap-0.5 w-[204px] shrink-0 p-3 border-r border-app-border bg-app-surface-2/50 overflow-y-auto"
-          >
-            {visibleSections.map((s) => {
-              const active = s.key === activeSection;
-              const errs = sectionErrorCount[s.key] ?? 0;
+        {/* ── Progress rail ──
+            The same shape as OnboardingLayout's: consecutive steps grouped
+            under their phase label ("Your stay" spanning four ticks), so an
+            admin sees the flow the host walked. One difference on purpose —
+            every tick is a BUTTON. A vendor fills the form once and moves
+            forward; an admin usually opens a listing to change one field, and
+            making them click Continue six times to reach it would be worse
+            than the long scroll this replaces. */}
+        <nav
+          aria-label="Form steps"
+          className="shrink-0 px-4 md:px-5 pt-3 pb-3 border-b border-app-border bg-app-surface-2/40"
+        >
+          <ol className="flex items-end gap-3 sm:gap-5">
+            {phaseGroups.map((group) => {
+              const active = step >= group.start && step <= group.end;
+              const done = step > group.end;
               return (
-                <button
-                  key={s.key}
-                  type="button"
-                  onClick={() => goToSection(s.key)}
-                  aria-current={active ? "true" : undefined}
-                  className={cn(
-                    "flex items-center gap-2.5 h-9 px-2.5 rounded-lg text-left transition-colors",
-                    FOCUS_RING,
-                    active
-                      ? "bg-app-surface text-app-accent shadow-[0_1px_2px_rgba(18,25,38,0.06)]"
-                      : "text-app-fg-muted hover:bg-app-surface/70 hover:text-app-fg",
-                  )}
+                <li
+                  key={group.label}
+                  // Weighted so every tick is the same width whatever a phase
+                  // holds — computed, so it belongs inline.
+                  style={{ flexGrow: group.end - group.start + 1, flexBasis: 0 }}
+                  className="min-w-0"
+                  aria-current={active ? "step" : undefined}
                 >
-                  <s.icon size={15} strokeWidth={2} className="shrink-0" />
-                  <span className="flex-1 text-[13px] font-medium truncate">{s.label}</span>
-                  {errs > 0 && (
-                    <span
-                      className="grid place-items-center min-w-[17px] h-[17px] px-1 rounded-full bg-red-100 text-[10px] font-bold text-red-600 tabular-nums"
-                      title={`${errs} field${errs === 1 ? "" : "s"} need attention`}
-                    >
-                      {errs}
-                    </span>
-                  )}
-                </button>
+                  <span
+                    className={cn(
+                      "block truncate text-[11.5px] font-bold tracking-[-0.01em] mb-1.5",
+                      active
+                        ? "text-app-accent"
+                        : done
+                          ? "text-app-fg"
+                          : "text-app-fg-subtle",
+                    )}
+                  >
+                    {group.label}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {wizardSteps.slice(group.start, group.end + 1).map((s, offset) => {
+                      const i = group.start + offset;
+                      const errs = stepErrorCount[s.key] ?? 0;
+                      return (
+                        <button
+                          key={s.key}
+                          type="button"
+                          onClick={() => goToStep(i)}
+                          title={errs > 0 ? `${s.label} — ${errs} to fix` : s.label}
+                          aria-label={`${group.label}: ${s.label}${
+                            errs > 0
+                              ? `, ${errs} field${errs === 1 ? "" : "s"} need attention`
+                              : ""
+                          }`}
+                          aria-current={i === step ? "step" : undefined}
+                          className={cn(
+                            "flex-1 h-[5px] min-w-[10px] rounded-full transition-colors",
+                            FOCUS_RING,
+                            errs > 0
+                              ? "bg-red-400 hover:bg-red-500"
+                              : i === step
+                                ? "bg-app-accent"
+                                : i < step
+                                  ? "bg-app-accent/35"
+                                  : "bg-app-border hover:bg-app-fg-subtle/40",
+                          )}
+                        />
+                      );
+                    })}
+                  </span>
+                </li>
               );
             })}
-          </nav>
+          </ol>
+        </nav>
 
-          <div
-            ref={scrollRef}
-            onScroll={handleScroll}
-            className="flex-1 min-w-0 overflow-y-auto overscroll-contain"
+        {/* ── Body — one step at a time ── */}
+        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <form
+            id="management-listing-form"
+            onSubmit={handleSubmit}
+            noValidate
+            className="mx-auto w-full max-w-[760px] px-4 py-6 md:px-6"
           >
-            {/* Mobile equivalent of the rail. */}
-            <div className="md:hidden sticky top-0 z-10 flex gap-1.5 px-4 py-2 overflow-x-auto scrollbar-hide border-b border-app-border bg-app-surface/95 backdrop-blur">
-              {visibleSections.map((s) => {
-                const errs = sectionErrorCount[s.key] ?? 0;
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => goToSection(s.key)}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 h-8 px-3 rounded-full whitespace-nowrap shrink-0 text-[12px] font-semibold transition-colors",
-                      s.key === activeSection
-                        ? "bg-app-accent-soft text-app-accent"
-                        : "bg-app-surface-2 text-app-fg-muted",
-                    )}
+            {currentStep && (
+              <section key={currentStep.key} aria-labelledby={`step-${currentStep.key}`}>
+                <div className="mb-5">
+                  <h3
+                    id={`step-${currentStep.key}`}
+                    className="text-[17px] font-bold tracking-[-0.015em] text-app-fg"
                   >
-                    {s.label}
-                    {errs > 0 && (
-                      <span className="grid place-items-center min-w-[16px] h-4 px-1 rounded-full bg-red-100 text-[10px] font-bold text-red-600">
-                        {errs}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+                    {currentStep.label}
+                  </h3>
+                  <p className="mt-1 text-[13px] leading-relaxed text-app-fg-muted">
+                    {currentStep.blurb}
+                  </p>
+                </div>
 
-            <form
-              id="management-listing-form"
-              onSubmit={handleSubmit}
-              noValidate
-              className="px-4 py-5 md:px-6 md:py-6 space-y-7"
-            >
-              {SECTIONS.map((s) => {
-                const fields = (s.fields ?? []).filter(isFieldVisible);
-                // A category-specific section with nothing to show is noise —
-                // "Capacity" with zero fields reads as a broken form.
-                if (!s.custom && !fields.length) return null;
-                return (
-                  <section
-                    key={s.key}
-                    ref={(el) => {
-                      sectionRefs.current[s.key] = el;
-                    }}
-                    aria-labelledby={`section-${s.key}`}
-                    className="scroll-mt-4"
-                  >
-                    <div className="flex items-baseline gap-2.5 pb-3 mb-4 border-b border-app-border">
-                      <h3
-                        id={`section-${s.key}`}
-                        className="text-[13.5px] font-bold tracking-[-0.01em] text-app-fg"
-                      >
-                        {s.label}
-                      </h3>
-                      <p className="text-[12px] text-app-fg-muted truncate">{s.blurb}</p>
-                    </div>
+                {currentStep.custom === "photos" ? (
+                  renderPhotos()
+                ) : currentStep.custom === "discounts" ? (
+                  renderDiscounts()
+                ) : currentStep.custom === "rooms" ? (
+                  <RoomsEditor
+                    rooms={(formData.rooms as any) || []}
+                    onChange={(rooms) => setValue("rooms", rooms)}
+                    onUploadPhotos={handleRoomPhotos}
+                    perRoomPricing={formData.stayType === "individual"}
+                  />
+                ) : (
+                  /* Two columns, not three. The onboarding steps this mirrors
+                     are narrow and mostly single-column, and `wide` fields
+                     already span the row. */
+                  <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+                    {currentStep.fields.map(renderField)}
+                  </div>
+                )}
+              </section>
+            )}
 
-                    {s.custom === "photos" ? (
-                      renderPhotos()
-                    ) : s.custom === "discounts" ? (
-                      renderDiscounts()
-                    ) : s.custom === "rooms" ? (
-                      <RoomsEditor
-                        rooms={(formData.rooms as any) || []}
-                        onChange={(rooms) => setValue("rooms", rooms)}
-                        onUploadPhotos={handleRoomPhotos}
-                        perRoomPricing={formData.stayType === "individual"}
-                      />
-                    ) : (
-                      <div
-                        className={cn(
-                          "grid grid-cols-1 gap-x-5 gap-y-4",
-                          s.cols === 3 ? "md:grid-cols-3" : "md:grid-cols-2",
-                        )}
-                      >
-                        {fields.map(renderField)}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
-
-              {hiddenCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllFields((v) => !v)}
-                  className={cn(BTN_GHOST, BTN_SM, "sm:hidden w-full")}
-                >
-                  {showAllFields ? "Show relevant fields" : `Show all fields (+${hiddenCount})`}
-                </button>
-              )}
-            </form>
-          </div>
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAllFields((v) => !v)}
+                className={cn(BTN_GHOST, BTN_SM, "sm:hidden w-full mt-6")}
+              >
+                {showAllFields ? "Show relevant fields" : `Show all fields (+${hiddenCount})`}
+              </button>
+            )}
+          </form>
         </div>
 
-        {/* ── Footer save bar ── */}
+        {/* ── Footer ──
+            Back / Continue like the onboarding flow, but Save stays reachable
+            on every step. Onboarding can afford to gate saving behind the last
+            step because a vendor is completing a form once; an admin is usually
+            correcting one field, and making them walk to the end to commit it
+            would be a worse form than the one this replaces. */}
         <footer className="shrink-0 flex items-center justify-between gap-3 px-5 py-3 border-t border-app-border bg-app-surface-2/60">
           <p className="text-[12.5px] text-app-fg-muted min-w-0 truncate" aria-live="polite">
             {isDirty ? (
@@ -1346,9 +1451,23 @@ const ManagementForm: React.FC<ManagementFormProps> = ({
             )}
           </p>
           <div className="flex items-center gap-2 shrink-0">
-            <button type="button" onClick={requestClose} className={BTN_NEUTRAL}>
-              Cancel
+            <button
+              type="button"
+              onClick={step === 0 ? requestClose : () => goToStep(step - 1)}
+              className={cn(BTN_NEUTRAL, BTN_SM)}
+            >
+              {step === 0 ? "Cancel" : "Back"}
             </button>
+            {!isLastStep && (
+              <button
+                type="button"
+                onClick={() => goToStep(step + 1)}
+                className={cn(BTN_NEUTRAL, BTN_SM, "gap-1.5")}
+              >
+                Continue
+                <ArrowRight size={13} strokeWidth={2.4} aria-hidden />
+              </button>
+            )}
             <button
               type="submit"
               form="management-listing-form"

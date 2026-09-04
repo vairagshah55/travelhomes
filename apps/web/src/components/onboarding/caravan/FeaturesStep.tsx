@@ -4,6 +4,7 @@ import { StepHeader } from "../shared/primitives";
 import { sortFeatureRows } from "@/lib/cmsFeatures";
 import { cn } from "@/lib/utils";
 import { FeatureIcon } from "@/components/features/featureIcons";
+import { FALLBACK_CARAVAN_FEATURES } from "./caravanConfig";
 
 interface CustomFeature {
   name: string;
@@ -44,48 +45,7 @@ const ICON_SIZE = 17;
  * CMS. Order and wording match the canonical list seeded by
  * Server/scripts/seed-caravan-features.js.
  */
-const FALLBACK_FEATURES: string[] = [
-  "Air Conditioning",
-  "Heating",
-  "Sofa / Lounge Seating",
-  "Recliner Seats",
-  "Storage Cabinets",
-  "Double Bed",
-  "Single Beds",
-  "Bunk Beds",
-  "Sofa Cum Bed",
-  "Pillows",
-  "Blankets",
-  "Induction Stove / Gas Stove",
-  "Microwave",
-  "Refrigerator",
-  "Basic Kitchen Utensils",
-  "Bathroom",
-  "Toilet",
-  "Hot Water / Geyser",
-  "Wash Basin",
-  "Mirror",
-  "Toiletries",
-  "TV",
-  "Wi-Fi",
-  "Speaker",
-  "Charging Points",
-  "Generator",
-  "Power Backup",
-  "Exterior Lights",
-  "Drinking Water Facility",
-  "Fire Extinguisher",
-  "First Aid Kit",
-  "CCTV",
-  "GPS Tracking",
-  "Awning",
-  "Outdoor Kitchen",
-  "BBQ",
-  "Rooftop Terrace",
-  "Camping Chairs",
-  "Camping Table",
-  "Wheelchair Accessible",
-];
+const FALLBACK_FEATURES: string[] = FALLBACK_CARAVAN_FEATURES;
 
 interface Amenity {
   key: string;

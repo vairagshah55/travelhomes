@@ -103,11 +103,20 @@ describe("offers.dto.updateStatusBody", () => {
   });
 });
 
+/* `upsertBody` used to be `z.object({}).passthrough()`, and this suite asserted
+   that contract: an arbitrary key came back untouched. That was the bug, not the
+   feature — Mongoose then dropped the key and the save returned 200 having
+   written nothing. The body is now derived from `Offer.schema`; the behaviour it
+   replaced this with is covered in depth by offerBody.test.mjs. */
 describe("offers.dto.upsertBody", () => {
-  it("accepts and preserves arbitrary fields", () => {
-    const parsed = dto.upsertBody.parse({ name: "x", description: "y", weird: 1 });
+  it("keeps the fields the model can store", () => {
+    const parsed = dto.upsertBody.parse({ name: "x", description: "y" });
     expect(parsed.name).toBe("x");
-    expect(parsed.weird).toBe(1);
+    expect(parsed.description).toBe("y");
+  });
+
+  it("rejects a field the model cannot store, instead of passing it through", () => {
+    expect(() => dto.upsertBody.parse({ name: "x", weird: 1 })).toThrowError();
   });
 });
 

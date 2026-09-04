@@ -78,7 +78,10 @@ const idParams = z.object({ id: objectIdString });
 
 // Offer is a sprawling content schema — keep .passthrough() so we don't
 // drop any legacy fields. The model is the schema-of-record.
-const upsertBody = z.object({}).passthrough();
+/* Derived from `Offer.schema` — see offerBody.js for why this is not a
+   hand-written schema, and for the two live incidents that a passthrough body
+   made invisible. */
+const { upsertBody } = require("./offerBody");
 
 const rateBody = z.object({
   rating: z.coerce.number().min(1).max(5),

@@ -24,8 +24,10 @@ import {
   Images,
   Info,
   IndianRupee,
+  ListChecks,
   MapPin,
   Percent,
+  Tag,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -116,6 +118,11 @@ export type Control =
   | "number"
   | "textarea"
   | "tags"
+  /* The amenity picker. Its own control rather than `tags`, because the values
+     are a CMS list an admin curates (CMS → Features), not free text — typing
+     "Wi-Fi" where the catalog says "WiFi" makes a listing invisible to the
+     guest filter that matches on the exact string. */
+  | "features"
   | "category"
   | "vendor"
   | "serviceType"
@@ -192,9 +199,9 @@ export const SECTIONS: SectionSpec[] = [
       {
         name: "features",
         label: "Features",
-        control: "tags",
+        control: "features",
         wide: true,
-        placeholder: "WiFi, Air conditioning, Parking…",
+        help: "The catalog for this service type, from CMS → Features. Guests filter on these.",
       },
       {
         name: "rules",
@@ -967,17 +974,27 @@ export function serializeOfferingValues(
     if (k in out) out[k] = toArr(out[k]);
   });
 
-  /* Empty numbers: dropping the key keeps Mongoose from casting "" → NaN, but
-     dropping it on a field that HAD a value means clearing one is impossible —
-     the update simply doesn't mention it and the old figure survives. So an
-     emptied field is sent as an explicit null, and only a never-filled one is
-     dropped. Enum fields need the same treatment for a different reason: a
-     blank one is the string "", which fails validation and rejects the whole
-     update rather than just that field. */
-  [...NUMERIC_FIELDS, ...ENUM_FIELDS].forEach((k) => {
-    if (!(k in out) || !isBlank(out[k])) return;
-    if (isBlank(baseline[k])) delete out[k];
-    else out[k] = null;
+  /* Blank values, and the difference between "never filled in" and "cleared".
+     Dropping a blank key keeps Mongoose from casting "" → NaN on a number and
+     from failing an enum on "". But dropping it on a field that HAD a value
+     makes clearing one impossible — the update simply doesn't mention it and
+     the old value survives. So: a never-filled field is dropped, and a cleared
+     one is sent explicitly.
+
+     This applies to every field, not just numbers and enums. A form seeds an
+     unmapped field as "" and then sends it, which is how an admin save came to
+     write empty strings over a stay's stored check-in and check-out times.
+     Arrays are exempt by construction — `isBlank` doesn't call [] blank, so an
+     emptied tag list is still sent as [] and really does clear. */
+  Object.keys(out).forEach((k) => {
+    if (!isBlank(out[k])) return;
+    if (isBlank(baseline[k])) {
+      delete out[k];
+      return;
+    }
+    // Cleared. `null` for a number or an enum, "" for a string — sending null
+    // for a String path stores null rather than an empty value.
+    out[k] = NUMERIC_FIELDS.includes(k) || ENUM_FIELDS.includes(k) ? null : "";
   });
 
   /* The Offer model stores the discounted rate as `discountPrice`; there is no
@@ -1016,4 +1033,411 @@ export function pickOfferingValues(source: Record<string, any> | null | undefine
     out[f.name] = ARRAY_FIELDS.includes(f.name) ? toArr(source[f.name]) : source[f.name];
   });
   return out;
+}
+
+/* ── Field relevance ──────────────────────────────────────────────────────
+   Which fields a form shows for a given listing. Pure and shared so the rule
+   is testable — it decides what an operator can see and edit. */
+
+/**
+ * Whether a listing genuinely carries a value for `name`.
+ *
+ * Used only to decide whether an OUT-OF-SCOPE field should be revealed anyway,
+ * so that editing a listing never hides data it actually holds. That makes the
+ * bar "is there something here worth showing a whole section for", not "is this
+ * key present":
+ *
+ * - A switch that is off is a default, not data. `EMPTY` seeds
+ *   `airConditioned`, `selfDriveEnabled`, `withDriverEnabled` and
+ *   `withDriverTwoWay` as `false` on every listing, so counting `false` as a
+ *   value put the Vehicle and Rental rates sections on every stay, activity and
+ *   camper van — which is what "why does my unique stay have vehicle fields?"
+ *   was.
+ * - A rate of 0 is the same story from the other side: the server stores an
+ *   unanswered rate as 0 rather than leaving it out.
+ */
+export function hasMeaningfulValue(name: string, values: Record<string, any>): boolean {
+  const v = values?.[name];
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "boolean") return v;
+  if (v === "" || v === undefined || v === null) return false;
+  if (NUMERIC_FIELDS.includes(name)) return Number(v) !== 0;
+  return true;
+}
+
+/**
+ * Whether `f` belongs on screen for a listing of `kind`.
+ *
+ * `showAll` is the operator's "show every field" escape hatch, and a null kind
+ * means the listing says nothing about what it is — both show everything rather
+ * than hiding fields on a guess.
+ */
+export function isFieldRelevant(
+  f: FieldSpec,
+  kind: Kind | null,
+  values: Record<string, any>,
+  showAll = false,
+): boolean {
+  if (!f.only || !kind || showAll) return true;
+  return f.only.includes(kind) || hasMeaningfulValue(f.name, values);
+}
+
+/* ── Admin wizard steps ───────────────────────────────────────────────────
+   The admin edit form walks the SAME steps, in the same order, under the same
+   phase labels as the vendor onboarding flow for that service type. A listing
+   an admin corrects and a listing a vendor submits are then described the same
+   way, which is the point — an admin reviewing a stay should be looking at the
+   screens the host filled in, not a different decomposition of them.
+
+   Two groupings of one field set, on purpose:
+     SECTIONS     groups by schema domain (Vehicle, Rental rates, Location).
+     WIZARD_STEPS groups by onboarding order (Property type, Stay details, …).
+   Both name fields from the same registry, and `offeringFields.spec.ts` asserts
+   the wizard partitions every field that applies to a kind — exactly once — so
+   a field can never quietly fall out of the admin form.
+
+   The onboarding flows' Business / Personal / Terms / Documents steps are
+   deliberately absent: those are the VENDOR record and the compliance
+   documents, not the listing, and each already has its own admin surface
+   (VendorDetailsPopup, ComplianceRenewDialog).
+
+   Location has no onboarding equivalent — those flows derive city and state
+   from the vendor's business address (see deriveVehicleLocation). Both are
+   `required` on the model, so an admin has to be able to set them; they sit
+   with capacity, which is where the caravan flow puts its address too
+   (CapacityAddressStep). */
+
+export interface WizardStepSpec {
+  key: string;
+  label: string;
+  blurb: string;
+  icon: LucideIcon;
+  /** Progress-rail grouping, matching that flow's `*_PHASES`. */
+  phase: string;
+  /** Registry field names, in the order the onboarding step asks for them. */
+  fields?: string[];
+  /** A custom block — the same names `SECTIONS` uses. */
+  custom?: "photos" | "discounts" | "rooms";
+}
+
+/* Shared: the vendor/service header every admin step 0 needs, and the location
+   block described above. */
+const OWNER_FIELDS = ["vendorId", "serviceType"];
+const LOCATION_FIELDS = ["address", "locality", "city", "state", "pincode"];
+
+const PHOTOS_STEP = (phase: string): WizardStepSpec => ({
+  key: "photos",
+  label: "Photos",
+  blurb: "The cover is the only image most guests will see.",
+  icon: Images,
+  phase,
+  custom: "photos",
+});
+
+const DISCOUNTS_STEP = (label: string, phase: string): WizardStepSpec => ({
+  key: "discounts",
+  label,
+  blurb: "Optional promotional rates, off by default.",
+  icon: Percent,
+  phase,
+  custom: "discounts",
+});
+
+export const WIZARD_STEPS: Record<Kind, WizardStepSpec[]> = {
+  /* /onboarding/stay — STAY_PHASES: "Your stay" ×4, "Pricing" ×1
+     0 Property type · 1 Category · 2 Stay details · 3 Features · 4 Discounts */
+  "unique-stay": [
+    {
+      key: "property-type",
+      label: "Property type",
+      blurb: "What kind of place this is, and which vendor it belongs to.",
+      icon: Info,
+      phase: "Your stay",
+      fields: [...OWNER_FIELDS, "stayType", "name", "description"],
+    },
+    {
+      key: "category",
+      label: "Category",
+      blurb: "How guests find it when they filter a search.",
+      icon: Tag,
+      phase: "Your stay",
+      fields: ["category"],
+    },
+    {
+      key: "stay-details",
+      label: "Stay details",
+      blurb: "Capacity, the nightly rate, arrival times and house rules.",
+      icon: BedDouble,
+      phase: "Your stay",
+      fields: [
+        "guestCapacity",
+        "numberOfRooms",
+        "numberOfBeds",
+        "numberOfBathrooms",
+        "regularPrice",
+        "finalPrice",
+        "checkInTime",
+        "checkOutTime",
+        "rules",
+        "optionalRules",
+        "priceIncludes",
+        "priceExcludes",
+        ...LOCATION_FIELDS,
+      ],
+    },
+    {
+      key: "rooms",
+      label: "Rooms",
+      blurb: "Each room carries its own capacity, price and photos.",
+      icon: BedDouble,
+      phase: "Your stay",
+      custom: "rooms",
+    },
+    PHOTOS_STEP("Your stay"),
+    {
+      key: "features",
+      label: "Features",
+      blurb: "Tick everything that applies — guests use these as filters.",
+      icon: ListChecks,
+      phase: "Your stay",
+      fields: ["features"],
+    },
+    DISCOUNTS_STEP("Discounts", "Pricing"),
+  ],
+
+  /* /onboarding/caravan — CARAVAN_PHASES: "Your caravan" ×4, "Pricing" ×2
+     0 Details · 1 Category · 2 Features · 3 Capacity · 4 Pricing · 5 Offers */
+  "camper-van": [
+    {
+      key: "details",
+      label: "Details",
+      blurb: "What this camper van is, and which vendor it belongs to.",
+      icon: Info,
+      phase: "Your caravan",
+      fields: [...OWNER_FIELDS, "name", "description", "rules"],
+    },
+    {
+      key: "category",
+      label: "Category",
+      blurb: "The vehicle type guests filter on.",
+      icon: Tag,
+      phase: "Your caravan",
+      fields: ["category"],
+    },
+    {
+      key: "features",
+      label: "Features",
+      blurb: "Everything on board.",
+      icon: ListChecks,
+      phase: "Your caravan",
+      fields: ["features"],
+    },
+    {
+      key: "capacity",
+      label: "Capacity & location",
+      blurb: "How many it sleeps and seats, and where it is picked up.",
+      icon: Users,
+      phase: "Your caravan",
+      fields: ["seatingCapacity", "sleepingCapacity", "numberOfBeds", ...LOCATION_FIELDS],
+    },
+    {
+      key: "pricing",
+      label: "Pricing",
+      blurb: "Per day and per km, and what each rate covers.",
+      icon: IndianRupee,
+      phase: "Pricing",
+      fields: [
+        "perDayCharge",
+        "perDayIncludes",
+        "perDayExcludes",
+        "perKmCharge",
+        "perKmIncludes",
+        "perKmExcludes",
+        "regularPrice",
+        "finalPrice",
+        "priceIncludes",
+        "priceExcludes",
+      ],
+    },
+    PHOTOS_STEP("Pricing"),
+    DISCOUNTS_STEP("Offers", "Pricing"),
+  ],
+
+  /* /onboarding/activity — ACTIVITY_PHASES: "Your activity" ×3, "Pricing" ×3
+     0 Type · 1 Features · 2 Details · 3 Pricing · 4 Inclusions · 5 Discounts */
+  activity: [
+    {
+      key: "type",
+      label: "Type",
+      blurb: "What this activity is, and which vendor runs it.",
+      icon: Info,
+      phase: "Your activity",
+      fields: [...OWNER_FIELDS, "category", "name", "description"],
+    },
+    {
+      key: "features",
+      label: "Features",
+      blurb: "What is provided on the day.",
+      icon: ListChecks,
+      phase: "Your activity",
+      fields: ["features"],
+    },
+    {
+      key: "details",
+      label: "Details",
+      blurb: "Group size, how long it runs, the rules, and where it happens.",
+      icon: Users,
+      phase: "Your activity",
+      fields: ["personCapacity", "timeDuration", "expectations", "rules", ...LOCATION_FIELDS],
+    },
+    {
+      key: "pricing",
+      label: "Pricing",
+      blurb: "What a guest pays per person.",
+      icon: IndianRupee,
+      phase: "Pricing",
+      fields: ["regularPrice", "finalPrice"],
+    },
+    {
+      key: "inclusions",
+      label: "Inclusions",
+      blurb: "What the price does and does not cover.",
+      icon: ListChecks,
+      phase: "Pricing",
+      fields: ["priceIncludes", "priceExcludes"],
+    },
+    PHOTOS_STEP("Pricing"),
+    DISCOUNTS_STEP("Discounts", "Pricing"),
+  ],
+
+  /* /onboarding/vehicle — VEHICLE_PHASES: "Your vehicle" ×3, "Pricing" ×1
+     0 Details · 1 Class · 2 Specs · 3 Capacity · 4 Pricing
+     That flow drops Discount Offers; the admin form keeps them, because a
+     vehicle listing can still carry discounts set from elsewhere. */
+  "vehicle-rental": [
+    {
+      key: "details",
+      label: "Details",
+      blurb: "What this vehicle is, and which vendor it belongs to.",
+      icon: Info,
+      phase: "Your vehicle",
+      fields: [...OWNER_FIELDS, "name", "description", "rules"],
+    },
+    {
+      key: "class",
+      label: "Class",
+      blurb: "Class, category, and the vehicle's own identity.",
+      icon: Car,
+      phase: "Your vehicle",
+      fields: [
+        "vehicleClass",
+        "category",
+        "brand",
+        "model",
+        "manufactureYear",
+        "registrationNumber",
+      ],
+    },
+    {
+      key: "specs",
+      label: "Specs & features",
+      blurb: "Fuel, transmission and air conditioning are search filters.",
+      icon: ListChecks,
+      phase: "Your vehicle",
+      fields: ["fuelType", "transmission", "airConditioned", "features"],
+    },
+    {
+      key: "capacity",
+      label: "Capacity & location",
+      blurb: "Seats, luggage, and where it is handed over.",
+      icon: Users,
+      phase: "Your vehicle",
+      fields: ["seatingCapacity", "luggageCapacity", "pickupPoints", ...LOCATION_FIELDS],
+    },
+    {
+      key: "pricing",
+      label: "Pricing",
+      blurb: "Self-drive and chauffeur are independent — either or both.",
+      icon: IndianRupee,
+      phase: "Pricing",
+      fields: [
+        "selfDriveEnabled",
+        "selfDrivePerDay",
+        "selfDrivePerKm",
+        "freeKmPerDay",
+        "extraKmCharge",
+        "securityDeposit",
+        "minRentalHours",
+        "selfDriveIncludes",
+        "selfDriveExcludes",
+        "withDriverEnabled",
+        "withDriverTwoWay",
+        "withDriverPerKm",
+        "withDriverPerDay",
+        "driverAllowancePerDay",
+        "nightChargeAfter",
+        "outstationPerKm",
+        "withDriverIncludes",
+        "withDriverExcludes",
+        "fuelPolicy",
+        "tollsAndParking",
+        "cancellationWindowHours",
+        "regularPrice",
+        "finalPrice",
+        "priceIncludes",
+        "priceExcludes",
+      ],
+    },
+    PHOTOS_STEP("Pricing"),
+    DISCOUNTS_STEP("Discounts", "Pricing"),
+  ],
+};
+
+export interface ResolvedWizardStep {
+  key: string;
+  label: string;
+  blurb: string;
+  icon: LucideIcon;
+  phase: string;
+  fields: FieldSpec[];
+  custom?: SectionSpec["custom"];
+}
+
+/**
+ * The steps to show for a listing, with each step's field specs resolved.
+ *
+ * A null kind — a listing whose serviceType says nothing — falls back to the
+ * schema-domain `SECTIONS`, the same way the field-relevance rule does: show
+ * everything rather than guess at a flow.
+ */
+export function wizardStepsFor(
+  kind: Kind | null,
+  isVisible: (f: FieldSpec) => boolean,
+): ResolvedWizardStep[] {
+  const steps: WizardStepSpec[] = kind
+    ? WIZARD_STEPS[kind]
+    : SECTIONS.map((s) => ({
+        key: s.key,
+        label: s.label,
+        blurb: s.blurb,
+        icon: s.icon,
+        phase: "All fields",
+        fields: (s.fields ?? []).map((f) => f.name),
+        custom: s.custom,
+      }));
+
+  return steps
+    .map((s) => ({
+      key: s.key,
+      label: s.label,
+      blurb: s.blurb,
+      icon: s.icon,
+      phase: s.phase,
+      custom: s.custom,
+      fields: (s.fields ?? [])
+        .map((n) => FIELDS_BY_NAME.get(n))
+        .filter((f): f is FieldSpec => !!f && isVisible(f)),
+    }))
+    // A step with nothing on it reads as a broken form.
+    .filter((s) => s.custom || s.fields.length > 0);
 }

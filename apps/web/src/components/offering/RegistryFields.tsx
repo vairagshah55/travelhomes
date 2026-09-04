@@ -60,13 +60,26 @@ export interface RegistryFieldsProps {
   errors?: Record<string, string>;
 }
 
+/* Controls whose data comes from somewhere this component cannot reach — the
+   CMS catalog, the vendor directory, the service-type picker. Each surface
+   renders these itself; a generic text box in their place would let someone
+   type a category or an amenity that matches nothing. `offeringFields.spec.ts`
+   asserts none of them ever lands in the vendor remainder. */
+const SURFACE_OWNED: ReadonlySet<string> = new Set([
+  "features",
+  "category",
+  "vendor",
+  "serviceType",
+]);
+
 export const RegistryFields: React.FC<RegistryFieldsProps> = ({
   fields,
   values,
   onChange,
   errors = {},
 }) => {
-  if (fields.length === 0) return null;
+  const renderable = fields.filter((f) => !SURFACE_OWNED.has(f.control ?? "text"));
+  if (renderable.length === 0) return null;
 
   const renderControl = (f: FieldSpec) => {
     const raw = values[f.name];
@@ -159,7 +172,7 @@ export const RegistryFields: React.FC<RegistryFieldsProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {fields.map((f) => {
+      {renderable.map((f) => {
         const wide = f.wide || f.control === "textarea" || f.control === "tags";
         return (
           <div key={f.name} className={cn("min-w-0", wide && "md:col-span-2")}>

@@ -1,6 +1,30 @@
 import { useMemo } from "react";
 import { sortFeatureRows } from "@/lib/cmsFeatures";
 import { useFeatures } from "./useFeatures";
+import { STAY_AMENITY_NAMES } from "@/components/onboarding/stays/stayConfig";
+import { FALLBACK_CARAVAN_FEATURES } from "@/components/onboarding/caravan/caravanConfig";
+import { FALLBACK_VEHICLE_FEATURES } from "@/components/onboarding/vehicle/vehicleConfig";
+
+/**
+ * Amenity lists shown when CMS has nothing published for a service type.
+ *
+ * These used to live in the two vendor pages, hand-copied and already out of
+ * step: /offering/add fell back for camper-van AND unique-stay, /offering/:id/
+ * edit only for unique-stay, and the admin form had no fallback at all — so the
+ * same stay offered a full amenity grid on one screen and an empty one on the
+ * next. Applied here, every surface that reads `features` gets the same answer.
+ */
+const FALLBACK_FEATURES: Record<string, string[]> = {
+  "unique-stay": STAY_AMENITY_NAMES,
+  "camper-van": FALLBACK_CARAVAN_FEATURES,
+  "vehicle-rental": FALLBACK_VEHICLE_FEATURES,
+  // Activity has no canonical list to fall back to; an unseeded CMS shows the
+  // empty-state copy rather than a made-up grid.
+  activity: [],
+};
+
+const withFallback = (kind: string, fromCms: string[]) =>
+  fromCms.length ? fromCms : (FALLBACK_FEATURES[kind] ?? []);
 
 const toNames = (data: any[] | undefined): string[] =>
   (data ?? []).filter((f) => f && f.status === "enable").map((f) => String(f.name));
@@ -74,10 +98,16 @@ export function useOfferingCatalog() {
         "vehicle-rental": toNames(sortFeatureRows(vehicleCatsQuery.data ?? [])),
       } as Record<string, string[]>,
       features: {
-        "unique-stay": toNames(stayFeatsQuery.data),
-        activity: toNames(actFeatsQuery.data),
-        "camper-van": vanFeatureRows.map((f: any) => String(f.name)),
-        "vehicle-rental": vehicleFeatureRows.map((f: any) => String(f.name)),
+        "unique-stay": withFallback("unique-stay", toNames(stayFeatsQuery.data)),
+        activity: withFallback("activity", toNames(actFeatsQuery.data)),
+        "camper-van": withFallback(
+          "camper-van",
+          vanFeatureRows.map((f: any) => String(f.name)),
+        ),
+        "vehicle-rental": withFallback(
+          "vehicle-rental",
+          vehicleFeatureRows.map((f: any) => String(f.name)),
+        ),
       } as Record<string, string[]>,
       /** Enabled Camper Van categories, unflattened — for CaravanCategoryStep. */
       camperVanCategories: sortFeatureRows(

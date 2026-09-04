@@ -170,3 +170,55 @@ export function pickActiveDiscount(formData: FormData) {
   }
   return null;
 }
+
+/**
+ * Camper-van amenities shown when CMS has none published yet.
+ *
+ * Lives here rather than in FeaturesStep so `useOfferingCatalog` can import it
+ * without pulling a React component into a hook — the admin listing form needs
+ * the same fallback the vendor wizard has always had, or the two show different
+ * amenity grids for the same listing. Keep in step with
+ * Server/scripts/seed-caravan-features.js.
+ */
+export const FALLBACK_CARAVAN_FEATURES: string[] = [
+  "Air Conditioning",
+  "Heating",
+  "Sofa / Lounge Seating",
+  "Recliner Seats",
+  "Storage Cabinets",
+  "Double Bed",
+  "Single Beds",
+  "Bunk Beds",
+  "Sofa Cum Bed",
+  "Pillows",
+  "Blankets",
+  "Induction Stove / Gas Stove",
+  "Microwave",
+  "Refrigerator",
+  "Basic Kitchen Utensils",
+  "Bathroom",
+  "Toilet",
+  "Hot Water / Geyser",
+  "Wash Basin",
+  "Mirror",
+  "Toiletries",
+  "TV",
+  "Wi-Fi",
+  "Speaker",
+  "Charging Points",
+  "Generator",
+  "Power Backup",
+  "Exterior Lights",
+  "Drinking Water Facility",
+  "Fire Extinguisher",
+  "First Aid Kit",
+  "CCTV",
+  "GPS Tracking",
+  "Awning",
+  "Outdoor Kitchen",
+  "BBQ",
+  "Rooftop Terrace",
+  "Camping Chairs",
+  "Camping Table",
+  "Wheelchair Accessible",
+];
