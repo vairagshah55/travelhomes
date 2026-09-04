@@ -11,7 +11,6 @@ import {
   Plus,
   Loader2,
   Image as ImageIcon,
-  IndianRupee,
   Layers,
   RefreshCw,
   ShieldAlert,
@@ -50,7 +49,7 @@ import {
   type CompliancePayload,
 } from "@/components/compliance";
 import { evaluateCompliance } from "@/lib/vehicleCompliance";
-import { BTN_NEUTRAL, BTN_PRIMARY, CARD_FLUSH, STAT_GRID } from "@/components/admin/adminUI";
+import { BTN_NEUTRAL, BTN_PRIMARY, CARD_FLUSH } from "@/components/admin/adminUI";
 import { useTableUrlState, type UrlFilterDef } from "@/components/admin/useTableUrlState";
 
 /* ── Tab definitions ────────────────────────────────────────────────────── */
@@ -98,11 +97,15 @@ const URL_FILTERS: UrlFilterDef[] = [
 /* Metric row. Each figure is computed from the listings already fetched for
    the active tab — deriving them costs nothing and, unlike a second endpoint,
    can never disagree with the table underneath it. */
+/* Not the shared STAT_GRID: that is `xl:grid-cols-4` for the four-card rows on
+   User and Vendor management, and this row has three, which left a quarter of
+   the row empty. */
+const STAT_ROW = "grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3";
+
 const STAT_DEFS = [
   { key: "listings", title: "Listings", icon: PackageOpen, color: "#2563eb" },
   { key: "vendors", title: "Vendors", icon: Store, color: "#7c3aed" },
   { key: "categories", title: "Categories", icon: Layers, color: "#0891b2" },
-  { key: "avgPrice", title: "Avg price", icon: IndianRupee, color: "#059669" },
 ] as const;
 
 /* ── Component ──────────────────────────────────────────────────────────── */
@@ -256,22 +259,14 @@ const ManagementListing = () => {
   );
 
   /* Metric-row figures, all derived from the listings already loaded. */
-  const stats = useMemo(() => {
-    const priced = scoped
-      .map((o) => Number(o.regularPrice))
-      .filter((n) => Number.isFinite(n) && n > 0);
-    const avg = priced.length
-      ? Math.round(priced.reduce((sum, n) => sum + n, 0) / priced.length)
-      : 0;
-    return {
+  const stats = useMemo(
+    () => ({
       listings: String(scoped.length),
       vendors: String(new Set(scoped.map((o) => o.vendorId).filter(Boolean)).size),
       categories: String(new Set(scoped.map((o) => o.category).filter(Boolean)).size),
-      // A formatted string, so AdminStatCard renders it as-is instead of
-      // count-up animating a rupee figure digit by digit.
-      avgPrice: avg ? formatINR(avg) : "—",
-    };
-  }, [scoped]);
+    }),
+    [scoped],
+  );
 
   const filterDefs: FilterDefinition[] = [
     {
@@ -843,7 +838,7 @@ const ManagementListing = () => {
           selected tab — no extra request and nothing invented. The hint under
           each says which tab it describes, so "12" is never mistaken for a
           platform-wide total. */}
-      <div className={`${STAT_GRID} mb-5`}>
+      <div className={`${STAT_ROW} mb-5`}>
         {STAT_DEFS.map((stat, i) => (
           <AdminStatCard
             key={stat.key}

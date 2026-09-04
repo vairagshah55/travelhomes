@@ -7,6 +7,7 @@ import {
   deriveVehicleName,
   deriveVehicleDescription,
   deriveVehicleLocation,
+  vehicleEnumFields,
 } from "./vehicleConfig";
 
 export interface SubmitVehicleCallbacks {
@@ -121,13 +122,9 @@ export async function submitVehicleOnboarding(
       nightChargeAfter: num(formData.nightChargeAfter),
       outstationPerKm: num(formData.outstationPerKm),
       cancellationWindowHours: num(formData.cancellationWindowHours),
-      /* Sent only when the vendor picked one. The wizard does not render these
-         two (see showRunningCostPolicies), so in practice they are blank here
-         and the schema defaults `excluded` / `on-actuals` apply — but a draft
-         resumed after an edit can carry a real value, and dropping it would
-         silently revert the vendor's choice. */
-      ...(formData.fuelPolicy ? { fuelPolicy: formData.fuelPolicy } : {}),
-      ...(formData.tollsAndParking ? { tollsAndParking: formData.tollsAndParking } : {}),
+      /* An unanswered enum must be omitted, not sent as "" — sending it 422'd
+         every vehicle submission. See vehicleEnumFields for the whole story. */
+      ...vehicleEnumFields(formData),
 
       registrationNumber: formData.registrationNumber.trim().toUpperCase(),
       pickupPoints: cleanList(formData.pickupPoints),

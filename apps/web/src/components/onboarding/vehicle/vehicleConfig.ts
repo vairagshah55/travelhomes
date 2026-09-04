@@ -628,6 +628,47 @@ export function pickActiveDiscount(formData: FormData) {
  * sees in the panel is what gets published — the card would otherwise sit on its
  * "Your vehicle name" placeholder forever with no field left to fill in.
  */
+/**
+ * The enum-backed paths, with an unanswered one omitted rather than sent as "".
+ *
+ * `VehicleOnboarding` constrains all four with a Mongoose `enum`, and Mongoose
+ * treats `""` as a value that is SET but not in the list — so it fails
+ * validation (`` `` is not a valid enum value for path `fuelPolicy` ``) and the
+ * error middleware returns a **422** for the whole submission, naming no field
+ * the vendor can act on.
+ *
+ * All four are typed `X | ""` and seeded `""` in `defaultVehicleFormData`, and
+ * the submit payload spreads `...formData`. The wizard never renders fuelPolicy
+ * or tollsAndParking (see showRunningCostPolicies), so `fuelPolicy: ""` went
+ * out on every vehicle submission.
+ *
+ * `undefined`, not a conditional spread: the payload spreads `...formData`
+ * first, and spreading `{}` afterwards does not remove a key that spread
+ * already set — which is why the guard that was written that way was inert.
+ * `JSON.stringify` omits undefined values, so the key never reaches the server
+ * and the schema default (`excluded` / `on-actuals`) applies.
+ *
+ * None of the four is `required`, so omitting one is valid. Step 1's validation
+ * is what insists the vendor answers fuelType and transmission; this only
+ * decides how an unanswered value is transmitted.
+ *
+ * The same rule already exists for the edit surfaces as `ENUM_FIELDS` in
+ * lib/offeringFields — keep the two lists in step.
+ */
+export function vehicleEnumFields(formData: FormData): {
+  fuelPolicy?: FuelPolicy;
+  tollsAndParking?: TollsPolicy;
+  fuelType?: FuelType;
+  transmission?: Transmission;
+} {
+  return {
+    fuelPolicy: formData.fuelPolicy || undefined,
+    tollsAndParking: formData.tollsAndParking || undefined,
+    fuelType: formData.fuelType || undefined,
+    transmission: formData.transmission || undefined,
+  };
+}
+
 export function deriveVehicleName(formData: FormData): string {
   const brand = (formData.brand || "").trim();
   const model = (formData.model || "").trim();
