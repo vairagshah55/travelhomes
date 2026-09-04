@@ -32,6 +32,16 @@ import {
 } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import { offersApi } from "@/lib/api";
+/* Fields the shared registry knows about that the hand-built steps below do not
+   collect. This page was the furthest behind of the four surfaces — a stay
+   created here was saved with its room counts and check-in times blank because
+   no input existed for them. See lib/offeringFields. */
+import {
+  serializeOfferingValues,
+  vendorFieldsFor,
+  vendorGenericFieldNames,
+  type Kind,
+} from "@/lib/offeringFields";
 import { useAuth } from "@/contexts/AuthContext";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
@@ -43,6 +53,7 @@ import {
   ChoiceTile,
   FeatureChip,
   ReviewSection,
+  RegistryFields,
   SubPanel,
   WizardError,
   WizardFooter,
@@ -270,6 +281,11 @@ const AddOfferings = () => {
     specialOffersValue: "",
     termsAccepted: false,
   });
+  /* Registry-driven fields, held beside the curated `formData` — see the import
+     comment. Nothing to seed from: this is a new listing. */
+  const [extras, setExtras] = useState<Record<string, any>>({});
+  const setExtra = (name: string, value: any) => setExtras((p) => ({ ...p, [name]: value }));
+
   const [previews, setPreviews] = useState({ cover: "", gallery: [] as string[] });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -434,6 +450,16 @@ const AddOfferings = () => {
           status: "pending",
           serviceType: activeTab,
           ...specificData,
+          /* Spread after `specificData` on purpose: the generic set is the
+             registry MINUS what the steps collect, so the only keys it shares
+             with it are the ones `specificData` sends with no input behind them
+             (a stay's room counts, an activity's expectations) — which is
+             exactly where the vendor's newly typed value has to win. */
+          ...serializeOfferingValues(
+            extras,
+            {},
+            vendorGenericFieldNames("create", activeTab as Kind),
+          ),
           // Discounts now persisted as a structured sub-doc on the Offer model
           // (Offer.discounts) rather than the legacy flat fields. The old
           // fields are kept on the payload for backwards-compat with any
@@ -695,6 +721,22 @@ const AddOfferings = () => {
   }, [locationCountry, formData.state]);
 
   const currentTab = TABS.find((t) => t.key === activeTab);
+  /* The registry fields for one wizard step, in the same SubPanel the hand-built
+     groups use so it reads as part of the step rather than an appendix. */
+  const registryPanel = (stepKey: Parameters<typeof vendorFieldsFor>[2]) => {
+    const fields = vendorFieldsFor("create", activeTab as Kind, stepKey);
+    if (fields.length === 0) return null;
+    return (
+      <SubPanel
+        icon={ListChecks}
+        title="Additional details"
+        blurb="Optional — these appear on the listing when set"
+      >
+        <RegistryFields fields={fields} values={extras} onChange={setExtra} errors={errors} />
+      </SubPanel>
+    );
+  };
+
   const stepMeta = STEPS[step];
   const StepIcon = stepMeta.icon;
 
@@ -1128,6 +1170,21 @@ const AddOfferings = () => {
                           weeklyLabel="Weekly / Monthly Offers"
                         />
                       </SubPanel>
+                    </div>
+                  )}
+
+                  {/* Whatever the registry says applies to this listing and the
+                      steps above do not collect — rendered at the foot of the
+                      step that owns it, so a new schema field reaches vendors
+                      without a fifth hand-written copy of the form. Step 0 is
+                      the service-type picker, hence the offset. */}
+                  {step > 0 && step < 6 && (
+                    <div className="mt-4">
+                      {step === 1 && registryPanel("category")}
+                      {step === 2 && registryPanel("basics")}
+                      {step === 3 && registryPanel("features")}
+                      {step === 4 && registryPanel("location")}
+                      {step === 5 && registryPanel("pricing")}
                     </div>
                   )}
 

@@ -40,6 +40,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCountriesData } from "@/hooks/useCountriesData";
 import { countryByName } from "@/data/countries";
 import { useOfferingCatalog } from "@/hooks/useOfferingCatalog";
+/* Every field the shared registry knows about that the hand-built steps below
+   do not already collect. Without it this page is a fourth, drifting copy of
+   the schema — which is exactly how it ended up six vehicle fields behind the
+   admin form. See lib/offeringFields. */
+import {
+  pickOfferingValues,
+  serializeOfferingValues,
+  vendorFieldsFor,
+  vendorGenericFieldNames,
+  type Kind,
+} from "@/lib/offeringFields";
 import { PiVanBold } from "react-icons/pi";
 import { GiBinoculars } from "react-icons/gi";
 import { STAY_AMENITY_NAMES } from "@/components/onboarding/stays/stayConfig";
@@ -48,6 +59,7 @@ import type { DiscountOffer } from "@/components/onboarding/shared";
 import { SearchableSelect } from "@/components/onboarding/shared/primitives";
 import {
   CamperVanPricing,
+  RegistryFields,
   UniqueStayPricing,
   ActivityPricing,
   ChoiceTile,
@@ -212,6 +224,16 @@ const EditOfferings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setUploading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  /* Registry-driven fields live beside `formData` rather than inside it: the
+     curated state below is typed field by field, and the generic set is
+     whatever the registry says applies to this service type. `extrasBaseline`
+     is what the listing arrived with, so clearing a value sends an explicit
+     null instead of quietly leaving the old figure in place. */
+  const [extras, setExtras] = useState<Record<string, any>>({});
+  const [extrasBaseline, setExtrasBaseline] = useState<Record<string, any>>({});
+  const setExtra = (name: string, value: any) =>
+    setExtras((p) => ({ ...p, [name]: value }));
 
   // ─── Form state ────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
@@ -448,6 +470,10 @@ const EditOfferings = () => {
       specialOffersValue: o.discounts?.special?.value ?? "",
       specialOffersFinalPrice: o.discounts?.special?.finalPrice ?? "",
     });
+
+    const loadedExtras = pickOfferingValues(o as any);
+    setExtras(loadedExtras);
+    setExtrasBaseline(loadedExtras);
 
     setCoverUrl(o.photos?.coverUrl || "");
     setGalleryUrls(o.photos?.galleryUrls || []);
@@ -945,6 +971,17 @@ const EditOfferings = () => {
         status: "pending",
         discounts,
         ...specificData,
+        /* Spread LAST on purpose. The generic set is the registry MINUS what the
+           steps above collect, so it cannot overlap a field the vendor actually
+           edited here. What it does overlap is the handful `specificData` sends
+           without ever rendering an input for them — `stayType`, an activity's
+           `expectations` — where the value the vendor just typed has to win over
+           the untouched one carried along from load. */
+        ...(serializeOfferingValues(
+          extras,
+          extrasBaseline,
+          vendorGenericFieldNames("edit", activeTab as Kind),
+        ) as Partial<OfferDTO>),
       };
 
       const res = await offersApi.update(id, payload, token);
@@ -959,6 +996,22 @@ const EditOfferings = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  /* The registry fields for one wizard step, wrapped in the same SubPanel the
+     hand-built groups use so it reads as part of the step, not an appendix. */
+  const registryPanel = (stepKey: Parameters<typeof vendorFieldsFor>[2]) => {
+    const fields = vendorFieldsFor("edit", activeTab as Kind, stepKey);
+    if (fields.length === 0) return null;
+    return (
+      <SubPanel
+        icon={ListChecks}
+        title="Additional details"
+        blurb="Optional — these appear on the listing when set"
+      >
+        <RegistryFields fields={fields} values={extras} onChange={setExtra} errors={errors} />
+      </SubPanel>
+    );
   };
 
   const catalog = useOfferingCatalog();
@@ -1822,6 +1875,20 @@ const EditOfferings = () => {
                           weeklyLabel="Weekly / Monthly Offers"
                         />
                       </SubPanel>
+                    </div>
+                  )}
+
+                  {/* Whatever the registry says applies to this listing and the
+                      steps above do not collect — rendered at the foot of the
+                      step that owns it, so a new schema field reaches vendors
+                      without a fifth hand-written copy of the form. */}
+                  {step < 5 && (
+                    <div className="mt-4">
+                      {step === 0 && registryPanel("category")}
+                      {step === 1 && registryPanel("basics")}
+                      {step === 2 && registryPanel("features")}
+                      {step === 3 && registryPanel("location")}
+                      {step === 4 && registryPanel("pricing")}
                     </div>
                   )}
 

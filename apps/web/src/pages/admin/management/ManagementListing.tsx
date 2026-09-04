@@ -22,7 +22,7 @@ import ViewDetailsPopup from "@/components/admin/ViewDetailsPopup";
 import VendorDetailsPopup from "@/components/admin/VendorDetailsPopup";
 import ManagementForm, { Offer as FormOffer } from "@/components/admin/ManagementForm";
 import { pickSubmissionDetails } from "@/lib/listingSubmission";
-import { serviceTypeOf } from "@/lib/listingKind";
+import { SERVICE_TYPES, serviceTypeLabel, serviceTypeOf } from "@/lib/listingKind";
 import RejectReasonPopup from "@/components/admin/RejectReasonPopup";
 import { TabStrip } from "@/components/shared/TabStrip";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -75,10 +75,19 @@ const SORT_OPTIONS = [
 
 const ITEMS_PER_PAGE = 10;
 
+/* Key for listings `serviceTypeOf` returns null for. Not a ServiceType, so it
+   cannot collide with one. */
+const UNCLASSIFIED = "unclassified";
+
 /* Query params this page owns. Module scope, because useTableUrlState needs the
    key/type pairs before `filterDefs` — whose options are derived from the
    loaded listings — can be built. */
 const URL_FILTERS: UrlFilterDef[] = [
+  /* The service-type strip under the toolbar. It is a filter as far as the URL
+     is concerned — so it survives a refresh and travels in a shared link — but
+     it is deliberately kept OUT of `filterDefs` below, or it would appear a
+     second time inside the filter dropdown. */
+  { key: "kind", type: "select" },
   { key: "vendor", type: "select" },
   { key: "brandName", type: "select" },
   { key: "serviceName", type: "select" },
@@ -217,23 +226,51 @@ const ManagementListing = () => {
 
   const activeTabLabel = TABS.find((t) => t.key === activeTab)?.label ?? "All";
 
-  /* Metric-row figures, all derived from `offers` (the active tab's data). */
+  /* ── Service type ──
+     A second strip inside every status tab: All · Unique Stay · Camper Van ·
+     Activity · Vehicle Rental. It rides in the URL as a filter (see
+     URL_FILTERS) but reads as navigation, because a reviewer works one kind of
+     listing at a time — a vehicle is approved against its insurance dates, a
+     stay against its rooms and photos, and the two were interleaved before. */
+  const activeKind = String(filters.kind || "all");
+  const setKind = (key: string) =>
+    setFilters({ ...filters, kind: key === "all" ? "" : key });
+  const activeKindLabel =
+    activeKind === "all"
+      ? ""
+      : activeKind === UNCLASSIFIED
+        ? "Unclassified"
+        : serviceTypeLabel(activeKind);
+
+  /* The scope the metric row describes: the status tab narrowed by the service
+     strip. Search and the filter dropdown are deliberately NOT applied — those
+     are transient ways of finding a row, not a change of what you're looking
+     at, and a stat that moved on every keystroke would be unreadable. */
+  const scoped = useMemo(
+    () =>
+      activeKind === "all"
+        ? offers
+        : offers.filter((o) => (serviceTypeOf(o as any) ?? UNCLASSIFIED) === activeKind),
+    [offers, activeKind],
+  );
+
+  /* Metric-row figures, all derived from the listings already loaded. */
   const stats = useMemo(() => {
-    const priced = offers
+    const priced = scoped
       .map((o) => Number(o.regularPrice))
       .filter((n) => Number.isFinite(n) && n > 0);
     const avg = priced.length
       ? Math.round(priced.reduce((sum, n) => sum + n, 0) / priced.length)
       : 0;
     return {
-      listings: String(offers.length),
-      vendors: String(new Set(offers.map((o) => o.vendorId).filter(Boolean)).size),
-      categories: String(new Set(offers.map((o) => o.category).filter(Boolean)).size),
+      listings: String(scoped.length),
+      vendors: String(new Set(scoped.map((o) => o.vendorId).filter(Boolean)).size),
+      categories: String(new Set(scoped.map((o) => o.category).filter(Boolean)).size),
       // A formatted string, so AdminStatCard renders it as-is instead of
       // count-up animating a rupee figure digit by digit.
       avgPrice: avg ? formatINR(avg) : "—",
     };
-  }, [offers]);
+  }, [scoped]);
 
   const filterDefs: FilterDefinition[] = [
     {
@@ -264,8 +301,12 @@ const ManagementListing = () => {
     },
   ];
 
-  /* ── Client-side filter + sort ── */
-  const filtered = useMemo(() => {
+  /* ── Client-side filter + sort ──
+     Split in two around the service-type strip: everything else narrows the
+     list first, the strip counts what each type would show at that point, and
+     only then does the chosen type narrow it further. Counting before the
+     search would promise rows a click can't deliver. */
+  const beforeKind = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let list = offers;
 
@@ -313,6 +354,62 @@ const ManagementListing = () => {
       });
     }
 
+    return list;
+  }, [offers, searchTerm, filters, vendorNameFor]);
+
+  /* `serviceTypeOf` rather than a `serviceType ===` compare: most of the real
+     taxonomy is names like "Havelis" and "Tempo Traveller", and listings typed
+     straight into the admin form never got a serviceType stamped at all. It
+     falls back to reading the category, so those rows land in a tab instead of
+     nowhere. See lib/listingKind. */
+  const kindOf = (o: Offer) => serviceTypeOf(o as any);
+
+  const kindCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: beforeKind.length };
+    beforeKind.forEach((o) => {
+      // `null` is its own bucket, not a row to quietly drop — see UNCLASSIFIED.
+      const k = kindOf(o) ?? UNCLASSIFIED;
+      counts[k] = (counts[k] ?? 0) + 1;
+    });
+    return counts;
+  }, [beforeKind]);
+
+  /* Every service type, every tab, zero counts included. An empty type is an
+     answer — "nothing of this kind is waiting" — and the strip has to be there
+     on a tab with no rows at all, which is where this page opens: the default
+     tab is Pending, and a queue that has just been worked through is empty. */
+  const kindTabs = useMemo(
+    () => [
+      { key: "all", label: "All", count: kindCounts.all ?? 0 },
+      ...SERVICE_TYPES.map((t) => ({
+        key: t.value,
+        label: t.label,
+        count: kindCounts[t.value] ?? 0,
+      })),
+      /* Listings `serviceTypeOf` cannot place — no stored serviceType and a
+         category none of its keywords match ("Cave", "Budget Camper"). Shown
+         only when there are some, for the same reason Compliance hold is its
+         own tab: without it those rows belong to no type and the counts across
+         the strip quietly fail to add up to All. */
+      ...(kindCounts[UNCLASSIFIED] || activeKind === UNCLASSIFIED
+        ? [
+            {
+              key: UNCLASSIFIED,
+              label: "Unclassified",
+              count: kindCounts[UNCLASSIFIED] ?? 0,
+            },
+          ]
+        : []),
+    ],
+    [kindCounts, activeKind],
+  );
+
+  const filtered = useMemo(() => {
+    const list =
+      activeKind === "all"
+        ? beforeKind
+        : beforeKind.filter((o) => (kindOf(o) ?? UNCLASSIFIED) === activeKind);
+
     // Sort
     return [...list].sort((a, b) => {
       if (sortBy === "price-low-high") {
@@ -326,7 +423,7 @@ const ManagementListing = () => {
       }
       return 0;
     });
-  }, [offers, searchTerm, sortBy, filters, vendorNameFor]);
+  }, [beforeKind, activeKind, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   // A `?page=` carried over from a longer list can outrun a narrower one.
@@ -804,7 +901,7 @@ const ManagementListing = () => {
             value={stats[stat.key]}
             icon={stat.icon}
             iconColor={stat.color}
-            hint={`in ${activeTabLabel}`}
+            hint={activeKindLabel ? `in ${activeTabLabel} · ${activeKindLabel}` : `in ${activeTabLabel}`}
             delay={i * 0.04}
           />
         ))}
@@ -812,6 +909,14 @@ const ManagementListing = () => {
 
       <MotionReveal delay={0}>
         <section className={CARD_FLUSH}>
+          {/* Service type sits ABOVE the toolbar, because it changes what you
+              are looking at while search and the filters only narrow it. Its
+              own TabStrip: the indicator is keyed on the tab keys, so this one
+              and the status strip in the page header animate independently. */}
+          <div className="px-3 pt-1 border-b border-app-border">
+            <TabStrip variant="flush" tabs={kindTabs} activeKey={activeKind} onChange={setKind} />
+          </div>
+
           {/* Toolbar is the card's HEADER — a recessed band on the card rather
               than another floating row. That is what makes search/filter read
               as belonging to this table instead of to the page. */}
@@ -854,7 +959,9 @@ const ManagementListing = () => {
             emptyTitle={
               activeTab === "compliance"
                 ? "No listings on compliance hold"
-                : `No ${activeTabLabel.toLowerCase()} listings`
+                : activeKindLabel
+                  ? `No ${activeTabLabel.toLowerCase()} ${activeKindLabel.toLowerCase()} listings`
+                  : `No ${activeTabLabel.toLowerCase()} listings`
             }
             emptyDescription={
               activeTab === "compliance"
